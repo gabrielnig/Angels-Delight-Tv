@@ -1744,3 +1744,10 @@
     grid-template-columns: repeat(2, 1fr);
   }
 }
+
+/* ---- Analytics ---- */
+.adm-stat {
+  font-size: var(--text-h2);
+  font-variant-numeric: tabular-nums;
+  line-height: var(--leading-tight, 1.2);
+}
