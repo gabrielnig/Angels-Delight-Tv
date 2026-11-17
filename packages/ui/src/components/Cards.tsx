@@ -4,7 +4,7 @@ import { useState, type ReactNode } from 'react';
 import { Badge } from './Badge';
 import { IconButton } from './Button';
 import { cx } from './cx';
-import { formatClock, spokenDuration, spokenLength } from './format';
+import { formatClock, spokenLength } from './format';
 import { Icon } from './Icon';
 import { Link } from './Link';
 import { ProgressBar } from './ProgressBar';
@@ -47,7 +47,7 @@ function Thumb({
           onError={() => setFailed(true)}
         />
       ) : (
-        <span className="ad-card__fallback">
+        <span className="ad-card__fallback" aria-hidden="true">
           <Icon name="play" size={24} filled />
           <span className="ad-card__fallback-title">{title}</span>
         </span>
@@ -83,21 +83,14 @@ export function VideoCard({
 }: VideoCardProps) {
   return (
     <article className={cx('ad-card', className)}>
-      <Link
-        href={href}
-        className="ad-card__link"
-        aria-label={`${title}, ${spokenLength(durationSeconds)}`}
-      >
+      <Link href={href} className="ad-card__link">
         <Thumb thumbnail={thumbnail} title={title} priority={priority}>
-          <span className="ad-card__badge">
-            <Badge variant="duration" srText={spokenDuration(durationSeconds)}>
-              {formatClock(durationSeconds)}
-            </Badge>
+          <span className="ad-card__badge" aria-hidden="true">
+            <Badge variant="duration">{formatClock(durationSeconds)}</Badge>
           </span>
         </Thumb>
-        <span className="ad-card__title" aria-hidden="true">
-          {title}
-        </span>
+        <span className="ad-card__title">{title}</span>
+        <span className="ad-sr-only">, {spokenLength(durationSeconds)}</span>
         {meta ? (
           <span className="ad-card__meta" aria-hidden="true">
             {meta}
@@ -140,19 +133,13 @@ export function ContinueCard({
   const rounded = known ? Math.round(Math.min(100, Math.max(0, progressPercent))) : 0;
   return (
     <article className={cx('ad-card ad-card--continue', className)}>
-      <Link
-        href={href}
-        className="ad-card__link"
-        aria-label={`Continue ${title}${timeLeftLabel ? `, ${timeLeftLabel}` : ''}${known ? `, ${rounded} percent watched` : ''}`}
-      >
+      <Link href={href} className="ad-card__link">
         <Thumb thumbnail={thumbnail} title={title} priority={priority}>
           <span className="ad-card__play" aria-hidden="true">
             <Icon name="play" size={24} filled />
           </span>
-          <span className="ad-card__badge">
-            <Badge variant="duration" srText={spokenDuration(durationSeconds)}>
-              {formatClock(durationSeconds)}
-            </Badge>
+          <span className="ad-card__badge" aria-hidden="true">
+            <Badge variant="duration">{formatClock(durationSeconds)}</Badge>
           </span>
           {known ? (
             <span className="ad-card__progress">
@@ -161,8 +148,10 @@ export function ContinueCard({
             </span>
           ) : null}
         </Thumb>
-        <span className="ad-card__title" aria-hidden="true">
-          {title}
+        <span className="ad-card__title">{title}</span>
+        <span className="ad-sr-only">
+          , {spokenLength(durationSeconds)}
+          {timeLeftLabel ? `, ${timeLeftLabel}` : ''}
         </span>
         {timeLeftLabel ? (
           <span className="ad-card__meta" aria-hidden="true">
@@ -206,17 +195,16 @@ export function SeriesCard({
   const countText = `${episodeCount} episode${episodeCount === 1 ? '' : 's'}`;
   return (
     <article className={cx('ad-card ad-card--series', className)}>
-      <Link href={href} className="ad-card__link" aria-label={`${title}, ${countText}`}>
+      <Link href={href} className="ad-card__link">
         <span className="ad-card__stack">
           <Thumb thumbnail={thumbnail} title={title} priority={priority}>
-            <span className="ad-card__badge">
+            <span className="ad-card__badge" aria-hidden="true">
               <Badge variant="duration">{countText}</Badge>
             </span>
           </Thumb>
         </span>
-        <span className="ad-card__title" aria-hidden="true">
-          {title}
-        </span>
+        <span className="ad-card__title">{title}</span>
+        <span className="ad-sr-only">, {countText}</span>
       </Link>
       {onToggleList ? (
         <IconButton

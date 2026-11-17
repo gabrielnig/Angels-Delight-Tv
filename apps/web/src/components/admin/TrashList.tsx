@@ -98,7 +98,7 @@ export function TrashList({
                     </Button>
                     <Button
                       variant="danger"
-                      aria-label={`Delete ${video.title} forever`}
+                      aria-label={`Delete forever: ${video.title}`}
                       disabledReason={canPurge ? undefined : 'Only an admin can delete forever.'}
                       onClick={() => setConfirm(video)}
                     >
