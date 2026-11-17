@@ -1,6 +1,6 @@
 import { and, desc, eq, sql } from 'drizzle-orm';
 import { searchHistory, withAccount } from '@ad/db';
-import { RateLimited, ValidationFailed, type Actor } from '@ad/shared';
+import { ValidationFailed, type Actor } from '@ad/shared';
 import {
   MAX_QUERY_LENGTH,
   MIN_QUERY_LENGTH,
@@ -11,7 +11,7 @@ import {
   type Suggestion,
 } from '@ad/catalog';
 import { annotateCards, type TitleCardDto } from './annotate';
-import { catalogContext, clockOf, type ViewerContext } from './context';
+import { catalogContext, clockOf, spendAttempt, type ViewerContext } from './context';
 import { audienceOf, loadOwnedProfile } from './profiles';
 
 export const RECENT_SEARCHES_SHOWN = 8;
@@ -42,10 +42,6 @@ function normalizeQuery(raw: string): string {
   return query.slice(0, MAX_QUERY_LENGTH);
 }
 
-async function takeSearchSlot(ctx: ViewerContext, accountId: string): Promise<void> {
-  if (ctx.rateLimit && !(await ctx.rateLimit(`search:${accountId}`))) throw new RateLimited(60);
-}
-
 export async function search(
   ctx: ViewerContext,
   actor: Actor,
@@ -54,7 +50,7 @@ export async function search(
   const query = normalizeQuery(input.query);
   return withAccount(ctx.db, actor, async (tx) => {
     const profile = await loadOwnedProfile(tx, actor, input.profileId);
-    await takeSearchSlot(ctx, actor.accountId);
+    await spendAttempt(ctx, 'search', actor.accountId);
     const audience = audienceOf(profile);
     const catalog = catalogContext(ctx);
     const page = await searchTitles(tx, catalog, audience, {
@@ -105,7 +101,7 @@ export async function suggest(
 ): Promise<Suggestion[]> {
   return withAccount(ctx.db, actor, async (tx) => {
     const profile = await loadOwnedProfile(tx, actor, input.profileId);
-    await takeSearchSlot(ctx, actor.accountId);
+    await spendAttempt(ctx, 'search', actor.accountId);
     return suggestTitles(tx, catalogContext(ctx), audienceOf(profile), input.query);
   });
 }

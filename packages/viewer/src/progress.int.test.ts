@@ -13,7 +13,9 @@ describe.skipIf(!process.env.TEST_DATABASE_ADMIN_URL)('watch progress', () => {
 
   beforeAll(async () => {
     h = await createHarness();
-    limited = await createHarness({ rateLimit: async () => false });
+    limited = await createHarness({
+      rateLimit: async () => ({ allowed: false, retryAfterSeconds: 30 }),
+    });
   });
   afterAll(async () => {
     await h?.drop();
