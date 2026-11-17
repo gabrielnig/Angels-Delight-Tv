@@ -42,6 +42,7 @@ describe.skipIf(!integrationEnabled())('viewer api', () => {
       secureCookies: false,
       profileSecret: new Uint8Array(32).fill(9),
       resolveActor: async () => signedIn,
+      lock: { read: async () => null, set: async () => undefined, clear: async () => undefined },
     };
     api = createViewerApi(runtime);
   });

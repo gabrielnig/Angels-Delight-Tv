@@ -8,6 +8,7 @@ import {
 } from '../viewer/active-profile';
 import { viewerRuntime } from '../viewer/runtime';
 import { getSession } from '../auth/session';
+import { authRuntime } from '../auth/runtime';
 import type { ProfileIo } from './real-profiles';
 
 /**
@@ -20,10 +21,22 @@ export function cookieProfileIo(): ProfileIo {
     async activeProfileId() {
       const session = await getSession();
       if (!session) return null;
+      // A kids lock on the session row wins over the cookie, which the client can delete or replace.
+      if (session.kidsLocked) return session.activeProfileId;
       const value = (await cookies()).get(activeProfileCookieName(rt().secureCookies))?.value;
       return readActiveProfile(rt().profileSecret, session.accountId, value);
     },
-    async setActive(accountId, profileId) {
+    async kidsLocked() {
+      return (await getSession())?.kidsLocked ?? false;
+    },
+    async clearLock() {
+      const session = await getSession();
+      if (session) await authRuntime().sessions.clearKidsLock(session.sessionId, session.accountId);
+    },
+    async setActive(accountId, profileId, isKids) {
+      const session = await getSession();
+      if (session)
+        await authRuntime().sessions.setProfile(session.sessionId, accountId, profileId, isKids);
       const { secureCookies, profileSecret } = rt();
       (await cookies()).set(
         activeProfileCookieName(secureCookies),

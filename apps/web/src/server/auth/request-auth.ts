@@ -25,14 +25,23 @@ export function createRequestAuth(deps: RequestAuthDeps) {
 
   return {
     /** The signed in viewer. `profileId` is the active profile hint, or '' when the cookie is absent or not valid. */
-    async getViewer(request: Request): Promise<{ accountId: string; profileId: string }> {
+    async getViewer(
+      request: Request,
+    ): Promise<{ accountId: string; profileId: string; kidsLocked: boolean }> {
       const found = await session(request);
+      // The kids lock is on the session row. While it holds, the cookie is ignored.
+      if (found.kidsLocked)
+        return {
+          accountId: found.accountId,
+          profileId: found.activeProfileId ?? '',
+          kidsLocked: true,
+        };
       const profileId = readActiveProfile(
         deps.profileSecret,
         found.accountId,
         cookieValue(request.headers.get('cookie'), activeProfileCookieName(deps.secureCookies)),
       );
-      return { accountId: found.accountId, profileId: profileId ?? '' };
+      return { accountId: found.accountId, profileId: profileId ?? '', kidsLocked: false };
     },
 
     /** The signed in editor or admin. 401 when not signed in or the second factor is pending, 403 for a viewer. */

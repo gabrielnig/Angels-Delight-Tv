@@ -13,6 +13,8 @@ describe.skipIf(!integrationEnabled())('real profiles repository', () => {
   const calls: string[] = [];
   const io: ProfileIo = {
     activeProfileId: async () => active,
+    kidsLocked: async () => false,
+    clearLock: async () => undefined,
     setActive: async (_account, id) => {
       calls.push(`set:${id}`);
       active = id;

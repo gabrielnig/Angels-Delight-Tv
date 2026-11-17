@@ -17,6 +17,7 @@ function setup(allowed: boolean) {
     secureCookies: false,
     profileSecret: new Uint8Array(32).fill(1),
     resolveActor: async () => ({ accountId: ACCOUNT, role: 'viewer' as const }),
+    lock: { read: async () => null },
   } as unknown as ViewerRuntime;
   return { api: createViewerApi(runtime), spent };
 }

@@ -23,7 +23,12 @@ import { avatarFromTone, profileToView } from './mappers';
 /** The request bound part: the signed active profile cookie. Wired to next/headers in runtime code. */
 export interface ProfileIo {
   activeProfileId(): Promise<string | null>;
-  setActive(accountId: string, profileId: string): Promise<void>;
+  /** True while the session is locked to a kids profile (server side, not the cookie). */
+  kidsLocked(): Promise<boolean>;
+  /** Records the profile on the session row and in the cookie. */
+  setActive(accountId: string, profileId: string, isKids: boolean): Promise<void>;
+  /** Exit kids mode: the caller has already checked the account password. */
+  clearLock(): Promise<void>;
   clearActive(): Promise<void>;
 }
 
@@ -127,9 +132,9 @@ export class RealProfiles implements ProfilesRepository {
 
   /** Throws for a profile that is not this account's, or that needs a PIN the UI cannot ask for yet. */
   async select(accountId: string, id: string): Promise<void> {
-    await selectProfile(this.service, viewerActor(accountId), id, {
-      activeProfileId: await this.io.activeProfileId(),
+    const profile = await selectProfile(this.service, viewerActor(accountId), id, {
+      kidsLocked: await this.io.kidsLocked(),
     });
-    await this.io.setActive(accountId, id);
+    await this.io.setActive(accountId, id, profile.isKids);
   }
 }

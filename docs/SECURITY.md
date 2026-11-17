@@ -74,7 +74,8 @@ Sessions:
 - Cookie: name `__Host-ad_session` in production (`ad_session` in development over http). Attributes: `HttpOnly`, `Secure`, `SameSite=Lax`, `Path=/`, no `Domain`. Max-Age equals the idle window for viewers and is a session cookie for staff.
 - Lifetimes: viewers idle 30 days and absolute 90 days (mobile friendly). Staff idle 60 minutes and absolute 8 hours.
 - Revocation: logout, password change, password reset, role change, suspension and account deletion revoke sessions (`revoked_at`). Account page lists active sessions with revoke buttons.
-- Profile cookie `ad_profile` carries only a profile id and is never trusted. Every request re-verifies that the profile belongs to the session account.
+- Profile cookie `ad_profile` carries only a profile id and is a hint, never trusted. Every request re-verifies that the profile belongs to the session account.
+- Kids lock: the session row stores `active_profile_id` and `kids_locked`. Selecting a kids profile sets the lock. While it holds, every viewer route and the playback session refuse any other profile id (`kids_gate`, 403), the cookie is ignored, and only exit kids mode with the account password clears it. A new sign in needs the password anyway, so deleting cookies does not escape the lock.
 
 Staff accounts:
 - TOTP MFA is mandatory for `editor` and `admin` (secret encrypted with the user DEK, replay guard on time step, ten single-use recovery codes). If schedule forces a cut, the minimum fallback is a unique long password plus login alerts, logged as an exception in `docs/DECISIONS.md`.

@@ -454,3 +454,8 @@ Format: decision, options considered, why, reversible or not. Newest first. Deci
 - Options: fail open when Cloudflare is down, or serve the preview through `/watch/:id` with a signed link.
 - Why: failing open lets a bot flood through whenever Cloudflare has an incident, while failing closed only delays a person briefly. A page under `/admin` reuses the staff session check and the preview session route, so there is no second kind of link to leak.
 - Reversible: yes. `authInterrupts` is experimental in Next 16, so watch its release notes.
+## D-088 The kids lock is stored on the session row (lane J1)
+- Decision: `sessions` gains `active_profile_id` and `kids_locked` (migration 0018, additive). Selecting a kids profile locks the session. While locked, the viewer API guard, select, profile management and the playback session accept only the locked profile, and the `ad_profile` cookie is ignored. Exit kids mode with the account password clears the lock. If the locked profile is deleted the session stays locked with no profile until the password is entered (fails closed).
+- Options: a PIN on every grown-up profile, or a longer lived signed cookie.
+- Why: any cookie or request field is client controlled, so only server state can hold the lock. A fresh sign in needs the account password, so clearing cookies gains nothing.
+- Reversible: yes. The columns can stay unused.
