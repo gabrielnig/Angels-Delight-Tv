@@ -2,10 +2,7 @@ import { errorResponse, jsonResponse } from '../http/respond';
 import type { PlaybackService } from './service';
 
 export interface PlaybackHttpDeps {
-  service: Pick<
-    PlaybackService,
-    'startSession' | 'startPreview' | 'master' | 'variant' | 'key'
-  >;
+  service: Pick<PlaybackService, 'startSession' | 'startPreview' | 'master' | 'variant' | 'key'>;
   /** The signed in viewer and active profile, or throws Unauthorized. Owned by the auth lane. */
   getViewer(request: Request): Promise<{ accountId: string; profileId: string }>;
   /** The signed in admin or editor, or throws Unauthorized. */
@@ -53,7 +50,10 @@ export function createPlaybackHandlers(deps: PlaybackHttpDeps) {
     session: (request: Request, videoId: string) =>
       run(request, async () => {
         deps.assertSameOrigin?.(request);
-        const body = (await request.json().catch(() => ({}))) as { preview?: unknown; profileId?: unknown };
+        const body = (await request.json().catch(() => ({}))) as {
+          preview?: unknown;
+          profileId?: unknown;
+        };
         if (body.preview === true) {
           const actor = await deps.getActor(request);
           return jsonResponse(await deps.service.startPreview(actor, videoId));
@@ -62,7 +62,14 @@ export function createPlaybackHandlers(deps: PlaybackHttpDeps) {
         // The player names the active profile. Ownership is checked in the service against the account.
         const profileId = typeof body.profileId === 'string' ? body.profileId : viewer.profileId;
         return jsonResponse(
-          await deps.service.startSession({ accountId: viewer.accountId, profileId }, videoId),
+          await deps.service.startSession(
+            {
+              accountId: viewer.accountId,
+              profileId,
+              ...(viewer.profileId ? { activeProfileId: viewer.profileId } : {}),
+            },
+            videoId,
+          ),
         );
       }),
 

@@ -48,7 +48,8 @@ export function createDevMediaHandler(
 ): (request: Request, key: string) => Promise<Response> {
   return async (request, key) => {
     if (deps.nodeEnv === 'production') return text(404, 'Not found');
-    if (request.method !== 'GET' && request.method !== 'HEAD') return text(405, 'Method not allowed');
+    if (request.method !== 'GET' && request.method !== 'HEAD')
+      return text(405, 'Method not allowed');
     if (!KEY.test(key) || key.includes('..') || key.includes('//')) return text(404, 'Not found');
     if (key.startsWith('v/')) {
       const url = new URL(request.url);
@@ -77,14 +78,17 @@ export function createDevMediaHandler(
           status: 416,
           headers: { ...headers, 'content-range': `bytes */${info.bytes}` },
         });
-      return new Response(request.method === 'HEAD' ? null : await slice(deps.media, key, start, end), {
-        status: 206,
-        headers: {
-          ...headers,
-          'content-range': `bytes ${start}-${end}/${info.bytes}`,
-          'content-length': String(end - start + 1),
+      return new Response(
+        request.method === 'HEAD' ? null : await slice(deps.media, key, start, end),
+        {
+          status: 206,
+          headers: {
+            ...headers,
+            'content-range': `bytes ${start}-${end}/${info.bytes}`,
+            'content-length': String(end - start + 1),
+          },
         },
-      });
+      );
     }
     headers['content-length'] = String(info.bytes);
     if (request.method === 'HEAD') return new Response(null, { headers });
