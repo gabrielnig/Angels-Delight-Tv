@@ -34,3 +34,7 @@ export async function reauthenticateAction(password: string) {
   const actor = await requireActor('/admin/roles');
   return peopleService.reauthenticate(actor, String(password));
 }
+
+export async function resetTwoFactorAction(id: string, code: string) {
+  return run((a) => peopleService.resetTwoFactor(a, String(id), String(code).replace(/\s/g, '')));
+}
