@@ -1,4 +1,4 @@
-import { schema, type Database } from '@ad/db';
+import { schema, withAccount, type Database } from '@ad/db';
 import { and, eq } from 'drizzle-orm';
 import type { PlayableVideo, PlaybackStore, PublicCaption } from './service';
 
@@ -25,11 +25,14 @@ export class DrizzlePlaybackStore implements PlaybackStore {
   }
 
   async profile(profileId: string, accountId: string) {
-    const [row] = await this.db
-      .select({ id: profiles.id, isKids: profiles.isKids })
-      .from(profiles)
-      .where(and(eq(profiles.id, profileId), eq(profiles.accountId, accountId)))
-      .limit(1);
+    // profiles are row level secured by account, so the read must run as that account or it sees nothing.
+    const [row] = await withAccount(this.db, { accountId, role: 'viewer' }, (tx) =>
+      tx
+        .select({ id: profiles.id, isKids: profiles.isKids })
+        .from(profiles)
+        .where(and(eq(profiles.id, profileId), eq(profiles.accountId, accountId)))
+        .limit(1),
+    );
     return row ?? null;
   }
 
