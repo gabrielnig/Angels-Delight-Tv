@@ -8,3 +8,4 @@ export * from './videos';
 export * from './detail';
 export * from './rows';
 export * from './publishing';
+export * from './seed-demo';
