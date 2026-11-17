@@ -18,6 +18,8 @@ import { can } from '@/lib/admin/can';
 import { buildDashboard } from './dashboard';
 import type { DashboardData } from './dashboard';
 import { getStore } from './store';
+import { validateConfig } from './home-rules';
+import type { HomeConfig, HomeState } from './home-rules';
 import {
   categoryVideoCount,
   createCategory,
@@ -404,5 +406,61 @@ export const collectionService: CollectionService = {
   async setEpisode(actor, videoId, seriesId, season, episode) {
     need(actor, 'series.manage');
     return setEpisode(getStore(), videoId, seriesId, season, episode);
+  },
+};
+
+export interface HomeData {
+  state: HomeState;
+  videos: VideoRecord[];
+  series: SeriesRecord[];
+  categories: CategoryRecord[];
+}
+
+export interface HomeService {
+  get(actor: AdminActor): Promise<HomeData>;
+  saveDraft(actor: AdminActor, config: HomeConfig): Promise<CommandResult>;
+  publish(actor: AdminActor, config: HomeConfig): Promise<CommandResult>;
+  restorePrevious(actor: AdminActor): Promise<CommandResult>;
+}
+
+export const homeService: HomeService = {
+  async get(actor) {
+    need(actor, 'home.curate');
+    const s = getStore();
+    return {
+      state: structuredClone(s.home),
+      videos: s.videos.filter((v) => v.deletedAt === null).map((v) => ({ ...v })),
+      series: [...s.series],
+      categories: [...s.categories].sort((a, b) => a.position - b.position),
+    };
+  },
+  async saveDraft(actor, config) {
+    need(actor, 'home.curate');
+    const problem = validateConfig(config);
+    if (problem) return { ok: false, error: problem };
+    getStore().home.draft = structuredClone(config);
+    return { ok: true };
+  },
+  async publish(actor, config) {
+    need(actor, 'home.curate');
+    const problem = validateConfig(config);
+    if (problem) return { ok: false, error: problem };
+    const home = getStore().home;
+    home.previous = home.published;
+    home.draft = structuredClone(config);
+    home.published = structuredClone(config);
+    home.publishedAt = new Date().toISOString();
+    return { ok: true };
+  },
+  async restorePrevious(actor) {
+    need(actor, 'home.curate');
+    const home = getStore().home;
+    if (!home.previous) return { ok: false, error: 'There is no earlier version to restore.' };
+    const current = home.published;
+    home.published = home.previous;
+    home.draft = structuredClone(home.previous);
+    home.previous = current;
+    home.publishedAt = new Date().toISOString();
+    return { ok: true };
   },
 };
