@@ -4,3 +4,4 @@ export * from './visibility';
 export { alias, isoOrNull, rowsOf, uuidList } from './sql';
 export * from './artwork';
 export * from './titles';
+export * from './videos';
