@@ -11,7 +11,8 @@
   "scripts": {
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
-    "test:file": "vitest run"
+    "test:file": "vitest run",
+    "seed:admin": "tsx src/seed-admin-cli.ts"
   },
   "dependencies": {
     "@ad/db": "workspace:*",
@@ -26,6 +27,7 @@
   },
   "devDependencies": {
     "@types/pg": "^8.23.1",
-    "@types/qrcode": "^1.5.5"
+    "@types/qrcode": "^1.5.5",
+    "tsx": "^4.23.15"
   }
 }

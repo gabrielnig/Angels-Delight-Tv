@@ -15,7 +15,8 @@
     "test:file": "vitest run",
     "test:related": "vitest related --run",
     "footprint": "scripts/footprint-check.sh",
-    "hooks:install": "scripts/install-hooks.sh"
+    "hooks:install": "scripts/install-hooks.sh",
+    "db:seed:admin": "pnpm --filter @ad/auth run seed:admin"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.5",
