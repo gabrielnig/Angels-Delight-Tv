@@ -37,6 +37,7 @@ const cases: Array<[TemplateName, Record<string, string | number>]> = [
   ],
   ['email_change_notice', { resetUrl: 'https://tv.example.org/forgot-password' }],
   ['two_factor_reset', { signInUrl: 'https://tv.example.org/admin/login' }],
+  ['staff_lockout_alert', { account: 'e***@example.org', minutes: 30 }],
   ['account_deleted', {}],
 ];
 
