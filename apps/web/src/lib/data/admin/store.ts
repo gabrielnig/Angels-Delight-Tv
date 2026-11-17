@@ -5,13 +5,16 @@ import type {
   CaptionTrack,
   CategoryRecord,
   InviteRecord,
+  JobRecord,
   MyAccount,
   SeriesRecord,
   StaffRecord,
+  StorageUsage,
   UserRecord,
   VideoRecord,
 } from './types';
 import { seedPeople } from './people-seed';
+import { seedSystem } from './system-rules';
 import { videoStub } from './video-rules';
 
 /** In memory fixture data. One copy per server process, shared by every fixture service. */
@@ -25,6 +28,8 @@ export interface AdminStore {
   invites: InviteRecord[];
   audit: AuditRow[];
   accounts: Record<string, MyAccount>;
+  jobs: JobRecord[];
+  storage: StorageUsage[];
   captions: Record<string, CaptionTrack>;
   settings: { requireApprovedCaptions: boolean };
   /** Oldest first. Last entry is yesterday. Deterministic so charts are stable. */
@@ -248,6 +253,7 @@ export function seedStore(now = Date.now()): AdminStore {
     home: homeState,
     ...seedPeople(now),
     accounts: {},
+    ...seedSystem(now),
     captions: {},
     settings: { requireApprovedCaptions: true },
     dailyViews,

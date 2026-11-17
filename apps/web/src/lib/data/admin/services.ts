@@ -35,6 +35,9 @@ import {
 } from './users-commands';
 import { randomBytes } from 'node:crypto';
 import { can } from '@/lib/admin/can';
+import { discardJob, fixtureQuality, retryJob } from './system-rules';
+import type { Quality } from './system-rules';
+import type { JobRecord, StorageUsage } from './types';
 import {
   changePassword,
   ensureAccount,
@@ -691,5 +694,38 @@ export const accountService: AccountService = {
         .toString('hex')
         .replace(/^(.{5})/, '$1-');
     return regenerateRecoveryCodes(getStore(), actor, password, generate, Date.now());
+  },
+};
+
+export interface SystemService {
+  jobs(actor: AdminActor): Promise<JobRecord[]>;
+  retryJob(actor: AdminActor, id: string): Promise<CommandResult>;
+  discardJob(actor: AdminActor, id: string, reason: string): Promise<CommandResult>;
+  storage(actor: AdminActor): Promise<StorageUsage[]>;
+  quality(actor: AdminActor): Promise<Quality>;
+}
+
+/** Jobs and storage stay on fixtures until the queue and storage packages expose list and retry calls. Player quality is real with ADMIN_DATA=real. */
+export const systemService: SystemService = {
+  async jobs(actor) {
+    need(actor, 'system.view');
+    return structuredClone(getStore().jobs);
+  },
+  async retryJob(actor, id) {
+    need(actor, 'system.view');
+    return retryJob(getStore(), id, actor.accountId, actor.name, Date.now());
+  },
+  async discardJob(actor, id, reason) {
+    need(actor, 'system.view');
+    return discardJob(getStore(), id, reason, actor.accountId, actor.name, Date.now());
+  },
+  async storage(actor) {
+    need(actor, 'system.view');
+    return structuredClone(getStore().storage);
+  },
+  async quality(actor) {
+    need(actor, 'system.view');
+    if (adminDataMode() === 'real') return (await import('./analytics-quality-real')).realQuality();
+    return fixtureQuality();
   },
 };
