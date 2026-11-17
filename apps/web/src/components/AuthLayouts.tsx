@@ -4,7 +4,12 @@ import type { SiteContent } from '../lib/data';
 
 export function Brand({ site, inverse = false }: { site: SiteContent; inverse?: boolean }) {
   return (
-    <Link href="/" className="web-brand" data-inverse={inverse ? 'true' : undefined} aria-label={`${site.platformName}, home`}>
+    <Link
+      href="/"
+      className="web-brand"
+      data-inverse={inverse ? 'true' : undefined}
+      aria-label={`${site.platformName}, home`}
+    >
       <span className="web-brand__logo" aria-hidden="true">
         <Icon name="play" size={16} filled />
       </span>
@@ -25,7 +30,11 @@ export function AuthSplit({ site, children }: { site: SiteContent; children: Rea
             {site.valueLines.map((line, index) => (
               <li key={line}>
                 <span className="web-split__tick" aria-hidden="true">
-                  {index === site.valueLines.length - 1 ? 'CC' : <Icon name={index === 0 ? 'check' : 'clock'} size={20} />}
+                  {index === site.valueLines.length - 1 ? (
+                    'CC'
+                  ) : (
+                    <Icon name={index === 0 ? 'check' : 'clock'} size={20} />
+                  )}
                 </span>
                 {line}
               </li>
@@ -53,7 +62,15 @@ export function AuthSplit({ site, children }: { site: SiteContent; children: Rea
 }
 
 /** Centred card for sign up, verify, forgot and reset (docs/DESIGN-SYSTEM.md 11.26). */
-export function AuthCardPage({ site, children, action }: { site: SiteContent; children: ReactNode; action?: ReactNode }) {
+export function AuthCardPage({
+  site,
+  children,
+  action,
+}: {
+  site: SiteContent;
+  children: ReactNode;
+  action?: ReactNode;
+}) {
   return (
     <div className="web-authpage">
       <header className="web-authpage__bar">

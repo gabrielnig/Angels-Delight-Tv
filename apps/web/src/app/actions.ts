@@ -38,13 +38,21 @@ const cookieOptions = { path: '/', httpOnly: true, sameSite: 'lax' as const };
 
 // ---- Auth ----
 
-export async function signInAction(input: { email: string; password: string; next?: string }): Promise<AuthResult> {
+export async function signInAction(input: {
+  email: string;
+  password: string;
+  next?: string;
+}): Promise<AuthResult> {
   const result = await getAuth().signIn(input);
   if (result.ok) (await cookies()).delete(sessionCookieNames.fixture);
   return result;
 }
 
-export async function signUpAction(input: { email: string; password: string; inviteCode?: string }): Promise<SignUpResult> {
+export async function signUpAction(input: {
+  email: string;
+  password: string;
+  inviteCode?: string;
+}): Promise<SignUpResult> {
   return getAuth().signUp(input);
 }
 
@@ -84,7 +92,10 @@ export async function createProfileAction(input: ProfileInput) {
   return getProfiles().create(FIXTURE_ACCOUNT_ID, input);
 }
 
-export async function updateProfileAction(id: string, input: Partial<ProfileInput> & { password?: string }) {
+export async function updateProfileAction(
+  id: string,
+  input: Partial<ProfileInput> & { password?: string },
+) {
   if (input.password) {
     const check = await getAuth().checkPassword(input.password);
     if (!check.ok) return { ok: false as const, reason: 'password_required' as const };
@@ -119,6 +130,19 @@ export async function toggleListAction(itemKey: string, add: boolean) {
   else await getLibrary().removeFromList(ctx, itemKey);
 }
 
+export async function addToListAction(itemKey: string) {
+  return toggleListAction(itemKey, true);
+}
+
+export async function removeFromListAction(itemKey: string) {
+  return toggleListAction(itemKey, false);
+}
+
+export async function loadMoreMyListAction(cursor: string) {
+  const { ctx } = await context();
+  return getLibrary().myList(ctx, cursor);
+}
+
 export async function removeContinueAction(videoId: string) {
   const { ctx } = await context();
   await getLibrary().removeFromContinue(ctx, videoId);
@@ -141,7 +165,12 @@ export async function suggestAction(q: string): Promise<Suggestion[]> {
   return getCatalog().suggest(ctx, q);
 }
 
-export async function loadMoreBrowseAction(query: { categorySlug?: string; length?: 'any' | 'short' | 'medium' | 'long'; sort?: 'newest' | 'shortest' | 'longest'; cursor: string }) {
+export async function loadMoreBrowseAction(query: {
+  categorySlug?: string;
+  length?: 'any' | 'short' | 'medium' | 'long';
+  sort?: 'newest' | 'shortest' | 'longest';
+  cursor: string;
+}) {
   const { ctx } = await context();
   return getCatalog().browse(ctx, query);
 }
