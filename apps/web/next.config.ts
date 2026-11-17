@@ -16,10 +16,9 @@ const config: NextConfig = {
     '@ad/db',
     '@ad/storage',
     '@ad/theme',
+    '@ad/player',
   ],
   serverExternalPackages: ['pg', '@node-rs/argon2', 'nodemailer', 'qrcode'],
-  transpilePackages: ['@ad/player', '@ad/shared', '@ad/config', '@ad/ui', '@ad/db', '@ad/storage'],
-  serverExternalPackages: ['pg'],
   // Lets the standalone build trace files from the monorepo root.
   outputFileTracingRoot: resolve(import.meta.dirname, '../..'),
 };
