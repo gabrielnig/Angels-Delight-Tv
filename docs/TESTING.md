@@ -114,6 +114,8 @@ Not in e2e: every form validation message, every admin table state, cross-browse
 
 ## 8. Running tests
 
+Integration files skip themselves unless `TEST_DATABASE_ADMIN_URL` is set (a Postgres superuser URL, see DEV-SETUP section 5). Each run builds throwaway databases from the real migrations. Packages expose `test:file` (needs a path) instead of `test`.
+
 See TDD-PROTOCOL.md section 2 for the scoped commands. Quick reference:
 
 ```bash

@@ -29,9 +29,12 @@ Related: `docs/ARCHITECTURE.md`, `docs/SECURITY.md`.
 | `ad_app` | `apps/web` | DML on app tables. No DDL, no `BYPASSRLS`, not superuser. `audit_log`: INSERT and SELECT only |
 | `ad_worker` | `apps/worker` | DML on `videos`, `renditions`, `video_keys`, `assets`, `captions`, `caption_tracks`, `jobs`, `upload_sessions`, `view_events`, `video_daily_stats`, `rate_limit_buckets`, `pgboss.*`. SELECT on `settings`. No access to `accounts`, `profiles`, `sessions`, `email_tokens`, `mfa_*`, `consents` |
 | `ad_keys_app` | `apps/web` on `ad_keys` | SELECT, INSERT on `user_keys` |
-| `ad_keys_shred` | `apps/worker` on `ad_keys` | DELETE only on `user_keys` |
+| `ad_keys_shred` | `apps/worker` on `ad_keys` | DELETE only on `user_keys`, plus SELECT on the `account_id` column because a DELETE with a WHERE clause needs it |
+| `ad_maintenance` | Retention prune job | SELECT, DELETE on `audit_log` and `view_events`. The only role the `audit_log` immutability trigger lets through |
 
 Foreign key checks run as the table owner, so the worker can write rows that reference `accounts` without being granted access to it.
+
+Roles are created by `packages/db/sql/roles.sql` (compose init and the integration tests run it). The migrations skip a grant block when its role does not exist, so they also run on a plain developer database. `ad_migrator` is a member of `ad_worker` so it can set default privileges for the tables pg-boss creates. The `pgboss` schema is created by migration 0005 and pg-boss runs with `createSchema: false`, because `ad_worker` has no CREATE on the database. `FORCE ROW LEVEL SECURITY` also binds the table owner, so `accounts` has a read-only policy for `ad_migrator` that the SECURITY DEFINER helpers (`auth_find_account`, `keep_one_active_admin`) rely on.
 
 ## 3. Enums
 
@@ -237,7 +240,7 @@ Index `(updated_at)` for cleanup. Consumed with one atomic `INSERT ... ON CONFLI
 Constraints:
 - `CHECK (publish_state <> 'scheduled' OR publish_at IS NOT NULL)`.
 - `CHECK (publish_state NOT IN ('scheduled','published') OR status = 'ready')`.
-- `CHECK (status <> 'ready' OR duration_ms > 0)`.
+- `CHECK (status <> 'ready' OR (duration_ms IS NOT NULL AND duration_ms > 0))`. The explicit `IS NOT NULL` matters: a NULL duration makes `duration_ms > 0` NULL and a CHECK treats NULL as passing.
 - `UNIQUE (id, kind)` so `episodes` can pin the kind with a composite FK.
 - `UNIQUE (slug) WHERE deleted_at IS NULL`.
 
@@ -559,7 +562,7 @@ Indexes: `(video_id, created_at DESC)`; `(status, created_at) WHERE status IN ('
 | `sessions`, `email_tokens`, `mfa_*`, `consents` | off | Reached only by dedicated modules with narrow queries, never by user-supplied ids |
 | Catalog, pipeline, platform tables | off | Role checks in the service layer |
 
-Fail closed: `current_setting('app.account_id', true)` returns NULL when unset, so policies match no rows. `withAccount()` sets values with `set_config(name, value, true)` (transaction scoped), which is safe with connection pooling. Tests in TESTING.md assert that a connection without context sees zero rows and that account A cannot read or write account B rows.
+Fail closed: `current_setting('app.account_id', true)` returns NULL when never set, and an empty string on a pooled connection after an earlier transaction set it, so policies read the context through `app_account_id()` and `app_actor_role()`, which map the empty string to NULL. An unset context therefore matches no rows and never raises a cast error. `withAccount()` sets values with `set_config(name, value, true)` (transaction scoped), which is safe with connection pooling. Tests in TESTING.md assert that a connection without context sees zero rows and that account A cannot read or write account B rows.
 
 ## 11. Deletion and retention
 
