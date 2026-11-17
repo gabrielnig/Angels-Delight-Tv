@@ -5,12 +5,14 @@ export const itemHref = (item: CatalogItem) =>
   item.kind === 'video' ? `/title/${item.slug}` : `/series/${item.slug}`;
 
 export const itemKey = (item: CatalogItem) =>
-  item.kind === 'video' ? `video:${item.id}` : `series:${item.slug}`;
+  item.kind === 'video' ? `video:${item.id}` : `series:${item.id ?? item.slug}`;
 
 export function metaLine(item: CatalogItem): string {
-  return item.kind === 'video'
-    ? `${item.categoryName}, ${formatDuration(item.durationSeconds)}`
-    : `${item.categoryName}, ${item.episodeCount} episodes`;
+  const detail =
+    item.kind === 'video'
+      ? formatDuration(item.durationSeconds)
+      : `${item.episodeCount} ${item.episodeCount === 1 ? 'episode' : 'episodes'}`;
+  return item.categoryName ? `${item.categoryName}, ${detail}` : detail;
 }
 
 export function timeLeftLabel(progress: Progress): string {

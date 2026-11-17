@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import { formatDuration } from '@ad/ui';
 import { AppShell } from '../../../../components/Shell';
 import { PublicTitle, TitleBlocked, TitleView } from '../../../../components/title/TitleView';
@@ -45,6 +45,7 @@ export default async function TitlePage({ params }: Params) {
   const { ctx } = await requireProfile(`/title/${slug}`);
   const detail = await getCatalog().title(ctx, slug);
   if (!detail) notFound();
+  if ('redirect' in detail) redirect(detail.redirect);
   if ('blocked' in detail) {
     return (
       <AppShell>
