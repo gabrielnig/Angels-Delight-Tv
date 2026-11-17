@@ -114,13 +114,7 @@ function Split({ title, rows }: { title: string; rows: AnalyticsOverview['splits
             <li key={r.label}>
               <span>{r.label}</span>
               <span className="adm-num">{Math.round(r.percent)}%</span>
-              <span
-                className="adm-bar"
-                role="img"
-                aria-label={`${r.label} ${Math.round(r.percent)} percent`}
-              >
-                <span className="adm-bar__fill" style={{ width: `${Math.min(100, r.percent)}%` }} />
-              </span>
+              <ProgressBar value={r.percent} label={`${r.label} share`} small showNumber={false} />
             </li>
           ))}
         </ul>
