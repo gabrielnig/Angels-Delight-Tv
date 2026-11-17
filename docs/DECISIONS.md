@@ -167,3 +167,15 @@ Format: decision, options considered, why, reversible or not. Newest first. Deci
 ## D-034 Theme and settings writes require the admin role (lane H)
 - Decision: all theme and site settings writes need `role = 'admin'` (editors and viewers get 403). The "Super admin only" flags and limits (S64) use the same check until the roles lane adds a super admin tier. Audit entries are written inside the same transaction as the change.
 - Reversible: yes, one function per service.
+
+## D-035 Analytics collection model (lane I)
+- Decision: events are sent as batches to one ingest route. The profile and audience come from the session, never the body. Viewer counts use `viewer_hash`, an HMAC of the Lagos day and profile id, so the id rotates daily and cannot link days. Kids profiles store no profile id and no hash. Device, connection, country, errors, empty searches, startup and web vitals are daily counters in `analytics_counters` (migration 0007), bucketed histograms for timings. Daily views, watch time and completions roll up into `video_daily_stats` and the new `site_daily_stats`. Retention curves are built from raw `view_events` (24 month window).
+- Options: store every event raw and aggregate later, or a third party analytics tool.
+- Why: no third party scripts, no cross day tracking (M19-S07), small tables for fast dashboards. The hashing key is derived from `MEDIA_URL_SECRET` by HMAC with a fixed label, so no new variable is needed.
+- Limits: "unique viewers" for a range is the sum of daily uniques, because the id rotates. Watch time is client reported and bounded to 6 hours per play, so it is a usage measure, not a billing grade number.
+- Reversible: yes.
+
+## D-036 Analytics fails open (lane I)
+- Decision: ingest returns 202 even when storage fails, drops bots, admin previews and unknown videos silently, and answers 429 with `Retry-After` only for rate limits. The browser client never throws and never retries across page loads. The rate limiter is the `@ad/security` one (structural interface), so the limits are enforced by the same Postgres buckets (`rate_limit_buckets`).
+- Why: M19-S01 says an event write failure must never affect playback.
+- Reversible: yes.
