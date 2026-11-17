@@ -64,6 +64,20 @@
       "when": 1794945046111,
       "tag": "0008_analytics_collection",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1794945686316,
+      "tag": "0009_viewer_tables",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1794945695942,
+      "tag": "0010_search_indexes_and_viewer_rls",
+      "breakpoints": true
     }
   ]
 }
