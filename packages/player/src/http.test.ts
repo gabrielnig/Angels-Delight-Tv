@@ -147,3 +147,35 @@ describe('createHttpProgressSink', () => {
     expect((err as ProgressSinkError).status).toBe(0);
   });
 });
+
+describe('createHttpProgressSink body mapping', () => {
+  const update = {
+    videoId: 'v1',
+    profileId: 'p1',
+    positionSeconds: 12.5,
+    durationSeconds: 60,
+    ended: false,
+  };
+
+  it('sends the update as is by default', async () => {
+    const fetchFn = vi.fn().mockResolvedValue(res(200, {}));
+    await createHttpProgressSink({ endpoint: '/api/progress', fetchFn }).save(update);
+    expect(JSON.parse(fetchFn.mock.calls[0]![1].body)).toEqual(update);
+  });
+
+  it('sends the mapped body for fetch and for sendBeacon', async () => {
+    const fetchFn = vi.fn().mockResolvedValue(res(200, {}));
+    const sendBeacon = vi.fn().mockReturnValue(true);
+    const sink = createHttpProgressSink({
+      endpoint: '/api/progress',
+      fetchFn,
+      sendBeacon,
+      toBody: (u) => ({ id: u.videoId, ms: Math.round(u.positionSeconds * 1000) }),
+    });
+    await sink.save(update);
+    expect(JSON.parse(fetchFn.mock.calls[0]![1].body)).toEqual({ id: 'v1', ms: 12500 });
+    await sink.save(update, { beacon: true });
+    const blob = sendBeacon.mock.calls[0]![1] as Blob;
+    expect(JSON.parse(await blob.text())).toEqual({ id: 'v1', ms: 12500 });
+  });
+});
