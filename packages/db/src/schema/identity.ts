@@ -28,6 +28,9 @@ export const accounts = pgTable(
     locale: text('locale').notNull().default('en'),
     passwordChangedAt: timestamptz('password_changed_at').notNull().defaultNow(),
     lastLoginAt: timestamptz('last_login_at'),
+    /** Why staff suspended this viewer. Shown to staff only. */
+    suspendedReason: text('suspended_reason'),
+    suspendedAt: timestamptz('suspended_at'),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
     deletedAt: timestamptz('deleted_at'),

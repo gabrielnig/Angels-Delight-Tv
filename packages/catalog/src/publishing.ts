@@ -178,6 +178,11 @@ export async function publish(
       publishAt: scheduling ? input.publishAt! : null,
       publishedAt: scheduling ? undefined : (current.publishedAt ?? now),
     });
+    if (override && target === 'video')
+      await tx
+        .update(videos)
+        .set({ captionOverrideReason: override.reason.trim() })
+        .where(eq(videos.id, id));
     await writeAudit(tx, {
       action: `${target}.${scheduling ? 'schedule' : 'publish'}`,
       outcome: 'success',

@@ -85,6 +85,20 @@
       "when": 1794946046076,
       "tag": "0011_staff_role_function",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1794949083559,
+      "tag": "0012_admin_content_fields",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1794949087844,
+      "tag": "0013_staff_account_status_function",
+      "breakpoints": true
     }
   ]
 }
