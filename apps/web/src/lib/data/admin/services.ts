@@ -13,7 +13,26 @@ import {
   validateVideoPatch,
 } from './video-commands';
 import type { PublishRequest, VideoPatch, CommandResult } from './video-commands';
-import type { SeriesRecord, CategoryRecord, Page, VideoRecord } from './types';
+import type {
+  SeriesRecord,
+  CategoryRecord,
+  InviteRecord,
+  Page,
+  StaffRecord,
+  UserRecord,
+  VideoRecord,
+} from './types';
+import {
+  changeRole,
+  filterUsers,
+  inviteStaff,
+  maskEmail,
+  reinstateUser,
+  resendInvite,
+  revokeInvite,
+  revokeSessions,
+  suspendUser,
+} from './users-commands';
 import { can } from '@/lib/admin/can';
 import { buildDashboard } from './dashboard';
 import type { DashboardData } from './dashboard';
@@ -462,5 +481,72 @@ export const homeService: HomeService = {
     home.previous = current;
     home.publishedAt = new Date().toISOString();
     return { ok: true };
+  },
+};
+
+export interface PeopleService {
+  users(
+    actor: AdminActor,
+    query: { q?: string; status?: 'active' | 'suspended' | '' },
+  ): Promise<UserRecord[]>;
+  user(actor: AdminActor, id: string): Promise<UserRecord>;
+  suspend(actor: AdminActor, id: string, reason: string): Promise<CommandResult>;
+  reinstate(actor: AdminActor, id: string): Promise<CommandResult>;
+  revokeSessions(actor: AdminActor, id: string, reason: string): Promise<CommandResult>;
+  staff(actor: AdminActor): Promise<{ staff: StaffRecord[]; invites: InviteRecord[] }>;
+  invite(actor: AdminActor, email: string, role: 'editor' | 'admin'): Promise<CommandResult>;
+  resendInvite(actor: AdminActor, id: string): Promise<CommandResult>;
+  revokeInvite(actor: AdminActor, id: string): Promise<CommandResult>;
+  changeRole(actor: AdminActor, staffId: string, role: 'editor' | 'admin'): Promise<CommandResult>;
+}
+
+const shown = (actor: AdminActor, user: UserRecord): UserRecord =>
+  can(actor.role, 'users.view') && actor.role === 'admin'
+    ? { ...user }
+    : { ...user, email: maskEmail(user.email) };
+
+export const peopleService: PeopleService = {
+  async users(actor, query) {
+    need(actor, 'users.view');
+    return filterUsers(getStore().users, query).map((u) => shown(actor, u));
+  },
+  async user(actor, id) {
+    need(actor, 'users.view');
+    const user = getStore().users.find((u) => u.id === id);
+    if (!user) throw new NotFound('User not found');
+    return shown(actor, user);
+  },
+  async suspend(actor, id, reason) {
+    need(actor, 'users.suspend');
+    return suspendUser(getStore(), id, reason, actor.accountId, actor.name, Date.now());
+  },
+  async reinstate(actor, id) {
+    need(actor, 'users.suspend');
+    return reinstateUser(getStore(), id, actor.accountId, actor.name, Date.now());
+  },
+  async revokeSessions(actor, id, reason) {
+    need(actor, 'users.suspend');
+    return revokeSessions(getStore(), id, reason, actor.accountId, actor.name, Date.now());
+  },
+  async staff(actor) {
+    need(actor, 'roles.change');
+    const s = getStore();
+    return { staff: structuredClone(s.staff), invites: structuredClone(s.invites) };
+  },
+  async invite(actor, email, role) {
+    need(actor, 'roles.change');
+    return inviteStaff(getStore(), email, role, actor.accountId, actor.name, Date.now());
+  },
+  async resendInvite(actor, id) {
+    need(actor, 'roles.change');
+    return resendInvite(getStore(), id, actor.accountId, actor.name, Date.now());
+  },
+  async revokeInvite(actor, id) {
+    need(actor, 'roles.change');
+    return revokeInvite(getStore(), id, actor.accountId, actor.name, Date.now());
+  },
+  async changeRole(actor, staffId, role) {
+    need(actor, 'roles.change');
+    return changeRole(getStore(), staffId, role, actor.accountId, actor.name, Date.now());
   },
 };

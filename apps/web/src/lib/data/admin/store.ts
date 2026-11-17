@@ -1,6 +1,16 @@
 import { defaultHome } from './home-rules';
 import type { HomeState } from './home-rules';
-import type { CaptionTrack, CategoryRecord, SeriesRecord, VideoRecord } from './types';
+import type {
+  AuditRow,
+  CaptionTrack,
+  CategoryRecord,
+  InviteRecord,
+  SeriesRecord,
+  StaffRecord,
+  UserRecord,
+  VideoRecord,
+} from './types';
+import { seedPeople } from './people-seed';
 import { videoStub } from './video-rules';
 
 /** In memory fixture data. One copy per server process, shared by every fixture service. */
@@ -9,6 +19,10 @@ export interface AdminStore {
   categories: CategoryRecord[];
   series: SeriesRecord[];
   home: HomeState;
+  users: UserRecord[];
+  staff: StaffRecord[];
+  invites: InviteRecord[];
+  audit: AuditRow[];
   captions: Record<string, CaptionTrack>;
   settings: { requireApprovedCaptions: boolean };
   /** Oldest first. Last entry is yesterday. Deterministic so charts are stable. */
@@ -230,6 +244,7 @@ export function seedStore(now = Date.now()): AdminStore {
     categories,
     series,
     home: homeState,
+    ...seedPeople(now),
     captions: {},
     settings: { requireApprovedCaptions: true },
     dailyViews,
@@ -242,7 +257,13 @@ export function getStore(): AdminStore {
   const holder = globalThis as unknown as Record<symbol, AdminStore | undefined>;
   // A store from an older build (dev hot reload) lacks newer collections, so reseed it.
   const existing = holder[GLOBAL_KEY];
-  if (existing && Array.isArray(existing.series) && existing.captions && existing.home)
+  if (
+    existing &&
+    Array.isArray(existing.series) &&
+    existing.captions &&
+    existing.home &&
+    existing.audit
+  )
     return existing;
   return (holder[GLOBAL_KEY] = seedStore());
 }

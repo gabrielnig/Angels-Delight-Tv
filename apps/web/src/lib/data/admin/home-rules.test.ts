@@ -43,7 +43,7 @@ describe('home rules', () => {
     expect(removeRow(defaultHome(), 'row_continue').ok).toBe(false);
   });
   it('adds, rejects duplicate and reorders titles', () => {
-    let c = addRow(defaultHome(), 'manual', 'Picks', null, () => 'm1');
+    const c = addRow(defaultHome(), 'manual', 'Picks', null, () => 'm1');
     if (!c.ok) throw new Error();
     let cfg = c.config;
     for (const v of ['a', 'b']) {
@@ -64,7 +64,7 @@ describe('home rules', () => {
     const s = structuredClone(getStore());
     const pub = s.videos.filter((v) => v.publishState === 'published');
     const draft = s.videos.find((v) => v.publishState !== 'published' && v.deletedAt === null)!;
-    let c = addRow(defaultHome(), 'manual', 'Picks', null, () => 'm1');
+    const c = addRow(defaultHome(), 'manual', 'Picks', null, () => 'm1');
     if (!c.ok) throw new Error();
     let cfg = c.config;
     for (const v of [pub[0]!.id, draft.id]) {
