@@ -457,3 +457,10 @@ export async function findTitleRefBySlug(
     ORDER BY (t.kind = 'video') DESC LIMIT 1`);
   return rowsOf<TitleRef>(result)[0] ?? null;
 }
+
+/** A category by slug when the editor has it switched on, whether or not it holds titles right now. */
+export async function findCategory(tx: Tx, slug: string): Promise<CategoryDto | null> {
+  const result = await tx.execute(sql`
+    SELECT id, slug, name::text AS name, description FROM categories WHERE slug = ${slug} AND is_visible`);
+  return rowsOf<CategoryDto>(result)[0] ?? null;
+}
