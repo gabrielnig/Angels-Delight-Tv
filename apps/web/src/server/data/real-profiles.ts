@@ -127,7 +127,9 @@ export class RealProfiles implements ProfilesRepository {
 
   /** Throws for a profile that is not this account's, or that needs a PIN the UI cannot ask for yet. */
   async select(accountId: string, id: string): Promise<void> {
-    await selectProfile(this.service, viewerActor(accountId), id);
+    await selectProfile(this.service, viewerActor(accountId), id, {
+      activeProfileId: await this.io.activeProfileId(),
+    });
     await this.io.setActive(accountId, id);
   }
 }

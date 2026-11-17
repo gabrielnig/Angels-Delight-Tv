@@ -58,7 +58,12 @@ const watchProgressBody = z.object({
   videoId: saveProgressBody.shape.videoId,
   profileId: saveProgressBody.shape.profileId,
   positionSeconds: z.number().finite().min(0).max(86_400),
-  durationSeconds: z.number().finite().min(0).max(86_400 * 7).optional(),
+  durationSeconds: z
+    .number()
+    .finite()
+    .min(0)
+    .max(86_400 * 7)
+    .optional(),
   ended: z.boolean().optional(),
 });
 
@@ -171,7 +176,10 @@ export function createViewerApi(rt: ViewerRuntime) {
       select: guard(
         async (req, actor, params) => {
           const { pin } = parseWith(selectProfileBody, await readJson(req));
-          const profile = await selectProfile(rt.ctx, actor, idParam(params), { pin });
+          const profile = await selectProfile(rt.ctx, actor, idParam(params), {
+            pin,
+            activeProfileId: activeProfileOf(req, actor),
+          });
           const cookie = serialize(
             cookieName,
             signActiveProfile(rt.profileSecret, actor.accountId, profile.id),

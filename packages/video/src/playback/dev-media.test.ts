@@ -21,7 +21,12 @@ describe('dev media handler', () => {
     const media = new LocalStorage({ root, bucket: 'media', secret } as never);
     await media.put(KEY, new Uint8Array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9]));
     await media.put('cap/abc/en.vtt', new TextEncoder().encode('WEBVTT\n'));
-    handler = createDevMediaHandler({ nodeEnv: 'development', mediaSecret: secret, media, now: () => NOW });
+    handler = createDevMediaHandler({
+      nodeEnv: 'development',
+      mediaSecret: secret,
+      media,
+      now: () => NOW,
+    });
   });
   afterAll(() => rm(root, { recursive: true, force: true }));
 
@@ -50,13 +55,19 @@ describe('dev media handler', () => {
   });
 
   it('serves captions without a signature and rejects traversal', async () => {
-    expect((await handler(new Request('http://x/cap/abc/en.vtt'), 'cap/abc/en.vtt')).status).toBe(200);
+    expect((await handler(new Request('http://x/cap/abc/en.vtt'), 'cap/abc/en.vtt')).status).toBe(
+      200,
+    );
     expect((await handler(new Request('http://x/v/../secret'), 'v/../secret')).status).toBe(404);
     expect((await handler(new Request('http://x/originals/a'), 'originals/a')).status).toBe(404);
   });
 
   it('does not exist in production', async () => {
-    const prod = createDevMediaHandler({ nodeEnv: 'production', mediaSecret: secret, media: {} as never });
+    const prod = createDevMediaHandler({
+      nodeEnv: 'production',
+      mediaSecret: secret,
+      media: {} as never,
+    });
     expect((await prod(new Request(url()), KEY)).status).toBe(404);
   });
 });
