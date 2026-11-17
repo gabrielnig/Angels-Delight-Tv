@@ -70,7 +70,31 @@ test('admin signs in, uploads two files, one fails and resumes with Retry', asyn
 
 test('an editor does not see admin only pages', async ({ page }) => {
   await signIn(page, 'ngozi@example.test');
+  const menu = page.getByRole('button', { name: 'Open menu' });
+  if (await menu.isVisible()) await menu.click();
   await expect(page.getByRole('navigation', { name: 'Admin' })).not.toContainText('Audit log');
   await page.goto('/admin/audit-log');
   await expect(page.getByText('You do not have access to this page')).toBeVisible();
+});
+
+const SCREENS: Array<[string, string]> = [
+  ['/admin/series', 'Series'],
+  ['/admin/categories', 'Categories'],
+  ['/admin/home', 'Home curation'],
+  ['/admin/users', 'Users'],
+  ['/admin/roles', 'Roles and invites'],
+  ['/admin/audit-log', 'Audit log'],
+  ['/admin/analytics', 'Analytics'],
+  ['/admin/account', 'My account'],
+  ['/admin/system', 'System'],
+  ['/admin/captions', 'Captions'],
+];
+
+test('every admin screen opens for an admin with its heading and no error', async ({ page }) => {
+  await signIn(page);
+  for (const [path, heading] of SCREENS) {
+    await page.goto(path);
+    await expect(page.getByRole('heading', { level: 1, name: heading })).toBeVisible();
+    await expect(page.getByText('This page could not load.')).toHaveCount(0);
+  }
 });

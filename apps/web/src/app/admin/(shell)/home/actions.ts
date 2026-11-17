@@ -28,8 +28,12 @@ async function run(fn: (a: Awaited<ReturnType<typeof requireActor>>) => Promise<
   return result;
 }
 
-export const saveHomeDraftAction = (config: HomeConfig) =>
-  run((a) => homeService.saveDraft(a, clean(config)));
-export const publishHomeAction = (config: HomeConfig) =>
-  run((a) => homeService.publish(a, clean(config)));
-export const restoreHomeAction = () => run((a) => homeService.restorePrevious(a));
+export async function saveHomeDraftAction(config: HomeConfig) {
+  return run((a) => homeService.saveDraft(a, clean(config)));
+}
+export async function publishHomeAction(config: HomeConfig) {
+  return run((a) => homeService.publish(a, clean(config)));
+}
+export async function restoreHomeAction() {
+  return run((a) => homeService.restorePrevious(a));
+}
