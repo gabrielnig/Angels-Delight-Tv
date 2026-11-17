@@ -1,8 +1,12 @@
-import { createDb, type Database } from '@ad/db';
+import { createDb, schema, type Database } from '@ad/db';
 import { createTestDatabase, type TestDatabase } from '@ad/db/testing';
 import { Mailer, MemoryTransport } from '@ad/mailer';
 import { AuditWriter, LockoutStore, RateLimiter } from '@ad/security';
+import type { AccountRole } from '@ad/shared';
+import { eq } from 'drizzle-orm';
 import pg from 'pg';
+import type { AccountService } from './accounts';
+import { emailHash } from './identifiers';
 import { KeyService } from './keys';
 import { PasswordHasher } from './password';
 import { SessionService } from './sessions';
@@ -142,5 +146,42 @@ export async function createAuthHarness(overrides: Partial<AuthDeps> = {}): Prom
       await Promise.all(pending.splice(0));
       await dbs.drop();
     },
+  };
+}
+
+let memberCounter = 0;
+
+export interface TestMember {
+  email: string;
+  password: string;
+  id: string;
+}
+
+/** Signs up (and by default verifies) a new viewer through the real service. */
+export async function registerMember(
+  h: AuthHarness,
+  auth: AccountService,
+  options: { verified?: boolean; password?: string; email?: string } = {},
+): Promise<TestMember> {
+  const email = options.email ?? `member${++memberCounter}-${Date.now() % 100000}@example.com`;
+  const password = options.password ?? TEST_PASSWORD;
+  await auth.signUp({ email, password, acceptTerms: true, guardianDeclaration: true }, h.meta);
+  if (options.verified !== false) await auth.verifyCode({ email, code: h.codeFor(email) }, h.meta);
+  const hash = Buffer.from(emailHash(email, h.deps.pepper));
+  const [row] = await h.dbs.admin.db
+    .select({ id: schema.accounts.id })
+    .from(schema.accounts)
+    .where(eq(schema.accounts.emailHash, hash));
+  if (!row) throw new Error('registered account not found');
+  return { email, password, id: row.id };
+}
+
+/** Signs in and returns the session plus the Actor shape the services take. */
+export async function signInActor(h: AuthHarness, auth: AccountService, member: TestMember) {
+  const result = await auth.signIn({ email: member.email, password: member.password }, h.meta);
+  if (result.status !== 'signed_in') throw new Error('expected a session');
+  return {
+    session: result.session,
+    actor: { accountId: member.id, role: result.role as AccountRole, sessionId: result.session.id },
   };
 }
