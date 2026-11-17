@@ -5,3 +5,6 @@ export * from './rules';
 export * from './progress';
 export * from './annotate';
 export * from './my-list';
+export * from './home';
+export * from './play-target';
+export * from './title-detail';
