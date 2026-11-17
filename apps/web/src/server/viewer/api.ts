@@ -21,6 +21,7 @@ import {
   selectProfile,
   suggest,
   updateProfile,
+  spendAttempt,
   type ViewerContext,
 } from '@ad/viewer';
 import {
@@ -121,6 +122,7 @@ export function createViewerApi(rt: ViewerRuntime) {
         }
         const actor = await rt.resolveActor(request);
         if (!actor) throw new Unauthorized();
+        await spendAttempt(rt.ctx, 'api', actor.accountId);
         return await handler(request, actor, params);
       } catch (error) {
         const mapped = errorResponse(error);
