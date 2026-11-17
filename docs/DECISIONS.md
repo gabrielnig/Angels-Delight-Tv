@@ -347,3 +347,15 @@ Format: decision, options considered, why, reversible or not. Newest first. Deci
 - Options: wire them now and let every action fail with a reauth error.
 - Why: a half wired mutation is worse than a clear gap. Under D-066 these screens fail in production until wired.
 - Reversible: yes. Add a reauth dialog calling `StaffService.reauthenticate`, then a `staff-real.ts` adapter.
+
+## D-070 Admin catalog writes live in @ad/catalog/admin and the home page config in settings (lane K3)
+- Decision: staff videos, categories, series, trash and home curation are functions in `packages/catalog/src/admin`, each taking `(ctx, actor, ...)` and running inside `withAccount` with an audit entry in the same transaction. Home curation keeps its draft, published and previous configs as JSON in `settings` (`home.draft`, `home.published`, `home.previous`, `home.published_at`). Publishing writes the same config into `rows` and `row_items` in one transaction, so the viewer API reads only `rows`. A "series" row is snapshotted to the series episodes at publish time (a curated row), and row ids from the editor screen map to stable uuids. Migration 0012 adds `videos.tags`, `suitability`, `caption_override_reason`, `poster_focus` and `accounts.suspended_reason`, `suspended_at`.
+- Options: a new `@ad/admin` package, or a draft and published column pair on `rows`.
+- Why: the fixture screens already model the whole config as one document, a settings document keeps draft and rollback atomic without a second set of tables, and the catalog package already owns publishing and the visibility rules.
+- Reversible: yes. A series row does not follow later episode changes until the next publish.
+
+## D-071 Viewer suspension goes through a SECURITY DEFINER function (lane K3)
+- Decision: migration 0013 adds `staff_set_account_status(actor, target, status, reason)`, which re checks in SQL that the caller is an active admin and only ever changes viewers. Same pattern and error codes as `staff_set_role`.
+- Options: let the app role update any account row, or widen the accounts RLS policy.
+- Why: RLS hides other accounts from the app role on purpose, and a bug in the app layer must not be able to suspend or edit staff.
+- Reversible: yes.

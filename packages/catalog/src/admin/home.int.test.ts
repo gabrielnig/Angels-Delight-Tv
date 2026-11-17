@@ -1,0 +1,201 @@
+import { schema } from '@ad/db';
+import { uuidv7, type Actor } from '@ad/shared';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { listPublishedRows } from '../rows';
+import {
+  createViewerTestDb,
+  integrationEnabled,
+  seedAccount,
+  seedCategory,
+  seedSeries,
+  seedVideo,
+  type ViewerTestDb,
+} from '../testing';
+import {
+  getAdminHome,
+  publishAdminHome,
+  restorePreviousAdminHome,
+  saveAdminHomeDraft,
+  type HomeConfig,
+} from './home';
+import type { AdminContext } from './types';
+
+const row = (id: string, type: HomeConfig['rows'][number]['type'], name: string, extra = {}) => ({
+  id,
+  type,
+  name,
+  visible: true,
+  videoIds: [] as string[],
+  sourceId: null as string | null,
+  ...extra,
+});
+
+describe.skipIf(!integrationEnabled())('admin home curation', () => {
+  let t: ViewerTestDb;
+  let ctx: AdminContext;
+  let editor: Actor;
+  let viewer: Actor;
+
+  beforeAll(async () => {
+    t = await createViewerTestDb();
+    ctx = { db: t.app };
+    editor = { accountId: (await seedAccount(t.setup, 'editor')).id, role: 'editor' };
+    viewer = { accountId: (await seedAccount(t.setup)).id, role: 'viewer' };
+  });
+  afterAll(async () => {
+    await t?.drop();
+  });
+
+  const published = () => t.setup.transaction((tx) => listPublishedRows(tx, { kids: false }));
+
+  it('starts from the built in default when nothing is curated, and refuses viewers', async () => {
+    const home = await getAdminHome(ctx, editor);
+    expect(home.state.published.rows.map((r) => r.type)).toEqual([
+      'continue_watching',
+      'newest',
+      'smart',
+      'my_list',
+    ]);
+    expect(home.state.publishedAt).toBeNull();
+    expect(home.state.previous).toBeNull();
+    await expect(getAdminHome(ctx, viewer)).rejects.toThrow();
+  });
+
+  it('validates before saving', async () => {
+    const tooMany = {
+      heroIds: [],
+      rows: Array.from({ length: 13 }, (_, i) => row(`r${i}`, 'newest', `Row ${i}`)),
+    };
+    expect(await saveAdminHomeDraft(ctx, editor, tooMany)).toEqual({
+      ok: false,
+      error: 'Home can have up to 12 rows.',
+    });
+    expect(
+      await saveAdminHomeDraft(ctx, editor, { heroIds: [], rows: [row('a', 'newest', ' ')] }),
+    ).toEqual({ ok: false, error: 'Every row needs a name.' });
+    expect(
+      await saveAdminHomeDraft(ctx, editor, { heroIds: ['1', '2', '3', '4', '5', '6'], rows: [] }),
+    ).toEqual({ ok: false, error: 'Choose up to 5 hero titles.' });
+  });
+
+  it('saves a draft without touching what viewers see', async () => {
+    const before = await published();
+    const draft = { heroIds: [], rows: [row('draft_row', 'newest', 'Only a draft')] };
+    expect(await saveAdminHomeDraft(ctx, editor, draft)).toEqual({ ok: true });
+    expect((await getAdminHome(ctx, editor)).state.draft.rows[0]?.name).toBe('Only a draft');
+    expect(await published()).toEqual(before);
+  });
+
+  it('publishes hero and every row kind into the rows viewers read, in order', async () => {
+    const a = await seedVideo(t.setup, { title: 'Alpha' });
+    const b = await seedVideo(t.setup, { title: 'Beta' });
+    const cat = await seedCategory(t.setup, 'Home science');
+    const course = await seedSeries(t.setup, { seasonSizes: [2] });
+    const config: HomeConfig = {
+      heroIds: [b.id, a.id],
+      rows: [
+        row('row_continue', 'continue_watching', 'Pick up where you left'),
+        row('picks', 'manual', 'Editor picks', { videoIds: [a.id, b.id, uuidv7()] }),
+        row('by_cat', 'category', 'Science', { sourceId: cat.id }),
+        row('fresh', 'newest', 'New this week'),
+        row('course_row', 'series', 'The course', { sourceId: course.id }),
+        row('hot', 'smart', 'Most watched', { visible: false }),
+        row('mine', 'my_list', 'My List'),
+      ],
+    };
+    expect(await publishAdminHome(ctx, editor, config)).toEqual({ ok: true });
+
+    const rows = await published();
+    expect(rows.map((r) => [r.title, r.kind])).toEqual([
+      ['Featured', 'hero'],
+      ['Pick up where you left', 'continue_watching'],
+      ['Editor picks', 'curated'],
+      ['Science', 'category'],
+      ['New this week', 'recently_added'],
+      ['The course', 'curated'],
+      ['My List', 'my_list'],
+    ]);
+    expect(rows[3]?.categorySlug).toBe(cat.slug);
+
+    const items = await t.setup
+      .select()
+      .from(schema.rowItems)
+      .innerJoin(
+        schema.rows,
+        (await import('drizzle-orm')).eq(schema.rows.id, schema.rowItems.rowId),
+      )
+      .orderBy(schema.rows.position, schema.rowItems.position);
+    const byRow = (title: string) =>
+      items.filter((i) => i.rows.title === title).map((i) => i.row_items.videoId);
+    expect(byRow('Featured')).toEqual([b.id, a.id]);
+    expect(byRow('Editor picks')).toEqual([a.id, b.id]); // the unknown id is dropped
+    expect(byRow('The course')).toEqual(course.episodes.map((e) => e.id));
+
+    const hidden = await t.setup.select().from(schema.rows);
+    expect(hidden.find((r) => r.title === 'Most watched')?.isPublished).toBe(false);
+
+    const home = await getAdminHome(ctx, editor);
+    expect(home.state.published.rows.map((r) => r.id)).toEqual(config.rows.map((r) => r.id));
+    expect(home.state.draft).toEqual(home.state.published);
+    expect(home.state.publishedAt).not.toBeNull();
+  });
+
+  it('keeps the earlier version and restores it, swapping the two', async () => {
+    const first = (await getAdminHome(ctx, editor)).state.published;
+    const second: HomeConfig = { heroIds: [], rows: [row('only', 'newest', 'Just newest')] };
+    expect(await publishAdminHome(ctx, editor, second)).toEqual({ ok: true });
+    expect((await published()).map((r) => r.title)).toEqual(['Just newest']);
+    expect((await getAdminHome(ctx, editor)).state.previous).toEqual(first);
+
+    expect(await restorePreviousAdminHome(ctx, editor)).toEqual({ ok: true });
+    const after = await getAdminHome(ctx, editor);
+    expect(after.state.published).toEqual(first);
+    expect(after.state.previous).toEqual(second);
+    expect((await published()).map((r) => r.title)).toContain('Editor picks');
+  });
+
+  it('says so when there is nothing to restore', async () => {
+    const fresh = await createViewerTestDb();
+    try {
+      const actor = {
+        accountId: (await seedAccount(fresh.setup, 'editor')).id,
+        role: 'editor' as const,
+      };
+      expect(await restorePreviousAdminHome({ db: fresh.app }, actor)).toEqual({
+        ok: false,
+        error: 'There is no earlier version to restore.',
+      });
+    } finally {
+      await fresh.drop();
+    }
+  });
+
+  it('reads a config back from rows that exist but were never curated in the admin', async () => {
+    const fresh = await createViewerTestDb();
+    try {
+      const actor = {
+        accountId: (await seedAccount(fresh.setup, 'editor')).id,
+        role: 'editor' as const,
+      };
+      const v = await seedVideo(fresh.setup);
+      const [curated] = await fresh.setup
+        .insert(schema.rows)
+        .values({ title: 'Seeded picks', kind: 'curated', position: 0, isPublished: true })
+        .returning();
+      await fresh.setup
+        .insert(schema.rowItems)
+        .values({ rowId: curated!.id, position: 0, videoId: v.id });
+      await fresh.setup
+        .insert(schema.rows)
+        .values({ title: 'Fresh', kind: 'recently_added', position: 1, isPublished: false });
+      const state = (await getAdminHome({ db: fresh.app }, actor)).state;
+      expect(state.published.rows.map((r) => [r.type, r.name, r.visible])).toEqual([
+        ['manual', 'Seeded picks', true],
+        ['newest', 'Fresh', false],
+      ]);
+      expect(state.published.rows[0]?.videoIds).toEqual([v.id]);
+    } finally {
+      await fresh.drop();
+    }
+  });
+});
