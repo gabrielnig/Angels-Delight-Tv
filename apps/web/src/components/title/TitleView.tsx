@@ -29,7 +29,7 @@ export function TitleView({ detail, inList }: { detail: TitleDetail; inList: boo
         {video.hasCaptions ? <Badge variant="neutral">Captions</Badge> : null}
       </p>
       <TitleActions
-        watchHref={`/watch/${video.slug}`}
+        watchHref={`/watch/${video.id}`}
         itemKey={itemKey(video)}
         inList={inList}
         resume={resume && progress ? { timeLeft: timeLeftLabel(progress) } : undefined}
