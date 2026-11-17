@@ -8,9 +8,9 @@ describe('fixture data guard', () => {
     expect(fixtureDataAllowed({ NODE_ENV: 'development' })).toBe(true);
     expect(fixtureDataAllowed({ NODE_ENV: 'test' })).toBe(true);
   });
-  it('is refused in production unless switched on on purpose', () => {
+  it('is refused in production, even with the old override', () => {
     expect(fixtureDataAllowed({ NODE_ENV: 'production' })).toBe(false);
-    expect(fixtureDataAllowed({ NODE_ENV: 'production', ADMIN_FIXTURES: 'on' })).toBe(true);
+    expect(fixtureDataAllowed({ NODE_ENV: 'production', ADMIN_FIXTURES: 'on' })).toBe(false);
   });
   it('getStore throws in production so fake data is never served', () => {
     vi.stubEnv('NODE_ENV', 'production');

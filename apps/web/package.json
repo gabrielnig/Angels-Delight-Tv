@@ -24,6 +24,8 @@
     "@ad/storage": "workspace:*",
     "@ad/theme": "workspace:*",
     "@ad/player": "workspace:*",
+    "@ad/queue": "workspace:*",
+    "@ad/video": "workspace:*",
     "@ad/ui": "workspace:*",
     "@ad/viewer": "workspace:*",
     "drizzle-orm": "^0.45.4",

@@ -101,7 +101,7 @@ export const videos = pgTable(
     suitability: text('suitability'),
     /** Set when an admin published without approved captions. Audited at the same time. */
     captionOverrideReason: text('caption_override_reason'),
-    /** Poster crop focus chosen in the poster picker: x and y from 0 to 1, zoom from 1. */
+    /** Poster crop chosen in the poster picker: focus x and y in percent, zoom from 100 to 200 percent. */
     posterFocus: jsonb('poster_focus').$type<{ x: number; y: number; zoom: number }>(),
     createdBy: uuid('created_by').references(() => accounts.id, { onDelete: 'set null' }),
     createdAt: createdAt(),

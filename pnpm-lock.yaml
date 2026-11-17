@@ -77,6 +77,9 @@ importers:
       '@ad/player':
         specifier: workspace:*
         version: link:../../packages/player
+      '@ad/queue':
+        specifier: workspace:*
+        version: link:../../packages/queue
       '@ad/security':
         specifier: workspace:*
         version: link:../../packages/security
@@ -92,6 +95,9 @@ importers:
       '@ad/ui':
         specifier: workspace:*
         version: link:../../packages/ui
+      '@ad/video':
+        specifier: workspace:*
+        version: link:../../packages/video
       '@ad/viewer':
         specifier: workspace:*
         version: link:../../packages/viewer

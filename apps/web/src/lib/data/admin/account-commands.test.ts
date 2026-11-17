@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { changePassword, ensureAccount, regenerateRecoveryCodes, revokeSession, updateName } from './account-commands';
+import {
+  changePassword,
+  ensureAccount,
+  regenerateRecoveryCodes,
+  revokeSession,
+  updateName,
+} from './account-commands';
 import { FIXTURE_PASSWORD } from './session';
 import { getStore } from './store';
 
@@ -40,16 +46,27 @@ describe('changePassword', () => {
   });
   it('rejects weak, mismatched and unchanged passwords', () => {
     const s = setup();
-    expect(changePassword(s, actor, FIXTURE_PASSWORD, 'short', 'short', NOW)).toMatchObject({ ok: false, field: 'next' });
-    expect(changePassword(s, actor, FIXTURE_PASSWORD, STRONG, STRONG + 'x', NOW)).toMatchObject({ ok: false, field: 'confirm' });
-    expect(changePassword(s, actor, FIXTURE_PASSWORD, FIXTURE_PASSWORD, FIXTURE_PASSWORD, NOW)).toMatchObject({ ok: false, field: 'next' });
+    expect(changePassword(s, actor, FIXTURE_PASSWORD, 'short', 'short', NOW)).toMatchObject({
+      ok: false,
+      field: 'next',
+    });
+    expect(changePassword(s, actor, FIXTURE_PASSWORD, STRONG, STRONG + 'x', NOW)).toMatchObject({
+      ok: false,
+      field: 'confirm',
+    });
+    expect(
+      changePassword(s, actor, FIXTURE_PASSWORD, FIXTURE_PASSWORD, FIXTURE_PASSWORD, NOW),
+    ).toMatchObject({ ok: false, field: 'next' });
   });
   it('signs out other devices and audits it', () => {
     const s = setup();
     expect(changePassword(s, actor, FIXTURE_PASSWORD, STRONG, STRONG, NOW).ok).toBe(true);
     expect(s.accounts[actor.accountId]!.sessions.every((x) => x.current)).toBe(true);
     expect(s.accounts[actor.accountId]!.passwordChangedAt).toBe(new Date(NOW).toISOString());
-    expect(s.audit[0]).toMatchObject({ action: 'account.password_change', actorId: actor.accountId });
+    expect(s.audit[0]).toMatchObject({
+      action: 'account.password_change',
+      actorId: actor.accountId,
+    });
     expect(JSON.stringify(s.audit[0])).not.toContain(STRONG);
   });
 });
