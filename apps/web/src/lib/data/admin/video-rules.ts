@@ -54,7 +54,10 @@ export interface PublishRules {
 
 export const MIN_DESCRIPTION_LENGTH = 20;
 
-export function publishChecklist(video: VideoRecord, rules: PublishRules = { requireApprovedCaptions: true }): ChecklistItem[] {
+export function publishChecklist(
+  video: VideoRecord,
+  rules: PublishRules = { requireApprovedCaptions: true },
+): ChecklistItem[] {
   const editHref = `/admin/videos/${video.id}`;
   const uploaded = video.status !== 'uploading';
   const encoded = video.status === 'ready';
@@ -62,7 +65,8 @@ export function publishChecklist(video: VideoRecord, rules: PublishRules = { req
     !rules.requireApprovedCaptions ||
     video.captionState === 'approved' ||
     Boolean(video.captionOverrideReason);
-  const detailsOk = video.title.trim().length > 0 && video.description.trim().length >= MIN_DESCRIPTION_LENGTH;
+  const detailsOk =
+    video.title.trim().length > 0 && video.description.trim().length >= MIN_DESCRIPTION_LENGTH;
 
   let captionDetail = 'Captions are approved.';
   if (!captionsOk) {
@@ -127,7 +131,10 @@ export function publishChecklist(video: VideoRecord, rules: PublishRules = { req
   ];
 }
 
-export function canPublish(video: VideoRecord, rules: PublishRules = { requireApprovedCaptions: true }) {
+export function canPublish(
+  video: VideoRecord,
+  rules: PublishRules = { requireApprovedCaptions: true },
+) {
   const blockers = publishChecklist(video, rules).filter((item) => !item.done);
   return { ok: blockers.length === 0, blockers };
 }

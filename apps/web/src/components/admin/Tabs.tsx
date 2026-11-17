@@ -69,7 +69,13 @@ export function Tabs({
           </button>
         ))}
       </div>
-      <div role="tabpanel" id={`${base}-panel-${value}`} aria-labelledby={`${base}-tab-${value}`} tabIndex={0} className="adm-tabs__panel">
+      <div
+        role="tabpanel"
+        id={`${base}-panel-${value}`}
+        aria-labelledby={`${base}-tab-${value}`}
+        tabIndex={0}
+        className="adm-tabs__panel"
+      >
         {children}
       </div>
     </div>

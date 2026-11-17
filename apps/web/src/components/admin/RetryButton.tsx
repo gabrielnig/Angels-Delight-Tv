@@ -9,7 +9,12 @@ export function RetryButton({ label = 'Retry' }: { label?: string }) {
   const router = useRouter();
   const [pending, start] = useTransition();
   return (
-    <Button variant="secondary" icon="retry" loading={pending} onClick={() => start(() => router.refresh())}>
+    <Button
+      variant="secondary"
+      icon="retry"
+      loading={pending}
+      onClick={() => start(() => router.refresh())}
+    >
       {label}
     </Button>
   );

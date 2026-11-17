@@ -12,7 +12,15 @@ describe('safeNext', () => {
     expect(safeNext('/admin')).toBe('/admin');
   });
   it('drops anything that could leave the site', () => {
-    for (const bad of ['//evil.test', 'https://evil.test', '/other', '/admin//evil.test', '/admin/../x', undefined, 5]) {
+    for (const bad of [
+      '//evil.test',
+      'https://evil.test',
+      '/other',
+      '/admin//evil.test',
+      '/admin/../x',
+      undefined,
+      5,
+    ]) {
       expect(safeNext(bad)).toBe('/admin');
     }
   });

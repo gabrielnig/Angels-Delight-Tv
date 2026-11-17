@@ -225,7 +225,10 @@ export function createUploader(options: UploaderOptions) {
     await Promise.all(Array.from({ length: Math.min(partConcurrency, pending.length) }, worker));
     if (signal.aborted) return;
     if (partFailed) {
-      fail(record, `Upload failed. ${Math.floor((record.completedBytes / lane.size) * 100)} percent was saved.`);
+      fail(
+        record,
+        `Upload failed. ${Math.floor((record.completedBytes / lane.size) * 100)} percent was saved.`,
+      );
       return;
     }
 
@@ -234,7 +237,10 @@ export function createUploader(options: UploaderOptions) {
       await transport.complete(lane.uploadId);
     } catch {
       if (!signal.aborted) {
-        fail(record, 'Upload failed at the last step. Everything was saved, so Retry only finishes it.');
+        fail(
+          record,
+          'Upload failed at the last step. Everything was saved, so Retry only finishes it.',
+        );
       }
       return;
     }
@@ -304,7 +310,10 @@ export function createUploader(options: UploaderOptions) {
       }
       if (file.size <= 0) return reject(file, `${file.name} is empty.`);
       if (file.size > maxFileBytes) {
-        return reject(file, `${file.name} is too large. The limit is ${formatLimit(maxFileBytes)}.`);
+        return reject(
+          file,
+          `${file.name} is too large. The limit is ${formatLimit(maxFileBytes)}.`,
+        );
       }
       const fingerprint = laneFingerprint(file);
       if (records.some((r) => r.lane.fingerprint === fingerprint && r.lane.status !== 'rejected')) {
@@ -364,8 +373,7 @@ export function createUploader(options: UploaderOptions) {
       notify();
     },
     /** True while any lane is waiting or has work in flight. */
-    hasActiveWork: () =>
-      records.some((r) => r.running || r.lane.status === 'waiting'),
+    hasActiveWork: () => records.some((r) => r.running || r.lane.status === 'waiting'),
     /** Resolves once nothing is waiting or running. Paused and failed lanes do not count. */
     async idle(): Promise<void> {
       for (;;) {

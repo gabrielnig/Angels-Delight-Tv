@@ -3,7 +3,12 @@
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { PENDING_COOKIE, SESSION_COOKIE, fixtureAuthEnabled } from '@/lib/data/admin/session';
-import { cookieOptions, fixtureAuth, pendingAccountId, safeNext } from '@/lib/data/admin/session-next';
+import {
+  cookieOptions,
+  fixtureAuth,
+  pendingAccountId,
+  safeNext,
+} from '@/lib/data/admin/session-next';
 
 export interface LoginState {
   error?: string;
@@ -15,13 +20,18 @@ export async function signInAction(_prev: LoginState, form: FormData): Promise<L
   const email = String(form.get('email') ?? '');
   const password = String(form.get('password') ?? '');
   const next = safeNext(form.get('next'));
-  if (!fixtureAuthEnabled()) return { email, error: 'Sign in is not available right now. Try again later.' };
+  if (!fixtureAuthEnabled())
+    return { email, error: 'Sign in is not available right now. Try again later.' };
   if (!email || !password) return { email, error: 'Enter your email and password.' };
 
   const result = fixtureAuth().checkPassword(email, password);
   if (!result.ok) {
     return result.reason === 'locked'
-      ? { email, locked: true, error: `Too many attempts. Try again in ${result.retryInMinutes} minutes.` }
+      ? {
+          email,
+          locked: true,
+          error: `Too many attempts. Try again in ${result.retryInMinutes} minutes.`,
+        }
       : { email, error: 'Email or password is not right. Check both and try again.' };
   }
   (await cookies()).set(PENDING_COOKIE, result.actor.accountId, { ...cookieOptions, maxAge: 600 });

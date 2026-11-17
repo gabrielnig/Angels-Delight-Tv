@@ -12,7 +12,8 @@ interface Common {
   className?: string;
 }
 
-export interface ButtonProps extends Common, Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'className'> {
+export interface ButtonProps
+  extends Common, Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'className'> {
   loading?: boolean;
   /** Why the button is unavailable. Shown as text under the label for screen readers and as a tooltip. */
   disabledReason?: string;
@@ -44,7 +45,11 @@ export function Button({
       title={disabledReason ?? rest.title}
       onClick={blocked || loading ? (event) => event.preventDefault() : rest.onClick}
     >
-      {loading ? <span className="adm-spinner" aria-hidden="true" /> : icon ? <Icon name={icon} size={18} /> : null}
+      {loading ? (
+        <span className="adm-spinner" aria-hidden="true" />
+      ) : icon ? (
+        <Icon name={icon} size={18} />
+      ) : null}
       {children ? <span>{children}</span> : null}
       {disabledReason ? <span className="adm-sr">{`. ${disabledReason}`}</span> : null}
     </button>

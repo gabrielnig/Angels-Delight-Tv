@@ -3,7 +3,10 @@ import { createHttpTransport } from './http-transport';
 import { TransportError } from './types';
 
 function json(body: unknown, status = 200) {
-  return new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json' } });
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { 'content-type': 'application/json' },
+  });
 }
 
 describe('http transport', () => {
@@ -11,14 +14,32 @@ describe('http transport', () => {
     const calls: string[] = [];
     const fetcher = async (url: string, init?: RequestInit) => {
       calls.push(`${init?.method ?? 'GET'} ${url}`);
-      if (url === '/api/admin/uploads') return json({ uploadId: 'u1', partSize: 8388608, totalParts: 3 });
-      if (url === '/api/admin/uploads/u1') return json({ uploadId: 'u1', partSize: 8388608, totalParts: 3, uploadedParts: [1, 2] });
+      if (url === '/api/admin/uploads')
+        return json({ uploadId: 'u1', partSize: 8388608, totalParts: 3 });
+      if (url === '/api/admin/uploads/u1')
+        return json({ uploadId: 'u1', partSize: 8388608, totalParts: 3, uploadedParts: [1, 2] });
       throw new Error(`unexpected ${url}`);
     };
     const transport = createHttpTransport({ fetch: fetcher as never, putPart: async () => {} });
-    const fresh = await transport.start({ fingerprint: 'f', name: 'a.mp4', size: 20_000_000, type: 'video/mp4' });
-    expect(fresh).toEqual({ uploadId: 'u1', partSizeBytes: 8388608, totalParts: 3, uploadedParts: [] });
-    const resumed = await transport.start({ fingerprint: 'f', name: 'a.mp4', size: 20_000_000, type: 'video/mp4', resumeUploadId: 'u1' });
+    const fresh = await transport.start({
+      fingerprint: 'f',
+      name: 'a.mp4',
+      size: 20_000_000,
+      type: 'video/mp4',
+    });
+    expect(fresh).toEqual({
+      uploadId: 'u1',
+      partSizeBytes: 8388608,
+      totalParts: 3,
+      uploadedParts: [],
+    });
+    const resumed = await transport.start({
+      fingerprint: 'f',
+      name: 'a.mp4',
+      size: 20_000_000,
+      type: 'video/mp4',
+      resumeUploadId: 'u1',
+    });
     expect(resumed.uploadedParts).toEqual([1, 2]);
     expect(calls).toEqual(['POST /api/admin/uploads', 'GET /api/admin/uploads/u1']);
   });
@@ -58,9 +79,7 @@ describe('http transport', () => {
       }) as never,
       putPart: async () => {},
     });
-    const error = await offline
-      .complete('u1')
-      .catch((e: unknown) => e as TransportError);
+    const error = await offline.complete('u1').catch((e: unknown) => e as TransportError);
     expect(error).toBeInstanceOf(TransportError);
     expect((error as TransportError).kind).toBe('network');
   });
