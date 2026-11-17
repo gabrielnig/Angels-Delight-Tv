@@ -1,4 +1,5 @@
 import { uuidv7 } from '@ad/shared';
+import type { SettingRow, SettingUpsert, SettingsStore, SettingsTx } from './settings-store';
 import type { AuditEntry, ListFilter, NewThemeRow, ThemeRow, ThemeStore, ThemeTx } from './store';
 
 /** In memory store with the same invariants as the database indexes. For unit tests. */
@@ -80,5 +81,59 @@ export class MemoryAudit {
   entries: AuditEntry[] = [];
   async record(entry: AuditEntry): Promise<void> {
     this.entries.push(entry);
+  }
+}
+
+export class MemorySettingsStore implements SettingsStore {
+  rows = new Map<string, SettingRow>();
+  audit = new MemoryAudit();
+  failReads = false;
+  readAllCalls = 0;
+  private lock: Promise<unknown> = Promise.resolve();
+
+  async readAll(): Promise<SettingRow[]> {
+    this.readAllCalls += 1;
+    if (this.failReads) throw new Error('database unavailable');
+    return [...this.rows.values()].map((row) => ({ ...row }));
+  }
+
+  async readOne(key: string): Promise<SettingRow | null> {
+    if (this.failReads) throw new Error('database unavailable');
+    const row = this.rows.get(key);
+    return row ? { ...row } : null;
+  }
+
+  async transaction<T>(fn: (tx: SettingsTx) => Promise<T>): Promise<T> {
+    const run = this.lock.then(async () => {
+      const snapshot = new Map([...this.rows].map(([key, row]) => [key, { ...row }]));
+      const auditCount = this.audit.entries.length;
+      try {
+        return await fn({
+          get: async (key) => {
+            const row = this.rows.get(key);
+            return row ? { ...row } : null;
+          },
+          upsert: async (input: SettingUpsert) => {
+            const row: SettingRow = {
+              key: input.key,
+              value: structuredClone(input.value),
+              isPublic: input.isPublic,
+              description: input.description ?? null,
+              updatedBy: input.updatedBy,
+              updatedAt: new Date(),
+            };
+            this.rows.set(input.key, row);
+            return { ...row };
+          },
+          audit: async (entry) => this.audit.record(entry),
+        });
+      } catch (error) {
+        this.rows = snapshot;
+        this.audit.entries.length = auditCount;
+        throw error;
+      }
+    });
+    this.lock = run.catch(() => undefined);
+    return run;
   }
 }
