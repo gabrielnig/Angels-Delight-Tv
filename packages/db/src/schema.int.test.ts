@@ -27,8 +27,10 @@ import {
 const MAIN_TABLES = [
   'account_deletions',
   'accounts',
+  'admin_invites',
   'assets',
   'audit_log',
+  'auth_lockouts',
   'caption_tracks',
   'captions',
   'categories',
@@ -51,6 +53,7 @@ const MAIN_TABLES = [
   'settings',
   'theme_settings',
   'upload_sessions',
+  'verification_codes',
   'video_categories',
   'video_daily_stats',
   'video_keys',
