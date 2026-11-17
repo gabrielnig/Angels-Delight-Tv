@@ -262,18 +262,32 @@ export function seedStore(now = Date.now()): AdminStore {
 
 const GLOBAL_KEY = Symbol.for('ad.admin.fixture.store');
 
+/** Fixture data is for development, tests and demos. Production never serves it unless ADMIN_FIXTURES=on is set on purpose. */
+export function fixtureDataAllowed(env: Record<string, string | undefined> = process.env): boolean {
+  return env.NODE_ENV !== 'production' || env.ADMIN_FIXTURES === 'on';
+}
+
+const REQUIRED_KEYS = [
+  'videos',
+  'categories',
+  'series',
+  'captions',
+  'home',
+  'users',
+  'staff',
+  'invites',
+  'audit',
+  'accounts',
+  'jobs',
+  'storage',
+] as const;
+
 export function getStore(): AdminStore {
+  if (!fixtureDataAllowed()) throw new Error('Admin fixture data is disabled in production.');
   const holder = globalThis as unknown as Record<symbol, AdminStore | undefined>;
   // A store from an older build (dev hot reload) lacks newer collections, so reseed it.
   const existing = holder[GLOBAL_KEY];
-  if (
-    existing &&
-    Array.isArray(existing.series) &&
-    existing.captions &&
-    existing.home &&
-    existing.audit
-  )
-    return existing;
+  if (existing && REQUIRED_KEYS.every((key) => existing[key] !== undefined)) return existing;
   return (holder[GLOBAL_KEY] = seedStore());
 }
 
