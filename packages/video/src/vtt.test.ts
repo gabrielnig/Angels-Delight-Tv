@@ -73,13 +73,11 @@ describe('parseSrt', () => {
 
 describe('cuesFromWords', () => {
   const words = (text: string, startMs: number, stepMs: number) =>
-    text
-      .split(' ')
-      .map((word, i) => ({
-        word,
-        startMs: startMs + i * stepMs,
-        endMs: startMs + (i + 1) * stepMs - 50,
-      }));
+    text.split(' ').map((word, i) => ({
+      word,
+      startMs: startMs + i * stepMs,
+      endMs: startMs + (i + 1) * stepMs - 50,
+    }));
 
   it('wraps to two lines of at most 42 characters and keeps cues between 1 and 7 seconds', () => {
     const text =
