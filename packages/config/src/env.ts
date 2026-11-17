@@ -211,6 +211,28 @@ const webSchema = withRules({ ...commonShape, ...webShape }, (env, add) => {
     if (env.COOKIE_PREFIX_SECURE === false) {
       add('COOKIE_PREFIX_SECURE', 'must be true in production');
     }
+    if (env.TRUSTED_PROXY_MODE !== 'cloudflare') {
+      add(
+        'TRUSTED_PROXY_MODE',
+        'must be cloudflare in production, or per IP limits share one bucket',
+      );
+    }
+    if (!env.KEYS_DATABASE_URL_SHRED) {
+      add('KEYS_DATABASE_URL_SHRED', 'required in production so deleted accounts lose their keys');
+    }
+    const used = new Map<string, string>();
+    for (const name of [
+      'FIELD_KEK',
+      'EMAIL_HASH_PEPPER',
+      'HLS_KEK',
+      'PLAYBACK_TOKEN_SECRET',
+      'MEDIA_URL_SECRET',
+    ] as const) {
+      const fingerprint = Buffer.from(env[name]).toString('base64');
+      const other = used.get(fingerprint);
+      if (other) add(name, `must differ from ${other}`);
+      else used.set(fingerprint, name);
+    }
   }
 }).transform((env) => ({
   ...env,

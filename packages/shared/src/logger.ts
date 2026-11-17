@@ -2,7 +2,9 @@ export type LogLevel = 'debug' | 'info' | 'warn' | 'error';
 
 const LEVEL_ORDER: Record<LogLevel, number> = { debug: 10, info: 20, warn: 30, error: 40 };
 const SECRET_FIELD =
-  /pass(word)?|secret|token|authorization|cookie|api_?key|private_?key|kek|pepper/i;
+  /pass(word)?|secret|token|authorization|cookie|api_?key|private_?key|kek|pepper|e_?mail/i;
+const EMAIL = /[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/g;
+const maskEmails = (text: string) => text.replace(EMAIL, '[email]');
 
 export interface Logger {
   debug(message: string, fields?: Record<string, unknown>): void;
@@ -20,8 +22,13 @@ export interface LoggerOptions {
 }
 
 function scrub(value: unknown, seen: WeakSet<object>): unknown {
+  if (typeof value === 'string') return maskEmails(value);
   if (value instanceof Error) {
-    return { name: value.name, message: value.message, stack: value.stack };
+    return {
+      name: value.name,
+      message: maskEmails(value.message),
+      stack: value.stack ? maskEmails(value.stack) : undefined,
+    };
   }
   if (value === null || typeof value !== 'object') return value;
   if (seen.has(value)) return '[circular]';
