@@ -102,6 +102,27 @@ describe('uploader engine: parallelism', () => {
   });
 });
 
+describe('uploader engine: settings', () => {
+  it('raising the file concurrency starts waiting lanes at once', async () => {
+    const { transport, uploader } = make({ gated: true }, { fileConcurrency: 1 });
+    for (const name of ['a.mp4', 'b.mp4', 'c.mp4']) uploader.add(fakeFile(name, PART));
+    await transport.untilInFlight(1);
+    expect(uploader.getLanes().map((l) => l.status)).toEqual(['uploading', 'waiting', 'waiting']);
+    uploader.setFileConcurrency(3);
+    await transport.untilInFlight(3);
+    expect(uploader.getLanes().map((l) => l.status)).toEqual(['uploading', 'uploading', 'uploading']);
+    transport.releaseAll();
+    await settled(uploader);
+  });
+
+  it('keeps the video id the server gave the lane', async () => {
+    const { uploader } = make({ videoIdFor: (name) => `vid_${name}` });
+    uploader.add(fakeFile('a.mp4', PART));
+    const [lane] = await settled(uploader);
+    expect(lane!.videoId).toBe('vid_a.mp4');
+  });
+});
+
 describe('uploader engine: failure isolation', () => {
   it('a failing file does not stop or fail the others', async () => {
     const { uploader } = make({

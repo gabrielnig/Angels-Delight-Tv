@@ -27,6 +27,7 @@ export interface FakeTransportOptions {
   failWith?: (call: FakePartCall) => Error;
   failStart?: (name: string) => boolean;
   failComplete?: () => boolean;
+  videoIdFor?: (name: string) => string;
 }
 
 interface Gate {
@@ -78,6 +79,7 @@ export function createFakeTransport(options: FakeTransportOptions = {}) {
         partSizeBytes,
         totalParts: Math.ceil(input.size / partSizeBytes),
         uploadedParts: [...serverParts.get(uploadId)!].sort((a, b) => a - b),
+        videoId: options.videoIdFor?.(input.name),
       };
     },
 
