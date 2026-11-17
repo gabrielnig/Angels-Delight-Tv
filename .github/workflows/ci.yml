@@ -49,6 +49,10 @@ jobs:
       - name: Dependency audit
         run: pnpm audit --prod --audit-level=high
 
+      # Plain grep scan, since gitleaks is not available everywhere. Never prints the matched value.
+      - name: Secret scan
+        run: scripts/secret-scan.sh
+
       - name: Lint
         run: pnpm lint
 
