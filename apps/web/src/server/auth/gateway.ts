@@ -68,6 +68,7 @@ export class RealAuthGateway implements AuthGateway {
         await this.io.setPending(result.email);
         return { ok: true as const, next: '/verify-email' };
       }
+      if (result.status === 'use_admin_login') return { ok: true as const, next: '/admin/login' };
       await this.io.setSession(result.session.token, 'viewer');
       return { ok: true as const, next: safeViewerNext(input.next) };
     } catch (error) {
