@@ -73,7 +73,8 @@ test('an editor does not see admin only pages', async ({ page }) => {
   const menu = page.getByRole('button', { name: 'Open menu' });
   if (await menu.isVisible()) await menu.click();
   await expect(page.getByRole('navigation', { name: 'Admin' })).not.toContainText('Audit log');
-  await page.goto('/admin/audit-log');
+  const response = await page.goto('/admin/audit-log');
+  expect(response?.status()).toBe(403);
   await expect(page.getByText('You do not have access to this page')).toBeVisible();
 });
 
