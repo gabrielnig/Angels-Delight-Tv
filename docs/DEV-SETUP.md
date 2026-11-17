@@ -1,6 +1,6 @@
 # Developer Setup
 
-Status: matches the lane A foundation (monorepo, config, storage, database, worker, web shell, Docker). Items marked "not yet" arrive with the lane that owns them. Update this file in the same change as any setup step that changes.
+Status: matches main after the lane K integration passes. Update this file in the same change as any setup step that changes.
 
 Related: `docs/ARCHITECTURE.md`, `docs/TDD-PROTOCOL.md`, `docs/TESTING.md`.
 
@@ -34,7 +34,9 @@ pnpm --filter @ad/web dev              # http://localhost:3000, health at /api/h
 pnpm --filter @ad/worker dev           # second terminal
 ```
 
-`pnpm --filter @ad/db db:seed:admin` (first admin) is not yet implemented, it arrives with lane B.
+Seed the first admin with `pnpm db:seed:admin`. It prompts for the email and password, needs `DATABASE_URL_MIGRATE`, `KEYS_DATABASE_URL`, `FIELD_KEK` and `EMAIL_HASH_PEPPER` in the environment, and refuses to run when an admin exists. `pnpm db:seed:demo` adds demo catalog data in development and refuses to run in production.
+
+Data modes in development: with real auth configured, viewer and admin screens use the real services. `VIEWER_FIXTURES=on`, `AUTH_FIXTURES=on` and `ADMIN_DATA=fixture` switch to in memory fixtures for UI work. Production always uses real services. The flags are listed in `docs/lanes/K1-viewer-integration.md` and `docs/lanes/F-admin-ui.md`.
 
 Install the git hook with `pnpm run hooks:install`. It runs the footprint check, gitleaks when installed, and `vitest related --run` on staged `.ts` and `.tsx` files (config files are skipped on purpose, vitest reruns everything when a config changes).
 
@@ -169,7 +171,7 @@ Never run the whole suite (see TDD-PROTOCOL.md section 2).
 ## 6. Working with media locally
 
 - Make a test clip: `ffmpeg -f lavfi -i testsrc=duration=20:size=1280x720:rate=30 -f lavfi -i sine=duration=20 -c:v libx264 -pix_fmt yuv420p -c:a aac sample.mp4`.
-- Upload it at `http://localhost:3000/admin` as the seeded admin (TOTP can be bypassed in development only through `DEV_SKIP_MFA=true`, which the env schema rejects when `NODE_ENV=production`; the admin upload screen arrives with lane F).
+- Upload it at `http://localhost:3000/admin` as the seeded admin (TOTP can be bypassed in development only through `DEV_SKIP_MFA=true`, which the env schema rejects when `NODE_ENV=production`).
 - Watch the job: `docker compose logs -f worker` or the admin encoding status table.
 - Inspect outputs in the MinIO console at `http://localhost:9001` (buckets `ad-originals`, `ad-media`).
 - Emails appear at `http://localhost:8025`.

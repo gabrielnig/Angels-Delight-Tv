@@ -23,32 +23,35 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 ### Changed
 - DATA-MODEL: `videos` ready check now requires a non null duration. Upload defaults follow D-006 (8 MiB parts, 5 GiB). DEV-SETUP, ARCHITECTURE layout and env docs match the built repo.
 
-## Lane I
-- Added `@ad/analytics`, `@ad/audit`, the PWA (manifest, service worker, install prompt, offline page), Data saver helpers, responsive posters, request ids, error reporter, `/api/ready`, `/api/analytics`, web vitals and the error page. Migration 0008. Decisions D-035 to D-041.
-## Lane H: site settings screen
+### Lane I: analytics, PWA and observability
+
+- Add `@ad/analytics`, `@ad/audit`, the PWA (manifest, service worker, install prompt, offline page), Data saver helpers, responsive posters, request ids, error reporter, `/api/ready`, `/api/analytics`, web vitals and the error page. Migration 0008. Decisions D-035 to D-041.
+
+### Lane H: site settings and theme
 
 - Add S64 site settings: platform details, features and limits, legal and info pages editor with versions, maintenance mode, launch checklist.
 
 - Lane H: add `getRootTheme` helper for the root layout and docs/lanes/H-theme.md.
-### Added (lane G)
+
+### Lane G: player
+
 - `@ad/player` and the `/watch/[videoId]` page: HLS playback with token and key handling, custom controls, resume, progress, captions viewer, quality, up next, recovery states, sample HLS generator and Playwright smoke.
 
-## Lane D: video pipeline
+### Lane D: video pipeline
 
 - Add `@ad/video` (upload, encoding, captions, playback authorization, lifecycle), `@ad/queue` (pg-boss helpers), `apps/whisper`, `apps/edge` and worker handlers for every lane D queue. Migration 0007. Decisions D-027 to D-030, D-037, D-045 to D-048.
 
-
-## Lane E: viewer UI
+### Lane E: viewer UI
 
 - Add the `@ad/ui` component library and the viewer pages in `apps/web`: landing, sign-in, sign-up, verify, recovery, profiles, Home, Browse, Search, title, series, My List, account, legal, help and system pages.
 
-## Lane F: admin UI
+### Lane F: admin UI
 
 - Add the admin area in `apps/web` under `/admin`: shell with role aware menu and breadcrumbs, dashboard, videos list, upload with a resumable multi file queue, video edit with status checklist, poster picker and crop, publish and schedule dialog, encoding queue, captions list and review, series, categories, trash, home curation with live preview, users, roles and invites, audit log with detail panel and CSV export, analytics (overview and per video) with accessible SVG charts, my account and system.
 - Add `lib/uploader` (framework free resumable upload engine with fake, simulated and HTTP transports) and `lib/admin` (`can`, cue and poster rules, formatters).
 - Add typed admin services with fixture implementations, real audit, analytics and player quality reads with `ADMIN_DATA=real`, and a guard that refuses fixture data in production.
 
-## Lane K2: video delivery integration
+### Lane K2: video delivery integration
 
 - Wire the lane D routes into `apps/web`: `POST /api/play/{id}/session`, playlists at `/api/play/{id}/{file}`, `GET /api/hls/keys/{id}`, the admin upload API, encoding status, caption list and approve, publish, and the development only `/api/dev-storage` and `/api/dev-media` routes, with real sessions, same origin checks, client address handling and the shared rate limiter.
 - Add `POST /api/watch/progress` for the player sink, reusing the lane C progress service.
@@ -56,3 +59,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - Fix the playback store reading profiles outside the account (row level security hid every profile from the web role).
 - Register the nightly analytics rollup, monthly view event prune and monthly audit prune in the worker. Add `DATABASE_URL_MAINTENANCE`, `WHISPER_FAKE` and `WORKER_SCRATCH_MIN_FREE_RATIO`. Migration 0016. Decisions D-079 to D-082.
 - Add the real pipeline Playwright spec `apps/web/e2e/video-pipeline.e2e.ts` and `scripts/e2e-video-up.sh`.
+
+### Lane J2: quality review
+
+- Remove unused code and four unused dependencies, show an invite as expired only for rejected tokens, and bring DEV-SETUP, ARCHITECTURE, DATA-MODEL and TESTING in line with the built repo. Findings are in `docs/QUALITY-REVIEW.md`.

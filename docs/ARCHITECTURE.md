@@ -88,7 +88,7 @@ Component responsibilities:
 | Video processing | FFmpeg in the worker image, CPU x264 | Reliable, scriptable, no GPU on the VPS. | Cloud transcoding (cost). |
 | Captions | faster-whisper in its own container, CPU int8 | Good English accuracy on clean narration, isolated heavy dependency (Python, model files). | Calling a paid API (cost, data leaves the platform). |
 | Object storage | S3-compatible client (`@aws-sdk/client-s3` and presigner), R2 in production, MinIO (or compatible) in dev | One S3 driver covers both. Multipart presigning is first class. | Vendor SDK for R2 only. |
-| Player | Video.js v10 with hls.js engine (confirm v10 is stable at scaffold, else Vidstack, then Plyr) | Brief. | Native `<video>` only (no Android HLS). |
+| Player | hls.js (the pinned build shipped with Video.js v10) behind our own `PlayerEngine` interface, custom controls (D-042) | Token, key loader and recovery rules need direct engine control. | Video.js v10 skin, Vidstack, Plyr, native `<video>` only (no Android HLS). |
 | Images | `sharp` in the worker | Re-encodes uploads, strips metadata, builds fixed sizes. | Next image optimizer on the VPS (CPU cost). |
 | Email | SMTP through `nodemailer`, provider-agnostic (for example Brevo), Mailpit in dev | No lock-in. Needs SPF, DKIM and DMARC on the sending domain. | Provider SDK. |
 | Reverse proxy | Caddy | Small config, HTTP/2 and HTTP/3, easy headers. | Nginx, Traefik. |
@@ -97,7 +97,7 @@ Component responsibilities:
 
 ### 3.1 Auth recommendation: custom sessions
 
-Recommended: small custom session module in `packages/crypto` and `apps/web/src/server/auth`, following the OWASP session management guidance.
+Built as `packages/auth` (sessions, passwords, field encryption keys) with the web gateway in `apps/web/src/server/auth`, following the OWASP session management guidance.
 
 Why not Auth.js: (1) its user model expects a plain email column, which conflicts with encrypted email plus HMAC lookup hash needed for crypto-shredding; (2) the credentials provider is built around JWT sessions, while we need server-side revocation and per-role lifetimes; (3) the profile layer (Netflix style, kids profiles) sits between account and content and is not modelled by it; (4) no social login is needed at launch.
 
@@ -110,20 +110,28 @@ angels-delight-tv/
   apps/
     web/            Next.js app (site, /admin, API routes)
     worker/         pg-boss consumers, FFmpeg, sharp
-    whisper/        Python service (faster-whisper). Not a pnpm package. Not yet created.
-    edge/           Cloudflare Worker for signed segment URLs (wrangler project). Not yet created.
+    whisper/        Python service (faster-whisper). Not a pnpm package
+    edge/           Cloudflare Worker for signed segment URLs (wrangler project)
   packages/
     db/             Drizzle schema, SQL migrations, withAccount, test database helpers (@ad/db/testing)
     storage/        StorageAdapter interface, s3 driver, local driver, multipart helpers, driver contract suite
     config/         Zod env loaders (web, worker, migrate)
     shared/         Ids, typed errors, crypto helpers, logger, DATA-MODEL enums
-    ui/             tokens.css and the theme variable helper
-    queue/          pg-boss client factory and typed job contracts. Not yet created (lane D).
-    crypto/         argon2 wrapper, field encryption, key wrapping. Not yet created (lane B).
-    video/          pure functions: ladder, ffmpeg args, playlist build and rewrite. Not yet created (lane D).
+    ui/             tokens.css, the theme variable helper and the component library
+    auth/           Argon2id passwords, sessions, field keys, sign up and sign in, staff TOTP, invites, first admin seed
+    security/       Rate limiter, lockouts, CSRF, CSP, client address handling
+    mailer/         SMTP transport and email templates
+    audit/          Append only audit writer and reader
+    analytics/      Event collection, daily rollups, admin analytics reads
+    queue/          pg-boss client factory and typed job contracts
+    video/          Upload sessions, encoding pipeline, captions, playback authorization, lifecycle
+    catalog/        Titles, series, categories, home curation, search, publishing, admin catalog services
+    viewer/         Profiles, kids mode, Continue Watching, My List, progress
+    player/         Player controller, hls.js and native engines, React view
+    theme/          Theme and site settings, logo handling, legal pages
   docs/
   docker/           postgres init scripts, minio init script, caddy config
-  scripts/          footprint check, hook installer. deploy and backup scripts come later
+  scripts/          footprint check, hook installer, sample HLS and e2e helpers. deploy and backup scripts come later
   docker-compose.yml      local dev
   compose.prod.yaml       production (not yet created)
   tsconfig.base.json  eslint.config.js  vitest.config.ts  pnpm-workspace.yaml

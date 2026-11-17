@@ -44,7 +44,7 @@ Targets are floors measured with Vitest coverage on the module, run on the modul
 
 | Module | Lines | Branches | Notes |
 |---|---|---|---|
-| `packages/crypto` (hashing, field encryption, HMAC tokens, key wrap) | 95 | 90 | Tamper, wrong key, expired, rotation |
+| `packages/shared/src/crypto.ts` and `packages/auth/src/keys.ts` (hashing, field encryption, HMAC tokens, key wrap) | 95 | 90 | Tamper, wrong key, expired, rotation |
 | `apps/web/src/server/auth` (sessions, signup, reset, MFA) | 95 | 90 | Includes timing equalization and no-enumeration responses |
 | Authorization policies and visibility predicate | 100 | 100 | Every role and kids case |
 | Rate limiting | 95 | 90 | Refill, exhaustion, concurrency |
@@ -120,7 +120,7 @@ See TDD-PROTOCOL.md section 2 for the scoped commands. Quick reference:
 
 ```bash
 docker compose up -d postgres minio mailpit          # integration and e2e dependencies
-pnpm vitest run packages/crypto/src/field.test.ts
+pnpm vitest run packages/shared/src/crypto.test.ts
 pnpm vitest run apps/web/src/server/profiles --project integration
 pnpm vitest run apps/worker/src/encode/ladder.test.ts
 pnpm exec playwright test apps/web/e2e/watch.e2e.ts
@@ -129,5 +129,5 @@ pnpm exec playwright test apps/web/e2e/watch.e2e.ts
 Coverage for a module only:
 
 ```bash
-pnpm vitest run packages/crypto --coverage --coverage.include='packages/crypto/src/**'
+pnpm vitest run packages/shared/src/crypto.test.ts --coverage --coverage.include='packages/shared/src/crypto.ts'
 ```
