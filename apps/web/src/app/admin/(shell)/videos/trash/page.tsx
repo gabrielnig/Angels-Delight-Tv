@@ -1,10 +1,9 @@
 import type { Metadata } from 'next';
-import { NoAccess } from '@/components/admin/states';
+import { forbidden } from 'next/navigation';
 import { PageHeader } from '@/components/admin/PageHeader';
 import { TrashList } from '@/components/admin/TrashList';
 import { can } from '@/lib/admin/can';
 import { videoService } from '@/lib/data/admin/services';
-import { ROLE_LABELS } from '@/lib/data/admin/session';
 import { requireActor } from '@/lib/data/admin/session-next';
 import { purgeVideoAction, restoreVideoAction } from '../actions';
 
@@ -12,10 +11,7 @@ export const metadata: Metadata = { title: 'Trash' };
 
 export default async function TrashPage() {
   const actor = await requireActor('/admin/videos/trash');
-  if (!can(actor.role, 'video.restore'))
-    return (
-      <NoAccess pageName="Trash" roleLabel={ROLE_LABELS[actor.role]} needed="editors and admins" />
-    );
+  if (!can(actor.role, 'video.restore')) forbidden();
   const videos = await videoService.trashed(actor);
   return (
     <>

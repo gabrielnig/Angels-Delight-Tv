@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { PageHeader } from '@/components/admin/PageHeader';
 import { VideoEditor } from '@/components/admin/VideoEditor';
-import { videoService } from '@/lib/data/admin/services';
+import { adminDataMode, videoService } from '@/lib/data/admin/services';
 import { requireActor } from '@/lib/data/admin/session-next';
 import { NotFound } from '@ad/shared';
 import {
@@ -15,8 +15,9 @@ import {
 
 export const metadata: Metadata = { title: 'Edit video' };
 
-/** The viewer lane owns the watch route. Change this one line when its path is final. */
-const viewerHref = (id: string) => `/watch/${id}`;
+/** Real data previews on the staff only preview page (M16-S08). Fixtures have no streams, so they keep the viewer page. */
+const viewerHref = (id: string) =>
+  adminDataMode() === 'real' ? `/admin/videos/${id}/preview` : `/watch/${id}`;
 
 export default async function VideoEditPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;

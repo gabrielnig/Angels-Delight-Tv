@@ -1,12 +1,12 @@
 import type { Metadata } from 'next';
+import { forbidden } from 'next/navigation';
 import { AuditLogView } from '@/components/admin/AuditLogView';
 import { PageHeader } from '@/components/admin/PageHeader';
 import { LinkButton } from '@/components/admin/Button';
-import { ErrorState, NoAccess } from '@/components/admin/states';
+import { ErrorState } from '@/components/admin/states';
 import { can } from '@/lib/admin/can';
 import { parseAuditQuery } from '@/lib/data/admin/audit-adapter';
 import { auditService } from '@/lib/data/admin/services';
-import { ROLE_LABELS } from '@/lib/data/admin/session';
 import { requireActor } from '@/lib/data/admin/session-next';
 
 export const metadata: Metadata = { title: 'Audit log' };
@@ -18,8 +18,7 @@ export default async function AuditLogPage({
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const actor = await requireActor('/admin/audit-log');
-  if (!can(actor.role, 'audit.read'))
-    return <NoAccess pageName="Audit log" roleLabel={ROLE_LABELS[actor.role]} needed="admins" />;
+  if (!can(actor.role, 'audit.read')) forbidden();
   const query = parseAuditQuery(await searchParams);
   const crumbs = [{ label: 'Admin', href: '/admin' }, { label: 'Audit log' }];
   try {

@@ -207,7 +207,13 @@ export type SignUpResult =
   | { ok: true; next: string }
   | {
       ok: false;
-      reason: 'rate_limited' | 'network' | 'invite_required' | 'invalid_email' | 'weak_password';
+      reason:
+        | 'rate_limited'
+        | 'network'
+        | 'invite_required'
+        | 'invalid_email'
+        | 'weak_password'
+        | 'check_required';
     };
 
 export interface AuthGateway {
@@ -217,7 +223,12 @@ export interface AuthGateway {
     next?: string;
     challengeToken?: string;
   }): Promise<AuthResult>;
-  signUp(input: { email: string; password: string; inviteCode?: string }): Promise<SignUpResult>;
+  signUp(input: {
+    email: string;
+    password: string;
+    inviteCode?: string;
+    challengeToken?: string;
+  }): Promise<SignUpResult>;
   verifyEmail(input: { code: string }): Promise<CodeResult>;
   /** The address waiting for a verification code (set by sign up or sign in), or null. */
   pendingEmail(): Promise<string | null>;

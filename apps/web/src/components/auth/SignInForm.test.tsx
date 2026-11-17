@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
-import { render, screen, waitFor } from '@testing-library/react';
+import { act, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { SignInForm } from './SignInForm';
 
 async function fill(
@@ -12,6 +12,48 @@ async function fill(
   await user.type(screen.getByLabelText(/^Email/), email);
   await user.type(screen.getByLabelText('Password'), password);
 }
+
+interface FakeTurnstile {
+  callback?: (token: string) => void;
+}
+function installTurnstile(): FakeTurnstile {
+  const fake: FakeTurnstile = {};
+  (window as unknown as { turnstile: unknown }).turnstile = {
+    render: (_el: HTMLElement, o: { callback: (t: string) => void }) => {
+      fake.callback = o.callback;
+      return 'w';
+    },
+    reset: vi.fn(),
+    remove: vi.fn(),
+  };
+  return fake;
+}
+
+describe('SignInForm with Turnstile', () => {
+  afterEach(() => {
+    delete (window as unknown as { turnstile?: unknown }).turnstile;
+  });
+
+  it('shows no check without a site key', () => {
+    render(<SignInForm onSubmit={vi.fn()} onDone={vi.fn()} signUpOpen />);
+    expect(screen.queryByRole('group', { name: 'Security check' })).toBeNull();
+  });
+
+  it('waits for the check, then sends its token once', async () => {
+    const fake = installTurnstile();
+    const onSubmit = vi.fn().mockResolvedValue({ ok: true, next: '/' });
+    const user = userEvent.setup();
+    render(<SignInForm onSubmit={onSubmit} onDone={vi.fn()} signUpOpen turnstileSiteKey="site" />);
+    expect(screen.getByRole('group', { name: 'Security check' })).toBeInTheDocument();
+    await fill(user);
+    await user.click(screen.getByRole('button', { name: 'Sign in' }));
+    expect(await screen.findByText(/security check is still running/)).toBeInTheDocument();
+    expect(onSubmit).not.toHaveBeenCalled();
+    act(() => fake.callback!('token-1'));
+    await user.click(screen.getByRole('button', { name: 'Sign in' }));
+    expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({ challengeToken: 'token-1' }));
+  });
+});
 
 describe('SignInForm', () => {
   it('has labelled email and password fields with the right input hints', () => {

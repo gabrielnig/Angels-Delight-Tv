@@ -303,6 +303,13 @@ a {
   overflow: hidden;
 }
 
+.web-turnstile {
+  /* Reserve the widget height so the form does not jump when the check appears. */
+  min-height: 0;
+  display: flex;
+  justify-content: center;
+}
+
 .web-result__icon {
   color: var(--color-primary);
 }

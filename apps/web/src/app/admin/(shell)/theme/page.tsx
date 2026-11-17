@@ -1,8 +1,7 @@
 import type { Metadata } from 'next';
+import { forbidden } from 'next/navigation';
 import { ThemeEditor } from '@/components/admin/theme/ThemeEditor';
-import { NoAccess } from '@/components/admin/states';
 import { allowed, requireActor } from '@/lib/data/admin/session-next';
-import { ROLE_LABELS } from '@/lib/data/admin/session';
 import { themeAdmin } from '@/lib/data/admin/theme';
 import { ErrorState } from '@/components/admin/states';
 import { publishAction, resetAction, saveDraftAction, uploadLogoAction } from './actions';
@@ -13,9 +12,7 @@ export const dynamic = 'force-dynamic';
 export default async function ThemePage() {
   const actor = await requireActor('/admin/theme');
   if (!allowed(actor, 'settings.theme')) {
-    return (
-      <NoAccess pageName="Theme settings" roleLabel={ROLE_LABELS[actor.role]} needed="admins" />
-    );
+    forbidden();
   }
   const result = await themeAdmin.load(actor);
   if (!result.ok) {

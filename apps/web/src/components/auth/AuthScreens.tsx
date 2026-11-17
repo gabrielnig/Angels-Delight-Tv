@@ -20,10 +20,12 @@ export function SignInScreen({
   next,
   signUpOpen,
   notice,
+  turnstileSiteKey,
 }: {
   next?: string;
   signUpOpen: boolean;
   notice?: string;
+  turnstileSiteKey?: string;
 }) {
   const router = useRouter();
   return (
@@ -31,6 +33,7 @@ export function SignInScreen({
       next={next}
       signUpOpen={signUpOpen}
       notice={notice}
+      turnstileSiteKey={turnstileSiteKey}
       onSubmit={signInAction}
       onDone={(destination) => {
         router.push(destination);
@@ -40,11 +43,18 @@ export function SignInScreen({
   );
 }
 
-export function SignUpScreen({ inviteOnly }: { inviteOnly: boolean }) {
+export function SignUpScreen({
+  inviteOnly,
+  turnstileSiteKey,
+}: {
+  inviteOnly: boolean;
+  turnstileSiteKey?: string;
+}) {
   const router = useRouter();
   return (
     <SignUpForm
       inviteOnly={inviteOnly}
+      turnstileSiteKey={turnstileSiteKey}
       onSubmit={signUpAction}
       onDone={(destination) => router.push(destination)}
     />
