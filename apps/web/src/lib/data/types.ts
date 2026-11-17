@@ -59,6 +59,8 @@ export interface VideoSummary {
 
 export interface SeriesSummary {
   kind: 'series';
+  /** Set by the real catalog. Fixtures have none and use the slug as the key. */
+  id?: string;
   slug: string;
   title: string;
   description: string;
@@ -159,11 +161,17 @@ export interface CatalogRepository {
   search(ctx: ViewerContext, q: string, cursor?: string): Promise<Page<CatalogItem>>;
   suggest(ctx: ViewerContext, q: string): Promise<Suggestion[]>;
   popular(ctx: ViewerContext): Promise<VideoSummary[]>;
-  /** null when the title is missing, unpublished or not allowed for the audience. */
-  title(ctx: ViewerContext, slug: string): Promise<TitleDetail | { blocked: 'kids' } | null>;
+  /**
+   * null when the title is missing, unpublished or not allowed for the audience. `redirect` is a path when the
+   * slug moved or belongs to an episode (the page redirects to it).
+   */
+  title(
+    ctx: ViewerContext,
+    slug: string,
+  ): Promise<TitleDetail | { blocked: 'kids' } | { redirect: string } | null>;
   /** Public preview for signed out visitors. */
   publicTitle(slug: string): Promise<VideoSummary | null>;
-  series(ctx: ViewerContext, slug: string): Promise<SeriesDetail | null>;
+  series(ctx: ViewerContext, slug: string): Promise<SeriesDetail | { redirect: string } | null>;
 }
 
 export interface LibraryRepository {
@@ -197,19 +205,38 @@ export type CodeResult = { ok: true; next: string } | CodeFailure;
 
 export type SignUpResult =
   | { ok: true; next: string }
-  | { ok: false; reason: 'rate_limited' | 'network' | 'invite_required' | 'invalid_email' | 'weak_password' };
+  | {
+      ok: false;
+      reason: 'rate_limited' | 'network' | 'invite_required' | 'invalid_email' | 'weak_password';
+    };
 
 export interface AuthGateway {
-  signIn(input: { email: string; password: string; next?: string; challengeToken?: string }): Promise<AuthResult>;
+  signIn(input: {
+    email: string;
+    password: string;
+    next?: string;
+    challengeToken?: string;
+  }): Promise<AuthResult>;
   signUp(input: { email: string; password: string; inviteCode?: string }): Promise<SignUpResult>;
   verifyEmail(input: { code: string }): Promise<CodeResult>;
   resendCode(): Promise<{ ok: true } | { ok: false; reason: 'resend_limit' | 'network' }>;
-  requestPasswordReset(input: { email: string }): Promise<{ ok: true } | { ok: false; reason: 'rate_limited' | 'network' }>;
-  resetPassword(input: { token: string; password: string }): Promise<{ ok: true } | { ok: false; reason: 'expired' | 'weak_password' | 'network' }>;
+  requestPasswordReset(input: {
+    email: string;
+  }): Promise<{ ok: true } | { ok: false; reason: 'rate_limited' | 'network' }>;
+  resetPassword(input: {
+    token: string;
+    password: string;
+  }): Promise<{ ok: true } | { ok: false; reason: 'expired' | 'weak_password' | 'network' }>;
   confirmEmailLink(token: string): Promise<'confirmed' | 'used' | 'expired'>;
   signOut(): Promise<void>;
   /** Re-checks the account password, used by the Kids exit gate. */
-  checkPassword(password: string): Promise<{ ok: true } | { ok: false; reason: 'wrong'; triesLeft: number } | { ok: false; reason: 'locked'; minutes: number }>;
+  checkPassword(
+    password: string,
+  ): Promise<
+    | { ok: true }
+    | { ok: false; reason: 'wrong'; triesLeft: number }
+    | { ok: false; reason: 'locked'; minutes: number }
+  >;
 }
 
 export interface ProfileInput {
@@ -225,9 +252,19 @@ export type ProfileFailure = 'duplicate' | 'limit' | 'last_adult' | 'password_re
 export interface ProfilesRepository {
   list(accountId: string): Promise<Profile[]>;
   get(accountId: string, id: string): Promise<Profile | null>;
-  create(accountId: string, input: ProfileInput): Promise<{ ok: true; profile: Profile } | { ok: false; reason: ProfileFailure }>;
-  update(accountId: string, id: string, input: Partial<ProfileInput> & { password?: string }): Promise<{ ok: true; profile: Profile } | { ok: false; reason: ProfileFailure }>;
-  remove(accountId: string, id: string): Promise<{ ok: true } | { ok: false; reason: ProfileFailure }>;
+  create(
+    accountId: string,
+    input: ProfileInput,
+  ): Promise<{ ok: true; profile: Profile } | { ok: false; reason: ProfileFailure }>;
+  update(
+    accountId: string,
+    id: string,
+    input: Partial<ProfileInput> & { password?: string },
+  ): Promise<{ ok: true; profile: Profile } | { ok: false; reason: ProfileFailure }>;
+  remove(
+    accountId: string,
+    id: string,
+  ): Promise<{ ok: true } | { ok: false; reason: ProfileFailure }>;
   select(accountId: string, id: string): Promise<void>;
   maxProfiles: number;
 }
@@ -276,10 +313,21 @@ export interface AccountRepository {
   devices(accountId: string): Promise<DeviceSession[]>;
   revokeDevice(accountId: string, id: string): Promise<void>;
   revokeOtherDevices(accountId: string): Promise<number>;
-  changePassword(accountId: string, input: { current: string; next: string }): Promise<{ ok: true; signedOutDevices: number } | { ok: false; reason: 'wrong_current' | 'weak' | 'network' }>;
+  changePassword(
+    accountId: string,
+    input: { current: string; next: string },
+  ): Promise<
+    | { ok: true; signedOutDevices: number }
+    | { ok: false; reason: 'wrong_current' | 'weak' | 'network' }
+  >;
   exportState(accountId: string): Promise<ExportState>;
   requestExport(accountId: string): Promise<ExportState>;
-  deleteAccount(accountId: string, input: { password: string; confirm: string }): Promise<{ ok: true; days: number } | { ok: false; reason: 'wrong_password' | 'confirm' | 'network' }>;
+  deleteAccount(
+    accountId: string,
+    input: { password: string; confirm: string },
+  ): Promise<
+    { ok: true; days: number } | { ok: false; reason: 'wrong_password' | 'confirm' | 'network' }
+  >;
 }
 
 export interface SiteContent {

@@ -1,4 +1,4 @@
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import { Badge, ButtonLink } from '@ad/ui';
 import { AppShell } from '../../../../components/Shell';
 import { EpisodeList } from '../../../../components/title/EpisodeList';
@@ -11,6 +11,7 @@ export default async function SeriesPage({ params }: { params: Promise<{ slug: s
   const { ctx } = await requireProfile(`/series/${slug}`);
   const detail = await getCatalog().series(ctx, slug);
   if (!detail) notFound();
+  if ('redirect' in detail) redirect(detail.redirect);
   const { series, seasons, next } = detail;
   const nextVideo = seasons.flatMap((s) => s.episodes).find((e) => e.video.id === next.videoId);
   const rows = seasons.map((s) => ({
@@ -22,7 +23,7 @@ export default async function SeriesPage({ params }: { params: Promise<{ slug: s
         title: e.video.title,
         blurb: e.blurb,
         durationSeconds: e.video.durationSeconds,
-        href: `/watch/${e.video.slug}`,
+        href: `/watch/${e.video.id}`,
         watched: e.watched,
         percent: p > 0 && p < 100 ? p : undefined,
       };
@@ -38,7 +39,7 @@ export default async function SeriesPage({ params }: { params: Promise<{ slug: s
         </p>
         {nextVideo ? (
           <div className="web-title-actions">
-            <ButtonLink href={`/watch/${nextVideo.video.slug}`} icon="play">
+            <ButtonLink href={`/watch/${nextVideo.video.id}`} icon="play">
               {next.resume
                 ? `Resume S${next.season} E${next.episode}`
                 : `Start S${next.season} E${next.episode}`}
