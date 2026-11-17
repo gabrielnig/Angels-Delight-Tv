@@ -3,7 +3,7 @@ import type { AnalyticsEvent, DeviceClass } from './events';
 import { normalizeSearchQuery, parseBatch } from './events';
 import { bucketLabel, STARTUP_EDGES_MS, vitalEdges } from './histogram';
 import { classifyDevice, isBot, viewerHash } from './identity';
-import { ANALYTICS_LIMITS, type RateLimiter } from './rate-limit';
+import { ANALYTICS_LIMITS, type BucketPolicy, type RateLimiter } from './rate-limit';
 
 export interface ViewUpsert {
   playId: string;
@@ -77,14 +77,12 @@ export async function ingestBatch(input: IngestInput): Promise<IngestResult> {
   const now = (input.now ?? (() => new Date()))();
   const { context } = input;
 
-  const subjects: Array<[string, (typeof ANALYTICS_LIMITS)[keyof typeof ANALYTICS_LIMITS]]> = [
-    [`analytics:ip:${context.ipKey}`, ANALYTICS_LIMITS.perIp],
-  ];
-  if (context.profileId)
-    subjects.push([`analytics:profile:${context.profileId}`, ANALYTICS_LIMITS.perProfile]);
-  for (const [key, policy] of subjects) {
+  const subjects: Array<[BucketPolicy, string]> = [[ANALYTICS_LIMITS.perIp, context.ipKey]];
+  if (context.profileId) subjects.push([ANALYTICS_LIMITS.perProfile, context.profileId]);
+  for (const [policy, subject] of subjects) {
+    // Analytics fails open: a broken limiter store must not stop events or playback.
     const verdict = await input.limiter
-      .consume(key, policy)
+      .consume(policy, subject)
       .catch(() => ({ allowed: true, retryAfterSeconds: 0 }));
     if (!verdict.allowed) return { status: 429, retryAfterSeconds: verdict.retryAfterSeconds };
   }
