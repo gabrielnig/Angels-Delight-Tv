@@ -1,6 +1,7 @@
 import { Forbidden, NotFound, ValidationFailed, type Actor, type Logger } from '@ad/shared';
 import { z } from 'zod';
 import { THEME_CACHE_TTL_MS, TtlCache } from './cache';
+import { PAGE_SLUGS, PAGE_TITLES, type PageSlug } from './page-meta';
 import { isPlaceholderBody, sanitizeHtml } from './html-sanitize';
 import {
   PUBLIC_SETTING_KEYS,
@@ -23,15 +24,7 @@ export const SETTINGS_ACTIONS = {
   pageRestored: 'page.restore',
 } as const;
 
-export const PAGE_SLUGS = ['terms', 'privacy', 'about', 'help'] as const;
-export type PageSlug = (typeof PAGE_SLUGS)[number];
-
-export const PAGE_TITLES: Record<PageSlug, string> = {
-  terms: 'Terms of use',
-  privacy: 'Privacy policy',
-  about: 'About',
-  help: 'Help',
-};
+export { PAGE_SLUGS, PAGE_TITLES, type PageSlug } from './page-meta';
 
 export const PAGE_PLACEHOLDERS: Record<PageSlug, string> = {
   terms: '<p>[Add your terms of use here before launch]</p>',

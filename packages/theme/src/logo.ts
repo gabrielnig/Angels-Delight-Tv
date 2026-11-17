@@ -137,11 +137,16 @@ export interface StoredAsset {
 
 export interface AssetStore {
   insert(asset: StoredAsset): Promise<void>;
+  get(id: string): Promise<StoredAsset | null>;
 }
 
 export class MemoryAssetStore implements AssetStore {
   rows: StoredAsset[] = [];
   failNextInsert = false;
+  async get(id: string): Promise<StoredAsset | null> {
+    return this.rows.find((row) => row.id === id) ?? null;
+  }
+
   async insert(asset: StoredAsset): Promise<void> {
     if (this.failNextInsert) {
       this.failNextInsert = false;
@@ -214,6 +219,10 @@ export class LogoUploader {
       await Promise.allSettled(written.map((key) => this.options.storage.delete(key)));
       throw error;
     }
+  }
+
+  async get(id: string): Promise<StoredAsset | null> {
+    return this.options.assets.get(id);
   }
 
   /** The smallest variant that is at least `width` wide, or the largest one. */

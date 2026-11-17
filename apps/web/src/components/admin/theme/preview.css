@@ -1,0 +1,206 @@
+/*
+  Preview scoping. The theme variables are set inline on .adt-preview. Custom properties that use var()
+  are resolved where they are declared, so the type scale tokens are declared again here: without it a
+  changed --type-scale would not reach the text sizes inside the preview. A test checks these formulas
+  against tokens.css.
+*/
+.adt-preview {
+  --text-micro: calc(0.6875rem * var(--type-scale));
+  --text-caption: calc(0.8125rem * var(--type-scale));
+  --text-small: calc(0.875rem * var(--type-scale));
+  --text-body: calc(1rem * var(--type-scale));
+  --text-lead: calc(1.125rem * var(--type-scale));
+  --text-h4: calc(1.25rem * var(--type-scale));
+  --text-h3: calc(1.5rem * var(--type-scale));
+  --text-h2: calc(2rem * var(--type-scale));
+  --text-h1: calc(2.5rem * var(--type-scale));
+  --text-hero: calc(3.5rem * var(--type-scale));
+  container-type: inline-size;
+  background: var(--color-bg);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  font-size: var(--text-body);
+  line-height: var(--leading-normal);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  margin-inline: auto;
+  width: 100%;
+}
+.adt-preview[data-device='mobile'] {
+  max-width: 22.5rem;
+}
+.adt-preview__page {
+  min-height: 26rem;
+  display: grid;
+  align-content: start;
+}
+.adt-pnav {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-3) var(--space-4);
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+  min-height: var(--nav-height);
+}
+.adt-pnav__name {
+  font-family: var(--font-display);
+  font-weight: var(--weight-bold);
+  font-size: var(--text-lead);
+  color: var(--color-primary);
+}
+.adt-pnav__logo {
+  height: 2rem;
+  width: auto;
+  max-width: 10rem;
+  object-fit: contain;
+}
+.adt-pnav__links {
+  display: flex;
+  gap: var(--space-4);
+  color: var(--color-muted);
+  font-size: var(--text-small);
+}
+.adt-pnav__links [aria-current='page'] {
+  color: var(--color-ink);
+  font-weight: var(--weight-semibold);
+}
+.adt-preview[data-device='mobile'] .adt-pnav__links span:not([aria-current]) {
+  display: none;
+}
+.adt-prow {
+  padding: var(--space-4);
+  display: grid;
+  gap: var(--space-2);
+}
+.adt-prow__title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: var(--text-h4);
+  font-weight: var(--weight-semibold);
+}
+.adt-prow__cards {
+  display: grid;
+  gap: var(--card-gap);
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+.adt-preview[data-device='mobile'] .adt-prow__cards {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.adt-preview .ad-hero {
+  min-height: 14rem;
+}
+.adt-watch {
+  padding: var(--space-4);
+  display: grid;
+  gap: var(--space-2);
+}
+.adt-watch__player {
+  aspect-ratio: 16 / 9;
+  border-radius: var(--radius-md);
+  background: var(--color-player-bg);
+  display: grid;
+  place-items: center;
+  position: relative;
+}
+.adt-watch__play {
+  width: 0;
+  height: 0;
+  border-style: solid;
+  border-width: 0.75rem 0 0.75rem 1.25rem;
+  border-color: transparent transparent transparent var(--color-player-ink);
+}
+.adt-watch__rail {
+  position: absolute;
+  left: var(--space-3);
+  right: var(--space-3);
+  bottom: var(--space-3);
+  height: var(--space-1);
+  border-radius: var(--radius-pill);
+  background: var(--color-player-rail);
+}
+.adt-watch__fill {
+  display: block;
+  width: 35%;
+  height: 100%;
+  border-radius: var(--radius-pill);
+  background: var(--color-accent);
+}
+.adt-watch__title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: var(--text-h3);
+}
+.adt-watch__meta {
+  margin: 0;
+  color: var(--color-muted);
+  font-size: var(--text-small);
+}
+.adt-watch__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+.adt-watch__next {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--space-2);
+}
+.adt-tile {
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  display: grid;
+  gap: var(--space-1);
+  color: var(--color-ink);
+}
+.adt-tile[data-tone='0'] {
+  background: var(--color-tile-sky);
+}
+.adt-tile[data-tone='1'] {
+  background: var(--color-tile-mint);
+}
+.adt-tile[data-tone='2'] {
+  background: var(--color-tile-lemon);
+}
+.adt-tile__label {
+  font-size: var(--text-micro);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-weight: var(--weight-semibold);
+}
+.adt-tile__title {
+  font-weight: var(--weight-semibold);
+}
+.adt-signin {
+  margin: var(--space-6) auto;
+  width: min(22rem, calc(100% - var(--space-8)));
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-5);
+  display: grid;
+  gap: var(--space-3);
+}
+.adt-signin__title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: var(--text-h3);
+}
+.adt-signin__field {
+  min-height: var(--touch-target);
+  display: flex;
+  align-items: center;
+  padding: 0 var(--space-3);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  color: var(--color-muted);
+}
+.adt-signin__link {
+  color: var(--color-primary);
+  font-weight: var(--weight-semibold);
+  text-align: center;
+}

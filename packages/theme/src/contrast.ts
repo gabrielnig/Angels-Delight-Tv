@@ -63,10 +63,17 @@ export function contrastRatio(foreground: string, background: string): number | 
   return (light + 0.05) / (dark + 0.05);
 }
 
-/** Two decimals, truncated so 4.4999 never displays as a passing 4.50. */
+/**
+ * Two decimals, rounded like the WCAG tools do. A value just under 3 or 4.5 never displays as passing:
+ * 4.4999 shows 4.49, not 4.50.
+ */
 export function formatRatio(ratio: number | null): string {
   if (ratio === null) return 'Not checked';
-  return `${(Math.floor(ratio * 100 + 1e-9) / 100).toFixed(2)}:1`;
+  let shown = Math.round(ratio * 100) / 100;
+  for (const threshold of [3, 4.5]) {
+    if (ratio < threshold && shown >= threshold) shown = threshold - 0.01;
+  }
+  return `${shown.toFixed(2)}:1`;
 }
 
 export const AA_TEXT = 4.5;
