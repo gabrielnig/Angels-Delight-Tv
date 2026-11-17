@@ -12,9 +12,14 @@ async function run(fn: (a: Awaited<ReturnType<typeof requireActor>>) => Promise<
   return result;
 }
 
-export const suspendUserAction = (id: string, reason: string) =>
-  run((a) => peopleService.suspend(a, String(id), String(reason)));
-export const reinstateUserAction = (id: string) =>
-  run((a) => peopleService.reinstate(a, String(id)));
-export const revokeSessionsAction = (id: string, reason: string) =>
-  run((a) => peopleService.revokeSessions(a, String(id), String(reason)));
+export async function suspendUserAction(id: string, reason: string) {
+  return run((a) => peopleService.suspend(a, String(id), String(reason)));
+}
+
+export async function reinstateUserAction(id: string) {
+  return run((a) => peopleService.reinstate(a, String(id)));
+}
+
+export async function revokeSessionsAction(id: string, reason: string) {
+  return run((a) => peopleService.revokeSessions(a, String(id), String(reason)));
+}

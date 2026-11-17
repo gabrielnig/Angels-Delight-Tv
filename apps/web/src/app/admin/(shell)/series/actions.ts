@@ -15,27 +15,33 @@ async function run(
   return result;
 }
 
-export const createSeriesAction = (title: string, description: string) =>
-  run((a) =>
+export async function createSeriesAction(title: string, description: string) {
+  return run((a) =>
     collectionService.createSeries(a, { title: String(title), description: String(description) }),
   );
-export const updateSeriesAction = (id: string, patch: SeriesPatch) =>
-  run((a) =>
+}
+
+export async function updateSeriesAction(id: string, patch: SeriesPatch) {
+  return run((a) =>
     collectionService.updateSeries(a, String(id), {
       title: patch.title === undefined ? undefined : String(patch.title),
       description: patch.description === undefined ? undefined : String(patch.description),
       published: patch.published === undefined ? undefined : Boolean(patch.published),
     }),
   );
-export const deleteSeriesAction = (id: string) =>
-  run((a) => collectionService.deleteSeries(a, String(id)));
-export const setEpisodeAction = (
+}
+
+export async function deleteSeriesAction(id: string) {
+  return run((a) => collectionService.deleteSeries(a, String(id)));
+}
+
+export async function setEpisodeAction(
   videoId: string,
   seriesId: string | null,
   season: number | null,
   episode: number | null,
-) =>
-  run((a) =>
+) {
+  return run((a) =>
     collectionService.setEpisode(
       a,
       String(videoId),
@@ -44,3 +50,4 @@ export const setEpisodeAction = (
       Number.isInteger(episode) && episode! > 0 ? episode : null,
     ),
   );
+}
