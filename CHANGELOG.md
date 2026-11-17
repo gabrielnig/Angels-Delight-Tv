@@ -22,3 +22,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## Lane I
 - Added `@ad/analytics`, `@ad/audit`, the PWA (manifest, service worker, install prompt, offline page), Data saver helpers, responsive posters, request ids, error reporter, `/api/ready`, `/api/analytics`, web vitals and the error page. Migration 0008. Decisions D-035 to D-041.
+## Lane H: site settings screen
+
+- Add S64 site settings: platform details, features and limits, legal and info pages editor with versions, maintenance mode, launch checklist.
