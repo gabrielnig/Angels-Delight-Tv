@@ -49,7 +49,11 @@ export function createSimulatedTransport(options: SimulatedOptions = {}): Upload
           step++;
           onProgress(Math.floor((blob.size * step) / steps));
           const failHere =
-            info.name.toLowerCase().includes(flaky) && !info.failed && partNumber === total && total > 1 && step === 3;
+            info.name.toLowerCase().includes(flaky) &&
+            !info.failed &&
+            partNumber === total &&
+            total > 1 &&
+            step === 3;
           if (failHere) {
             info.failed = true;
             clearInterval(timer);

@@ -17,7 +17,15 @@ const TILE_LINKS = {
   failed: { label: 'Failed', href: '/admin/videos?status=failed' },
 } as const;
 
-export function DashboardView({ data, name, hour }: { data: DashboardData; name: string; hour: number }) {
+export function DashboardView({
+  data,
+  name,
+  hour,
+}: {
+  data: DashboardData;
+  name: string;
+  hour: number;
+}) {
   const upload = (
     <LinkButton href="/admin/videos/upload" variant="accent" icon="upload">
       Upload videos
@@ -55,7 +63,12 @@ export function DashboardView({ data, name, hour }: { data: DashboardData; name:
 
   return (
     <>
-      <PageHeader crumbs={[{ label: 'Admin' }]} title="Dashboard" lead={greeting(name, hour, data.attention.length)} actions={upload} />
+      <PageHeader
+        crumbs={[{ label: 'Admin' }]}
+        title="Dashboard"
+        lead={greeting(name, hour, data.attention.length)}
+        actions={upload}
+      />
 
       <div className="adm-tiles" aria-label="Video counts">
         {(Object.keys(TILE_LINKS) as Array<keyof typeof TILE_LINKS>).map((key) => {
@@ -73,7 +86,9 @@ export function DashboardView({ data, name, hour }: { data: DashboardData; name:
                 </>
               ) : (
                 <>
-                  <p className="adm-muted" style={{ margin: 0 }}>We could not load this number. Your videos are safe.</p>
+                  <p className="adm-muted" style={{ margin: 0 }}>
+                    We could not load this number. Your videos are safe.
+                  </p>
                   <RetryButton />
                 </>
               )}
@@ -83,7 +98,10 @@ export function DashboardView({ data, name, hour }: { data: DashboardData; name:
       </div>
 
       <div className="adm-dash-grid">
-        <Card title="Needs attention" aside={<span className="adm-muted">{data.attention.length} items</span>}>
+        <Card
+          title="Needs attention"
+          aside={<span className="adm-muted">{data.attention.length} items</span>}
+        >
           {data.attention.length === 0 ? (
             <EmptyState title="All clear." help="Nothing is waiting on you." icon="check" />
           ) : (
@@ -94,7 +112,10 @@ export function DashboardView({ data, name, hour }: { data: DashboardData; name:
                     <p className="adm-list__title">{item.title}</p>
                     <p className="adm-list__sub">{item.detail}</p>
                   </div>
-                  <LinkButton href={item.href} variant={item.kind === 'ready' ? 'primary' : 'secondary'}>
+                  <LinkButton
+                    href={item.href}
+                    variant={item.kind === 'ready' ? 'primary' : 'secondary'}
+                  >
                     {item.actionLabel}
                   </LinkButton>
                 </li>
@@ -104,7 +125,14 @@ export function DashboardView({ data, name, hour }: { data: DashboardData; name:
         </Card>
 
         <div className="adm-stack">
-          <Card title="Recent uploads" aside={<Link className="adm-link" href="/admin/videos">All videos</Link>}>
+          <Card
+            title="Recent uploads"
+            aside={
+              <Link className="adm-link" href="/admin/videos">
+                All videos
+              </Link>
+            }
+          >
             <ul className="adm-list">
               {data.recent.map((item) => (
                 <li key={item.id}>
@@ -127,7 +155,10 @@ export function DashboardView({ data, name, hour }: { data: DashboardData; name:
               <>
                 <p className="adm-tile__value" style={{ margin: 0 }}>
                   {formatBytes(data.storage.value!.usedBytes)}{' '}
-                  <span className="adm-muted" style={{ fontSize: 'var(--text-body)', fontWeight: 'var(--weight-regular)' }}>
+                  <span
+                    className="adm-muted"
+                    style={{ fontSize: 'var(--text-body)', fontWeight: 'var(--weight-regular)' }}
+                  >
                     of {formatBytes(data.storage.value!.capBytes)}
                   </span>
                 </p>
@@ -136,14 +167,20 @@ export function DashboardView({ data, name, hour }: { data: DashboardData; name:
                   value={(data.storage.value!.usedBytes / data.storage.value!.capBytes) * 100}
                 />
                 <p className="adm-muted" style={{ margin: 0 }}>
-                  Originals {formatBytes(data.storage.value!.originalsBytes)}. Streaming sizes {formatBytes(data.storage.value!.streamingBytes)}. About {data.storage.value!.monthsLeft} months left at this pace.
+                  Originals {formatBytes(data.storage.value!.originalsBytes)}. Streaming sizes{' '}
+                  {formatBytes(data.storage.value!.streamingBytes)}. About{' '}
+                  {data.storage.value!.monthsLeft} months left at this pace.
                 </p>
               </>
             ) : data.storage.state === 'forbidden' ? (
-              <p className="adm-muted" style={{ margin: 0 }}>Storage is shown to admins. Ask an admin if you need it.</p>
+              <p className="adm-muted" style={{ margin: 0 }}>
+                Storage is shown to admins. Ask an admin if you need it.
+              </p>
             ) : (
               <>
-                <p className="adm-muted" style={{ margin: 0 }}>We could not load this number. Your videos are safe.</p>
+                <p className="adm-muted" style={{ margin: 0 }}>
+                  We could not load this number. Your videos are safe.
+                </p>
                 <RetryButton />
               </>
             )}
@@ -154,20 +191,30 @@ export function DashboardView({ data, name, hour }: { data: DashboardData; name:
       <Card>
         {data.views.state === 'ready' ? (
           <>
-            <Chart title="Views, last 7 days" noun="views" points={data.views.value!.days} kind="bar" />
+            <Chart
+              title="Views, last 7 days"
+              noun="views"
+              points={data.views.value!.days}
+              kind="bar"
+            />
             <p className="adm-muted" style={{ margin: 0 }}>
               {data.views.value!.total.toLocaleString('en-NG')} views in total,{' '}
-              {data.views.value!.changePercent >= 0 ? 'up' : 'down'} {Math.abs(data.views.value!.changePercent)} percent on the week before.{' '}
+              {data.views.value!.changePercent >= 0 ? 'up' : 'down'}{' '}
+              {Math.abs(data.views.value!.changePercent)} percent on the week before.{' '}
               <Link className="adm-link" href="/admin/analytics">
                 Open Analytics
               </Link>
             </p>
           </>
         ) : data.views.state === 'forbidden' ? (
-          <p className="adm-muted" style={{ margin: 0 }}>Views are shown to Analysts and Admins. Ask an Admin if you need them.</p>
+          <p className="adm-muted" style={{ margin: 0 }}>
+            Views are shown to Analysts and Admins. Ask an Admin if you need them.
+          </p>
         ) : (
           <>
-            <p className="adm-muted" style={{ margin: 0 }}>We could not load views. Your videos are safe.</p>
+            <p className="adm-muted" style={{ margin: 0 }}>
+              We could not load views. Your videos are safe.
+            </p>
             <RetryButton />
           </>
         )}

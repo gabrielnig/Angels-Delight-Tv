@@ -23,7 +23,8 @@ export function CodeForm({ next }: { next: string }) {
     if (digit) slots.current[index + 1]?.focus();
   };
   const onKeyDown = (index: number, event: KeyboardEvent<HTMLInputElement>) => {
-    if (event.key === 'Backspace' && !slots.current[index]?.value) slots.current[index - 1]?.focus();
+    if (event.key === 'Backspace' && !slots.current[index]?.value)
+      slots.current[index - 1]?.focus();
   };
   const onPaste = (event: ClipboardEvent) => {
     const digits = event.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6);

@@ -11,7 +11,14 @@ interface ProgressBarProps {
 }
 
 /** DESIGN-SYSTEM 11.18. Never a bar without a number on admin tasks. */
-export function ProgressBar({ value, label, tone = 'primary', indeterminate, small, showNumber = true }: ProgressBarProps) {
+export function ProgressBar({
+  value,
+  label,
+  tone = 'primary',
+  indeterminate,
+  small,
+  showNumber = true,
+}: ProgressBarProps) {
   const pct = Math.max(0, Math.min(100, Math.round(value)));
   return (
     <div className="adm-progress">
@@ -24,7 +31,10 @@ export function ProgressBar({ value, label, tone = 'primary', indeterminate, sma
         aria-valuenow={indeterminate ? undefined : pct}
         aria-valuetext={indeterminate ? 'Working' : `${pct} percent`}
       >
-        <div className={`adm-progress__fill adm-progress__fill--${tone}`} style={{ width: indeterminate ? '40%' : `${pct}%` }} />
+        <div
+          className={`adm-progress__fill adm-progress__fill--${tone}`}
+          style={{ width: indeterminate ? '40%' : `${pct}%` }}
+        />
       </div>
       {showNumber && !indeterminate ? <span className="adm-progress__num">{pct}%</span> : null}
     </div>

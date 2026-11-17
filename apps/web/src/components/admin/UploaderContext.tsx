@@ -50,7 +50,13 @@ export function localResumeStore(): ResumeStore {
  * pages (the top bar chip reads the same state). `mode` comes from the server: fixture until the
  * upload API is wired.
  */
-export function UploaderProvider({ mode, children }: { mode: 'fixture' | 'http'; children: ReactNode }) {
+export function UploaderProvider({
+  mode,
+  children,
+}: {
+  mode: 'fixture' | 'http';
+  children: ReactNode;
+}) {
   const uploader = useMemo(
     () =>
       createUploader({
@@ -88,7 +94,9 @@ export function UploaderProvider({ mode, children }: { mode: 'fixture' | 'http';
   }, []);
 
   useEffect(() => {
-    const active = lanes.some((lane) => ['waiting', 'uploading', 'offline', 'processing'].includes(lane.status));
+    const active = lanes.some((lane) =>
+      ['waiting', 'uploading', 'offline', 'processing'].includes(lane.status),
+    );
     if (!active) return;
     const warn = (event: BeforeUnloadEvent) => {
       event.preventDefault();
@@ -102,7 +110,9 @@ export function UploaderProvider({ mode, children }: { mode: 'fixture' | 'http';
 }
 
 export function summarizeUploads(lanes: Lane[]) {
-  const active = lanes.filter((l) => ['waiting', 'uploading', 'offline', 'processing', 'paused'].includes(l.status));
+  const active = lanes.filter((l) =>
+    ['waiting', 'uploading', 'offline', 'processing', 'paused'].includes(l.status),
+  );
   const size = active.reduce((sum, l) => sum + l.size, 0);
   const sent = active.reduce((sum, l) => sum + l.bytesUploaded, 0);
   return { count: active.length, percent: size ? Math.floor((sent / size) * 100) : 0 };

@@ -68,7 +68,8 @@ export function Banner({
   children: ReactNode;
   action?: ReactNode;
 }) {
-  const icon: IconName = tone === 'danger' || tone === 'warning' ? 'alert' : tone === 'success' ? 'check' : 'info';
+  const icon: IconName =
+    tone === 'danger' || tone === 'warning' ? 'alert' : tone === 'success' ? 'check' : 'info';
   return (
     <div className={`adm-banner adm-banner--${tone}`} role={tone === 'danger' ? 'alert' : 'status'}>
       <Icon name={icon} size={20} />
@@ -79,7 +80,15 @@ export function Banner({
 }
 
 /** Skeleton with matched geometry. Appears after 300ms via CSS, static under reduced motion. */
-export function Skeleton({ rows = 3, height = '3.5rem', label = 'Loading' }: { rows?: number; height?: string; label?: string }) {
+export function Skeleton({
+  rows = 3,
+  height = '3.5rem',
+  label = 'Loading',
+}: {
+  rows?: number;
+  height?: string;
+  label?: string;
+}) {
   return (
     <div className="adm-skeleton" aria-busy="true" aria-label={label} role="status">
       {Array.from({ length: rows }, (_, index) => (
@@ -89,7 +98,15 @@ export function Skeleton({ rows = 3, height = '3.5rem', label = 'Loading' }: { r
   );
 }
 
-export function NoAccess({ pageName, roleLabel, needed }: { pageName: string; roleLabel: string; needed: string }) {
+export function NoAccess({
+  pageName,
+  roleLabel,
+  needed,
+}: {
+  pageName: string;
+  roleLabel: string;
+  needed: string;
+}) {
   return (
     <div className="adm-error" role="alert">
       <Icon name="lock" size={48} />

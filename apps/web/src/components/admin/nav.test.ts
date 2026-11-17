@@ -12,9 +12,27 @@ describe('navForRole', () => {
   it('shows editors the content pipeline but not admin only pages', () => {
     const names = labels('editor');
     expect(names).toEqual(
-      expect.arrayContaining(['Dashboard', 'Videos', 'Upload', 'Encoding', 'Captions', 'Series', 'Categories', 'Trash', 'Home curation', 'Analytics']),
+      expect.arrayContaining([
+        'Dashboard',
+        'Videos',
+        'Upload',
+        'Encoding',
+        'Captions',
+        'Series',
+        'Categories',
+        'Trash',
+        'Home curation',
+        'Analytics',
+      ]),
     );
-    for (const hidden of ['Users', 'Audit log', 'Roles and invites', 'System', 'Theme', 'Site settings']) {
+    for (const hidden of [
+      'Users',
+      'Audit log',
+      'Roles and invites',
+      'System',
+      'Theme',
+      'Site settings',
+    ]) {
       expect(names).not.toContain(hidden);
     }
   });
@@ -54,6 +72,6 @@ describe('breadcrumbTrail', () => {
     ]);
   });
   it('labels the dashboard root', () => {
-    expect(breadcrumbTrail('/admin')).toEqual([{ label: 'Admin' }, ]);
+    expect(breadcrumbTrail('/admin')).toEqual([{ label: 'Admin' }]);
   });
 });

@@ -22,7 +22,14 @@ const H = 220;
 const PAD = { top: 12, right: 12, bottom: 28, left: 44 };
 
 /** Accessible SVG chart with a "Show as table" switch. Colour is never the only signal. */
-export function Chart({ title, noun = 'views', points, kind = 'line', format, emptyText }: ChartProps) {
+export function Chart({
+  title,
+  noun = 'views',
+  points,
+  kind = 'line',
+  format,
+  emptyText,
+}: ChartProps) {
   const [asTable, setAsTable] = useState(false);
   const id = useId();
   const fmt = format ?? ((value: number) => value.toLocaleString('en-NG'));
@@ -91,7 +98,10 @@ export function Chart({ title, noun = 'views', points, kind = 'line', format, em
                     className="adm-chart__area"
                     d={`M0 ${plotH} ${laid.map((p) => `L${p.x} ${p.y}`).join(' ')} L${plotW} ${plotH} Z`}
                   />
-                  <polyline className="adm-chart__line" points={laid.map((p) => `${p.x},${p.y}`).join(' ')} />
+                  <polyline
+                    className="adm-chart__line"
+                    points={laid.map((p) => `${p.x},${p.y}`).join(' ')}
+                  />
                   {laid.map((p) => (
                     <circle key={p.label} className="adm-chart__dot" cx={p.x} cy={p.y} r={3.5}>
                       <title>{`${p.label}: ${fmt(p.value)}`}</title>
@@ -102,7 +112,15 @@ export function Chart({ title, noun = 'views', points, kind = 'line', format, em
                 laid.map((p, index) => {
                   const slot = plotW / points.length;
                   return (
-                    <rect key={p.label} className="adm-chart__bar" x={index * slot + (slot - barW) / 2} y={p.y} width={barW} height={plotH - p.y} rx={2}>
+                    <rect
+                      key={p.label}
+                      className="adm-chart__bar"
+                      x={index * slot + (slot - barW) / 2}
+                      y={p.y}
+                      width={barW}
+                      height={plotH - p.y}
+                      rx={2}
+                    >
                       <title>{`${p.label}: ${fmt(p.value)}`}</title>
                     </rect>
                   );
@@ -113,7 +131,11 @@ export function Chart({ title, noun = 'views', points, kind = 'line', format, em
                   <text
                     key={p.label}
                     className="adm-chart__label"
-                    x={kind === 'bar' ? index * (plotW / points.length) + plotW / points.length / 2 : p.x}
+                    x={
+                      kind === 'bar'
+                        ? index * (plotW / points.length) + plotW / points.length / 2
+                        : p.x
+                    }
                     y={plotH + 18}
                     textAnchor="middle"
                   >

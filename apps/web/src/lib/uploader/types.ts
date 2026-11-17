@@ -63,14 +63,7 @@ export interface NetworkSource {
 }
 
 export type LaneStatus =
-  | 'waiting'
-  | 'uploading'
-  | 'paused'
-  | 'offline'
-  | 'processing'
-  | 'done'
-  | 'failed'
-  | 'rejected';
+  'waiting' | 'uploading' | 'paused' | 'offline' | 'processing' | 'done' | 'failed' | 'rejected';
 
 export interface Lane {
   id: string;

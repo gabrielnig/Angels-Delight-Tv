@@ -10,13 +10,22 @@ describe('fixture admin sign in', () => {
 
   it('gives one generic answer for a wrong password and for an unknown email', () => {
     const auth = createFixtureAuth({ now: () => 0 });
-    expect(auth.checkPassword('chiamaka@example.test', 'nope')).toEqual({ ok: false, reason: 'invalid' });
-    expect(auth.checkPassword('nobody@example.test', 'nope')).toEqual({ ok: false, reason: 'invalid' });
+    expect(auth.checkPassword('chiamaka@example.test', 'nope')).toEqual({
+      ok: false,
+      reason: 'invalid',
+    });
+    expect(auth.checkPassword('nobody@example.test', 'nope')).toEqual({
+      ok: false,
+      reason: 'invalid',
+    });
   });
 
   it('does not let a viewer account into admin', () => {
     const auth = createFixtureAuth({ now: () => 0 });
-    expect(auth.checkPassword('viewer@example.test', FIXTURE_PASSWORD)).toEqual({ ok: false, reason: 'invalid' });
+    expect(auth.checkPassword('viewer@example.test', FIXTURE_PASSWORD)).toEqual({
+      ok: false,
+      reason: 'invalid',
+    });
   });
 
   it('locks after 5 failures for 15 minutes then lets the person back in', () => {

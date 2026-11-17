@@ -16,12 +16,21 @@ interface FixtureAccount extends AdminActor {
 }
 
 const ACCOUNTS: FixtureAccount[] = [
-  { accountId: 'acc_chiamaka', email: 'chiamaka@example.test', name: 'Chiamaka Okafor', role: 'admin' },
+  {
+    accountId: 'acc_chiamaka',
+    email: 'chiamaka@example.test',
+    name: 'Chiamaka Okafor',
+    role: 'admin',
+  },
   { accountId: 'acc_ngozi', email: 'ngozi@example.test', name: 'Ngozi Eze', role: 'editor' },
   { accountId: 'acc_viewer', email: 'viewer@example.test', name: 'Ada Viewer', role: 'viewer' },
 ];
 
-const toActor = ({ accountId, role, name }: FixtureAccount): AdminActor => ({ accountId, role, name });
+const toActor = ({ accountId, role, name }: FixtureAccount): AdminActor => ({
+  accountId,
+  role,
+  name,
+});
 
 export type PasswordResult =
   | { ok: true; actor: AdminActor }
@@ -40,7 +49,11 @@ export function createFixtureAuth({ now = Date.now }: { now?: () => number } = {
       const key = email.trim().toLowerCase();
       const state = failures.get(key) ?? { count: 0, lockedUntil: 0 };
       if (state.lockedUntil > now()) {
-        return { ok: false, reason: 'locked', retryInMinutes: Math.ceil((state.lockedUntil - now()) / 60_000) };
+        return {
+          ok: false,
+          reason: 'locked',
+          retryInMinutes: Math.ceil((state.lockedUntil - now()) / 60_000),
+        };
       }
       const account = ACCOUNTS.find((a) => a.email === key);
       const allowed = account && account.role !== 'viewer';

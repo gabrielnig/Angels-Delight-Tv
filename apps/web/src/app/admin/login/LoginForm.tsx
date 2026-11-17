@@ -17,8 +17,24 @@ export function LoginForm({ next }: { next: string }) {
           {state.error}
         </p>
       ) : null}
-      <TextField label="Email" name="email" type="email" autoComplete="username" inputMode="email" defaultValue={state.email} required disabled={state.locked} />
-      <TextField label="Password" name="password" type={show ? 'text' : 'password'} autoComplete="current-password" required disabled={state.locked} />
+      <TextField
+        label="Email"
+        name="email"
+        type="email"
+        autoComplete="username"
+        inputMode="email"
+        defaultValue={state.email}
+        required
+        disabled={state.locked}
+      />
+      <TextField
+        label="Password"
+        name="password"
+        type={show ? 'text' : 'password'}
+        autoComplete="current-password"
+        required
+        disabled={state.locked}
+      />
       <div className="adm-row" style={{ justifyContent: 'space-between' }}>
         <Button variant="ghost" aria-pressed={show} onClick={() => setShow((v) => !v)}>
           {show ? 'Hide password' : 'Show password'}

@@ -11,11 +11,22 @@ vi.mock('./UploaderContext', () => ({
 
 const { AdminShell } = await import('./AdminShell');
 
-const base = { platformName: 'Test TV', counts: { encoding: 2, captions: 0 }, signOut: async () => {} };
+const base = {
+  platformName: 'Test TV',
+  counts: { encoding: 2, captions: 0 },
+  signOut: async () => {},
+};
 
 describe('AdminShell', () => {
   it('shows an editor only what the role can open and marks the current page', () => {
-    render(<AdminShell {...base} actor={{ name: 'Ngozi Eze', role: 'editor', roleLabel: 'Content editor' }}>x</AdminShell>);
+    render(
+      <AdminShell
+        {...base}
+        actor={{ name: 'Ngozi Eze', role: 'editor', roleLabel: 'Content editor' }}
+      >
+        x
+      </AdminShell>,
+    );
     const nav = screen.getByRole('navigation', { name: 'Admin' });
     expect(nav).toHaveTextContent('Videos');
     expect(nav).not.toHaveTextContent('Audit log');
@@ -24,12 +35,20 @@ describe('AdminShell', () => {
   });
 
   it('shows admins the control pages', () => {
-    render(<AdminShell {...base} actor={{ name: 'Chiamaka Okafor', role: 'admin', roleLabel: 'Admin' }}>x</AdminShell>);
+    render(
+      <AdminShell {...base} actor={{ name: 'Chiamaka Okafor', role: 'admin', roleLabel: 'Admin' }}>
+        x
+      </AdminShell>,
+    );
     expect(screen.getByRole('link', { name: 'Audit log' })).toBeInTheDocument();
   });
 
   it('opens and closes the drawer from the menu button', async () => {
-    render(<AdminShell {...base} actor={{ name: 'A B', role: 'admin', roleLabel: 'Admin' }}>x</AdminShell>);
+    render(
+      <AdminShell {...base} actor={{ name: 'A B', role: 'admin', roleLabel: 'Admin' }}>
+        x
+      </AdminShell>,
+    );
     const button = screen.getByRole('button', { name: 'Open menu' });
     expect(button).toHaveAttribute('aria-expanded', 'false');
     await userEvent.click(button);

@@ -8,7 +8,11 @@ import { LoginForm } from './LoginForm';
 export const metadata: Metadata = { title: 'Sign in' };
 export const dynamic = 'force-dynamic';
 
-export default async function AdminLoginPage({ searchParams }: { searchParams: Promise<{ next?: string; expired?: string }> }) {
+export default async function AdminLoginPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ next?: string; expired?: string }>;
+}) {
   const params = await searchParams;
   const next = safeNext(params.next);
   if (await getActor()) redirect(next);
@@ -18,7 +22,9 @@ export default async function AdminLoginPage({ searchParams }: { searchParams: P
       lead="Use your staff email and password."
       notice={
         params.expired ? (
-          <Banner tone="warning">Your session ended after 30 minutes without activity. Sign in to continue.</Banner>
+          <Banner tone="warning">
+            Your session ended after 30 minutes without activity. Sign in to continue.
+          </Banner>
         ) : null
       }
     >

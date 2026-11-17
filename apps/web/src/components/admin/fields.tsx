@@ -1,7 +1,12 @@
 'use client';
 
 import { useId } from 'react';
-import type { InputHTMLAttributes, ReactNode, SelectHTMLAttributes, TextareaHTMLAttributes } from 'react';
+import type {
+  InputHTMLAttributes,
+  ReactNode,
+  SelectHTMLAttributes,
+  TextareaHTMLAttributes,
+} from 'react';
 
 interface FieldShell {
   label: string;
@@ -11,7 +16,14 @@ interface FieldShell {
   aside?: ReactNode;
 }
 
-function Shell({ id, label, hint, error, aside, children }: FieldShell & { id: string; children: ReactNode }) {
+function Shell({
+  id,
+  label,
+  hint,
+  error,
+  aside,
+  children,
+}: FieldShell & { id: string; children: ReactNode }) {
   return (
     <div className={`adm-field${error ? ' has-error' : ''}`}>
       <div className="adm-field__head">
@@ -35,22 +47,47 @@ function Shell({ id, label, hint, error, aside, children }: FieldShell & { id: s
   );
 }
 
-const described = (id: string, hint?: string, error?: string) => (error ? `${id}-error` : hint ? `${id}-hint` : undefined);
+const described = (id: string, hint?: string, error?: string) =>
+  error ? `${id}-error` : hint ? `${id}-hint` : undefined;
 
-export function TextField({ label, hint, error, aside, ...rest }: FieldShell & InputHTMLAttributes<HTMLInputElement>) {
+export function TextField({
+  label,
+  hint,
+  error,
+  aside,
+  ...rest
+}: FieldShell & InputHTMLAttributes<HTMLInputElement>) {
   const id = useId();
   return (
     <Shell id={id} label={label} hint={hint} error={error} aside={aside}>
-      <input id={id} className="adm-input" aria-invalid={error ? true : undefined} aria-describedby={described(id, hint, error)} {...rest} />
+      <input
+        id={id}
+        className="adm-input"
+        aria-invalid={error ? true : undefined}
+        aria-describedby={described(id, hint, error)}
+        {...rest}
+      />
     </Shell>
   );
 }
 
-export function TextArea({ label, hint, error, aside, ...rest }: FieldShell & TextareaHTMLAttributes<HTMLTextAreaElement>) {
+export function TextArea({
+  label,
+  hint,
+  error,
+  aside,
+  ...rest
+}: FieldShell & TextareaHTMLAttributes<HTMLTextAreaElement>) {
   const id = useId();
   return (
     <Shell id={id} label={label} hint={hint} error={error} aside={aside}>
-      <textarea id={id} className="adm-input adm-input--area" aria-invalid={error ? true : undefined} aria-describedby={described(id, hint, error)} {...rest} />
+      <textarea
+        id={id}
+        className="adm-input adm-input--area"
+        aria-invalid={error ? true : undefined}
+        aria-describedby={described(id, hint, error)}
+        {...rest}
+      />
     </Shell>
   );
 }
@@ -61,11 +98,18 @@ export function SelectField({
   error,
   options,
   ...rest
-}: FieldShell & SelectHTMLAttributes<HTMLSelectElement> & { options: Array<{ value: string; label: string }> }) {
+}: FieldShell &
+  SelectHTMLAttributes<HTMLSelectElement> & { options: Array<{ value: string; label: string }> }) {
   const id = useId();
   return (
     <Shell id={id} label={label} hint={hint} error={error}>
-      <select id={id} className="adm-input adm-select" aria-invalid={error ? true : undefined} aria-describedby={described(id, hint, error)} {...rest}>
+      <select
+        id={id}
+        className="adm-input adm-select"
+        aria-invalid={error ? true : undefined}
+        aria-describedby={described(id, hint, error)}
+        {...rest}
+      >
         {options.map((option) => (
           <option key={option.value} value={option.value}>
             {option.label}
@@ -76,7 +120,10 @@ export function SelectField({
   );
 }
 
-export function Checkbox({ label, ...rest }: { label: string } & Omit<InputHTMLAttributes<HTMLInputElement>, 'type'>) {
+export function Checkbox({
+  label,
+  ...rest
+}: { label: string } & Omit<InputHTMLAttributes<HTMLInputElement>, 'type'>) {
   return (
     <label className="adm-check">
       <input type="checkbox" {...rest} />
