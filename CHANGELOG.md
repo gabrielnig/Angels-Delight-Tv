@@ -40,3 +40,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 ## Lane E: viewer UI
 
 - Add the `@ad/ui` component library and the viewer pages in `apps/web`: landing, sign-in, sign-up, verify, recovery, profiles, Home, Browse, Search, title, series, My List, account, legal, help and system pages.
+
+## Lane F: admin UI
+
+- Add the admin area in `apps/web` under `/admin`: shell with role aware menu and breadcrumbs, dashboard, videos list, upload with a resumable multi file queue, video edit with status checklist, poster picker and crop, publish and schedule dialog, encoding queue, captions list and review, series, categories, trash, home curation with live preview, users, roles and invites, audit log with detail panel and CSV export, analytics (overview and per video) with accessible SVG charts, my account and system.
+- Add `lib/uploader` (framework free resumable upload engine with fake, simulated and HTTP transports) and `lib/admin` (`can`, cue and poster rules, formatters).
+- Add typed admin services with fixture implementations, real audit, analytics and player quality reads with `ADMIN_DATA=real`, and a guard that refuses fixture data in production.
