@@ -57,6 +57,13 @@
       "when": 1794945045111,
       "tag": "0007_jobs_error_detail_heartbeat",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1794945046111,
+      "tag": "0008_analytics_collection",
+      "breakpoints": true
     }
   ]
 }

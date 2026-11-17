@@ -80,12 +80,25 @@ export const viewEvents = pgTable(
     completed: boolean('completed').notNull().default(false),
     maxHeight: smallint('max_height'),
     country: char('country', { length: 2 }),
+    /** Daily rotating hash of the profile, null for kids. Cannot be joined across days (M19-S07). */
+    viewerHash: text('viewer_hash'),
+    deviceClass: text('device_class'),
+    saveData: boolean('save_data'),
   },
   (t) => [
     check('view_events_audience_known', sql`${t.audience} IN ('general', 'kids')`),
+    check(
+      'view_events_device_known',
+      sql`${t.deviceClass} IS NULL OR ${t.deviceClass} IN ('phone', 'tablet', 'desktop', 'tv', 'other')`,
+    ),
+    check(
+      'view_events_kids_no_viewer_hash',
+      sql`${t.audience} <> 'kids' OR ${t.viewerHash} IS NULL`,
+    ),
     check('view_events_kids_anonymous', sql`${t.audience} <> 'kids' OR ${t.profileId} IS NULL`),
     index('view_events_video_started_idx').on(t.videoId, t.startedAt),
     index('view_events_started_idx').on(t.startedAt),
+    index('view_events_viewer_idx').on(t.startedAt, t.viewerHash),
   ],
 );
 
@@ -102,4 +115,26 @@ export const videoDailyStats = pgTable(
     updatedAt: updatedAt(),
   },
   (t) => [primaryKey({ columns: [t.videoId, t.day] })],
+);
+
+/** One row per day, written by the nightly rollup. `uniques` counts daily rotating viewer hashes. */
+export const siteDailyStats = pgTable('site_daily_stats', {
+  day: date('day', { mode: 'string' }).primaryKey(),
+  views: integer('views').notNull().default(0),
+  uniques: integer('uniques').notNull().default(0),
+  watchMs: bigint('watch_ms', { mode: 'number' }).notNull().default(0),
+  completions: integer('completions').notNull().default(0),
+  updatedAt: updatedAt(),
+});
+
+/** Small daily counters: device and connection splits, errors by code, vitals and startup buckets, empty searches. */
+export const analyticsCounters = pgTable(
+  'analytics_counters',
+  {
+    day: date('day', { mode: 'string' }).notNull(),
+    kind: text('kind').notNull(),
+    key: text('key').notNull(),
+    count: bigint('count', { mode: 'number' }).notNull().default(0),
+  },
+  (t) => [primaryKey({ columns: [t.day, t.kind, t.key] })],
 );
