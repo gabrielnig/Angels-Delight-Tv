@@ -48,6 +48,13 @@ describe('ProfileTile', () => {
   });
 });
 
+describe('ProfileTile as a link', () => {
+  it('renders a link when given an href, for manage mode', () => {
+    render(<ProfileTile name="Emeka" editing href="/profiles/p2/edit" />);
+    expect(screen.getByRole('link', { name: 'Edit Emeka' })).toHaveAttribute('href', '/profiles/p2/edit');
+  });
+});
+
 describe('AddProfileTile', () => {
   it('is a link to the new profile form', () => {
     render(<AddProfileTile href="/profiles/new" />);
