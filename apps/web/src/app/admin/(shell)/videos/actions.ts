@@ -34,9 +34,15 @@ export async function retryEncodeAction(id: string): Promise<CommandResult> {
   return result;
 }
 
-export async function registerUploadAction(name: string, sizeBytes: number): Promise<{ id: string }> {
+export async function registerUploadAction(
+  name: string,
+  sizeBytes: number,
+): Promise<{ id: string }> {
   const actor = await requireActor('/admin/videos/upload');
-  const result = await videoService.createFromUpload(actor, { name: String(name).slice(0, 200), sizeBytes: Number(sizeBytes) || 0 });
+  const result = await videoService.createFromUpload(actor, {
+    name: String(name).slice(0, 200),
+    sizeBytes: Number(sizeBytes) || 0,
+  });
   revalidatePath('/admin', 'layout');
   return result;
 }

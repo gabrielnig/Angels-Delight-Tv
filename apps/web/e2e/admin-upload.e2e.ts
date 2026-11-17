@@ -15,14 +15,20 @@ async function signIn(page: Page, email = 'chiamaka@example.test') {
 }
 
 const MB = 1024 * 1024;
-const file = (name: string, size: number) => ({ name, mimeType: 'video/mp4', buffer: Buffer.alloc(size, 1) });
+const file = (name: string, size: number) => ({
+  name,
+  mimeType: 'video/mp4',
+  buffer: Buffer.alloc(size, 1),
+});
 
 test('wrong password gives one generic message', async ({ page }) => {
   await page.goto('/admin/login');
   await page.getByLabel('Email').fill('chiamaka@example.test');
   await page.getByLabel('Password').fill('nope');
   await page.getByRole('button', { name: 'Sign in' }).click();
-  await expect(page.getByText('Email or password is not right. Check both and try again.')).toBeVisible();
+  await expect(
+    page.getByText('Email or password is not right. Check both and try again.'),
+  ).toBeVisible();
 });
 
 test('anonymous visitors are sent to admin sign in', async ({ page }) => {
@@ -34,15 +40,28 @@ test('admin signs in, uploads two files, one fails and resumes with Retry', asyn
   await signIn(page);
   const menu = page.getByRole('button', { name: 'Open menu' });
   if (await menu.isVisible()) await menu.click();
-  await page.getByRole('navigation', { name: 'Admin' }).getByRole('link', { name: 'Upload', exact: true }).click();
+  await page
+    .getByRole('navigation', { name: 'Admin' })
+    .getByRole('link', { name: 'Upload', exact: true })
+    .click();
   await expect(page.getByRole('heading', { name: 'Upload videos' })).toBeVisible();
   await expect(page.getByText('Nothing uploading.')).toBeVisible();
 
-  await page.getByTestId('file-input').setInputFiles([file('lesson one.mp4', 10 * MB), file('flaky lesson.mp4', 20 * MB), { name: 'movie.avi', mimeType: 'video/x-msvideo', buffer: Buffer.alloc(MB) }]);
+  await page
+    .getByTestId('file-input')
+    .setInputFiles([
+      file('lesson one.mp4', 10 * MB),
+      file('flaky lesson.mp4', 20 * MB),
+      { name: 'movie.avi', mimeType: 'video/x-msvideo', buffer: Buffer.alloc(MB) },
+    ]);
 
-  await expect(page.getByRole('alert').filter({ hasText: 'movie.avi is not supported. Use MP4, MOV or MKV.' })).toBeVisible();
+  await expect(
+    page.getByRole('alert').filter({ hasText: 'movie.avi is not supported. Use MP4, MOV or MKV.' }),
+  ).toBeVisible();
   await expect(page.getByText('Uploaded just now')).toBeVisible({ timeout: 20_000 });
-  await expect(page.locator('.adm-lane__text').filter({ hasText: /Upload failed\. \d+ percent was saved\./ })).toBeVisible({ timeout: 20_000 });
+  await expect(
+    page.locator('.adm-lane__text').filter({ hasText: /Upload failed\. \d+ percent was saved\./ }),
+  ).toBeVisible({ timeout: 20_000 });
 
   await page.getByRole('button', { name: 'Retry flaky lesson.mp4' }).click();
   await expect(page.getByText('Uploaded just now')).toHaveCount(2, { timeout: 20_000 });

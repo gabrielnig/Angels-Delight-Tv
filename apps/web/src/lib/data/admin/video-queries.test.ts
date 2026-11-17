@@ -16,14 +16,22 @@ describe('queryVideos', () => {
 
   it('filters by search on title and tags', () => {
     expect(queryVideos(fresh().videos, { q: 'sky' }).items.map((v) => v.id)).toEqual(['vid_sky']);
-    expect(queryVideos(fresh().videos, { q: 'DATA' }).items.map((v) => v.id)).toEqual(['vid_money_data']);
+    expect(queryVideos(fresh().videos, { q: 'DATA' }).items.map((v) => v.id)).toEqual([
+      'vid_money_data',
+    ]);
   });
 
   it('filters by status, category, captions and suitability', () => {
-    expect(queryVideos(fresh().videos, { status: 'failed' }).items.map((v) => v.id)).toEqual(['vid_solar']);
+    expect(queryVideos(fresh().videos, { status: 'failed' }).items.map((v) => v.id)).toEqual([
+      'vid_solar',
+    ]);
     expect(queryVideos(fresh().videos, { categoryId: 'cat_maths' }).total).toBe(3);
-    expect(queryVideos(fresh().videos, { captions: 'needs_review' }).items.map((v) => v.id)).toEqual(['vid_plants']);
-    expect(queryVideos(fresh().videos, { suitability: 'kids' }).items.map((v) => v.id)).toEqual(['vid_hygiene']);
+    expect(
+      queryVideos(fresh().videos, { captions: 'needs_review' }).items.map((v) => v.id),
+    ).toEqual(['vid_plants']);
+    expect(queryVideos(fresh().videos, { suitability: 'kids' }).items.map((v) => v.id)).toEqual([
+      'vid_hygiene',
+    ]);
   });
 
   it('pages with a cursor and reports the next one', () => {
@@ -36,7 +44,9 @@ describe('queryVideos', () => {
   });
 
   it('sorts by title and views', () => {
-    const byTitle = queryVideos(fresh().videos, { sort: 'title', dir: 'asc' }).items.map((v) => v.title);
+    const byTitle = queryVideos(fresh().videos, { sort: 'title', dir: 'asc' }).items.map(
+      (v) => v.title,
+    );
     expect(byTitle).toEqual([...byTitle].sort((a, b) => a.localeCompare(b)));
     const byViews = queryVideos(fresh().videos, { sort: 'views', dir: 'desc' }).items;
     expect(byViews[0]!.id).toBe('vid_hygiene');
@@ -45,7 +55,9 @@ describe('queryVideos', () => {
 
 describe('query string round trip', () => {
   it('parses and serializes only known, valid values', () => {
-    expect(parseVideoQuery({ q: ' sky ', status: 'failed', sort: 'nope', dir: 'up', limit: '9999' })).toEqual({
+    expect(
+      parseVideoQuery({ q: ' sky ', status: 'failed', sort: 'nope', dir: 'up', limit: '9999' }),
+    ).toEqual({
       q: 'sky',
       status: 'failed',
       limit: 50,
@@ -60,9 +72,18 @@ describe('applyBulk', () => {
 
   it('publishes what is ready and reports the rest with a reason (partial failure)', () => {
     const store = fresh();
-    const result = applyBulk(store.videos, ['vid_safe_online', 'vid_naira'], { type: 'publish' }, 'editor', rules, NOW);
+    const result = applyBulk(
+      store.videos,
+      ['vid_safe_online', 'vid_naira'],
+      { type: 'publish' },
+      'editor',
+      rules,
+      NOW,
+    );
     expect(result.succeeded).toEqual(['vid_safe_online']);
-    expect(result.failed).toEqual([{ id: 'vid_naira', reason: expect.stringContaining('Not ready') }]);
+    expect(result.failed).toEqual([
+      { id: 'vid_naira', reason: expect.stringContaining('Not ready') },
+    ]);
     expect(store.videos.find((v) => v.id === 'vid_safe_online')!.publishState).toBe('published');
     expect(store.videos.find((v) => v.id === 'vid_naira')!.publishState).toBe('draft');
   });
@@ -78,16 +99,39 @@ describe('applyBulk', () => {
 
   it('adds a category once and unpublishes', () => {
     const store = fresh();
-    applyBulk(store.videos, ['vid_sky'], { type: 'category', categoryId: 'cat_maths' }, 'editor', rules, NOW);
-    applyBulk(store.videos, ['vid_sky'], { type: 'category', categoryId: 'cat_maths' }, 'editor', rules, NOW);
-    expect(store.videos.find((v) => v.id === 'vid_sky')!.categoryIds.filter((c) => c === 'cat_maths')).toHaveLength(1);
+    applyBulk(
+      store.videos,
+      ['vid_sky'],
+      { type: 'category', categoryId: 'cat_maths' },
+      'editor',
+      rules,
+      NOW,
+    );
+    applyBulk(
+      store.videos,
+      ['vid_sky'],
+      { type: 'category', categoryId: 'cat_maths' },
+      'editor',
+      rules,
+      NOW,
+    );
+    expect(
+      store.videos.find((v) => v.id === 'vid_sky')!.categoryIds.filter((c) => c === 'cat_maths'),
+    ).toHaveLength(1);
     applyBulk(store.videos, ['vid_sky'], { type: 'unpublish' }, 'editor', rules, NOW);
     expect(store.videos.find((v) => v.id === 'vid_sky')!.publishState).toBe('unpublished');
   });
 
   it('refuses everything for a viewer', () => {
     const store = fresh();
-    const result = applyBulk(store.videos, ['vid_sky'], { type: 'unpublish' }, 'viewer', rules, NOW);
+    const result = applyBulk(
+      store.videos,
+      ['vid_sky'],
+      { type: 'unpublish' },
+      'viewer',
+      rules,
+      NOW,
+    );
     expect(result.succeeded).toEqual([]);
     expect(result.failed[0]!.reason).toBe('You do not have permission for this.');
   });

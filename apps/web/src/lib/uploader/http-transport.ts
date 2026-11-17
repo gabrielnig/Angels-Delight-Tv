@@ -26,7 +26,12 @@ export function xhrPutPart({ url, blob, signal, onProgress }: PutPartInput): Pro
     xhr.onload = () =>
       xhr.status >= 200 && xhr.status < 300
         ? resolve()
-        : reject(new TransportError(`Storage answered ${xhr.status}`, xhr.status >= 500 ? 'server' : 'rejected'));
+        : reject(
+            new TransportError(
+              `Storage answered ${xhr.status}`,
+              xhr.status >= 500 ? 'server' : 'rejected',
+            ),
+          );
     xhr.onerror = () => reject(new TransportError('Network error', 'network'));
     xhr.ontimeout = () => reject(new TransportError('Network timeout', 'network'));
     signal.addEventListener('abort', () => {
@@ -96,7 +101,12 @@ export function createHttpTransport(options: HttpTransportOptions = {}): UploadT
         type: input.type,
         fingerprint: input.fingerprint,
       });
-      const data = (await response.json()) as { uploadId: string; partSize: number; totalParts: number; videoId?: string };
+      const data = (await response.json()) as {
+        uploadId: string;
+        partSize: number;
+        totalParts: number;
+        videoId?: string;
+      };
       return {
         uploadId: data.uploadId,
         partSizeBytes: data.partSize,
@@ -107,11 +117,20 @@ export function createHttpTransport(options: HttpTransportOptions = {}): UploadT
     },
 
     async uploadPart(request: PartRequest) {
-      const response = await post(`${base}/${request.uploadId}/parts`, { partNumbers: [request.partNumber] }, request.signal);
+      const response = await post(
+        `${base}/${request.uploadId}/parts`,
+        { partNumbers: [request.partNumber] },
+        request.signal,
+      );
       const { urls } = (await response.json()) as { urls: Record<string, string> };
       const url = urls[String(request.partNumber)];
       if (!url) throw new TransportError('No upload address for this part', 'server');
-      await put({ url, blob: request.blob, signal: request.signal, onProgress: request.onProgress });
+      await put({
+        url,
+        blob: request.blob,
+        signal: request.signal,
+        onProgress: request.onProgress,
+      });
     },
 
     async complete(uploadId) {

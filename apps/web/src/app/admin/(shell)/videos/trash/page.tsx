@@ -12,12 +12,29 @@ export const metadata: Metadata = { title: 'Trash' };
 
 export default async function TrashPage() {
   const actor = await requireActor('/admin/videos/trash');
-  if (!can(actor.role, 'video.restore')) return <NoAccess pageName="Trash" roleLabel={ROLE_LABELS[actor.role]} needed="editors and admins" />;
+  if (!can(actor.role, 'video.restore'))
+    return (
+      <NoAccess pageName="Trash" roleLabel={ROLE_LABELS[actor.role]} needed="editors and admins" />
+    );
   const videos = await videoService.trashed(actor);
   return (
     <>
-      <PageHeader crumbs={[{ label: 'Admin', href: '/admin' }, { label: 'Videos', href: '/admin/videos' }, { label: 'Trash' }]} title="Trash" lead="Videos wait here for 30 days before they are deleted for good." />
-      <TrashList videos={videos} role={actor.role} now={Date.now()} restore={restoreVideoAction} purge={purgeVideoAction} />
+      <PageHeader
+        crumbs={[
+          { label: 'Admin', href: '/admin' },
+          { label: 'Videos', href: '/admin/videos' },
+          { label: 'Trash' },
+        ]}
+        title="Trash"
+        lead="Videos wait here for 30 days before they are deleted for good."
+      />
+      <TrashList
+        videos={videos}
+        role={actor.role}
+        now={Date.now()}
+        restore={restoreVideoAction}
+        purge={purgeVideoAction}
+      />
     </>
   );
 }

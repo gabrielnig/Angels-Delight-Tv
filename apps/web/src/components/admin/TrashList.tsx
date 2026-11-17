@@ -37,7 +37,9 @@ export function TrashList({
     setBusyId(id);
     try {
       const result = await fn(id);
-      toast.show(result.ok ? { tone: 'success', message: done } : { tone: 'danger', message: result.error });
+      toast.show(
+        result.ok ? { tone: 'success', message: done } : { tone: 'danger', message: result.error },
+      );
       router.refresh();
     } catch {
       toast.show({ tone: 'danger', message: 'That did not work. Nothing was changed. Try again.' });
@@ -48,7 +50,13 @@ export function TrashList({
   }
 
   if (videos.length === 0) {
-    return <EmptyState title="Trash is empty." help="Videos you move to Trash wait here for 30 days." icon="trash" />;
+    return (
+      <EmptyState
+        title="Trash is empty."
+        help="Videos you move to Trash wait here for 30 days."
+        icon="trash"
+      />
+    );
   }
   return (
     <div className="adm-card adm-table-card">
@@ -58,8 +66,12 @@ export function TrashList({
           <tr>
             <th scope="col">Video</th>
             <th scope="col">Deleted</th>
-            <th scope="col" className="adm-num">Days left</th>
-            <th scope="col"><span className="adm-sr">Actions</span></th>
+            <th scope="col" className="adm-num">
+              Days left
+            </th>
+            <th scope="col">
+              <span className="adm-sr">Actions</span>
+            </th>
           </tr>
         </thead>
         <tbody>
@@ -77,7 +89,11 @@ export function TrashList({
                 <td className="adm-num">{left}</td>
                 <td>
                   <div className="adm-row">
-                    <Button loading={busyId === video.id} aria-label={`Restore ${video.title}`} onClick={() => act(video.id, restore, `${video.title} was restored.`)}>
+                    <Button
+                      loading={busyId === video.id}
+                      aria-label={`Restore ${video.title}`}
+                      onClick={() => act(video.id, restore, `${video.title} was restored.`)}
+                    >
                       Restore
                     </Button>
                     <Button

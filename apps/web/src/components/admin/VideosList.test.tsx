@@ -6,7 +6,10 @@ import { seedStore } from '@/lib/data/admin/store';
 import { queryVideos } from '@/lib/data/admin/video-queries';
 
 const replace = vi.fn();
-vi.mock('next/navigation', () => ({ useRouter: () => ({ replace, refresh: vi.fn() }), usePathname: () => '/admin/videos' }));
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({ replace, refresh: vi.fn() }),
+  usePathname: () => '/admin/videos',
+}));
 
 const { VideosList } = await import('./VideosList');
 const NOW = Date.parse('2026-11-17T09:00:00Z');
@@ -14,8 +17,21 @@ const store = seedStore(NOW);
 const page = queryVideos(store.videos, { limit: 5 });
 
 function setup(over: Partial<Parameters<typeof VideosList>[0]> = {}) {
-  const bulk = vi.fn(async () => ({ succeeded: ['a'], failed: [{ id: page.items[1]!.id, reason: 'Not ready: Poster needs attention first.' }] }));
-  render(<VideosList page={page} query={{}} categories={store.categories} role="admin" bulk={bulk} now={NOW} {...over} />);
+  const bulk = vi.fn(async () => ({
+    succeeded: ['a'],
+    failed: [{ id: page.items[1]!.id, reason: 'Not ready: Poster needs attention first.' }],
+  }));
+  render(
+    <VideosList
+      page={page}
+      query={{}}
+      categories={store.categories}
+      role="admin"
+      bulk={bulk}
+      now={NOW}
+      {...over}
+    />,
+  );
   return { bulk };
 }
 
@@ -34,14 +50,19 @@ describe('VideosList', () => {
       await userEvent.click(screen.getAllByRole('checkbox', { name: `Select ${item.title}` })[0]!);
     }
     await userEvent.click(screen.getByRole('button', { name: 'Publish' }));
-    expect(bulk).toHaveBeenCalledWith(page.items.slice(0, 2).map((v) => v.id), { type: 'publish' });
+    expect(bulk).toHaveBeenCalledWith(
+      page.items.slice(0, 2).map((v) => v.id),
+      { type: 'publish' },
+    );
     await waitFor(() => expect(screen.getByText(/1 could not be changed/)).toBeInTheDocument());
     expect(screen.getByText(/Poster needs attention first/)).toBeInTheDocument();
   });
 
   it('confirms before moving to Trash and names the consequence', async () => {
     const { bulk } = setup();
-    await userEvent.click(screen.getAllByRole('checkbox', { name: `Select ${page.items[0]!.title}` })[0]!);
+    await userEvent.click(
+      screen.getAllByRole('checkbox', { name: `Select ${page.items[0]!.title}` })[0]!,
+    );
     await userEvent.click(screen.getByRole('button', { name: 'Move to Trash' }));
     const dialog = await screen.findByRole('dialog');
     expect(within(dialog).getByText(/restore them for 30 days/)).toBeInTheDocument();
@@ -50,7 +71,9 @@ describe('VideosList', () => {
 
   it('explains why an editor cannot trash', async () => {
     setup({ role: 'editor' });
-    await userEvent.click(screen.getAllByRole('checkbox', { name: `Select ${page.items[0]!.title}` })[0]!);
+    await userEvent.click(
+      screen.getAllByRole('checkbox', { name: `Select ${page.items[0]!.title}` })[0]!,
+    );
     const button = screen.getByRole('button', { name: /Move to Trash/ });
     expect(button).toHaveAttribute('aria-disabled', 'true');
     expect(button).toHaveTextContent('Only an admin can move videos to Trash.');
@@ -58,10 +81,21 @@ describe('VideosList', () => {
 
   it('shows the empty state and the no match state', () => {
     const empty = { items: [], total: 0, nextCursor: null };
-    const { unmount } = render(<VideosList page={empty} query={{}} categories={[]} role="admin" bulk={vi.fn()} now={NOW} />);
+    const { unmount } = render(
+      <VideosList page={empty} query={{}} categories={[]} role="admin" bulk={vi.fn()} now={NOW} />,
+    );
     expect(screen.getByText('No videos yet.')).toBeInTheDocument();
     unmount();
-    render(<VideosList page={empty} query={{ q: 'zzz' }} categories={[]} role="admin" bulk={vi.fn()} now={NOW} />);
+    render(
+      <VideosList
+        page={empty}
+        query={{ q: 'zzz' }}
+        categories={[]}
+        role="admin"
+        bulk={vi.fn()}
+        now={NOW}
+      />,
+    );
     expect(screen.getByRole('status')).toHaveTextContent('No videos match.');
   });
 
