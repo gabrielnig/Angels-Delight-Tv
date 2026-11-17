@@ -1,4 +1,5 @@
 import 'server-only';
+import { TokenRejected } from '@ad/auth';
 import { cache } from 'react';
 import type { AdminActor } from '@/lib/data/admin/types';
 import { classifyCode } from './admin-code';
@@ -140,8 +141,9 @@ export async function realAdminSignOut(): Promise<void> {
 export async function realInspectInvite(token: string) {
   try {
     return await authRuntime().staff.inspectInvite(token);
-  } catch {
-    return null;
+  } catch (error) {
+    if (error instanceof TokenRejected) return null;
+    throw error;
   }
 }
 
