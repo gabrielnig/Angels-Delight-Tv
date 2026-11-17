@@ -12,3 +12,4 @@ export * from './http/respond';
 export * from './dev/storage-route';
 export * from './encode';
 export * from './captions';
+export * from './playback';
