@@ -397,3 +397,63 @@ export async function relatedTitles(
     LIMIT ${Math.min(Math.max(limit, 1), MAX_PAGE_SIZE)}`);
   return rowsOf<CardRow>(result).map((row) => toCard(row, ctx.mediaOrigin));
 }
+
+export const POPULAR_WINDOW_DAYS = 30;
+
+/**
+ * Videos ordered by views over the last 30 days (from the nightly rollup in video_daily_stats). With
+ * `fallbackToNewest` a catalog without any stats still returns something, for the no results page (M06-S05).
+ */
+export async function popularTitles(
+  tx: Tx,
+  ctx: CatalogContext,
+  audience: Audience,
+  options: { limit: number; fallbackToNewest?: boolean },
+): Promise<TitleCard[]> {
+  const now = ctx.now();
+  const limit = Math.min(Math.max(options.limit, 1), MAX_PAGE_SIZE);
+  const result = await tx.execute(sql`
+    WITH ${titlesCte(audience, now, false)}
+    SELECT ${CARD_COLUMNS}, coalesce(pv.views, 0) AS recent_views
+    FROM titles t ${POSTER_JOIN}
+    LEFT JOIN LATERAL (
+      SELECT sum(d.views) AS views FROM video_daily_stats d
+      WHERE d.video_id = t.id AND d.day >= (${now}::timestamptz)::date - ${POPULAR_WINDOW_DAYS}::int
+    ) pv ON true
+    WHERE t.kind = 'video'
+    ORDER BY coalesce(pv.views, 0) DESC, t.sort_at DESC, t.id DESC
+    LIMIT ${limit}`);
+  const rows = rowsOf<CardRow & { recent_views: string }>(result);
+  const popular = rows.filter((row) => Number(row.recent_views) > 0);
+  const chosen = popular.length > 0 || !options.fallbackToNewest ? popular : rows;
+  return chosen.map((row) => toCard(row, ctx.mediaOrigin));
+}
+
+/** True when at least one title is live for this audience. Drives the "new videos are on the way" state. */
+export async function hasLiveTitle(
+  tx: Tx,
+  ctx: CatalogContext,
+  audience: Audience,
+): Promise<boolean> {
+  const now = ctx.now();
+  const result = await tx.execute(sql`
+    SELECT (EXISTS (SELECT 1 FROM videos v WHERE v.kind = 'standalone' AND ${liveVideoSql('v', audience, now)})
+      OR EXISTS (SELECT 1 FROM series s WHERE ${liveSeriesSql('s', audience, now)})) AS found`);
+  return rowsOf<{ found: boolean }>(result)[0]?.found === true;
+}
+
+/** Looks a title up by slug. A video wins over a series with the same slug unless `kind` says otherwise. */
+export async function findTitleRefBySlug(
+  tx: Tx,
+  ctx: CatalogContext,
+  audience: Audience,
+  slug: string,
+  kind?: TitleKind,
+): Promise<TitleRef | null> {
+  const result = await tx.execute(sql`
+    WITH ${titlesCte(audience, ctx.now(), false)}
+    SELECT t.kind, t.id FROM titles t
+    WHERE t.slug = ${slug} ${kind ? sql`AND t.kind = ${kind}` : sql``}
+    ORDER BY (t.kind = 'video') DESC LIMIT 1`);
+  return rowsOf<TitleRef>(result)[0] ?? null;
+}

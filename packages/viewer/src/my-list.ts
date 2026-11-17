@@ -18,6 +18,8 @@ import { annotateCards, type TitleCardDto } from './annotate';
 import { catalogContext, clockOf, rulesOf, type ViewerContext } from './context';
 import { audienceOf, loadOwnedProfile } from './profiles';
 
+type ViewerTx = Parameters<Parameters<ViewerContext['db']['transaction']>[0]>[0];
+
 export const MY_LIST_FULL_MESSAGE = 'My List is full';
 
 export interface MyListItem {
@@ -125,51 +127,59 @@ export async function listMyList(
   actor: Actor,
   input: { profileId: string; limit?: number; cursor?: string },
 ): Promise<Page<MyListItem>> {
+  return withAccount(ctx.db, actor, async (tx) =>
+    loadMyList(tx, ctx, await loadOwnedProfile(tx, actor, input.profileId), input),
+  );
+}
+
+/** The list page for a profile the caller has already verified, so Home can reuse its own transaction. */
+export async function loadMyList(
+  tx: ViewerTx,
+  ctx: ViewerContext,
+  profile: Pick<typeof profiles.$inferSelect, 'id' | 'isKids'>,
+  input: { limit?: number; cursor?: string },
+): Promise<Page<MyListItem>> {
   const limit = clampLimit(input.limit, PAGE_SIZE, MAX_PAGE_SIZE);
   const cursor = input.cursor === undefined ? null : decodeCursor(input.cursor, isMyListCursor);
   const now = clockOf(ctx);
-
-  return withAccount(ctx.db, actor, async (tx) => {
-    const profile = await loadOwnedProfile(tx, actor, input.profileId);
-    const audience = audienceOf(profile);
-    const after = cursor
-      ? sql` AND (ml.added_at, ml.id) < (${cursor.k}::timestamptz, ${cursor.i}::uuid)`
-      : sql``;
-    const result = await tx.execute(sql`
-      SELECT ml.id, ml.added_at::text AS added_at_text, ml.video_id, ml.series_id
-      FROM my_list ml
-      LEFT JOIN videos v ON v.id = ml.video_id
-      LEFT JOIN series s ON s.id = ml.series_id
-      WHERE ml.profile_id = ${profile.id}::uuid
-        AND ((ml.video_id IS NOT NULL AND v.kind = 'standalone' AND ${liveVideoSql('v', audience, now)})
-          OR (ml.series_id IS NOT NULL AND ${liveSeriesSql('s', audience, now)}))${after}
-      ORDER BY ml.added_at DESC, ml.id DESC
-      LIMIT ${limit + 1}`);
-    const rows = rowsOf<{
-      id: string;
-      added_at_text: string;
-      video_id: string | null;
-      series_id: string | null;
-    }>(result);
-    const pageRows = rows.slice(0, limit);
-    const refs: TitleRef[] = pageRows.map((row) =>
-      row.video_id ? { kind: 'video', id: row.video_id } : { kind: 'series', id: row.series_id! },
-    );
-    const cards = await annotateCards(
-      tx,
-      profile.id,
-      await fetchCards(tx, catalogContext(ctx), audience, refs),
-    );
-    const byId = new Map(cards.map((card) => [card.id, card]));
-    const items = pageRows.flatMap((row, index) => {
-      const card = byId.get(refs[index]!.id);
-      return card ? [{ card, addedAt: new Date(row.added_at_text).toISOString() }] : [];
-    });
-    const last = pageRows[pageRows.length - 1];
-    return {
-      items,
-      nextCursor:
-        rows.length > limit && last ? encodeCursor({ k: last.added_at_text, i: last.id }) : null,
-    };
+  const audience = audienceOf(profile);
+  const after = cursor
+    ? sql` AND (ml.added_at, ml.id) < (${cursor.k}::timestamptz, ${cursor.i}::uuid)`
+    : sql``;
+  const result = await tx.execute(sql`
+    SELECT ml.id, ml.added_at::text AS added_at_text, ml.video_id, ml.series_id
+    FROM my_list ml
+    LEFT JOIN videos v ON v.id = ml.video_id
+    LEFT JOIN series s ON s.id = ml.series_id
+    WHERE ml.profile_id = ${profile.id}::uuid
+      AND ((ml.video_id IS NOT NULL AND v.kind = 'standalone' AND ${liveVideoSql('v', audience, now)})
+        OR (ml.series_id IS NOT NULL AND ${liveSeriesSql('s', audience, now)}))${after}
+    ORDER BY ml.added_at DESC, ml.id DESC
+    LIMIT ${limit + 1}`);
+  const rows = rowsOf<{
+    id: string;
+    added_at_text: string;
+    video_id: string | null;
+    series_id: string | null;
+  }>(result);
+  const pageRows = rows.slice(0, limit);
+  const refs: TitleRef[] = pageRows.map((row) =>
+    row.video_id ? { kind: 'video', id: row.video_id } : { kind: 'series', id: row.series_id! },
+  );
+  const cards = await annotateCards(
+    tx,
+    profile.id,
+    await fetchCards(tx, catalogContext(ctx), audience, refs),
+  );
+  const byId = new Map(cards.map((card) => [card.id, card]));
+  const items = pageRows.flatMap((row, index) => {
+    const card = byId.get(refs[index]!.id);
+    return card ? [{ card, addedAt: new Date(row.added_at_text).toISOString() }] : [];
   });
+  const last = pageRows[pageRows.length - 1];
+  return {
+    items,
+    nextCursor:
+      rows.length > limit && last ? encodeCursor({ k: last.added_at_text, i: last.id }) : null,
+  };
 }
