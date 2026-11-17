@@ -37,6 +37,8 @@ export function loadPreferences(
   store: KeyValueStore | null,
   profileId: string,
   profile: { kids: boolean },
+  /** The profile's settings from the server. Choices made on this device win over them. */
+  defaults: Partial<PlayerPreferences> = {},
 ): PlayerPreferences {
   let raw: string | null = null;
   try {
@@ -44,7 +46,7 @@ export function loadPreferences(
   } catch {
     raw = null;
   }
-  return { ...DEFAULT_PREFERENCES, captionsOn: profile.kids, ...parse(raw) };
+  return { ...DEFAULT_PREFERENCES, captionsOn: profile.kids, ...defaults, ...parse(raw) };
 }
 
 export function savePreferences(
