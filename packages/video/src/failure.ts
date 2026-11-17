@@ -12,6 +12,7 @@ export type FailureCode =
   | 'key_failed'
   | 'caption_failed'
   | 'caption_service_unavailable'
+  | 'script_mismatch'
   | 'timeout'
   | 'unknown';
 
@@ -62,6 +63,7 @@ const FAILURES: Record<FailureCode, FailureInfo> = {
     plain: 'The captions service is not responding. It will try again.',
     permanent: false,
   },
+  script_mismatch: { plain: 'The script does not match the audio.', permanent: true },
   timeout: { plain: 'This took too long and was stopped. It will try again.', permanent: false },
   unknown: { plain: 'Something went wrong. It will try again.', permanent: false },
 };

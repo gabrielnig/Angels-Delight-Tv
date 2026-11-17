@@ -43,13 +43,11 @@ describe.skipIf(!integrationEnabled())('VideoPipeline against Postgres and local
     const video = makeVideo({ createdBy: owner.id, status: 'uploaded', ...overrides });
     const key = `originals/${video.id}/up1`;
     if (source) await originals.put(key, source);
-    await t.db
-      .insert(schema.videos)
-      .values({
-        ...video,
-        originalKey: source ? key : null,
-        originalBytes: source?.length ?? null,
-      });
+    await t.db.insert(schema.videos).values({
+      ...video,
+      originalKey: source ? key : null,
+      originalBytes: source?.length ?? null,
+    });
     return { ...video, key };
   }
 
