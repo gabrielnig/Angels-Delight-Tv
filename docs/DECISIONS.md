@@ -151,3 +151,19 @@ Format: decision, options considered, why, reversible or not. Newest first. Deci
 - Options: block everything under 4.5 (too strict for brand colours that pass with the other text colour), warn only (breaks D-007).
 - Why: matches DESIGN-SYSTEM 4.3, M18-S02 and the S56 mockup states.
 - Reversible: yes, thresholds are constants in `packages/theme/src/gate.ts`.
+
+## D-026 Logo and favicon upload format (lane H)
+- Decision: logo and favicon uploads accept PNG, JPEG or WebP up to 500 KB, sniffed by magic bytes, decoded and re-encoded to WebP with `sharp` (logo widths 160, 320, 640 without upscaling, favicon 32, 192, 512 square), metadata stripped, animation rejected. SVG is rejected.
+- Options: accept sanitised SVG (needs the `assets.mime` check and DATA-MODEL changed, and a second sanitiser to trust), accept SVG only as text.
+- Why: SECURITY.md section 11 and DATA-MODEL 5.4 say SVG is not an allowed type. M18-S05 mentions SVG, the docs win until the owner asks. A high resolution PNG covers the same need.
+- Reversible: yes, a sanitiser and a mime in the assets check can be added later.
+
+## D-027 Theme history model (lane H)
+- Decision: there is no `theme_versions` table. `theme_settings` rows are the versions. Save draft updates the single draft in place. Publish archives the previous published row and promotes the draft with the same version number. Restore and reset archive the current draft (so it stays in history as a draft) and insert a new draft with the next version. History lists every row, 20 per page, newest first, status shown as published when `published_at` is set. No pruning in v1.
+- Options: separate versions table, cap at 5 versions (DESIGN-SYSTEM 11.24), cap at 20 (M18-S08).
+- Why: uses the schema as built, the unique draft and published indexes enforce one of each, and rows are tiny (under 16 KB each by CHECK).
+- Reversible: yes.
+
+## D-028 Theme and settings writes require the admin role (lane H)
+- Decision: all theme and site settings writes need `role = 'admin'` (editors and viewers get 403). The "Super admin only" flags and limits (S64) use the same check until the roles lane adds a super admin tier. Audit entries are written inside the same transaction as the change.
+- Reversible: yes, one function per service.
