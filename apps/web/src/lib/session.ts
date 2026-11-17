@@ -1,6 +1,8 @@
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
-import { getProfiles } from './data';
+import { realAuthEnabled } from '../server/auth/mode';
+import { getSession as getRealSession } from '../server/auth/session';
+import { getAccount, getProfiles } from './data';
 import type { Profile, ViewerContext, ViewerSession } from './data';
 
 /**
@@ -11,7 +13,35 @@ export const FIXTURE_ACCOUNT_ID = 'acct-demo';
 const PROFILE_COOKIE = 'ad_profile';
 const FIXTURE_COOKIE = 'ad_fixture';
 
+/** The account the request acts for: the real signed in account, or the demo one in fixture mode. */
+export async function currentAccountId(): Promise<string> {
+  if (!realAuthEnabled()) return FIXTURE_ACCOUNT_ID;
+  const session = await getRealSession();
+  if (!session) throw new Error('Not signed in');
+  return session.accountId;
+}
+
+async function getRealViewerSession(): Promise<ViewerSession | null> {
+  const real = await getRealSession();
+  if (!real || real.status !== 'active') return null;
+  const [overview, profiles, jar] = await Promise.all([
+    getAccount().overview(real.accountId),
+    getProfiles().list(real.accountId),
+    cookies(),
+  ]);
+  const selected = jar.get(PROFILE_COOKIE)?.value;
+  return {
+    accountId: real.accountId,
+    email: overview.email,
+    displayName: overview.displayName,
+    verified: real.emailVerified,
+    memberSince: overview.memberSince,
+    profile: profiles.find((p) => p.id === selected) ?? null,
+  };
+}
+
 export async function getSession(): Promise<ViewerSession | null> {
+  if (realAuthEnabled()) return getRealViewerSession();
   const jar = await cookies();
   const mode = jar.get(FIXTURE_COOKIE)?.value;
   if (mode === 'out') return null;

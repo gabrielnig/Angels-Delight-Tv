@@ -14,7 +14,7 @@ import {
   type SignUpResult,
   type Suggestion,
 } from '../lib/data';
-import { FIXTURE_ACCOUNT_ID, getSession, sessionCookieNames } from '../lib/session';
+import { currentAccountId, getSession, sessionCookieNames } from '../lib/session';
 
 /**
  * Server actions for the viewer UI. Each one resolves the signed in profile itself and only calls the
@@ -84,12 +84,12 @@ export async function signOutAction() {
 // ---- Profiles ----
 
 export async function selectProfileAction(profileId: string) {
-  await getProfiles().select(FIXTURE_ACCOUNT_ID, profileId);
+  await getProfiles().select(await currentAccountId(), profileId);
   (await cookies()).set(sessionCookieNames.profile, profileId, cookieOptions);
 }
 
 export async function createProfileAction(input: ProfileInput) {
-  return getProfiles().create(FIXTURE_ACCOUNT_ID, input);
+  return getProfiles().create(await currentAccountId(), input);
 }
 
 export async function updateProfileAction(
@@ -100,11 +100,11 @@ export async function updateProfileAction(
     const check = await getAuth().checkPassword(input.password);
     if (!check.ok) return { ok: false as const, reason: 'password_required' as const };
   }
-  return getProfiles().update(FIXTURE_ACCOUNT_ID, id, input);
+  return getProfiles().update(await currentAccountId(), id, input);
 }
 
 export async function deleteProfileAction(id: string) {
-  const result = await getProfiles().remove(FIXTURE_ACCOUNT_ID, id);
+  const result = await getProfiles().remove(await currentAccountId(), id);
   if (result.ok) {
     const jar = await cookies();
     if (jar.get(sessionCookieNames.profile)?.value === id) jar.delete(sessionCookieNames.profile);
@@ -115,7 +115,7 @@ export async function deleteProfileAction(id: string) {
 export async function checkKidsPasswordAction(password: string) {
   const result = await getAuth().checkPassword(password);
   if (result.ok) {
-    const profiles = await getProfiles().list(FIXTURE_ACCOUNT_ID);
+    const profiles = await getProfiles().list(await currentAccountId());
     const adult = profiles.find((p) => !p.kids);
     if (adult) (await cookies()).set(sessionCookieNames.profile, adult.id, cookieOptions);
   }
@@ -188,21 +188,21 @@ export async function savePlaybackAction(patch: Partial<PlaybackSettings>) {
 }
 
 export async function changePasswordAction(input: { current: string; next: string }) {
-  return getAccount().changePassword(FIXTURE_ACCOUNT_ID, input);
+  return getAccount().changePassword(await currentAccountId(), input);
 }
 
 export async function revokeDeviceAction(id: string) {
-  await getAccount().revokeDevice(FIXTURE_ACCOUNT_ID, id);
+  await getAccount().revokeDevice(await currentAccountId(), id);
 }
 
 export async function revokeOtherDevicesAction() {
-  return getAccount().revokeOtherDevices(FIXTURE_ACCOUNT_ID);
+  return getAccount().revokeOtherDevices(await currentAccountId());
 }
 
 export async function requestExportAction() {
-  return getAccount().requestExport(FIXTURE_ACCOUNT_ID);
+  return getAccount().requestExport(await currentAccountId());
 }
 
 export async function deleteAccountAction(input: { password: string; confirm: string }) {
-  return getAccount().deleteAccount(FIXTURE_ACCOUNT_ID, input);
+  return getAccount().deleteAccount(await currentAccountId(), input);
 }
