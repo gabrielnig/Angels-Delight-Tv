@@ -141,6 +141,7 @@ export interface TimedWord {
   word: string;
   startMs: number;
   endMs: number;
+  confidence?: number;
 }
 
 export const MAX_LINE_CHARS = 42;
