@@ -10,7 +10,8 @@
   "scripts": {
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
-    "test:file": "vitest run"
+    "test:file": "vitest run",
+    "seed:demo": "tsx src/seed-demo-cli.ts"
   },
   "dependencies": {
     "@ad/db": "workspace:*",
@@ -20,6 +21,7 @@
     "@ad/audit": "workspace:*"
   },
   "devDependencies": {
-    "@types/pg": "^8.23.1"
+    "@types/pg": "^8.23.1",
+    "tsx": "^4.23.15"
   }
 }
