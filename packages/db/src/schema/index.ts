@@ -7,3 +7,4 @@ export * from './identity';
 export * from './pipeline';
 export * from './platform';
 export { userKeys } from './keys';
+export * from './viewer';
