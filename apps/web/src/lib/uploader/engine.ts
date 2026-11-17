@@ -48,7 +48,7 @@ interface Record_ {
 
 export function createUploader(options: UploaderOptions) {
   const transport: UploadTransport = options.transport;
-  const fileConcurrency = options.fileConcurrency ?? 2;
+  let fileConcurrency = options.fileConcurrency ?? 2;
   const partConcurrency = options.partConcurrency ?? 3;
   const maxFileBytes = options.maxFileBytes ?? DEFAULT_MAX_FILE_BYTES;
   const extensions = (options.allowedExtensions ?? DEFAULT_EXTENSIONS).map((e) => e.toLowerCase());
@@ -195,6 +195,7 @@ export function createUploader(options: UploaderOptions) {
     if (signal.aborted) return;
 
     lane.uploadId = started.uploadId;
+    lane.videoId = started.videoId ?? lane.videoId;
     store?.set(lane.fingerprint, started.uploadId);
     record.partSize = started.partSizeBytes;
     record.completedParts = new Set(started.uploadedParts);
@@ -324,6 +325,10 @@ export function createUploader(options: UploaderOptions) {
       notify();
       pump();
       return { ...lane };
+    },
+    setFileConcurrency(count: number) {
+      fileConcurrency = Math.max(1, Math.min(5, Math.floor(count)));
+      pump();
     },
     getLanes: snapshot,
     subscribe(listener: (lanes: Lane[]) => void) {

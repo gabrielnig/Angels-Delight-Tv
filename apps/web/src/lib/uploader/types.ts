@@ -13,6 +13,8 @@ export interface StartResult {
   totalParts: number;
   /** Parts the server already holds (server truth from ListParts). */
   uploadedParts: number[];
+  /** The draft video the server created for this upload, when it says so. */
+  videoId?: string;
 }
 
 export interface PartRequest {
@@ -73,6 +75,7 @@ export interface Lane {
   fingerprint: string;
   status: LaneStatus;
   uploadId?: string;
+  videoId?: string;
   bytesUploaded: number;
   percent: number;
   speedBytesPerSecond: number;
