@@ -164,4 +164,38 @@ describe('createKeyAwareLoader', () => {
     new Loader().load({ url: 'https://media.example.test/seg.ts' });
     expect(seen).toEqual([`${APP}/api/hls/keys/v1`, 'https://media.example.test/seg.ts']);
   });
+
+  it('never mutates the caller context and hands it back to every callback', () => {
+    // hls.js looks the key up by context.url in its own map, so the original url must survive.
+    class Base {
+      load(
+        context: { url: string },
+        _config: unknown,
+        callbacks: {
+          onSuccess(r: string, s: string, c: { url: string }): void;
+          onError(e: string, c: { url: string }): void;
+        },
+      ) {
+        callbacks.onSuccess('ok', 'stats', context);
+        callbacks.onError('bad', context);
+      }
+    }
+    const Loader = createKeyAwareLoader(Base as never, APP) as unknown as new () => {
+      load(c: { url: string }, cfg: unknown, cbs: unknown): void;
+    };
+    const original = { url: 'ad-key://v1' };
+    const got: Array<{ url: string }> = [];
+    new Loader().load(
+      original,
+      {},
+      {
+        onSuccess: (_r: string, _s: string, c: { url: string }) => got.push(c),
+        onError: (_e: string, c: { url: string }) => got.push(c),
+      },
+    );
+    expect(original.url).toBe('ad-key://v1');
+    expect(got).toHaveLength(2);
+    expect(got[0]).toBe(original);
+    expect(got[1]).toBe(original);
+  });
 });

@@ -792,11 +792,13 @@ export class PlayerController {
     }
     this.refreshing = true;
     try {
+      // Read the intent first: tearing down the engine resets `paused` on a real media element.
+      const resumePlayback = this.wantsPlayback();
       const session = await this.o.tokens.refresh();
       this.lastRefreshAt = Date.now();
       this.o.engine.setToken(session.token);
       this.o.engine.reload(this.o.media.currentTime);
-      if (!this.o.media.paused || this.wasPlaying) this.play();
+      if (resumePlayback) this.play();
     } catch (e) {
       const k = e instanceof SessionError ? e.kind : 'network';
       this.setError(
@@ -805,6 +807,12 @@ export class PlayerController {
     } finally {
       this.refreshing = false;
     }
+  }
+
+  /** True when the viewer is playing, or autoplay is still waiting for the first frame. */
+  private wantsPlayback(): boolean {
+    if (!this.o.media.paused) return true;
+    return !this.firstFrame && (this.o.autoplay ?? true);
   }
 
   private onNetwork(online: boolean): void {

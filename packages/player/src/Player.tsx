@@ -1,3 +1,5 @@
+'use client';
+
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { PlayerController } from './controller';
 import type { NetworkMonitor, PageEvents, PlayerEngine } from './engine';

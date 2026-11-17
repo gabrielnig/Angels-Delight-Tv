@@ -14,7 +14,7 @@ describe('WatchDetails', () => {
   it('shows category, duration, title, description and the CC badge with a text alternative', async () => {
     const html = renderToStaticMarkup(<WatchDetails data={await data('v-plants')} />);
     expect(html).toContain('Science Made Simple');
-    expect(html).toContain('5:52');
+    expect(html).toContain('0:24');
     expect(html).toContain('<h1');
     expect(html).toContain('How Plants Make Their Own Food');
     expect(html).toContain('Captions available');

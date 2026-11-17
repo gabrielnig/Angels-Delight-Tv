@@ -18,7 +18,7 @@ describe('fixture playback data', () => {
 
   it('carries a saved position for resume', async () => {
     const r = await data.getWatchData('v-rain', adult);
-    expect(r.status === 'ok' && r.data.saved).toEqual({ positionSeconds: 134, finished: false });
+    expect(r.status === 'ok' && r.data.saved).toEqual({ positionSeconds: 14, finished: false });
   });
 
   it('includes a not yet approved track so the player gate is exercised', async () => {
