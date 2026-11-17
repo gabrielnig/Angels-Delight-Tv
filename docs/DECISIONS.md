@@ -400,4 +400,27 @@ Format: decision, options considered, why, reversible or not. Newest first. Deci
 - Decision: migration 0015 adds `staff_directory(actor, ids)`, returning the sealed email of staff accounts to an active staff caller. The app opens it with the key service and shows the readable part before the at sign as the name, as the signed in header already does. Editors never see addresses.
 - Options: store display names in plain text, or show "Staff member".
 - Why: names on "uploaded by" matter to editors and accounts hold no plain text name.
+
+## D-079 Video route layout and admin API paths (lane K2)
+- Decision: playlists are one dynamic route `/api/play/{id}/{file}` that serves `master.m3u8` and `{height}.m3u8` and answers 404 for any other name. Admin routes live under `/api/admin`: `uploads` (create, describe, parts, complete, abort, the paths lane F's uploader already calls), `videos/{id}/encoding`, `videos/{id}/captions`, `videos/{id}/publish`, `captions/{id}/approve`. Handlers are built in `server/video/api.ts` and route files are one line wrappers.
+- Options: a folder per playlist kind, or one route per admin action under `/admin`.
+- Why: Next cannot put a dynamic segment inside a file name, and the uploader paths were fixed by ARCHITECTURE section 7. The publish route is needed so the pipeline can be completed through the API until the lane F screens are wired.
+- Reversible: yes.
+
+## D-080 Maintenance connection and audit purge grant (lane K2)
+- Decision: the worker takes an optional `DATABASE_URL_MAINTENANCE` (role `ad_maintenance`). Without it the view event prune and audit prune jobs are not registered or scheduled, and the worker logs one warning. Migration 0015 grants `INSERT` on `audit_log` to `ad_worker`, because the purge writes one row recording itself and `ad_maintenance` cannot insert. The append only trigger still blocks update, delete and truncate for everyone but `ad_maintenance`.
+- Options: let `ad_maintenance` insert, give the worker `DATABASE_URL` for the web role, or skip the purge record.
+- Why: keeps `ad_maintenance` delete only, avoids a second app credential in the worker, and keeps the purge on the audit trail.
+- Reversible: yes.
+
+## D-081 Fake transcriber and scratch space ratio are configuration (lane K2)
+- Decision: `WHISPER_FAKE=true` makes the worker use a scripted transcriber (development and tests only, rejected in production). `WORKER_SCRATCH_MIN_FREE_RATIO` (default 0.15) sets how much of the scratch disk must stay free before a job starts.
+- Options: hard code both, or run a fake whisper HTTP server in tests.
+- Why: the real run needs captions without the 2 GB model, and a small disk should be tunable without a code change. The default keeps the lane D rule.
+- Reversible: yes.
+
+## D-082 Shared key rate bucket without a trusted proxy (lane K2)
+- Decision: `clientIp` returns null unless `TRUSTED_PROXY_MODE=cloudflare`, so the per IP key limit (300 per minute) uses one shared bucket named `untrusted` in that case. Production must set the proxy mode.
+- Options: read `X-Forwarded-For` (spoofable), or skip the per IP limit.
+- Why: the per profile limit still applies, a spoofable address would let one client dodge the limit, and development traffic is far below the shared cap.
 - Reversible: yes.
