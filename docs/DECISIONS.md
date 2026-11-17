@@ -237,3 +237,15 @@ Format: decision, options considered, why, reversible or not. Newest first. Deci
 - Decision: soft deleted videos are purged after 30 days (`graceDays`) by the nightly `videos.purge_deleted` cron, which queues one `video.purge` job per video. Purge deletes media, originals, templates, draft captions and the script, then hard deletes the row, and refuses to touch a video that is not soft deleted. Poster and hero assets are left to the image lane.
 - Why: gives staff a recovery window and keeps the destructive step small, repeatable and guarded.
 - Reversible: the grace period is configurable, deleted files are not recoverable.
+
+
+## D-049 Viewer API wiring (lane C)
+- Decision: viewer services take a `ViewerContext` (db, media origin, name cipher, password check, optional rate limit seam, clock, rules) and an `Actor`. Every read and write runs in `withAccount` and filters by `account_id` explicitly, because the admin role has a read policy on profiles. The active profile is a signed cookie (HMAC keyed from `PLAYBACK_TOKEN_SECRET` with its own label, bound to the account id). It only feeds the kids gate on management routes. Routes check Origin on writes, answer `Cache-Control: private, no-store`, and map service errors to `{ error: { code, message, fields? } }` with `Retry-After` on 429. Rate limits use named buckets (progress 30/min, search 60/min, PIN 5 per 15 min, kids exit 5 per 15 min).
+- Options: trust a `profileId` header, or keep the active profile in the session row.
+- Why: every service rechecks ownership, so a forged cookie gains nothing. A cookie needs no change to lane B's session table.
+- Reversible: yes.
+
+## D-050 Catalog rules (lane C)
+- Decision: kids mode uses the `kids_safe` flag from DATA-MODEL, not the suitability labels in the stories. The duration filter and the "shortest" sort apply to standalone videos only, series are left out. My List holds 500 titles (configurable, DATA-MODEL says 200). Search uses Postgres full text (weighted title and description, `simple` config) plus trigram and prefix matching through an IMMUTABLE `ad_unaccent` wrapper, with an offset cursor. Home injects Continue Watching and My List first unless the editor placed them. "Remove from row" deletes the progress record, which also clears the watched tick. A scheduled title that fails the publish checklist at release time goes back to draft and is audited. Republishing keeps the first publish date. Approved captions are required to publish unless an admin gives a reason.
+- Why: matches the schema we have, keeps queries index friendly, and fails closed.
+- Reversible: yes.
