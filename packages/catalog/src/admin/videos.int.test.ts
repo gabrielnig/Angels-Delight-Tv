@@ -1,5 +1,5 @@
 import { eq, sql } from 'drizzle-orm';
-import { assets, categories, videos } from '@ad/db';
+import { assets, captionTracks, captions, categories, videos } from '@ad/db';
 import { uuidv7, type Actor } from '@ad/shared';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { publish } from '../publishing';
@@ -14,6 +14,7 @@ import {
   type ViewerTestDb,
 } from '../testing';
 import {
+  adminNavCounts,
   bulkAdminVideos,
   getAdminVideo,
   listAdminVideos,
@@ -201,5 +202,55 @@ describe.skipIf(!integrationEnabled())('admin videos', () => {
     });
     expect(added.succeeded).toEqual([ready.id]);
     expect((await t.setup.select().from(categories)).length).toBeGreaterThan(2);
+  });
+
+  it('counts work waiting in the navigation without loading every video', async () => {
+    const fresh = await createViewerTestDb();
+    try {
+      const staff = {
+        accountId: (await seedAccount(fresh.setup, 'editor')).id,
+        role: 'editor' as const,
+      };
+      const fctx = { db: fresh.app };
+      await seedVideo(fresh.setup, { status: 'encoding', publishState: 'draft' });
+      await seedVideo(fresh.setup, { status: 'uploaded', publishState: 'draft' });
+      await seedVideo(fresh.setup, {
+        status: 'encoding',
+        publishState: 'draft',
+        deletedAt: new Date(),
+      });
+      const reviewing = await seedVideo(fresh.setup);
+      const approved = await seedVideo(fresh.setup);
+      const make = async (videoId: string, status: 'in_review' | 'approved', revision = 1) => {
+        const track = await fresh.setup
+          .insert(captionTracks)
+          .values({ videoId, language: 'en', label: 'English', kind: 'captions', isDefault: true })
+          .onConflictDoNothing()
+          .returning();
+        const trackId =
+          track[0]?.id ??
+          (
+            await fresh.setup.select().from(captionTracks).where(eq(captionTracks.videoId, videoId))
+          )[0]!.id;
+        await fresh.setup.insert(captions).values({
+          trackId,
+          revision,
+          source: 'whisper',
+          status,
+          storageKey: `k/${videoId}/${revision}`,
+          sha256: Buffer.alloc(32),
+          bytes: 10,
+          cueCount: 3,
+          ...(status === 'approved'
+            ? { reviewedBy: staff.accountId, publicKey: `pub/${videoId}.vtt` }
+            : {}),
+        });
+      };
+      await make(reviewing.id, 'in_review');
+      await make(approved.id, 'approved');
+      expect(await adminNavCounts(fctx, staff)).toEqual({ encoding: 2, captions: 1 });
+    } finally {
+      await fresh.drop();
+    }
   });
 });
