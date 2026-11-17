@@ -1721,3 +1721,26 @@
   flex: 0 0 6rem;
   font-size: var(--text-small);
 }
+
+/* ---- Definition lists and permission table ---- */
+.adm-dl {
+  display: grid;
+  gap: var(--space-3);
+  margin: 0;
+}
+.adm-dl > div {
+  display: grid;
+  gap: var(--space-1);
+}
+.adm-dl dt {
+  color: var(--color-muted);
+  font-size: var(--text-small);
+}
+.adm-dl dd {
+  margin: 0;
+}
+@media (min-width: 40rem) {
+  .adm-dl {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}

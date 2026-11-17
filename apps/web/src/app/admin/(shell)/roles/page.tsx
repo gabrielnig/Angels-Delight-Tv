@@ -1,0 +1,46 @@
+import type { Metadata } from 'next';
+import { PageHeader } from '@/components/admin/PageHeader';
+import { RolesInvites } from '@/components/admin/RolesInvites';
+import { NoAccess } from '@/components/admin/states';
+import { can } from '@/lib/admin/can';
+import { peopleService } from '@/lib/data/admin/services';
+import { ROLE_LABELS } from '@/lib/data/admin/session';
+import { requireActor } from '@/lib/data/admin/session-next';
+import {
+  changeRoleAction,
+  inviteStaffAction,
+  resendInviteAction,
+  revokeInviteAction,
+} from './actions';
+
+export const metadata: Metadata = { title: 'Roles and invites' };
+
+export default async function RolesPage() {
+  const actor = await requireActor('/admin/roles');
+  if (!can(actor.role, 'roles.change'))
+    return (
+      <NoAccess pageName="Roles and invites" roleLabel={ROLE_LABELS[actor.role]} needed="admins" />
+    );
+  const { staff, invites } = await peopleService.staff(actor);
+  return (
+    <>
+      <PageHeader
+        crumbs={[{ label: 'Admin', href: '/admin' }, { label: 'Roles and invites' }]}
+        title="Roles and invites"
+        lead="Who can sign in to the admin area, and what they can do."
+      />
+      <RolesInvites
+        staff={staff}
+        invites={invites}
+        now={Date.now()}
+        canManage
+        actions={{
+          invite: inviteStaffAction,
+          resend: resendInviteAction,
+          revoke: revokeInviteAction,
+          changeRole: changeRoleAction,
+        }}
+      />
+    </>
+  );
+}
