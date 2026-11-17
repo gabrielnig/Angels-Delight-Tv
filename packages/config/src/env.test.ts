@@ -181,6 +181,27 @@ describe('loadWebEnv', () => {
   });
 });
 
+describe('loadWebEnv auth lane variables', () => {
+  it('defaults CSP to enforcing and leaves the shred connection and support address unset', () => {
+    const env = loadWebEnv(devWeb);
+    expect(env.CSP_REPORT_ONLY).toBe(false);
+    expect(env.KEYS_DATABASE_URL_SHRED).toBeUndefined();
+    expect(env.SUPPORT_EMAIL).toBeUndefined();
+  });
+
+  it('accepts the report only switch, the shred connection and a support address', () => {
+    const env = loadWebEnv({
+      ...devWeb,
+      CSP_REPORT_ONLY: 'true',
+      KEYS_DATABASE_URL_SHRED: 'postgres://ad_keys_shred:dev@localhost:5432/ad_keys',
+      SUPPORT_EMAIL: 'help@example.org',
+    });
+    expect(env.CSP_REPORT_ONLY).toBe(true);
+    expect(env.KEYS_DATABASE_URL_SHRED).toContain('ad_keys_shred');
+    expect(env.SUPPORT_EMAIL).toBe('help@example.org');
+  });
+});
+
 describe('loadWorkerEnv', () => {
   it('parses a development worker environment with encode defaults', () => {
     const env = loadWorkerEnv(devWorker);
