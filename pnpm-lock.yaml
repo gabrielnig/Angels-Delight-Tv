@@ -220,6 +220,9 @@ importers:
 
   packages/catalog:
     dependencies:
+      '@ad/audit':
+        specifier: workspace:*
+        version: link:../audit
       '@ad/db':
         specifier: workspace:*
         version: link:../db

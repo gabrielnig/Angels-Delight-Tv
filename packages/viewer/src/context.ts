@@ -1,4 +1,5 @@
 import type { Database } from '@ad/db';
+import { RateLimited } from '@ad/shared';
 import type { CatalogContext } from '@ad/catalog';
 import { DEFAULT_RULES, type ViewerRules } from './rules';
 
@@ -8,6 +9,26 @@ export interface NameCipher {
   open(accountId: string, sealed: Uint8Array): Promise<string>;
 }
 
+export type ViewerBucket = 'progress' | 'search' | 'profile_pin' | 'kids_exit';
+
+export interface RateLimitDecision {
+  allowed: boolean;
+  retryAfterSeconds: number;
+}
+
+export type RateLimitCheck = (bucket: ViewerBucket, subject: string) => Promise<RateLimitDecision>;
+
+/** Defaults from docs/SECURITY.md section 7. The web wiring turns these into token buckets. */
+export const VIEWER_RATE_POLICIES: Record<
+  ViewerBucket,
+  { capacity: number; windowSeconds: number }
+> = {
+  progress: { capacity: 30, windowSeconds: 60 },
+  search: { capacity: 60, windowSeconds: 60 },
+  profile_pin: { capacity: 5, windowSeconds: 900 },
+  kids_exit: { capacity: 5, windowSeconds: 900 },
+};
+
 /** Everything the viewer services need besides the actor. Built once at startup, passed to every service call. */
 export interface ViewerContext {
   db: Database;
@@ -16,8 +37,8 @@ export interface ViewerContext {
   nameCipher: NameCipher;
   /** Checks the account password. The auth lane owns hashing and its lockout rules. */
   verifyPassword(accountId: string, password: string): Promise<boolean>;
-  /** Consumes one attempt from a bucket and says whether it was allowed. Absent in tests and early dev. */
-  rateLimit?: (key: string) => Promise<boolean>;
+  /** Spends one attempt from a bucket (see VIEWER_RATE_POLICIES). Absent means unlimited, which only tests and early dev use. */
+  rateLimit?: RateLimitCheck;
   now?: () => Date;
   rules?: Partial<ViewerRules>;
 }
@@ -32,4 +53,15 @@ export function rulesOf(ctx: ViewerContext): ViewerRules {
 
 export function clockOf(ctx: ViewerContext): Date {
   return (ctx.now ?? (() => new Date()))();
+}
+
+/** Spends one attempt and throws RateLimited with the wait time when the bucket is empty. */
+export async function spendAttempt(
+  ctx: ViewerContext,
+  bucket: ViewerBucket,
+  subject: string,
+): Promise<void> {
+  if (!ctx.rateLimit) return;
+  const decision = await ctx.rateLimit(bucket, subject);
+  if (!decision.allowed) throw new RateLimited(decision.retryAfterSeconds);
 }

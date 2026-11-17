@@ -16,7 +16,8 @@
     "@ad/db": "workspace:*",
     "@ad/shared": "workspace:*",
     "drizzle-orm": "^0.45.4",
-    "pg": "^8.23.1"
+    "pg": "^8.23.1",
+    "@ad/audit": "workspace:*"
   },
   "devDependencies": {
     "@types/pg": "^8.23.1"
