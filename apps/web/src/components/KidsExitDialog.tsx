@@ -4,8 +4,12 @@ import { useState } from 'react';
 import { Button, Modal, PasswordField } from '@ad/ui';
 import { checkKidsPasswordAction } from '../app/actions';
 
-type Check = (password: string) => Promise<
-  { ok: true } | { ok: false; reason: 'wrong'; triesLeft: number } | { ok: false; reason: 'locked'; minutes: number }
+type Check = (
+  password: string,
+) => Promise<
+  | { ok: true }
+  | { ok: false; reason: 'wrong'; triesLeft: number }
+  | { ok: false; reason: 'locked'; minutes: number }
 >;
 
 /** Screen 13. Leaving Kids mode needs the account password. */

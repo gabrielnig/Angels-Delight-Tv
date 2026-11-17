@@ -46,7 +46,8 @@ export function SignInForm({
   const [checked, setChecked] = useState(false);
 
   const shownEmailError = touched.email || submitted ? emailError(email) : undefined;
-  const shownPasswordError = (touched.password || submitted) && !password ? 'Enter your password.' : undefined;
+  const shownPasswordError =
+    (touched.password || submitted) && !password ? 'Enter your password.' : undefined;
   const lockedMinutes = problem?.kind === 'locked' ? problem.minutes : null;
 
   async function submit(event: FormEvent) {
@@ -96,13 +97,17 @@ export function SignInForm({
     <form ref={formRef} className="web-form" onSubmit={submit} noValidate>
       {notice && !problem ? <Banner tone="success">{notice}</Banner> : null}
       {problem?.kind === 'invalid' ? (
-        <Banner tone="danger">That email or password is not right. Check them and try again.</Banner>
+        <Banner tone="danger">
+          That email or password is not right. Check them and try again.
+        </Banner>
       ) : null}
       {problem?.kind === 'network' ? <Banner tone="danger">{NETWORK_MESSAGE}</Banner> : null}
       {problem?.kind === 'unavailable' ? (
         <Banner tone="danger">Sign in is temporarily unavailable. Try again in a moment.</Banner>
       ) : null}
-      {problem?.kind === 'rate_limited' ? <Banner tone="warning">{RATE_LIMIT_MESSAGE}</Banner> : null}
+      {problem?.kind === 'rate_limited' ? (
+        <Banner tone="warning">{RATE_LIMIT_MESSAGE}</Banner>
+      ) : null}
       {problem?.kind === 'locked' ? (
         <Banner tone="warning" title="Sign in is paused">
           {`Too many attempts. Try again in ${problem.minutes} minutes.`}{' '}
@@ -142,10 +147,18 @@ export function SignInForm({
         Forgot your password?
       </Link>
       {problem?.kind === 'check' ? (
-        <Checkbox label="I am a person" checked={checked} onChange={(event) => setChecked(event.target.checked)} />
+        <Checkbox
+          label="I am a person"
+          checked={checked}
+          onChange={(event) => setChecked(event.target.checked)}
+        />
       ) : null}
       <Button type="submit" size="lg" fullWidth loading={busy} disabled={lockedMinutes !== null}>
-        {busy ? 'Signing in' : lockedMinutes !== null ? `Try again in ${lockedMinutes} min` : 'Sign in'}
+        {busy
+          ? 'Signing in'
+          : lockedMinutes !== null
+            ? `Try again in ${lockedMinutes} min`
+            : 'Sign in'}
       </Button>
       {signUpOpen ? (
         <p className="web-form__alt">

@@ -7,5 +7,6 @@ export function emailError(value: string): string | undefined {
   return undefined;
 }
 
-export const NETWORK_MESSAGE = 'We could not reach the server. Check your data or Wi-Fi, then try again.';
+export const NETWORK_MESSAGE =
+  'We could not reach the server. Check your data or Wi-Fi, then try again.';
 export const RATE_LIMIT_MESSAGE = 'Too many requests. Try again in 15 minutes.';

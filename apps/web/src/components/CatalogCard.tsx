@@ -56,6 +56,8 @@ export function CatalogCard({
         thumbnail={item.thumbnail}
         episodeCount={item.episodeCount}
         priority={priority}
+        inList={inList}
+        onToggleList={onToggle}
       />
     );
   }
@@ -121,16 +123,16 @@ export function ContinueRow({
   return (
     <Row title="Continue watching">
       {visible.map(({ video, progress }) => (
-          <ContinueCard
-            key={video.id}
-            title={video.title}
-            href={`/watch/${video.id}?t=${Math.floor(progress.positionSeconds)}`}
-            durationSeconds={video.durationSeconds}
-            thumbnail={video.thumbnail}
-            progressPercent={progress.durationSeconds > 0 ? percent(progress) : undefined}
-            timeLeftLabel={timeLeftLabel(progress)}
-            onRemove={() => void onRemove(video)}
-          />
+        <ContinueCard
+          key={video.id}
+          title={video.title}
+          href={`/watch/${video.id}?t=${Math.floor(progress.positionSeconds)}`}
+          durationSeconds={video.durationSeconds}
+          thumbnail={video.thumbnail}
+          progressPercent={progress.durationSeconds > 0 ? percent(progress) : undefined}
+          timeLeftLabel={timeLeftLabel(progress)}
+          onRemove={() => void onRemove(video)}
+        />
       ))}
     </Row>
   );
