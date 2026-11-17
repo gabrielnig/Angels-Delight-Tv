@@ -1,16 +1,8 @@
 import { and, asc, eq, sql } from 'drizzle-orm';
 import { profiles, withAccount } from '@ad/db';
-import {
-  Conflict,
-  Forbidden,
-  isUuid,
-  NotFound,
-  RateLimited,
-  ValidationFailed,
-  type Actor,
-} from '@ad/shared';
+import { Conflict, Forbidden, isUuid, NotFound, ValidationFailed, type Actor } from '@ad/shared';
 import type { Audience } from '@ad/catalog';
-import type { ViewerContext } from './context';
+import { spendAttempt, type ViewerContext } from './context';
 import { dbErrorInfo } from './db-errors';
 import { hashPin, PIN_PATTERN, verifyPin } from './pin';
 
@@ -350,9 +342,7 @@ export async function selectProfile(
   const row = await withAccount(ctx.db, actor, (tx) => loadOwnedProfile(tx, actor, profileId));
   if (row.pinHash !== null) {
     if (options.pin === undefined) throw new Forbidden('pin_required');
-    if (ctx.rateLimit && !(await ctx.rateLimit(`profile-pin:${row.id}`))) {
-      throw new RateLimited(900);
-    }
+    await spendAttempt(ctx, 'profile_pin', row.id);
     if (!(await verifyPin(options.pin, row.pinHash))) throw new Forbidden('pin_invalid');
   }
   return toDto(ctx, actor.accountId, row);
@@ -364,9 +354,7 @@ export async function exitKidsMode(
   actor: Actor,
   input: { password: string },
 ): Promise<{ ok: true }> {
-  if (ctx.rateLimit && !(await ctx.rateLimit(`kids-exit:${actor.accountId}`))) {
-    throw new RateLimited(900);
-  }
+  await spendAttempt(ctx, 'kids_exit', actor.accountId);
   if (!(await ctx.verifyPassword(actor.accountId, input.password))) {
     throw new Forbidden('password_incorrect');
   }

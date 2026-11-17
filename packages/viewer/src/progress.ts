@@ -1,7 +1,7 @@
 import { and, desc, eq, gte, inArray, sql } from 'drizzle-orm';
 import type { profiles } from '@ad/db';
 import { watchProgress, withAccount } from '@ad/db';
-import { isUuid, NotFound, RateLimited, type Actor } from '@ad/shared';
+import { isUuid, NotFound, type Actor } from '@ad/shared';
 import {
   episodeOrder,
   fetchVideoCards,
@@ -10,7 +10,7 @@ import {
   rowsOf,
   type VideoCard,
 } from '@ad/catalog';
-import { catalogContext, clockOf, rulesOf, type ViewerContext } from './context';
+import { catalogContext, clockOf, rulesOf, spendAttempt, type ViewerContext } from './context';
 import { audienceOf, loadOwnedProfile } from './profiles';
 import type { ViewerRules } from './rules';
 
@@ -63,7 +63,6 @@ export interface ContinueWatchingItem {
 }
 
 const HISTORY_SCAN_LIMIT = 200;
-const PROGRESS_WRITES_PER_MINUTE_MESSAGE = 'Too many progress updates';
 
 export function isFinished(rules: ViewerRules, positionMs: number, durationMs: number): boolean {
   return (
@@ -132,9 +131,7 @@ export async function saveProgress(
 
   return withAccount(ctx.db, actor, async (tx) => {
     const profile = await loadOwnedProfile(tx, actor, input.profileId);
-    if (ctx.rateLimit && !(await ctx.rateLimit(`progress:${profile.id}`))) {
-      throw new RateLimited(60, PROGRESS_WRITES_PER_MINUTE_MESSAGE);
-    }
+    await spendAttempt(ctx, 'progress', profile.id);
     const durationMs = await requirePlayableDuration(tx, ctx, audienceOf(profile), input.videoId);
     const positionMs = Math.min(Math.max(Math.trunc(input.positionMs), 0), durationMs);
     const timestamp = effectiveTimestamp(input.clientTimestamp, now, rules.maxClockSkewMs);
