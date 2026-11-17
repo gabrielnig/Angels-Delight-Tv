@@ -7,16 +7,14 @@ import type { Logger } from '@ad/shared';
 import { createStorage, storageConfigFromEnv } from '@ad/storage';
 import {
   CaptionGenerator,
-  HttpWhisperClient,
   LifecycleService,
-  PipelineError,
   UploadService,
   VideoPipeline,
   keyring,
-  type Transcriber,
 } from '@ad/video';
 import type { PgBoss } from 'pg-boss';
 import type { VideoHandlerDeps } from './handlers';
+import { chooseTranscriber } from './transcriber';
 import type { MaintenanceDeps } from './maintenance';
 
 // Cleanup never validates new uploads, so the limits here are placeholders.
@@ -73,13 +71,7 @@ export function buildVideoHandlerDeps(
     logger,
   });
 
-  const transcriber: Transcriber = env.WHISPER_URL
-    ? new HttpWhisperClient({ baseUrl: env.WHISPER_URL })
-    : {
-        transcribe: async () => {
-          throw new PipelineError('caption_failed', 'WHISPER_URL is not configured', true);
-        },
-      };
+  const transcriber = chooseTranscriber(env);
   const captions = new CaptionGenerator({ db, originals, transcriber, scratch });
 
   return {
