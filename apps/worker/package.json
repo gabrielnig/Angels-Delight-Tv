@@ -22,12 +22,10 @@
     "@ad/shared": "workspace:*",
     "@ad/storage": "workspace:*",
     "@ad/video": "workspace:*",
-    "pg": "^8.23.1",
     "pg-boss": "^12.38.2",
     "tsx": "^4.23.15"
   },
   "devDependencies": {
-    "@types/pg": "^8.23.1",
     "drizzle-orm": "^0.45.4"
   }
 }

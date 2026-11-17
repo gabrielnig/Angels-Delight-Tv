@@ -12,7 +12,6 @@
     "test:file": "vitest run"
   },
   "dependencies": {
-    "@ad/shared": "workspace:*",
     "zod": "^4.6.7"
   }
 }

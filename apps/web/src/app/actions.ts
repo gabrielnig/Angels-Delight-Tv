@@ -169,11 +169,6 @@ export async function restoreContinueAction(videoId: string) {
   await getLibrary().restoreContinue(ctx, videoId);
 }
 
-export async function loadMyListAction(cursor: string) {
-  const { ctx } = await context();
-  return getLibrary().myList(ctx, cursor);
-}
-
 // ---- Catalog ----
 
 export async function suggestAction(q: string): Promise<Suggestion[]> {
