@@ -63,6 +63,7 @@ export function UploaderProvider({
         transport: mode === 'http' ? createHttpTransport() : createSimulatedTransport(),
         network: typeof window === 'undefined' ? undefined : browserNetwork(),
         store: typeof window === 'undefined' ? undefined : localResumeStore(),
+        baseDelayMs: mode === 'fixture' ? 200 : undefined,
       }),
     [mode],
   );
