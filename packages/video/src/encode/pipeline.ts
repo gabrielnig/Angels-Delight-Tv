@@ -1,8 +1,7 @@
 import { createHash } from 'node:crypto';
-import { createReadStream, createWriteStream } from 'node:fs';
-import { mkdir, open, readFile, stat, writeFile } from 'node:fs/promises';
+import { createReadStream } from 'node:fs';
+import { mkdir, readFile, stat, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import { pipeline as streamPipeline } from 'node:stream/promises';
 import { schema, type Database } from '@ad/db';
 import type { ClassifiedFailure, JobProducer } from '@ad/queue';
 import { Conflict, NotFound, createLogger, uuidv7, type Logger } from '@ad/shared';
@@ -28,6 +27,7 @@ import {
   nodeRunner,
   type ProcessRunner,
 } from './ffmpeg';
+import { downloadTo, readHead } from './files';
 import { withScratch, type ScratchOptions } from './scratch';
 
 const { videos, renditions, videoKeys, assets } = schema;
@@ -69,21 +69,6 @@ export function classifyPipelineError(error: unknown): ClassifiedFailure {
     detail: failure.technical,
     permanent: failure.permanent,
   };
-}
-
-async function downloadTo(storage: StorageAdapter, key: string, path: string): Promise<void> {
-  await streamPipeline(await storage.get(key), createWriteStream(path, { mode: 0o600 }));
-}
-
-async function readHead(path: string, bytes: number): Promise<Buffer> {
-  const handle = await open(path, 'r');
-  try {
-    const buffer = Buffer.alloc(bytes);
-    const { bytesRead } = await handle.read(buffer, 0, bytes, 0);
-    return buffer.subarray(0, bytesRead);
-  } finally {
-    await handle.close();
-  }
 }
 
 async function mapLimit<T>(
