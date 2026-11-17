@@ -76,6 +76,8 @@ Login identity. "Users" in the UI and brief means accounts. Role lives here.
 | `locale` | text | no | `en` | BCP-47, length 2 to 35 |
 | `password_changed_at` | timestamptz | no | `now()` | Sessions older than this are revoked on change |
 | `last_login_at` | timestamptz | yes | | |
+| `suspended_reason` | text | yes | | Why staff suspended this viewer. Staff only. Set by `staff_set_account_status` |
+| `suspended_at` | timestamptz | yes | | |
 | `created_at`, `updated_at` | timestamptz | no | `now()` | |
 | `deleted_at` | timestamptz | yes | | |
 
@@ -232,6 +234,10 @@ Index `(updated_at)` for cleanup. Consumed with one atomic `INSERT ... ON CONFLI
 | `hero_asset_id` | uuid | yes | | FK `assets` ON DELETE SET NULL |
 | `failure_code` | text | yes | | Machine code for `failed` |
 | `failure_message` | text | yes | | Readable, sanitized |
+| `tags` | text[] | no | `{}` | At most 10. Editor tags, admin only |
+| `suitability` | text | yes | | `everyone`, `kids` or `older`. `kids_safe` is true for `kids` and `everyone` |
+| `caption_override_reason` | text | yes | | Set when an admin published without approved captions |
+| `poster_focus` | jsonb | yes | | `{x, y, zoom}` chosen in the poster picker |
 | `created_by` | uuid | yes | | FK `accounts` ON DELETE SET NULL |
 | `created_at`, `updated_at` | timestamptz | no | `now()` | |
 | `deleted_at` | timestamptz | yes | | Soft delete, purged after 30 days |
