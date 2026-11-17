@@ -16,7 +16,7 @@ Viewer screens S01 to S07 and S27 to S30 are the lane E screens, now served by `
 - Viewer sessions: 30 days idle, 90 absolute. Staff: 30 minutes idle, 8 hours. Pending second factor: 10 minutes.
 - Sign up, resend and reset answer identically for known and unknown addresses, and mail goes out in the background where timing could leak.
 - Lockouts: viewers 5 failures per 15 minutes locks 15 minutes, staff 3 failures locks 30 minutes, second factor codes 5 per 15 minutes.
-- Account deletion destroys the account key (see D-052). `AccountService.destroyPendingKeys` retries failed destruction.
+- Account deletion destroys the account key (see D-059). `AccountService.destroyPendingKeys` retries failed destruction.
 - Seed: `pnpm db:seed:admin` creates the first admin from env variables and refuses to run when an admin exists.
 
 ## Tests
@@ -25,10 +25,10 @@ Viewer screens S01 to S07 and S27 to S30 are the lane E screens, now served by `
 - `pnpm vitest run apps/web/src/server/auth`
 
 ## Environment
-`FIELD_KEK`, `EMAIL_HASH_PEPPER`, `KEYS_DATABASE_URL`, `SMTP_URL`, `EMAIL_FROM`, `TRUSTED_PROXY_MODE`, `DEV_SKIP_MFA` (rejected in production), plus `KEYS_DATABASE_URL_SHRED`, `CSP_REPORT_ONLY`, `SUPPORT_EMAIL`, `AUTH_FIXTURES` (see D-056).
+`FIELD_KEK`, `EMAIL_HASH_PEPPER`, `KEYS_DATABASE_URL`, `SMTP_URL`, `EMAIL_FROM`, `TRUSTED_PROXY_MODE`, `DEV_SKIP_MFA` (rejected in production), plus `KEYS_DATABASE_URL_SHRED`, `CSP_REPORT_ONLY`, `SUPPORT_EMAIL`, `AUTH_FIXTURES` (see D-063).
 
 ## Decisions
-D-051 to D-057.
+D-058 to D-064.
 
 ## Gaps
 - Turnstile verification on sign in and sign up is not wired (the gateway has no challenge step yet).
