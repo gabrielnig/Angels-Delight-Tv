@@ -52,7 +52,7 @@ Install the git hook with `pnpm run hooks:install`. It runs the footprint check,
 | `web` | build `apps/web` | 3000 | Profile `full` only |
 | `worker` | build `apps/worker` | none | Profile `full` only. Has FFmpeg |
 | `caddy` | `caddy:2-alpine`, config in `docker/caddy/Caddyfile` | 80, 443 | Profile `proxy` only. Gives `https://localhost` with an internal certificate |
-| `whisper` | build `apps/whisper` | 8000 | Not yet. Arrives with the captions lane (profile `captions`) |
+| `whisper` | build `apps/whisper` | 8000 | faster-whisper over a small HTTP service. Profiles `captions` and `full`. Downloads its model into the `whisper-models` volume on first start. Tests: `pnpm --filter @ad/whisper test:py` |
 
 Note on MinIO: its community distribution has changed (the `minio/minio` repository was not found on Docker Hub when this was checked on 2026-11-17). The default tags above were not pulled in the lane A environment. Set `MINIO_IMAGE` and `MC_IMAGE` to images you have pulled and verified, keep `STORAGE_DRIVER=s3` vendor neutral so Garage, SeaweedFS or RustFS can replace it, or use `STORAGE_DRIVER=local` (see section 4) which needs no container. Logged as D-017.
 
