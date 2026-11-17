@@ -1,4 +1,7 @@
-import { Algorithm, hash as argonHash, verify as argonVerify } from '@node-rs/argon2';
+import { hash as argonHash, verify as argonVerify } from '@node-rs/argon2';
+
+/** The library's Algorithm enum is a const enum, which the build setting verbatimModuleSyntax cannot import. 2 is Argon2id. */
+const ARGON2ID = 2;
 import { PASSWORD_MAX_LENGTH } from './policy';
 
 export interface HashParams {
@@ -18,7 +21,7 @@ export interface HashEngine {
 const argon2Engine: HashEngine = {
   hash: (password, params) =>
     argonHash(password, {
-      algorithm: Algorithm.Argon2id,
+      algorithm: ARGON2ID,
       memoryCost: params.memoryKib,
       timeCost: params.timeCost,
       parallelism: params.parallelism,
