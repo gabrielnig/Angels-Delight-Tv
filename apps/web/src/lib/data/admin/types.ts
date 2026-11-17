@@ -6,6 +6,8 @@ export interface AdminActor {
   accountId: string;
   role: AccountRole;
   name: string;
+  /** The staff session, so sensitive actions can check a recent password confirmation. Real auth only. */
+  sessionId?: string;
 }
 
 export type CaptionState = 'none' | 'generating' | 'needs_review' | 'approved' | 'failed';

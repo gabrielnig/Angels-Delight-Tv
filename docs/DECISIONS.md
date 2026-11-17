@@ -430,3 +430,9 @@ Format: decision, options considered, why, reversible or not. Newest first. Deci
 - Options: coalesce autosaves into one working revision, or build a separate preview player.
 - Why: the service already owns revision numbers and the approved copy, and the viewer controller already handles tokens, stalls and quality. A revision per pause is noisy but safe, and coalescing needs a change in lane D.
 - Reversible: yes. Coalescing is a follow up in `storeRevision`.
+
+## D-083 Staff mutations run on the real StaffService behind a reauth dialog (lane K3)
+- Decision: this replaces D-069. Invites, resend, cancel and role changes call `StaffService`. When the service answers `ReauthRequired` the command result carries `reauth: true`, and `useReauth` shows a password dialog, calls `PeopleService.reauthenticate` (which marks the session) and repeats the command once. The admin actor carries the staff `sessionId`. Role changes read the person's current role first and pass it as `expectedRole`. Resend creates a new invite for the same address, which cancels the old one. Viewer suspension, reinstating and sign out everywhere write their audit row with the status change in one transaction.
+- Options: a separate reauth page, or asking for the password on every staff mutation.
+- Why: a modal keeps the person on the screen and the 10 minute window means one prompt per sitting.
+- Reversible: yes.

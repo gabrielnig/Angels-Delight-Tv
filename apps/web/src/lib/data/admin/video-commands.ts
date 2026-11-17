@@ -66,7 +66,8 @@ export interface PublishRequest {
   overrideReason?: string;
 }
 
-export type CommandResult = { ok: true } | { ok: false; error: string };
+/** `reauth` means the action needs a recent password confirmation first. The screen asks and tries again. */
+export type CommandResult = { ok: true } | { ok: false; error: string; reauth?: true };
 
 export function schedulePublish(
   video: VideoRecord,
