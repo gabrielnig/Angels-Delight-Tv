@@ -50,12 +50,18 @@ importers:
       '@ad/analytics':
         specifier: workspace:*
         version: link:../../packages/analytics
+      '@ad/auth':
+        specifier: workspace:*
+        version: link:../../packages/auth
       '@ad/config':
         specifier: workspace:*
         version: link:../../packages/config
       '@ad/db':
         specifier: workspace:*
         version: link:../../packages/db
+      '@ad/mailer':
+        specifier: workspace:*
+        version: link:../../packages/mailer
       '@ad/security':
         specifier: workspace:*
         version: link:../../packages/security

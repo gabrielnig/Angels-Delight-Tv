@@ -79,6 +79,11 @@ const webShape = {
 
   DATABASE_URL: postgresUrl,
   KEYS_DATABASE_URL: postgresUrl,
+  /** Delete only connection to the keys database. Lets the web process finish account deletion at once. */
+  KEYS_DATABASE_URL_SHRED: postgresUrl.optional(),
+  CSP_REPORT_ONLY: bool.default(false),
+  /** Address shown to people who need help. Falls back to the From address until site settings supply one. */
+  SUPPORT_EMAIL: z.string().min(3).optional(),
 
   FIELD_KEK: key32,
   FIELD_KEK_PREVIOUS: key32.optional(),

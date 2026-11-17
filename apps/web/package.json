@@ -13,8 +13,10 @@
   },
   "dependencies": {
     "@ad/analytics": "workspace:*",
+    "@ad/auth": "workspace:*",
     "@ad/config": "workspace:*",
     "@ad/db": "workspace:*",
+    "@ad/mailer": "workspace:*",
     "@ad/security": "workspace:*",
     "@ad/shared": "workspace:*",
     "@ad/storage": "workspace:*",
