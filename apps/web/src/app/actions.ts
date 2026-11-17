@@ -1,0 +1,179 @@
+'use server';
+
+import { cookies } from 'next/headers';
+import {
+  getAccount,
+  getAuth,
+  getCatalog,
+  getLibrary,
+  getProfiles,
+  type AuthResult,
+  type CodeResult,
+  type PlaybackSettings,
+  type ProfileInput,
+  type SignUpResult,
+  type Suggestion,
+} from '../lib/data';
+import { FIXTURE_ACCOUNT_ID, getSession, sessionCookieNames } from '../lib/session';
+
+/**
+ * Server actions for the viewer UI. Each one resolves the signed in profile itself and only calls the
+ * data interfaces in lib/data, so swapping fixtures for real services needs no change here.
+ */
+
+async function context() {
+  const session = await getSession();
+  if (!session?.profile) throw new Error('No profile selected');
+  return {
+    session,
+    ctx: {
+      accountId: session.accountId,
+      profileId: session.profile.id,
+      audience: session.profile.kids ? ('kids' as const) : ('adult' as const),
+    },
+  };
+}
+
+const cookieOptions = { path: '/', httpOnly: true, sameSite: 'lax' as const };
+
+// ---- Auth ----
+
+export async function signInAction(input: { email: string; password: string; next?: string }): Promise<AuthResult> {
+  const result = await getAuth().signIn(input);
+  if (result.ok) (await cookies()).delete(sessionCookieNames.fixture);
+  return result;
+}
+
+export async function signUpAction(input: { email: string; password: string; inviteCode?: string }): Promise<SignUpResult> {
+  return getAuth().signUp(input);
+}
+
+export async function verifyEmailAction(input: { code: string }): Promise<CodeResult> {
+  const result = await getAuth().verifyEmail(input);
+  if (result.ok) (await cookies()).delete(sessionCookieNames.fixture);
+  return result;
+}
+
+export async function resendCodeAction() {
+  return getAuth().resendCode();
+}
+
+export async function requestResetAction(input: { email: string }) {
+  return getAuth().requestPasswordReset(input);
+}
+
+export async function resetPasswordAction(input: { token: string; password: string }) {
+  return getAuth().resetPassword(input);
+}
+
+export async function signOutAction() {
+  await getAuth().signOut();
+  const jar = await cookies();
+  jar.set(sessionCookieNames.fixture, 'out', cookieOptions);
+  jar.delete(sessionCookieNames.profile);
+}
+
+// ---- Profiles ----
+
+export async function selectProfileAction(profileId: string) {
+  await getProfiles().select(FIXTURE_ACCOUNT_ID, profileId);
+  (await cookies()).set(sessionCookieNames.profile, profileId, cookieOptions);
+}
+
+export async function createProfileAction(input: ProfileInput) {
+  return getProfiles().create(FIXTURE_ACCOUNT_ID, input);
+}
+
+export async function updateProfileAction(id: string, input: Partial<ProfileInput> & { password?: string }) {
+  if (input.password) {
+    const check = await getAuth().checkPassword(input.password);
+    if (!check.ok) return { ok: false as const, reason: 'password_required' as const };
+  }
+  return getProfiles().update(FIXTURE_ACCOUNT_ID, id, input);
+}
+
+export async function deleteProfileAction(id: string) {
+  const result = await getProfiles().remove(FIXTURE_ACCOUNT_ID, id);
+  if (result.ok) {
+    const jar = await cookies();
+    if (jar.get(sessionCookieNames.profile)?.value === id) jar.delete(sessionCookieNames.profile);
+  }
+  return result;
+}
+
+export async function checkKidsPasswordAction(password: string) {
+  const result = await getAuth().checkPassword(password);
+  if (result.ok) {
+    const profiles = await getProfiles().list(FIXTURE_ACCOUNT_ID);
+    const adult = profiles.find((p) => !p.kids);
+    if (adult) (await cookies()).set(sessionCookieNames.profile, adult.id, cookieOptions);
+  }
+  return result;
+}
+
+// ---- Library ----
+
+export async function toggleListAction(itemKey: string, add: boolean) {
+  const { ctx } = await context();
+  if (add) await getLibrary().addToList(ctx, itemKey);
+  else await getLibrary().removeFromList(ctx, itemKey);
+}
+
+export async function removeContinueAction(videoId: string) {
+  const { ctx } = await context();
+  await getLibrary().removeFromContinue(ctx, videoId);
+}
+
+export async function restoreContinueAction(videoId: string) {
+  const { ctx } = await context();
+  await getLibrary().restoreContinue(ctx, videoId);
+}
+
+export async function loadMyListAction(cursor: string) {
+  const { ctx } = await context();
+  return getLibrary().myList(ctx, cursor);
+}
+
+// ---- Catalog ----
+
+export async function suggestAction(q: string): Promise<Suggestion[]> {
+  const { ctx } = await context();
+  return getCatalog().suggest(ctx, q);
+}
+
+export async function loadMoreBrowseAction(query: { categorySlug?: string; length?: 'any' | 'short' | 'medium' | 'long'; sort?: 'newest' | 'shortest' | 'longest'; cursor: string }) {
+  const { ctx } = await context();
+  return getCatalog().browse(ctx, query);
+}
+
+export async function loadMoreSearchAction(q: string, cursor: string) {
+  const { ctx } = await context();
+  return getCatalog().search(ctx, q, cursor);
+}
+
+// ---- Account ----
+
+export async function savePlaybackAction(patch: Partial<PlaybackSettings>) {
+  const { ctx } = await context();
+  return getAccount().savePlayback(ctx.profileId, patch);
+}
+
+export async function changePasswordAction(input: { current: string; next: string }) {
+  return getAccount().changePassword(FIXTURE_ACCOUNT_ID, input);
+}
+
+export async function revokeDeviceAction(id: string) {
+  await getAccount().revokeDevice(FIXTURE_ACCOUNT_ID, id);
+}
+
+export async function revokeOtherDevicesAction() {
+  return getAccount().revokeOtherDevices(FIXTURE_ACCOUNT_ID);
+}
+
+export async function requestExportAction() {
+  return getAccount().requestExport(FIXTURE_ACCOUNT_ID);
+}
+
+export async function deleteAccountAction(input: { password: string; confirm: string }) {
+  return getAccount().deleteAccount(FIXTURE_ACCOUNT_ID, input);
+}
