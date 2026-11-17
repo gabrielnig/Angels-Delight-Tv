@@ -53,6 +53,9 @@ importers:
       '@ad/auth':
         specifier: workspace:*
         version: link:../../packages/auth
+      '@ad/catalog':
+        specifier: workspace:*
+        version: link:../../packages/catalog
       '@ad/config':
         specifier: workspace:*
         version: link:../../packages/config
@@ -77,6 +80,9 @@ importers:
       '@ad/ui':
         specifier: workspace:*
         version: link:../../packages/ui
+      '@ad/viewer':
+        specifier: workspace:*
+        version: link:../../packages/viewer
       drizzle-orm:
         specifier: ^0.45.4
         version: 0.45.4(@opentelemetry/api@1.10.0)(@types/pg@8.23.1)(pg@8.23.1)
@@ -92,6 +98,9 @@ importers:
       server-only:
         specifier: ^0.0.1
         version: 0.0.1
+      zod:
+        specifier: ^4.6.7
+        version: 4.6.7
     devDependencies:
       '@axe-core/playwright':
         specifier: ^4.14.0
