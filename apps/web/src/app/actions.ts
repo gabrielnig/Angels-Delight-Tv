@@ -15,6 +15,8 @@ import {
   type Suggestion,
 } from '../lib/data';
 import { currentAccountId, getSession, sessionCookieNames } from '../lib/session';
+import { realDataEnabled } from '../server/data/mode';
+import { cookieProfileIo } from '../server/data/profile-io';
 
 /**
  * Server actions for the viewer UI. Each one resolves the signed in profile itself and only calls the
@@ -79,13 +81,20 @@ export async function signOutAction() {
   const jar = await cookies();
   jar.set(sessionCookieNames.fixture, 'out', cookieOptions);
   jar.delete(sessionCookieNames.profile);
+  if (realDataEnabled()) await cookieProfileIo().clearActive();
 }
 
 // ---- Profiles ----
 
+/** Makes a profile the active one. Real data sets the signed cookie itself, fixtures use the plain one. */
+async function activate(accountId: string, profileId: string) {
+  await getProfiles().select(accountId, profileId);
+  if (!realDataEnabled())
+    (await cookies()).set(sessionCookieNames.profile, profileId, cookieOptions);
+}
+
 export async function selectProfileAction(profileId: string) {
-  await getProfiles().select(await currentAccountId(), profileId);
-  (await cookies()).set(sessionCookieNames.profile, profileId, cookieOptions);
+  await activate(await currentAccountId(), profileId);
 }
 
 export async function createProfileAction(input: ProfileInput) {
@@ -115,9 +124,16 @@ export async function deleteProfileAction(id: string) {
 export async function checkKidsPasswordAction(password: string) {
   const result = await getAuth().checkPassword(password);
   if (result.ok) {
-    const profiles = await getProfiles().list(await currentAccountId());
-    const adult = profiles.find((p) => !p.kids);
-    if (adult) (await cookies()).set(sessionCookieNames.profile, adult.id, cookieOptions);
+    const accountId = await currentAccountId();
+    const adult = (await getProfiles().list(accountId)).find((p) => !p.kids);
+    if (adult) {
+      try {
+        await activate(accountId, adult.id);
+      } catch {
+        // A grown-up profile with a PIN cannot be opened from here: leave the kids profile and show the picker.
+        if (realDataEnabled()) await cookieProfileIo().clearActive();
+      }
+    }
   }
   return result;
 }

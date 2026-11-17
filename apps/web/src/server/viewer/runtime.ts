@@ -69,9 +69,16 @@ function build(): ViewerRuntime {
   };
 }
 
+let runtime: ViewerRuntime | undefined;
 let cached: ViewerApi | undefined;
 
+/** The wiring shared by the routes and the server side data layer (lib/data). Built once, on first use. */
+export function viewerRuntime(): ViewerRuntime {
+  runtime ??= build();
+  return runtime;
+}
+
 export function viewerApi(): ViewerApi {
-  cached ??= createViewerApi(build());
+  cached ??= createViewerApi(viewerRuntime());
   return cached;
 }
