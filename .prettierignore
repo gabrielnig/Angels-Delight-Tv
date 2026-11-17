@@ -1,0 +1,11 @@
+node_modules
+.next
+dist
+coverage
+pnpm-lock.yaml
+packages/db/migrations
+.claude
+docs/research
+packages/ui/src/tokens.css
+docs
+*.md
