@@ -45,6 +45,18 @@ describe.skipIf(!integrationEnabled())('account overview, email change and delet
     });
   });
 
+  describe('password tries left', () => {
+    it('counts down with each wrong confirmation', async () => {
+      const m = await registerMember(h, auth);
+      const { actor } = await signInActor(h, auth, m);
+      expect(await auth.triesLeft(actor)).toBe(5);
+      await expect(auth.reauthenticate(actor, 'not-my-password-1', h.meta)).rejects.toBeInstanceOf(
+        FieldErrors,
+      );
+      expect(await auth.triesLeft(actor)).toBe(4);
+    });
+  });
+
   describe('change email', () => {
     it('mails a code to the new address and a notice to the old one, and changes nothing yet', async () => {
       const m = await registerMember(h, auth);
