@@ -1,6 +1,6 @@
 import 'server-only';
 import { readPending, signPending } from '@ad/auth';
-import { RealAccountRepository } from './account-repo';
+import { type AccountViewerSource, RealAccountRepository } from './account-repo';
 import { type GatewayIo, RealAuthGateway } from './gateway';
 import { authRuntime } from './runtime';
 import {
@@ -42,7 +42,14 @@ export function requestIo(): GatewayIo {
 
 export const createRealAuth = () => new RealAuthGateway(authRuntime().staff, requestIo());
 
-export const createRealAccount = () => {
+/** `viewer` is the stats, playback settings and export source. Pass it when viewer data is real. */
+export const createRealAccount = (viewer?: AccountViewerSource) => {
   const runtime = authRuntime();
-  return new RealAccountRepository(runtime.staff, runtime.sessions, requestIo());
+  return new RealAccountRepository(
+    runtime.staff,
+    runtime.sessions,
+    requestIo(),
+    () => new Date(),
+    viewer,
+  );
 };
