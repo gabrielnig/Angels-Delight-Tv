@@ -18,15 +18,44 @@ describe.skipIf(!integrationEnabled())('real playback data', () => {
   let h: ViewerHarness;
   let playback: RealPlaybackData;
   let settings = { ...DEFAULT_PLAYBACK };
+  let captioned = '';
   const adult = (u: User) => ({ accountId: u.accountId, profileId: u.profileId, kids: false });
   const kids = (u: User) => ({ accountId: u.accountId, profileId: u.kidsProfileId, kids: true });
 
   beforeAll(async () => {
     h = await createHarness();
-    playback = new RealPlaybackData(h.ctx, async () => settings);
+    playback = new RealPlaybackData(
+      h.ctx,
+      async () => settings,
+      async (videoId) =>
+        videoId === captioned
+          ? [{ language: 'en', label: 'English', isDefault: true, key: 'cap/p/en/abcd1234.vtt' }]
+          : [],
+    );
   });
   afterAll(async () => {
     await h?.drop();
+  });
+
+  it('attaches approved caption tracks from the media origin, and none when there are none', async () => {
+    const u = await h.makeUser();
+    const withTrack = await seedVideo(h.db.setup, { title: 'Has captions', kidsSafe: true });
+    const without = await seedVideo(h.db.setup, { title: 'No captions', kidsSafe: true });
+    captioned = withTrack.id;
+    const a = await playback.getWatchData(withTrack.id, adult(u));
+    if (a.status !== 'ok') throw new Error(a.status);
+    expect(a.data.captions).toEqual([
+      {
+        id: 'en',
+        language: 'en',
+        label: 'English',
+        src: 'https://media.test/cap/p/en/abcd1234.vtt',
+        status: 'approved',
+      },
+    ]);
+    const b = await playback.getWatchData(without.id, adult(u));
+    if (b.status !== 'ok') throw new Error(b.status);
+    expect(b.data.captions).toEqual([]);
   });
 
   it('describes a standalone video with saved progress, related tiles and list state', async () => {
