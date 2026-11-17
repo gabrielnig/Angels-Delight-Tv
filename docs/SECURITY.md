@@ -25,7 +25,7 @@ Content is free and educational, so content confidentiality is the lowest priori
 | Tampering | Client edits a profile id or video id in a request. Mass assignment of `role`. Altered upload part sizes. Modified theme tokens to inject CSS. | Server-side ownership checks and RLS, Zod `.strict()` with explicit field whitelists, size verification at completion, theme tokens allowlist (no raw CSS), lockfile with frozen installs. | IDOR suite, mass assignment tests, theme schema tests |
 | Repudiation | Admin denies unpublishing a video or changing a role. | Append-only `audit_log` with insert-only grants and trigger, request ids, staff MFA. | Audit trigger test, audit coverage test per admin action |
 | Information disclosure | Profile or watch history of another account. Unpublished or kids-unsafe video exposed. Emails in logs. Raw originals public. DB dump leaks PII. | RLS plus ownership checks, visibility predicate on every read, redacted logs, private originals bucket, field-level encryption with separately stored keys. Response DTOs, never raw rows. | IDOR and visibility tests, log redaction test, bucket policy check in launch checklist |
-| Denial of service | Login floods burning argon2 CPU. Search floods. Upload abuse filling disk or R2. Encode queue flooded. Cache-busting query strings. | Token buckets (section 7), hash concurrency cap of 2, input size limits, upload only for staff, per-creator pending upload cap (5), queue concurrency 1 for heavy jobs, Cloudflare rules, media cache key ignores query. | Rate limit tests, load check before launch |
+| Denial of service | Login floods burning argon2 CPU. Search floods. Upload abuse filling disk or R2. Encode queue flooded. Cache-busting query strings. | Token buckets (section 7), hash concurrency cap of 2, input size limits, upload only for staff, per-creator pending upload cap (20, D-089), queue concurrency 1 for heavy jobs, Cloudflare rules, media cache key ignores query. | Rate limit tests, load check before launch |
 | Elevation of privilege | Viewer reaches `/admin` or admin API. Editor changes roles. Next.js middleware bypass. Server Action called directly. Worker compromised pivots to account data. | Role checks inside every handler and service (never only middleware), separate DB roles (worker has no account table grants), explicit permission matrix, re-authentication for sensitive actions, Server Actions treated as public endpoints. | Authorization matrix test generated from the table in section 5 |
 
 Additional abuse cases specific to this platform:
@@ -148,7 +148,7 @@ Postgres token buckets (`rate_limit_buckets`). Keys combine route policy and sub
 
 | Route or action | Subject | Limit |
 |---|---|---|
-| Login | IP and email hash pair | 5 failures per 15 minutes, then refill slowly (no hard lockout, to avoid locking a victim out) |
+| Login | IP and email hash pair | 5 failures per 15 minutes, then a 15 minute lock for viewers (D-004, D-089), 3 failures and 30 minutes for staff. The owner gets a lockout email at most hourly |
 | Login | IP | 20 failures per 15 minutes |
 | Signup | IP | 5 per hour |
 | Password reset request | email hash, IP | 3 per hour, 10 per hour |
@@ -186,7 +186,7 @@ Captions (manual edit or upload): 1 MiB cap, strict WebVTT parse, cue text limit
 Details in ARCHITECTURE.md sections 10 and 11. Security requirements:
 - AES-128 key per video, random, wrapped at rest, served only after token check, published check and rate limit, with `Cache-Control: no-store` and `Referrer-Policy: no-referrer`.
 - Playback token HMAC-SHA256, 30 minute life, `kid` for rotation, constant-time comparison, binds video and profile.
-- Signed segment URLs HMAC over path and expiry, 2 hour life, verified at the edge, query ignored for caching.
+- Signed segment URLs HMAC over path and expiry, 6 hour life (D-089), verified at the edge, query ignored for caching.
 - Secrets `PLAYBACK_TOKEN_SECRET` and `MEDIA_URL_SECRET` are different and independent of `HLS_KEK`.
 - Key and playlist routes never log query strings. The `?pt=` fallback exists only for native HLS clients.
 - Honest limit: this is deterrence, not DRM. Do not describe it as copy protection in user-facing text.
