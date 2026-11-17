@@ -12,12 +12,15 @@
     "test:file": "vitest run"
   },
   "dependencies": {
+    "@ad/analytics": "workspace:*",
     "@ad/config": "workspace:*",
     "@ad/db": "workspace:*",
+    "@ad/security": "workspace:*",
     "@ad/shared": "workspace:*",
     "@ad/storage": "workspace:*",
     "@ad/theme": "workspace:*",
     "@ad/ui": "workspace:*",
+    "drizzle-orm": "^0.45.4",
     "next": "^16.4.6",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
