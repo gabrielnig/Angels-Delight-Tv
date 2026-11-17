@@ -5,3 +5,6 @@ onlyBuiltDependencies:
   - esbuild
   - sharp
   - unrs-resolver
+
+# Do not install a package version published in the last day (SECURITY.md section 17, L-11). Minutes.
+minimumReleaseAge: 1440
