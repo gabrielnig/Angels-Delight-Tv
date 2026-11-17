@@ -5,6 +5,7 @@ import {
   check,
   doublePrecision,
   index,
+  jsonb,
   pgTable,
   smallint,
   text,
@@ -87,6 +88,8 @@ export const profiles = pgTable(
     language: text('language').notNull().default('en'),
     autoplayNext: boolean('autoplay_next').notNull().default(true),
     dataSaver: boolean('data_saver').notNull().default(false),
+    /** Playback choices beyond autoplay and data saver: quality, speed, captions default and size. Validated in the app. */
+    playbackPrefs: jsonb('playback_prefs').notNull().default({}),
     position: smallint('position').notNull().default(0),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
