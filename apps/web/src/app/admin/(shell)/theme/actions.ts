@@ -10,10 +10,10 @@ import type {
   ThemeEditorDto,
   VersionDetailDto,
 } from '@/lib/data/admin/theme-types';
-import { requireActor } from '@/lib/data/admin/session-next';
+import { requireActionActor } from '@/lib/data/admin/session-next';
 
 export async function saveDraftAction(input: SaveInput): Promise<ActionResult<ThemeEditorDto>> {
-  const actor = await requireActor('/admin/theme');
+  const actor = await requireActionActor('/admin/theme');
   const result = await themeAdmin.saveDraft(actor, input);
   if (result.ok) revalidatePath('/admin/theme');
   return result;
@@ -22,21 +22,21 @@ export async function saveDraftAction(input: SaveInput): Promise<ActionResult<Th
 export async function publishAction(
   input: SaveInput & { acknowledgeWarnings?: boolean },
 ): Promise<ActionResult<ThemeEditorDto>> {
-  const actor = await requireActor('/admin/theme');
+  const actor = await requireActionActor('/admin/theme');
   const result = await themeAdmin.publish(actor, input);
   if (result.ok) revalidatePath('/admin/theme');
   return result;
 }
 
 export async function resetAction(): Promise<ActionResult<ThemeEditorDto>> {
-  const actor = await requireActor('/admin/theme');
+  const actor = await requireActionActor('/admin/theme');
   const result = await themeAdmin.reset(actor);
   if (result.ok) revalidatePath('/admin/theme');
   return result;
 }
 
 export async function uploadLogoAction(formData: FormData): Promise<ActionResult<LogoDto>> {
-  const actor = await requireActor('/admin/theme');
+  const actor = await requireActionActor('/admin/theme');
   const file = formData.get('file');
   if (!(file instanceof File) || file.size === 0) {
     return { ok: false, message: 'Choose an image file.' };
@@ -56,17 +56,17 @@ export async function loadHistoryAction(options: {
   filter: 'all' | 'published' | 'draft';
   beforeVersion?: number;
 }): Promise<ActionResult<HistoryDto>> {
-  const actor = await requireActor('/admin/theme/history');
+  const actor = await requireActionActor('/admin/theme/history');
   return themeAdmin.history(actor, options);
 }
 
 export async function loadVersionAction(id: string): Promise<ActionResult<VersionDetailDto>> {
-  const actor = await requireActor('/admin/theme/history');
+  const actor = await requireActionActor('/admin/theme/history');
   return themeAdmin.version(actor, id);
 }
 
 export async function restoreVersionAction(id: string): Promise<ActionResult<{ version: number }>> {
-  const actor = await requireActor('/admin/theme/history');
+  const actor = await requireActionActor('/admin/theme/history');
   const result = await themeAdmin.restore(actor, id);
   if (result.ok) {
     revalidatePath('/admin/theme');

@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 import type { PageSlug } from '@ad/theme/client';
-import { requireActor } from '@/lib/data/admin/session-next';
+import { requireActionActor } from '@/lib/data/admin/session-next';
 import { siteSettingsAdmin } from '@/lib/data/admin/site-settings';
 import type { PageDto, SiteSettingsDto } from '@/lib/data/admin/site-types';
 import type { ActionResult } from '@/lib/data/admin/theme-types';
@@ -12,19 +12,19 @@ const NEXT = '/admin/site-settings';
 export async function updateSettingsAction(
   changes: Record<string, unknown>,
 ): Promise<ActionResult<SiteSettingsDto>> {
-  const actor = await requireActor(NEXT);
+  const actor = await requireActionActor(NEXT);
   const result = await siteSettingsAdmin.update(actor, changes);
   if (result.ok) revalidatePath(NEXT);
   return result;
 }
 
 export async function savePageAction(slug: PageSlug, body: string): Promise<ActionResult<PageDto>> {
-  const actor = await requireActor(NEXT);
+  const actor = await requireActionActor(NEXT);
   return siteSettingsAdmin.savePage(actor, slug, body);
 }
 
 export async function publishPageAction(slug: PageSlug): Promise<ActionResult<SiteSettingsDto>> {
-  const actor = await requireActor(NEXT);
+  const actor = await requireActionActor(NEXT);
   const result = await siteSettingsAdmin.publishPage(actor, slug);
   if (result.ok) revalidatePath(NEXT);
   return result;
@@ -34,6 +34,6 @@ export async function restorePageAction(
   slug: PageSlug,
   version: number,
 ): Promise<ActionResult<PageDto>> {
-  const actor = await requireActor(NEXT);
+  const actor = await requireActionActor(NEXT);
   return siteSettingsAdmin.restorePage(actor, slug, version);
 }

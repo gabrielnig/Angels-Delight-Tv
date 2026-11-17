@@ -1,4 +1,4 @@
-import { Forbidden, Unauthorized } from '@ad/shared';
+import { Forbidden, RateLimited, Unauthorized } from '@ad/shared';
 import { describe, expect, it } from 'vitest';
 import { signActiveProfile } from '../viewer/active-profile';
 import { createRequestAuth } from './request-auth';
@@ -98,5 +98,23 @@ describe('getActor', () => {
 
   it('answers 403 for a viewer who is signed in', async () => {
     await expect(auth(base).getActor(req('ad_session=good'))).rejects.toBeInstanceOf(Forbidden);
+  });
+});
+
+describe('staff budget hook', () => {
+  const staff: Session = { ...base, role: 'editor', mfaVerified: true };
+  it('runs the hook for a staff actor and lets its RateLimited error through', async () => {
+    const seen: string[] = [];
+    const a = createRequestAuth({
+      sessions: { validate: async () => staff as never },
+      secureCookies: false,
+      profileSecret: SECRET,
+      beforeStaff: async (id) => {
+        seen.push(id);
+        throw new RateLimited(9);
+      },
+    });
+    await expect(a.getActor(req('ad_session=good'))).rejects.toBeInstanceOf(RateLimited);
+    expect(seen).toEqual(['a1']);
   });
 });
