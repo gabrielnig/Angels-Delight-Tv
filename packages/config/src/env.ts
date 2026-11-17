@@ -119,6 +119,8 @@ const workerShape = {
   DATABASE_URL_MAINTENANCE: postgresUrl.optional(),
   KEYS_DATABASE_URL_SHRED: postgresUrl,
   WHISPER_URL: z.url().optional(),
+  /** Development and tests only: captions come from a scripted fake instead of the whisper service. Rejected in production. */
+  WHISPER_FAKE: bool.default(false),
   FFMPEG_PRESET: z.enum(FFMPEG_PRESETS).default('medium'),
   FFMPEG_THREADS: int(0, 0),
   WORKER_SCRATCH_DIR: z.string().min(1).default('/tmp/ad-work'),
@@ -210,7 +212,10 @@ const webSchema = withRules({ ...commonShape, ...webShape }, (env, add) => {
   EDGE_TOKEN_MODE: env.EDGE_TOKEN_MODE ?? (env.NODE_ENV === 'production' ? 'worker' : 'off'),
 }));
 
-const workerSchema = withRules({ ...commonShape, ...workerShape });
+const workerSchema = withRules({ ...commonShape, ...workerShape }, (env, add) => {
+  if (env.NODE_ENV === 'production' && env.WHISPER_FAKE)
+    add('WHISPER_FAKE', 'must not be enabled in production');
+});
 const migrateSchema = z.object(migrateShape);
 
 function parse<S extends z.ZodType>(schema: S, source: EnvSource): z.output<S> {
