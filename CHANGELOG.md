@@ -47,3 +47,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - Add the admin area in `apps/web` under `/admin`: shell with role aware menu and breadcrumbs, dashboard, videos list, upload with a resumable multi file queue, video edit with status checklist, poster picker and crop, publish and schedule dialog, encoding queue, captions list and review, series, categories, trash, home curation with live preview, users, roles and invites, audit log with detail panel and CSV export, analytics (overview and per video) with accessible SVG charts, my account and system.
 - Add `lib/uploader` (framework free resumable upload engine with fake, simulated and HTTP transports) and `lib/admin` (`can`, cue and poster rules, formatters).
 - Add typed admin services with fixture implementations, real audit, analytics and player quality reads with `ADMIN_DATA=real`, and a guard that refuses fixture data in production.
+
+## Lane K2: video delivery integration
+
+- Wire the lane D routes into `apps/web`: `POST /api/play/{id}/session`, playlists at `/api/play/{id}/{file}`, `GET /api/hls/keys/{id}`, the admin upload API, encoding status, caption list and approve, publish, and the development only `/api/dev-storage` and `/api/dev-media` routes, with real sessions, same origin checks, client address handling and the shared rate limiter.
+- Add `POST /api/watch/progress` for the player sink, reusing the lane C progress service.
+- Attach approved caption tracks to the Watch page data.
+- Fix the playback store reading profiles outside the account (row level security hid every profile from the web role).
+- Register the nightly analytics rollup, monthly view event prune and monthly audit prune in the worker. Add `DATABASE_URL_MAINTENANCE`, `WHISPER_FAKE` and `WORKER_SCRATCH_MIN_FREE_RATIO`. Migration 0016. Decisions D-079 to D-082.
+- Add the real pipeline Playwright spec `apps/web/e2e/video-pipeline.e2e.ts` and `scripts/e2e-video-up.sh`.

@@ -2,7 +2,7 @@
 
 Modules M13 upload, M14 encoding, M15 captions, M31 playback authorization, M30 queue helpers, M22 storage lifecycle. Packages `@ad/video`, `@ad/queue`, `apps/whisper`, `apps/edge`, handlers in `apps/worker`.
 
-## Wiring still needed in apps/web (lane B session code)
+## Wiring in apps/web (done in lane K2, see docs/lanes/K2-video-integration.md)
 
 Handlers take injected functions, so route files are one line wrappers. Not wired yet: `getActor`, `getViewer`, `assertSameOrigin`, `clientIp`, the shared `RateLimiter`, a Drizzle `DrizzlePlaybackStore`, and a `JobProducer` built on `createProducerBoss`. Dev only routes: `/api/dev-storage/{bucket}/{get|part}` uses `createDevStorageHandler`, `/api/dev-media/{key...}` uses `createDevMediaHandler`. Set the media origin to `{APP_ORIGIN}/api/dev-media` in development.
 
