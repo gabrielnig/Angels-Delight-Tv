@@ -9,12 +9,15 @@ const SLOW_TYPES = new Set(['slow-2g', '2g', '3g']);
 export function detectLowData(hints: NetworkHints | undefined | null): boolean {
   if (!hints) return false;
   if (hints.saveData) return true;
-  return hints.effectiveType != null && SLOW_TYPES.has(hints.effectiveType);
+  return hints.effectiveType !== undefined && SLOW_TYPES.has(hints.effectiveType);
 }
 
 /** Read hints from the Network Information API where it exists. */
-export function readNetworkHints(nav: unknown = typeof navigator === 'undefined' ? undefined : navigator): NetworkHints {
-  const conn = (nav as { connection?: { saveData?: boolean; effectiveType?: string } } | undefined)?.connection;
+export function readNetworkHints(
+  nav: unknown = typeof navigator === 'undefined' ? undefined : navigator,
+): NetworkHints {
+  const conn = (nav as { connection?: { saveData?: boolean; effectiveType?: string } } | undefined)
+    ?.connection;
   const hints: NetworkHints = {};
   if (conn?.saveData !== undefined) hints.saveData = conn.saveData;
   if (conn?.effectiveType !== undefined) hints.effectiveType = conn.effectiveType;
@@ -30,7 +33,10 @@ export interface StartHeightOptions {
  * First rendition to load: 360p on low data, 480p otherwise, never above the cap.
  * When the ladder has no rung at or below the target, the lowest rung is used.
  */
-export function pickStartHeight(heights: readonly number[], opts: StartHeightOptions): number | null {
+export function pickStartHeight(
+  heights: readonly number[],
+  opts: StartHeightOptions,
+): number | null {
   const sorted = [...new Set(heights)].sort((a, b) => a - b);
   if (sorted.length === 0) return null;
   const target = Math.min(opts.lowData ? 360 : 480, opts.cap ?? Infinity);
@@ -39,7 +45,10 @@ export function pickStartHeight(heights: readonly number[], opts: StartHeightOpt
   return sorted[0] ?? null;
 }
 
-export function effectiveCap(opts: { dataSaver: boolean; dataSaverMaxHeight: number }): number | null {
+export function effectiveCap(opts: {
+  dataSaver: boolean;
+  dataSaverMaxHeight: number;
+}): number | null {
   return opts.dataSaver ? opts.dataSaverMaxHeight : null;
 }
 
@@ -80,10 +89,10 @@ export function buildQualityMenu(state: QualityState): QualityMenu {
     selected: state.selected === 'auto',
     disabled: false,
   };
-  if (state.currentHeight != null) auto.detail = `${state.currentHeight}p now`;
+  if (state.currentHeight !== null) auto.detail = `${state.currentHeight}p now`;
   const items: QualityItem[] = [auto];
   for (const h of heights) {
-    const blocked = cap != null && h > cap;
+    const blocked = cap !== null && h > cap;
     const item: QualityItem = {
       id: String(h),
       label: `${h}p`,

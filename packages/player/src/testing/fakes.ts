@@ -36,7 +36,11 @@ export class FakeMedia extends EventTarget implements PlayerMedia {
 
   get buffered() {
     const r = this.bufferedRanges;
-    return { length: r.length, start: (i: number) => r[i]?.[0] ?? 0, end: (i: number) => r[i]?.[1] ?? 0 };
+    return {
+      length: r.length,
+      start: (i: number) => r[i]?.[0] ?? 0,
+      end: (i: number) => r[i]?.[1] ?? 0,
+    };
   }
 
   play(): Promise<void> {

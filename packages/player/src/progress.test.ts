@@ -90,7 +90,9 @@ describe('ProgressReporter', () => {
     const { save, reporter } = setup();
     reporter.update(33, 300);
     reporter.beacon();
-    expect(save).toHaveBeenCalledWith(expect.objectContaining({ positionSeconds: 33 }), { beacon: true });
+    expect(save).toHaveBeenCalledWith(expect.objectContaining({ positionSeconds: 33 }), {
+      beacon: true,
+    });
     reporter.dispose();
   });
 

@@ -22,7 +22,11 @@ describe('createHlsConfig', () => {
 
   it('retries three times with exponential backoff from one second', () => {
     const policy = make().fragLoadPolicy?.default;
-    expect(policy?.errorRetry).toMatchObject({ maxNumRetry: 3, retryDelayMs: 1000, backoff: 'exponential' });
+    expect(policy?.errorRetry).toMatchObject({
+      maxNumRetry: 3,
+      retryDelayMs: 1000,
+      backoff: 'exponential',
+    });
   });
 
   it('adds the bearer token for app origin requests only', () => {
@@ -30,7 +34,11 @@ describe('createHlsConfig', () => {
     make().xhrSetup?.(xhr, `${APP}/api/play/v1/720.m3u8`, {} as never);
     expect(xhr.setRequestHeader).toHaveBeenCalledWith('Authorization', 'Bearer T');
     const other = { setRequestHeader: vi.fn() } as unknown as XMLHttpRequest;
-    make().xhrSetup?.(other, 'https://media.example.test/v/a/720/seg_1.ts?exp=1&sig=x', {} as never);
+    make().xhrSetup?.(
+      other,
+      'https://media.example.test/v/a/720/seg_1.ts?exp=1&sig=x',
+      {} as never,
+    );
     expect(other.setRequestHeader).not.toHaveBeenCalled();
   });
 
