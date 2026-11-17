@@ -1,10 +1,11 @@
-import type { CategoryRecord, VideoRecord } from './types';
+import type { CategoryRecord, SeriesRecord, VideoRecord } from './types';
 import { videoStub } from './video-rules';
 
 /** In memory fixture data. One copy per server process, shared by every fixture service. */
 export interface AdminStore {
   videos: VideoRecord[];
   categories: CategoryRecord[];
+  series: SeriesRecord[];
   settings: { requireApprovedCaptions: boolean };
   /** Oldest first. Last entry is yesterday. Deterministic so charts are stable. */
   dailyViews: number[];
@@ -187,6 +188,23 @@ export function seedStore(now = Date.now()): AdminStore {
     { id: 'cat_health', name: 'Health', hidden: true, position: 4 },
   ];
 
+  const series: SeriesRecord[] = [
+    {
+      id: 'ser_maths',
+      title: 'Maths Made Simple',
+      description: 'Everyday maths with food, money and markets.',
+      posterId: 'poster_ser_maths',
+      published: true,
+    },
+    {
+      id: 'ser_life',
+      title: 'Life Skills for Teens',
+      description: 'Practical skills for growing up.',
+      posterId: null,
+      published: false,
+    },
+  ];
+
   // Gentle weekly rhythm with a slow climb, last 90 days.
   const dailyViews = Array.from({ length: 90 }, (_, day) => {
     const weekday = day % 7;
@@ -194,14 +212,17 @@ export function seedStore(now = Date.now()): AdminStore {
     return Math.round((1500 + day * 9) * rhythm);
   });
 
-  return { videos, categories, settings: { requireApprovedCaptions: true }, dailyViews };
+  return { videos, categories, series, settings: { requireApprovedCaptions: true }, dailyViews };
 }
 
 const GLOBAL_KEY = Symbol.for('ad.admin.fixture.store');
 
 export function getStore(): AdminStore {
   const holder = globalThis as unknown as Record<symbol, AdminStore | undefined>;
-  return (holder[GLOBAL_KEY] ??= seedStore());
+  // A store from an older build (dev hot reload) lacks newer collections, so reseed it.
+  const existing = holder[GLOBAL_KEY];
+  if (existing && Array.isArray(existing.series)) return existing;
+  return (holder[GLOBAL_KEY] = seedStore());
 }
 
 /** Tests build a fresh store and pass it in. */
