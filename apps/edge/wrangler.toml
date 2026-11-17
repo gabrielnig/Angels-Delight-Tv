@@ -1,0 +1,14 @@
+# Media edge worker (ARCHITECTURE section 10). Serves the R2 media bucket behind signed urls.
+# Secrets are set with `wrangler secret put MEDIA_URL_SECRET` and `wrangler secret put MEDIA_URL_SECRET_PREVIOUS`.
+# The secret is base64 encoded, the same value as the app's MEDIA_URL_SECRET.
+name = "angels-delight-media"
+main = "src/index.ts"
+compatibility_date = "2025-01-01"
+
+[vars]
+# The web app origin allowed to fetch segments from the browser. Set per environment.
+APP_ORIGIN = "https://example.invalid"
+
+[[r2_buckets]]
+binding = "MEDIA"
+bucket_name = "angels-delight-media"
