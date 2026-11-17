@@ -431,7 +431,7 @@ Format: decision, options considered, why, reversible or not. Newest first. Deci
 - Why: the service already owns revision numbers and the approved copy, and the viewer controller already handles tokens, stalls and quality. A revision per pause is noisy but safe, and coalescing needs a change in lane D.
 - Reversible: yes. Coalescing is a follow up in `storeRevision`.
 
-## D-083 Staff mutations run on the real StaffService behind a reauth dialog (lane K3)
+## D-085 Staff mutations run on the real StaffService behind a reauth dialog (lane K3)
 - Decision: this replaces D-069. Invites, resend, cancel and role changes call `StaffService`. When the service answers `ReauthRequired` the command result carries `reauth: true`, and `useReauth` shows a password dialog, calls `PeopleService.reauthenticate` (which marks the session) and repeats the command once. The admin actor carries the staff `sessionId`. Role changes read the person's current role first and pass it as `expectedRole`. Resend creates a new invite for the same address, which cancels the old one. Viewer suspension, reinstating and sign out everywhere write their audit row with the status change in one transaction.
 - Options: a separate reauth page, or asking for the password on every staff mutation.
 - Why: a modal keeps the person on the screen and the 10 minute window means one prompt per sitting.
@@ -442,3 +442,9 @@ Format: decision, options considered, why, reversible or not. Newest first. Deci
 - Options: warn only, or fall back to per account limits when the address is unknown.
 - Why: without a trusted proxy every per IP limit shares one bucket, so 20 bad sign ins by anyone lock everyone out for 15 minutes. Without the shred connection a deleted account keeps its key. Reused secrets collapse separate trust domains.
 - Reversible: yes. If the site is ever served without Cloudflare, add a second proxy mode instead of removing the rule.
+
+## D-086 My account is real, display names are sealed and codes replace passwords (lane K3)
+- Decision: staff display names are stored in `accounts.display_name_enc` sealed under the `display_name` key column, and `staff_directory` (migration 0017) returns them so other staff see the chosen name. Without one, the name comes from the email address as before. Changing the password and making new recovery codes take the 6 digit authenticator code (D-069) instead of a password prompt, and the screen shows an "Authenticator code" field for both. A password change rotates the session, so the real service writes the new cookie through `AdminRuntime.setSession`. Resetting another person's two factor is a Reset button on the roles screen that asks for the admin's own code.
+- Options: keep the name derived from the address only, or add a new profile table for staff.
+- Why: the column already existed unused, sealing keeps it with the other personal fields, and the lane B service already defines which proof each action needs.
+- Reversible: yes. Remove the column read to fall back to address names.

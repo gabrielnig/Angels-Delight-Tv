@@ -20,6 +20,7 @@ function roles(canManage = true) {
     revoke: ok(),
     changeRole: ok(),
     reauthenticate: ok(),
+    resetTwoFactor: ok(),
   };
   render(
     <ToastProvider>
@@ -28,6 +29,7 @@ function roles(canManage = true) {
         invites={s.invites}
         now={now}
         canManage={canManage}
+        selfId="stf_1"
         actions={actions}
       />
     </ToastProvider>,
@@ -52,14 +54,35 @@ describe('RolesInvites', () => {
   it('asks for the password when the server wants a recent confirmation, then retries', async () => {
     const a = roles();
     a.invite
-      .mockResolvedValueOnce({ ok: false, error: 'Confirm your password to continue.', reauth: true })
+      .mockResolvedValueOnce({
+        ok: false,
+        error: 'Confirm your password to continue.',
+        reauth: true,
+      })
       .mockResolvedValueOnce({ ok: true });
     fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'new@example.test' } });
     fireEvent.click(screen.getByRole('button', { name: 'Send invite' }));
-    fireEvent.change(await screen.findByLabelText('Password'), { target: { value: 'secret-pass' } });
+    fireEvent.change(await screen.findByLabelText('Password'), {
+      target: { value: 'secret-pass' },
+    });
     fireEvent.click(screen.getByRole('button', { name: 'Confirm' }));
     await waitFor(() => expect(a.invite).toHaveBeenCalledTimes(2));
     expect(a.reauthenticate).toHaveBeenCalledWith('secret-pass', undefined);
+  });
+  it('resets another person two step sign in with the admin code', async () => {
+    const a = roles();
+    fireEvent.click(screen.getByRole('button', { name: 'Reset two step sign in for Ngozi' }));
+    fireEvent.change(screen.getByLabelText('Your authenticator code'), {
+      target: { value: '123 456' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Reset' }));
+    await waitFor(() => expect(a.resetTwoFactor).toHaveBeenCalledWith('stf_2', '123456'));
+  });
+  it('does not offer a reset for yourself', () => {
+    roles();
+    expect(
+      screen.queryByRole('button', { name: /Reset two step sign in for Chiamaka/ }),
+    ).toBeNull();
   });
   it('marks an expired invite in words', () => {
     roles();

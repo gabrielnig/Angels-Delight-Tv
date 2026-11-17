@@ -599,5 +599,6 @@ The schema in `packages/db/src/schema` is the source of truth. These changes wer
 | 0014 | `profiles.playback_prefs` (jsonb, default empty object). |
 | 0015 | `staff_directory()`, SECURITY DEFINER, returns the sealed email of staff accounts to an active staff caller so editors can see who uploaded a video. |
 | 0016 | `INSERT` on `audit_log` for `ad_worker`, so the monthly purge job can record itself. The append only trigger still blocks updates and deletes. |
+| 0017 | `staff_directory()` also returns the sealed display name. |
 
 Row level security summary additions: `search_history` is on and forced like `watch_progress`. `admin_invites`, `auth_lockouts`, `verification_codes`, `site_daily_stats`, `analytics_counters` and `slug_redirects` have no policies and are reached only by their own modules.

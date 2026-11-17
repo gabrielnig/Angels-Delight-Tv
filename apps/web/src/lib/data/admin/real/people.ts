@@ -35,11 +35,7 @@ async function loadUsers(actor: Actor, only?: SQL): Promise<UserRecord[]> {
       })
       .from(accounts)
       .where(
-        and(
-          eq(accounts.role, 'viewer'),
-          inArray(accounts.status, ['active', 'suspended']),
-          only,
-        ),
+        and(eq(accounts.role, 'viewer'), inArray(accounts.status, ['active', 'suspended']), only),
       )
       .orderBy(desc(accounts.createdAt))
       .limit(MAX_USERS);
@@ -244,6 +240,19 @@ export const realPeopleService: PeopleService = {
       need(actor, 'roles.change');
       const rt = adminRuntime();
       await rt.auth().staff.reauthenticate(staffActor(actor), password, await rt.meta());
+      return OK;
+    } catch (error) {
+      return staffFailure(error);
+    }
+  },
+
+  async resetTwoFactor(actor, staffId, code) {
+    try {
+      need(actor, 'roles.change');
+      const rt = adminRuntime();
+      await rt
+        .auth()
+        .staff.resetTwoFactor(staffActor(actor), { accountId: staffId, code }, await rt.meta());
       return OK;
     } catch (error) {
       return staffFailure(error);

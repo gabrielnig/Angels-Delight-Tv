@@ -4,6 +4,7 @@ import { cache } from 'react';
 import type { AdminActor } from '@/lib/data/admin/types';
 import { classifyCode } from './admin-code';
 import { type FormState, toFormState } from './form-errors';
+import { adminRuntime, titleCaseFromEmail } from '@/server/admin/runtime';
 import { authRuntime } from './runtime';
 import {
   clearSessionCookie,
@@ -22,13 +23,10 @@ async function currentStaff() {
 }
 
 const nameFor = cache(async (accountId: string, role: 'editor' | 'admin', sessionId: string) => {
+  const chosen = (await adminRuntime().names({ accountId, role }, [accountId])).get(accountId);
+  if (chosen) return chosen;
   const info = await authRuntime().staff.getOverview({ accountId, role, sessionId });
-  const local = info.email.split('@')[0] ?? 'Staff';
-  return local
-    .split(/[._-]+/)
-    .filter(Boolean)
-    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-    .join(' ');
+  return titleCaseFromEmail(info.email);
 });
 
 /** The signed in staff member whose session passed the second factor, or null. */
