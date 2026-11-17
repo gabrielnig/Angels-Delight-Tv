@@ -103,6 +103,10 @@
 
 .adp-controls[data-visible] {
   opacity: 1;
+}
+
+/* The gradient padding must not swallow taps meant for the video surface. */
+.adp-controls[data-visible] > * {
   pointer-events: auto;
 }
 

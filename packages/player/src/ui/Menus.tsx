@@ -1,3 +1,5 @@
+'use client';
+
 import { useEffect, useRef, type KeyboardEvent, type ReactNode } from 'react';
 import type { QualityMenu } from '../quality';
 import { PLAYBACK_RATES, type CaptionTrack } from '../types';

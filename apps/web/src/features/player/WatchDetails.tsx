@@ -1,4 +1,4 @@
-import { formatClock } from '@ad/player';
+import { formatClock } from '@ad/player/format';
 import type { WatchData } from '@/lib/data/playback';
 
 /** Title, category, caption badge and description under the player. */

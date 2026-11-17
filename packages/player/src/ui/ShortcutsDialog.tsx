@@ -1,3 +1,5 @@
+'use client';
+
 import { useEffect, useRef, type KeyboardEvent } from 'react';
 import { SHORTCUT_HELP } from '../keyboard';
 
