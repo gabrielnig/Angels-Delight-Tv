@@ -175,6 +175,10 @@ Never run the whole suite (see TDD-PROTOCOL.md section 2).
 - Emails appear at `http://localhost:8025`.
 - Encode faster in dev with `FFMPEG_PRESET=veryfast` and a short clip.
 
+### Real video pipeline run (no fixtures)
+
+`scripts/e2e-video-up.sh [port]` prepares databases `ad_e2e` and `ad_e2e_keys` on the local Postgres, applies the migrations, writes `.env.e2e-video` (throwaway secrets, local storage driver, `WHISPER_FAKE=true`) and seeds an admin and a viewer. Then start the worker and web with that environment and run the spec, see `docs/lanes/K2-video-integration.md`.
+
 ## 7. Troubleshooting
 
 | Symptom | Likely cause and fix |
