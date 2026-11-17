@@ -58,6 +58,7 @@ export async function HomeView({ ctx }: { ctx: ViewerContext }) {
   if (home.empty) {
     return (
       <div className="web-page">
+        <h1 className="ad-sr-only">Home</h1>
         <EmptyState
           title="New videos are on the way"
           description="Nothing is published yet. Check back soon."
@@ -74,6 +75,7 @@ export async function HomeView({ ctx }: { ctx: ViewerContext }) {
 
   return (
     <>
+      <h1 className="ad-sr-only">Home</h1>
       <Hero items={heroItems(home, progress)} label="Featured" />
       <div className="web-wide web-stack web-rows">
         {continueResult.ok ? (

@@ -17,6 +17,19 @@
 .adm-root a {
   color: inherit;
 }
+/* Link buttons keep their variant text colour (the rule above would turn them ink). */
+.adm-root a.adm-btn--primary {
+  color: var(--color-on-primary);
+}
+.adm-root a.adm-btn--accent {
+  color: var(--color-on-accent);
+}
+.adm-root a.adm-btn--danger {
+  color: var(--color-danger);
+}
+.adm-root a.adm-btn--ghost {
+  color: var(--color-primary);
+}
 .adm-h1 {
   margin: 0;
   font-family: var(--font-display);
@@ -51,6 +64,7 @@
 }
 .adm-stack {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--space-4);
 }
 .adm-row {
@@ -303,7 +317,13 @@
   font-weight: var(--weight-semibold);
 }
 .adm-menu__name {
-  display: none;
+  /* Visually hidden on small screens, still part of the name of the menu button. */
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
   font-weight: var(--weight-medium);
 }
 .adm-menu__panel {
@@ -384,7 +404,11 @@
     display: none;
   }
   .adm-menu__name {
-    display: inline;
+    position: static;
+    width: auto;
+    height: auto;
+    overflow: visible;
+    clip-path: none;
   }
   .adm-content {
     padding-top: var(--space-6);
@@ -524,7 +548,9 @@
   border-radius: var(--radius-xs);
   font-size: var(--text-caption);
   font-weight: var(--weight-semibold);
-  white-space: nowrap;
+  /* Wraps instead of pushing a narrow card wider than the screen. */
+  max-width: 100%;
+  overflow-wrap: anywhere;
 }
 .adm-badge--neutral {
   background: var(--color-surface-sunken);
@@ -975,11 +1001,11 @@
 .adm-tiles {
   display: grid;
   gap: var(--space-3);
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 @media (min-width: 64rem) {
   .adm-tiles {
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 }
 .adm-tile {
@@ -1846,7 +1872,8 @@
   padding: 0;
   display: flex;
   gap: var(--space-3);
-  overflow-x: auto;
+  /* A static preview: nothing to scroll for keyboard users. */
+  overflow-x: hidden;
 }
 .adm-preview__tiles li {
   display: grid;
@@ -1880,6 +1907,7 @@
 
 /* ---- Analytics ---- */
 .adm-stat {
+  overflow-wrap: anywhere;
   font-size: var(--text-h2);
   font-variant-numeric: tabular-nums;
   line-height: var(--leading-tight, 1.2);
