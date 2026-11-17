@@ -1,4 +1,4 @@
-import { schema } from '@ad/db';
+import { schema, type Database } from '@ad/db';
 import { asRole, createTestDatabase, integrationEnabled, type TestDatabase } from '@ad/db/testing';
 import { uuidv7 } from '@ad/shared';
 import { drizzle } from 'drizzle-orm/node-postgres';
@@ -20,8 +20,10 @@ describe.skipIf(!integrationEnabled())('audit log on Postgres', () => {
     await t?.drop();
   });
 
-  const asApp = <T>(fn: (db: ReturnType<typeof drizzle<typeof schema>>) => Promise<T>) =>
-    asRole(t.pool, 'ad_app', {}, (client) => fn(drizzle(client, { schema })));
+  const asApp = <T>(fn: (db: Database) => Promise<T>) =>
+    asRole(t.pool, 'ad_app', {}, (client) =>
+      fn(drizzle(client, { schema }) as unknown as Database),
+    );
 
   it('writes entries as ad_app and lists them newest first with cursor pagination', async () => {
     await asApp(async (db) => {
