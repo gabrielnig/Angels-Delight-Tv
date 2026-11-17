@@ -1,4 +1,6 @@
 import 'server-only';
+import { validatePosterChoice } from '@/lib/admin/poster-rules';
+import type { PosterChoice } from '@/lib/admin/poster-rules';
 import { adminStatusOf, videoStub } from './video-rules';
 import { Forbidden, NotFound, ValidationFailed } from '@ad/shared';
 import type { BulkAction, BulkResult, VideoQuery } from './video-queries';
@@ -11,7 +13,7 @@ import {
   validateVideoPatch,
 } from './video-commands';
 import type { PublishRequest, VideoPatch, CommandResult } from './video-commands';
-import type { CategoryRecord, Page, VideoRecord } from './types';
+import type { SeriesRecord, CategoryRecord, Page, VideoRecord } from './types';
 import { can } from '@/lib/admin/can';
 import { buildDashboard } from './dashboard';
 import type { DashboardData } from './dashboard';
@@ -54,11 +56,12 @@ export interface VideoService {
   list(actor: AdminActor, query: VideoQuery): Promise<Page<VideoRecord>>;
   get(actor: AdminActor, id: string): Promise<VideoRecord>;
   categories(actor: AdminActor): Promise<CategoryRecord[]>;
+  seriesOptions(actor: AdminActor): Promise<SeriesRecord[]>;
   update(actor: AdminActor, id: string, patch: VideoPatch): Promise<VideoRecord>;
   bulk(actor: AdminActor, ids: string[], action: BulkAction): Promise<BulkResult>;
   publish(actor: AdminActor, id: string, request: PublishRequest): Promise<CommandResult>;
   unpublish(actor: AdminActor, id: string): Promise<CommandResult>;
-  setPoster(actor: AdminActor, id: string, posterId: string): Promise<CommandResult>;
+  setPoster(actor: AdminActor, id: string, choice: PosterChoice): Promise<CommandResult>;
   retryEncode(actor: AdminActor, id: string): Promise<CommandResult>;
   trashed(actor: AdminActor): Promise<VideoRecord[]>;
   restore(actor: AdminActor, id: string): Promise<CommandResult>;
@@ -89,6 +92,10 @@ export const videoService: VideoService = {
   async categories(actor) {
     need(actor, 'admin.access');
     return [...getStore().categories].sort((a, b) => a.position - b.position);
+  },
+  async seriesOptions(actor) {
+    need(actor, 'admin.access');
+    return [...getStore().series];
   },
   async update(actor, id, patch) {
     need(actor, 'video.edit');
@@ -123,11 +130,15 @@ export const videoService: VideoService = {
     video.updatedAt = new Date().toISOString();
     return { ok: true };
   },
-  async setPoster(actor, id, posterId) {
+  async setPoster(actor, id, choice) {
     need(actor, 'video.edit');
+    const errors = validatePosterChoice(choice);
+    if (Object.keys(errors).length) return { ok: false, error: Object.values(errors)[0]! };
     const video = getStore().videos.find((v) => v.id === id && v.deletedAt === null);
     if (!video) throw new NotFound('Video not found');
-    video.posterId = posterId;
+    video.posterId = choice.posterId;
+    video.posterAlt = choice.alt.trim();
+    video.posterFocus = { ...choice.focus, zoom: choice.zoom };
     video.updatedAt = new Date().toISOString();
     return { ok: true };
   },
