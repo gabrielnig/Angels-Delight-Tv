@@ -49,3 +49,4 @@ export {
   type PlayerErrorKind,
   type UpNextItem,
 } from './types';
+export { createHttpProgressSink, createHttpSessionProvider } from './http';
