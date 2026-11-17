@@ -29,7 +29,7 @@ describe('Mailer', () => {
     await mailer.sendAdminInvite({ to: 'b@example.com', role: 'editor', token: 'i1', hours: 72 });
     expect(transport.outbox[0]?.text).toContain('https://tv.example.org/reset-password?token=r1');
     expect(transport.outbox[1]?.text).toContain('https://tv.example.org/forgot-password');
-    expect(transport.outbox[2]?.text).toContain('https://tv.example.org/admin/invite?token=i1');
+    expect(transport.outbox[2]?.text).toContain('https://tv.example.org/admin/invite/i1');
   });
 
   it('tells an admin that a staff account was locked without naming the address in full', async () => {

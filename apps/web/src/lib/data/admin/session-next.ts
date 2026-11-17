@@ -3,6 +3,8 @@ import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { can } from '@/lib/admin/can';
 import type { AdminAction } from '@/lib/admin/can';
+import { realAdminActor, realPendingActor } from '@/server/auth/admin';
+import { realAuthEnabled } from '@/server/auth/mode';
 import { createFixtureAuth, fixtureAuthEnabled, PENDING_COOKIE, SESSION_COOKIE } from './session';
 import type { AdminActor } from './types';
 
@@ -23,6 +25,10 @@ export const cookieOptions = {
 
 /** Returns the signed in staff member, or null. Replace the body when the auth lane lands. */
 export async function getActor(): Promise<AdminActor | null> {
+  if (realAuthEnabled()) {
+    const real = await realAdminActor();
+    return real && can(real.role, 'admin.access') ? real : null;
+  }
   if (!fixtureAuthEnabled()) return null;
   const jar = await cookies();
   const id = jar.get(SESSION_COOKIE)?.value;
@@ -37,6 +43,7 @@ export async function requireActor(next = '/admin'): Promise<AdminActor> {
 }
 
 export async function pendingAccountId(): Promise<string | null> {
+  if (realAuthEnabled()) return (await realPendingActor())?.accountId ?? null;
   return (await cookies()).get(PENDING_COOKIE)?.value ?? null;
 }
 

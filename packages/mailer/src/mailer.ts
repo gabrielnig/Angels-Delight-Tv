@@ -143,7 +143,7 @@ export class Mailer {
   sendAdminInvite(input: { to: string; role: string; token: string; hours: number }) {
     return this.deliver(input.to, 'admin_invite', {
       role: input.role,
-      linkUrl: this.url('/admin/invite', { token: input.token }),
+      linkUrl: this.url(`/admin/invite/${encodeURIComponent(input.token)}`),
       hours: input.hours,
     });
   }

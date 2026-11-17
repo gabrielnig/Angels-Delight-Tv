@@ -2,6 +2,14 @@
 
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
+import {
+  realAdminSignIn,
+  realAdminSignOut,
+  realConfirmEnrolment,
+  realSubmitCode,
+} from '@/server/auth/admin';
+import { assertActionOrigin } from '@/server/auth/session';
+import { realAuthEnabled } from '@/server/auth/mode';
 import { PENDING_COOKIE, SESSION_COOKIE, fixtureAuthEnabled } from '@/lib/data/admin/session';
 import {
   cookieOptions,
@@ -20,6 +28,13 @@ export async function signInAction(_prev: LoginState, form: FormData): Promise<L
   const email = String(form.get('email') ?? '');
   const password = String(form.get('password') ?? '');
   const next = safeNext(form.get('next'));
+  if (realAuthEnabled()) {
+    await assertActionOrigin();
+    if (!email || !password) return { email, error: 'Enter your email and password.' };
+    const real = await realAdminSignIn(email, password);
+    if (!real.ok) return { email, error: real.error, locked: real.retryAfter !== undefined };
+    redirect(`/admin/login/2fa?next=${encodeURIComponent(next)}`);
+  }
   if (!fixtureAuthEnabled())
     return { email, error: 'Sign in is not available right now. Try again later.' };
   if (!email || !password) return { email, error: 'Enter your email and password.' };
@@ -43,6 +58,13 @@ export interface CodeState {
 }
 
 export async function verifyCodeAction(_prev: CodeState, form: FormData): Promise<CodeState> {
+  if (realAuthEnabled()) {
+    await assertActionOrigin();
+    const next = safeNext(form.get('next'));
+    const real = await realSubmitCode(String(form.get('code') ?? ''));
+    if (!real.ok) return { error: real.error };
+    redirect(next);
+  }
   const accountId = await pendingAccountId();
   const next = safeNext(form.get('next'));
   if (!accountId) redirect('/admin/login?expired=1');
@@ -63,7 +85,25 @@ export async function verifyCodeAction(_prev: CodeState, form: FormData): Promis
   redirect(next);
 }
 
+export interface EnrolState {
+  error?: string;
+  recoveryCodes?: string[];
+}
+
+export async function confirmEnrolmentAction(
+  _prev: EnrolState,
+  form: FormData,
+): Promise<EnrolState> {
+  await assertActionOrigin();
+  const result = await realConfirmEnrolment(String(form.get('code') ?? ''));
+  return result.ok ? { recoveryCodes: result.recoveryCodes } : { error: result.error };
+}
+
 export async function signOutAction(): Promise<void> {
+  if (realAuthEnabled()) {
+    await realAdminSignOut();
+    redirect('/admin/login');
+  }
   const jar = await cookies();
   jar.delete({ name: SESSION_COOKIE, path: '/admin' });
   redirect('/admin/login');
