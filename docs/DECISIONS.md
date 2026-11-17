@@ -122,4 +122,27 @@ Format: decision, options considered, why, reversible or not. Newest first. Deci
 - Decision: the client upload engine is a framework free module (`apps/web/src/lib/uploader`) driven by an `UploadTransport` seam (start, uploadPart, complete, abort). Resume is part level from server truth: `start` with a known upload id returns the parts already stored, so Retry and a re-picked file send only the missing parts. Defaults: 2 files at once, 3 parts per file, 4 automatic attempts per part with exponential backoff (1s base, 30s cap), then the lane fails with "N percent was saved" and a manual Retry. Offline lanes wait for the network and resume without using attempts.
 - Options: byte range resume inside a part (not possible with S3 multipart), tus protocol (extra server).
 - Why: matches docs/ARCHITECTURE.md section 7 and D-006. The fake transport lets the screens run before the API lane merges.
+
+## D-027 Video pipeline package layout and testing seams
+- Decision: lane D code lives in `packages/video` (pure pipeline logic plus services with narrow store interfaces), `packages/queue` (pg-boss helpers), `apps/whisper` (Python HTTP service), `apps/edge` (Cloudflare Worker). Services take small interfaces (storage, stores, runners) so unit tests use fakes, and Drizzle implementations are covered by `*.int.test.ts` files.
+- Options: put everything in `apps/worker` and `apps/web`.
+- Why: web and worker both need the same signing, playlist and upload rules, and ARCHITECTURE section 4 already names these packages. Packages never import apps.
+- Reversible: yes.
+
+## D-028 HLS KEK rotation and playback token key ids
+- Decision: `video_keys.kek_version` is always 1. Unwrapping tries `HLS_KEK` then `HLS_KEK_PREVIOUS`, AES-GCM with the video id as associated data makes a wrong key fail closed. Playback token `kid` is the first 6 base64url characters of SHA-256 of the secret, so rotation needs no extra setting.
+- Options: a numeric key version in config, a stored key id per row.
+- Why: no new environment variables and nothing to keep in step by hand. A rotation sets `HLS_KEK_PREVIOUS`, runs the rewrap helper, then removes it.
+- Reversible: yes.
+
+## D-029 Permanent job failures complete the pg-boss job
+- Decision: when a handler hits a permanent error (bad file, wrong format) it writes `failed_permanent` and the plain reason to the `jobs` mirror and the video, then returns normally so pg-boss does not retry. Transient errors throw and pg-boss retries with backoff, and the mirror shows `failed` after the last attempt.
+- Options: `boss.fail` with a dead letter queue.
+- Why: no retries wasted on input that can never work, and the admin screens read the mirror, not pg-boss tables. ARCHITECTURE section 13 asked to verify the call in the pinned version, this needs no special call.
+- Reversible: yes.
+
+## D-030 Signed media url covers the object key, not the host
+- Decision: `sig = base64url(HMAC_SHA256(MEDIA_URL_SECRET, objectKey + "\n" + exp))` where `objectKey` is `v/{prefix}/{height}/seg_N.ts`. The media origin may carry a base path in dev (`http://localhost:9000/ad-media`), so the verifier strips its own mount prefix to recover the key.
+- Options: sign the full pathname.
+- Why: the same signature works on the Cloudflare Worker (path is the key), on MinIO behind a prefix and on the local dev route.
 - Reversible: yes.
