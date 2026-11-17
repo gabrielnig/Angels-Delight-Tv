@@ -122,3 +122,19 @@ describe('SeriesCard', () => {
     expect(screen.getByText('1 episode')).toBeInTheDocument();
   });
 });
+
+describe('SeriesCard My List', () => {
+  it('has a pressed My List button when a handler is given', async () => {
+    const onToggleList = vi.fn();
+    render(<SeriesCard title="Science" href="/series/s" episodeCount={3} inList onToggleList={onToggleList} />);
+    const button = screen.getByRole('button', { name: 'Remove Science from My List' });
+    expect(button).toHaveAttribute('aria-pressed', 'true');
+    button.click();
+    expect(onToggleList).toHaveBeenCalled();
+  });
+
+  it('has no My List button without a handler', () => {
+    render(<SeriesCard title="Science" href="/series/s" episodeCount={3} />);
+    expect(screen.queryByRole('button')).toBeNull();
+  });
+});
