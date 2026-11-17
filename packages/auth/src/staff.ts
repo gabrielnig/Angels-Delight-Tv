@@ -799,7 +799,8 @@ export class StaffService extends AccountService {
           throw error;
       }
     }
-    if (input.role === 'viewer') await this.deps.sessions.revokeAll(input.accountId);
+    // L-7: any change of role ends the target's sessions, so a demotion or promotion never rides an old session.
+    if (previous !== input.role) await this.deps.sessions.revokeAll(input.accountId);
     await this.deps.audit.record({
       action: 'admin.role_changed',
       outcome: 'success',
