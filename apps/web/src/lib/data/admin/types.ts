@@ -88,3 +88,19 @@ export interface TileState<T> {
   state: 'ready' | 'error' | 'forbidden';
   value?: T;
 }
+
+export interface CaptionTrack {
+  videoId: string;
+  language: 'en';
+  state: CaptionState;
+  cues: import('@/lib/admin/cues').Cue[];
+  source: 'whisper' | 'manual';
+  approvedBy: string | null;
+  approvedAt: string | null;
+  /** The cues as they were when approved. Viewers keep seeing these until the next approval. */
+  approvedCues: import('@/lib/admin/cues').Cue[] | null;
+  updatedBy: string;
+  updatedAt: string;
+  failure: string | null;
+  progress: { step: number; of: number; minutesLeft: number } | null;
+}
