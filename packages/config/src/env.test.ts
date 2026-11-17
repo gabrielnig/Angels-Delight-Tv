@@ -1,0 +1,216 @@
+import { describe, expect, it } from 'vitest';
+import { ConfigError, loadMigrateEnv, loadWebEnv, loadWorkerEnv } from './env';
+
+const key = (fill: number) => Buffer.alloc(32, fill).toString('base64');
+
+const baseSecrets = {
+  FIELD_KEK: key(1),
+  EMAIL_HASH_PEPPER: key(2),
+  HLS_KEK: key(3),
+  PLAYBACK_TOKEN_SECRET: key(4),
+  MEDIA_URL_SECRET: key(5),
+};
+
+const devWeb = {
+  NODE_ENV: 'development',
+  APP_ORIGIN: 'http://localhost:3000',
+  MEDIA_ORIGIN: 'http://localhost:9000/ad-media',
+  DATABASE_URL: 'postgres://ad_app:dev@localhost:5432/ad',
+  KEYS_DATABASE_URL: 'postgres://ad_keys_app:dev@localhost:5432/ad_keys',
+  STORAGE_DRIVER: 'local',
+  LOCAL_STORAGE_ROOT: './.local-storage',
+  SMTP_URL: 'smtp://localhost:1025',
+  EMAIL_FROM: 'no-reply@localhost',
+  ...baseSecrets,
+};
+
+const s3Vars = {
+  STORAGE_DRIVER: 's3',
+  S3_ENDPOINT: 'http://localhost:9000',
+  S3_ACCESS_KEY_ID: 'minio',
+  S3_SECRET_ACCESS_KEY: 'minio-secret',
+};
+
+const prodWeb = {
+  ...devWeb,
+  ...s3Vars,
+  NODE_ENV: 'production',
+  APP_ORIGIN: 'https://app.example.com',
+  MEDIA_ORIGIN: 'https://video.example.com',
+  COOKIE_PREFIX_SECURE: 'true',
+  TRUSTED_PROXY_MODE: 'cloudflare',
+  EDGE_TOKEN_MODE: 'worker',
+};
+
+const devWorker = {
+  NODE_ENV: 'development',
+  APP_ORIGIN: 'http://localhost:3000',
+  MEDIA_ORIGIN: 'http://localhost:9000/ad-media',
+  DATABASE_URL_WORKER: 'postgres://ad_worker:dev@localhost:5432/ad',
+  KEYS_DATABASE_URL_SHRED: 'postgres://ad_keys_shred:dev@localhost:5432/ad_keys',
+  STORAGE_DRIVER: 'local',
+  LOCAL_STORAGE_ROOT: './.local-storage',
+  HLS_KEK: key(3),
+};
+
+function failureNames(run: () => unknown): string[] {
+  try {
+    run();
+  } catch (error) {
+    if (error instanceof ConfigError) return error.issues.map((issue) => issue.name);
+    throw error;
+  }
+  throw new Error('expected loader to throw');
+}
+
+describe('loadWebEnv', () => {
+  it('parses a complete development environment and applies defaults', () => {
+    const env = loadWebEnv(devWeb);
+    expect(env.NODE_ENV).toBe('development');
+    expect(env.LOG_LEVEL).toBe('info');
+    expect(env.UPLOAD_PART_BYTES).toBe(8 * 1024 * 1024);
+    expect(env.MAX_UPLOAD_BYTES).toBe(5 * 1024 ** 3);
+    expect(env.COOKIE_PREFIX_SECURE).toBe(false);
+    expect(env.TRUSTED_PROXY_MODE).toBe('none');
+    expect(env.BUCKET_ORIGINALS).toBe('ad-originals');
+  });
+
+  it('decodes secrets into 32 byte keys', () => {
+    const env = loadWebEnv(devWeb);
+    expect(env.FIELD_KEK).toBeInstanceOf(Uint8Array);
+    expect(env.FIELD_KEK).toHaveLength(32);
+  });
+
+  it('treats a blank value like an unset variable', () => {
+    expect(failureNames(() => loadWebEnv({ ...devWeb, FIELD_KEK: '' }))).toEqual(['FIELD_KEK']);
+  });
+
+  it('names every missing variable at once and never prints a value', () => {
+    let message = '';
+    try {
+      loadWebEnv({ ...devWeb, DATABASE_URL: undefined, HLS_KEK: 'not-base64!!' });
+    } catch (error) {
+      message = (error as Error).message;
+    }
+    expect(message).toContain('DATABASE_URL');
+    expect(message).toContain('HLS_KEK');
+    expect(message).not.toContain('not-base64');
+  });
+
+  it('rejects a key that is not 32 bytes', () => {
+    const short = Buffer.alloc(16, 1).toString('base64');
+    expect(failureNames(() => loadWebEnv({ ...devWeb, MEDIA_URL_SECRET: short }))).toEqual([
+      'MEDIA_URL_SECRET',
+    ]);
+  });
+
+  it('accepts an optional previous key for rotation', () => {
+    const env = loadWebEnv({ ...devWeb, HLS_KEK_PREVIOUS: key(9) });
+    expect(env.HLS_KEK_PREVIOUS).toHaveLength(32);
+  });
+
+  it('requires s3 settings when the driver is s3', () => {
+    const names = failureNames(() =>
+      loadWebEnv({ ...devWeb, STORAGE_DRIVER: 's3', LOCAL_STORAGE_ROOT: undefined }),
+    );
+    expect(names).toEqual(
+      expect.arrayContaining(['S3_ENDPOINT', 'S3_ACCESS_KEY_ID', 'S3_SECRET_ACCESS_KEY']),
+    );
+  });
+
+  it('parses s3 settings, including the path style flag', () => {
+    const env = loadWebEnv({ ...devWeb, ...s3Vars, S3_FORCE_PATH_STYLE: 'true' });
+    expect(env.S3_FORCE_PATH_STYLE).toBe(true);
+    expect(env.S3_REGION).toBe('auto');
+  });
+
+  it('requires a local storage root when the driver is local', () => {
+    expect(failureNames(() => loadWebEnv({ ...devWeb, LOCAL_STORAGE_ROOT: undefined }))).toEqual([
+      'LOCAL_STORAGE_ROOT',
+    ]);
+  });
+
+  it('rejects a non numeric size limit', () => {
+    expect(failureNames(() => loadWebEnv({ ...devWeb, MAX_UPLOAD_BYTES: 'big' }))).toEqual([
+      'MAX_UPLOAD_BYTES',
+    ]);
+  });
+
+  it('rejects a part size below the S3 minimum of 5 MiB', () => {
+    expect(failureNames(() => loadWebEnv({ ...devWeb, UPLOAD_PART_BYTES: '1048576' }))).toEqual([
+      'UPLOAD_PART_BYTES',
+    ]);
+  });
+
+  it('requires turnstile keys together', () => {
+    expect(failureNames(() => loadWebEnv({ ...devWeb, TURNSTILE_SITE_KEY: 'site' }))).toEqual([
+      'TURNSTILE_SECRET_KEY',
+    ]);
+  });
+
+  describe('in production', () => {
+    it('accepts a complete production environment', () => {
+      expect(loadWebEnv(prodWeb).COOKIE_PREFIX_SECURE).toBe(true);
+    });
+
+    it('rejects the local storage driver', () => {
+      expect(failureNames(() => loadWebEnv({ ...prodWeb, STORAGE_DRIVER: 'local' }))).toEqual([
+        'STORAGE_DRIVER',
+      ]);
+    });
+
+    it('rejects DEV_SKIP_MFA', () => {
+      expect(failureNames(() => loadWebEnv({ ...prodWeb, DEV_SKIP_MFA: 'true' }))).toEqual([
+        'DEV_SKIP_MFA',
+      ]);
+    });
+
+    it('rejects insecure cookie names', () => {
+      expect(failureNames(() => loadWebEnv({ ...prodWeb, COOKIE_PREFIX_SECURE: 'false' }))).toEqual(
+        ['COOKIE_PREFIX_SECURE'],
+      );
+    });
+
+    it('rejects a non https app origin', () => {
+      expect(
+        failureNames(() => loadWebEnv({ ...prodWeb, APP_ORIGIN: 'http://app.example.com' })),
+      ).toEqual(['APP_ORIGIN']);
+    });
+  });
+});
+
+describe('loadWorkerEnv', () => {
+  it('parses a development worker environment with encode defaults', () => {
+    const env = loadWorkerEnv(devWorker);
+    expect(env.FFMPEG_PRESET).toBe('medium');
+    expect(env.WORKER_SCRATCH_DIR).toBe('/tmp/ad-work');
+    expect(env.MAX_VIDEO_SECONDS).toBe(1800);
+  });
+
+  it('needs no web only secrets', () => {
+    expect(() => loadWorkerEnv(devWorker)).not.toThrow();
+  });
+
+  it('requires the worker database url', () => {
+    expect(
+      failureNames(() => loadWorkerEnv({ ...devWorker, DATABASE_URL_WORKER: undefined })),
+    ).toEqual(['DATABASE_URL_WORKER']);
+  });
+
+  it('rejects an unknown ffmpeg preset', () => {
+    expect(failureNames(() => loadWorkerEnv({ ...devWorker, FFMPEG_PRESET: 'warp' }))).toEqual([
+      'FFMPEG_PRESET',
+    ]);
+  });
+});
+
+describe('loadMigrateEnv', () => {
+  it('needs only the owner database url', () => {
+    const env = loadMigrateEnv({ DATABASE_URL_MIGRATE: 'postgres://ad_migrator:dev@localhost/ad' });
+    expect(env.DATABASE_URL_MIGRATE).toContain('ad_migrator');
+  });
+
+  it('fails fast when it is missing', () => {
+    expect(failureNames(() => loadMigrateEnv({}))).toEqual(['DATABASE_URL_MIGRATE']);
+  });
+});
