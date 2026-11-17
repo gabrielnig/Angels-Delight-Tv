@@ -2,11 +2,11 @@
 
 import { revalidatePath } from 'next/cache';
 import { peopleService } from '@/lib/data/admin/services';
-import { requireActor } from '@/lib/data/admin/session-next';
+import { requireActionActor } from '@/lib/data/admin/session-next';
 import type { CommandResult } from '@/lib/data/admin/video-commands';
 
-async function run(fn: (a: Awaited<ReturnType<typeof requireActor>>) => Promise<CommandResult>) {
-  const actor = await requireActor('/admin/users');
+async function run(fn: (a: Awaited<ReturnType<typeof requireActionActor>>) => Promise<CommandResult>) {
+  const actor = await requireActionActor('/admin/users');
   const result = await fn(actor);
   revalidatePath('/admin', 'layout');
   return result;

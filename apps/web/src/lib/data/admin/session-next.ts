@@ -42,6 +42,23 @@ export async function requireActor(next = '/admin'): Promise<AdminActor> {
   return actor;
 }
 
+/**
+ * For server actions: same as requireActor, then spends the per staff admin budget (M-6). A staff member over the
+ * limit gets a 429 style RateLimited error. Real auth only, because fixture auth has no limiter.
+ */
+export async function requireActionActor(next = '/admin'): Promise<AdminActor> {
+  const actor = await requireActor(next);
+  await spendAdminBudget(actor);
+  return actor;
+}
+
+/** Spends the per staff admin budget. Throws RateLimited when it is empty. */
+export async function spendAdminBudget(actor: AdminActor): Promise<void> {
+  if (!realAuthEnabled()) return;
+  const { adminBudget } = await import('@/server/auth/request-actor');
+  await adminBudget().spend(actor.accountId);
+}
+
 export async function pendingAccountId(): Promise<string | null> {
   if (realAuthEnabled()) return (await realPendingActor())?.accountId ?? null;
   return (await cookies()).get(PENDING_COOKIE)?.value ?? null;
