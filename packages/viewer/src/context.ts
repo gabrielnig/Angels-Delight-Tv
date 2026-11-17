@@ -9,7 +9,7 @@ export interface NameCipher {
   open(accountId: string, sealed: Uint8Array): Promise<string>;
 }
 
-export type ViewerBucket = 'progress' | 'search' | 'profile_pin' | 'kids_exit';
+export type ViewerBucket = 'api' | 'progress' | 'search' | 'profile_pin' | 'kids_exit';
 
 export interface RateLimitDecision {
   allowed: boolean;
@@ -23,6 +23,8 @@ export const VIEWER_RATE_POLICIES: Record<
   ViewerBucket,
   { capacity: number; windowSeconds: number }
 > = {
+  /** Every signed in viewer API request, per account. SECURITY.md section 7 global API limit. */
+  api: { capacity: 300, windowSeconds: 60 },
   progress: { capacity: 30, windowSeconds: 60 },
   search: { capacity: 60, windowSeconds: 60 },
   profile_pin: { capacity: 5, windowSeconds: 900 },
