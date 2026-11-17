@@ -5,6 +5,7 @@ import type {
   AccountOverview,
   AccountRepository,
   DeviceSession,
+  ExportState,
   PlaybackSettings,
 } from '../../lib/data/types';
 import { deviceLabel, relativeTime } from './devices';
@@ -12,6 +13,23 @@ import type { GatewayIo } from './gateway';
 
 type Service = Pick<StaffService, 'getOverview' | 'changePassword' | 'deleteAccount'>;
 type Sessions = Pick<SessionService, 'list' | 'revokeOwn' | 'revokeAll'>;
+
+/** The viewer side of the account area (stats, playback settings, export). Implemented by AccountViewerData. */
+export interface AccountViewerSource {
+  stats(
+    accountId: string,
+  ): Promise<{ watchedThisMonth: number; minutesLearning: number; myListCount: number }>;
+  playback(accountId: string, profileId: string): Promise<PlaybackSettings>;
+  savePlayback(
+    accountId: string,
+    profileId: string,
+    patch: Partial<PlaybackSettings>,
+  ): Promise<PlaybackSettings>;
+  buildExport(accountId: string, account: { email: string; memberSince: string }): Promise<unknown>;
+  signExportToken(accountId: string): string;
+}
+
+export const EXPORT_FILE_NAME = 'angels-delight-data.json';
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
@@ -22,8 +40,8 @@ function displayNameFrom(email: string): string {
 }
 
 /**
- * Account area backed by the real auth services. Playback settings and the export request still come from the
- * fixture parent until the viewer data lane supplies them.
+ * Account area backed by the real auth services. Stats, playback settings and the export come from the viewer
+ * data when it is given. Without it (unit tests, fixture mode) the fixture parent answers those.
  */
 export class RealAccountRepository implements AccountRepository {
   private readonly fallback = new FixtureAccount();
@@ -33,22 +51,51 @@ export class RealAccountRepository implements AccountRepository {
     private readonly sessions: Sessions,
     private readonly io: GatewayIo,
     private readonly clock: () => Date = () => new Date(),
+    private readonly viewer?: AccountViewerSource,
   ) {}
 
-  playback(profileId: string) {
-    return this.fallback.playback(profileId);
+  private async signedInAccount(): Promise<string> {
+    const actor = await this.io.currentActor();
+    if (!actor) throw new Error('Not signed in');
+    return actor.accountId;
   }
 
-  savePlayback(profileId: string, patch: Partial<PlaybackSettings>) {
-    return this.fallback.savePlayback(profileId, patch);
+  async playback(profileId: string) {
+    if (!this.viewer) return this.fallback.playback(profileId);
+    return this.viewer.playback(await this.signedInAccount(), profileId);
   }
 
-  exportState() {
-    return this.fallback.exportState();
+  async savePlayback(profileId: string, patch: Partial<PlaybackSettings>) {
+    if (!this.viewer) return this.fallback.savePlayback(profileId, patch);
+    return this.viewer.savePlayback(await this.signedInAccount(), profileId, patch);
   }
 
-  requestExport() {
-    return this.fallback.requestExport();
+  /** Exports are built on request and are not stored, so there is never an earlier export to show. */
+  async exportState(_accountId?: string): Promise<ExportState> {
+    return this.viewer ? { status: 'none' } : this.fallback.exportState();
+  }
+
+  /**
+   * Builds the file now to size it, and hands back a ten minute link that rebuilds it. A queued job with an
+   * email link (M02-S05) waits for the worker, see docs/lanes/K1-viewer-integration.md.
+   */
+  async requestExport(accountId: string): Promise<ExportState> {
+    if (!this.viewer) return this.fallback.requestExport();
+    const actor = await this.actor(accountId);
+    const info = await this.service.getOverview(actor);
+    const file = await this.viewer.buildExport(accountId, {
+      email: info.email,
+      memberSince: info.memberSince.toISOString(),
+    });
+    const bytes = Buffer.byteLength(JSON.stringify(file, null, 2));
+    return {
+      status: 'ready',
+      requestedAt: 'just now',
+      fileName: EXPORT_FILE_NAME,
+      sizeLabel: bytes < 1024 ? `${bytes} bytes` : `${(bytes / 1024).toFixed(1)} KB`,
+      expiresLabel: 'in 10 minutes',
+      downloadHref: `/api/account/export?token=${this.viewer.signExportToken(accountId)}`,
+    };
   }
 
   private async actor(accountId: string) {
@@ -64,14 +111,15 @@ export class RealAccountRepository implements AccountRepository {
       this.sessions.list(accountId),
     ]);
     const since = info.memberSince;
+    const stats = this.viewer
+      ? await this.viewer.stats(accountId)
+      : { watchedThisMonth: 0, minutesLearning: 0, myListCount: 0 };
     return {
       displayName: displayNameFrom(info.email),
       email: info.email,
       verified: info.emailVerified,
       memberSince: `${since.getUTCDate()} ${MONTHS[since.getUTCMonth()]} ${since.getUTCFullYear()}`,
-      watchedThisMonth: 0,
-      minutesLearning: 0,
-      myListCount: 0,
+      ...stats,
       devices: devices.length,
     };
   }

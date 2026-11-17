@@ -26,7 +26,10 @@ export function DataPanel({ initial }: { initial: ExportState }) {
       if (result.ok)
         setMessage({
           tone: 'success',
-          text: `Your account will be deleted in ${result.days} days. Sign in before then to cancel.`,
+          text:
+            result.days === 0
+              ? 'Your account and its data have been deleted. You are now signed out.'
+              : `Your account will be deleted in ${result.days} days. Sign in before then to cancel.`,
         });
       else if (result.reason === 'wrong_password')
         setMessage({ tone: 'danger', text: 'That password is not right.' });

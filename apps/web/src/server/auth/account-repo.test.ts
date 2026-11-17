@@ -6,7 +6,11 @@ import type { GatewayIo } from './gateway';
 const actor = { accountId: 'a1', role: 'viewer' as const, sessionId: 's1' };
 const now = new Date('2026-03-10T12:00:00Z');
 
-function setup(service: Record<string, unknown> = {}, sessions: Record<string, unknown> = {}) {
+function setup(
+  service: Record<string, unknown> = {},
+  sessions: Record<string, unknown> = {},
+  viewer?: Record<string, unknown>,
+) {
   const io: GatewayIo = {
     meta: async () => ({ ip: null, ipTrunc: null, userAgent: null, requestId: null }),
     setSession: vi.fn(async () => undefined),
@@ -44,6 +48,7 @@ function setup(service: Record<string, unknown> = {}, sessions: Record<string, u
     } as never,
     io,
     () => now,
+    viewer as never,
   );
   return { repo, io, list };
 }
@@ -168,6 +173,68 @@ describe('RealAccountRepository', () => {
       verified: true,
       displayName: 'Ada',
       devices: 2,
+    });
+  });
+});
+
+describe('RealAccountRepository with viewer data', () => {
+  const memberSince = new Date('2026-01-05T08:00:00Z');
+  const service = {
+    getOverview: vi.fn(async () => ({
+      email: 'ada@example.com',
+      emailVerified: true,
+      memberSince,
+    })),
+  };
+  const viewer = () => ({
+    stats: vi.fn(async () => ({ watchedThisMonth: 4, minutesLearning: 37, myListCount: 6 })),
+    playback: vi.fn(async () => ({ quality: '720' })),
+    savePlayback: vi.fn(async (_a: string, _p: string, patch: object) => ({
+      quality: '720',
+      ...patch,
+    })),
+    buildExport: vi.fn(async () => ({ profiles: [], exportedAt: 'x', account: {} })),
+    signExportToken: vi.fn(() => 'tok.1.mac'),
+  });
+
+  it('fills the overview numbers from the viewer data', async () => {
+    const { repo } = setup(service, {}, viewer());
+    expect(await repo.overview('a1')).toMatchObject({
+      watchedThisMonth: 4,
+      minutesLearning: 37,
+      myListCount: 6,
+      devices: 2,
+    });
+  });
+
+  it('reads and saves playback settings for the signed in account', async () => {
+    const v = viewer();
+    const { repo } = setup(service, {}, v);
+    expect(await repo.playback('p1')).toEqual({ quality: '720' });
+    expect(v.playback).toHaveBeenCalledWith('a1', 'p1');
+    await repo.savePlayback('p1', { dataSaver: true });
+    expect(v.savePlayback).toHaveBeenCalledWith('a1', 'p1', { dataSaver: true });
+  });
+
+  it('starts an export as a short lived download link', async () => {
+    const { repo } = setup(service, {}, viewer());
+    expect(await repo.exportState('a1')).toEqual({ status: 'none' });
+    const state = await repo.requestExport('a1');
+    expect(state).toMatchObject({
+      status: 'ready',
+      fileName: 'angels-delight-data.json',
+      downloadHref: '/api/account/export?token=tok.1.mac',
+      expiresLabel: 'in 10 minutes',
+    });
+    expect(state.sizeLabel).toMatch(/KB|bytes/);
+  });
+
+  it('says deletion is immediate', async () => {
+    const del = vi.fn(async () => undefined);
+    const { repo } = setup({ ...service, deleteAccount: del }, {}, viewer());
+    expect(await repo.deleteAccount('a1', { password: 'pw', confirm: 'DELETE' })).toEqual({
+      ok: true,
+      days: 0,
     });
   });
 });
