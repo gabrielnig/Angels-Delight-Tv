@@ -5,3 +5,5 @@ export { alias, isoOrNull, rowsOf, uuidList } from './sql';
 export * from './artwork';
 export * from './titles';
 export * from './videos';
+export * from './detail';
+export * from './rows';
