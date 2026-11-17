@@ -1,10 +1,9 @@
 import type { Metadata } from 'next';
+import { forbidden } from 'next/navigation';
 import { CaptionList } from '@/components/admin/CaptionList';
 import { PageHeader } from '@/components/admin/PageHeader';
-import { NoAccess } from '@/components/admin/states';
 import { can } from '@/lib/admin/can';
 import { captionService } from '@/lib/data/admin/services';
-import { ROLE_LABELS } from '@/lib/data/admin/session';
 import { requireActor } from '@/lib/data/admin/session-next';
 import type { CaptionState } from '@/lib/data/admin/types';
 
@@ -17,14 +16,7 @@ export default async function CaptionsPage({
   searchParams: Promise<{ state?: string }>;
 }) {
   const actor = await requireActor('/admin/captions');
-  if (!can(actor.role, 'caption.review'))
-    return (
-      <NoAccess
-        pageName="Captions"
-        roleLabel={ROLE_LABELS[actor.role]}
-        needed="editors and admins"
-      />
-    );
+  if (!can(actor.role, 'caption.review')) forbidden();
   const { state } = await searchParams;
   const active = STATES.find((s) => s === state);
   const all = await captionService.list(actor);

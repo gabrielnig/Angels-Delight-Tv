@@ -6,6 +6,7 @@ import { SignInScreen } from '../components/auth/AuthScreens';
 import { HomeSkeleton, HomeView } from '../components/home/HomeView';
 import { getSite } from '../lib/data';
 import { requireProfile, getSession } from '../lib/session';
+import { turnstileSiteKey } from '../server/auth/turnstile-site';
 
 /** Signed out: the landing page with the sign in card. Signed in with a profile: Home. */
 export default async function RootPage() {
@@ -15,7 +16,7 @@ export default async function RootPage() {
     return (
       <AuthSplit site={site}>
         <h1 className="web-auth__title">Sign in</h1>
-        <SignInScreen signUpOpen={site.signUpOpen} />
+        <SignInScreen signUpOpen={site.signUpOpen} turnstileSiteKey={turnstileSiteKey()} />
       </AuthSplit>
     );
   }

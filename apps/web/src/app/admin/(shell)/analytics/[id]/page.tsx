@@ -1,13 +1,12 @@
 import type { Metadata } from 'next';
-import { notFound } from 'next/navigation';
+import { notFound, forbidden } from 'next/navigation';
 import { NotFound } from '@ad/shared';
 import { VideoAnalyticsView } from '@/components/admin/AnalyticsView';
 import { PageHeader } from '@/components/admin/PageHeader';
-import { ErrorState, NoAccess } from '@/components/admin/states';
+import { ErrorState } from '@/components/admin/states';
 import { can } from '@/lib/admin/can';
 import { parseRange } from '@/lib/data/admin/analytics-rules';
 import { analyticsService } from '@/lib/data/admin/services';
-import { ROLE_LABELS } from '@/lib/data/admin/session';
 import { requireActor } from '@/lib/data/admin/session-next';
 
 export const metadata: Metadata = { title: 'Video analytics' };
@@ -22,14 +21,7 @@ export default async function VideoAnalyticsPage({
 }) {
   const { id } = await params;
   const actor = await requireActor(`/admin/analytics/${id}`);
-  if (!can(actor.role, 'analytics.view'))
-    return (
-      <NoAccess
-        pageName="Analytics"
-        roleLabel={ROLE_LABELS[actor.role]}
-        needed="editors and admins"
-      />
-    );
+  if (!can(actor.role, 'analytics.view')) forbidden();
   const { preset, range } = parseRange(await searchParams);
   try {
     const data = await analyticsService.video(actor, id, range);

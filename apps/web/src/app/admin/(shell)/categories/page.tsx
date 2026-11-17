@@ -1,10 +1,9 @@
 import type { Metadata } from 'next';
+import { forbidden } from 'next/navigation';
 import { CategoriesManager } from '@/components/admin/CategoriesManager';
 import { PageHeader } from '@/components/admin/PageHeader';
-import { NoAccess } from '@/components/admin/states';
 import { can } from '@/lib/admin/can';
 import { collectionService } from '@/lib/data/admin/services';
-import { ROLE_LABELS } from '@/lib/data/admin/session';
 import { requireActor } from '@/lib/data/admin/session-next';
 import {
   createCategoryAction,
@@ -18,14 +17,7 @@ export const metadata: Metadata = { title: 'Categories' };
 
 export default async function CategoriesPage() {
   const actor = await requireActor('/admin/categories');
-  if (!can(actor.role, 'category.manage'))
-    return (
-      <NoAccess
-        pageName="Categories"
-        roleLabel={ROLE_LABELS[actor.role]}
-        needed="editors and admins"
-      />
-    );
+  if (!can(actor.role, 'category.manage')) forbidden();
   const categories = await collectionService.categories(actor);
   return (
     <>

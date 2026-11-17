@@ -41,12 +41,24 @@ const minutes = (seconds: number) => Math.max(1, Math.ceil(seconds / 60));
 
 /** Real implementation of the viewer UI's AuthGateway on top of the auth services (modules M01 and M02). */
 export class RealAuthGateway implements AuthGateway {
+  /**
+   * `challenge` is the Turnstile check. When it is given, sign in and sign up need a token it accepts.
+   * Without it (no keys configured) nothing changes.
+   */
   constructor(
     private readonly service: Service,
     private readonly io: GatewayIo,
+    private readonly challenge?: (token: string | undefined, ip: string | null) => Promise<boolean>,
   ) {}
 
-  async signIn(input: { email: string; password: string; next?: string }) {
+  private async checkPassed(token: string | undefined): Promise<boolean> {
+    if (!this.challenge) return true;
+    return this.challenge(token, (await this.io.meta()).ip);
+  }
+
+  async signIn(input: { email: string; password: string; next?: string; challengeToken?: string }) {
+    if (!(await this.checkPassed(input.challengeToken)))
+      return { ok: false as const, reason: 'check_required' as const };
     try {
       const result = await this.service.signIn(
         { email: input.email, password: input.password },
@@ -75,11 +87,18 @@ export class RealAuthGateway implements AuthGateway {
     }
   }
 
-  async signUp(input: { email: string; password: string }) {
+  async signUp(input: { email: string; password: string; challengeToken?: string }) {
+    if (!(await this.checkPassed(input.challengeToken)))
+      return { ok: false as const, reason: 'check_required' as const };
     try {
       // The screen states that creating an account accepts the terms and confirms an adult or guardian.
       const result = await this.service.signUp(
-        { ...input, acceptTerms: true, guardianDeclaration: true },
+        {
+          email: input.email,
+          password: input.password,
+          acceptTerms: true,
+          guardianDeclaration: true,
+        },
         await this.io.meta(),
       );
       await this.io.setPending(result.email);

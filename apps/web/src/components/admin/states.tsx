@@ -103,9 +103,10 @@ export function NoAccess({
   roleLabel,
   needed,
 }: {
-  pageName: string;
+  /** Leave out pageName and needed for the generic answer the 403 page gives. */
+  pageName?: string;
   roleLabel: string;
-  needed: string;
+  needed?: string;
 }) {
   return (
     <div className="adm-error" role="alert">
@@ -115,7 +116,8 @@ export function NoAccess({
           You do not have access to this page
         </h1>
         <p className="adm-error__help">
-          {pageName} is only for {needed}. Your role is {roleLabel}. Ask an admin if you need it.
+          {pageName && needed ? `${pageName} is only for ${needed}. ` : 'This page is for admins. '}
+          Your role is {roleLabel}. Ask an admin if you need it.
         </p>
         <p className="adm-error__ref">Error 403</p>
       </div>

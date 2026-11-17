@@ -5,6 +5,8 @@ const config: NextConfig = {
   output: 'standalone',
   poweredByHeader: false,
   reactStrictMode: true,
+  // Lets a page call forbidden() so the response is a real 403 (admin pages for the wrong role).
+  experimental: { authInterrupts: true },
   // Workspace packages ship TypeScript source, so Next compiles them.
   transpilePackages: [
     '@ad/auth',
