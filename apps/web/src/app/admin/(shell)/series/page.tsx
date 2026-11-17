@@ -1,10 +1,9 @@
 import type { Metadata } from 'next';
+import { forbidden } from 'next/navigation';
 import { PageHeader } from '@/components/admin/PageHeader';
 import { SeriesList } from '@/components/admin/SeriesList';
-import { NoAccess } from '@/components/admin/states';
 import { can } from '@/lib/admin/can';
 import { collectionService } from '@/lib/data/admin/services';
-import { ROLE_LABELS } from '@/lib/data/admin/session';
 import { requireActor } from '@/lib/data/admin/session-next';
 import { createSeriesAction } from './actions';
 
@@ -12,10 +11,7 @@ export const metadata: Metadata = { title: 'Series' };
 
 export default async function SeriesPage() {
   const actor = await requireActor('/admin/series');
-  if (!can(actor.role, 'series.manage'))
-    return (
-      <NoAccess pageName="Series" roleLabel={ROLE_LABELS[actor.role]} needed="editors and admins" />
-    );
+  if (!can(actor.role, 'series.manage')) forbidden();
   const series = await collectionService.seriesList(actor);
   return (
     <>

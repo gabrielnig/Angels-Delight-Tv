@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { AuthSplit } from '../../../components/AuthLayouts';
 import { SignInScreen } from '../../../components/auth/AuthScreens';
 import { getSite } from '../../../lib/data';
+import { turnstileSiteKey } from '../../../server/auth/turnstile-site';
 import { safeNext } from '../../../lib/data/fixtures/auth';
 
 export const metadata: Metadata = { title: 'Sign in' };
@@ -18,6 +19,7 @@ export default async function SignInPage({
       <h1 className="web-auth__title">Sign in</h1>
       <SignInScreen
         next={next}
+        turnstileSiteKey={turnstileSiteKey()}
         signUpOpen={site.signUpOpen}
         notice={
           params.notice === 'reset'

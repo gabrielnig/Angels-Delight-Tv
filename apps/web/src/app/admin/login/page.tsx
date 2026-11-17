@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation';
 import { AuthLayout } from '@/components/admin/AuthLayout';
 import { Banner } from '@/components/admin/states';
 import { getActor, safeNext } from '@/lib/data/admin/session-next';
+import { turnstileSiteKey } from '@/server/auth/turnstile-site';
 import { LoginForm } from './LoginForm';
 
 export const metadata: Metadata = { title: 'Sign in' };
@@ -28,7 +29,7 @@ export default async function AdminLoginPage({
         ) : null
       }
     >
-      <LoginForm next={next} />
+      <LoginForm next={next} turnstileSiteKey={turnstileSiteKey()} />
     </AuthLayout>
   );
 }

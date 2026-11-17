@@ -13,11 +13,13 @@ import {
 import type { SignUpResult } from '../../lib/data';
 import { NETWORK_MESSAGE, RATE_LIMIT_MESSAGE, emailError } from './shared';
 import { useFocusFirstInvalid } from './useFocusFirstInvalid';
+import { CHECK_RUNNING_MESSAGE, useTurnstile } from './useTurnstile';
 
 export interface SignUpValues {
   email: string;
   password: string;
   inviteCode?: string;
+  challengeToken?: string;
 }
 
 export function SignUpForm({
@@ -25,12 +27,16 @@ export function SignUpForm({
   onDone,
   inviteOnly = false,
   scorer,
+  turnstileSiteKey,
 }: {
   onSubmit: (values: SignUpValues) => Promise<SignUpResult>;
   onDone: (next: string) => void;
   inviteOnly?: boolean;
   scorer?: PasswordScorer;
+  /** Turns on the Cloudflare Turnstile check. Leave out when no keys are configured. */
+  turnstileSiteKey?: string;
 }) {
+  const turnstile = useTurnstile(turnstileSiteKey);
   const formRef = useRef<HTMLFormElement>(null);
   const requestFocus = useFocusFirstInvalid(formRef);
   const [email, setEmail] = useState('');
@@ -68,18 +74,25 @@ export function SignUpForm({
       onDone('/verify-email');
       return;
     }
+    if (turnstile.enabled && !turnstile.token) {
+      setBanner(CHECK_RUNNING_MESSAGE);
+      return;
+    }
     setBusy(true);
     try {
       const result = await onSubmit({
         email: email.trim(),
         password,
         inviteCode: inviteOnly ? invite.trim() : undefined,
+        challengeToken: turnstile.token ?? undefined,
       });
       if (result.ok) {
         onDone(result.next);
         return;
       }
-      if (result.reason === 'rate_limited') setBanner(RATE_LIMIT_MESSAGE);
+      if (result.reason === 'check_required')
+        setBanner('We could not confirm the security check. Try again.');
+      else if (result.reason === 'rate_limited') setBanner(RATE_LIMIT_MESSAGE);
       else if (result.reason === 'network') setBanner(NETWORK_MESSAGE);
       else if (result.reason === 'invite_required')
         setBanner('That invite code is not valid. Check it and try again.');
@@ -91,6 +104,7 @@ export function SignUpForm({
       setBanner(NETWORK_MESSAGE);
     } finally {
       setBusy(false);
+      turnstile.spent();
     }
   }
 
@@ -143,6 +157,7 @@ export function SignUpForm({
           onChange={(event) => setTrap(event.target.value)}
         />
       </div>
+      {turnstile.widget}
       <p className="web-form__fine">
         By creating an account you agree to the <Link href="/terms">Terms</Link> and{' '}
         <Link href="/privacy">Privacy Policy</Link>.

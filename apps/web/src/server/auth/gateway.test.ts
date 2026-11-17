@@ -267,3 +267,55 @@ describe('RealAuthGateway.pendingEmail', () => {
     expect(await gateway.pendingEmail()).toBeNull();
   });
 });
+
+describe('RealAuthGateway with a Turnstile check', () => {
+  const signedIn = {
+    signIn: async () => ({
+      status: 'signed_in',
+      accountId: 'a1',
+      role: 'viewer',
+      session: { token: 'T', id: 's' },
+    }),
+    signUp: vi.fn(async () => ({ email: 'a@b.co' })),
+  };
+  const withCheck = (answer: boolean) => {
+    const check = vi.fn(async () => answer);
+    const io = setup(signedIn).io;
+    return { check, gateway: new RealAuthGateway(signedIn as never, io, check), io };
+  };
+
+  it('asks for the check and never calls the service when the token fails', async () => {
+    const service = { signIn: vi.fn(), signUp: vi.fn() };
+    const io = setup({}).io;
+    const gateway = new RealAuthGateway(service as never, io, async () => false);
+    expect(await gateway.signIn({ email: 'a@b.co', password: 'x' })).toEqual({
+      ok: false,
+      reason: 'check_required',
+    });
+    expect(await gateway.signUp({ email: 'a@b.co', password: 'long enough password' })).toEqual({
+      ok: false,
+      reason: 'check_required',
+    });
+    expect(service.signIn).not.toHaveBeenCalled();
+    expect(service.signUp).not.toHaveBeenCalled();
+  });
+
+  it('passes the token to the check and continues when it passes', async () => {
+    const { gateway, check } = withCheck(true);
+    const result = await gateway.signIn({ email: 'a@b.co', password: 'x', challengeToken: 'tok' });
+    expect(result.ok).toBe(true);
+    expect(check).toHaveBeenCalledWith('tok', null);
+    const up = await gateway.signUp({
+      email: 'a@b.co',
+      password: 'long enough password',
+      challengeToken: 'tok2',
+    });
+    expect(up.ok).toBe(true);
+    expect(check).toHaveBeenLastCalledWith('tok2', null);
+  });
+
+  it('does nothing extra when no check is configured', async () => {
+    const { gateway } = setup(signedIn);
+    expect((await gateway.signIn({ email: 'a@b.co', password: 'x' })).ok).toBe(true);
+  });
+});

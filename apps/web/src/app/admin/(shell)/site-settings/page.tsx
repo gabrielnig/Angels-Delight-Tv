@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
+import { forbidden } from 'next/navigation';
 import { SiteSettingsView } from '@/components/admin/site/SiteSettingsView';
-import { ErrorState, NoAccess } from '@/components/admin/states';
-import { ROLE_LABELS } from '@/lib/data/admin/session';
+import { ErrorState } from '@/components/admin/states';
 import { allowed, requireActor } from '@/lib/data/admin/session-next';
 import { siteSettingsAdmin } from '@/lib/data/admin/site-settings';
 import {
@@ -17,9 +17,7 @@ export const dynamic = 'force-dynamic';
 export default async function SiteSettingsPage() {
   const actor = await requireActor('/admin/site-settings');
   if (!allowed(actor, 'settings.site')) {
-    return (
-      <NoAccess pageName="Site settings" roleLabel={ROLE_LABELS[actor.role]} needed="admins" />
-    );
+    forbidden();
   }
   const result = await siteSettingsAdmin.load(actor);
   if (!result.ok)

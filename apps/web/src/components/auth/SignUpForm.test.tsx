@@ -1,10 +1,42 @@
 // @vitest-environment jsdom
-import { render, screen, waitFor } from '@testing-library/react';
+import { act, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { SignUpForm } from './SignUpForm';
 
 const scorer = async (pw: string) => (pw.length > 18 ? 4 : 2);
+
+describe('SignUpForm with Turnstile', () => {
+  afterEach(() => {
+    delete (window as unknown as { turnstile?: unknown }).turnstile;
+  });
+
+  it('sends the token and explains a refused check', async () => {
+    let callback: ((token: string) => void) | undefined;
+    (window as unknown as { turnstile: unknown }).turnstile = {
+      render: (_el: HTMLElement, o: { callback: (t: string) => void }) => {
+        callback = o.callback;
+        return 'w';
+      },
+      reset: vi.fn(),
+      remove: vi.fn(),
+    };
+    const onSubmit = vi.fn().mockResolvedValue({ ok: false, reason: 'check_required' });
+    const user = userEvent.setup();
+    render(
+      <SignUpForm onSubmit={onSubmit} onDone={vi.fn()} scorer={scorer} turnstileSiteKey="site" />,
+    );
+    await user.type(screen.getByLabelText(/Email/), 'chioma@example.com');
+    await user.type(screen.getByLabelText(/Password/), 'blue mango river sunrise');
+    await user.click(screen.getByRole('button', { name: 'Create account' }));
+    expect(await screen.findByText(/security check is still running/)).toBeInTheDocument();
+    expect(onSubmit).not.toHaveBeenCalled();
+    act(() => callback!('t-9'));
+    await user.click(screen.getByRole('button', { name: 'Create account' }));
+    expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({ challengeToken: 't-9' }));
+    expect(await screen.findByText(/could not confirm the security check/)).toBeInTheDocument();
+  });
+});
 
 describe('SignUpForm', () => {
   it('shows the strength checklist and terms links', () => {
