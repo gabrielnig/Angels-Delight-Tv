@@ -36,8 +36,11 @@ export interface VideoRecord {
   captionState: CaptionState;
   captionCueCount: number;
   posterId: string | null;
+  posterAlt: string | null;
+  posterFocus: { x: number; y: number; zoom: number } | null;
   suitability: Suitability | null;
   seriesId: string | null;
+  seasonNumber: number | null;
   episodeNumber: number | null;
   views: number;
   uploadedBy: string;
@@ -55,6 +58,14 @@ export interface CategoryRecord {
   name: string;
   hidden: boolean;
   position: number;
+}
+
+export interface SeriesRecord {
+  id: string;
+  title: string;
+  description: string;
+  posterId: string | null;
+  published: boolean;
 }
 
 export interface Page<T> {
