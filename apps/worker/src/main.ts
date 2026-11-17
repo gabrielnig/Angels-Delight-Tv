@@ -1,6 +1,9 @@
 import { ConfigError, loadWorkerEnv } from '@ad/config';
 import { createLogger } from '@ad/shared';
+import type { PgBoss } from 'pg-boss';
 import { bootWorker } from './boot';
+import { registerVideoHandlers } from './handlers';
+import { buildVideoHandlerDeps } from './runtime';
 
 async function main(): Promise<void> {
   const bootLogger = createLogger({ bindings: { app: 'worker' } });
@@ -17,7 +20,12 @@ async function main(): Promise<void> {
   }
 
   const logger = createLogger({ level: env.LOG_LEVEL, bindings: { app: 'worker' } });
-  const worker = await bootWorker({ env, logger });
+  const worker = await bootWorker({
+    env,
+    logger,
+    register: (queueBoss, raw) =>
+      registerVideoHandlers(queueBoss, buildVideoHandlerDeps(env, raw as unknown as PgBoss, logger)),
+  });
 
   const shutdown = (signal: string) => {
     logger.info('shutdown requested', { signal });
