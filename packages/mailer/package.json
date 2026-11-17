@@ -12,9 +12,9 @@
     "test:file": "vitest run"
   },
   "dependencies": {
-    "nodemailer": "^7.0.0"
+    "nodemailer": "^10.6.0"
   },
   "devDependencies": {
-    "@types/nodemailer": "^7.0.0"
+    "@types/nodemailer": "^8.0.2"
   }
 }
