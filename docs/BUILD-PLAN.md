@@ -26,7 +26,7 @@ Lane A must merge first. Lanes B to J then run at the same time, each in its own
 | D Video pipeline | Resumable upload sessions, presigned multipart, job queue, FFmpeg HLS worker, thumbnails, caption worker, signed playback URLs | M13, M14, M15 | A |
 | E Viewer UI | Tokens, components, sign in and sign up screens, profile picker, Home, Browse, Search, Title, My List, Account | M03 to M10, M26 | A, tokens |
 | F Admin UI | Shell, dashboard, videos, upload UI, encoding queue, caption review, series and categories, curation, users, audit log, analytics | M12 to M17, M19, M20 | A, B, D contracts |
-| G Player | Video.js v10 and hls.js integration, resume, captions menu, speed, quality, keyboard and touch, error recovery, up next | M08, M11 | A, C contracts |
+| G Player | hls.js engine behind our own interface (D-042), resume, captions menu, speed, quality, keyboard and touch, error recovery, up next | M08, M11 | A, C contracts |
 | H Theme settings | Theme model, admin editor with live preview, contrast check, reset, CSS variable injection at render | M18 | A, tokens |
 | I Low data and PWA | Data saver defaults, lazy loading, service worker, offline screen, image sizes | M25 | E |
 | J Quality | Security review agent, AI-footprint review agent, accessibility agent, e2e for critical paths, scan harness notes | M23 | all |
