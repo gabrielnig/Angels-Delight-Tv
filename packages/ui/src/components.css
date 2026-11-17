@@ -1938,6 +1938,8 @@
 .ad-footer__links a {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
+  min-width: var(--touch-target);
   min-height: var(--touch-target);
   color: var(--color-ink);
 }
