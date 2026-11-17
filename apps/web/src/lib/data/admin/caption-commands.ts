@@ -96,6 +96,17 @@ export type CaptionResult = { ok: true } | { ok: false; error: string };
 
 const DENIED = 'You do not have permission to edit captions.';
 
+/** Why a list of cues cannot be saved, in plain words, or null when it can. */
+export function cueListProblem(cues: Cue[]): string | null {
+  if (cues.length === 0 || cues.length > 5000) return 'Captions need between 1 and 5000 cues.';
+  for (const cue of cues) {
+    if (!Number.isFinite(cue.start) || !Number.isFinite(cue.end) || cue.start < 0)
+      return 'A cue has a time that is not valid.';
+    if (cue.text.length > 500) return 'A cue is over 500 characters. Split it into two.';
+  }
+  return null;
+}
+
 export function saveCues(
   store: AdminStore,
   video: VideoRecord,
@@ -108,14 +119,8 @@ export function saveCues(
   const track = ensureTrack(store, video, now);
   if (!track) return { ok: false, error: 'This video has no captions yet.' };
   if (track.state === 'generating') return { ok: false, error: 'Captions are still being made.' };
-  if (cues.length === 0 || cues.length > 5000)
-    return { ok: false, error: 'Captions need between 1 and 5000 cues.' };
-  for (const cue of cues) {
-    if (!Number.isFinite(cue.start) || !Number.isFinite(cue.end) || cue.start < 0)
-      return { ok: false, error: 'A cue has a time that is not valid.' };
-    if (cue.text.length > 500)
-      return { ok: false, error: 'A cue is over 500 characters. Split it into two.' };
-  }
+  const problem = cueListProblem(cues);
+  if (problem) return { ok: false, error: problem };
   track.cues = cues.map(({ id, start, end, text }) => ({ id, start, end, text }));
   track.updatedBy = by;
   track.updatedAt = new Date(now).toISOString();

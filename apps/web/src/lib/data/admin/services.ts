@@ -302,7 +302,7 @@ function liveVideo(id: string) {
   return video;
 }
 
-export const captionService: CaptionService = {
+const fixtureCaptionService: CaptionService = {
   async list(actor, filter) {
     need(actor, 'caption.review');
     const store = getStore();
@@ -751,4 +751,8 @@ export const dashboardService: DashboardService = delegating(
 export const systemService: SystemService = delegating(
   fixtureSystemService,
   async () => (await import('./real/system')).realSystemService,
+);
+export const captionService: CaptionService = delegating(
+  fixtureCaptionService,
+  async () => (await import('./real/captions')).realCaptionService,
 );

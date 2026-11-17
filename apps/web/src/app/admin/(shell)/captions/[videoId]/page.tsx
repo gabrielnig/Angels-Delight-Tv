@@ -6,7 +6,7 @@ import { CaptionReview } from '@/components/admin/CaptionReview';
 import { PageHeader } from '@/components/admin/PageHeader';
 import { NoAccess } from '@/components/admin/states';
 import { can } from '@/lib/admin/can';
-import { captionService } from '@/lib/data/admin/services';
+import { adminDataMode, captionService } from '@/lib/data/admin/services';
 import { ROLE_LABELS } from '@/lib/data/admin/session';
 import { requireActor } from '@/lib/data/admin/session-next';
 import {
@@ -53,6 +53,7 @@ export default async function CaptionReviewPage({
         video={video}
         track={track}
         role={actor.role}
+        preview={adminDataMode() === 'real'}
         actions={{
           save: saveCuesAction.bind(null, videoId),
           approve: approveCaptionsAction.bind(null, videoId),

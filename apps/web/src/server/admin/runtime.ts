@@ -6,6 +6,9 @@ import { DrizzleJobMirror, JobProducer, createProducerBoss, bossAdapter } from '
 import { sql } from 'drizzle-orm';
 import { eq } from 'drizzle-orm';
 import type { Actor } from '@ad/shared';
+import { CaptionService } from '@ad/video';
+import { recordAudit } from '@ad/audit';
+import { createStorage, storageConfigFromEnv } from '@ad/storage';
 import { getServices } from '@/lib/runtime/services';
 
 /** What the real admin services need from the process. Tests install a fake with `setAdminRuntime`. */
@@ -14,6 +17,8 @@ export interface AdminRuntime {
   /** Catalog context with the current caption approval setting (D-005). */
   ctx(): Promise<AdminContext>;
   enqueue: JobProducer['enqueue'];
+  /** Review and approval of caption revisions (lane D). */
+  captions(): Promise<CaptionService>;
   /** Display names for staff accounts, by account id. Unknown ids are left out. */
   names(actor: Actor, ids: readonly string[]): Promise<Map<string, string>>;
 }
@@ -21,10 +26,24 @@ export interface AdminRuntime {
 const slot = Symbol.for('ad.admin.runtime');
 type Holder = { [slot]?: AdminRuntime };
 
-export function setAdminRuntime(runtime: AdminRuntime | null): void {
+/** Tests install a runtime built from just the parts they use. Anything else fails loudly if it is touched. */
+export function setAdminRuntime(
+  runtime: (Partial<AdminRuntime> & Pick<AdminRuntime, 'db'>) | null,
+): void {
   const holder = globalThis as Holder;
-  if (runtime) holder[slot] = runtime;
-  else delete holder[slot];
+  if (!runtime) {
+    delete holder[slot];
+    return;
+  }
+  holder[slot] = {
+    ctx: async () => ({ db: runtime.db() }),
+    enqueue: (async () => ({ jobId: 'test-job', deduped: false })) as AdminRuntime['enqueue'],
+    names: async () => new Map(),
+    captions: async () => {
+      throw new Error('This test did not provide a caption service');
+    },
+    ...runtime,
+  };
 }
 
 export function adminRuntime(): AdminRuntime {
@@ -70,6 +89,31 @@ function build(): AdminRuntime {
     },
     enqueue: (async (...args: Parameters<JobProducer['enqueue']>) =>
       (await getProducer()).enqueue(...args)) as JobProducer['enqueue'],
+    captions: async () => {
+      const services = getServices();
+      const { env, db } = services;
+      const originals = createStorage(
+        storageConfigFromEnv(env, env.BUCKET_ORIGINALS, env.MEDIA_URL_SECRET),
+      );
+      return new CaptionService({
+        db,
+        originals,
+        media: services.mediaStorage,
+        producer: { enqueue: (...args) => adminRuntime().enqueue(...args) },
+        audit: {
+          record: (event) =>
+            recordAudit(db, {
+              action: event.action,
+              outcome: event.outcome,
+              actorAccountId: event.actorAccountId,
+              actorRole: event.actorRole,
+              targetType: event.targetType,
+              targetId: event.targetId,
+              extra: event.metadata,
+            }),
+        },
+      });
+    },
     async names(actor, ids) {
       const out = new Map<string, string>();
       const unique = [...new Set(ids)];
