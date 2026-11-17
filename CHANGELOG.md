@@ -25,3 +25,5 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 ## Lane H: site settings screen
 
 - Add S64 site settings: platform details, features and limits, legal and info pages editor with versions, maintenance mode, launch checklist.
+
+- Lane H: add `getRootTheme` helper for the root layout and docs/lanes/H-theme.md.
