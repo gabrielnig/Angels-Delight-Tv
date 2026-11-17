@@ -111,3 +111,15 @@ Format: decision, options considered, why, reversible or not. Newest first. Deci
 ## D-024 View event privacy constraint
 - Decision: an extra CHECK on `view_events` rejects a non null `profile_id` when `audience = 'kids'`, enforcing "always null for kids profiles" in the database as well as the service.
 - Reversible: yes.
+
+## D-025 Admin UI role model
+- Decision: the admin UI authorizes with the three database roles (viewer, editor, admin) through one `can(role, action)` table in `apps/web/src/lib/admin/can.ts`, taken from docs/SECURITY.md section 5. Screens marked "Super admin" in SCREEN-ARCHITECTURE (roles, system, purge from trash, site feature flags) are admin only for now. "Analyst" is treated as read only analytics and is not a separate role yet.
+- Options: add super_admin and analyst to the account_role enum now, or keep three roles and map.
+- Why: D-005 lists four staff roles but the schema has three and an enum change touches lane B auth. The table is the single place to extend when the enum grows.
+- Reversible: yes, one file plus a migration.
+
+## D-026 Upload engine shape
+- Decision: the client upload engine is a framework free module (`apps/web/src/lib/uploader`) driven by an `UploadTransport` seam (start, uploadPart, complete, abort). Resume is part level from server truth: `start` with a known upload id returns the parts already stored, so Retry and a re-picked file send only the missing parts. Defaults: 2 files at once, 3 parts per file, 4 automatic attempts per part with exponential backoff (1s base, 30s cap), then the lane fails with "N percent was saved" and a manual Retry. Offline lanes wait for the network and resume without using attempts.
+- Options: byte range resume inside a part (not possible with S3 multipart), tus protocol (extra server).
+- Why: matches docs/ARCHITECTURE.md section 7 and D-006. The fake transport lets the screens run before the API lane merges.
+- Reversible: yes.
