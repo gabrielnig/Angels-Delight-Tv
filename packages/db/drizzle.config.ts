@@ -1,0 +1,15 @@
+import { defineConfig } from 'drizzle-kit';
+
+export default defineConfig({
+  dialect: 'postgresql',
+  schema: [
+    './src/schema/activity.ts',
+    './src/schema/captions.ts',
+    './src/schema/content.ts',
+    './src/schema/enums.ts',
+    './src/schema/identity.ts',
+    './src/schema/pipeline.ts',
+    './src/schema/platform.ts',
+  ],
+  out: './migrations/main',
+});
