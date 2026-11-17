@@ -53,13 +53,17 @@ export function createPlaybackHandlers(deps: PlaybackHttpDeps) {
     session: (request: Request, videoId: string) =>
       run(request, async () => {
         deps.assertSameOrigin?.(request);
-        const body = (await request.json().catch(() => ({}))) as { preview?: unknown };
+        const body = (await request.json().catch(() => ({}))) as { preview?: unknown; profileId?: unknown };
         if (body.preview === true) {
           const actor = await deps.getActor(request);
           return jsonResponse(await deps.service.startPreview(actor, videoId));
         }
         const viewer = await deps.getViewer(request);
-        return jsonResponse(await deps.service.startSession(viewer, videoId));
+        // The player names the active profile. Ownership is checked in the service against the account.
+        const profileId = typeof body.profileId === 'string' ? body.profileId : viewer.profileId;
+        return jsonResponse(
+          await deps.service.startSession({ accountId: viewer.accountId, profileId }, videoId),
+        );
       }),
 
     /** GET /api/play/{id}/master.m3u8 */

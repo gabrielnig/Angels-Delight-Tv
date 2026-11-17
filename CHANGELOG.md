@@ -29,3 +29,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - Lane H: add `getRootTheme` helper for the root layout and docs/lanes/H-theme.md.
 ### Added (lane G)
 - `@ad/player` and the `/watch/[videoId]` page: HLS playback with token and key handling, custom controls, resume, progress, captions viewer, quality, up next, recovery states, sample HLS generator and Playwright smoke.
+
+## Lane D: video pipeline
+
+- Add `@ad/video` (upload, encoding, captions, playback authorization, lifecycle), `@ad/queue` (pg-boss helpers), `apps/whisper`, `apps/edge` and worker handlers for every lane D queue. Migration 0007. Decisions D-027 to D-030, D-037, D-045 to D-048.
