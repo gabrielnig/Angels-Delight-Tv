@@ -1,4 +1,5 @@
 export * from './activity';
+export * from './auth';
 export * from './captions';
 export * from './content';
 export * from './enums';
