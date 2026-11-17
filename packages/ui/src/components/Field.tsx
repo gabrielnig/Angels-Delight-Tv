@@ -3,6 +3,7 @@
 import {
   useId,
   type InputHTMLAttributes,
+  type SelectHTMLAttributes,
   type ReactNode,
   type TextareaHTMLAttributes,
 } from 'react';
@@ -144,6 +145,36 @@ export function Textarea({
         aria-invalid={error ? 'true' : undefined}
         aria-describedby={ids.describedBy}
       />
+    </FieldFrame>
+  );
+}
+
+export interface SelectProps
+  extends FieldMeta,
+    Omit<SelectHTMLAttributes<HTMLSelectElement>, 'required'> {}
+
+export function Select({ label, hint, error, required, optional, id, className, children, ...rest }: SelectProps) {
+  const ids = useFieldIds(id, Boolean(hint), Boolean(error));
+  return (
+    <FieldFrame
+      {...ids}
+      label={label}
+      hint={hint}
+      error={error}
+      required={required}
+      optional={optional}
+      className={className}
+    >
+      <select
+        {...rest}
+        id={ids.inputId}
+        className="ad-input ad-input--select"
+        required={required}
+        aria-invalid={error ? 'true' : undefined}
+        aria-describedby={ids.describedBy}
+      >
+        {children}
+      </select>
     </FieldFrame>
   );
 }

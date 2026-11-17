@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
-import { Checkbox, Input, Switch, Textarea } from './Field';
+import { Checkbox, Input, Select, Switch, Textarea } from './Field';
 
 describe('Input', () => {
   it('has a visible label tied to the input', () => {
@@ -93,5 +93,31 @@ describe('Switch', () => {
     await user.tab();
     await user.keyboard(' ');
     expect(onCheckedChange).toHaveBeenCalledWith(true);
+  });
+});
+
+describe('Select', () => {
+  it('is a labelled native select with options', async () => {
+    const user = userEvent.setup();
+    const onChange = vi.fn();
+    render(
+      <Select label="Language" value="en" onChange={onChange}>
+        <option value="en">English</option>
+        <option value="yo">Yoruba</option>
+      </Select>,
+    );
+    const select = screen.getByLabelText('Language');
+    expect(select.tagName).toBe('SELECT');
+    await user.selectOptions(select, 'yo');
+    expect(onChange).toHaveBeenCalled();
+  });
+
+  it('reports an error', () => {
+    render(
+      <Select label="Language" error="Choose a language." defaultValue="">
+        <option value="">Pick one</option>
+      </Select>,
+    );
+    expect(screen.getByLabelText('Language')).toHaveAttribute('aria-invalid', 'true');
   });
 });

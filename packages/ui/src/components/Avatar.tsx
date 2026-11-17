@@ -42,25 +42,20 @@ export function ProfileTile({
   tone,
   kids,
   editing,
+  href,
   onSelect,
 }: {
   name: string;
   tone?: AvatarTone;
   kids?: boolean;
   editing?: boolean;
-  onSelect: () => void;
+  /** Renders a link instead of a button, used by manage mode. */
+  href?: string;
+  onSelect?: () => void;
 }) {
-  const accessibleName = editing
-    ? `Edit ${name}`
-    : `Switch to ${name}${kids ? ', Kids profile' : ''}`;
-  return (
-    <button
-      type="button"
-      className="ad-tile"
-      aria-label={accessibleName}
-      onClick={onSelect}
-      data-editing={editing ? 'true' : undefined}
-    >
+  const accessibleName = editing ? `Edit ${name}` : `Switch to ${name}${kids ? ', Kids profile' : ''}`;
+  const inner = (
+    <>
       <span className="ad-tile__avatar">
         <Avatar name={name} tone={tone} size={120} />
         {editing ? (
@@ -77,6 +72,24 @@ export function ProfileTile({
           <Badge variant="kids">Kids</Badge>
         </span>
       ) : null}
+    </>
+  );
+  if (href) {
+    return (
+      <Link href={href} className="ad-tile" aria-label={accessibleName} data-editing={editing ? 'true' : undefined}>
+        {inner}
+      </Link>
+    );
+  }
+  return (
+    <button
+      type="button"
+      className="ad-tile"
+      aria-label={accessibleName}
+      onClick={onSelect}
+      data-editing={editing ? 'true' : undefined}
+    >
+      {inner}
     </button>
   );
 }
