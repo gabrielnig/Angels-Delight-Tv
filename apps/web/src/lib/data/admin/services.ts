@@ -34,6 +34,9 @@ import {
   suspendUser,
 } from './users-commands';
 import { can } from '@/lib/admin/can';
+import { filterAudit } from './audit-adapter';
+import type { AuditQuery } from './audit-adapter';
+import type { AuditRow } from './types';
 import { buildDashboard } from './dashboard';
 import type { DashboardData } from './dashboard';
 import { getStore } from './store';
@@ -548,5 +551,57 @@ export const peopleService: PeopleService = {
   async changeRole(actor, staffId, role) {
     need(actor, 'roles.change');
     return changeRole(getStore(), staffId, role, actor.accountId, actor.name, Date.now());
+  },
+};
+
+export const AUDIT_PAGE_SIZE = 25;
+export const AUDIT_EXPORT_MAX = 5000;
+
+export function adminDataMode(): 'fixture' | 'real' {
+  return process.env.ADMIN_DATA === 'real' ? 'real' : 'fixture';
+}
+
+export interface AuditService {
+  list(
+    actor: AdminActor,
+    query: AuditQuery,
+  ): Promise<{ items: AuditRow[]; nextCursor: string | null }>;
+  get(actor: AdminActor, id: number): Promise<AuditRow>;
+  exportRows(
+    actor: AdminActor,
+    query: AuditQuery,
+  ): Promise<{ rows: AuditRow[]; total: number; truncated: boolean }>;
+}
+
+export const auditService: AuditService = {
+  async list(actor, query) {
+    need(actor, 'audit.read');
+    if (adminDataMode() === 'real')
+      return (await import('./audit-real')).realAudit.list(query, AUDIT_PAGE_SIZE);
+    const all = filterAudit(getStore().audit, query);
+    const start = query.cursor ? all.findIndex((r) => String(r.id) === query.cursor) : 0;
+    const items = all.slice(Math.max(start, 0), Math.max(start, 0) + AUDIT_PAGE_SIZE);
+    const next = all[Math.max(start, 0) + AUDIT_PAGE_SIZE];
+    return { items: structuredClone(items), nextCursor: next ? String(next.id) : null };
+  },
+  async get(actor, id) {
+    need(actor, 'audit.read');
+    const row =
+      adminDataMode() === 'real'
+        ? await (await import('./audit-real')).realAudit.get(id)
+        : (getStore().audit.find((r) => r.id === id) ?? null);
+    if (!row) throw new NotFound('Entry not found');
+    return structuredClone(row);
+  },
+  async exportRows(actor, query) {
+    need(actor, 'audit.read');
+    if (adminDataMode() === 'real') {
+      const { rows, total } = await (
+        await import('./audit-real')
+      ).realAudit.exportRows(query, AUDIT_EXPORT_MAX);
+      return { rows, total, truncated: total > rows.length };
+    }
+    const rows = filterAudit(getStore().audit, query);
+    return { rows: structuredClone(rows), total: rows.length, truncated: false };
   },
 };
