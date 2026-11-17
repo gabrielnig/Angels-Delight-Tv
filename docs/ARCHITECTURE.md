@@ -110,28 +110,31 @@ angels-delight-tv/
   apps/
     web/            Next.js app (site, /admin, API routes)
     worker/         pg-boss consumers, FFmpeg, sharp
-    whisper/        Python service (faster-whisper). Not a pnpm package.
-    edge/           Cloudflare Worker for signed segment URLs (wrangler project)
+    whisper/        Python service (faster-whisper). Not a pnpm package. Not yet created.
+    edge/           Cloudflare Worker for signed segment URLs (wrangler project). Not yet created.
   packages/
-    db/             Drizzle schema, SQL migrations, RLS helpers, seed scripts
-    storage/        StorageAdapter interface, s3 driver, local driver
-    queue/          pg-boss client factory and typed job contracts
-    crypto/         argon2 wrapper, field encryption, HMAC tokens, key wrapping
-    video/          pure functions: ladder, ffmpeg args, playlist build and rewrite
-    shared/         Zod schemas, env parsing, constants, error types
-    config/         tsconfig bases, eslint config, vitest base config
+    db/             Drizzle schema, SQL migrations, withAccount, test database helpers (@ad/db/testing)
+    storage/        StorageAdapter interface, s3 driver, local driver, multipart helpers, driver contract suite
+    config/         Zod env loaders (web, worker, migrate)
+    shared/         Ids, typed errors, crypto helpers, logger, DATA-MODEL enums
+    ui/             tokens.css and the theme variable helper
+    queue/          pg-boss client factory and typed job contracts. Not yet created (lane D).
+    crypto/         argon2 wrapper, field encryption, key wrapping. Not yet created (lane B).
+    video/          pure functions: ladder, ffmpeg args, playlist build and rewrite. Not yet created (lane D).
   docs/
-  scripts/          deploy, backup, footprint check
-  compose.yaml            local dev
-  compose.prod.yaml       production
-  pnpm-workspace.yaml
+  docker/           postgres init scripts, minio init script, caddy config
+  scripts/          footprint check, hook installer. deploy and backup scripts come later
+  docker-compose.yml      local dev
+  compose.prod.yaml       production (not yet created)
+  tsconfig.base.json  eslint.config.js  vitest.config.ts  pnpm-workspace.yaml
 ```
 
 Rules:
 - Package names use the `@ad/` scope (`@ad/web`, `@ad/db`, ...).
 - `apps/*` may import `packages/*`. Packages never import apps. `apps/web` and `apps/worker` never import each other.
 - Only `packages/db` exports table definitions. `apps/web` route files may not import them directly. They call repository functions under `apps/web/src/server/**`, enforced by an ESLint `no-restricted-imports` rule.
-- A package exists only when two consumers exist or a boundary needs enforcing. `packages/ui` is deliberately absent: only `apps/web` has UI.
+- A package exists only when two consumers exist or a boundary needs enforcing. `packages/ui` was added in lane A so the tokens and theme helper have one home that web and tests share. Basic hashing, HMAC and AES-GCM helpers live in `packages/shared` until lane B creates `packages/crypto` around them (D-014).
+- Workspace packages ship TypeScript source (`exports` point at `src`). Next compiles them through `transpilePackages`, the worker runs through `tsx`, so there is no package build step.
 - `apps/web` inner layout: `src/app` (routes), `src/server` (auth, repositories, services, policies), `src/features` (client components by feature: player, upload, theme editor), `src/lib` (small shared helpers).
 
 ## 5. Request pipeline in `apps/web`
@@ -218,7 +221,7 @@ sequenceDiagram
 ```
 
 Rules:
-- Part size default 16 MiB (`UPLOAD_PART_BYTES`), all parts equal except the last. S3 limits: minimum 5 MiB, maximum 10,000 parts. `totalParts = ceil(size / partSize)`.
+- Part size default 8 MiB (`UPLOAD_PART_BYTES`, D-006), all parts equal except the last. S3 limits: minimum 5 MiB, maximum 10,000 parts. `totalParts = ceil(size / partSize)`.
 - Concurrency 3 parts per file, one lane per file, independent retries with exponential backoff and jitter. A failed file never blocks others (UI standard section 4).
 - The browser reads the `ETag` response header. Bucket CORS must expose it.
 - Server truth is `ListParts`, never the client's list. The client also keeps `{uploadId, fingerprint}` in IndexedDB so re-selecting the same file after a restart resumes. Fingerprint is a hash of name, size and last modified time, unique per creator while the session is open.
@@ -389,7 +392,7 @@ Rule: no failure path returns a success-shaped result. A fallback must be a spec
 
 ## 15. Environment variables
 
-Parsed with Zod at boot (`packages/shared/env`), separate schemas per app, process exits on invalid config. `.env.example` lists names only. Secrets never go in `settings` or the repo.
+Parsed with Zod at boot (`packages/config`: `loadWebEnv`, `loadWorkerEnv`, `loadMigrateEnv`), separate schemas per app, process exits on invalid config. `.env.example` lists names only. Secrets never go in `settings` or the repo.
 
 | Variable | Apps | Secret | Purpose |
 |---|---|---|---|
@@ -401,6 +404,7 @@ Parsed with Zod at boot (`packages/shared/env`), separate schemas per app, proce
 | `DATABASE_URL` | web | yes | Runtime role `ad_app` |
 | `DATABASE_URL_WORKER` | worker | yes | Runtime role `ad_worker` |
 | `DATABASE_URL_MIGRATE` | deploy only | yes | Owner role for migrations, never given to long-running containers |
+| `KEYS_DATABASE_URL_MIGRATE` | deploy only | yes | Owner role for the keys database migrations. Optional |
 | `KEYS_DATABASE_URL` | web | yes | Keys DB, role `ad_keys_app` |
 | `KEYS_DATABASE_URL_SHRED` | worker | yes | Keys DB, delete-only role |
 | `FIELD_KEK` | web | yes | 32 byte base64 key wrapping user DEKs. `FIELD_KEK_PREVIOUS` optional during rotation |
@@ -416,9 +420,9 @@ Parsed with Zod at boot (`packages/shared/env`), separate schemas per app, proce
 | `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY` | web, worker | yes | Per-app credentials (web: originals only, worker: originals and media) |
 | `BUCKET_ORIGINALS`, `BUCKET_MEDIA` | web, worker | no | Bucket names |
 | `LOCAL_STORAGE_ROOT` | web, worker | no | Local driver root |
-| `MAX_UPLOAD_BYTES` | web | no | Default 4 GiB |
+| `MAX_UPLOAD_BYTES` | web | no | Default 5 GiB (D-006) |
 | `MAX_VIDEO_SECONDS` | web, worker | no | Default 1800 |
-| `UPLOAD_PART_BYTES` | web | no | Default 16 MiB |
+| `UPLOAD_PART_BYTES` | web | no | Default 8 MiB (D-006), minimum 5 MiB |
 | `SMTP_URL`, `EMAIL_FROM` | web | yes, no | SMTP connection, sender address |
 | `TURNSTILE_SITE_KEY`, `TURNSTILE_SECRET_KEY` | web | no, yes | Optional bot check on signup and reset |
 | `WHISPER_URL` | worker | no | Internal URL of the whisper service |

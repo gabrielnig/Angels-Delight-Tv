@@ -101,7 +101,7 @@ git log origin/main..HEAD --format='%B' | grep -niE 'co-authored-by|generated wi
 git log origin/main..HEAD --format='%an' | sort -u    # must print only ARKDEV
 ```
 
-Every command must print nothing (the author check must print only `ARKDEV`). The repo ships these in `scripts/check-footprint.sh`, run by the pre-commit hook and CI.
+Every command must print nothing (the author check must print only `ARKDEV`). The repo ships these in `scripts/footprint-check.sh`, run by the pre-commit hook and CI.
 
 Manual checks from `docs/AI-CODE-FOOTPRINT.md`, each as a deliberate step:
 - Comments explain why, not what. Delete restating comments.
