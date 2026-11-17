@@ -552,7 +552,7 @@ export function CaptionReview({ video, track, role, actions, preview = false }: 
                         variant="ghost"
                         disabled={index === cues.length - 1}
                         onClick={() => onMerge(index)}
-                        aria-label={`Merge cue ${index + 1} with the next one`}
+                        aria-label={`Merge with next (cue ${index + 1})`}
                       >
                         Merge with next
                       </Button>

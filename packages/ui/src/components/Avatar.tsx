@@ -56,7 +56,7 @@ export function ProfileTile({
   const accessibleName = editing ? `Edit ${name}` : `Switch to ${name}${kids ? ', Kids profile' : ''}`;
   const inner = (
     <>
-      <span className="ad-tile__avatar">
+      <span className="ad-tile__avatar" aria-hidden="true">
         <Avatar name={name} tone={tone} size={120} />
         {editing ? (
           <span className="ad-tile__edit" aria-hidden="true">
@@ -72,11 +72,12 @@ export function ProfileTile({
           <Badge variant="kids">Kids</Badge>
         </span>
       ) : null}
+      <span className="ad-sr-only">{accessibleName}</span>
     </>
   );
   if (href) {
     return (
-      <Link href={href} className="ad-tile" aria-label={accessibleName} data-editing={editing ? 'true' : undefined}>
+      <Link href={href} className="ad-tile" data-editing={editing ? 'true' : undefined}>
         {inner}
       </Link>
     );
@@ -85,7 +86,7 @@ export function ProfileTile({
     <button
       type="button"
       className="ad-tile"
-      aria-label={accessibleName}
+     
       onClick={onSelect}
       data-editing={editing ? 'true' : undefined}
     >

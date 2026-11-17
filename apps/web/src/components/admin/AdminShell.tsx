@@ -132,7 +132,8 @@ export function AdminShell({ platformName, actor, counts, signOut, children }: S
             </Link>
           ) : null}
           <details className="adm-menu">
-            <summary aria-label={`Account menu for ${actor.name}`}>
+            <summary>
+              <span className="adm-sr">Account menu for </span>
               <span className="adm-avatar" aria-hidden="true">
                 {initials(actor.name)}
               </span>
