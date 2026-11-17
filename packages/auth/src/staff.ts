@@ -343,14 +343,12 @@ export class StaffService extends AccountService {
     await this.deps.db
       .delete(schema.mfaRecoveryCodes)
       .where(eq(schema.mfaRecoveryCodes.accountId, accountId));
-    await this.deps.db
-      .insert(schema.mfaRecoveryCodes)
-      .values(
-        codes.map((code) => ({
-          accountId,
-          codeHash: Buffer.from(hashRecoveryCode(this.deps.pepper, code)),
-        })),
-      );
+    await this.deps.db.insert(schema.mfaRecoveryCodes).values(
+      codes.map((code) => ({
+        accountId,
+        codeHash: Buffer.from(hashRecoveryCode(this.deps.pepper, code)),
+      })),
+    );
     return codes;
   }
 
