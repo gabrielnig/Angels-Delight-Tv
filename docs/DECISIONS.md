@@ -186,13 +186,19 @@ Format: decision, options considered, why, reversible or not. Newest first. Deci
 - Why: matches M13-S05, S08, S11 and ARCHITECTURE section 7. A new `mediaPrefix` means the CDN never serves stale segments (ARCHITECTURE section 12).
 - Reversible: yes.
 
-## D-037 Service worker caches static files only (lane I)
+## D-039 Service worker caches static files only (lane I)
 - Decision: the worker caches hashed build files, icons, fonts and public posters (when CORS readable), plus a precached offline page. Page HTML, API responses, admin pages, video playlists, segments, keys and captions are never stored, and a request with Range or Authorization is never touched. A failed navigation shows `/offline`. Updates wait until nothing is playing, apply on navigation or when the page is hidden, then show an "Updated" notice. `PWA_ENABLED=false` serves a worker that clears every cache and unregisters. The worker text is served by `/sw.js` with the build id (`APP_VERSION`) baked in.
 - Options: also cache page HTML for "recently opened" (S34), or use a build tool such as Workbox.
 - Why: pages are personal and phones are shared, so stale or leaked HTML is worse than an offline screen. A short worker with a tested policy is easier to audit than generated code. The "Recently opened" list in S34 can be added later from a local list of titles without caching HTML.
 - Reversible: yes.
 
-## D-038 Install prompt and Data saver defaults (lane I)
+## D-040 Install prompt and Data saver defaults (lane I)
 - Decision: install banner after two visits at least 3 days apart, hidden 30 days after Not now, never after two dismissals or an install. iPhone Safari gets the three step sheet, other iPhone browsers the open in Safari notice. Data saver defaults on for Save-Data or a slow effective type, the viewer's saved choice always wins, and the choice is stored per profile in local storage with an `onChange` hook for the profile service to persist it. Quality cap 360p, posters 320 px.
 - Why: matches M25-S01 and M25-S03. Server side persistence waits for the profile service.
 - Reversible: yes.
+
+## D-041 Observability without an SDK (lane I)
+- Decision: request ids come from `x-request-id` when well formed, else `req_` plus random base32. `withRequest` wraps route handlers: id in and out, one structured log line per request without the query string, and a 500 body that carries only a generic message and the reference id. Error tracking is a small fetch based Sentry envelope sender that does nothing unless `SENTRY_DSN` is set, sends release, route and request id only, masks emails, groups repeats for a minute and ignores outages. `/api/ready` checks database, storage and queue in parallel with a 2 second timeout and returns 200 or 503 with pass or fail per check and no error text. Liveness stays `/api/health`.
+- Options: the official Sentry SDK, OpenTelemetry.
+- Why: the SDK adds bundle size and ships breadcrumbs and user data by default, which conflicts with M24-S03 "no personal data" and the 300 KB budget. The sender is about 80 lines and tested.
+- Reversible: yes. Swap `createErrorReporter` for the SDK behind the same interface.
