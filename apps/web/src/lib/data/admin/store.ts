@@ -1,3 +1,5 @@
+import { defaultHome } from './home-rules';
+import type { HomeState } from './home-rules';
 import type { CaptionTrack, CategoryRecord, SeriesRecord, VideoRecord } from './types';
 import { videoStub } from './video-rules';
 
@@ -6,6 +8,7 @@ export interface AdminStore {
   videos: VideoRecord[];
   categories: CategoryRecord[];
   series: SeriesRecord[];
+  home: HomeState;
   captions: Record<string, CaptionTrack>;
   settings: { requireApprovedCaptions: boolean };
   /** Oldest first. Last entry is yesterday. Deterministic so charts are stable. */
@@ -213,7 +216,24 @@ export function seedStore(now = Date.now()): AdminStore {
     return Math.round((1500 + day * 9) * rhythm);
   });
 
-  return { videos, categories, series, captions: {}, settings: { requireApprovedCaptions: true }, dailyViews };
+  const home = defaultHome();
+  const pubs = videos.filter((v) => v.publishState === 'published');
+  home.heroIds = pubs.slice(0, 1).map((v) => v.id);
+  const homeState: HomeState = {
+    draft: home,
+    published: structuredClone(home),
+    previous: null,
+    publishedAt: null,
+  };
+  return {
+    videos,
+    categories,
+    series,
+    home: homeState,
+    captions: {},
+    settings: { requireApprovedCaptions: true },
+    dailyViews,
+  };
 }
 
 const GLOBAL_KEY = Symbol.for('ad.admin.fixture.store');
@@ -222,7 +242,8 @@ export function getStore(): AdminStore {
   const holder = globalThis as unknown as Record<symbol, AdminStore | undefined>;
   // A store from an older build (dev hot reload) lacks newer collections, so reseed it.
   const existing = holder[GLOBAL_KEY];
-  if (existing && Array.isArray(existing.series) && existing.captions) return existing;
+  if (existing && Array.isArray(existing.series) && existing.captions && existing.home)
+    return existing;
   return (holder[GLOBAL_KEY] = seedStore());
 }
 
