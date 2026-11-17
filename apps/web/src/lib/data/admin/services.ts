@@ -57,6 +57,7 @@ import type { AuditRow } from './types';
 import { buildDashboard } from './dashboard';
 import type { DashboardData } from './dashboard';
 import { getStore } from './store';
+import { adminDataMode, delegating } from './mode';
 import { validateConfig } from './home-rules';
 import type { HomeConfig, HomeState } from './home-rules';
 import {
@@ -84,7 +85,7 @@ export interface DashboardService {
   navCounts(actor: AdminActor): Promise<{ encoding: number; captions: number }>;
 }
 
-export const dashboardService: DashboardService = {
+const fixtureDashboardService: DashboardService = {
   async get(actor, options) {
     if (!can(actor.role, 'admin.access')) throw new Error('forbidden');
     return buildDashboard(actor, getStore(), options);
@@ -99,9 +100,11 @@ export const dashboardService: DashboardService = {
   },
 };
 
-/** 'fixture' until the upload API is wired. The client picks its transport from this. */
+/** Real data uses the upload API. Fixtures use the simulated transport. `ADMIN_UPLOADS` overrides either. */
 export function uploadTransportMode(): 'fixture' | 'http' {
-  return process.env.ADMIN_UPLOADS === 'http' ? 'http' : 'fixture';
+  if (process.env.ADMIN_UPLOADS === 'http') return 'http';
+  if (process.env.ADMIN_UPLOADS === 'fixture') return 'fixture';
+  return adminDataMode() === 'real' ? 'http' : 'fixture';
 }
 
 // ---- Videos ----
@@ -132,7 +135,7 @@ function need(actor: AdminActor, action: Parameters<typeof can>[1]) {
   if (!can(actor.role, action)) throw new Forbidden();
 }
 
-export const videoService: VideoService = {
+const fixtureVideoService: VideoService = {
   async list(actor, query) {
     need(actor, 'admin.access');
     return queryVideos(getStore().videos, query);
@@ -379,7 +382,7 @@ export interface CollectionService {
   ): Promise<CommandResult>;
 }
 
-export const collectionService: CollectionService = {
+const fixtureCollectionService: CollectionService = {
   async categories(actor) {
     need(actor, 'category.manage');
     const s = getStore();
@@ -462,7 +465,7 @@ export interface HomeService {
   restorePrevious(actor: AdminActor): Promise<CommandResult>;
 }
 
-export const homeService: HomeService = {
+const fixtureHomeService: HomeService = {
   async get(actor) {
     need(actor, 'home.curate');
     const s = getStore();
@@ -574,9 +577,7 @@ export const peopleService: PeopleService = {
 export const AUDIT_PAGE_SIZE = 25;
 export const AUDIT_EXPORT_MAX = 5000;
 
-export function adminDataMode(): 'fixture' | 'real' {
-  return process.env.ADMIN_DATA === 'real' ? 'real' : 'fixture';
-}
+export { adminDataMode };
 
 export interface AuditService {
   list(
@@ -706,7 +707,7 @@ export interface SystemService {
 }
 
 /** Jobs and storage stay on fixtures until the queue and storage packages expose list and retry calls. Player quality is real with ADMIN_DATA=real. */
-export const systemService: SystemService = {
+const fixtureSystemService: SystemService = {
   async jobs(actor) {
     need(actor, 'system.view');
     return structuredClone(getStore().jobs);
@@ -729,3 +730,25 @@ export const systemService: SystemService = {
     return fixtureQuality();
   },
 };
+
+// ---- Real or fixture, chosen per call (D-072) ----
+export const videoService: VideoService = delegating(
+  fixtureVideoService,
+  async () => (await import('./real/videos')).realVideoService,
+);
+export const collectionService: CollectionService = delegating(
+  fixtureCollectionService,
+  async () => (await import('./real/collections')).realCollectionService,
+);
+export const homeService: HomeService = delegating(
+  fixtureHomeService,
+  async () => (await import('./real/home')).realHomeService,
+);
+export const dashboardService: DashboardService = delegating(
+  fixtureDashboardService,
+  async () => (await import('./real/dashboard')).realDashboardService,
+);
+export const systemService: SystemService = delegating(
+  fixtureSystemService,
+  async () => (await import('./real/system')).realSystemService,
+);

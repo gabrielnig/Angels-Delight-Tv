@@ -1,4 +1,5 @@
 import { defaultHome } from './home-rules';
+import { fixtureDataAllowed } from './mode';
 import type { HomeState } from './home-rules';
 import type {
   AuditRow,
@@ -262,10 +263,7 @@ export function seedStore(now = Date.now()): AdminStore {
 
 const GLOBAL_KEY = Symbol.for('ad.admin.fixture.store');
 
-/** Fixture data is for development, tests and demos. Production never serves it unless ADMIN_FIXTURES=on is set on purpose. */
-export function fixtureDataAllowed(env: Record<string, string | undefined> = process.env): boolean {
-  return env.NODE_ENV !== 'production' || env.ADMIN_FIXTURES === 'on';
-}
+export { fixtureDataAllowed } from './mode';
 
 const REQUIRED_KEYS = [
   'videos',

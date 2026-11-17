@@ -148,7 +148,11 @@ export async function listAdminVideos(
   if (options.trashed) assertStaff(actor);
   return withAccount(ctx.db, actor, async (tx) => {
     const result = await tx.execute(
-      sql`${SELECT} WHERE ${options.trashed ? sql`v.deleted_at IS NOT NULL` : sql`v.deleted_at IS NULL`}
+      sql`${SELECT} WHERE ${
+        options.trashed
+          ? sql`v.deleted_at IS NOT NULL AND NOT EXISTS (SELECT 1 FROM jobs pj WHERE pj.video_id = v.id AND pj.queue = 'video.purge' AND pj.status IN ('queued', 'running'))`
+          : sql`v.deleted_at IS NULL`
+      }
         ORDER BY v.updated_at DESC, v.id LIMIT ${ADMIN_VIDEO_LIMIT}`,
     );
     return rowsOf<Row>(result).map(toVideo);
@@ -455,5 +459,97 @@ export async function addToCategory(
     await tx.insert(videoCategories).values({ videoId, categoryId }).onConflictDoNothing();
     await tx.update(videos).set({ updatedAt: new Date() }).where(eq(videos.id, videoId));
     return OK;
+  });
+}
+
+/** Queues one job. `JobProducer.enqueue` fits this shape, and tests pass a recorder. */
+export type Enqueue = (
+  queue: 'video.probe' | 'video.encode' | 'video.purge',
+  payload: { videoId: string },
+  options?: { createdBy?: string },
+) => Promise<unknown>;
+
+/** Admin Retry: restart from the last good stage (M14-S06). Probe first when the file was never read. */
+export async function retryAdminVideo(
+  ctx: AdminContext,
+  actor: Actor,
+  id: string,
+  enqueue: Enqueue,
+): Promise<CommandResult> {
+  assertStaff(actor);
+  if (!isUuid(id)) throw new NotFound('Video not found');
+  const queue = await withAccount(ctx.db, actor, async (tx) => {
+    const [video] = await tx.select().from(videos).where(eq(videos.id, id)).for('update');
+    if (!video) throw new NotFound('Video not found');
+    if (video.status !== 'failed') return fail('Only failed videos can be retried.');
+    if (!video.originalKey) return fail('The source file was removed. Replace the file instead.');
+    await tx
+      .update(videos)
+      .set({ status: 'uploaded', failureCode: null, failureMessage: null })
+      .where(eq(videos.id, id));
+    await writeAudit(tx, {
+      action: 'video.retry',
+      outcome: 'success',
+      actorAccountId: actor.accountId,
+      actorRole: actor.role,
+      targetType: 'video',
+      targetId: id,
+      summary: `Retried processing for ${video.title}`,
+    });
+    return video.durationMs ? ('video.encode' as const) : ('video.probe' as const);
+  });
+  if (typeof queue !== 'string') return queue;
+  await enqueue(queue, { videoId: id }, { createdBy: actor.accountId });
+  return OK;
+}
+
+/** Delete forever (admin only): records the decision, then queues the job that removes files and the row. */
+export async function requestPurgeAdminVideo(
+  ctx: AdminContext,
+  actor: Actor,
+  id: string,
+  enqueue: Enqueue,
+): Promise<CommandResult> {
+  assertAdmin(actor);
+  if (!isUuid(id)) return fail('That video is not in Trash.');
+  const found = await withAccount(ctx.db, actor, async (tx) => {
+    const [video] = await tx
+      .select({ title: videos.title })
+      .from(videos)
+      .where(and(eq(videos.id, id), sql`${videos.deletedAt} IS NOT NULL`));
+    if (!video) return false;
+    await writeAudit(tx, {
+      action: 'video.purge',
+      outcome: 'success',
+      actorAccountId: actor.accountId,
+      actorRole: actor.role,
+      targetType: 'video',
+      targetId: id,
+      summary: `Deleted ${video.title} forever`,
+    });
+    return true;
+  });
+  if (!found) return fail('That video is not in Trash.');
+  await enqueue('video.purge', { videoId: id }, { createdBy: actor.accountId });
+  return OK;
+}
+
+/** Counts for the navigation badges. One cheap query, because it runs on every admin page. */
+export async function adminNavCounts(
+  ctx: AdminContext,
+  actor: Actor,
+): Promise<{ encoding: number; captions: number }> {
+  assertStaff(actor);
+  return withAccount(ctx.db, actor, async (tx) => {
+    const result = await tx.execute(sql`
+      SELECT
+        (SELECT count(*) FROM videos v WHERE v.deleted_at IS NULL AND v.status IN ('uploaded', 'validating', 'encoding')) AS encoding,
+        (SELECT count(*) FROM videos v
+          JOIN caption_tracks ct ON ct.video_id = v.id AND ct.language = 'en'
+          JOIN captions c ON c.track_id = ct.id
+          WHERE v.deleted_at IS NULL AND v.status = 'ready' AND c.status IN ('draft', 'in_review')
+            AND NOT EXISTS (SELECT 1 FROM captions n WHERE n.track_id = c.track_id AND n.revision > c.revision)) AS captions`);
+    const row = rowsOf<{ encoding: string; captions: string }>(result)[0]!;
+    return { encoding: Number(row.encoding), captions: Number(row.captions) };
   });
 }

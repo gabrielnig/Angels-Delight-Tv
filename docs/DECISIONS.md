@@ -383,3 +383,21 @@ Format: decision, options considered, why, reversible or not. Newest first. Deci
 - Options: add an account status, a purge job and cancel on sign in now.
 - Why: it needs a worker job and a status that touches sign in, and was marked "if feasible".
 - Reversible: yes.
+
+## D-076 Admin data is real by default and fixtures are opt in (lane K3)
+- Decision: `adminDataMode()` returns real unless `NODE_ENV=test` or `ADMIN_DATA=fixture`. In production fixtures are always refused, and `ADMIN_DATA=fixture` there throws instead of falling back. The old `ADMIN_FIXTURES=on` override from D-066 is removed. Each service is a `delegating(fixture, real)` object that picks per call and imports the real code on first use. The upload screen uses the HTTP transport whenever data is real.
+- Options: keep the escape hatch for demos, or make fixtures the default in development.
+- Why: a demo escape hatch in production is how invented numbers reach a client, and developers should see the same code path that ships. Fixtures stay for unit tests and UI work.
+- Reversible: yes.
+
+## D-077 Admin jobs and storage come from catalog records (lane K3)
+- Decision: the System screen lists failed jobs from the `jobs` mirror table (D-029), maps queues to the screen's five kinds, and takes max attempts from the queue definition. Retry queues the same work again and marks the old row cancelled. Discard needs a reason and marks the row cancelled with the reason in the audit entry. Storage is added up from `videos`, `renditions`, `assets` and `captions` rows (and open upload sessions as other), so it is cheap and does not list buckets. The cap is the `limits.storage_cap_bytes` setting, default 200 GB, and "months left" divides the room left by the last 30 days of growth.
+- Options: read pg-boss tables directly, or list the buckets.
+- Why: the mirror already holds plain language errors for staff, and bucket listing is slow and costs requests. Objects without a catalog row (orphans) are not counted.
+- Reversible: yes.
+
+## D-078 Staff names come from a SECURITY DEFINER directory (lane K3)
+- Decision: migration 0015 adds `staff_directory(actor, ids)`, returning the sealed email of staff accounts to an active staff caller. The app opens it with the key service and shows the readable part before the at sign as the name, as the signed in header already does. Editors never see addresses.
+- Options: store display names in plain text, or show "Staff member".
+- Why: names on "uploaded by" matter to editors and accounts hold no plain text name.
+- Reversible: yes.
