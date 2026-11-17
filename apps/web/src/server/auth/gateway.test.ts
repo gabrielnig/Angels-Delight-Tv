@@ -255,3 +255,15 @@ describe('RealAuthGateway.checkPassword', () => {
     });
   });
 });
+
+describe('RealAuthGateway.pendingEmail', () => {
+  it('returns the address waiting for a code, from the signed pending cookie', async () => {
+    const { gateway } = setup({});
+    expect(await gateway.pendingEmail()).toBe('me@example.org');
+  });
+
+  it('is null when nothing is pending', async () => {
+    const { gateway } = setup({}, { readPending: async () => null });
+    expect(await gateway.pendingEmail()).toBeNull();
+  });
+});
