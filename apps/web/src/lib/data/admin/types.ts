@@ -1,4 +1,5 @@
 import type { AccountRole, PublishState, VideoStatus } from '@ad/shared';
+import type { Cue } from '@/lib/admin/cues';
 
 /** Request scoped identity every service call takes (docs/SECURITY.md section 5). */
 export interface AdminActor {
@@ -93,12 +94,12 @@ export interface CaptionTrack {
   videoId: string;
   language: 'en';
   state: CaptionState;
-  cues: import('@/lib/admin/cues').Cue[];
+  cues: Cue[];
   source: 'whisper' | 'manual';
   approvedBy: string | null;
   approvedAt: string | null;
   /** The cues as they were when approved. Viewers keep seeing these until the next approval. */
-  approvedCues: import('@/lib/admin/cues').Cue[] | null;
+  approvedCues: Cue[] | null;
   updatedBy: string;
   updatedAt: string;
   failure: string | null;
