@@ -1,7 +1,6 @@
 import 'server-only';
 import { DEFAULT_SESSION_POLICIES, type SessionContext } from '@ad/auth';
 import { cookies, headers } from 'next/headers';
-import { redirect } from 'next/navigation';
 import { cache } from 'react';
 import {
   type SessionCookieKind,
@@ -64,16 +63,3 @@ export const getSession = cache(async (): Promise<SessionContext | null> => {
   if (!token) return null;
   return authRuntime().sessions.validate(token);
 });
-
-/** A signed in viewer (or staff member browsing as a viewer). Redirects to sign in, keeping the return path. */
-export async function requireSession(
-  next: string,
-  options: { verified?: boolean } = {},
-): Promise<SessionContext> {
-  const session = await getSession();
-  if (!session || session.status !== 'active') {
-    redirect(`/sign-in?next=${encodeURIComponent(next)}`);
-  }
-  if (options.verified !== false && !session.emailVerified) redirect('/verify-email');
-  return session;
-}
