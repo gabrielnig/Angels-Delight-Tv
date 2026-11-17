@@ -137,7 +137,7 @@ export async function createAuthHarness(overrides: Partial<AuthDeps> = {}): Prom
     },
     tokenFor(email) {
       const mail = outboxFor(email).at(-1);
-      const match = /token=([^\s&]+)/.exec(mail?.text ?? '');
+      const match = /(?:token=|admin\/invite\/)([^\s&]+)/.exec(mail?.text ?? '');
       if (!match?.[1]) throw new Error(`No token mailed to ${email}`);
       return decodeURIComponent(match[1]);
     },

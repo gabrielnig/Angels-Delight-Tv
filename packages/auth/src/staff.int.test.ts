@@ -168,6 +168,7 @@ describe.skipIf(!integrationEnabled())('staff sign in, two factor, invites and r
         .set({ role: 'editor' })
         .where(eq(schema.accounts.id, member.id));
       const { pending } = await loginPending(member, 'editor');
+      expect(await staff.twoFactorConfirmed(pending)).toBe(false);
       const begin = await staff.beginEnrolment(pending, h.meta);
       expect(begin.uri).toContain('otpauth://totp/');
       expect(begin.qrSvg.startsWith('<svg')).toBe(true);
@@ -194,6 +195,7 @@ describe.skipIf(!integrationEnabled())('staff sign in, two factor, invites and r
         .from(schema.mfaRecoveryCodes)
         .where(eq(schema.mfaRecoveryCodes.accountId, member.id));
       expect(stored).toHaveLength(10);
+      expect(await staff.twoFactorConfirmed(pending)).toBe(true);
       expect(JSON.stringify(stored)).not.toContain(done.recoveryCodes[0]);
     });
 
