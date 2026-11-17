@@ -1,9 +1,10 @@
+import { realDataEnabled } from '../../server/data/mode';
 import { DEFAULT_PWA_SETTINGS, type PwaSettings } from '../pwa/manifest';
 
 /**
- * Data access for the PWA (docs: UI lanes build against typed interfaces first). The default implementation
- * returns the built in values. The integration pass replaces it with one that reads `platform.name`,
- * the theme colours and the logo assets from site settings (M29, M18).
+ * Data access for the PWA. Real data mode reads `platform.name` and the theme colour from the lane H runtime
+ * (`themedPwaSettings`). Fixture mode returns the built in values. Icons are still the built in set until a
+ * logo derived icon pipeline exists (M25-S01 AC2).
  */
 export interface PwaSettingsSource {
   get(): Promise<PwaSettings>;
@@ -13,12 +14,25 @@ export const fixturePwaSettings: PwaSettingsSource = {
   get: async () => DEFAULT_PWA_SETTINGS,
 };
 
-let source: PwaSettingsSource = fixturePwaSettings;
+export const themedPwaSettings: PwaSettingsSource = {
+  async get() {
+    // Loaded on demand so fixture mode and unit tests never pull in the theme runtime.
+    const { getRootTheme } = await import('../theme/root');
+    const theme = await getRootTheme();
+    return {
+      ...DEFAULT_PWA_SETTINGS,
+      name: theme.platformName,
+      themeColor: theme.injection.themeColor,
+    };
+  },
+};
 
-export function setPwaSettingsSource(next: PwaSettingsSource): void {
-  source = next;
+let override: PwaSettingsSource | null = null;
+
+export function setPwaSettingsSource(next: PwaSettingsSource | null): void {
+  override = next;
 }
 
 export function getPwaSettings(): Promise<PwaSettings> {
-  return source.get();
+  return (override ?? (realDataEnabled() ? themedPwaSettings : fixturePwaSettings)).get();
 }
