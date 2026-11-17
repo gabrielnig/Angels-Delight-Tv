@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import type { ReactNode } from 'react';
 import '@ad/ui/tokens.css';
 import './globals.css';
+import { WebVitals } from '../components/observability/WebVitals';
 import { PwaClient } from '../components/pwa/PwaClient';
 import { getPwaSettings } from '../lib/data/pwa-settings';
 import { DEFAULT_PLATFORM_NAME } from '../lib/platform';
@@ -24,6 +25,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
       <body>
         {children}
         <PwaClient platformName={name} />
+        <WebVitals />
       </body>
     </html>
   );
