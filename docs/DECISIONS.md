@@ -359,3 +359,27 @@ Format: decision, options considered, why, reversible or not. Newest first. Deci
 - Options: let the app role update any account row, or widen the accounts RLS policy.
 - Why: RLS hides other accounts from the app role on purpose, and a bug in the app layer must not be able to suspend or edit staff.
 - Reversible: yes.
+
+## D-072 Real versus fixture viewer data is chosen by one helper (lane K1)
+- Decision: `realDataEnabled()` is true in production always. Elsewhere it follows real auth, and `VIEWER_FIXTURES=on` forces fixtures. Real data requires real auth.
+- Options: a separate flag per repository, or fixtures by default.
+- Why: mixing real data with fixture sessions gives profiles that do not exist, and one switch is hard to misconfigure.
+- Reversible: yes.
+
+## D-073 Cards, redirects and tones on the viewer seam (lane K1)
+- Decision: cards carry an empty category and publish date. Episode and moved slugs return a redirect path. The five profile tones map to the first five avatar ids. Items are keyed `video:<uuid>` or `series:<uuid>`.
+- Options: extend card queries with category and date, or hide those fields in the UI.
+- Why: the list queries do not join categories, and the card UI hides empty values.
+- Reversible: yes.
+
+## D-074 Playback preferences and export design (lane K1)
+- Decision: playback preferences are stored in `profiles.playback_prefs` (migration 0014) next to the existing autoplay and data saver columns. Data export is generated on request behind a 10 minute HMAC link bound to the account.
+- Options: a settings row per profile, or an emailed export job.
+- Why: one column is additive and cheap, and an on demand export needs no worker or storage.
+- Reversible: yes.
+
+## D-075 Account deletion grace period deferred (lane K1)
+- Decision: deletion stays immediate per D-059. The 14 day grace period is not built.
+- Options: add an account status, a purge job and cancel on sign in now.
+- Why: it needs a worker job and a status that touches sign in, and was marked "if feasible".
+- Reversible: yes.
