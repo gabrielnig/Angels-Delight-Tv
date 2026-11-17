@@ -1,7 +1,8 @@
-import { assets, auditLog, themeSettings, type Database } from '@ad/db';
+import { assets, auditLog, settings, themeSettings, type Database } from '@ad/db';
 import { uuidv7 } from '@ad/shared';
 import { and, count, desc, eq, isNotNull, isNull, lt, max, sql, type SQL } from 'drizzle-orm';
 import type { AssetStore } from './logo';
+import type { SettingsStore, SettingsTx } from './settings-store';
 import type { ListFilter, NewThemeRow, ThemeRow, ThemeStore, ThemeTx } from './store';
 
 type Executor = Pick<Database, 'select' | 'insert' | 'update' | 'execute'>;
@@ -135,6 +136,49 @@ export function createDrizzleAssetStore(db: Database): AssetStore {
         placeholderColor: asset.placeholderColor,
         altText: asset.altText,
         createdBy: asset.createdBy,
+      });
+    },
+  };
+}
+
+function bindSettings(db: Executor): SettingsTx {
+  return {
+    async get(key) {
+      const [row] = await db.select().from(settings).where(eq(settings.key, key)).limit(1);
+      return row ?? null;
+    },
+    async upsert(input) {
+      const values = {
+        key: input.key,
+        value: input.value,
+        isPublic: input.isPublic,
+        description: input.description ?? null,
+        updatedBy: input.updatedBy,
+        updatedAt: new Date(),
+      };
+      const [row] = await db
+        .insert(settings)
+        .values(values)
+        .onConflictDoUpdate({ target: settings.key, set: values })
+        .returning();
+      return row!;
+    },
+    audit: (entry) => bind(db).audit(entry),
+  };
+}
+
+export function createDrizzleSettingsStore(db: Database): SettingsStore {
+  return {
+    async readAll() {
+      return db.select().from(settings);
+    },
+    async readOne(key) {
+      return bindSettings(db).get(key);
+    },
+    async transaction(fn) {
+      return db.transaction(async (tx) => {
+        await tx.execute(sql`select pg_advisory_xact_lock(hashtext('settings'))`);
+        return fn(bindSettings(tx));
       });
     },
   };
