@@ -2,12 +2,16 @@ import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { realAuthEnabled } from '../server/auth/mode';
 import { getSession as getRealSession } from '../server/auth/session';
+import { realDataEnabled } from '../server/data/mode';
+import { cookieProfileIo } from '../server/data/profile-io';
 import { getAccount, getProfiles } from './data';
 import type { Profile, ViewerContext, ViewerSession } from './data';
 
 /**
- * Fixture session. A cookie named ad_fixture switches the demo state: out, unverified or noprofile.
- * ad_profile holds the selected profile id. The real session reader from lane B replaces this file's internals.
+ * The viewer session for pages and actions. With real auth it comes from the lane B session cookie. With real
+ * viewer data the selected profile is the signed active profile cookie (server/viewer/active-profile.ts), which
+ * is also what the API routes read. In fixture mode a cookie named ad_fixture switches the demo state: out,
+ * unverified or noprofile, and ad_profile holds the selected fixture profile id.
  */
 export const FIXTURE_ACCOUNT_ID = 'acct-demo';
 const PROFILE_COOKIE = 'ad_profile';
@@ -21,15 +25,19 @@ export async function currentAccountId(): Promise<string> {
   return session.accountId;
 }
 
+async function selectedProfileId(): Promise<string | null | undefined> {
+  if (realDataEnabled()) return cookieProfileIo().activeProfileId();
+  return (await cookies()).get(PROFILE_COOKIE)?.value;
+}
+
 async function getRealViewerSession(): Promise<ViewerSession | null> {
   const real = await getRealSession();
   if (!real || real.status !== 'active') return null;
-  const [overview, profiles, jar] = await Promise.all([
+  const [overview, profiles, selected] = await Promise.all([
     getAccount().overview(real.accountId),
     getProfiles().list(real.accountId),
-    cookies(),
+    selectedProfileId(),
   ]);
-  const selected = jar.get(PROFILE_COOKIE)?.value;
   return {
     accountId: real.accountId,
     email: overview.email,
