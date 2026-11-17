@@ -2,12 +2,13 @@ import { and, eq, sql } from 'drizzle-orm';
 import { assets, categories, videoCategories, videos, withAccount } from '@ad/db';
 import { writeAudit } from '@ad/audit';
 import { Forbidden, NotFound, ValidationFailed, isUuid, type Actor } from '@ad/shared';
-import { isoOrNull, rowsOf } from '../sql';
+import { rowsOf } from '../sql';
 import type { Tx } from '../types';
 import { publish, unpublish } from '../publishing';
 import {
   OK,
   fail,
+  isoOf,
   type AdminContext,
   type AdminVideo,
   type CommandResult,
@@ -57,7 +58,7 @@ interface Row {
   views: string | number;
 }
 
-const iso = (value: Date | string) => isoOrNull(value)!;
+const iso = (value: Date | string) => isoOf(value)!;
 
 function toVideo(row: Row): AdminVideo {
   const captionState: AdminVideo['captionState'] = row.cap_generating
@@ -77,8 +78,8 @@ function toVideo(row: Row): AdminVideo {
     categoryIds: row.category_ids ?? [],
     status: row.status,
     publishState: row.publish_state,
-    publishAt: isoOrNull(row.publish_at),
-    publishedAt: isoOrNull(row.published_at),
+    publishAt: isoOf(row.publish_at),
+    publishedAt: isoOf(row.published_at),
     durationSeconds: Math.round((row.duration_ms ?? 0) / 1000),
     sizeBytes: Number(row.original_bytes ?? 0),
     captionState,
@@ -95,7 +96,7 @@ function toVideo(row: Row): AdminVideo {
     createdBy: row.created_by,
     createdAt: iso(row.created_at),
     updatedAt: iso(row.updated_at),
-    deletedAt: isoOrNull(row.deleted_at),
+    deletedAt: isoOf(row.deleted_at),
     failure:
       row.status === 'failed'
         ? {

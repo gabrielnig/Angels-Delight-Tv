@@ -243,14 +243,12 @@ describe.skipIf(!integrationEnabled())('real system and dashboard services', () 
           failureMessage: 'Damaged.',
         });
         await seedVideo(fresh.setup, { title: 'Busy', status: 'encoding', publishState: 'draft' });
-        await fresh.setup
-          .insert(schema.siteDailyStats)
-          .values({
-            day: new Date(Date.now() - 86_400_000).toISOString().slice(0, 10),
-            views: 42,
-            uniques: 5,
-            watchMs: 1000,
-          });
+        await fresh.setup.insert(schema.siteDailyStats).values({
+          day: new Date(Date.now() - 86_400_000).toISOString().slice(0, 10),
+          views: 42,
+          uniques: 5,
+          watchMs: 1000,
+        });
 
         const data = await realDashboardService.get(staff);
         expect(data.isEmpty).toBe(false);

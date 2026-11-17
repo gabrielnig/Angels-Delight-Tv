@@ -19,13 +19,11 @@ const ok = { ok: true } as const;
 function view() {
   const actions = {
     updateName: vi.fn().mockResolvedValue(ok),
-    changePassword: vi
-      .fn()
-      .mockResolvedValue({
-        ok: false,
-        field: 'current',
-        error: 'That is not your current password.',
-      }),
+    changePassword: vi.fn().mockResolvedValue({
+      ok: false,
+      field: 'current',
+      error: 'That is not your current password.',
+    }),
     revokeSession: vi.fn().mockResolvedValue(ok),
     regenerateCodes: vi.fn().mockResolvedValue({ ok: true, codes: ['aaaaa-bbbbb', 'ccccc-ddddd'] }),
   };

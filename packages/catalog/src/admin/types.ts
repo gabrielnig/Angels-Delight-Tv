@@ -62,3 +62,10 @@ export function slugOf(text: string, fallback: string): string {
     .replace(/-+$/g, '');
   return base.length >= 3 ? base : fallback;
 }
+
+/** Raw SQL returns timestamps as text like `2026-06-02 08:00:00+00`. Screens get proper ISO strings. */
+export function isoOf(value: Date | string | null | undefined): string | null {
+  if (value === null || value === undefined) return null;
+  const date = value instanceof Date ? value : new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date.toISOString();
+}
