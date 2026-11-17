@@ -20,7 +20,7 @@ export function EmptyState({
   return (
     <div className="adm-empty" role={live ? 'status' : undefined}>
       <Icon name={icon} size={48} />
-      <h3 className="adm-empty__title">{title}</h3>
+      <h2 className="adm-empty__title">{title}</h2>
       {help ? <p className="adm-empty__help">{help}</p> : null}
       {action ? <div className="adm-empty__action">{action}</div> : null}
     </div>

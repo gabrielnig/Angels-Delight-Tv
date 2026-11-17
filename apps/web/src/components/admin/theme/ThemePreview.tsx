@@ -90,7 +90,7 @@ function HomeScreen({ platformName }: { platformName: string }) {
         ]}
       />
       <section className="adt-prow" aria-label="New this week">
-        <h3 className="adt-prow__title">New this week</h3>
+        <p className="adt-prow__title">New this week</p>
         <div className="adt-prow__cards">
           {SAMPLE_TITLES.map((item) => (
             <VideoCard
@@ -115,13 +115,13 @@ function WatchScreen() {
           <span className="adt-watch__fill" />
         </span>
       </div>
-      <h3 className="adt-watch__title">{SAMPLE_TITLES[0]!.title}</h3>
+      <p className="adt-watch__title">{SAMPLE_TITLES[0]!.title}</p>
       <p className="adt-watch__meta">5 min, captions on</p>
       <div className="adt-watch__actions">
         <Button variant="primary">My List</Button>
         <Button variant="secondary">Share</Button>
       </div>
-      <h4 className="adt-prow__title">Up next</h4>
+      <p className="adt-prow__title">Up next</p>
       <ul className="adt-watch__next">
         {SAMPLE_TITLES.slice(1).map((item, index) => (
           <li key={item.title} className="adt-tile" data-tone={index}>
@@ -137,7 +137,7 @@ function WatchScreen() {
 function SignInScreen({ platformName }: { platformName: string }) {
   return (
     <div className="adt-signin">
-      <h3 className="adt-signin__title">Sign in to {platformName}</h3>
+      <p className="adt-signin__title">Sign in to {platformName}</p>
       <div className="adt-signin__field">Email</div>
       <div className="adt-signin__field">Password</div>
       <Button variant="primary" fullWidth>
