@@ -4,14 +4,16 @@ import { ToastProvider } from '@/components/admin/Toast';
 import { UploaderProvider } from '@/components/admin/UploaderContext';
 import { dashboardService, uploadTransportMode } from '@/lib/data/admin/services';
 import { ROLE_LABELS } from '@/lib/data/admin/session';
-import { requireActor } from '@/lib/data/admin/session-next';
+import { getActor } from '@/lib/data/admin/session-next';
 import { DEFAULT_PLATFORM_NAME } from '@/lib/platform';
 import { signOutAction } from '../login/actions';
 
 export const dynamic = 'force-dynamic';
 
 export default async function ShellLayout({ children }: { children: ReactNode }) {
-  const actor = await requireActor();
+  const actor = await getActor();
+  // Every page calls requireActor with its own path, so the sign in redirect keeps ?next=.
+  if (!actor) return <>{children}</>;
   const counts = await dashboardService.navCounts(actor);
   return (
     <UploaderProvider mode={uploadTransportMode()}>
