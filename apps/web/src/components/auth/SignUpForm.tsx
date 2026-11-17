@@ -1,7 +1,15 @@
 'use client';
 
 import { useRef, useState, type FormEvent } from 'react';
-import { Banner, Button, Input, Link, PasswordField, evaluatePassword, type PasswordScorer } from '@ad/ui';
+import {
+  Banner,
+  Button,
+  Input,
+  Link,
+  PasswordField,
+  evaluatePassword,
+  type PasswordScorer,
+} from '@ad/ui';
 import type { SignUpResult } from '../../lib/data';
 import { NETWORK_MESSAGE, RATE_LIMIT_MESSAGE, emailError } from './shared';
 import { useFocusFirstInvalid } from './useFocusFirstInvalid';
@@ -62,15 +70,21 @@ export function SignUpForm({
     }
     setBusy(true);
     try {
-      const result = await onSubmit({ email: email.trim(), password, inviteCode: inviteOnly ? invite.trim() : undefined });
+      const result = await onSubmit({
+        email: email.trim(),
+        password,
+        inviteCode: inviteOnly ? invite.trim() : undefined,
+      });
       if (result.ok) {
         onDone(result.next);
         return;
       }
       if (result.reason === 'rate_limited') setBanner(RATE_LIMIT_MESSAGE);
       else if (result.reason === 'network') setBanner(NETWORK_MESSAGE);
-      else if (result.reason === 'invite_required') setBanner('That invite code is not valid. Check it and try again.');
-      else if (result.reason === 'invalid_email') setServerField({ email: 'Enter your full email, for example name@example.com.' });
+      else if (result.reason === 'invite_required')
+        setBanner('That invite code is not valid. Check it and try again.');
+      else if (result.reason === 'invalid_email')
+        setServerField({ email: 'Enter your full email, for example name@example.com.' });
       else setServerField({ password: 'Use at least 10 characters.' });
       if (result.reason === 'invalid_email' || result.reason === 'weak_password') requestFocus();
     } catch {
@@ -121,10 +135,17 @@ export function SignUpForm({
         />
       ) : null}
       <div className="web-hp" aria-hidden="true">
-        <input name="website" tabIndex={-1} autoComplete="off" value={trap} onChange={(event) => setTrap(event.target.value)} />
+        <input
+          name="website"
+          tabIndex={-1}
+          autoComplete="off"
+          value={trap}
+          onChange={(event) => setTrap(event.target.value)}
+        />
       </div>
       <p className="web-form__fine">
-        By creating an account you agree to the <Link href="/terms">Terms</Link> and <Link href="/privacy">Privacy Policy</Link>.
+        By creating an account you agree to the <Link href="/terms">Terms</Link> and{' '}
+        <Link href="/privacy">Privacy Policy</Link>.
       </p>
       <Button type="submit" size="lg" fullWidth loading={busy}>
         {busy ? 'Creating account' : 'Create account'}

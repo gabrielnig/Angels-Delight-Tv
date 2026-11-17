@@ -6,7 +6,11 @@ import { getSite } from '../../../lib/data';
 
 export const metadata: Metadata = { title: 'Reset password' };
 
-export default async function ResetPasswordPage({ searchParams }: { searchParams: Promise<Record<string, string | undefined>> }) {
+export default async function ResetPasswordPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | undefined>>;
+}) {
   const [site, params] = await Promise.all([getSite().content(), searchParams]);
   return (
     <AuthCardPage site={site}>

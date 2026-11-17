@@ -12,12 +12,19 @@ export default async function EditProfilePage({ params }: { params: Promise<{ id
   const session = await requireSession(`/profiles/${id}/edit`);
   if (session.profile?.kids) return <KidsGate what="Editing a profile" />;
   const repo = getProfiles();
-  const [profile, profiles] = await Promise.all([repo.get(session.accountId, id), repo.list(session.accountId)]);
+  const [profile, profiles] = await Promise.all([
+    repo.get(session.accountId, id),
+    repo.list(session.accountId),
+  ]);
   if (!profile) notFound();
   const adults = profiles.filter((p) => !p.kids);
   return (
     <div className="web-profileform-wrap">
-      <EditScreen profile={profile} limitReached={false} lastAdult={!profile.kids && adults.length === 1} />
+      <EditScreen
+        profile={profile}
+        limitReached={false}
+        lastAdult={!profile.kids && adults.length === 1}
+      />
     </div>
   );
 }

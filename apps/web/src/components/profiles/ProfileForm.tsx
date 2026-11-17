@@ -70,7 +70,10 @@ export function ProfileForm({
 
   const needsPassword = Boolean(profile?.kids) && !kids;
   const nameProblem = !name.trim() ? 'Type a name for this profile.' : undefined;
-  const passwordProblem = needsPassword && !password ? 'Enter your account password to make this an adult profile.' : undefined;
+  const passwordProblem =
+    needsPassword && !password
+      ? 'Enter your account password to make this an adult profile.'
+      : undefined;
 
   async function submit(event: FormEvent) {
     event.preventDefault();
@@ -84,7 +87,12 @@ export function ProfileForm({
     }
     setBusy(true);
     try {
-      const input: SaveInput = { name: name.trim(), kids, tone, ...(editing ? { language, autoplayNext: autoplay } : {}) };
+      const input: SaveInput = {
+        name: name.trim(),
+        kids,
+        tone,
+        ...(editing ? { language, autoplayNext: autoplay } : {}),
+      };
       if (needsPassword) input.password = password;
       const result = await onSave(input);
       if (result.ok) {
@@ -92,10 +100,14 @@ export function ProfileForm({
         return;
       }
       if (result.reason === 'duplicate') {
-        setNameServerError(`You already have a profile called ${name.trim()}. Choose a different name.`);
+        setNameServerError(
+          `You already have a profile called ${name.trim()}. Choose a different name.`,
+        );
         requestFocus();
-      } else if (result.reason === 'limit') setBanner('You have reached 5 profiles. Delete a profile before adding another.');
-      else if (result.reason === 'last_adult') setBanner('This is the last adult profile. Make another profile an adult profile first.');
+      } else if (result.reason === 'limit')
+        setBanner('You have reached 5 profiles. Delete a profile before adding another.');
+      else if (result.reason === 'last_adult')
+        setBanner('This is the last adult profile. Make another profile an adult profile first.');
       else if (result.reason === 'password_required') {
         setPasswordServerError('That password is not right. Check it and try again.');
         requestFocus();
@@ -128,7 +140,9 @@ export function ProfileForm({
     <form ref={formRef} className="web-form web-profileform" onSubmit={submit} noValidate>
       <div>
         <h1 className="web-auth__title">{editing ? 'Edit profile' : 'Add a profile'}</h1>
-        <p className="web-muted">{editing ? 'Changes apply to this profile only.' : 'Pick a name and a picture.'}</p>
+        <p className="web-muted">
+          {editing ? 'Changes apply to this profile only.' : 'Pick a name and a picture.'}
+        </p>
       </div>
       {limitReached && !editing ? (
         <Banner tone="warning" title="You have reached 5 profiles.">
@@ -203,7 +217,12 @@ export function ProfileForm({
 
       {editing ? (
         <>
-          <Select label="Language" value={language} onChange={(event) => setLanguage(event.target.value)} hint="Captions and menus use this language for this profile.">
+          <Select
+            label="Language"
+            value={language}
+            onChange={(event) => setLanguage(event.target.value)}
+            hint="Captions and menus use this language for this profile."
+          >
             {LANGUAGES.map((item) => (
               <option key={item.value} value={item.value}>
                 {item.label}
