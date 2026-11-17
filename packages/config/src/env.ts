@@ -115,6 +115,8 @@ const FFMPEG_PRESETS = [
 
 const workerShape = {
   DATABASE_URL_WORKER: postgresUrl,
+  /** Connection as ad_maintenance (SELECT and DELETE on view_events and audit_log only). Without it the two prune jobs are not registered. */
+  DATABASE_URL_MAINTENANCE: postgresUrl.optional(),
   KEYS_DATABASE_URL_SHRED: postgresUrl,
   WHISPER_URL: z.url().optional(),
   FFMPEG_PRESET: z.enum(FFMPEG_PRESETS).default('medium'),

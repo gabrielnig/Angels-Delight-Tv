@@ -95,6 +95,7 @@ EDGE_TOKEN_MODE=off
 
 DATABASE_URL=postgres://ad_app:dev@localhost:5432/ad
 DATABASE_URL_WORKER=postgres://ad_worker:dev@localhost:5432/ad
+DATABASE_URL_MAINTENANCE=postgres://ad_maintenance:dev@localhost:5432/ad
 DATABASE_URL_MIGRATE=postgres://ad_migrator:dev@localhost:5432/ad
 KEYS_DATABASE_URL_MIGRATE=postgres://ad_migrator:dev@localhost:5432/ad_keys
 KEYS_DATABASE_URL=postgres://ad_keys_app:dev@localhost:5432/ad_keys
