@@ -198,7 +198,7 @@ export function RolesInvites({
                   <span className="adm-row">
                     <Button
                       disabled={!canManage || busy}
-                      aria-label={`Resend invite to ${i.email}`}
+                      aria-label={`${expired ? 'Send a new invite' : 'Resend invite'} to ${i.email}`}
                       onClick={() =>
                         run(() => guard(() => actions.resend(i.id)), 'Invite sent again.')
                       }

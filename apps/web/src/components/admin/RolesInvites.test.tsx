@@ -88,7 +88,7 @@ describe('RolesInvites', () => {
     roles();
     expect(screen.getByText(/^Expired /)).toBeTruthy();
     expect(
-      screen.getByRole('button', { name: 'Resend invite to old@example.test' }).textContent,
+      screen.getByRole('button', { name: 'Send a new invite to old@example.test' }).textContent,
     ).toBe('Send a new invite');
   });
   it('shows a read only permission table covering every action', () => {

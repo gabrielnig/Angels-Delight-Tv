@@ -13,6 +13,30 @@ const base = {
   },
 };
 
+describe('card links name from their visible text (WCAG 2.5.3)', () => {
+  it('has no aria-label that could drift from the visible title', () => {
+    const { container } = render(
+      <>
+        <VideoCard {...base} />
+        <ContinueCard {...base} progressPercent={20} timeLeftLabel="3 min left" />
+        <SeriesCard title="Farming basics" href="/series/farming" episodeCount={8} />
+      </>,
+    );
+    for (const link of container.querySelectorAll('a.ad-card__link')) {
+      expect(link.hasAttribute('aria-label')).toBe(false);
+    }
+  });
+
+  it('names the continue card from its title, length and time left', () => {
+    render(<ContinueCard {...base} progressPercent={20} timeLeftLabel="3 min left" />);
+    expect(
+      screen.getByRole('link', {
+        name: /How to save money on data, 4 minutes, 3 min left/,
+      }),
+    ).toBeInTheDocument();
+  });
+});
+
 describe('VideoCard', () => {
   it('is one link named with title and length', () => {
     render(<VideoCard {...base} />);
