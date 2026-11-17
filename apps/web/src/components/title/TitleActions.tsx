@@ -41,7 +41,7 @@ export function TitleActions({
           <ButtonLink href={watchHref} icon="play" aria-label={`Continue, ${resume.timeLeft}`}>
             Continue
           </ButtonLink>
-          <ButtonLink href={`${watchHref}?start=0`} variant="secondary">
+          <ButtonLink href={`${watchHref}?t=0`} variant="secondary">
             Start over
           </ButtonLink>
         </>

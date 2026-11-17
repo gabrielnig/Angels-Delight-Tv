@@ -27,7 +27,7 @@ describe('TitleActions', () => {
     expect(screen.getByRole('link', { name: /Continue/ })).toHaveAccessibleName(/3 min left/);
     expect(screen.getByRole('link', { name: 'Start over' })).toHaveAttribute(
       'href',
-      '/watch/a?start=0',
+      '/watch/a?t=0',
     );
   });
 
