@@ -5,7 +5,13 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useRef, useState, useTransition } from 'react';
 import type { AccountRole } from '@ad/shared';
 import { can } from '@/lib/admin/can';
-import { formatCount, formatDate, formatDateTime, formatDuration, spokenDuration } from '@/lib/admin/format';
+import {
+  formatCount,
+  formatDate,
+  formatDateTime,
+  formatDuration,
+  spokenDuration,
+} from '@/lib/admin/format';
 import type { BulkAction, BulkResult, VideoQuery } from '@/lib/data/admin/video-queries';
 import { serializeVideoQuery } from '@/lib/data/admin/video-queries';
 import type { CategoryRecord, Page, VideoRecord } from '@/lib/data/admin/types';
@@ -52,7 +58,8 @@ interface Props {
   now: number;
 }
 
-const options = (list: ReadonlyArray<readonly [string, string]>) => list.map(([value, label]) => ({ value, label }));
+const options = (list: ReadonlyArray<readonly [string, string]>) =>
+  list.map(([value, label]) => ({ value, label }));
 
 export function VideosList({ page, query, categories, role, bulk }: Props) {
   const router = useRouter();
@@ -63,13 +70,19 @@ export function VideosList({ page, query, categories, role, bulk }: Props) {
   const [compact, setCompact] = useState(false);
   const [confirmTrash, setConfirmTrash] = useState(false);
   const [categoryPick, setCategoryPick] = useState('');
-  const [summary, setSummary] = useState<{ done: number; failed: BulkResult['failed']; label: string } | null>(null);
+  const [summary, setSummary] = useState<{
+    done: number;
+    failed: BulkResult['failed'];
+    label: string;
+  } | null>(null);
   const [busy, setBusy] = useState(false);
   const [q, setQ] = useState(query.q ?? '');
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const canPublish = can(role, 'video.publish');
   const canTrash = can(role, 'video.delete');
-  const filtered = Boolean(query.q || query.status || query.categoryId || query.captions || query.suitability);
+  const filtered = Boolean(
+    query.q || query.status || query.categoryId || query.captions || query.suitability,
+  );
 
   useEffect(() => setSelected(new Set()), [page]);
   useEffect(() => () => void (timer.current && clearTimeout(timer.current)), []);
@@ -99,11 +112,15 @@ export function VideosList({ page, query, categories, role, bulk }: Props) {
     try {
       const result = await bulk(idsToRun, action);
       setSummary({ done: result.succeeded.length, failed: result.failed, label });
-      if (result.failed.length === 0) toast.show({ tone: 'success', message: `${label}: ${result.succeeded.length} done.` });
+      if (result.failed.length === 0)
+        toast.show({ tone: 'success', message: `${label}: ${result.succeeded.length} done.` });
       setSelected(new Set());
       router.refresh();
     } catch {
-      toast.show({ tone: 'danger', message: `${label} did not work. Nothing was changed. Try again.` });
+      toast.show({
+        tone: 'danger',
+        message: `${label} did not work. Nothing was changed. Try again.`,
+      });
     } finally {
       setBusy(false);
       setConfirmTrash(false);
@@ -116,18 +133,60 @@ export function VideosList({ page, query, categories, role, bulk }: Props) {
 
   return (
     <div className="adm-stack">
-      <form className="adm-card adm-filters" role="search" aria-label="Filter videos" onSubmit={(e) => { e.preventDefault(); setFilter({ q: q.trim() || undefined }); }}>
-        <TextField label="Search" type="search" value={q} placeholder="Title or tag" onChange={(e) => onSearch(e.target.value)} />
-        <SelectField label="Status" value={query.status ?? ''} options={options(STATUS_OPTIONS)} onChange={(e) => setFilter({ status: (e.target.value || undefined) as VideoQuery['status'] })} />
+      <form
+        className="adm-card adm-filters"
+        role="search"
+        aria-label="Filter videos"
+        onSubmit={(e) => {
+          e.preventDefault();
+          setFilter({ q: q.trim() || undefined });
+        }}
+      >
+        <TextField
+          label="Search"
+          type="search"
+          value={q}
+          placeholder="Title or tag"
+          onChange={(e) => onSearch(e.target.value)}
+        />
+        <SelectField
+          label="Status"
+          value={query.status ?? ''}
+          options={options(STATUS_OPTIONS)}
+          onChange={(e) =>
+            setFilter({ status: (e.target.value || undefined) as VideoQuery['status'] })
+          }
+        />
         <SelectField
           label="Category"
           value={query.categoryId ?? ''}
-          options={[{ value: '', label: 'All categories' }, ...categories.map((c) => ({ value: c.id, label: c.name }))]}
+          options={[
+            { value: '', label: 'All categories' },
+            ...categories.map((c) => ({ value: c.id, label: c.name })),
+          ]}
           onChange={(e) => setFilter({ categoryId: e.target.value || undefined })}
         />
-        <SelectField label="Captions" value={query.captions ?? ''} options={options(CAPTION_OPTIONS)} onChange={(e) => setFilter({ captions: (e.target.value || undefined) as VideoQuery['captions'] })} />
-        <SelectField label="Suitability" value={query.suitability ?? ''} options={options(SUITABILITY_OPTIONS)} onChange={(e) => setFilter({ suitability: (e.target.value || undefined) as VideoQuery['suitability'] })} />
-        <Checkbox label="Compact rows" checked={compact} onChange={(e) => setCompact(e.target.checked)} />
+        <SelectField
+          label="Captions"
+          value={query.captions ?? ''}
+          options={options(CAPTION_OPTIONS)}
+          onChange={(e) =>
+            setFilter({ captions: (e.target.value || undefined) as VideoQuery['captions'] })
+          }
+        />
+        <SelectField
+          label="Suitability"
+          value={query.suitability ?? ''}
+          options={options(SUITABILITY_OPTIONS)}
+          onChange={(e) =>
+            setFilter({ suitability: (e.target.value || undefined) as VideoQuery['suitability'] })
+          }
+        />
+        <Checkbox
+          label="Compact rows"
+          checked={compact}
+          onChange={(e) => setCompact(e.target.checked)}
+        />
       </form>
 
       {summary ? (
@@ -140,7 +199,8 @@ export function VideosList({ page, query, categories, role, bulk }: Props) {
           }
         >
           <strong>
-            {summary.label}: {summary.done} done{summary.failed.length ? `, ${summary.failed.length} could not be changed` : ''}.
+            {summary.label}: {summary.done} done
+            {summary.failed.length ? `, ${summary.failed.length} could not be changed` : ''}.
           </strong>
           {summary.failed.length ? (
             <ul style={{ margin: 'var(--space-1) 0 0', paddingLeft: 'var(--space-5)' }}>
@@ -165,20 +225,31 @@ export function VideosList({ page, query, categories, role, bulk }: Props) {
           >
             Publish
           </Button>
-          <Button disabled={busy || !canPublish} onClick={() => run(selectedIds, { type: 'unpublish' }, 'Unpublish')}>
+          <Button
+            disabled={busy || !canPublish}
+            onClick={() => run(selectedIds, { type: 'unpublish' }, 'Unpublish')}
+          >
             Unpublish
           </Button>
           <SelectField
             label="Add to category"
             value={categoryPick}
-            options={[{ value: '', label: 'Add to category' }, ...categories.map((c) => ({ value: c.id, label: c.name }))]}
+            options={[
+              { value: '', label: 'Add to category' },
+              ...categories.map((c) => ({ value: c.id, label: c.name })),
+            ]}
             onChange={(e) => {
               const id = e.target.value;
               setCategoryPick('');
-              if (id) void run(selectedIds, { type: 'category', categoryId: id }, 'Add to category');
+              if (id)
+                void run(selectedIds, { type: 'category', categoryId: id }, 'Add to category');
             }}
           />
-          <Button variant="danger" disabledReason={canTrash ? undefined : 'Only an admin can move videos to Trash.'} onClick={() => setConfirmTrash(true)}>
+          <Button
+            variant="danger"
+            disabledReason={canTrash ? undefined : 'Only an admin can move videos to Trash.'}
+            onClick={() => setConfirmTrash(true)}
+          >
             Move to Trash
           </Button>
           <Button variant="ghost" onClick={() => setSelected(new Set())}>
@@ -190,9 +261,32 @@ export function VideosList({ page, query, categories, role, bulk }: Props) {
       <div className="adm-card adm-table-card" aria-busy={pending || undefined}>
         {page.items.length === 0 ? (
           filtered ? (
-            <EmptyState live icon="search" title="No videos match." help="Try a different word or clear the filters." action={<Button onClick={() => { setQ(''); go({}); }}>Clear filters</Button>} />
+            <EmptyState
+              live
+              icon="search"
+              title="No videos match."
+              help="Try a different word or clear the filters."
+              action={
+                <Button
+                  onClick={() => {
+                    setQ('');
+                    go({});
+                  }}
+                >
+                  Clear filters
+                </Button>
+              }
+            />
           ) : (
-            <EmptyState title="No videos yet." help="Upload your first video to get started." action={<LinkButton href="/admin/videos/upload" variant="accent" icon="upload">Upload videos</LinkButton>} />
+            <EmptyState
+              title="No videos yet."
+              help="Upload your first video to get started."
+              action={
+                <LinkButton href="/admin/videos/upload" variant="accent" icon="upload">
+                  Upload videos
+                </LinkButton>
+              }
+            />
           )
         ) : (
           <>
@@ -209,11 +303,17 @@ export function VideosList({ page, query, categories, role, bulk }: Props) {
                   </th>
                   <th scope="col">Video</th>
                   <th scope="col">Status</th>
-                  <th scope="col" className="adm-num">Length</th>
+                  <th scope="col" className="adm-num">
+                    Length
+                  </th>
                   <th scope="col">Captions</th>
                   <th scope="col">Published</th>
-                  <th scope="col" className="adm-num">Views</th>
-                  <th scope="col"><span className="adm-sr">Actions</span></th>
+                  <th scope="col" className="adm-num">
+                    Views
+                  </th>
+                  <th scope="col">
+                    <span className="adm-sr">Actions</span>
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -223,7 +323,11 @@ export function VideosList({ page, query, categories, role, bulk }: Props) {
                   return (
                     <tr key={video.id} className={isSel ? 'is-selected' : undefined}>
                       <td className="adm-table__check">
-                        <Checkbox label={`Select ${video.title}`} checked={isSel} onChange={() => toggle(video.id)} />
+                        <Checkbox
+                          label={`Select ${video.title}`}
+                          checked={isSel}
+                          onChange={() => toggle(video.id)}
+                        />
                       </td>
                       <td>
                         <div className="adm-vcell">
@@ -232,11 +336,18 @@ export function VideosList({ page, query, categories, role, bulk }: Props) {
                             <Link className="adm-vtitle" href={`/admin/videos/${video.id}`}>
                               {video.title}
                             </Link>
-                            <div className="adm-muted">{video.categoryIds.map((id) => categories.find((c) => c.id === id)?.name).filter(Boolean).join(', ') || 'No category'}</div>
+                            <div className="adm-muted">
+                              {video.categoryIds
+                                .map((id) => categories.find((c) => c.id === id)?.name)
+                                .filter(Boolean)
+                                .join(', ') || 'No category'}
+                            </div>
                           </div>
                         </div>
                       </td>
-                      <td><StatusBadge status={status} /></td>
+                      <td>
+                        <StatusBadge status={status} />
+                      </td>
                       <td className="adm-num">
                         {video.durationSeconds ? (
                           <>
@@ -247,17 +358,25 @@ export function VideosList({ page, query, categories, role, bulk }: Props) {
                           '-'
                         )}
                       </td>
-                      <td><CaptionBadge state={video.captionState} /></td>
                       <td>
-                        {video.publishState === 'published' && video.publishedAt
-                          ? formatDate(video.publishedAt)
-                          : video.publishState === 'scheduled' && video.publishAt
-                            ? formatDateTime(video.publishAt)
-                            : <span className="adm-muted">Not published</span>}
+                        <CaptionBadge state={video.captionState} />
+                      </td>
+                      <td>
+                        {video.publishState === 'published' && video.publishedAt ? (
+                          formatDate(video.publishedAt)
+                        ) : video.publishState === 'scheduled' && video.publishAt ? (
+                          formatDateTime(video.publishAt)
+                        ) : (
+                          <span className="adm-muted">Not published</span>
+                        )}
                       </td>
                       <td className="adm-num">{formatCount(video.views)}</td>
                       <td>
-                        <LinkButton href={`/admin/videos/${video.id}`} variant="ghost" aria-label={`Edit ${video.title}`}>
+                        <LinkButton
+                          href={`/admin/videos/${video.id}`}
+                          variant="ghost"
+                          aria-label={`Edit ${video.title}`}
+                        >
                           Edit
                         </LinkButton>
                       </td>
@@ -269,14 +388,25 @@ export function VideosList({ page, query, categories, role, bulk }: Props) {
 
             <ul className="adm-cards" aria-label="Videos">
               {page.items.map((video) => (
-                <li key={video.id} className={`adm-vcard${selected.has(video.id) ? ' is-selected' : ''}`}>
-                  <Checkbox label={`Select ${video.title}`} checked={selected.has(video.id)} onChange={() => toggle(video.id)} />
+                <li
+                  key={video.id}
+                  className={`adm-vcard${selected.has(video.id) ? ' is-selected' : ''}`}
+                >
+                  <Checkbox
+                    label={`Select ${video.title}`}
+                    checked={selected.has(video.id)}
+                    onChange={() => toggle(video.id)}
+                  />
                   <PosterTile title={video.title} seed={seedOf(video.id)} />
                   <div className="adm-vcard__body">
-                    <Link className="adm-vtitle" href={`/admin/videos/${video.id}`}>{video.title}</Link>
+                    <Link className="adm-vtitle" href={`/admin/videos/${video.id}`}>
+                      {video.title}
+                    </Link>
                     <div className="adm-row">
                       <StatusBadge status={adminStatusOf(video)} />
-                      <span className="adm-muted">{video.durationSeconds ? formatDuration(video.durationSeconds) : ''}</span>
+                      <span className="adm-muted">
+                        {video.durationSeconds ? formatDuration(video.durationSeconds) : ''}
+                      </span>
                     </div>
                     <span className="adm-muted">{formatCount(video.views)} views</span>
                   </div>
@@ -286,13 +416,32 @@ export function VideosList({ page, query, categories, role, bulk }: Props) {
 
             <div className="adm-table__foot">
               <span>
-                Showing {Number(query.cursor ?? 0) + 1} to {Number(query.cursor ?? 0) + page.items.length} of {page.total} videos
+                Showing {Number(query.cursor ?? 0) + 1} to{' '}
+                {Number(query.cursor ?? 0) + page.items.length} of {page.total} videos
               </span>
               <span className="adm-row">
-                <Button disabled={!query.cursor} onClick={() => start(() => router.replace(`${pathname}?${serializeVideoQuery({ ...query, cursor: String(Math.max(0, Number(query.cursor ?? 0) - (query.limit ?? 10))) || undefined })}`))}>
+                <Button
+                  disabled={!query.cursor}
+                  onClick={() =>
+                    start(() =>
+                      router.replace(
+                        `${pathname}?${serializeVideoQuery({ ...query, cursor: String(Math.max(0, Number(query.cursor ?? 0) - (query.limit ?? 10))) || undefined })}`,
+                      ),
+                    )
+                  }
+                >
                   <Icon name="left" size={16} /> Previous
                 </Button>
-                <Button disabled={!page.nextCursor} onClick={() => start(() => router.replace(`${pathname}?${serializeVideoQuery({ ...query, cursor: page.nextCursor ?? undefined })}`))}>
+                <Button
+                  disabled={!page.nextCursor}
+                  onClick={() =>
+                    start(() =>
+                      router.replace(
+                        `${pathname}?${serializeVideoQuery({ ...query, cursor: page.nextCursor ?? undefined })}`,
+                      ),
+                    )
+                  }
+                >
                   Next <Icon name="right" size={16} />
                 </Button>
               </span>

@@ -14,7 +14,8 @@ export interface VideoPatch {
   episodeNumber?: number | null;
 }
 
-export type PatchResult = { ok: true; value: VideoPatch } | { ok: false; errors: Record<string, string> };
+export type PatchResult =
+  { ok: true; value: VideoPatch } | { ok: false; errors: Record<string, string> };
 
 /** Whitelist and validate an edit. Unknown keys are dropped, never copied across. */
 export function validateVideoPatch(input: VideoPatch, validCategoryIds: Set<string>): PatchResult {
@@ -27,7 +28,8 @@ export function validateVideoPatch(input: VideoPatch, validCategoryIds: Set<stri
     else value.title = title;
   }
   if (input.description !== undefined) {
-    if (input.description.length > 500) errors.description = 'Keep the description under 500 characters.';
+    if (input.description.length > 500)
+      errors.description = 'Keep the description under 500 characters.';
     else value.description = input.description.trim();
   }
   if (input.tags !== undefined) {
@@ -36,16 +38,22 @@ export function validateVideoPatch(input: VideoPatch, validCategoryIds: Set<stri
     else value.tags = tags;
   }
   if (input.categoryIds !== undefined) {
-    if (input.categoryIds.every((id) => validCategoryIds.has(id))) value.categoryIds = input.categoryIds;
+    if (input.categoryIds.every((id) => validCategoryIds.has(id)))
+      value.categoryIds = input.categoryIds;
     else errors.categoryIds = 'Pick categories from the list.';
   }
   if (input.suitability !== undefined) {
-    if (input.suitability === null || ['everyone', 'kids', 'older'].includes(input.suitability)) value.suitability = input.suitability;
+    if (input.suitability === null || ['everyone', 'kids', 'older'].includes(input.suitability))
+      value.suitability = input.suitability;
     else errors.suitability = 'Pick who this is suitable for.';
   }
   if (input.seriesId !== undefined) value.seriesId = input.seriesId;
   if (input.episodeNumber !== undefined) {
-    if (input.episodeNumber === null || (Number.isInteger(input.episodeNumber) && input.episodeNumber > 0)) value.episodeNumber = input.episodeNumber;
+    if (
+      input.episodeNumber === null ||
+      (Number.isInteger(input.episodeNumber) && input.episodeNumber > 0)
+    )
+      value.episodeNumber = input.episodeNumber;
     else errors.episodeNumber = 'Use a whole number from 1.';
   }
   return Object.keys(errors).length ? { ok: false, errors } : { ok: true, value };
@@ -60,23 +68,36 @@ export interface PublishRequest {
 
 export type CommandResult = { ok: true } | { ok: false; error: string };
 
-export function schedulePublish(video: VideoRecord, request: PublishRequest, role: AccountRole, rules: PublishRules, now: number): CommandResult {
-  if (!can(role, 'video.publish')) return { ok: false, error: 'You do not have permission to publish.' };
+export function schedulePublish(
+  video: VideoRecord,
+  request: PublishRequest,
+  role: AccountRole,
+  rules: PublishRules,
+  now: number,
+): CommandResult {
+  if (!can(role, 'video.publish'))
+    return { ok: false, error: 'You do not have permission to publish.' };
   const check = canPublish(video, rules);
-  const onlyCaptions = check.blockers.length > 0 && check.blockers.every((b) => b.key === 'captions');
+  const onlyCaptions =
+    check.blockers.length > 0 && check.blockers.every((b) => b.key === 'captions');
   let override: string | null = null;
   if (!check.ok) {
     if (onlyCaptions && request.overrideReason !== undefined && can(role, 'caption.override')) {
       const reason = request.overrideReason.trim();
-      if (reason.length < 5) return { ok: false, error: 'Say why captions are being skipped, in a few words.' };
+      if (reason.length < 5)
+        return { ok: false, error: 'Say why captions are being skipped, in a few words.' };
       override = reason;
     } else {
-      return { ok: false, error: `Not ready: ${check.blockers.map((b) => b.label).join(', ')} still need attention.` };
+      return {
+        ok: false,
+        error: `Not ready: ${check.blockers.map((b) => b.label).join(', ')} still need attention.`,
+      };
     }
   }
   if (request.mode === 'schedule') {
     const at = Date.parse(request.at ?? '');
-    if (!Number.isFinite(at) || at <= now) return { ok: false, error: 'Pick a time in the future.' };
+    if (!Number.isFinite(at) || at <= now)
+      return { ok: false, error: 'Pick a time in the future.' };
     video.publishState = 'scheduled';
     video.publishAt = new Date(at).toISOString();
   } else {
@@ -97,7 +118,8 @@ export function daysLeftInTrash(deletedAt: string, now: number): number {
 }
 
 export function restoreVideo(videos: VideoRecord[], id: string, role: AccountRole): CommandResult {
-  if (!can(role, 'video.restore')) return { ok: false, error: 'You do not have permission to restore videos.' };
+  if (!can(role, 'video.restore'))
+    return { ok: false, error: 'You do not have permission to restore videos.' };
   const video = videos.find((v) => v.id === id && v.deletedAt !== null);
   if (!video) return { ok: false, error: 'That video is not in Trash.' };
   video.deletedAt = null;

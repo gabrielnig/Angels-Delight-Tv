@@ -12,11 +12,22 @@ export const metadata: Metadata = { title: 'Encoding' };
 
 export default async function EncodingPage() {
   const actor = await requireActor('/admin/encoding');
-  if (!can(actor.role, 'video.edit')) return <NoAccess pageName="Encoding" roleLabel={ROLE_LABELS[actor.role]} needed="editors and admins" />;
+  if (!can(actor.role, 'video.edit'))
+    return (
+      <NoAccess
+        pageName="Encoding"
+        roleLabel={ROLE_LABELS[actor.role]}
+        needed="editors and admins"
+      />
+    );
   const jobs = await videoService.encodingQueue(actor);
   return (
     <>
-      <PageHeader crumbs={[{ label: 'Admin', href: '/admin' }, { label: 'Encoding' }]} title="Encoding queue" lead="Videos being prepared for streaming." />
+      <PageHeader
+        crumbs={[{ label: 'Admin', href: '/admin' }, { label: 'Encoding' }]}
+        title="Encoding queue"
+        lead="Videos being prepared for streaming."
+      />
       <EncodingQueue jobs={jobs} now={Date.now()} retry={retryEncodeAction} />
     </>
   );

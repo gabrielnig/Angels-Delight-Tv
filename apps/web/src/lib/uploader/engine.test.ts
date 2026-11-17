@@ -110,7 +110,11 @@ describe('uploader engine: settings', () => {
     expect(uploader.getLanes().map((l) => l.status)).toEqual(['uploading', 'waiting', 'waiting']);
     uploader.setFileConcurrency(3);
     await transport.untilInFlight(3);
-    expect(uploader.getLanes().map((l) => l.status)).toEqual(['uploading', 'uploading', 'uploading']);
+    expect(uploader.getLanes().map((l) => l.status)).toEqual([
+      'uploading',
+      'uploading',
+      'uploading',
+    ]);
     transport.releaseAll();
     await settled(uploader);
   });
