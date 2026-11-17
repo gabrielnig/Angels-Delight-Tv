@@ -3,7 +3,8 @@ import { createLogger } from '@ad/shared';
 import type { PgBoss } from 'pg-boss';
 import { bootWorker } from './boot';
 import { registerVideoHandlers } from './handlers';
-import { buildVideoHandlerDeps } from './runtime';
+import { registerMaintenanceHandlers } from './maintenance';
+import { buildMaintenanceDeps, buildVideoHandlerDeps, createWorkerDb } from './runtime';
 
 async function main(): Promise<void> {
   const bootLogger = createLogger({ bindings: { app: 'worker' } });
@@ -23,8 +24,16 @@ async function main(): Promise<void> {
   const worker = await bootWorker({
     env,
     logger,
-    register: (queueBoss, raw) =>
-      registerVideoHandlers(queueBoss, buildVideoHandlerDeps(env, raw as unknown as PgBoss, logger)),
+    register: async (queueBoss, raw) => {
+      const db = createWorkerDb(env);
+      const video = buildVideoHandlerDeps(env, raw as unknown as PgBoss, logger, db);
+      await registerVideoHandlers(queueBoss, video);
+      await registerMaintenanceHandlers(queueBoss, {
+        ...buildMaintenanceDeps(env, db, logger),
+        mirror: video.mirror,
+        logger,
+      });
+    },
   });
 
   const shutdown = (signal: string) => {
