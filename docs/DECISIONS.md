@@ -317,3 +317,33 @@ Format: decision, options considered, why, reversible or not. Newest first. Deci
 - Options: add checkboxes to the sign up form.
 - Why: keeps the existing screens unchanged. A checkbox is a small follow up if the client wants explicit consent.
 - Reversible: yes.
+
+## D-065 Admin data goes through typed services with fixture implementations (lane F)
+- Decision: every admin screen reads and writes through an interface in `apps/web/src/lib/data/admin/services.ts`. Each call takes the actor and re checks `can()`. Fixture implementations run on an in memory store. Audit, analytics and player quality read the real packages (`@ad/audit`, `@ad/analytics`) when `ADMIN_DATA=real`, with the same result shapes.
+- Options: wait for every lane, or call packages directly from pages.
+- Why: lets the screens be built and tested without a database and swaps data sources without touching components.
+- Reversible: yes.
+
+## D-066 Production never serves admin fixture data (lane F)
+- Decision: `getStore()` throws when `NODE_ENV=production` unless `ADMIN_FIXTURES=on` is set on purpose. Screens that are not yet backed by a real service fail with the admin error page instead of showing invented people, videos or numbers.
+- Options: show fixtures with a banner, or hide the screens.
+- Why: fake data that looks real is the worst failure for an admin tool, and a loud failure is easy to notice and fix.
+- Reversible: yes. Each service that gets a real implementation stops using the store.
+
+## D-067 Audit log scope for admins (lane F)
+- Decision: the audit screen asks `@ad/audit` for scope `all`. D-025 and D-058 make the admin role the super admin, so security namespaces are visible to admins. Editors cannot open the screen.
+- Options: scope `content` for admins.
+- Why: there is no separate lower admin role to hide security events from.
+- Reversible: yes, one argument in `audit-real.ts`.
+
+## D-068 Server rendered filters for list screens (lane F)
+- Decision: users, audit log and analytics filters are plain GET forms and the audit detail panel is chosen with `?entry=`. Lists page with a keyset cursor.
+- Options: client state with fetch.
+- Why: works without scripts on slow phones, links are shareable, and there is less client code.
+- Reversible: yes.
+
+## D-069 Staff mutations stay on fixtures until a reauth step exists (lane F)
+- Decision: roles, invites, staff password change and recovery code regeneration run on fixtures. The real `StaffService` methods need a password confirmed in the last 10 minutes and, for password and codes, a current authenticator code. The screens have no reauth dialog yet.
+- Options: wire them now and let every action fail with a reauth error.
+- Why: a half wired mutation is worse than a clear gap. Under D-066 these screens fail in production until wired.
+- Reversible: yes. Add a reauth dialog calling `StaffService.reauthenticate`, then a `staff-real.ts` adapter.
