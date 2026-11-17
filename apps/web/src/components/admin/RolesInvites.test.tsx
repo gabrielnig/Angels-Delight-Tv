@@ -1,0 +1,87 @@
+// @vitest-environment jsdom
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { getStore } from '@/lib/data/admin/store';
+import { RolesInvites } from './RolesInvites';
+import { ToastProvider } from './Toast';
+import { UserDetail } from './UserDetail';
+
+vi.mock('next/navigation', () => ({ useRouter: () => ({ refresh: vi.fn() }) }));
+afterEach(cleanup);
+
+const s = structuredClone(getStore());
+const ok = () => vi.fn().mockResolvedValue({ ok: true });
+const now = Date.now();
+
+function roles(canManage = true) {
+  const actions = { invite: ok(), resend: ok(), revoke: ok(), changeRole: ok() };
+  render(
+    <ToastProvider>
+      <RolesInvites
+        staff={s.staff}
+        invites={s.invites}
+        now={now}
+        canManage={canManage}
+        actions={actions}
+      />
+    </ToastProvider>,
+  );
+  return actions;
+}
+
+describe('RolesInvites', () => {
+  it('sends an invite', async () => {
+    const a = roles();
+    fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'new@example.test' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Send invite' }));
+    await waitFor(() => expect(a.invite).toHaveBeenCalledWith('new@example.test', 'editor'));
+  });
+  it('asks before changing a role', async () => {
+    const a = roles();
+    fireEvent.change(screen.getByLabelText('Role for Ngozi'), { target: { value: 'admin' } });
+    expect(a.changeRole).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: 'Change role' }));
+    await waitFor(() => expect(a.changeRole).toHaveBeenCalledWith('stf_2', 'admin'));
+  });
+  it('marks an expired invite in words', () => {
+    roles();
+    expect(screen.getByText(/^Expired /)).toBeTruthy();
+    expect(
+      screen.getByRole('button', { name: 'Resend invite to old@example.test' }).textContent,
+    ).toBe('Send a new invite');
+  });
+  it('shows a read only permission table covering every action', () => {
+    roles();
+    expect(screen.getByRole('table', { name: /Permissions by role/ })).toBeTruthy();
+    expect(screen.getByRole('rowheader', { name: 'Read the audit log' })).toBeTruthy();
+  });
+  it('locks controls without rights', () => {
+    roles(false);
+    expect(
+      (screen.getByRole('button', { name: 'Send invite' }) as HTMLButtonElement).disabled,
+    ).toBe(true);
+  });
+});
+
+describe('UserDetail', () => {
+  it('needs a reason before suspending', async () => {
+    const actions = {
+      suspend: vi
+        .fn()
+        .mockResolvedValue({
+          ok: false,
+          error: 'Write a short reason. It is kept in the audit log.',
+        }),
+      reinstate: ok(),
+      revokeSessions: ok(),
+    };
+    render(
+      <ToastProvider>
+        <UserDetail user={s.users[0]!} canAct actions={actions} />
+      </ToastProvider>,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Suspend account' }));
+    fireEvent.click(screen.getAllByRole('button', { name: 'Suspend account' }).at(-1)!);
+    await waitFor(() => expect(screen.getAllByText(/Write a short reason/).length).toBeGreaterThan(0));
+  });
+});
