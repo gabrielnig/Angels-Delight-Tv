@@ -146,9 +146,18 @@ importers:
       '@ad/db':
         specifier: workspace:*
         version: link:../../packages/db
+      '@ad/queue':
+        specifier: workspace:*
+        version: link:../../packages/queue
       '@ad/shared':
         specifier: workspace:*
         version: link:../../packages/shared
+      '@ad/storage':
+        specifier: workspace:*
+        version: link:../../packages/storage
+      '@ad/video':
+        specifier: workspace:*
+        version: link:../../packages/video
       pg:
         specifier: ^8.23.1
         version: 8.23.1
