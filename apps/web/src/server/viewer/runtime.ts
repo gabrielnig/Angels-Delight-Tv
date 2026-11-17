@@ -14,6 +14,11 @@ import { createViewerApi, type ViewerApi, type ViewerRuntime } from './api';
 const NAME_COLUMN = 'profile_name';
 const SECRET_LABEL = new TextEncoder().encode('ad:active-profile-key:v1');
 
+/** Key for the active profile cookie. Other request level auth (video routes) must derive the same key. */
+export function activeProfileKey(playbackTokenSecret: Uint8Array): Uint8Array {
+  return hmacSha256(playbackTokenSecret, SECRET_LABEL);
+}
+
 function policyFor(bucket: keyof typeof VIEWER_RATE_POLICIES): BucketPolicy {
   const { capacity, windowSeconds } = VIEWER_RATE_POLICIES[bucket];
   return { name: `viewer_${bucket}`, capacity, refillPerSecond: capacity / windowSeconds };
@@ -55,7 +60,7 @@ function build(): ViewerRuntime {
     ctx,
     appOrigin: services.env.APP_ORIGIN,
     secureCookies: auth.secureCookies,
-    profileSecret: hmacSha256(services.env.PLAYBACK_TOKEN_SECRET, SECRET_LABEL),
+    profileSecret: activeProfileKey(services.env.PLAYBACK_TOKEN_SECRET),
     async resolveActor(request) {
       const token = cookieValue(
         request.headers.get('cookie'),
