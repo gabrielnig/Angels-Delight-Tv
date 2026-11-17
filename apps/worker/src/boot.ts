@@ -1,5 +1,6 @@
 import type { Logger } from '@ad/shared';
 import { PgBoss, type ConstructorOptions } from 'pg-boss';
+import { bossAdapter, type BossLike as QueueBoss } from '@ad/queue';
 
 /** The slice of PgBoss the worker boot uses, so it can be tested with a fake. */
 export interface BossLike {
@@ -12,6 +13,8 @@ export interface BootDeps {
   env: { DATABASE_URL_WORKER: string; NODE_ENV: string };
   logger: Logger;
   createBoss?: (options: ConstructorOptions) => BossLike;
+  /** Registers workers once pg-boss has started. Receives the real client so it can build services on it. */
+  register?: (boss: QueueBoss, raw: BossLike) => Promise<void>;
 }
 
 const POOL_SIZE = 4;
@@ -21,6 +24,7 @@ export async function bootWorker({
   env,
   logger,
   createBoss,
+  register,
 }: BootDeps): Promise<{ stop(): Promise<void> }> {
   const make: (options: ConstructorOptions) => BossLike =
     createBoss ?? ((options) => new PgBoss(options));
@@ -35,6 +39,7 @@ export async function bootWorker({
 
   boss.on('error', (error) => logger.error('queue error', { err: error }));
   await boss.start();
+  if (register) await register(bossAdapter(boss as unknown as PgBoss), boss);
   logger.info('worker ready', { nodeEnv: env.NODE_ENV, poolSize: POOL_SIZE });
 
   return {
