@@ -9,6 +9,7 @@ import { PLAY_POLICIES, PlaybackService, type PlayableVideo, type PlaybackStore 
 
 const VID = '0192f0a0-0000-7000-8000-0000000000aa';
 const PROFILE = '0192f0a0-0000-7000-8000-0000000000b1';
+const ADULT = '0192f0a0-0000-7000-8000-0000000000b2';
 const ACCOUNT = '0192f0a0-0000-7000-8000-0000000000c1';
 const mediaSecret = new Uint8Array(32).fill(3);
 const kek = new Uint8Array(32).fill(9);
@@ -24,19 +25,35 @@ const baseVideo: PlayableVideo = {
   deletedAt: null,
 };
 
-function setup(over: { video?: Partial<PlayableVideo> | null; kids?: boolean; limiter?: unknown } = {}) {
+function setup(
+  over: { video?: Partial<PlayableVideo> | null; kids?: boolean; limiter?: unknown } = {},
+) {
   let clock = 1_800_000_000;
   const video = over.video === null ? null : { ...baseVideo, ...over.video };
   const store: PlaybackStore = {
     video: async () => video,
     profile: async (id, account) =>
-      id === PROFILE && account === ACCOUNT ? { id, isKids: over.kids ?? false } : null,
+      account !== ACCOUNT
+        ? null
+        : id === PROFILE
+          ? { id, isKids: over.kids ?? false }
+          : id === ADULT
+            ? { id, isKids: false }
+            : null,
     wrappedKey: async () => wrapHlsKey(keyring(kek), VID, hlsKey).keyWrapped,
-    captions: async () => [{ language: 'en', label: 'English', isDefault: true, key: `cap/abc/en.vtt` }],
+    captions: async () => [
+      { language: 'en', label: 'English', isDefault: true, key: `cap/abc/en.vtt` },
+    ],
   };
   const files: Record<string, string> = {
     [`templates/${VID}/master.m3u8`]: buildMasterTemplate([
-      { height: 720, width: 1280, bandwidthBps: 2_000_000, avgBandwidthBps: 1_500_000, codecs: 'avc1.4d401f,mp4a.40.2' },
+      {
+        height: 720,
+        width: 1280,
+        bandwidthBps: 2_000_000,
+        avgBandwidthBps: 1_500_000,
+        codecs: 'avc1.4d401f,mp4a.40.2',
+      },
     ]),
     [`templates/${VID}/720.m3u8`]: buildVariantTemplate({
       videoId: VID,
@@ -65,6 +82,22 @@ function setup(over: { video?: Partial<PlayableVideo> | null; kids?: boolean; li
 
 const viewer = { accountId: ACCOUNT, profileId: PROFILE };
 
+describe('PlaybackService kids gate', () => {
+  it('refuses a session for another profile while the active profile is a kids profile', async () => {
+    const { service } = setup({ kids: true });
+    await expect(
+      service.startSession({ accountId: ACCOUNT, profileId: ADULT, activeProfileId: PROFILE }, VID),
+    ).rejects.toBeInstanceOf(Forbidden);
+  });
+
+  it('allows the named profile when the active profile is a grown-up one', async () => {
+    const { service } = setup({ kids: false });
+    await expect(
+      service.startSession({ accountId: ACCOUNT, profileId: ADULT, activeProfileId: PROFILE }, VID),
+    ).resolves.toBeTruthy();
+  });
+});
+
 describe('PlaybackService sessions', () => {
   it('issues a token, master url and public caption urls for a published video', async () => {
     const { service } = setup();
@@ -78,14 +111,19 @@ describe('PlaybackService sessions', () => {
     ['draft', { publishState: 'draft' }],
     ['deleted', { deletedAt: new Date() }],
     ['processing', { status: 'processing' }],
-    ['scheduled in the future', { publishState: 'scheduled', publishAt: new Date(1_900_000_000_000) }],
+    [
+      'scheduled in the future',
+      { publishState: 'scheduled', publishAt: new Date(1_900_000_000_000) },
+    ],
   ])('treats a %s video as not found', async (_n, patch) => {
     const { service } = setup({ video: patch });
     await expect(service.startSession(viewer, VID)).rejects.toBeInstanceOf(NotFound);
   });
 
   it('allows a scheduled video once its time has passed', async () => {
-    const { service } = setup({ video: { publishState: 'scheduled', publishAt: new Date(1_700_000_000_000) } });
+    const { service } = setup({
+      video: { publishState: 'scheduled', publishAt: new Date(1_700_000_000_000) },
+    });
     await expect(service.startSession(viewer, VID)).resolves.toBeTruthy();
   });
 
@@ -118,7 +156,9 @@ describe('PlaybackService sessions', () => {
     const { service } = setup({ video: { publishState: 'draft' } });
     const s = await service.startPreview({ accountId: ACCOUNT, role: 'editor' }, VID);
     expect(s.preview).toBe(true);
-    await expect(service.startPreview({ accountId: ACCOUNT, role: 'viewer' }, VID)).rejects.toBeInstanceOf(Forbidden);
+    await expect(
+      service.startPreview({ accountId: ACCOUNT, role: 'viewer' }, VID),
+    ).rejects.toBeInstanceOf(Forbidden);
     await expect(service.master(s.token, VID)).resolves.toContain('#EXTM3U');
   });
 });
@@ -136,14 +176,22 @@ describe('PlaybackService playlists and key', () => {
     expect(url.origin).toBe('https://media.example');
     expect(url.pathname).toBe('/v/abcdefghijklmnopqrstuvwx/720/seg_00001.ts');
     expect(
-      verifyMediaSignature(mediaSecret, url.pathname.slice(1), Number(url.searchParams.get('exp')), url.searchParams.get('sig')!, clock()),
+      verifyMediaSignature(
+        mediaSecret,
+        url.pathname.slice(1),
+        Number(url.searchParams.get('exp')),
+        url.searchParams.get('sig')!,
+        clock(),
+      ),
     ).toBe(true);
   });
 
   it('carries the token in the query for native HLS clients', async () => {
     const { service } = setup();
     const { token } = await service.startSession(viewer, VID);
-    expect(await service.master(token, VID, true)).toContain(`720.m3u8?pt=${encodeURIComponent(token)}`);
+    expect(await service.master(token, VID, true)).toContain(
+      `720.m3u8?pt=${encodeURIComponent(token)}`,
+    );
     expect(await service.variant(token, VID, '720', true)).toContain(`keys/${VID}?pt=`);
   });
 
@@ -152,7 +200,9 @@ describe('PlaybackService playlists and key', () => {
     const { token } = await service.startSession(viewer, VID);
     await expect(service.master(null, VID)).rejects.toBeInstanceOf(Unauthorized);
     await expect(service.master('garbage', VID)).rejects.toBeInstanceOf(Unauthorized);
-    await expect(service.master(token, '0192f0a0-0000-7000-8000-0000000000ff')).rejects.toBeInstanceOf(Forbidden);
+    await expect(
+      service.master(token, '0192f0a0-0000-7000-8000-0000000000ff'),
+    ).rejects.toBeInstanceOf(Forbidden);
     advance(31 * 60 + 60);
     await expect(service.master(token, VID)).rejects.toBeInstanceOf(Unauthorized);
   });
@@ -166,7 +216,9 @@ describe('PlaybackService playlists and key', () => {
 
   it('returns the unwrapped key and limits by ip and profile', async () => {
     const seen: string[] = [];
-    const limiter = { enforce: async (p: { name: string }, s: string) => void seen.push(`${p.name}:${s}`) };
+    const limiter = {
+      enforce: async (p: { name: string }, s: string) => void seen.push(`${p.name}:${s}`),
+    };
     const { service } = setup({ limiter });
     const { token } = await service.startSession(viewer, VID);
     const key = await service.key(token, VID, '203.0.113.9');

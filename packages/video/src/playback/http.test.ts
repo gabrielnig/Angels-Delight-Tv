@@ -20,7 +20,8 @@ function setup() {
     },
     getActor: async () => ({ accountId: 'a', role: 'editor' }),
     assertSameOrigin: (r) => {
-      if (r.headers.get('origin') === 'https://evil.example') throw new Forbidden('Cross site request');
+      if (r.headers.get('origin') === 'https://evil.example')
+        throw new Forbidden('Cross site request');
     },
     clientIp: () => '9.9.9.9',
   });
@@ -36,16 +37,28 @@ describe('playback handlers', () => {
     );
     expect(res.status).toBe(200);
     expect(res.headers.get('cache-control')).toBe('no-store');
-    expect(calls[0]).toEqual(['session', { accountId: 'a', profileId: 'p' }, VID]);
+    expect(calls[0]).toEqual([
+      'session',
+      { accountId: 'a', profileId: 'p', activeProfileId: 'p' },
+      VID,
+    ]);
   });
 
   it('uses the profile named in the body', async () => {
     const { handlers, calls } = setup();
     await handlers.session(
-      new Request('https://app/x', { method: 'POST', headers: { cookie: 'c' }, body: '{"profileId":"p2"}' }),
+      new Request('https://app/x', {
+        method: 'POST',
+        headers: { cookie: 'c' },
+        body: '{"profileId":"p2"}',
+      }),
       VID,
     );
-    expect(calls[0]).toEqual(['session', { accountId: 'a', profileId: 'p2' }, VID]);
+    expect(calls[0]).toEqual([
+      'session',
+      { accountId: 'a', profileId: 'p2', activeProfileId: 'p' },
+      VID,
+    ]);
   });
 
   it('requires a signed in viewer and a same origin request', async () => {
@@ -53,7 +66,10 @@ describe('playback handlers', () => {
     const anon = await handlers.session(new Request('https://app/x', { method: 'POST' }), VID);
     expect(anon.status).toBe(401);
     const evil = await handlers.session(
-      new Request('https://app/x', { method: 'POST', headers: { origin: 'https://evil.example', cookie: 'c' } }),
+      new Request('https://app/x', {
+        method: 'POST',
+        headers: { origin: 'https://evil.example', cookie: 'c' },
+      }),
       VID,
     );
     expect(evil.status).toBe(403);
@@ -71,7 +87,10 @@ describe('playback handlers', () => {
 
   it('reads the bearer token and serves playlists without caching', async () => {
     const { handlers, calls } = setup();
-    const res = await handlers.master(new Request('https://app/m', { headers: { authorization: 'Bearer abc' } }), VID);
+    const res = await handlers.master(
+      new Request('https://app/m', { headers: { authorization: 'Bearer abc' } }),
+      VID,
+    );
     expect(res.headers.get('content-type')).toBe('application/vnd.apple.mpegurl');
     expect(res.headers.get('cache-control')).toBe('private, no-store');
     expect(res.headers.get('referrer-policy')).toBe('no-referrer');
@@ -94,7 +113,11 @@ describe('playback handlers', () => {
 
   it('maps service errors to statuses', async () => {
     const handlers = createPlaybackHandlers({
-      service: { master: async () => { throw new NotFound(); } } as never,
+      service: {
+        master: async () => {
+          throw new NotFound();
+        },
+      } as never,
       getViewer: async () => ({ accountId: 'a', profileId: 'p' }),
       getActor: async () => ({ accountId: 'a', role: 'admin' }),
       clientIp: () => 'x',
