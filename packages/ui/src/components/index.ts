@@ -25,3 +25,4 @@ export * from './format';
 export * from './Hero';
 export * from './Row';
 export * from './TopNav';
+export * from './Banner';
