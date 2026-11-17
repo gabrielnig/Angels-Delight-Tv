@@ -28,6 +28,11 @@ export class FixtureAuth implements AuthGateway {
     return { ok: true as const, next: '/profiles' };
   }
 
+  /** Fixture sessions already carry an email, so the screen falls back to the session. */
+  async pendingEmail() {
+    return null;
+  }
+
   async resendCode() {
     return { ok: true as const };
   }

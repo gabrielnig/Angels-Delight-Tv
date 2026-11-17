@@ -123,6 +123,11 @@ export class RealAuthGateway implements AuthGateway {
     }
   }
 
+  /** The address a verification code was sent to. The verify screen runs before any session exists. */
+  async pendingEmail() {
+    return this.io.readPending();
+  }
+
   async resendCode() {
     const email = await this.io.readPending();
     if (!email) return { ok: true as const };
