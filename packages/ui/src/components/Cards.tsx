@@ -190,6 +190,8 @@ export function SeriesCard({
   thumbnail,
   episodeCount,
   priority,
+  inList,
+  onToggleList,
   className,
 }: {
   title: string;
@@ -197,6 +199,8 @@ export function SeriesCard({
   thumbnail?: Thumbnail;
   episodeCount: number;
   priority?: boolean;
+  inList?: boolean;
+  onToggleList?: () => void;
   className?: string;
 }) {
   const countText = `${episodeCount} episode${episodeCount === 1 ? '' : 's'}`;
@@ -214,6 +218,16 @@ export function SeriesCard({
           {title}
         </span>
       </Link>
+      {onToggleList ? (
+        <IconButton
+          className="ad-card__action"
+          variant="on-dark"
+          icon={inList ? 'check' : 'plus'}
+          label={inList ? `Remove ${title} from My List` : `Add ${title} to My List`}
+          pressed={Boolean(inList)}
+          onClick={onToggleList}
+        />
+      ) : null}
     </article>
   );
 }
