@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { QUEUES } from './definitions';
 import { PermanentJobError, ensureQueues, registerWorker, scheduleCrons } from './worker';
 import { JobProducer } from './producer';
 import { FakeBoss, MemoryMirror } from './testing';
@@ -18,7 +19,7 @@ describe('ensureQueues and scheduleCrons', () => {
     const { boss } = setup();
     await ensureQueues(boss);
     expect(boss.queues.get('video.encode')?.retryLimit).toBe(3);
-    expect(boss.queues.size).toBe(9);
+    expect(boss.queues.size).toBe(Object.keys(QUEUES).length);
     await scheduleCrons(boss);
     expect(boss.schedules.find((s) => s.name === 'uploads.cleanup')).toMatchObject({
       tz: 'Africa/Lagos',

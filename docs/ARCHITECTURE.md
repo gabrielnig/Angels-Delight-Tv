@@ -403,6 +403,7 @@ Parsed with Zod at boot (`packages/config`: `loadWebEnv`, `loadWorkerEnv`, `load
 | `TRUSTED_PROXY_MODE` | web | no | `cloudflare` or `none`, controls `CF-Connecting-IP` trust |
 | `DATABASE_URL` | web | yes | Runtime role `ad_app` |
 | `DATABASE_URL_WORKER` | worker | yes | Runtime role `ad_worker` |
+| `DATABASE_URL_MAINTENANCE` | worker | no | Runtime role `ad_maintenance`. Without it the view event prune and audit prune jobs are not registered |
 | `DATABASE_URL_MIGRATE` | deploy only | yes | Owner role for migrations, never given to long-running containers |
 | `KEYS_DATABASE_URL_MIGRATE` | deploy only | yes | Owner role for the keys database migrations. Optional |
 | `KEYS_DATABASE_URL` | web | yes | Keys DB, role `ad_keys_app` |

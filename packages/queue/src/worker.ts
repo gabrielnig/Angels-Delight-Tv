@@ -6,6 +6,7 @@ import {
   QUEUE_DEFINITIONS,
   parsePayload,
   queueOptions,
+  type CronEntry,
   type PayloadOf,
   type QueueName,
 } from './definitions';
@@ -51,8 +52,11 @@ export async function ensureQueues(boss: BossLike): Promise<void> {
   }
 }
 
-export async function scheduleCrons(boss: BossLike): Promise<void> {
-  for (const entry of CRON_SCHEDULES) {
+export async function scheduleCrons(
+  boss: BossLike,
+  entries: readonly CronEntry[] = CRON_SCHEDULES,
+): Promise<void> {
+  for (const entry of entries) {
     await boss.schedule(entry.queue, entry.cron, {}, { tz: entry.timezone, missed: 'once' });
   }
 }
