@@ -1,0 +1,161 @@
+# Local development stack, see docs/DEV-SETUP.md.
+#   Infra only:   docker compose up -d postgres minio minio-init mailpit
+#   Everything:   docker compose --profile full up -d --build
+#   With proxy:   docker compose --profile full --profile proxy up -d
+# Values come from .env (copy .env.example). The defaults below are throwaway development values.
+# The web and worker images run the production build (NODE_ENV=production), so the production rules in
+# packages/config apply: https origins, no local storage driver. Use the proxy profile for local https.
+
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: 10m
+    max-file: '3'
+
+x-app-env: &app-env
+  env_file:
+    - path: .env
+      required: false
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-dev}
+      POSTGRES_DB: ad
+      DB_ROLE_PASSWORD: ${DB_ROLE_PASSWORD:-dev}
+    ports:
+      - '127.0.0.1:5432:5432'
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./packages/db/sql/roles.sql:/docker-entrypoint-initdb.d/00-roles.sql:ro
+      - ./docker/postgres/init/01-logins.sh:/docker-entrypoint-initdb.d/01-logins.sh:ro
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U postgres -d ad']
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    logging: *logging
+
+  # MinIO's community image distribution has changed. Pin an image you have pulled and verified, or point
+  # MINIO_IMAGE at a compatible server. STORAGE_DRIVER=local needs no container at all.
+  minio:
+    image: ${MINIO_IMAGE:-quay.io/minio/minio:RELEASE.2025-04-22T22-12-26Z}
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin-dev}
+      MINIO_API_CORS_ALLOW_ORIGIN: ${APP_ORIGIN:-http://localhost:3000}
+    ports:
+      - '127.0.0.1:9000:9000'
+      - '127.0.0.1:9001:9001'
+    volumes:
+      - minio-data:/data
+    healthcheck:
+      test: ['CMD', 'mc', 'ready', 'local']
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    logging: *logging
+
+  minio-init:
+    image: ${MC_IMAGE:-quay.io/minio/mc:RELEASE.2025-04-16T18-13-26Z}
+    depends_on:
+      minio:
+        condition: service_healthy
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin-dev}
+    entrypoint: ['/bin/sh', '/init.sh']
+    volumes:
+      - ./docker/minio/init.sh:/init.sh:ro
+    restart: 'no'
+    logging: *logging
+
+  mailpit:
+    image: axllent/mailpit:v1.34
+    restart: unless-stopped
+    ports:
+      - '127.0.0.1:1025:1025'
+      - '127.0.0.1:8025:8025'
+    logging: *logging
+
+  migrate:
+    profiles: ['full', 'ops']
+    build:
+      context: .
+      dockerfile: apps/worker/Dockerfile
+    <<: *app-env
+    environment:
+      DATABASE_URL_MIGRATE: postgres://ad_migrator:${DB_ROLE_PASSWORD:-dev}@postgres:5432/ad
+      KEYS_DATABASE_URL_MIGRATE: postgres://ad_migrator:${DB_ROLE_PASSWORD:-dev}@postgres:5432/ad_keys
+    command: ['node_modules/.bin/tsx', 'node_modules/@ad/db/src/migrate-cli.ts']
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: 'no'
+    logging: *logging
+
+  web:
+    profiles: ['full']
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+    <<: *app-env
+    environment:
+      DATABASE_URL: postgres://ad_app:${DB_ROLE_PASSWORD:-dev}@postgres:5432/ad
+      KEYS_DATABASE_URL: postgres://ad_keys_app:${DB_ROLE_PASSWORD:-dev}@postgres:5432/ad_keys
+      S3_ENDPOINT: http://minio:9000
+      SMTP_URL: smtp://mailpit:1025
+    ports:
+      - '3000:3000'
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      minio-init:
+        condition: service_completed_successfully
+    restart: unless-stopped
+    logging: *logging
+
+  worker:
+    profiles: ['full']
+    build:
+      context: .
+      dockerfile: apps/worker/Dockerfile
+    <<: *app-env
+    environment:
+      DATABASE_URL_WORKER: postgres://ad_worker:${DB_ROLE_PASSWORD:-dev}@postgres:5432/ad
+      KEYS_DATABASE_URL_SHRED: postgres://ad_keys_shred:${DB_ROLE_PASSWORD:-dev}@postgres:5432/ad_keys
+      S3_ENDPOINT: http://minio:9000
+      WHISPER_URL: http://whisper:8000
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      minio-init:
+        condition: service_completed_successfully
+    restart: unless-stopped
+    logging: *logging
+
+  caddy:
+    profiles: ['proxy']
+    image: caddy:2-alpine
+    environment:
+      APP_DOMAIN: ${APP_DOMAIN:-localhost}
+    ports:
+      - '80:80'
+      - '443:443'
+    volumes:
+      - ./docker/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+    depends_on:
+      - web
+    restart: unless-stopped
+    logging: *logging
+
+volumes:
+  postgres-data:
+  minio-data:
+  caddy-data:
