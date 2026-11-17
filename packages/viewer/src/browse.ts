@@ -1,6 +1,7 @@
 import { withAccount } from '@ad/db';
 import type { Actor } from '@ad/shared';
 import {
+  countTitles,
   findCategory,
   listCategories,
   listTitles,
@@ -25,6 +26,8 @@ export interface BrowseInput {
 export interface BrowsePage extends Page<TitleCardDto> {
   /** The category being browsed, or null for all titles or a category that is switched off. */
   category: CategoryDto | null;
+  /** How many titles the whole browse holds under these filters, for the "N videos" line. */
+  total: number;
 }
 
 /** Category chips: visible categories holding at least one live title for this profile (M06-S01). */
@@ -50,7 +53,7 @@ export async function browse(
     const category =
       input.categorySlug === undefined ? null : await findCategory(tx, input.categorySlug);
     if (input.categorySlug !== undefined && !category) {
-      return { category: null, items: [], nextCursor: null };
+      return { category: null, items: [], nextCursor: null, total: 0 };
     }
     const page = await listTitles(tx, catalogContext(ctx), audience, {
       categorySlug: input.categorySlug,
@@ -59,10 +62,16 @@ export async function browse(
       limit: input.limit,
       cursor: input.cursor,
     });
+    const total = await countTitles(tx, catalogContext(ctx), audience, {
+      categorySlug: input.categorySlug,
+      sort: input.sort ?? 'newest',
+      duration: input.duration,
+    });
     return {
       category,
       items: await annotateCards(tx, profile.id, page.items),
       nextCursor: page.nextCursor,
+      total,
     };
   });
 }

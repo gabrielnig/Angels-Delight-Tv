@@ -183,3 +183,53 @@ export async function loadMyList(
       rows.length > limit && last ? encodeCursor({ k: last.added_at_text, i: last.id }) : null,
   };
 }
+
+export interface MyListCounts {
+  /** Saved titles this profile can see now. */
+  visible: number;
+  /** Saved titles kept but not shown, for example grown-up titles on a kids profile (M10-S03). */
+  hidden: number;
+}
+
+export async function countMyList(
+  ctx: ViewerContext,
+  actor: Actor,
+  input: { profileId: string },
+): Promise<MyListCounts> {
+  const now = clockOf(ctx);
+  return withAccount(ctx.db, actor, async (tx) => {
+    const profile = await loadOwnedProfile(tx, actor, input.profileId);
+    const audience = audienceOf(profile);
+    const result = await tx.execute(sql`
+      SELECT count(*)::int AS saved,
+        count(*) FILTER (WHERE (ml.video_id IS NOT NULL AND v.kind = 'standalone' AND ${liveVideoSql('v', audience, now)})
+          OR (ml.series_id IS NOT NULL AND ${liveSeriesSql('s', audience, now)}))::int AS visible
+      FROM my_list ml
+      LEFT JOIN videos v ON v.id = ml.video_id
+      LEFT JOIN series s ON s.id = ml.series_id
+      WHERE ml.profile_id = ${profile.id}::uuid`);
+    const row = rowsOf<{ saved: number; visible: number }>(result)[0] ?? { saved: 0, visible: 0 };
+    return { visible: row.visible, hidden: row.saved - row.visible };
+  });
+}
+
+/** Every saved title reference of a profile, for the "in my list" state of buttons across screens. Includes hidden titles. */
+export async function listMyListRefs(
+  ctx: ViewerContext,
+  actor: Actor,
+  input: { profileId: string },
+): Promise<TitleRef[]> {
+  return withAccount(ctx.db, actor, async (tx) => {
+    const profile = await loadOwnedProfile(tx, actor, input.profileId);
+    const saved = await tx
+      .select({ videoId: myList.videoId, seriesId: myList.seriesId })
+      .from(myList)
+      .where(eq(myList.profileId, profile.id))
+      .limit(rulesOf(ctx).maxMyListItems);
+    return saved.map((row) =>
+      row.videoId
+        ? { kind: 'video' as const, id: row.videoId }
+        : { kind: 'series' as const, id: row.seriesId! },
+    );
+  });
+}
