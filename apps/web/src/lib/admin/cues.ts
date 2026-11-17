@@ -172,7 +172,7 @@ export function toVtt(cues: Cue[]): string {
 export type VttResult = { ok: true; cues: Cue[] } | { ok: false; error: string };
 
 export function parseVtt(source: string, newId: (n: number) => string): VttResult {
-  const text = source.replace(/^﻿/, '').replace(/\r\n?/g, '\n');
+  const text = source.replace(/^\uFEFF/, '').replace(/\r\n?/g, '\n');
   if (!text.trimStart().startsWith('WEBVTT'))
     return { ok: false, error: 'That does not look like a caption file. Use a .vtt file.' };
   const cues: Cue[] = [];
