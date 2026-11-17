@@ -415,7 +415,7 @@ describe.skipIf(!integrationEnabled())('staff sign in, two factor, invites and r
       expect(audit.at(-1)?.metadata).toMatchObject({ from: 'editor', to: 'viewer' });
     });
 
-    it('applies a promotion on the next request without ending the session', async () => {
+    it('ends the sessions of someone promoted, so the new role starts from a fresh sign in (L-7)', async () => {
       const boss = await staffMember('admin');
       const editor = await staffMember('editor');
       await staff.changeRole(
@@ -423,7 +423,18 @@ describe.skipIf(!integrationEnabled())('staff sign in, two factor, invites and r
         { accountId: editor.member.id, role: 'admin', expectedRole: 'editor' },
         h.meta,
       );
-      expect((await h.deps.sessions.validate(editor.token))?.role).toBe('admin');
+      expect(await h.deps.sessions.validate(editor.token)).toBeNull();
+    });
+
+    it('ends the sessions of someone moved between staff roles in either direction (L-7)', async () => {
+      const boss = await staffMember('admin');
+      const other = await staffMember('admin');
+      await staff.changeRole(
+        boss.actor,
+        { accountId: other.member.id, role: 'editor', expectedRole: 'admin' },
+        h.meta,
+      );
+      expect(await h.deps.sessions.validate(other.token)).toBeNull();
     });
 
     it('refuses a change to your own role, a stale view, and a caller who is not an admin', async () => {
