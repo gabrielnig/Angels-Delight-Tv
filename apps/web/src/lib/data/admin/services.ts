@@ -33,7 +33,18 @@ import {
   revokeSessions,
   suspendUser,
 } from './users-commands';
+import { randomBytes } from 'node:crypto';
 import { can } from '@/lib/admin/can';
+import {
+  changePassword,
+  ensureAccount,
+  regenerateRecoveryCodes,
+  revokeSession,
+  updateName,
+} from './account-commands';
+import type { FieldResult } from './account-commands';
+import { fixtureEmailOf } from './session';
+import type { MyAccount } from './types';
 import type { DayRange } from '@ad/analytics';
 import { buildFixtureOverview, buildFixtureVideo } from './analytics-rules';
 import type { AnalyticsOverview, VideoAnalytics } from './analytics-rules';
@@ -629,5 +640,56 @@ export const analyticsService: AnalyticsService = {
         : buildFixtureVideo(getStore(), id, range);
     if (!result) throw new NotFound('Video not found');
     return result;
+  },
+};
+
+export interface AccountService {
+  get(actor: AdminActor): Promise<MyAccount>;
+  updateName(actor: AdminActor, name: string): Promise<FieldResult>;
+  changePassword(
+    actor: AdminActor,
+    current: string,
+    next: string,
+    confirm: string,
+  ): Promise<FieldResult>;
+  revokeSession(actor: AdminActor, sessionId: string): Promise<FieldResult>;
+  regenerateCodes(
+    actor: AdminActor,
+    password: string,
+  ): Promise<{ ok: false; field: string; error: string } | { ok: true; codes: string[] }>;
+}
+
+const own = (actor: AdminActor) =>
+  ensureAccount(getStore(), actor, fixtureEmailOf(actor.accountId), Date.now());
+
+/** Every call acts on the signed in person only. There is no account id parameter to forge. */
+export const accountService: AccountService = {
+  async get(actor) {
+    need(actor, 'account.own');
+    return structuredClone(own(actor));
+  },
+  async updateName(actor, name) {
+    need(actor, 'account.own');
+    own(actor);
+    return updateName(getStore(), actor, name, Date.now());
+  },
+  async changePassword(actor, current, next, confirm) {
+    need(actor, 'account.own');
+    own(actor);
+    return changePassword(getStore(), actor, current, next, confirm, Date.now());
+  },
+  async revokeSession(actor, sessionId) {
+    need(actor, 'account.own');
+    own(actor);
+    return revokeSession(getStore(), actor, sessionId, Date.now());
+  },
+  async regenerateCodes(actor, password) {
+    need(actor, 'account.own');
+    own(actor);
+    const generate = () =>
+      randomBytes(5)
+        .toString('hex')
+        .replace(/^(.{5})/, '$1-');
+    return regenerateRecoveryCodes(getStore(), actor, password, generate, Date.now());
   },
 };

@@ -151,3 +151,21 @@ export interface AuditRow {
   ip: string | null;
   requestId: string | null;
 }
+
+export interface SessionRow {
+  id: string;
+  device: string;
+  place: string;
+  lastActiveAt: string;
+  current: boolean;
+}
+
+export interface MyAccount {
+  accountId: string;
+  name: string;
+  email: string;
+  twoFactor: boolean;
+  recoveryCodesLeft: number;
+  passwordChangedAt: string | null;
+  sessions: SessionRow[];
+}
