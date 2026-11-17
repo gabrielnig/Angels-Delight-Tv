@@ -1,0 +1,79 @@
+import type { AccountRole, PublishState, VideoStatus } from '@ad/shared';
+
+/** Request scoped identity every service call takes (docs/SECURITY.md section 5). */
+export interface AdminActor {
+  accountId: string;
+  role: AccountRole;
+  name: string;
+}
+
+export type CaptionState = 'none' | 'generating' | 'needs_review' | 'approved' | 'failed';
+
+export type AdminVideoStatus =
+  | 'draft'
+  | 'uploading'
+  | 'processing'
+  | 'needs_captions'
+  | 'ready'
+  | 'scheduled'
+  | 'published'
+  | 'failed';
+
+export type Suitability = 'everyone' | 'kids' | 'older';
+
+export interface VideoRecord {
+  id: string;
+  title: string;
+  description: string;
+  tags: string[];
+  categoryIds: string[];
+  status: VideoStatus;
+  publishState: PublishState;
+  publishAt: string | null;
+  publishedAt: string | null;
+  durationSeconds: number;
+  sizeBytes: number;
+  captionState: CaptionState;
+  captionCueCount: number;
+  posterId: string | null;
+  suitability: Suitability | null;
+  seriesId: string | null;
+  episodeNumber: number | null;
+  views: number;
+  uploadedBy: string;
+  createdAt: string;
+  updatedAt: string;
+  deletedAt: string | null;
+  failure: { stage: string; reason: string } | null;
+  /** 0 to 100 while encoding. */
+  progress: number;
+  captionOverrideReason: string | null;
+}
+
+export interface CategoryRecord {
+  id: string;
+  name: string;
+  hidden: boolean;
+  position: number;
+}
+
+export interface Page<T> {
+  items: T[];
+  total: number;
+  nextCursor: string | null;
+}
+
+export interface ChecklistItem {
+  key: 'uploaded' | 'encoded' | 'poster' | 'captions' | 'details' | 'suitability';
+  label: string;
+  done: boolean;
+  /** Plain words: what is missing, or what is done. */
+  detail: string;
+  /** Where to fix it. */
+  fixHref?: string;
+}
+
+export interface TileState<T> {
+  state: 'ready' | 'error' | 'forbidden';
+  value?: T;
+}

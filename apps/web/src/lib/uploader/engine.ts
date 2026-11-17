@@ -112,7 +112,7 @@ export function createUploader(options: UploaderOptions) {
   function waitOnline(record: Record_, signal: AbortSignal): Promise<void> {
     if (!network || network.isOnline()) return Promise.resolve();
     setStatus(record, 'offline');
-    return new Promise((resolve) => {
+    return new Promise<void>((resolve) => {
       let off = () => {};
       const finish = () => {
         off();
