@@ -49,6 +49,18 @@ describe('RealAuthGateway.signIn', () => {
     expect(io.setSession).not.toHaveBeenCalled();
   });
 
+  it('sends staff to the admin login without opening a viewer session (L-6)', async () => {
+    const { gateway, io } = setup({
+      signIn: async () => ({ status: 'use_admin_login' }) as never,
+    });
+    expect(await gateway.signIn({ email: 'a@b.co', password: 'x', next: '/browse' })).toEqual({
+      ok: true,
+      next: '/admin/login',
+    });
+    expect(io.setSession).not.toHaveBeenCalled();
+    expect(io.setPending).not.toHaveBeenCalled();
+  });
+
   it('maps failures without revealing which part was wrong', async () => {
     const bad = setup({
       signIn: async () => {

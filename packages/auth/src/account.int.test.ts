@@ -350,11 +350,13 @@ describe.skipIf(!integrationEnabled())('account overview, email change and delet
 
     it('refuses to delete the last active admin', async () => {
       const m = await registerMember(h, auth);
+      // Staff cannot use the viewer form (L-6), so sign in first and promote afterwards.
+      const { actor: viewerActor } = await signInActor(h, auth, m);
       await h.dbs.admin.db
         .update(schema.accounts)
         .set({ role: 'admin' })
         .where(eq(schema.accounts.id, m.id));
-      const { actor } = await signInActor(h, auth, m);
+      const actor = { ...viewerActor, role: 'admin' as const };
       await expect(
         auth.deleteAccount(actor, { password: m.password, confirmation: 'DELETE' }, h.meta),
       ).rejects.toMatchObject({ name: 'Conflict' });

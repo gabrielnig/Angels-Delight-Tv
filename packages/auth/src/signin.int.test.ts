@@ -136,15 +136,27 @@ describe.skipIf(!integrationEnabled())('sign in, lockout, sign out and password 
       expect(sessions.filter((s) => s.revokedAt === null)).toHaveLength(1);
     });
 
-    it('lets a staff account sign in as a viewer without any admin rights', async () => {
+    it('refuses a staff account in the viewer form: no session, an admin login hint only with the right password (L-6)', async () => {
       const m = await member();
       await h.dbs.admin.db
         .update(schema.accounts)
-        .set({ role: 'admin' })
+        .set({ role: 'editor' })
         .where(eq(schema.accounts.id, m.id));
+      const before = await h.dbs.admin.db
+        .select()
+        .from(schema.sessions)
+        .where(eq(schema.sessions.accountId, m.id));
       const result = await auth.signIn({ email: m.email, password: m.password }, h.meta);
-      if (result.status !== 'signed_in') throw new Error('expected a session');
-      expect((await h.deps.sessions.validate(result.session.token))?.mfaVerified).toBe(false);
+      expect(result).toEqual({ status: 'use_admin_login' });
+      const after = await h.dbs.admin.db
+        .select()
+        .from(schema.sessions)
+        .where(eq(schema.sessions.accountId, m.id));
+      expect(after).toHaveLength(before.length);
+      // A wrong password on a staff email looks exactly like a wrong password on any other email.
+      await expect(
+        auth.signIn({ email: m.email, password: 'wrong-password-12' }, h.meta),
+      ).rejects.toBeInstanceOf(InvalidCredentials);
     });
 
     it('rehashes the password when the stored parameters are stale', async () => {
