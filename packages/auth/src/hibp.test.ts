@@ -21,16 +21,22 @@ describe('isPasswordBreached', () => {
 
   it('is true when the suffix appears in the range response', async () => {
     const body = `0000000000000000000000000000000000A:3\r\n${hash.slice(5)}:42\r\nFFFFF:1`;
-    expect(await isPasswordBreached(password, { fetch: async () => new Response(body) })).toBe(true);
+    expect(await isPasswordBreached(password, { fetch: async () => new Response(body) })).toBe(
+      true,
+    );
   });
 
   it('is false when the suffix is absent', async () => {
-    expect(await isPasswordBreached(password, { fetch: async () => new Response('ABCDEF:1') })).toBe(false);
+    expect(
+      await isPasswordBreached(password, { fetch: async () => new Response('ABCDEF:1') }),
+    ).toBe(false);
   });
 
   it('ignores padding rows with a zero count', async () => {
     const body = `${hash.slice(5)}:0`;
-    expect(await isPasswordBreached(password, { fetch: async () => new Response(body) })).toBe(false);
+    expect(await isPasswordBreached(password, { fetch: async () => new Response(body) })).toBe(
+      false,
+    );
   });
 
   it('falls back to not breached and logs when the service fails or times out', async () => {

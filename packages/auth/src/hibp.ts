@@ -11,7 +11,10 @@ export interface HibpOptions {
  * If the service is slow or down the answer is "not breached" and the caller logs it. That is the deliberate,
  * documented fallback in SECURITY.md section 4.
  */
-export async function isPasswordBreached(password: string, options: HibpOptions = {}): Promise<boolean> {
+export async function isPasswordBreached(
+  password: string,
+  options: HibpOptions = {},
+): Promise<boolean> {
   const hash = createHash('sha1').update(password).digest('hex').toUpperCase();
   const prefix = hash.slice(0, 5);
   const suffix = hash.slice(5);

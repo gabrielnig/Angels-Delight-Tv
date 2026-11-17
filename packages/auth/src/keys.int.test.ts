@@ -25,7 +25,10 @@ describe.skipIf(!integrationEnabled())('KeyService', () => {
     const keys = service();
     const dek = await keys.createForAccount(accountId);
     expect(dek).toHaveLength(32);
-    const rows = await dbs.admin.keysPool.query('SELECT dek_wrapped FROM user_keys WHERE account_id = $1', [accountId]);
+    const rows = await dbs.admin.keysPool.query(
+      'SELECT dek_wrapped FROM user_keys WHERE account_id = $1',
+      [accountId],
+    );
     const wrapped = rows.rows[0].dek_wrapped as Buffer;
     expect(wrapped.length).toBeGreaterThan(32);
     expect(wrapped.includes(Buffer.from(dek))).toBe(false);

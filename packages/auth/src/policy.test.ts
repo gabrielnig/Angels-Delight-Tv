@@ -27,7 +27,13 @@ describe('checkPassword', () => {
   });
 
   it('rejects very common passwords even when long enough', () => {
-    for (const password of ['password123', 'qwertyuiop', '1234567890', 'iloveyou12', 'Password1234']) {
+    for (const password of [
+      'password123',
+      'qwertyuiop',
+      '1234567890',
+      'iloveyou12',
+      'Password1234',
+    ]) {
       const result = checkPassword(password, 'a@b.co');
       expect(result.rules.find((rule) => rule.id === 'not_common')?.passed, password).toBe(false);
     }

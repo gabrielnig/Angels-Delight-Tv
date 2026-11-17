@@ -14,7 +14,9 @@ describe('PasswordHasher', () => {
 
   it('uses a fresh salt every time', async () => {
     const hasher = new PasswordHasher(fast);
-    expect(await hasher.hash('same password here')).not.toBe(await hasher.hash('same password here'));
+    expect(await hasher.hash('same password here')).not.toBe(
+      await hasher.hash('same password here'),
+    );
   });
 
   it('returns false for a malformed stored hash instead of throwing', async () => {

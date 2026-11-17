@@ -118,19 +118,24 @@ export class SessionService {
     if (!session) return { ended: 'unknown' };
     const now = this.clock();
     if (session.revokedAt) return { ended: 'revoked' };
-    if (session.idleExpiresAt <= now || session.absoluteExpiresAt <= now) return { ended: 'expired' };
+    if (session.idleExpiresAt <= now || session.absoluteExpiresAt <= now)
+      return { ended: 'expired' };
 
-    const account = await withAccount(this.db, { accountId: session.accountId, role: 'viewer' }, async (tx) => {
-      const [row] = await tx
-        .select({
-          role: schema.accounts.role,
-          status: schema.accounts.status,
-          emailVerifiedAt: schema.accounts.emailVerifiedAt,
-        })
-        .from(schema.accounts)
-        .where(eq(schema.accounts.id, session.accountId));
-      return row;
-    });
+    const account = await withAccount(
+      this.db,
+      { accountId: session.accountId, role: 'viewer' },
+      async (tx) => {
+        const [row] = await tx
+          .select({
+            role: schema.accounts.role,
+            status: schema.accounts.status,
+            emailVerifiedAt: schema.accounts.emailVerifiedAt,
+          })
+          .from(schema.accounts)
+          .where(eq(schema.accounts.id, session.accountId));
+        return row;
+      },
+    );
     if (!account || account.status !== 'active') {
       if (account?.status === 'suspended') await this.revoke(session.id);
       return { ended: 'unavailable' };
@@ -166,7 +171,9 @@ export class SessionService {
   }
 
   /** After the second factor: ends the pending session and starts a staff session with a new token. */
-  async promoteToStaff(pendingSessionId: string): Promise<{ token: string; session: { id: string } }> {
+  async promoteToStaff(
+    pendingSessionId: string,
+  ): Promise<{ token: string; session: { id: string } }> {
     const [pending] = await this.db
       .select()
       .from(schema.sessions)
@@ -196,14 +203,23 @@ export class SessionService {
       .update(schema.sessions)
       .set({ revokedAt: this.clock() })
       .where(
-        and(eq(schema.sessions.tokenHash, Buffer.from(hashToken(token))), isNull(schema.sessions.revokedAt)),
+        and(
+          eq(schema.sessions.tokenHash, Buffer.from(hashToken(token))),
+          isNull(schema.sessions.revokedAt),
+        ),
       );
   }
 
   async revokeAll(accountId: string, options: { exceptSessionId?: string } = {}): Promise<void> {
-    const conditions = [eq(schema.sessions.accountId, accountId), isNull(schema.sessions.revokedAt)];
+    const conditions = [
+      eq(schema.sessions.accountId, accountId),
+      isNull(schema.sessions.revokedAt),
+    ];
     if (options.exceptSessionId) conditions.push(ne(schema.sessions.id, options.exceptSessionId));
-    await this.db.update(schema.sessions).set({ revokedAt: this.clock() }).where(and(...conditions));
+    await this.db
+      .update(schema.sessions)
+      .set({ revokedAt: this.clock() })
+      .where(and(...conditions));
   }
 
   /** Revokes one session if it belongs to the account. Returns false for someone else's session id. */
