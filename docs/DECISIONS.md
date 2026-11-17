@@ -202,3 +202,16 @@ Format: decision, options considered, why, reversible or not. Newest first. Deci
 - Options: the official Sentry SDK, OpenTelemetry.
 - Why: the SDK adds bundle size and ships breadcrumbs and user data by default, which conflicts with M24-S03 "no personal data" and the 300 KB budget. The sender is about 80 lines and tested.
 - Reversible: yes. Swap `createErrorReporter` for the SDK behind the same interface.
+## D-042 Player engine: Video.js v10 media layer with hls.js (lane G)
+- Decision: Video.js v10 is stable (video.js 10.5.0 is the npm latest tag, @videojs/react and @videojs/hlsjs-video 10.5.0 published Nov 2026). The player consumes its pinned hls.js build (`Hls` from @videojs/hlsjs-video, hls.js 1.7.4) behind our own PlayerEngine interface, with custom controls matching mockups S21 to S26. Native HLS is used only when MSE is unavailable (older iOS), with the token as ?pt=.
+- Options: Video.js v10 React skin, Vidstack, Plyr.
+- Why: the stock v10 skin cannot match the mockups without rebuilding it, and our token, key loader and recovery rules need direct engine control. The engine interface lets a v10 skin or Vidstack replace it later.
+- Reversible: yes.
+
+## D-043 Player timings and defaults (lane G)
+- Decision: progress every 15 s (ARCHITECTURE; stories say 10 s), up next countdown 5 s (story; mockup shows 8), configurable. Countdown shows the number only under reduced motion and still autoplays, following S25. Data saver cap is 360p, configurable. Start rendition is 360p on Save-Data or 2g/3g, else 480p. Player preferences are stored per profile in localStorage until M03-S09 exists.
+- Reversible: yes.
+
+## D-044 Key loader keeps the hls.js context intact (lane G)
+- Decision: the ad-key:// loader passes a copy of the context to hls.js and returns the original to callbacks, because hls.js looks keys up by context.url. Found by the Playwright smoke.
+- Reversible: yes.
