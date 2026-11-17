@@ -8,6 +8,7 @@ export * from './lookup';
 export * from './password';
 export * from './pending';
 export * from './policy';
+export * from './seed-admin';
 export * from './sessions';
 export * from './staff';
 export * from './tokens';
