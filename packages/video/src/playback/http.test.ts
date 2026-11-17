@@ -39,6 +39,15 @@ describe('playback handlers', () => {
     expect(calls[0]).toEqual(['session', { accountId: 'a', profileId: 'p' }, VID]);
   });
 
+  it('uses the profile named in the body', async () => {
+    const { handlers, calls } = setup();
+    await handlers.session(
+      new Request('https://app/x', { method: 'POST', headers: { cookie: 'c' }, body: '{"profileId":"p2"}' }),
+      VID,
+    );
+    expect(calls[0]).toEqual(['session', { accountId: 'a', profileId: 'p2' }, VID]);
+  });
+
   it('requires a signed in viewer and a same origin request', async () => {
     const { handlers } = setup();
     const anon = await handlers.session(new Request('https://app/x', { method: 'POST' }), VID);
