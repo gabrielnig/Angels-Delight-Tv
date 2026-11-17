@@ -8,54 +8,33 @@ import { createHarness, TEST_PASSWORD } from './testing';
  */
 describe.skipIf(!process.env.TEST_DATABASE_ADMIN_URL)('viewer adversarial cases', () => {
   describe('kids gate on profile switching', () => {
-    it('refuses to open a grown-up profile while a kids profile is active', async () => {
+    it('refuses to open a grown-up profile while the session is kids locked', async () => {
       const h = await createHarness();
       try {
         const user = await h.makeUser();
 
         await expect(
-          selectProfile(h.ctx, user.actor, user.profileId, { activeProfileId: user.kidsProfileId }),
+          selectProfile(h.ctx, user.actor, user.profileId, { kidsLocked: true }),
         ).rejects.toMatchObject({ code: 'forbidden', message: 'kids_gate' });
       } finally {
         await h.drop();
       }
     });
 
-    it('still lets a kids profile switch to another kids profile, and a grown-up switch freely', async () => {
+    it('still lets a locked session switch to a kids profile, and an unlocked one switch freely', async () => {
       const h = await createHarness();
       try {
         const user = await h.makeUser();
 
         await expect(
-          selectProfile(h.ctx, user.actor, user.kidsProfileId, {
-            activeProfileId: user.kidsProfileId,
-          }),
+          selectProfile(h.ctx, user.actor, user.kidsProfileId, { kidsLocked: true }),
         ).resolves.toMatchObject({ id: user.kidsProfileId });
         await expect(
-          selectProfile(h.ctx, user.actor, user.kidsProfileId, { activeProfileId: user.profileId }),
-        ).resolves.toMatchObject({ id: user.kidsProfileId });
-        await expect(
-          selectProfile(h.ctx, user.actor, user.profileId, { activeProfileId: user.profileId }),
+          selectProfile(h.ctx, user.actor, user.profileId, { kidsLocked: false }),
         ).resolves.toMatchObject({ id: user.profileId });
         await expect(selectProfile(h.ctx, user.actor, user.profileId)).resolves.toMatchObject({
           id: user.profileId,
         });
-      } finally {
-        await h.drop();
-      }
-    });
-
-    it('ignores an active profile id that belongs to another account', async () => {
-      const h = await createHarness();
-      try {
-        const user = await h.makeUser();
-        const stranger = await h.makeUser();
-
-        await expect(
-          selectProfile(h.ctx, user.actor, user.profileId, {
-            activeProfileId: stranger.kidsProfileId,
-          }),
-        ).resolves.toMatchObject({ id: user.profileId });
       } finally {
         await h.drop();
       }

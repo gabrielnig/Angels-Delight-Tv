@@ -4,7 +4,9 @@ import type { PlaybackService } from './service';
 export interface PlaybackHttpDeps {
   service: Pick<PlaybackService, 'startSession' | 'startPreview' | 'master' | 'variant' | 'key'>;
   /** The signed in viewer and active profile, or throws Unauthorized. Owned by the auth lane. */
-  getViewer(request: Request): Promise<{ accountId: string; profileId: string }>;
+  getViewer(
+    request: Request,
+  ): Promise<{ accountId: string; profileId: string; kidsLocked?: boolean }>;
   /** The signed in admin or editor, or throws Unauthorized. */
   getActor(request: Request): Promise<{ accountId: string; role: 'admin' | 'editor' | 'viewer' }>;
   assertSameOrigin?(request: Request): void;
@@ -67,6 +69,7 @@ export function createPlaybackHandlers(deps: PlaybackHttpDeps) {
               accountId: viewer.accountId,
               profileId,
               ...(viewer.profileId ? { activeProfileId: viewer.profileId } : {}),
+              ...(viewer.kidsLocked ? { kidsLocked: true } : {}),
             },
             videoId,
           ),

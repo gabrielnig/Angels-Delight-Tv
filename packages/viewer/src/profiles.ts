@@ -340,21 +340,12 @@ export async function selectProfile(
   ctx: ViewerContext,
   actor: Actor,
   profileId: string,
-  options: { pin?: string; activeProfileId?: string | null } = {},
+  options: { pin?: string; kidsLocked?: boolean } = {},
 ): Promise<ProfileDto> {
   const row = await withAccount(ctx.db, actor, async (tx) => {
     const target = await loadOwnedProfile(tx, actor, profileId);
-    // Leaving a kids profile goes through exitKidsMode, which needs the account password.
-    if (options.activeProfileId && !target.isKids) {
-      const [active] = await tx
-        .select({ isKids: profiles.isKids })
-        .from(profiles)
-        .where(
-          and(eq(profiles.id, options.activeProfileId), eq(profiles.accountId, actor.accountId)),
-        )
-        .limit(1);
-      if (active?.isKids) throw new Forbidden('kids_gate');
-    }
+    // The lock comes from the session row. Leaving a kids profile goes through exitKidsMode and the password.
+    if (options.kidsLocked && !target.isKids) throw new Forbidden('kids_gate');
     return target;
   });
   if (row.pinHash !== null) {

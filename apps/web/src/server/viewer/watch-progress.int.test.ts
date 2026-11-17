@@ -45,6 +45,7 @@ describe.skipIf(!integrationEnabled())('POST /api/watch/progress', () => {
       secureCookies: false,
       profileSecret: new Uint8Array(32).fill(9),
       resolveActor: async () => signedIn,
+      lock: { read: async () => null, set: async () => undefined, clear: async () => undefined },
     });
   });
   afterAll(async () => {
@@ -55,7 +56,9 @@ describe.skipIf(!integrationEnabled())('POST /api/watch/progress', () => {
     signedIn = null;
     expect((await api.watchProgress(post(update()))).status).toBe(401);
     signedIn = me.actor;
-    const cross = await api.watchProgress(post(update(), { headers: { origin: 'https://evil.test' } }));
+    const cross = await api.watchProgress(
+      post(update(), { headers: { origin: 'https://evil.test' } }),
+    );
     expect(cross.status).toBe(403);
   });
 
@@ -104,7 +107,9 @@ describe.skipIf(!integrationEnabled())('POST /api/watch/progress', () => {
 
   it('answers 404 for another account profile and 422 for bad input', async () => {
     signedIn = me.actor;
-    expect((await api.watchProgress(post(update({ profileId: other.profileId })))).status).toBe(404);
+    expect((await api.watchProgress(post(update({ profileId: other.profileId })))).status).toBe(
+      404,
+    );
     expect((await api.watchProgress(post(update({ positionSeconds: -3 })))).status).toBe(422);
     expect((await api.watchProgress(post(update({ positionSeconds: 'soon' })))).status).toBe(422);
     expect((await api.watchProgress(post('{nope'))).status).toBe(422);

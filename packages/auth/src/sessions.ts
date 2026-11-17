@@ -1,6 +1,6 @@
 import { schema, withAccount, type Database } from '@ad/db';
 import type { AccountRole, AccountStatus } from '@ad/shared';
-import { and, desc, eq, isNull, ne } from 'drizzle-orm';
+import { and, desc, eq, isNull, ne, sql } from 'drizzle-orm';
 import { generateToken, hashToken } from './tokens';
 
 export interface SessionPolicy {
@@ -28,6 +28,9 @@ export interface SessionContext {
   reauthAt: Date | null;
   idleExpiresAt: Date;
   absoluteExpiresAt: Date;
+  /** Server side profile choice. Authoritative while `kidsLocked` is true. */
+  activeProfileId: string | null;
+  kidsLocked: boolean;
 }
 
 export type SessionEnd = 'unknown' | 'revoked' | 'expired' | 'unavailable';
@@ -164,6 +167,8 @@ export class SessionService {
         emailVerified: account.emailVerifiedAt !== null,
         mfaVerified: session.mfaVerifiedAt !== null,
         reauthAt: session.reauthAt,
+        activeProfileId: session.activeProfileId,
+        kidsLocked: session.kidsLocked,
         idleExpiresAt,
         absoluteExpiresAt: session.absoluteExpiresAt,
       },
@@ -236,6 +241,41 @@ export class SessionService {
       )
       .returning({ id: schema.sessions.id });
     return rows.length > 0;
+  }
+
+  /**
+   * Records which profile this session uses and whether a kids profile locks it. The profile must belong to the
+   * account (checked under row level security), so a forged id cannot be stored.
+   */
+  async setProfile(
+    sessionId: string,
+    accountId: string,
+    profileId: string,
+    kidsLocked: boolean,
+  ): Promise<void> {
+    const updated = await withAccount(this.db, { accountId, role: 'viewer' }, (tx) =>
+      tx
+        .update(schema.sessions)
+        .set({ activeProfileId: profileId, kidsLocked })
+        .where(
+          and(
+            eq(schema.sessions.id, sessionId),
+            eq(schema.sessions.accountId, accountId),
+            isNull(schema.sessions.revokedAt),
+            sql`EXISTS (SELECT 1 FROM profiles p WHERE p.id = ${profileId}::uuid AND p.account_id = ${accountId}::uuid)`,
+          ),
+        )
+        .returning({ id: schema.sessions.id }),
+    );
+    if (updated.length === 0) throw new Error('Profile could not be set on this session');
+  }
+
+  /** Exit kids mode: the caller has already checked the account password. */
+  async clearKidsLock(sessionId: string, accountId: string): Promise<void> {
+    await this.db
+      .update(schema.sessions)
+      .set({ activeProfileId: null, kidsLocked: false })
+      .where(and(eq(schema.sessions.id, sessionId), eq(schema.sessions.accountId, accountId)));
   }
 
   async markReauth(sessionId: string): Promise<void> {

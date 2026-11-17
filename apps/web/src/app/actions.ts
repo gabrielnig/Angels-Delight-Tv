@@ -124,6 +124,7 @@ export async function deleteProfileAction(id: string) {
 export async function checkKidsPasswordAction(password: string) {
   const result = await getAuth().checkPassword(password);
   if (result.ok) {
+    if (realDataEnabled()) await cookieProfileIo().clearLock();
     const accountId = await currentAccountId();
     const adult = (await getProfiles().list(accountId)).find((p) => !p.kids);
     if (adult) {
