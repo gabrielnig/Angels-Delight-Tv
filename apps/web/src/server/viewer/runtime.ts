@@ -9,6 +9,7 @@ import { getServices } from '../../lib/runtime/services';
 import { authRuntime } from '../auth/runtime';
 import { cookieValue } from './active-profile';
 import { sessionCookieName } from '../auth/cookies';
+import { viewerActorFor } from './runtime-actor';
 import { createViewerApi, type ViewerApi, type ViewerRuntime } from './api';
 
 const NAME_COLUMN = 'profile_name';
@@ -88,7 +89,7 @@ function build(): ViewerRuntime {
       if (!token) return null;
       const session = await auth.sessions.validate(token);
       if (!session || session.status !== 'active' || !session.emailVerified) return null;
-      return { accountId: session.accountId, role: session.role };
+      return viewerActorFor(session);
     },
   };
 }

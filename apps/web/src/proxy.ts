@@ -1,10 +1,11 @@
 import { type NextRequest, NextResponse } from 'next/server';
+import { requestIdFrom } from './lib/observability/request-id';
 import { proxyResponseHeaders } from './server/auth/proxy-headers';
 
 /** Nonce CSP, security headers and request ids (SECURITY.md sections 4 and 14). Reads process.env directly. */
 export function proxy(request: NextRequest) {
   const nonce = btoa(crypto.randomUUID());
-  const requestId = request.headers.get('x-request-id') ?? crypto.randomUUID();
+  const requestId = requestIdFrom(request.headers);
   const headers = proxyResponseHeaders({
     pathname: request.nextUrl.pathname,
     nonce,

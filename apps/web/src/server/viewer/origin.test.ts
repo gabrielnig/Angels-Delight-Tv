@@ -30,7 +30,10 @@ describe('viewer api strict origin on mutating methods (L-14)', () => {
     expect((await api().progress.save(post({ origin: 'null' }))).status).toBe(403);
   });
   it('lets a same-origin request past the check (it then fails inside the stub context, not with 403)', async () => {
-    for (const headers of [{ origin: ORIGIN }, { 'sec-fetch-site': 'same-origin' }]) {
+    for (const headers of [{ origin: ORIGIN }, { 'sec-fetch-site': 'same-origin' }] as Record<
+      string,
+      string
+    >[]) {
       const outcome = await api()
         .progress.save(post(headers))
         .then((r) => r.status)
