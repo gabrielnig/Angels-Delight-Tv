@@ -459,3 +459,9 @@ Format: decision, options considered, why, reversible or not. Newest first. Deci
 - Options: a PIN on every grown-up profile, or a longer lived signed cookie.
 - Why: any cookie or request field is client controlled, so only server state can hold the lock. A fresh sign in needs the account password, so clearing cookies gains nothing.
 - Reversible: yes. The columns can stay unused.
+
+## D-089 Security review Lows: what was fixed and what was accepted (lane J4)
+- Decision: (1) One per staff budget, `adminGeneral` at 300 per minute, covers admin API routes (in `getActor`), every admin server action (`requireActionActor`) and the audit export. (2) Every unsafe viewer API method needs a same origin Origin or Sec-Fetch-Site. (3) Staff cannot sign in through the viewer form: the right password gets `use_admin_login` and a redirect, a wrong one looks like any wrong password. (4) Any role change ends the target's sessions. (5) The staff SQL functions require `p_actor` to equal the request context account (migration 0019). (6) Accepted without code change: segment urls last 6 hours (L-3), `cap/` and `img/` stay unsigned (L-4), pending upload cap stays 20 (L-5), `verifyCode` keeps its statuses (L-12). SECURITY.md now says 6 hours, 20 and a 15 minute viewer lock (L-13, D-004). (7) CI runs a grep secret scan, new dependency versions must be a day old, and `scripts/check-headers.sh` checks production headers.
+- Options: shorten segment urls to 2 hours, sign `cap/` and `img/`, cap uploads at 5, collapse verify statuses, drop the viewer lock for a slow refill.
+- Why: each accepted item has a stronger existing control or a real cost to the client (long videos, batch uploads, helpful code errors), and the reasons and residual risks are in `docs/SECURITY-REVIEW.md`. The fixed items closed real gaps with small changes.
+- Reversible: yes. All are constants or small guards, and migration 0019 can be replaced by one that drops the context check.
