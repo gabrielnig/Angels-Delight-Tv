@@ -204,6 +204,8 @@ a {
 .web-split__footer a {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
+  min-width: var(--touch-target);
   min-height: var(--touch-target);
   color: var(--color-on-primary);
 }
@@ -291,8 +293,11 @@ a {
 
 .web-form__alt a,
 .web-form__fine a {
-  display: inline-block;
-  padding: var(--space-2) 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: var(--touch-target);
+  min-height: var(--touch-target);
 }
 
 .web-hp {
@@ -772,6 +777,12 @@ a {
 }
 .web-legal__toc ul {
   padding-inline-start: var(--space-4);
+}
+.web-legal__toc a {
+  display: inline-flex;
+  align-items: center;
+  min-width: var(--touch-target);
+  min-height: var(--touch-target);
 }
 .web-legal__section {
   margin-block: var(--space-6);
