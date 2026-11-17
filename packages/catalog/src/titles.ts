@@ -28,7 +28,7 @@ export interface CategoryDto {
   description: string | null;
 }
 
-export type BrowseSort = 'newest' | 'az' | 'shortest';
+export type BrowseSort = 'newest' | 'az' | 'shortest' | 'longest';
 export type DurationBucket = 'short' | 'medium' | 'long';
 
 /** Duration buckets in milliseconds, as [min inclusive, max exclusive). The story calls the first one "under 3 minutes". */
@@ -161,6 +161,48 @@ function isKeysetCursor(value: unknown): value is KeysetCursor {
   );
 }
 
+/** The category, duration and kind filters of a browse, shared by the page query and the count. Null when the category is unknown or hidden. */
+async function browseFilters(
+  tx: Tx,
+  input: Pick<BrowseInput, 'categorySlug' | 'duration' | 'sort'>,
+): Promise<SQL[] | null> {
+  const filters: SQL[] = [];
+  if (input.categorySlug !== undefined) {
+    const found = rowsOf<{ id: string }>(
+      await tx.execute(
+        sql`SELECT id FROM categories WHERE slug = ${input.categorySlug} AND is_visible`,
+      ),
+    )[0];
+    if (!found) return null;
+    filters.push(sql`${found.id}::uuid = ANY(t.category_ids)`);
+  }
+  const videosOnly =
+    input.duration !== undefined || input.sort === 'shortest' || input.sort === 'longest';
+  if (videosOnly) filters.push(sql`t.kind = 'video'`);
+  if (input.duration !== undefined) {
+    const [min, max] = DURATION_BUCKETS[input.duration];
+    filters.push(sql`t.duration_ms >= ${min}`);
+    if (max !== null) filters.push(sql`t.duration_ms < ${max}`);
+  }
+  return filters;
+}
+
+/** How many titles a browse holds, for the "N videos" line. Ignores paging. */
+export async function countTitles(
+  tx: Tx,
+  ctx: CatalogContext,
+  audience: Audience,
+  input: Pick<BrowseInput, 'categorySlug' | 'duration' | 'sort'>,
+): Promise<number> {
+  const filters = await browseFilters(tx, input);
+  if (filters === null) return 0;
+  const where = filters.length > 0 ? sql`WHERE ${sql.join(filters, sql` AND `)}` : sql``;
+  const result = await tx.execute(sql`
+    WITH ${titlesCte(audience, ctx.now(), false)}
+    SELECT count(*)::int AS total FROM titles t ${where}`);
+  return rowsOf<{ total: number }>(result)[0]?.total ?? 0;
+}
+
 /**
  * Browse a category (or everything). A duration filter or the shortest sort leaves series out, because a series has
  * no single duration (decision D-050).
@@ -172,25 +214,9 @@ export async function listTitles(
   input: BrowseInput,
 ): Promise<Page<TitleCard>> {
   const limit = clampLimit(input.limit, PAGE_SIZE, MAX_PAGE_SIZE);
-  const filters: SQL[] = [];
-
-  if (input.categorySlug !== undefined) {
-    const found = rowsOf<{ id: string }>(
-      await tx.execute(
-        sql`SELECT id FROM categories WHERE slug = ${input.categorySlug} AND is_visible`,
-      ),
-    )[0];
-    if (!found) return { items: [], nextCursor: null };
-    filters.push(sql`${found.id}::uuid = ANY(t.category_ids)`);
-  }
-
-  const videosOnly = input.duration !== undefined || input.sort === 'shortest';
-  if (videosOnly) filters.push(sql`t.kind = 'video'`);
-  if (input.duration !== undefined) {
-    const [min, max] = DURATION_BUCKETS[input.duration];
-    filters.push(sql`t.duration_ms >= ${min}`);
-    if (max !== null) filters.push(sql`t.duration_ms < ${max}`);
-  }
+  const base = await browseFilters(tx, input);
+  if (base === null) return { items: [], nextCursor: null };
+  const filters: SQL[] = [...base];
 
   let orderBy: SQL;
   let keyColumn: SQL;
@@ -204,6 +230,10 @@ export async function listTitles(
     orderBy = sql`t.title_key ASC, t.id ASC`;
     keyColumn = sql`t.title_key`;
     if (cursor) after = sql`(t.title_key, t.id) > (${cursor.k}, ${cursor.i}::uuid)`;
+  } else if (input.sort === 'longest') {
+    orderBy = sql`t.duration_ms DESC, t.id DESC`;
+    keyColumn = sql`t.duration_ms::text`;
+    if (cursor) after = sql`(t.duration_ms, t.id) < (${cursor.k}::int, ${cursor.i}::uuid)`;
   } else {
     orderBy = sql`t.duration_ms ASC, t.id ASC`;
     keyColumn = sql`t.duration_ms::text`;

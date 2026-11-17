@@ -160,6 +160,19 @@ describe.skipIf(!integrationEnabled())('title queries', () => {
 
       expect(await titlesFor({ sort: 'az' })).toEqual(['alpha', 'Bravo', 'Charlie']);
       expect(await titlesFor({ sort: 'shortest' })).toEqual(['Charlie', 'Bravo', 'alpha']);
+      expect(await titlesFor({ sort: 'longest' })).toEqual(['alpha', 'Bravo', 'Charlie']);
+      const firstLongest = await run((tx) =>
+        listTitles(tx, ctx, general, { categorySlug: category.slug, sort: 'longest', limit: 2 }),
+      );
+      const restLongest = await run((tx) =>
+        listTitles(tx, ctx, general, {
+          categorySlug: category.slug,
+          sort: 'longest',
+          limit: 2,
+          cursor: firstLongest.nextCursor!,
+        }),
+      );
+      expect(restLongest.items.map((card) => card.title)).toEqual(['Charlie']);
       expect(await titlesFor({ sort: 'newest', duration: 'short' })).toEqual(['Charlie']);
       expect(await titlesFor({ sort: 'newest', duration: 'medium' })).toEqual(['Bravo']);
       expect(await titlesFor({ sort: 'newest', duration: 'long' })).toEqual(['alpha']);

@@ -102,7 +102,7 @@ describe.skipIf(!process.env.TEST_DATABASE_ADMIN_URL)('browse and search', () =>
         sort: 'newest',
       });
 
-      expect(page).toEqual({ category: null, items: [], nextCursor: null });
+      expect(page).toEqual({ category: null, items: [], nextCursor: null, total: 0 });
     });
 
     it('answers not found for a profile of another account', async () => {
