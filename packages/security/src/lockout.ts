@@ -40,15 +40,20 @@ export class LockoutStore {
     this.clock = options.clock ?? (() => new Date());
   }
 
-  async status(key: string): Promise<LockoutState> {
+  /** With a policy, `failures` also counts unlocked failures still inside the window (for tries left prompts). */
+  async status(key: string, policy?: LockoutPolicy): Promise<LockoutState> {
     const now = this.clock();
     const result = await this.db.execute<LockoutRow>(
       sql`SELECT failures, window_started_at, locked_until FROM auth_lockouts WHERE key = ${key}`,
     );
     const row = result.rows[0];
     const remaining = row?.locked_until ? secondsUntil(row.locked_until, now) : 0;
+    const inWindow =
+      policy !== undefined &&
+      row !== undefined &&
+      (now.getTime() - new Date(row.window_started_at).getTime()) / 1000 < policy.windowSeconds;
     return {
-      failures: remaining > 0 ? Number(row?.failures ?? 0) : 0,
+      failures: remaining > 0 || inWindow ? Number(row?.failures ?? 0) : 0,
       locked: remaining > 0,
       justLocked: false,
       retryAfterSeconds: remaining,

@@ -1,3 +1,5 @@
+import { createRealAccount, createRealAuth } from '../../server/auth/real-data';
+import { realAuthEnabled } from '../../server/auth/mode';
 import { FixtureAccount } from './fixtures/account';
 import { FixtureAuth } from './fixtures/auth';
 import { FixtureCatalog } from './fixtures/catalog';
@@ -35,8 +37,8 @@ function data(): Registry {
     catalog: new FixtureCatalog(),
     library: new FixtureLibrary(),
     profiles: new FixtureProfiles(),
-    auth: new FixtureAuth(),
-    account: new FixtureAccount(),
+    auth: realAuthEnabled() ? createRealAuth() : new FixtureAuth(),
+    account: realAuthEnabled() ? createRealAccount() : new FixtureAccount(),
     site: new FixtureSite(),
   });
 }

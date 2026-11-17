@@ -754,6 +754,17 @@ export class AccountService {
     };
   }
 
+  /** Wrong password confirmations left before the account locks, for the Kids exit prompt. */
+  async triesLeft(actor: Actor): Promise<number> {
+    const account = await this.loadOwn(actor.accountId);
+    const max = LOCKOUT_POLICIES.viewerLogin.maxFailures;
+    if (!account?.emailHash) return max;
+    const state = await this.closed(() =>
+      this.deps.lockouts.status(this.lockKey(account.emailHash!), LOCKOUT_POLICIES.viewerLogin),
+    );
+    return Math.max(0, max - state.failures);
+  }
+
   /** Confirms the password for a sensitive action and returns when it was confirmed. */
   async reauthenticate(actor: Actor, password: string, meta: RequestMeta): Promise<void> {
     await this.confirmPassword(actor, password, meta, 'password', 'Password is not right');

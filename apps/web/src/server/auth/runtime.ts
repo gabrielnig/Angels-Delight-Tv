@@ -22,6 +22,7 @@ export interface AuthRuntime {
   audit: AuditWriter;
   mailer: Mailer;
   secureCookies: boolean;
+  pepper: Uint8Array;
 }
 
 const slot = Symbol.for('ad.auth.runtime');
@@ -94,5 +95,6 @@ function build(env: WebEnv): AuthRuntime {
     audit,
     mailer,
     secureCookies: env.COOKIE_PREFIX_SECURE,
+    pepper: env.EMAIL_HASH_PEPPER,
   };
 }
