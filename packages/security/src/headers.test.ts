@@ -1,0 +1,82 @@
+import { describe, expect, it } from 'vitest';
+import { buildCsp, buildSecurityHeaders } from './headers';
+
+const base = {
+  nonce: 'abc123',
+  mediaOrigin: 'https://media.example.org',
+  isDevelopment: false,
+  admin: false,
+};
+
+describe('buildCsp', () => {
+  it('uses the nonce with strict-dynamic and never unsafe-inline for scripts', () => {
+    const csp = buildCsp(base);
+    expect(csp).toContain("script-src 'self' 'nonce-abc123' 'strict-dynamic'");
+    expect(csp).not.toContain("'unsafe-inline'");
+  });
+
+  it('locks down framing, objects, base and form targets', () => {
+    const csp = buildCsp(base);
+    for (const directive of [
+      "frame-ancestors 'none'",
+      "object-src 'none'",
+      "base-uri 'self'",
+      "form-action 'self'",
+      'upgrade-insecure-requests',
+    ]) {
+      expect(csp).toContain(directive);
+    }
+  });
+
+  it('allows the media origin for images, media and connections', () => {
+    const csp = buildCsp(base);
+    expect(csp).toContain("img-src 'self' data: blob: https://media.example.org");
+    expect(csp).toContain("media-src 'self' blob: https://media.example.org");
+    expect(csp).toContain("connect-src 'self' https://media.example.org");
+  });
+
+  it('allows the upload origin only on admin pages', () => {
+    const upload = 'https://uploads.example.org';
+    expect(buildCsp({ ...base, uploadOrigin: upload, admin: false })).not.toContain(upload);
+    expect(buildCsp({ ...base, uploadOrigin: upload, admin: true })).toContain(upload);
+  });
+
+  it('adds unsafe-eval only in development', () => {
+    expect(buildCsp(base)).not.toContain('unsafe-eval');
+    expect(buildCsp({ ...base, isDevelopment: true })).toContain("'unsafe-eval'");
+  });
+
+  it('skips upgrade-insecure-requests in development over http', () => {
+    expect(buildCsp({ ...base, isDevelopment: true })).not.toContain('upgrade-insecure-requests');
+  });
+
+  it('points violation reports at the app', () => {
+    expect(buildCsp(base)).toContain('report-uri /api/csp-report');
+  });
+});
+
+describe('buildSecurityHeaders', () => {
+  it('sets the full header set from SECURITY.md section 14', () => {
+    const headers = buildSecurityHeaders(base);
+    expect(headers['Content-Security-Policy']).toBeDefined();
+    expect(headers['Strict-Transport-Security']).toBe('max-age=31536000; includeSubDomains');
+    expect(headers['X-Content-Type-Options']).toBe('nosniff');
+    expect(headers['Referrer-Policy']).toBe('strict-origin-when-cross-origin');
+    expect(headers['Permissions-Policy']).toBe(
+      'camera=(), microphone=(), geolocation=(), payment=()',
+    );
+    expect(headers['Cross-Origin-Opener-Policy']).toBe('same-origin');
+  });
+
+  it('uses the report-only header name when asked', () => {
+    const headers = buildSecurityHeaders({ ...base, reportOnly: true });
+    expect(headers['Content-Security-Policy-Report-Only']).toBeDefined();
+    expect(headers['Content-Security-Policy']).toBeUndefined();
+  });
+
+  it('omits HSTS in development so localhost over http keeps working', () => {
+    expect(
+      buildSecurityHeaders({ ...base, isDevelopment: true })['Strict-Transport-Security'],
+    ).toBeUndefined();
+  });
+});
