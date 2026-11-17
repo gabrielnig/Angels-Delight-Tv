@@ -28,7 +28,13 @@ function inRange(
   duration: number | null | undefined,
 ): value is number {
   if (value === null || value === undefined || !Number.isFinite(value) || value < 0) return false;
-  if (duration !== null && duration !== undefined && Number.isFinite(duration) && duration > 0 && value >= duration)
+  if (
+    duration !== null &&
+    duration !== undefined &&
+    Number.isFinite(duration) &&
+    duration > 0 &&
+    value >= duration
+  )
     return false;
   return true;
 }

@@ -12,10 +12,20 @@ function res(status: number, body?: unknown): Response {
 
 describe('createHttpSessionProvider', () => {
   it('posts to the session route with credentials and maps the response', async () => {
-    const fetchFn = vi.fn().mockResolvedValue(
-      res(200, { token: 'v1.k.p.m', expiresAt: '2026-11-17T10:30:00Z', masterUrl: '/api/play/v1/master.m3u8' }),
-    );
-    const provider = createHttpSessionProvider({ appOrigin: 'https://app.test', profileId: 'p1', fetchFn });
+    const fetchFn = vi
+      .fn()
+      .mockResolvedValue(
+        res(200, {
+          token: 'v1.k.p.m',
+          expiresAt: '2026-11-17T10:30:00Z',
+          masterUrl: '/api/play/v1/master.m3u8',
+        }),
+      );
+    const provider = createHttpSessionProvider({
+      appOrigin: 'https://app.test',
+      profileId: 'p1',
+      fetchFn,
+    });
     const s = await provider.createSession('v1');
     expect(fetchFn).toHaveBeenCalledWith(
       'https://app.test/api/play/v1/session',
@@ -33,7 +43,11 @@ describe('createHttpSessionProvider', () => {
       createHttpSessionProvider({
         appOrigin: 'https://app.test',
         profileId: 'p1',
-        fetchFn: vi.fn().mockResolvedValue(res(200, { token: 't', expiresAt: n, masterUrl: 'https://x.test/m.m3u8' })),
+        fetchFn: vi
+          .fn()
+          .mockResolvedValue(
+            res(200, { token: 't', expiresAt: n, masterUrl: 'https://x.test/m.m3u8' }),
+          ),
       }).createSession('v1');
     expect((await mk(1_800_000_000)).expiresAt).toBe(1_800_000_000_000);
     expect((await mk(1_800_000_000_000)).expiresAt).toBe(1_800_000_000_000);
@@ -75,7 +89,13 @@ describe('createHttpSessionProvider', () => {
 });
 
 describe('createHttpProgressSink', () => {
-  const update = { videoId: 'v1', profileId: 'p1', positionSeconds: 12, durationSeconds: 300, ended: false };
+  const update = {
+    videoId: 'v1',
+    profileId: 'p1',
+    positionSeconds: 12,
+    durationSeconds: 300,
+    ended: false,
+  };
 
   it('posts JSON with keepalive', async () => {
     const fetchFn = vi.fn().mockResolvedValue(res(204));
@@ -83,7 +103,12 @@ describe('createHttpProgressSink', () => {
     await sink.save(update);
     expect(fetchFn).toHaveBeenCalledWith(
       '/api/watch/progress',
-      expect.objectContaining({ method: 'POST', credentials: 'include', keepalive: true, body: JSON.stringify(update) }),
+      expect.objectContaining({
+        method: 'POST',
+        credentials: 'include',
+        keepalive: true,
+        body: JSON.stringify(update),
+      }),
     );
   });
 
@@ -104,12 +129,21 @@ describe('createHttpProgressSink', () => {
   });
 
   it('throws a ProgressSinkError with the status', async () => {
-    const sink = createHttpProgressSink({ endpoint: '/x', fetchFn: vi.fn().mockResolvedValue(res(401)) });
-    await expect(sink.save(update)).rejects.toMatchObject({ name: 'ProgressSinkError', status: 401 });
+    const sink = createHttpProgressSink({
+      endpoint: '/x',
+      fetchFn: vi.fn().mockResolvedValue(res(401)),
+    });
+    await expect(sink.save(update)).rejects.toMatchObject({
+      name: 'ProgressSinkError',
+      status: 401,
+    });
   });
 
   it('reports a network failure as status 0', async () => {
-    const sink = createHttpProgressSink({ endpoint: '/x', fetchFn: vi.fn().mockRejectedValue(new TypeError('x')) });
+    const sink = createHttpProgressSink({
+      endpoint: '/x',
+      fetchFn: vi.fn().mockRejectedValue(new TypeError('x')),
+    });
     const err = await sink.save(update).catch((e: unknown) => e);
     expect(err).toBeInstanceOf(ProgressSinkError);
     expect((err as ProgressSinkError).status).toBe(0);
