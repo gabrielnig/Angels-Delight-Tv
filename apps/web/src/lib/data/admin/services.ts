@@ -204,3 +204,76 @@ export const videoService: VideoService = {
       .map((v) => ({ ...v }));
   },
 };
+
+// ---- Captions ----
+import { approveTrack, ensureTrack, regenerateTrack, replaceCues, saveCues } from './caption-commands';
+import type { SaveResult, CaptionResult } from './caption-commands';
+import type { Cue } from '@/lib/admin/cues';
+import type { CaptionState, CaptionTrack } from './types';
+
+export interface CaptionRow {
+  videoId: string;
+  title: string;
+  state: CaptionState;
+  language: string;
+  cueCount: number | null;
+  lastEditedBy: string;
+  lastEditedAt: string | null;
+}
+
+export interface CaptionService {
+  list(actor: AdminActor, filter?: { state?: CaptionState }): Promise<CaptionRow[]>;
+  track(actor: AdminActor, videoId: string): Promise<{ track: CaptionTrack | null; video: VideoRecord }>;
+  save(actor: AdminActor, videoId: string, cues: Cue[]): Promise<SaveResult>;
+  approve(actor: AdminActor, videoId: string): Promise<CaptionResult>;
+  regenerate(actor: AdminActor, videoId: string): Promise<CaptionResult>;
+  upload(actor: AdminActor, videoId: string, cues: Cue[]): Promise<CaptionResult>;
+}
+
+function liveVideo(id: string) {
+  const video = getStore().videos.find((v) => v.id === id && v.deletedAt === null);
+  if (!video) throw new NotFound('Video not found');
+  return video;
+}
+
+export const captionService: CaptionService = {
+  async list(actor, filter) {
+    need(actor, 'caption.review');
+    const store = getStore();
+    const now = Date.now();
+    const rows = store.videos
+      .filter((v) => v.deletedAt === null && v.status === 'ready')
+      .map((video): CaptionRow => {
+        const track = ensureTrack(store, video, now);
+        return {
+          videoId: video.id,
+          title: video.title,
+          state: track?.state ?? 'none',
+          language: 'English',
+          cueCount: track && track.cues.length ? track.cues.length : null,
+          lastEditedBy: track?.updatedBy ?? 'Not started',
+          lastEditedAt: track?.updatedAt ?? null,
+        };
+      });
+    const filtered = filter?.state ? rows.filter((r) => r.state === filter.state) : rows;
+    return filtered.sort((a, b) => Date.parse(a.lastEditedAt ?? '') - Date.parse(b.lastEditedAt ?? ''));
+  },
+  async track(actor, videoId) {
+    need(actor, 'caption.review');
+    const video = liveVideo(videoId);
+    const track = ensureTrack(getStore(), video, Date.now());
+    return { track: track ? structuredClone(track) : null, video: { ...video } };
+  },
+  async save(actor, videoId, cues) {
+    return saveCues(getStore(), liveVideo(videoId), cues, actor.role, actor.name, Date.now());
+  },
+  async approve(actor, videoId) {
+    return approveTrack(getStore(), liveVideo(videoId), actor.role, actor.name, Date.now());
+  },
+  async regenerate(actor, videoId) {
+    return regenerateTrack(getStore(), liveVideo(videoId), actor.role, Date.now());
+  },
+  async upload(actor, videoId, cues) {
+    return replaceCues(getStore(), liveVideo(videoId), cues, actor.role, actor.name, Date.now());
+  },
+};
