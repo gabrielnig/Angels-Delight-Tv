@@ -52,7 +52,7 @@ describe('createLogger', () => {
     expect(entry.password).toBe('[redacted]');
     expect(entry.nested).toEqual({ sessionToken: '[redacted]', apiKey: '[redacted]', keep: 1 });
     expect(entry.headers).toEqual({ Authorization: '[redacted]', cookie: '[redacted]' });
-    expect(entry.email).toBe('a@b.c');
+    expect(entry.email).toBe('[redacted]');
   });
 
   it('serialises an Error with name, message and stack', () => {
@@ -78,5 +78,23 @@ describe('createLogger', () => {
     loop.self = loop;
     expect(() => logger.info('loop', { loop })).not.toThrow();
     expect(lines).toHaveLength(1);
+  });
+});
+
+describe('createLogger email redaction', () => {
+  it('redacts fields named email', () => {
+    const { logger, lines } = capture();
+    logger.info('sent', { email: 'ada@example.com', to_email: 'x@example.com' });
+    expect(lines[0]).not.toContain('example.com');
+  });
+
+  it('masks addresses inside messages, string values and error text', () => {
+    const { logger, lines } = capture();
+    logger.error('mail to ada@example.com failed', {
+      error: new Error('550 <bola@example.org>: Recipient address rejected'),
+      detail: 'Key (email)=(chi@example.net) already exists',
+    });
+    expect(lines[0]).not.toMatch(/@example\.(com|org|net)/);
+    expect(lines[0]).toContain('[email]');
   });
 });

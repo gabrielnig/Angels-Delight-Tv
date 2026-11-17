@@ -436,3 +436,9 @@ Format: decision, options considered, why, reversible or not. Newest first. Deci
 - Options: a separate reauth page, or asking for the password on every staff mutation.
 - Why: a modal keeps the person on the screen and the 10 minute window means one prompt per sitting.
 - Reversible: yes.
+
+## D-084 Production refuses to start without a trusted proxy, a shred connection and distinct secrets (lane J1)
+- Decision: in production the web env loader rejects `TRUSTED_PROXY_MODE` other than `cloudflare`, a missing `KEYS_DATABASE_URL_SHRED`, and any two of `FIELD_KEK`, `EMAIL_HASH_PEPPER`, `HLS_KEK`, `PLAYBACK_TOKEN_SECRET`, `MEDIA_URL_SECRET` that hold the same value. Logs redact `email` keys and mask addresses inside string values and error text.
+- Options: warn only, or fall back to per account limits when the address is unknown.
+- Why: without a trusted proxy every per IP limit shares one bucket, so 20 bad sign ins by anyone lock everyone out for 15 minutes. Without the shred connection a deleted account keeps its key. Reused secrets collapse separate trust domains.
+- Reversible: yes. If the site is ever served without Cloudflare, add a second proxy mode instead of removing the rule.

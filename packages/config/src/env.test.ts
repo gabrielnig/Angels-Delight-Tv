@@ -40,6 +40,7 @@ const prodWeb = {
   COOKIE_PREFIX_SECURE: 'true',
   TRUSTED_PROXY_MODE: 'cloudflare',
   EDGE_TOKEN_MODE: 'worker',
+  KEYS_DATABASE_URL_SHRED: 'postgres://ad_keys_shred:dev@localhost:5432/ad_keys',
 };
 
 const devWorker = {
@@ -164,6 +165,30 @@ describe('loadWebEnv', () => {
     it('rejects DEV_SKIP_MFA', () => {
       expect(failureNames(() => loadWebEnv({ ...prodWeb, DEV_SKIP_MFA: 'true' }))).toEqual([
         'DEV_SKIP_MFA',
+      ]);
+    });
+
+    it('rejects running without a trusted proxy, which collapses every per IP limit into one bucket', () => {
+      expect(failureNames(() => loadWebEnv({ ...prodWeb, TRUSTED_PROXY_MODE: 'none' }))).toEqual([
+        'TRUSTED_PROXY_MODE',
+      ]);
+      const { TRUSTED_PROXY_MODE: _omitted, ...rest } = prodWeb;
+      expect(failureNames(() => loadWebEnv(rest))).toEqual(['TRUSTED_PROXY_MODE']);
+    });
+
+    it('requires the shred connection so account deletion can destroy keys', () => {
+      const { KEYS_DATABASE_URL_SHRED: _omitted, ...rest } = prodWeb;
+      expect(failureNames(() => loadWebEnv(rest))).toEqual(['KEYS_DATABASE_URL_SHRED']);
+    });
+
+    it('rejects a secret reused for another purpose', () => {
+      expect(
+        failureNames(() =>
+          loadWebEnv({ ...prodWeb, MEDIA_URL_SECRET: prodWeb.PLAYBACK_TOKEN_SECRET }),
+        ),
+      ).toEqual(['MEDIA_URL_SECRET']);
+      expect(failureNames(() => loadWebEnv({ ...prodWeb, HLS_KEK: prodWeb.FIELD_KEK }))).toEqual([
+        'HLS_KEK',
       ]);
     });
 
