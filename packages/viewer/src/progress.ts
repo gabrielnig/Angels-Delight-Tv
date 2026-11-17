@@ -1,5 +1,5 @@
 import { and, desc, eq, gte, inArray, sql } from 'drizzle-orm';
-import { watchProgress, withAccount } from '@ad/db';
+import { profiles, watchProgress, withAccount } from '@ad/db';
 import { isUuid, NotFound, RateLimited, type Actor } from '@ad/shared';
 import {
   episodeOrder,
@@ -274,90 +274,97 @@ export async function continueWatching(
   actor: Actor,
   input: { profileId: string },
 ): Promise<ContinueWatchingItem[]> {
+  return withAccount(ctx.db, actor, async (tx) =>
+    loadContinueWatching(tx, ctx, await loadOwnedProfile(tx, actor, input.profileId)),
+  );
+}
+
+/** The row for a profile the caller has already verified, so Home can reuse its own transaction. */
+export async function loadContinueWatching(
+  tx: ViewerTx,
+  ctx: ViewerContext,
+  profile: Pick<typeof profiles.$inferSelect, 'id' | 'isKids'>,
+): Promise<ContinueWatchingItem[]> {
   const rules = rulesOf(ctx);
   const now = clockOf(ctx);
+  const audience = audienceOf(profile);
+  const cutoff =
+    rules.continueWatchingMaxAgeDays === null
+      ? null
+      : new Date(now.getTime() - rules.continueWatchingMaxAgeDays * 24 * 3600 * 1000);
 
-  return withAccount(ctx.db, actor, async (tx) => {
-    const profile = await loadOwnedProfile(tx, actor, input.profileId);
-    const audience = audienceOf(profile);
-    const cutoff =
-      rules.continueWatchingMaxAgeDays === null
-        ? null
-        : new Date(now.getTime() - rules.continueWatchingMaxAgeDays * 24 * 3600 * 1000);
-
-    const rows = await tx
-      .select()
-      .from(watchProgress)
-      .where(
-        and(
-          eq(watchProgress.profileId, profile.id),
-          cutoff ? gte(watchProgress.updatedAt, cutoff) : undefined,
-        ),
-      )
-      .orderBy(desc(watchProgress.updatedAt))
-      .limit(HISTORY_SCAN_LIMIT);
-
-    const cards = await fetchVideoCards(
-      tx,
-      catalogContext(ctx),
-      audience,
-      rows.map((row) => row.videoId),
-    );
-    const seriesIds = [
-      ...new Set(
-        [...cards.values()].flatMap((card) => (card.episode ? [card.episode.seriesId] : [])),
+  const rows = await tx
+    .select()
+    .from(watchProgress)
+    .where(
+      and(
+        eq(watchProgress.profileId, profile.id),
+        cutoff ? gte(watchProgress.updatedAt, cutoff) : undefined,
       ),
-    ];
-    const playableEpisodes = await listEpisodes(tx, catalogContext(ctx), audience, seriesIds);
-    const orderBySeries = await episodeOrder(tx, seriesIds);
-    const completedVideos = new Set(rows.filter((row) => row.completed).map((row) => row.videoId));
+    )
+    .orderBy(desc(watchProgress.updatedAt))
+    .limit(HISTORY_SCAN_LIMIT);
 
-    const items: ContinueWatchingItem[] = [];
-    const handledSeries = new Set<string>();
-    for (const row of rows) {
-      const card = cards.get(row.videoId);
-      if (!card) continue;
-      const counts = row.completed || row.positionMs >= rules.minProgressMs;
-      if (!counts) continue;
+  const cards = await fetchVideoCards(
+    tx,
+    catalogContext(ctx),
+    audience,
+    rows.map((row) => row.videoId),
+  );
+  const seriesIds = [
+    ...new Set(
+      [...cards.values()].flatMap((card) => (card.episode ? [card.episode.seriesId] : [])),
+    ),
+  ];
+  const playableEpisodes = await listEpisodes(tx, catalogContext(ctx), audience, seriesIds);
+  const orderBySeries = await episodeOrder(tx, seriesIds);
+  const completedVideos = new Set(rows.filter((row) => row.completed).map((row) => row.videoId));
 
-      if (card.episode) {
-        if (handledSeries.has(card.episode.seriesId)) continue;
-        handledSeries.add(card.episode.seriesId);
-      }
+  const items: ContinueWatchingItem[] = [];
+  const handledSeries = new Set<string>();
+  for (const row of rows) {
+    const card = cards.get(row.videoId);
+    if (!card) continue;
+    const counts = row.completed || row.positionMs >= rules.minProgressMs;
+    if (!counts) continue;
 
-      if (!row.completed) {
-        items.push({
-          video: card,
-          positionMs: row.positionMs,
-          durationMs: row.durationMs,
-          resumeFromMs: resumeInfo(rules, row).resumeFromMs,
-          nextUp: false,
-          progressVideoId: row.videoId,
-          updatedAt: row.updatedAt.toISOString(),
-        });
-        continue;
-      }
-
-      if (!card.episode) continue;
-      const order = orderBySeries.get(card.episode.seriesId) ?? [];
-      const nextId = order
-        .slice(order.indexOf(row.videoId) + 1)
-        .find((videoId) => !completedVideos.has(videoId));
-      const next = playableEpisodes
-        .get(card.episode.seriesId)
-        ?.find((episode) => episode.id === nextId);
-      if (next) {
-        items.push({
-          video: next,
-          positionMs: 0,
-          durationMs: next.durationMs,
-          resumeFromMs: 0,
-          nextUp: true,
-          progressVideoId: row.videoId,
-          updatedAt: row.updatedAt.toISOString(),
-        });
-      }
+    if (card.episode) {
+      if (handledSeries.has(card.episode.seriesId)) continue;
+      handledSeries.add(card.episode.seriesId);
     }
-    return items.slice(0, rules.continueWatchingLimit);
-  });
+
+    if (!row.completed) {
+      items.push({
+        video: card,
+        positionMs: row.positionMs,
+        durationMs: row.durationMs,
+        resumeFromMs: resumeInfo(rules, row).resumeFromMs,
+        nextUp: false,
+        progressVideoId: row.videoId,
+        updatedAt: row.updatedAt.toISOString(),
+      });
+      continue;
+    }
+
+    if (!card.episode) continue;
+    const order = orderBySeries.get(card.episode.seriesId) ?? [];
+    const nextId = order
+      .slice(order.indexOf(row.videoId) + 1)
+      .find((videoId) => !completedVideos.has(videoId));
+    const next = playableEpisodes
+      .get(card.episode.seriesId)
+      ?.find((episode) => episode.id === nextId);
+    if (next) {
+      items.push({
+        video: next,
+        positionMs: 0,
+        durationMs: next.durationMs,
+        resumeFromMs: 0,
+        nextUp: true,
+        progressVideoId: row.videoId,
+        updatedAt: row.updatedAt.toISOString(),
+      });
+    }
+  }
+  return items.slice(0, rules.continueWatchingLimit);
 }
