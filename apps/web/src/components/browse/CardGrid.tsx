@@ -1,0 +1,81 @@
+'use client';
+
+import { useState } from 'react';
+import { Button } from '@ad/ui';
+import type { CatalogItem, Page } from '../../lib/data';
+import { itemKey } from '../../lib/format';
+import { CatalogCard } from '../CatalogCard';
+
+export interface CardGridProps {
+  initialItems: CatalogItem[];
+  total: number;
+  nextCursor: string | null;
+  inList: string[];
+  loadMore: (cursor: string) => Promise<Page<CatalogItem>>;
+  /** Plural noun, for example "videos". */
+  countLabel: string;
+}
+
+function countText(total: number, noun: string) {
+  return `${total} ${total === 1 ? noun.replace(/s$/, '') : noun}`;
+}
+
+/** A responsive grid of cards with a polite live count and a Show more button that keeps loaded cards on failure. */
+export function CardGrid({
+  initialItems,
+  total,
+  nextCursor,
+  inList,
+  loadMore,
+  countLabel,
+}: CardGridProps) {
+  const [items, setItems] = useState(initialItems);
+  const [cursor, setCursor] = useState(nextCursor);
+  const [count, setCount] = useState(total);
+  const [loading, setLoading] = useState(false);
+  const [failed, setFailed] = useState(false);
+  const saved = new Set(inList);
+
+  async function more() {
+    if (!cursor || loading) return;
+    setLoading(true);
+    setFailed(false);
+    try {
+      const page = await loadMore(cursor);
+      setItems((current) => [...current, ...page.items]);
+      setCursor(page.nextCursor);
+      setCount(page.total);
+    } catch {
+      setFailed(true);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <div className="web-grid-wrap">
+      <p className="web-grid-count" aria-live="polite">
+        {countText(count, countLabel)}
+      </p>
+      <ul className="web-grid">
+        {items.map((item) => (
+          <li key={itemKey(item)}>
+            <CatalogCard item={item} inList={saved.has(itemKey(item))} showMeta />
+          </li>
+        ))}
+      </ul>
+      {failed ? (
+        <p role="alert" className="web-grid-error">
+          Could not load more {countLabel}.
+        </p>
+      ) : null}
+      {cursor ? (
+        <div className="web-grid-more">
+          <Button variant="secondary" loading={loading} onClick={() => void more()}>
+            {loading ? 'Loading' : 'Show more'}
+          </Button>
+        </div>
+      ) : null}
+    </div>
+  );
+}
