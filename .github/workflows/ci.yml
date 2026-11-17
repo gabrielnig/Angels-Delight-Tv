@@ -55,6 +55,7 @@ jobs:
       - name: Affected tests
         run: pnpm exec vitest run --changed origin/main --passWithNoTests
 
+      # Check the branch commits, not the merge commit GitHub builds for the PR, which it authors itself.
       - name: Footprint
         if: github.event_name == 'pull_request'
-        run: scripts/footprint-check.sh --range origin/${{ github.base_ref }}..HEAD
+        run: scripts/footprint-check.sh --range origin/${{ github.base_ref }}..${{ github.event.pull_request.head.sha }}
