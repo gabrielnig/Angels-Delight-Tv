@@ -53,29 +53,29 @@ describe('WatchClient', () => {
     await waitFor(() => expect(engine.loads).toHaveLength(1));
     expect(engine.loads[0]).toMatchObject({
       src: `${window.location.origin}/fixtures/hls/plain/master.m3u8`,
-      startPosition: 131,
+      startPosition: 11,
     });
     expect(engine.tokens).toContain('fixture-token');
     expect(screen.getByRole('region', { name: 'Video player: How Rain Is Made' })).toBeTruthy();
-    expect(screen.getByText('Resumed from 2:14')).toBeTruthy();
+    expect(screen.getByText('Resumed from 0:14')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Start over' })).toBeTruthy();
   });
 
   it('lets ?t override the saved position without a resume toast', async () => {
-    const { engine } = mount(await dataFor('v-rain'), { startAt: 90 });
+    const { engine } = mount(await dataFor('v-rain'), { startAt: 10 });
     await waitFor(() => expect(engine.loads).toHaveLength(1));
-    expect(engine.loads[0]?.startPosition).toBe(90);
+    expect(engine.loads[0]?.startPosition).toBe(10);
     expect(screen.queryByText(/Resumed from/)).toBeNull();
   });
 
   it('prefers the newest local progress in fixture mode', async () => {
     localStorage.setItem(
       'ad.progress.p1.v-plants',
-      JSON.stringify({ positionSeconds: 200, finished: false }),
+      JSON.stringify({ positionSeconds: 20, finished: false }),
     );
     const { engine } = mount(await dataFor('v-plants'));
     await waitFor(() => expect(engine.loads).toHaveLength(1));
-    expect(engine.loads[0]?.startPosition).toBe(197);
+    expect(engine.loads[0]?.startPosition).toBe(17);
   });
 
   it('attaches only the approved caption track', async () => {

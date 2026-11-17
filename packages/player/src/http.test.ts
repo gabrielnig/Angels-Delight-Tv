@@ -12,15 +12,13 @@ function res(status: number, body?: unknown): Response {
 
 describe('createHttpSessionProvider', () => {
   it('posts to the session route with credentials and maps the response', async () => {
-    const fetchFn = vi
-      .fn()
-      .mockResolvedValue(
-        res(200, {
-          token: 'v1.k.p.m',
-          expiresAt: '2026-11-17T10:30:00Z',
-          masterUrl: '/api/play/v1/master.m3u8',
-        }),
-      );
+    const fetchFn = vi.fn().mockResolvedValue(
+      res(200, {
+        token: 'v1.k.p.m',
+        expiresAt: '2026-11-17T10:30:00Z',
+        masterUrl: '/api/play/v1/master.m3u8',
+      }),
+    );
     const provider = createHttpSessionProvider({
       appOrigin: 'https://app.test',
       profileId: 'p1',
