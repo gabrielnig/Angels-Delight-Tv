@@ -10,7 +10,8 @@ export interface HttpSessionOptions {
 }
 
 function toEpochMs(value: unknown): number | null {
-  if (typeof value === 'number' && Number.isFinite(value)) return value < 1e12 ? value * 1000 : value;
+  if (typeof value === 'number' && Number.isFinite(value))
+    return value < 1e12 ? value * 1000 : value;
   if (typeof value === 'string') {
     const t = Date.parse(value);
     return Number.isNaN(t) ? null : t;
@@ -52,7 +53,11 @@ export function createHttpSessionProvider(opts: HttpSessionOptions): SessionProv
         throw new SessionError('network');
       }
       const expiresAt = toEpochMs(body.expiresAt);
-      if (typeof body.token !== 'string' || typeof body.masterUrl !== 'string' || expiresAt === null) {
+      if (
+        typeof body.token !== 'string' ||
+        typeof body.masterUrl !== 'string' ||
+        expiresAt === null
+      ) {
         throw new SessionError('network');
       }
       const session: PlaybackSession = {
@@ -84,7 +89,12 @@ export function createHttpProgressSink(opts: HttpProgressOptions): ProgressSink 
   return {
     async save(update: ProgressUpdate, options) {
       const body = JSON.stringify(update);
-      if (options?.beacon && beacon && beacon(opts.endpoint, new Blob([body], { type: 'application/json' }))) return;
+      if (
+        options?.beacon &&
+        beacon &&
+        beacon(opts.endpoint, new Blob([body], { type: 'application/json' }))
+      )
+        return;
       let response: Response;
       try {
         response = await doFetch(opts.endpoint, {

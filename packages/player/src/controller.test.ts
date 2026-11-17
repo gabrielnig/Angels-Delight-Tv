@@ -19,13 +19,11 @@ function setup(
   const tokens: TokenSource = {
     token: 'tok-1',
     masterUrl: `${APP}/api/play/v1/master.m3u8`,
-    refresh: vi
-      .fn()
-      .mockResolvedValue({
-        token: 'tok-2',
-        expiresAt: Date.now() + 1_800_000,
-        masterUrl: `${APP}/api/play/v1/master.m3u8`,
-      }),
+    refresh: vi.fn().mockResolvedValue({
+      token: 'tok-2',
+      expiresAt: Date.now() + 1_800_000,
+      masterUrl: `${APP}/api/play/v1/master.m3u8`,
+    }),
     ...tokenOverrides,
   };
   const onNext = vi.fn();
