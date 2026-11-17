@@ -1,0 +1,27 @@
+{
+  "name": "@ad/worker",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "test:file": "vitest run",
+    "dev": "tsx watch src/main.ts",
+    "start": "tsx src/main.ts"
+  },
+  "dependencies": {
+    "@ad/config": "workspace:*",
+    "@ad/db": "workspace:*",
+    "@ad/shared": "workspace:*",
+    "pg": "^8.23.1",
+    "pg-boss": "^12.38.2",
+    "tsx": "^4.23.15"
+  },
+  "devDependencies": {
+    "@types/pg": "^8.23.1"
+  }
+}
