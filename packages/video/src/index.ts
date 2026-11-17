@@ -7,3 +7,6 @@ export * from './playlist';
 export * from './probe';
 export * from './signing';
 export * from './vtt';
+export * from './upload';
+export * from './http/respond';
+export * from './dev/storage-route';
