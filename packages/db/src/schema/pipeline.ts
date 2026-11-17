@@ -65,9 +65,13 @@ export const jobs = pgTable(
     attempts: smallint('attempts').notNull().default(0),
     errorCode: text('error_code'),
     errorMessage: text('error_message'),
+    /** Technical detail for the developer. The admin screens show errorMessage (plain words) by default. */
+    errorDetail: text('error_detail'),
     createdBy: uuid('created_by').references(() => accounts.id, { onDelete: 'set null' }),
     createdAt: createdAt(),
     startedAt: timestamptz('started_at'),
+    /** Touched on every progress write. A running job with an old heartbeat is shown as Stalled. */
+    heartbeatAt: timestamptz('heartbeat_at'),
     finishedAt: timestamptz('finished_at'),
   },
   (t) => [
