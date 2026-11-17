@@ -6,8 +6,18 @@ const config: NextConfig = {
   poweredByHeader: false,
   reactStrictMode: true,
   // Workspace packages ship TypeScript source, so Next compiles them.
-  transpilePackages: ['@ad/shared', '@ad/config', '@ad/ui', '@ad/db', '@ad/storage', '@ad/theme'],
-  serverExternalPackages: ['pg'],
+  transpilePackages: [
+    '@ad/auth',
+    '@ad/mailer',
+    '@ad/security',
+    '@ad/shared',
+    '@ad/config',
+    '@ad/ui',
+    '@ad/db',
+    '@ad/storage',
+    '@ad/theme',
+  ],
+  serverExternalPackages: ['pg', '@node-rs/argon2', 'nodemailer', 'qrcode'],
   // Lets the standalone build trace files from the monorepo root.
   outputFileTracingRoot: resolve(import.meta.dirname, '../..'),
 };
