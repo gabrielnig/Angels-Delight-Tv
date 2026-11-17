@@ -8,3 +8,5 @@ export * from './my-list';
 export * from './home';
 export * from './play-target';
 export * from './title-detail';
+export * from './browse';
+export * from './search';
