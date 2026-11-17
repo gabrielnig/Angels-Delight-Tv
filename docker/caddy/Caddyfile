@@ -1,0 +1,12 @@
+# Local reverse proxy for `docker compose --profile proxy up`. Production uses the Caddyfile in docs/DEPLOYMENT.md.
+{$APP_DOMAIN:localhost} {
+	encode zstd gzip
+	request_body {
+		max_size 2MB
+	}
+	reverse_proxy web:3000
+	header {
+		X-Content-Type-Options nosniff
+		-Server
+	}
+}
