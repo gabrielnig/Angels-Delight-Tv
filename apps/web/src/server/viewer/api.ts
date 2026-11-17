@@ -51,6 +51,7 @@ import {
   readActiveProfile,
   signActiveProfile,
 } from './active-profile';
+import { assertSameOrigin } from '@ad/security';
 import { z } from 'zod';
 import { errorResponse, json, parseWith, queryObject, readJson } from './http';
 
@@ -92,6 +93,8 @@ export interface KidsLockStore {
   set(sessionId: string, accountId: string, profileId: string, kidsLocked: boolean): Promise<void>;
   clear(sessionId: string, accountId: string): Promise<void>;
 }
+
+const SAFE_METHODS = new Set(['GET', 'HEAD', 'OPTIONS']);
 
 type Handler = (
   request: Request,
@@ -144,13 +147,9 @@ export function createViewerApi(rt: ViewerRuntime) {
   function guard(handler: Handler, options: { mutating?: boolean } = {}) {
     return async (request: Request, params: Record<string, string> = {}): Promise<Response> => {
       try {
-        if (options.mutating) {
-          const origin = request.headers.get('origin');
-          if (origin !== null && origin !== rt.appOrigin)
-            throw new Forbidden('Cross-origin request refused');
-          if (origin === null && request.headers.get('sec-fetch-site') === 'cross-site') {
-            throw new Forbidden('Cross-origin request refused');
-          }
+        // Strict check for every method that is not safe, whatever the route says (L-14).
+        if (options.mutating || !SAFE_METHODS.has(request.method.toUpperCase())) {
+          assertSameOrigin(request.headers, rt.appOrigin);
         }
         const actor = await rt.resolveActor(request);
         if (!actor) throw new Unauthorized();
