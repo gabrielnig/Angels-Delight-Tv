@@ -517,6 +517,8 @@ export interface PeopleService {
   reinstate(actor: AdminActor, id: string): Promise<CommandResult>;
   revokeSessions(actor: AdminActor, id: string, reason: string): Promise<CommandResult>;
   staff(actor: AdminActor): Promise<{ staff: StaffRecord[]; invites: InviteRecord[] }>;
+  /** Confirms the staff member's password so a sensitive action can follow (D-069). */
+  reauthenticate(actor: AdminActor, password: string): Promise<CommandResult>;
   invite(actor: AdminActor, email: string, role: 'editor' | 'admin'): Promise<CommandResult>;
   resendInvite(actor: AdminActor, id: string): Promise<CommandResult>;
   revokeInvite(actor: AdminActor, id: string): Promise<CommandResult>;
@@ -528,7 +530,7 @@ const shown = (actor: AdminActor, user: UserRecord): UserRecord =>
     ? { ...user }
     : { ...user, email: maskEmail(user.email) };
 
-export const peopleService: PeopleService = {
+const fixturePeopleService: PeopleService = {
   async users(actor, query) {
     need(actor, 'users.view');
     return filterUsers(getStore().users, query).map((u) => shown(actor, u));
@@ -555,6 +557,10 @@ export const peopleService: PeopleService = {
     need(actor, 'roles.change');
     const s = getStore();
     return { staff: structuredClone(s.staff), invites: structuredClone(s.invites) };
+  },
+  async reauthenticate(actor, password) {
+    need(actor, 'roles.change');
+    return password.length > 0 ? { ok: true } : { ok: false, error: 'Password is not right' };
   },
   async invite(actor, email, role) {
     need(actor, 'roles.change');
@@ -755,4 +761,8 @@ export const systemService: SystemService = delegating(
 export const captionService: CaptionService = delegating(
   fixtureCaptionService,
   async () => (await import('./real/captions')).realCaptionService,
+);
+export const peopleService: PeopleService = delegating(
+  fixturePeopleService,
+  async () => (await import('./real/people')).realPeopleService,
 );

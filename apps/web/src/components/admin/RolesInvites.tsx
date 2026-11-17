@@ -11,6 +11,7 @@ import { Button } from './Button';
 import { ConfirmDialog } from './Dialog';
 import { SelectField, TextField } from './fields';
 import { Icon } from './Icon';
+import { useReauth } from './ReauthDialog';
 import { Banner } from './states';
 import { useCommand } from './useCommand';
 
@@ -19,6 +20,8 @@ export interface RoleActions {
   resend(id: string): Promise<CommandResult>;
   revoke(id: string): Promise<CommandResult>;
   changeRole(id: string, role: string): Promise<CommandResult>;
+  /** Confirms the signed in person's password before invites and role changes (D-069). */
+  reauthenticate(password: string): Promise<CommandResult>;
 }
 
 const ROLE_OPTIONS = [
@@ -41,6 +44,7 @@ export function RolesInvites({
   actions: RoleActions;
 }) {
   const { run, busy } = useCommand();
+  const { guard, dialog: reauthDialog } = useReauth(actions.reauthenticate);
   const [email, setEmail] = useState('');
   const [role, setRole] = useState('editor');
   const [error, setError] = useState<string>();
@@ -51,7 +55,7 @@ export function RolesInvites({
 
   async function invite(e: React.FormEvent) {
     e.preventDefault();
-    const result = await run(() => actions.invite(email, role), 'Invite sent.');
+    const result = await run(() => guard(() => actions.invite(email, role)), 'Invite sent.');
     if (result.ok) {
       setEmail('');
       setError(undefined);
@@ -173,7 +177,7 @@ export function RolesInvites({
                     <Button
                       disabled={!canManage || busy}
                       aria-label={`Resend invite to ${i.email}`}
-                      onClick={() => run(() => actions.resend(i.id), 'Invite sent again.')}
+                      onClick={() => run(() => guard(() => actions.resend(i.id)), 'Invite sent again.')}
                     >
                       {expired ? 'Send a new invite' : 'Resend'}
                     </Button>
@@ -241,7 +245,7 @@ export function RolesInvites({
         onConfirm={async () => {
           if (pending) {
             const r = await run(
-              () => actions.changeRole(pending.member.id, pending.role),
+              () => guard(() => actions.changeRole(pending.member.id, pending.role)),
               'Role changed.',
             );
             if (!r.ok) setRoleError(r.error);
@@ -262,6 +266,7 @@ export function RolesInvites({
           setCancelInvite(null);
         }}
       />
+      {reauthDialog}
     </div>
   );
 }

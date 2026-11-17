@@ -9,6 +9,7 @@ import { requireActor } from '@/lib/data/admin/session-next';
 import {
   changeRoleAction,
   inviteStaffAction,
+  reauthenticateAction,
   resendInviteAction,
   revokeInviteAction,
 } from './actions';
@@ -39,6 +40,7 @@ export default async function RolesPage() {
           resend: resendInviteAction,
           revoke: revokeInviteAction,
           changeRole: changeRoleAction,
+          reauthenticate: reauthenticateAction,
         }}
       />
     </>
