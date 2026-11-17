@@ -18,6 +18,19 @@ import { can } from '@/lib/admin/can';
 import { buildDashboard } from './dashboard';
 import type { DashboardData } from './dashboard';
 import { getStore } from './store';
+import {
+  categoryVideoCount,
+  createCategory,
+  createSeries,
+  deleteCategory,
+  deleteSeries,
+  moveCategory,
+  renameCategory,
+  setCategoryHidden,
+  setEpisode,
+  updateSeries,
+} from './collection-commands';
+import type { SeriesPatch } from './collection-commands';
 import type { AdminActor } from './types';
 
 /**
@@ -206,7 +219,13 @@ export const videoService: VideoService = {
 };
 
 // ---- Captions ----
-import { approveTrack, ensureTrack, regenerateTrack, replaceCues, saveCues } from './caption-commands';
+import {
+  approveTrack,
+  ensureTrack,
+  regenerateTrack,
+  replaceCues,
+  saveCues,
+} from './caption-commands';
 import type { SaveResult, CaptionResult } from './caption-commands';
 import type { Cue } from '@/lib/admin/cues';
 import type { CaptionState, CaptionTrack } from './types';
@@ -223,7 +242,10 @@ export interface CaptionRow {
 
 export interface CaptionService {
   list(actor: AdminActor, filter?: { state?: CaptionState }): Promise<CaptionRow[]>;
-  track(actor: AdminActor, videoId: string): Promise<{ track: CaptionTrack | null; video: VideoRecord }>;
+  track(
+    actor: AdminActor,
+    videoId: string,
+  ): Promise<{ track: CaptionTrack | null; video: VideoRecord }>;
   save(actor: AdminActor, videoId: string, cues: Cue[]): Promise<SaveResult>;
   approve(actor: AdminActor, videoId: string): Promise<CaptionResult>;
   regenerate(actor: AdminActor, videoId: string): Promise<CaptionResult>;
@@ -256,7 +278,9 @@ export const captionService: CaptionService = {
         };
       });
     const filtered = filter?.state ? rows.filter((r) => r.state === filter.state) : rows;
-    return filtered.sort((a, b) => Date.parse(a.lastEditedAt ?? '') - Date.parse(b.lastEditedAt ?? ''));
+    return filtered.sort(
+      (a, b) => Date.parse(a.lastEditedAt ?? '') - Date.parse(b.lastEditedAt ?? ''),
+    );
   },
   async track(actor, videoId) {
     need(actor, 'caption.review');
@@ -275,5 +299,110 @@ export const captionService: CaptionService = {
   },
   async upload(actor, videoId, cues) {
     return replaceCues(getStore(), liveVideo(videoId), cues, actor.role, actor.name, Date.now());
+  },
+};
+
+export interface CategoryRow extends CategoryRecord {
+  videoCount: number;
+}
+export interface SeriesRow extends SeriesRecord {
+  episodeCount: number;
+}
+export interface SeriesDetail {
+  series: SeriesRecord;
+  episodes: VideoRecord[];
+  available: VideoRecord[];
+}
+
+export interface CollectionService {
+  categories(actor: AdminActor): Promise<CategoryRow[]>;
+  createCategory(actor: AdminActor, name: string): Promise<CommandResult>;
+  renameCategory(actor: AdminActor, id: string, name: string): Promise<CommandResult>;
+  setCategoryHidden(actor: AdminActor, id: string, hidden: boolean): Promise<CommandResult>;
+  moveCategory(actor: AdminActor, id: string, delta: -1 | 1): Promise<CommandResult>;
+  deleteCategory(actor: AdminActor, id: string): Promise<CommandResult>;
+  seriesList(actor: AdminActor): Promise<SeriesRow[]>;
+  seriesDetail(actor: AdminActor, id: string): Promise<SeriesDetail>;
+  createSeries(
+    actor: AdminActor,
+    input: { title: string; description: string },
+  ): Promise<CommandResult>;
+  updateSeries(actor: AdminActor, id: string, patch: SeriesPatch): Promise<CommandResult>;
+  deleteSeries(actor: AdminActor, id: string): Promise<CommandResult>;
+  setEpisode(
+    actor: AdminActor,
+    videoId: string,
+    seriesId: string | null,
+    season: number | null,
+    episode: number | null,
+  ): Promise<CommandResult>;
+}
+
+export const collectionService: CollectionService = {
+  async categories(actor) {
+    need(actor, 'category.manage');
+    const s = getStore();
+    return [...s.categories]
+      .sort((a, b) => a.position - b.position)
+      .map((c) => ({ ...c, videoCount: categoryVideoCount(s, c.id) }));
+  },
+  async createCategory(actor, name) {
+    need(actor, 'category.manage');
+    return createCategory(getStore(), name);
+  },
+  async renameCategory(actor, id, name) {
+    need(actor, 'category.manage');
+    return renameCategory(getStore(), id, name);
+  },
+  async setCategoryHidden(actor, id, hidden) {
+    need(actor, 'category.manage');
+    return setCategoryHidden(getStore(), id, hidden);
+  },
+  async moveCategory(actor, id, delta) {
+    need(actor, 'category.manage');
+    return moveCategory(getStore(), id, delta);
+  },
+  async deleteCategory(actor, id) {
+    need(actor, 'category.manage');
+    return deleteCategory(getStore(), id);
+  },
+  async seriesList(actor) {
+    need(actor, 'series.manage');
+    const s = getStore();
+    return s.series.map((x) => ({
+      ...x,
+      episodeCount: s.videos.filter((v) => v.seriesId === x.id && v.deletedAt === null).length,
+    }));
+  },
+  async seriesDetail(actor, id) {
+    need(actor, 'series.manage');
+    const s = getStore();
+    const series = s.series.find((x) => x.id === id);
+    if (!series) throw new NotFound('Series not found');
+    const live = s.videos.filter((v) => v.deletedAt === null);
+    const episodes = live
+      .filter((v) => v.seriesId === id)
+      .sort(
+        (a, b) =>
+          (a.seasonNumber ?? 1) - (b.seasonNumber ?? 1) ||
+          (a.episodeNumber ?? 0) - (b.episodeNumber ?? 0),
+      );
+    return { series: { ...series }, episodes, available: live.filter((v) => v.seriesId === null) };
+  },
+  async createSeries(actor, input) {
+    need(actor, 'series.manage');
+    return createSeries(getStore(), input);
+  },
+  async updateSeries(actor, id, patch) {
+    need(actor, 'series.manage');
+    return updateSeries(getStore(), id, patch);
+  },
+  async deleteSeries(actor, id) {
+    need(actor, 'series.manage');
+    return deleteSeries(getStore(), id);
+  },
+  async setEpisode(actor, videoId, seriesId, season, episode) {
+    need(actor, 'series.manage');
+    return setEpisode(getStore(), videoId, seriesId, season, episode);
   },
 };
