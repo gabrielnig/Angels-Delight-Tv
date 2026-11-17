@@ -237,7 +237,7 @@ Index `(updated_at)` for cleanup. Consumed with one atomic `INSERT ... ON CONFLI
 | `tags` | text[] | no | `{}` | At most 10. Editor tags, admin only |
 | `suitability` | text | yes | | `everyone`, `kids` or `older`. `kids_safe` is true for `kids` and `everyone` |
 | `caption_override_reason` | text | yes | | Set when an admin published without approved captions |
-| `poster_focus` | jsonb | yes | | `{x, y, zoom}` chosen in the poster picker |
+| `poster_focus` | jsonb | yes | | `{x, y, zoom}` in percent (zoom 100 to 200) chosen in the poster picker |
 | `created_by` | uuid | yes | | FK `accounts` ON DELETE SET NULL |
 | `created_at`, `updated_at` | timestamptz | no | `now()` | |
 | `deleted_at` | timestamptz | yes | | Soft delete, purged after 30 days |
