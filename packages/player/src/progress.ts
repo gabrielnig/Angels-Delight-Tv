@@ -65,7 +65,10 @@ export class ProgressReporter {
     if (this.timer) clearInterval(this.timer);
     this.timer = null;
     if (playing && !this.disposed) {
-      this.timer = setInterval(() => void this.send(false, undefined), this.opts.intervalMs ?? 15_000);
+      this.timer = setInterval(
+        () => void this.send(false, undefined),
+        this.opts.intervalMs ?? 15_000,
+      );
     }
   }
 
@@ -111,11 +114,20 @@ export class ProgressReporter {
     const update = this.build(ended);
     if (!update) return;
     const last = this.lastSent;
-    if (last && last.position === update.positionSeconds && last.ended === update.ended && !this.pending) return;
+    if (
+      last &&
+      last.position === update.positionSeconds &&
+      last.ended === update.ended &&
+      !this.pending
+    )
+      return;
     await this.deliver(update, options);
   }
 
-  private async deliver(update: ProgressUpdate, options: ProgressSaveOptions | undefined): Promise<void> {
+  private async deliver(
+    update: ProgressUpdate,
+    options: ProgressSaveOptions | undefined,
+  ): Promise<void> {
     if (this.opts.isOnline && !this.opts.isOnline()) {
       this.pending = update;
       return;

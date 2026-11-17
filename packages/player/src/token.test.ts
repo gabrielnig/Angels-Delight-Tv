@@ -23,7 +23,10 @@ describe('TokenManager', () => {
   });
   afterEach(() => vi.useRealTimers());
 
-  function make(provider: SessionProvider, extra: Partial<ConstructorParameters<typeof TokenManager>[0]> = {}) {
+  function make(
+    provider: SessionProvider,
+    extra: Partial<ConstructorParameters<typeof TokenManager>[0]> = {},
+  ) {
     return new TokenManager({ videoId: 'v1', provider, initial: session(1), ...extra });
   }
 
@@ -50,7 +53,9 @@ describe('TokenManager', () => {
 
   it('shares one in flight refresh between callers', async () => {
     let resolve!: (s: PlaybackSession) => void;
-    const createSession = vi.fn().mockReturnValue(new Promise<PlaybackSession>((r) => (resolve = r)));
+    const createSession = vi
+      .fn()
+      .mockReturnValue(new Promise<PlaybackSession>((r) => (resolve = r)));
     const tm = make({ createSession });
     const a = tm.refresh();
     const b = tm.refresh();
@@ -114,7 +119,9 @@ describe('TokenManager', () => {
 describe('shouldAttachAuth', () => {
   it('attaches only for the app origin', () => {
     expect(shouldAttachAuth(`${APP}/api/hls/keys/v1`, APP)).toBe(true);
-    expect(shouldAttachAuth('https://media.example.test/v/a/360/seg_1.ts?exp=1&sig=x', APP)).toBe(false);
+    expect(shouldAttachAuth('https://media.example.test/v/a/360/seg_1.ts?exp=1&sig=x', APP)).toBe(
+      false,
+    );
     expect(shouldAttachAuth('http://[bad', APP)).toBe(false);
   });
 });
@@ -133,10 +140,14 @@ describe('resolveKeyUrl', () => {
 
 describe('withNativeToken', () => {
   it('adds pt on playlist and key routes of the app origin only', () => {
-    expect(withNativeToken(`${APP}/api/play/v1/master.m3u8`, 'T', APP)).toBe(`${APP}/api/play/v1/master.m3u8?pt=T`);
+    expect(withNativeToken(`${APP}/api/play/v1/master.m3u8`, 'T', APP)).toBe(
+      `${APP}/api/play/v1/master.m3u8?pt=T`,
+    );
     expect(withNativeToken(`${APP}/api/hls/keys/v1`, 'T', APP)).toBe(`${APP}/api/hls/keys/v1?pt=T`);
     expect(withNativeToken(`${APP}/api/other`, 'T', APP)).toBe(`${APP}/api/other`);
-    expect(withNativeToken('https://media.example.test/seg.ts', 'T', APP)).toBe('https://media.example.test/seg.ts');
+    expect(withNativeToken('https://media.example.test/seg.ts', 'T', APP)).toBe(
+      'https://media.example.test/seg.ts',
+    );
   });
 });
 

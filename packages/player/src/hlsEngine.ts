@@ -48,10 +48,14 @@ export function mapHlsError(data: HlsEventData, types: HlsStatic['ErrorTypes']):
   const base = status !== undefined ? { status, detail } : { detail };
   if (status === 401) return { kind: 'auth', fatal: true, ...base };
   if (status === 403) return { kind: 'forbidden', fatal: true, ...base };
-  if ((status === 404 || status === 410) && (detail === 'manifestLoadError' || detail === 'levelLoadError')) {
+  if (
+    (status === 404 || status === 410) &&
+    (detail === 'manifestLoadError' || detail === 'levelLoadError')
+  ) {
     return { kind: 'gone', fatal: true, ...base };
   }
-  if (data.type === types.NETWORK_ERROR) return { kind: 'network', fatal: Boolean(data.fatal), ...base };
+  if (data.type === types.NETWORK_ERROR)
+    return { kind: 'network', fatal: Boolean(data.fatal), ...base };
   return { kind: 'media', fatal: Boolean(data.fatal), ...base };
 }
 
@@ -84,7 +88,8 @@ export function createHlsEngine(opts: HlsEngineOptions): PlayerEngine {
     if (cap === null || !hls) return -1;
     let best = -1;
     hls.levels.forEach((l, i) => {
-      if (l.height <= cap && (best === -1 || l.height >= (hls?.levels[best]?.height ?? 0))) best = i;
+      if (l.height <= cap && (best === -1 || l.height >= (hls?.levels[best]?.height ?? 0)))
+        best = i;
     });
     return best;
   };
@@ -112,7 +117,9 @@ export function createHlsEngine(opts: HlsEngineOptions): PlayerEngine {
       const level = instance.levels[data.level ?? -1];
       if (level) emit({ type: 'level', height: level.height, bitrate: level.bitrate });
     });
-    instance.on(Hls.Events.ERROR, (_e, data) => emit({ type: 'error', error: mapHlsError(data, Hls.ErrorTypes) }));
+    instance.on(Hls.Events.ERROR, (_e, data) =>
+      emit({ type: 'error', error: mapHlsError(data, Hls.ErrorTypes) }),
+    );
     instance.attachMedia(video);
     instance.loadSource(o.src);
   }
@@ -184,7 +191,9 @@ export function createNativeEngine(opts: NativeEngineOptions): PlayerEngine {
     const t = token ?? opts.getToken();
     video.src = t ? withNativeToken(baseSrc, t, opts.appOrigin) : baseSrc;
     if (startPosition > 0) {
-      video.addEventListener('loadedmetadata', () => (video.currentTime = startPosition), { once: true });
+      video.addEventListener('loadedmetadata', () => (video.currentTime = startPosition), {
+        once: true,
+      });
     }
     video.load();
   };
@@ -226,7 +235,11 @@ export function createUnsupportedEngine(): PlayerEngine {
     name: 'unsupported',
     load() {
       queueMicrotask(() => {
-        for (const l of listeners) l({ type: 'error', error: { kind: 'unsupported', fatal: true, detail: 'no MSE or native HLS' } });
+        for (const l of listeners)
+          l({
+            type: 'error',
+            error: { kind: 'unsupported', fatal: true, detail: 'no MSE or native HLS' },
+          });
       });
     },
     reload() {},
@@ -253,7 +266,8 @@ export interface CreateEngineOptions extends NativeEngineOptions {
 /** MSE through hls.js first (headers work), native HLS second, otherwise an unsupported engine. */
 export async function createPlayerEngine(opts: CreateEngineOptions): Promise<PlayerEngine> {
   const loadHls =
-    opts.loadHls ?? (async () => (await import('@videojs/hlsjs-video')).Hls as unknown as HlsStatic);
+    opts.loadHls ??
+    (async () => (await import('@videojs/hlsjs-video')).Hls as unknown as HlsStatic);
   try {
     const Hls = await loadHls();
     if (Hls.isSupported()) return createHlsEngine({ ...opts, Hls });

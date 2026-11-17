@@ -23,9 +23,13 @@ export interface ResumeResult {
 
 const NONE: ResumeResult = { start: 0, source: 'none', resumedFrom: null };
 
-function inRange(value: number | null | undefined, duration: number | null | undefined): value is number {
-  if (value == null || !Number.isFinite(value) || value < 0) return false;
-  if (duration != null && Number.isFinite(duration) && duration > 0 && value >= duration) return false;
+function inRange(
+  value: number | null | undefined,
+  duration: number | null | undefined,
+): value is number {
+  if (value === null || value === undefined || !Number.isFinite(value) || value < 0) return false;
+  if (duration !== null && duration !== undefined && Number.isFinite(duration) && duration > 0 && value >= duration)
+    return false;
   return true;
 }
 

@@ -7,7 +7,10 @@ import { FakeEngine, FakeMedia, FakeNetwork, FakePage } from './testing/fakes';
 
 const APP = 'https://app.example.test';
 
-function setup(extra: Partial<PlayerControllerOptions> = {}, tokenOverrides: Partial<TokenSource> = {}) {
+function setup(
+  extra: Partial<PlayerControllerOptions> = {},
+  tokenOverrides: Partial<TokenSource> = {},
+) {
   const media = new FakeMedia();
   const engine = new FakeEngine();
   const network = new FakeNetwork();
@@ -16,7 +19,13 @@ function setup(extra: Partial<PlayerControllerOptions> = {}, tokenOverrides: Par
   const tokens: TokenSource = {
     token: 'tok-1',
     masterUrl: `${APP}/api/play/v1/master.m3u8`,
-    refresh: vi.fn().mockResolvedValue({ token: 'tok-2', expiresAt: Date.now() + 1_800_000, masterUrl: `${APP}/api/play/v1/master.m3u8` }),
+    refresh: vi
+      .fn()
+      .mockResolvedValue({
+        token: 'tok-2',
+        expiresAt: Date.now() + 1_800_000,
+        masterUrl: `${APP}/api/play/v1/master.m3u8`,
+      }),
     ...tokenOverrides,
   };
   const onNext = vi.fn();
@@ -36,11 +45,34 @@ function setup(extra: Partial<PlayerControllerOptions> = {}, tokenOverrides: Par
     onUnauthorized,
     ...extra,
   });
-  return { c, media, engine, network, page, save, tokens, onNext, onPreferencesChange, onUnauthorized };
+  return {
+    c,
+    media,
+    engine,
+    network,
+    page,
+    save,
+    tokens,
+    onNext,
+    onPreferencesChange,
+    onUnauthorized,
+  };
 }
 
-const approved: CaptionTrack = { id: 'en', language: 'en', label: 'English', src: '/c/en.vtt', status: 'approved' };
-const review: CaptionTrack = { id: 'yo', language: 'yo', label: 'Yoruba', src: '/c/yo.vtt', status: 'needs_review' };
+const approved: CaptionTrack = {
+  id: 'en',
+  language: 'en',
+  label: 'English',
+  src: '/c/en.vtt',
+  status: 'approved',
+};
+const review: CaptionTrack = {
+  id: 'yo',
+  language: 'yo',
+  label: 'Yoruba',
+  src: '/c/yo.vtt',
+  status: 'needs_review',
+};
 
 async function started(extra: Partial<PlayerControllerOptions> = {}, t: Partial<TokenSource> = {}) {
   const s = setup(extra, t);
@@ -73,7 +105,11 @@ describe('PlayerController', () => {
     it('shows the resume toast with a Start over action', () => {
       const { c } = setup({ resume: { saved: 134, duration: 300 } });
       c.start();
-      expect(c.getState().toast).toMatchObject({ kind: 'resume', message: 'Resumed from 2:14', action: 'start-over' });
+      expect(c.getState().toast).toMatchObject({
+        kind: 'resume',
+        message: 'Resumed from 2:14',
+        action: 'start-over',
+      });
     });
 
     it('starts low on Save-Data and when data saver is on', () => {
@@ -127,7 +163,13 @@ describe('PlayerController', () => {
       media.bufferedRanges = [[0, 40]];
       media.advance(12);
       const s = c.getState();
-      expect(s).toMatchObject({ phase: 'ready', playing: true, currentTime: 12, duration: 300, bufferedEnd: 40 });
+      expect(s).toMatchObject({
+        phase: 'ready',
+        playing: true,
+        currentTime: 12,
+        duration: 300,
+        bufferedEnd: 40,
+      });
       media.pause();
       expect(c.getState().playing).toBe(false);
     });
@@ -151,7 +193,12 @@ describe('PlayerController', () => {
       media.advance(14);
       await vi.advanceTimersByTimeAsync(15_000);
       expect(save).toHaveBeenCalledTimes(1);
-      expect(save.mock.calls[0]?.[0]).toMatchObject({ videoId: 'v1', profileId: 'p1', positionSeconds: 14, durationSeconds: 300 });
+      expect(save.mock.calls[0]?.[0]).toMatchObject({
+        videoId: 'v1',
+        profileId: 'p1',
+        positionSeconds: 14,
+        durationSeconds: 300,
+      });
     });
 
     it('writes on pause, on seek and when the tab hides', async () => {
@@ -172,7 +219,9 @@ describe('PlayerController', () => {
       const { media, save, page } = await started();
       media.advance(33);
       page.pagehide();
-      expect(save).toHaveBeenLastCalledWith(expect.objectContaining({ positionSeconds: 33 }), { beacon: true });
+      expect(save).toHaveBeenLastCalledWith(expect.objectContaining({ positionSeconds: 33 }), {
+        beacon: true,
+      });
     });
 
     it('queues the newest position while offline and sends it when back online', async () => {
@@ -183,7 +232,10 @@ describe('PlayerController', () => {
       expect(save).not.toHaveBeenCalled();
       network.set(true);
       await vi.advanceTimersByTimeAsync(0);
-      expect(save).toHaveBeenCalledWith(expect.objectContaining({ positionSeconds: 20 }), undefined);
+      expect(save).toHaveBeenCalledWith(
+        expect.objectContaining({ positionSeconds: 20 }),
+        undefined,
+      );
     });
 
     it('stops with a sign in prompt on a 401 write', async () => {
@@ -248,7 +300,10 @@ describe('PlayerController', () => {
   describe('network error recovery', () => {
     it('drops one rendition and retries before showing an error', async () => {
       const { c, engine } = await started();
-      engine.emit({ type: 'error', error: { kind: 'network', fatal: true, detail: 'fragLoadError' } });
+      engine.emit({
+        type: 'error',
+        error: { kind: 'network', fatal: true, detail: 'fragLoadError' },
+      });
       expect(engine.dropCalls).toBe(1);
       expect(engine.recovers).toBe(1);
       expect(c.getState().error).toBeNull();
@@ -258,11 +313,17 @@ describe('PlayerController', () => {
       const { c, engine, media, save } = await started();
       engine.canDrop = false;
       media.advance(42);
-      engine.emit({ type: 'error', error: { kind: 'network', fatal: true, detail: 'fragLoadError' } });
+      engine.emit({
+        type: 'error',
+        error: { kind: 'network', fatal: true, detail: 'fragLoadError' },
+      });
       expect(c.getState().error).toBe('connection-lost');
       expect(c.getState().phase).toBe('error');
       expect(media.currentTime).toBe(42);
-      expect(save).toHaveBeenCalledWith(expect.objectContaining({ positionSeconds: 42 }), undefined);
+      expect(save).toHaveBeenCalledWith(
+        expect.objectContaining({ positionSeconds: 42 }),
+        undefined,
+      );
     });
 
     it('ignores non fatal engine errors', async () => {
@@ -358,28 +419,40 @@ describe('PlayerController', () => {
 
     it('treats a 403 on a segment the same way', async () => {
       const { engine, tokens } = await started();
-      engine.emit({ type: 'error', error: { kind: 'forbidden', fatal: true, status: 403, detail: 'fragLoadError' } });
+      engine.emit({
+        type: 'error',
+        error: { kind: 'forbidden', fatal: true, status: 403, detail: 'fragLoadError' },
+      });
       await vi.advanceTimersByTimeAsync(0);
       expect(tokens.refresh).toHaveBeenCalledTimes(1);
       expect(engine.reloads).toHaveLength(1);
     });
 
     it('shows Sign in again when the refresh is refused with 401', async () => {
-      const { c, engine } = await started({}, { refresh: vi.fn().mockRejectedValue(new SessionError('auth')) });
+      const { c, engine } = await started(
+        {},
+        { refresh: vi.fn().mockRejectedValue(new SessionError('auth')) },
+      );
       engine.emit({ type: 'error', error: auth });
       await vi.advanceTimersByTimeAsync(0);
       expect(c.getState().error).toBe('session-expired');
     });
 
     it('shows the removed message when the video is gone', async () => {
-      const { c, engine } = await started({}, { refresh: vi.fn().mockRejectedValue(new SessionError('gone')) });
+      const { c, engine } = await started(
+        {},
+        { refresh: vi.fn().mockRejectedValue(new SessionError('gone')) },
+      );
       engine.emit({ type: 'error', error: auth });
       await vi.advanceTimersByTimeAsync(0);
       expect(c.getState().error).toBe('removed');
     });
 
     it('falls back to Connection lost when the refresh fails on the network', async () => {
-      const { c, engine } = await started({}, { refresh: vi.fn().mockRejectedValue(new SessionError('network')) });
+      const { c, engine } = await started(
+        {},
+        { refresh: vi.fn().mockRejectedValue(new SessionError('network')) },
+      );
       engine.emit({ type: 'error', error: auth });
       await vi.advanceTimersByTimeAsync(0);
       expect(c.getState().error).toBe('connection-lost');
@@ -445,7 +518,10 @@ describe('PlayerController', () => {
 
     it('maps a gone video from the engine to the removed message', async () => {
       const { c, engine } = await started();
-      engine.emit({ type: 'error', error: { kind: 'gone', fatal: true, status: 404, detail: 'manifestLoadError' } });
+      engine.emit({
+        type: 'error',
+        error: { kind: 'gone', fatal: true, status: 404, detail: 'manifestLoadError' },
+      });
       expect(c.getState().error).toBe('removed');
     });
   });
@@ -454,12 +530,19 @@ describe('PlayerController', () => {
     const next = { id: 'v2', title: 'Why the Sky Is Blue' };
 
     it('marks the video finished and runs the autoplay countdown', async () => {
-      const { c, media, save, onNext } = await started({ upNext: next, preferences: { autoplayNext: true }, countdownSeconds: 5 });
+      const { c, media, save, onNext } = await started({
+        upNext: next,
+        preferences: { autoplayNext: true },
+        countdownSeconds: 5,
+      });
       media.advance(299);
       media.finish();
       await vi.advanceTimersByTimeAsync(0);
       expect(c.getState().phase).toBe('ended');
-      expect(save).toHaveBeenLastCalledWith(expect.objectContaining({ ended: true, positionSeconds: 300 }), undefined);
+      expect(save).toHaveBeenLastCalledWith(
+        expect.objectContaining({ ended: true, positionSeconds: 300 }),
+        undefined,
+      );
       expect(c.getState().upNext.countdown).toBe(5);
       await vi.advanceTimersByTimeAsync(3_000);
       expect(c.getState().upNext.countdown).toBe(2);
@@ -477,7 +560,10 @@ describe('PlayerController', () => {
     });
 
     it('Cancel stops the countdown and keeps the card', async () => {
-      const { c, media, onNext } = await started({ upNext: next, preferences: { autoplayNext: true } });
+      const { c, media, onNext } = await started({
+        upNext: next,
+        preferences: { autoplayNext: true },
+      });
       media.finish();
       c.cancelCountdown();
       await vi.advanceTimersByTimeAsync(10_000);
@@ -487,7 +573,10 @@ describe('PlayerController', () => {
     });
 
     it('does not count down when autoplay is off', async () => {
-      const { c, media, onNext } = await started({ upNext: next, preferences: { autoplayNext: false } });
+      const { c, media, onNext } = await started({
+        upNext: next,
+        preferences: { autoplayNext: false },
+      });
       media.finish();
       await vi.advanceTimersByTimeAsync(10_000);
       expect(c.getState().upNext.countdown).toBeNull();
@@ -501,7 +590,10 @@ describe('PlayerController', () => {
     });
 
     it('Play now goes to the next title at once', async () => {
-      const { c, media, onNext } = await started({ upNext: next, preferences: { autoplayNext: true } });
+      const { c, media, onNext } = await started({
+        upNext: next,
+        preferences: { autoplayNext: true },
+      });
       media.finish();
       c.playNext();
       expect(onNext).toHaveBeenCalledWith(next);
@@ -542,10 +634,14 @@ describe('PlayerController', () => {
       c.setVolume(1.4);
       expect(media.volume).toBe(1);
       c.setVolume(0.35);
-      expect(onPreferencesChange).toHaveBeenLastCalledWith(expect.objectContaining({ volume: 0.35 }));
+      expect(onPreferencesChange).toHaveBeenLastCalledWith(
+        expect.objectContaining({ volume: 0.35 }),
+      );
       c.toggleMute();
       expect(media.muted).toBe(true);
-      expect(onPreferencesChange).toHaveBeenLastCalledWith(expect.objectContaining({ muted: true }));
+      expect(onPreferencesChange).toHaveBeenLastCalledWith(
+        expect.objectContaining({ muted: true }),
+      );
     });
 
     it('adjusts volume in 5 percent steps without float drift', async () => {
@@ -606,7 +702,9 @@ describe('PlayerController', () => {
       c.setDataSaver(true);
       expect(c.getState().quality.selected).toBe('auto');
       expect(engine.qualityCalls.at(-1)).toEqual({ selection: 'auto', cap: 360 });
-      expect(onPreferencesChange).toHaveBeenLastCalledWith(expect.objectContaining({ dataSaver: true }));
+      expect(onPreferencesChange).toHaveBeenLastCalledWith(
+        expect.objectContaining({ dataSaver: true }),
+      );
     });
 
     it('hides the menu for a single rendition', async () => {
@@ -628,18 +726,28 @@ describe('PlayerController', () => {
     });
 
     it('starts on or off from the stored preference', () => {
-      expect(setup({ captions: [approved], preferences: { captionsOn: true } }).c.getState().captions.active).toBe('en');
-      expect(setup({ captions: [approved], preferences: { captionsOn: false } }).c.getState().captions.active).toBeNull();
+      expect(
+        setup({ captions: [approved], preferences: { captionsOn: true } }).c.getState().captions
+          .active,
+      ).toBe('en');
+      expect(
+        setup({ captions: [approved], preferences: { captionsOn: false } }).c.getState().captions
+          .active,
+      ).toBeNull();
     });
 
     it('toggles and remembers the choice', () => {
       const { c, onPreferencesChange } = setup({ captions: [approved] });
       c.toggleCaptions();
       expect(c.getState().captions.active).toBe('en');
-      expect(onPreferencesChange).toHaveBeenLastCalledWith(expect.objectContaining({ captionsOn: true, captionLanguage: 'en' }));
+      expect(onPreferencesChange).toHaveBeenLastCalledWith(
+        expect.objectContaining({ captionsOn: true, captionLanguage: 'en' }),
+      );
       c.toggleCaptions();
       expect(c.getState().captions.active).toBeNull();
-      expect(onPreferencesChange).toHaveBeenLastCalledWith(expect.objectContaining({ captionsOn: false }));
+      expect(onPreferencesChange).toHaveBeenLastCalledWith(
+        expect.objectContaining({ captionsOn: false }),
+      );
     });
 
     it('does nothing when there are no tracks', () => {
@@ -650,20 +758,29 @@ describe('PlayerController', () => {
 
     it('picks the profile language when several tracks exist', () => {
       const yo = { ...review, status: 'approved' };
-      const { c } = setup({ captions: [approved, yo], preferences: { captionsOn: true, captionLanguage: 'yo' } });
+      const { c } = setup({
+        captions: [approved, yo],
+        preferences: { captionsOn: true, captionLanguage: 'yo' },
+      });
       expect(c.getState().captions.active).toBe('yo');
     });
 
     it('shows a toast when a track fails and keeps playing', () => {
       const { c } = setup({ captions: [approved], preferences: { captionsOn: true } });
       c.captionFailed('en');
-      expect(c.getState().toast).toMatchObject({ kind: 'error', message: 'Captions could not load' });
+      expect(c.getState().toast).toMatchObject({
+        kind: 'error',
+        message: 'Captions could not load',
+      });
       expect(c.getState().error).toBeNull();
     });
 
     it('falls back to English when another language fails', () => {
       const yo = { ...review, status: 'approved' };
-      const { c } = setup({ captions: [approved, yo], preferences: { captionsOn: true, captionLanguage: 'yo' } });
+      const { c } = setup({
+        captions: [approved, yo],
+        preferences: { captionsOn: true, captionLanguage: 'yo' },
+      });
       c.captionFailed('yo');
       expect(c.getState().captions.active).toBe('en');
     });
@@ -707,7 +824,10 @@ describe('PlayerController', () => {
       expect(media.currentTime).toBe(0);
       expect(c.getState().toast).toBeNull();
       await vi.advanceTimersByTimeAsync(0);
-      expect(save).toHaveBeenLastCalledWith(expect.objectContaining({ positionSeconds: 0 }), undefined);
+      expect(save).toHaveBeenLastCalledWith(
+        expect.objectContaining({ positionSeconds: 0 }),
+        undefined,
+      );
     });
   });
 
@@ -717,7 +837,10 @@ describe('PlayerController', () => {
       media.advance(30);
       c.dispose();
       expect(engine.destroyed).toBe(true);
-      expect(save).toHaveBeenCalledWith(expect.objectContaining({ positionSeconds: 30 }), expect.anything());
+      expect(save).toHaveBeenCalledWith(
+        expect.objectContaining({ positionSeconds: 30 }),
+        expect.anything(),
+      );
       const fn = vi.fn();
       c.subscribe(fn);
       media.advance(40);
@@ -726,7 +849,15 @@ describe('PlayerController', () => {
 
     it('pushes a refreshed token to the engine', async () => {
       const listeners: Array<(s: { token: string }) => void> = [];
-      const { engine } = await started({}, { subscribe: (l) => { listeners.push(l); return () => undefined; } });
+      const { engine } = await started(
+        {},
+        {
+          subscribe: (l) => {
+            listeners.push(l);
+            return () => undefined;
+          },
+        },
+      );
       listeners[0]?.({ token: 'tok-9' });
       expect(engine.tokens.at(-1)).toBe('tok-9');
     });
