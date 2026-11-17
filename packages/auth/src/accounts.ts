@@ -763,6 +763,7 @@ export class AccountService {
     actor: Actor,
     input: { currentPassword: string; newPassword: string },
     meta: RequestMeta,
+    sessionKind: 'viewer' | 'staff' = 'viewer',
   ): Promise<{ session: { token: string; id: string } }> {
     const confirmed = await this.confirmPassword(
       actor,
@@ -790,7 +791,7 @@ export class AccountService {
     await this.deps.sessions.revokeAll(actor.accountId);
     const session = await this.deps.sessions.create({
       accountId: actor.accountId,
-      kind: 'viewer',
+      kind: sessionKind,
       ipTrunc: meta.ipTrunc,
       userAgent: meta.userAgent,
     });

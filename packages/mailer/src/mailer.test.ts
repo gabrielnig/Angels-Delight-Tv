@@ -32,6 +32,17 @@ describe('Mailer', () => {
     expect(transport.outbox[2]?.text).toContain('https://tv.example.org/admin/invite?token=i1');
   });
 
+  it('tells an admin that a staff account was locked without naming the address in full', async () => {
+    const transport = new MemoryTransport();
+    await new Mailer(transport, settings).sendStaffLockoutAlert({
+      to: 'boss@example.org',
+      account: 'e***@example.org',
+      minutes: 30,
+    });
+    expect(transport.outbox[0]?.text).toContain('e***@example.org');
+    expect(transport.outbox[0]?.subject).toMatch(/staff account/i);
+  });
+
   it('url encodes tokens', async () => {
     const transport = new MemoryTransport();
     await new Mailer(transport, settings).sendPasswordReset({

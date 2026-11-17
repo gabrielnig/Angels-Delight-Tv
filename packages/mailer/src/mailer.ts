@@ -165,6 +165,13 @@ export class Mailer {
     return this.deliver(input.to, 'two_factor_reset', { signInUrl: this.url('/admin/login') });
   }
 
+  sendStaffLockoutAlert(input: { to: string; account: string; minutes: number }) {
+    return this.deliver(input.to, 'staff_lockout_alert', {
+      account: input.account,
+      minutes: input.minutes,
+    });
+  }
+
   sendAccountDeleted(input: { to: string }) {
     return this.deliver(input.to, 'account_deleted', {});
   }
