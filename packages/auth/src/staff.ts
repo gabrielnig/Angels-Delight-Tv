@@ -287,6 +287,16 @@ export class StaffService extends AccountService {
     return { factorId: factor.id, step: result.step };
   }
 
+  /** True once the second factor was confirmed, so the sign in page knows whether to enrol or ask for a code. */
+  async twoFactorConfirmed(actor: Actor): Promise<boolean> {
+    const account = await this.staffAccount(actor);
+    const [factor] = await this.deps.db
+      .select({ confirmedAt: schema.mfaFactors.confirmedAt })
+      .from(schema.mfaFactors)
+      .where(eq(schema.mfaFactors.accountId, account.id));
+    return Boolean(factor?.confirmedAt);
+  }
+
   async beginEnrolment(
     actor: Actor,
     _meta: RequestMeta,
