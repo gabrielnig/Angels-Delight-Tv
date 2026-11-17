@@ -1,15 +1,19 @@
 import { schema, withAccount } from '@ad/db';
-import { RATE_POLICIES } from '@ad/security';
-import { hmacSha256, uuidv7 } from '@ad/shared';
-import { eq } from 'drizzle-orm';
+import { LimiterUnavailable, LOCKOUT_POLICIES, RATE_POLICIES } from '@ad/security';
+import { hmacSha256, RateLimited, uuidv7 } from '@ad/shared';
+import { and, eq, isNull } from 'drizzle-orm';
 import { checkCode, findEmailToken, issueEmailToken, voidEmailTokens } from './email-tokens';
 import { emailHash, maskEmail, normalizeEmail } from './identifiers';
 import { findAccountByEmailHash, isUniqueViolation } from './lookup';
 import { checkPassword } from './policy';
 import {
   DEFAULT_AUTH_CONFIG,
+  AccountUnavailable,
   FieldErrors,
+  InvalidCredentials,
   SignUpClosed,
+  TokenRejected,
+  type Actor,
   type AuthConfig,
   type AuthDeps,
   type Logger,
@@ -422,6 +426,361 @@ export class AccountService {
     await this.audit('auth.reset_requested', 'success', meta, {
       accountId: account.id,
       role: account.role,
+    });
+  }
+
+  // ---------------------------------------------------------------------------------------------
+  // Sign in, lockout and sign out
+  // ---------------------------------------------------------------------------------------------
+
+  protected lockKey(hash: Uint8Array): string {
+    return `acct:${Buffer.from(hash).toString('hex')}`;
+  }
+
+  /** Limiter and lockout stores must fail closed on auth routes (M23-S03 AC2). */
+  protected async closed<T>(task: () => Promise<T>): Promise<T> {
+    try {
+      return await task();
+    } catch (error) {
+      if (error instanceof RateLimited || error instanceof LimiterUnavailable) throw error;
+      throw new LimiterUnavailable({ cause: error });
+    }
+  }
+
+  async signIn(
+    input: { email: string; password: string },
+    meta: RequestMeta,
+  ): Promise<
+    | {
+        status: 'signed_in';
+        accountId: string;
+        role: string;
+        session: { token: string; id: string };
+      }
+    | { status: 'needs_verification'; email: string }
+  > {
+    const email = normalizeEmail(input.email);
+    const hash = email ? emailHash(email, this.deps.pepper) : null;
+    const ipKey = this.ipSubject(meta);
+
+    const ip = await this.closed(() => this.deps.limiter.peek(RATE_POLICIES.loginIp, ipKey));
+    if (!ip.allowed) {
+      await this.audit('auth.rate_limited', 'denied', meta, { metadata: { scope: 'login_ip' } });
+      throw new RateLimited(ip.retryAfterSeconds);
+    }
+    if (hash) {
+      const lock = await this.closed(() => this.deps.lockouts.status(this.lockKey(hash)));
+      if (lock.locked) {
+        await this.audit('auth.rate_limited', 'denied', meta, {
+          metadata: { scope: 'login_account' },
+        });
+        throw new RateLimited(lock.retryAfterSeconds);
+      }
+    }
+
+    const account = hash ? await findAccountByEmailHash(this.deps.db, hash) : null;
+    let verified = false;
+    if (account?.passwordHash) {
+      verified = await this.deps.hasher.verify(account.passwordHash, input.password);
+    } else {
+      await this.deps.hasher.verifyDummy(input.password);
+    }
+    if (!account || !verified || !email || !hash) {
+      await this.loginFailed(email, hash, account?.id ?? null, meta, ipKey);
+      throw new InvalidCredentials();
+    }
+
+    if (account.status !== 'active') {
+      await this.audit('auth.login', 'denied', meta, {
+        accountId: account.id,
+        role: account.role,
+        metadata: { reason: 'status' },
+      });
+      throw new AccountUnavailable();
+    }
+
+    await this.closed(() => this.deps.lockouts.clear(this.lockKey(hash)));
+    const state = await withAccount(
+      this.deps.db,
+      { accountId: account.id, role: account.role },
+      async (tx) => {
+        const [row] = await tx
+          .select({ verifiedAt: schema.accounts.emailVerifiedAt })
+          .from(schema.accounts)
+          .where(eq(schema.accounts.id, account.id));
+        if (account.passwordHash && this.deps.hasher.needsRehash(account.passwordHash)) {
+          await tx
+            .update(schema.accounts)
+            .set({ passwordHash: await this.deps.hasher.hash(input.password) })
+            .where(eq(schema.accounts.id, account.id));
+        }
+        return row;
+      },
+    );
+
+    if (!state?.verifiedAt) {
+      this.run(async () => {
+        const allowed = await this.deps.limiter.consume(
+          RATE_POLICIES.verifyResendAccount,
+          this.subject('mail', email),
+        );
+        if (allowed.allowed) await this.sendNewVerification(account.id, email, meta, false);
+      });
+      await this.audit('auth.login', 'success', meta, {
+        accountId: account.id,
+        role: account.role,
+        metadata: { verified: false },
+      });
+      return { status: 'needs_verification', email };
+    }
+
+    const now = this.now();
+    await withAccount(this.deps.db, { accountId: account.id, role: account.role }, (tx) =>
+      tx
+        .update(schema.accounts)
+        .set({ lastLoginAt: now })
+        .where(eq(schema.accounts.id, account.id)),
+    );
+    const session = await this.deps.sessions.create({
+      accountId: account.id,
+      kind: 'viewer',
+      ipTrunc: meta.ipTrunc,
+      userAgent: meta.userAgent,
+    });
+    await this.audit('auth.login', 'success', meta, { accountId: account.id, role: account.role });
+    return {
+      status: 'signed_in',
+      accountId: account.id,
+      role: account.role,
+      session: { token: session.token, id: session.session.id },
+    };
+  }
+
+  private async loginFailed(
+    email: string | null,
+    hash: Uint8Array | null,
+    accountId: string | null,
+    meta: RequestMeta,
+    ipKey: string,
+  ): Promise<void> {
+    await this.closed(() => this.deps.limiter.consume(RATE_POLICIES.loginIp, ipKey));
+    await this.audit('auth.login', 'failure', meta, { accountId });
+    if (!hash || !email) return;
+    await this.registerAccountFailure(hash, accountId, email, meta, LOCKOUT_POLICIES.viewerLogin);
+  }
+
+  /** Counts one failure against the account key and, when it starts a lock, mails the owner at most hourly. */
+  protected async registerAccountFailure(
+    hash: Uint8Array,
+    accountId: string | null,
+    email: string,
+    meta: RequestMeta,
+    policy: typeof LOCKOUT_POLICIES.viewerLogin,
+  ): Promise<void> {
+    const state = await this.closed(() =>
+      this.deps.lockouts.registerFailure(this.lockKey(hash), policy),
+    );
+    if (!state.justLocked) return;
+    await this.audit('auth.lockout', 'denied', meta, {
+      accountId,
+      metadata: { minutes: Math.round(policy.lockSeconds / 60) },
+    });
+    if (!accountId) return;
+    this.run(async () => {
+      const allowed = await this.deps.limiter.consume(
+        RATE_POLICIES.lockoutNoticeAccount,
+        this.subject('acct', accountId),
+      );
+      if (allowed.allowed) {
+        await this.deps.mailer.sendLockoutNotice({
+          to: email,
+          minutes: Math.round(policy.lockSeconds / 60),
+        });
+      }
+    });
+  }
+
+  async signOut(token: string, meta: RequestMeta): Promise<void> {
+    try {
+      const context = await this.deps.sessions.validate(token);
+      await this.deps.sessions.revokeByToken(token);
+      if (context)
+        await this.audit('auth.logout', 'success', meta, {
+          accountId: context.accountId,
+          role: context.role,
+        });
+    } catch (error) {
+      // The cookie is cleared by the caller either way (M01-S10 error case).
+      this.logger.error('sign out failed', { error: String(error) });
+    }
+  }
+
+  // ---------------------------------------------------------------------------------------------
+  // Password reset and change
+  // ---------------------------------------------------------------------------------------------
+
+  protected async loadOwn(accountId: string) {
+    return withAccount(this.deps.db, { accountId, role: 'viewer' }, async (tx) => {
+      const [row] = await tx
+        .select()
+        .from(schema.accounts)
+        .where(eq(schema.accounts.id, accountId));
+      return row ?? null;
+    });
+  }
+
+  /** Marks a token used. False when another request used it first. */
+  protected async consumeToken(tokenId: string, now: Date): Promise<boolean> {
+    const rows = await this.deps.db
+      .update(schema.emailTokens)
+      .set({ usedAt: now })
+      .where(and(eq(schema.emailTokens.id, tokenId), isNull(schema.emailTokens.usedAt)))
+      .returning({ id: schema.emailTokens.id });
+    return rows.length > 0;
+  }
+
+  async resetPassword(
+    input: { token: string; password: string },
+    meta: RequestMeta,
+  ): Promise<void> {
+    const row = await findEmailToken(this.deps.db, input.token);
+    if (!row || row.purpose !== 'reset_password') throw new TokenRejected('invalid');
+    if (row.usedAt) throw new TokenRejected('used');
+    const now = this.now();
+    if (row.expiresAt <= now) throw new TokenRejected('expired');
+    const account = await this.loadOwn(row.accountId);
+    if (!account || account.status !== 'active' || !account.emailEnc || !account.emailHash) {
+      throw new TokenRejected('invalid');
+    }
+    const email = await this.deps.keys.open(account.id, 'email', account.emailEnc);
+    const problem =
+      this.passwordProblem(input.password, email) ?? (await this.breachProblem(input.password));
+    if (problem) throw new FieldErrors({ password: problem });
+    if (
+      account.passwordHash &&
+      (await this.deps.hasher.verify(account.passwordHash, input.password))
+    ) {
+      throw new FieldErrors({ password: 'Choose a different password from your current one' });
+    }
+    const passwordHash = await this.deps.hasher.hash(input.password);
+    if (!(await this.consumeToken(row.id, now))) throw new TokenRejected('used');
+    await withAccount(this.deps.db, { accountId: account.id, role: account.role }, (tx) =>
+      tx
+        .update(schema.accounts)
+        .set({
+          passwordHash,
+          passwordChangedAt: now,
+          emailVerifiedAt: account.emailVerifiedAt ?? now,
+        })
+        .where(eq(schema.accounts.id, account.id)),
+    );
+    await this.deps.sessions.revokeAll(account.id);
+    await this.closed(() => this.deps.lockouts.clear(this.lockKey(account.emailHash!)));
+    await this.audit('auth.password_reset', 'success', meta, {
+      accountId: account.id,
+      role: account.role,
+    });
+    this.run(() => this.deps.mailer.sendPasswordChanged({ to: email }));
+  }
+
+  /**
+   * Re-checks the password of a signed in account. Wrong answers count toward the same lockout as sign in
+   * (M02-S03, M01-S11). On success the session records a fresh reauthentication.
+   */
+  protected async confirmPassword(
+    actor: Actor,
+    password: string,
+    meta: RequestMeta,
+    field: string,
+    message: string,
+    policy: typeof LOCKOUT_POLICIES.viewerLogin = LOCKOUT_POLICIES.viewerLogin,
+  ) {
+    const account = await this.loadOwn(actor.accountId);
+    if (
+      !account ||
+      account.status !== 'active' ||
+      !account.emailHash ||
+      !account.emailEnc ||
+      !account.passwordHash
+    ) {
+      throw new AccountUnavailable();
+    }
+    const key = this.lockKey(account.emailHash);
+    const lock = await this.closed(() => this.deps.lockouts.status(key));
+    if (lock.locked) throw new RateLimited(lock.retryAfterSeconds);
+    if (!(await this.deps.hasher.verify(account.passwordHash, password))) {
+      const email = await this.deps.keys.open(account.id, 'email', account.emailEnc);
+      await this.registerAccountFailure(account.emailHash, account.id, email, meta, policy);
+      await this.audit('auth.reauth', 'failure', meta, {
+        accountId: account.id,
+        role: account.role,
+      });
+      throw new FieldErrors({ [field]: message });
+    }
+    await this.closed(() => this.deps.lockouts.clear(key));
+    await this.deps.sessions.markReauth(actor.sessionId);
+    return {
+      account,
+      passwordHash: account.passwordHash,
+      email: () => this.deps.keys.open(account.id, 'email', account.emailEnc!),
+    };
+  }
+
+  /** Confirms the password for a sensitive action and returns when it was confirmed. */
+  async reauthenticate(actor: Actor, password: string, meta: RequestMeta): Promise<void> {
+    await this.confirmPassword(actor, password, meta, 'password', 'Password is not right');
+  }
+
+  async changePassword(
+    actor: Actor,
+    input: { currentPassword: string; newPassword: string },
+    meta: RequestMeta,
+  ): Promise<{ session: { token: string; id: string } }> {
+    const confirmed = await this.confirmPassword(
+      actor,
+      input.currentPassword,
+      meta,
+      'currentPassword',
+      'Current password is not right',
+    );
+    const email = await confirmed.email();
+    if (input.newPassword === input.currentPassword) {
+      throw new FieldErrors({ newPassword: 'Choose a different password from your current one' });
+    }
+    const problem =
+      this.passwordProblem(input.newPassword, email) ??
+      (await this.breachProblem(input.newPassword));
+    if (problem) throw new FieldErrors({ newPassword: problem });
+    const passwordHash = await this.deps.hasher.hash(input.newPassword);
+    const now = this.now();
+    await withAccount(this.deps.db, { accountId: actor.accountId, role: actor.role }, (tx) =>
+      tx
+        .update(schema.accounts)
+        .set({ passwordHash, passwordChangedAt: now })
+        .where(eq(schema.accounts.id, actor.accountId)),
+    );
+    await this.deps.sessions.revokeAll(actor.accountId);
+    const session = await this.deps.sessions.create({
+      accountId: actor.accountId,
+      kind: 'viewer',
+      ipTrunc: meta.ipTrunc,
+      userAgent: meta.userAgent,
+    });
+    await this.deps.sessions.markReauth(session.session.id);
+    await this.audit('auth.password_changed', 'success', meta, {
+      accountId: actor.accountId,
+      role: actor.role,
+    });
+    this.run(() => this.deps.mailer.sendPasswordChanged({ to: email }));
+    return { session: { token: session.token, id: session.session.id } };
+  }
+
+  async signOutEverywhere(actor: Actor, password: string, meta: RequestMeta): Promise<void> {
+    await this.confirmPassword(actor, password, meta, 'password', 'Password is not right');
+    await this.deps.sessions.revokeAll(actor.accountId);
+    await this.audit('auth.sign_out_everywhere', 'success', meta, {
+      accountId: actor.accountId,
+      role: actor.role,
     });
   }
 
