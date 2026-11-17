@@ -169,3 +169,20 @@ export interface MyAccount {
   passwordChangedAt: string | null;
   sessions: SessionRow[];
 }
+
+export interface JobRecord {
+  id: string;
+  kind: 'encode' | 'captions' | 'poster' | 'email' | 'cleanup';
+  state: 'failed' | 'dead';
+  subject: string;
+  attempts: number;
+  maxAttempts: number;
+  lastError: string;
+  failedAt: string;
+}
+
+export interface StorageUsage {
+  type: 'video' | 'poster' | 'caption' | 'other';
+  bytes: number;
+  files: number;
+}
