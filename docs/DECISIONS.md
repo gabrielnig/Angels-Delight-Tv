@@ -179,3 +179,9 @@ Format: decision, options considered, why, reversible or not. Newest first. Deci
 - Decision: ingest returns 202 even when storage fails, drops bots, admin previews and unknown videos silently, and answers 429 with `Retry-After` only for rate limits. The browser client never throws and never retries across page loads. The rate limiter is the `@ad/security` one (structural interface), so the limits are enforced by the same Postgres buckets (`rate_limit_buckets`).
 - Why: M19-S01 says an event write failure must never affect playback.
 - Reversible: yes.
+
+## D-037 Upload sessions: resume, replace and cleanup (lane D)
+- Decision: a second `create` with the same fingerprint while a session is open returns that session (resume). Replace creates a session on the existing video and swaps the source only after the new upload completes, removing the old original, renditions, key and media prefix, and rotating `mediaPrefix`. Replace is refused while the video is published or scheduled. Sessions idle for 48 hours (`expires_at` moves on every part request) are aborted by `uploads.cleanup`, and a draft video that never got a source is deleted with its session. Generic or empty browser MIME types are accepted for mkv and mov because browsers send nothing for them, the extension decides and the magic bytes are checked in `video.probe`.
+- Options: refuse a second session, keep the old rendition files until the next publish, trust the declared MIME.
+- Why: matches M13-S05, S08, S11 and ARCHITECTURE section 7. A new `mediaPrefix` means the CDN never serves stale segments (ARCHITECTURE section 12).
+- Reversible: yes.

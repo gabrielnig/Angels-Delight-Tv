@@ -308,6 +308,9 @@ importers:
       '@ad/db':
         specifier: workspace:*
         version: link:../db
+      '@ad/queue':
+        specifier: workspace:*
+        version: link:../queue
       '@ad/shared':
         specifier: workspace:*
         version: link:../shared
