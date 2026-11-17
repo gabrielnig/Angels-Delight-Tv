@@ -50,7 +50,17 @@ import {
   readActiveProfile,
   signActiveProfile,
 } from './active-profile';
+import { z } from 'zod';
 import { errorResponse, json, parseWith, queryObject, readJson } from './http';
+
+/** The player's progress sink shape (`ProgressUpdate` in @ad/player): seconds, not milliseconds. */
+const watchProgressBody = z.object({
+  videoId: saveProgressBody.shape.videoId,
+  profileId: saveProgressBody.shape.profileId,
+  positionSeconds: z.number().finite().min(0).max(86_400),
+  durationSeconds: z.number().finite().min(0).max(86_400 * 7).optional(),
+  ended: z.boolean().optional(),
+});
 
 /** Everything the viewer routes need from the outside. Production wiring is in runtime.ts, tests pass their own. */
 export interface ViewerRuntime {
@@ -261,6 +271,21 @@ export function createViewerApi(rt: ViewerRuntime) {
         { mutating: true },
       ),
     },
+
+    /** POST /api/watch/progress, the route the player's HTTP sink and sendBeacon call. Same service as /api/progress. */
+    watchProgress: guard(
+      async (req, actor) => {
+        const body = parseWith(watchProgressBody, await readJson(req));
+        const progress = await saveProgress(rt.ctx, actor, {
+          profileId: body.profileId,
+          videoId: body.videoId,
+          positionMs: Math.round(body.positionSeconds * 1000),
+          ended: body.ended === true ? true : undefined,
+        });
+        return json({ progress });
+      },
+      { mutating: true },
+    ),
 
     myList: {
       list: guard(async (req, actor) => {
