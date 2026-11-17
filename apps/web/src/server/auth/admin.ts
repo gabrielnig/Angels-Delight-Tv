@@ -40,6 +40,7 @@ export async function realAdminActor(): Promise<AdminActor | null> {
     accountId: session.accountId,
     role,
     name: await nameFor(session.accountId, role, session.sessionId),
+    sessionId: session.sessionId,
   };
 }
 

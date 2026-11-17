@@ -29,3 +29,8 @@ export async function revokeInviteAction(id: string) {
 export async function changeRoleAction(id: string, role: string) {
   return run((a) => peopleService.changeRole(a, String(id), roleOf(role)));
 }
+
+export async function reauthenticateAction(password: string) {
+  const actor = await requireActor('/admin/roles');
+  return peopleService.reauthenticate(actor, String(password));
+}
