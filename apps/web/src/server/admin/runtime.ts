@@ -9,7 +9,10 @@ import type { Actor } from '@ad/shared';
 import { CaptionService } from '@ad/video';
 import { recordAudit } from '@ad/audit';
 import { createStorage, storageConfigFromEnv } from '@ad/storage';
+import type { KeyService, SessionService, StaffService } from '@ad/auth';
+import type { RequestMeta } from '@ad/auth';
 import { getServices } from '@/lib/runtime/services';
+import { authRuntime } from '@/server/auth/runtime';
 
 /** What the real admin services need from the process. Tests install a fake with `setAdminRuntime`. */
 export interface AdminRuntime {
@@ -21,6 +24,12 @@ export interface AdminRuntime {
   captions(): Promise<CaptionService>;
   /** Display names for staff accounts, by account id. Unknown ids are left out. */
   names(actor: Actor, ids: readonly string[]): Promise<Map<string, string>>;
+  /** The auth services behind people, roles and my account (lane B). */
+  auth(): { staff: StaffService; sessions: SessionService; keys: KeyService };
+  /** The current time. Tests install a fixed clock. */
+  now(): Date;
+  /** Who is asking, for rate limits and audit. */
+  meta(): Promise<RequestMeta>;
 }
 
 const slot = Symbol.for('ad.admin.runtime');
@@ -41,6 +50,13 @@ export function setAdminRuntime(
     names: async () => new Map(),
     captions: async () => {
       throw new Error('This test did not provide a caption service');
+    },
+    auth: () => {
+      throw new Error('This test did not provide the auth services');
+    },
+    now: () => new Date(),
+    meta: async () => {
+      throw new Error('This test did not provide request details');
     },
     ...runtime,
   };
@@ -114,11 +130,16 @@ function build(): AdminRuntime {
         },
       });
     },
+    auth: () => {
+      const { staff, sessions, keys } = authRuntime();
+      return { staff, sessions, keys };
+    },
+    now: () => new Date(),
+    meta: async () => (await import('@/server/auth/session')).requestMeta(),
     async names(actor, ids) {
       const out = new Map<string, string>();
       const unique = [...new Set(ids)];
       if (!unique.length) return out;
-      const { authRuntime } = await import('@/server/auth/runtime');
       const result = await getServices().db.execute<{ id: string; email_enc: Buffer }>(
         sql`SELECT id, email_enc FROM staff_directory(${actor.accountId}::uuid, ${sql`ARRAY[${sql.join(
           unique.map((id) => sql`${id}::uuid`),

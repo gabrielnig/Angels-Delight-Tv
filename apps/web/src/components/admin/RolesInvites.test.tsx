@@ -14,7 +14,13 @@ const ok = () => vi.fn().mockResolvedValue({ ok: true });
 const now = Date.now();
 
 function roles(canManage = true) {
-  const actions = { invite: ok(), resend: ok(), revoke: ok(), changeRole: ok() };
+  const actions = {
+    invite: ok(),
+    resend: ok(),
+    revoke: ok(),
+    changeRole: ok(),
+    reauthenticate: ok(),
+  };
   render(
     <ToastProvider>
       <RolesInvites
@@ -42,6 +48,18 @@ describe('RolesInvites', () => {
     expect(a.changeRole).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole('button', { name: 'Change role' }));
     await waitFor(() => expect(a.changeRole).toHaveBeenCalledWith('stf_2', 'admin'));
+  });
+  it('asks for the password when the server wants a recent confirmation, then retries', async () => {
+    const a = roles();
+    a.invite
+      .mockResolvedValueOnce({ ok: false, error: 'Confirm your password to continue.', reauth: true })
+      .mockResolvedValueOnce({ ok: true });
+    fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'new@example.test' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Send invite' }));
+    fireEvent.change(await screen.findByLabelText('Password'), { target: { value: 'secret-pass' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Confirm' }));
+    await waitFor(() => expect(a.invite).toHaveBeenCalledTimes(2));
+    expect(a.reauthenticate).toHaveBeenCalledWith('secret-pass', undefined);
   });
   it('marks an expired invite in words', () => {
     roles();
