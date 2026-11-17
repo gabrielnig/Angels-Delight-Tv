@@ -72,6 +72,10 @@ const webShape = {
   TRUSTED_PROXY_MODE: z.enum(['none', 'cloudflare']).default('none'),
   EDGE_TOKEN_MODE: z.enum(['off', 'worker']).optional(),
   DEV_SKIP_MFA: bool.default(false),
+  /** Kill switch for the service worker (M25-S02). Off serves a worker that clears caches and unregisters. */
+  PWA_ENABLED: bool.default(true),
+  /** Build id for cache names, logs and error reports. Set by CI to the git sha. */
+  APP_VERSION: z.string().min(1).max(64).default('dev'),
 
   DATABASE_URL: postgresUrl,
   KEYS_DATABASE_URL: postgresUrl,

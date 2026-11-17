@@ -27,7 +27,9 @@ describe('adminStatusOf', () => {
   });
 
   it('shows draft for a new video with no details yet', () => {
-    expect(adminStatusOf({ ...base, title: '', status: 'ready', captionState: 'none' })).toBe('draft');
+    expect(adminStatusOf({ ...base, title: '', status: 'ready', captionState: 'none' })).toBe(
+      'draft',
+    );
   });
 
   it('failure wins over publish state', () => {
@@ -51,7 +53,12 @@ describe('publishChecklist and canPublish', () => {
   });
 
   it('names what is missing in plain words', () => {
-    const video = { ...base, posterId: null, captionState: 'needs_review' as const, suitability: null };
+    const video = {
+      ...base,
+      posterId: null,
+      captionState: 'needs_review' as const,
+      suitability: null,
+    };
     const result = canPublish(video, { requireApprovedCaptions: true });
     expect(result.ok).toBe(false);
     expect(result.blockers.map((b) => b.key)).toEqual(['poster', 'captions', 'suitability']);

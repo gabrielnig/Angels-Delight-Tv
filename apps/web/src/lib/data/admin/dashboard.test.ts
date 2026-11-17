@@ -8,9 +8,15 @@ const editor = { accountId: 'e', role: 'editor', name: 'Ngozi Eze' } as const;
 
 describe('greeting', () => {
   it('uses the first name, the time of day and the number of things to do', () => {
-    expect(greeting('Chiamaka Okafor', 8, 4)).toBe('Good morning, Chiamaka. Four things need you today.');
-    expect(greeting('Chiamaka Okafor', 14, 1)).toBe('Good afternoon, Chiamaka. One thing needs you today.');
-    expect(greeting('Chiamaka Okafor', 20, 0)).toBe('Good evening, Chiamaka. Nothing needs you right now.');
+    expect(greeting('Chiamaka Okafor', 8, 4)).toBe(
+      'Good morning, Chiamaka. Four things need you today.',
+    );
+    expect(greeting('Chiamaka Okafor', 14, 1)).toBe(
+      'Good afternoon, Chiamaka. One thing needs you today.',
+    );
+    expect(greeting('Chiamaka Okafor', 20, 0)).toBe(
+      'Good evening, Chiamaka. Nothing needs you right now.',
+    );
   });
 });
 

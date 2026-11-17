@@ -43,7 +43,11 @@ export async function pendingAccountId(): Promise<string | null> {
 /** Same origin admin paths only, so a crafted next parameter cannot send people elsewhere. */
 export function safeNext(value: unknown): string {
   if (typeof value !== 'string') return '/admin';
-  return /^\/admin(\/[A-Za-z0-9._~\-/]*)?(\?[A-Za-z0-9._~\-=&%]*)?$/.test(value) && !value.includes('//') && !value.includes('..') ? value : '/admin';
+  return /^\/admin(\/[A-Za-z0-9._~\-/]*)?(\?[A-Za-z0-9._~\-=&%]*)?$/.test(value) &&
+    !value.includes('//') &&
+    !value.includes('..')
+    ? value
+    : '/admin';
 }
 
 export function allowed(actor: AdminActor, action: AdminAction): boolean {

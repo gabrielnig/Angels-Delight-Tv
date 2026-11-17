@@ -44,7 +44,9 @@ describe('uploader engine: happy path', () => {
     const { transport, uploader } = make();
     uploader.add(fakeFile('a.mp4', 20 * MIB));
     await settled(uploader);
-    const sizes = transport.partCalls.sort((a, b) => a.partNumber - b.partNumber).map((c) => c.size);
+    const sizes = transport.partCalls
+      .sort((a, b) => a.partNumber - b.partNumber)
+      .map((c) => c.size);
     expect(sizes).toEqual([PART, PART, 4 * MIB]);
   });
 
@@ -86,7 +88,10 @@ describe('uploader engine: parallelism', () => {
   });
 
   it('honours custom concurrency', async () => {
-    const { transport, uploader } = make({ gated: true }, { fileConcurrency: 1, partConcurrency: 1 });
+    const { transport, uploader } = make(
+      { gated: true },
+      { fileConcurrency: 1, partConcurrency: 1 },
+    );
     uploader.add(fakeFile('a.mp4', 3 * PART));
     uploader.add(fakeFile('b.mp4', 3 * PART));
     await transport.untilInFlight(1);
@@ -349,10 +354,7 @@ describe('uploader engine: offline', () => {
 describe('uploader engine: speed and eta', () => {
   it('reports speed and time left from recent progress', async () => {
     let clock = 0;
-    const { transport, uploader } = make(
-      { gated: true },
-      { now: () => clock, partConcurrency: 1 },
-    );
+    const { transport, uploader } = make({ gated: true }, { now: () => clock, partConcurrency: 1 });
     uploader.add(fakeFile('a.mp4', 4 * PART));
     await transport.untilInFlight(1);
     clock = 1000;

@@ -10,7 +10,10 @@ export const metadata: Metadata = { title: 'Accept invite' };
  */
 export default function AcceptInvitePage() {
   return (
-    <AuthLayout title="This invite has expired" lead="Invites last 7 days and work once. Ask the person who invited you to send a new one.">
+    <AuthLayout
+      title="This invite has expired"
+      lead="Invites last 7 days and work once. Ask the person who invited you to send a new one."
+    >
       <LinkButton href="/admin/login" variant="primary">
         Go to admin sign in
       </LinkButton>

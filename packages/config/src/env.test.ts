@@ -72,6 +72,8 @@ describe('loadWebEnv', () => {
     expect(env.MAX_UPLOAD_BYTES).toBe(5 * 1024 ** 3);
     expect(env.COOKIE_PREFIX_SECURE).toBe(false);
     expect(env.TRUSTED_PROXY_MODE).toBe('none');
+    expect(env.PWA_ENABLED).toBe(true);
+    expect(env.APP_VERSION).toBe('dev');
     expect(env.BUCKET_ORIGINALS).toBe('ad-originals');
   });
 

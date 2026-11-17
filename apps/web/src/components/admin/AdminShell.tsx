@@ -71,7 +71,10 @@ export function AdminShell({ platformName, actor, counts, signOut, children }: S
                   const count = item.countKey ? counts[item.countKey] : 0;
                   return (
                     <li key={item.href}>
-                      <Link href={item.href} aria-current={isActive(item, pathname) ? 'page' : undefined}>
+                      <Link
+                        href={item.href}
+                        aria-current={isActive(item, pathname) ? 'page' : undefined}
+                      >
                         <Icon name={item.icon} />
                         <span>{item.label}</span>
                         {count > 0 ? (
@@ -89,7 +92,14 @@ export function AdminShell({ platformName, actor, counts, signOut, children }: S
           ))}
         </nav>
       </aside>
-      {open ? <button type="button" className="adm-scrim" aria-label="Close menu" onClick={() => setOpen(false)} /> : null}
+      {open ? (
+        <button
+          type="button"
+          className="adm-scrim"
+          aria-label="Close menu"
+          onClick={() => setOpen(false)}
+        />
+      ) : null}
 
       <div className="adm-main">
         <header className="adm-top">
@@ -106,7 +116,13 @@ export function AdminShell({ platformName, actor, counts, signOut, children }: S
           </button>
           <form className="adm-search" role="search" action="/admin/videos" method="get">
             <Icon name="search" size={18} />
-            <input type="search" name="q" aria-label="Search videos" placeholder="Search videos" autoComplete="off" />
+            <input
+              type="search"
+              name="q"
+              aria-label="Search videos"
+              placeholder="Search videos"
+              autoComplete="off"
+            />
           </form>
           <span className="adm-top__space" />
           {uploads.count > 0 ? (
@@ -141,7 +157,8 @@ export function AdminShell({ platformName, actor, counts, signOut, children }: S
         </header>
         {!online ? (
           <div className="adm-offline" role="status">
-            <Icon name="alert" size={18} /> You are offline. Uploads will continue when you are back online.
+            <Icon name="alert" size={18} /> You are offline. Uploads will continue when you are back
+            online.
           </div>
         ) : null}
         <main id="adm-main" className="adm-content" tabIndex={-1}>
