@@ -185,3 +185,14 @@ Format: decision, options considered, why, reversible or not. Newest first. Deci
 - Options: refuse a second session, keep the old rendition files until the next publish, trust the declared MIME.
 - Why: matches M13-S05, S08, S11 and ARCHITECTURE section 7. A new `mediaPrefix` means the CDN never serves stale segments (ARCHITECTURE section 12).
 - Reversible: yes.
+
+## D-037 Service worker caches static files only (lane I)
+- Decision: the worker caches hashed build files, icons, fonts and public posters (when CORS readable), plus a precached offline page. Page HTML, API responses, admin pages, video playlists, segments, keys and captions are never stored, and a request with Range or Authorization is never touched. A failed navigation shows `/offline`. Updates wait until nothing is playing, apply on navigation or when the page is hidden, then show an "Updated" notice. `PWA_ENABLED=false` serves a worker that clears every cache and unregisters. The worker text is served by `/sw.js` with the build id (`APP_VERSION`) baked in.
+- Options: also cache page HTML for "recently opened" (S34), or use a build tool such as Workbox.
+- Why: pages are personal and phones are shared, so stale or leaked HTML is worse than an offline screen. A short worker with a tested policy is easier to audit than generated code. The "Recently opened" list in S34 can be added later from a local list of titles without caching HTML.
+- Reversible: yes.
+
+## D-038 Install prompt and Data saver defaults (lane I)
+- Decision: install banner after two visits at least 3 days apart, hidden 30 days after Not now, never after two dismissals or an install. iPhone Safari gets the three step sheet, other iPhone browsers the open in Safari notice. Data saver defaults on for Save-Data or a slow effective type, the viewer's saved choice always wins, and the choice is stored per profile in local storage with an `onChange` hook for the profile service to persist it. Quality cap 360p, posters 320 px.
+- Why: matches M25-S01 and M25-S03. Server side persistence waits for the profile service.
+- Reversible: yes.
