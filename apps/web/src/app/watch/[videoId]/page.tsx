@@ -2,7 +2,12 @@ import '@ad/player/player.css';
 import type { Metadata } from 'next';
 import { cookies } from 'next/headers';
 import { notFound } from 'next/navigation';
-import { getPlaybackData, getViewerContext, getTransport } from '@/lib/data/playback.server';
+import {
+  getPlaybackData,
+  getProgressTransport,
+  getTransport,
+  getViewerContext,
+} from '@/lib/data/playback.server';
 import { BROWSE_PATH, HOME_PATH } from '@/features/player/routes';
 import { parseStartAt } from '@/features/player/start-at';
 import { UpNextList } from '@/features/player/UpNextList';
@@ -24,7 +29,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
 export default async function WatchPage({ params, searchParams }: PageProps) {
   const [{ videoId }, query] = await Promise.all([params, searchParams]);
-  const viewer = await getViewerContext(await cookies());
+  const viewer = await getViewerContext(await cookies(), `/watch/${videoId}`);
   const lookup = await getPlaybackData().getWatchData(videoId, viewer);
 
   if (lookup.status === 'not-found') notFound();
@@ -56,6 +61,7 @@ export default async function WatchPage({ params, searchParams }: PageProps) {
           data={data}
           viewer={viewer}
           transport={getTransport()}
+          progressTransport={getProgressTransport()}
           startAt={parseStartAt(query.t)}
         >
           <WatchDetails data={data} />

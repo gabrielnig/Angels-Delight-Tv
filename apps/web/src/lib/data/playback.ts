@@ -7,6 +7,8 @@ import type { CaptionTrack, PlayerPreferences, RelatedItem, UpNextItem } from '@
  */
 
 export interface ViewerContext {
+  /** Set by the real viewer wiring. Fixtures have no account. */
+  accountId?: string;
   profileId: string;
   /** True on a kids profile. */
   kids: boolean;
