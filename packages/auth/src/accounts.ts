@@ -486,6 +486,7 @@ export class AccountService {
         session: { token: string; id: string };
       }
     | { status: 'needs_verification'; email: string }
+    | { status: 'use_admin_login' }
   > {
     const email = normalizeEmail(input.email);
     const hash = email ? emailHash(email, this.deps.pepper) : null;
@@ -516,6 +517,16 @@ export class AccountService {
     if (!account || !verified || !email || !hash) {
       await this.loginFailed(email, hash, account?.id ?? null, meta, ipKey);
       throw new InvalidCredentials();
+    }
+
+    // L-6: staff sign in at /admin/login only. Reached only with the right password, so a wrong guess learns nothing.
+    if (account.role === 'editor' || account.role === 'admin') {
+      await this.audit('auth.login', 'denied', meta, {
+        accountId: account.id,
+        role: account.role,
+        metadata: { reason: 'staff_use_admin_login' },
+      });
+      return { status: 'use_admin_login' };
     }
 
     if (account.status !== 'active') {
