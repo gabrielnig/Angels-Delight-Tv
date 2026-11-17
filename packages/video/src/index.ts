@@ -10,3 +10,4 @@ export * from './vtt';
 export * from './upload';
 export * from './http/respond';
 export * from './dev/storage-route';
+export * from './encode';
