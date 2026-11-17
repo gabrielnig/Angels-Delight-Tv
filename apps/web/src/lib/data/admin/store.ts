@@ -1,4 +1,4 @@
-import type { CategoryRecord, SeriesRecord, VideoRecord } from './types';
+import type { CaptionTrack, CategoryRecord, SeriesRecord, VideoRecord } from './types';
 import { videoStub } from './video-rules';
 
 /** In memory fixture data. One copy per server process, shared by every fixture service. */
@@ -6,6 +6,7 @@ export interface AdminStore {
   videos: VideoRecord[];
   categories: CategoryRecord[];
   series: SeriesRecord[];
+  captions: Record<string, CaptionTrack>;
   settings: { requireApprovedCaptions: boolean };
   /** Oldest first. Last entry is yesterday. Deterministic so charts are stable. */
   dailyViews: number[];
@@ -212,7 +213,7 @@ export function seedStore(now = Date.now()): AdminStore {
     return Math.round((1500 + day * 9) * rhythm);
   });
 
-  return { videos, categories, series, settings: { requireApprovedCaptions: true }, dailyViews };
+  return { videos, categories, series, captions: {}, settings: { requireApprovedCaptions: true }, dailyViews };
 }
 
 const GLOBAL_KEY = Symbol.for('ad.admin.fixture.store');
@@ -221,7 +222,7 @@ export function getStore(): AdminStore {
   const holder = globalThis as unknown as Record<symbol, AdminStore | undefined>;
   // A store from an older build (dev hot reload) lacks newer collections, so reseed it.
   const existing = holder[GLOBAL_KEY];
-  if (existing && Array.isArray(existing.series)) return existing;
+  if (existing && Array.isArray(existing.series) && existing.captions) return existing;
   return (holder[GLOBAL_KEY] = seedStore());
 }
 
