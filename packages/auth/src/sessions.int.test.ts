@@ -34,9 +34,17 @@ describe.skipIf(!integrationEnabled())('SessionService', () => {
   it('issues an opaque token and stores only its hash', async () => {
     at(0);
     const account = await newAccount();
-    const { token } = await sessions.create({ accountId: account.id, kind: 'viewer', ipTrunc: '203.0.113.0/24', userAgent: 'Mozilla/5.0' });
+    const { token } = await sessions.create({
+      accountId: account.id,
+      kind: 'viewer',
+      ipTrunc: '203.0.113.0/24',
+      userAgent: 'Mozilla/5.0',
+    });
     expect(token).toMatch(/^[A-Za-z0-9_-]{43}$/);
-    const rows = await dbs.admin.db.select().from(schema.sessions).where(eq(schema.sessions.accountId, account.id));
+    const rows = await dbs.admin.db
+      .select()
+      .from(schema.sessions)
+      .where(eq(schema.sessions.accountId, account.id));
     expect(rows).toHaveLength(1);
     expect(Buffer.from(rows[0]!.tokenHash).toString('utf8')).not.toContain(token);
     expect(rows[0]!.tokenHash).toHaveLength(32);
@@ -47,7 +55,12 @@ describe.skipIf(!integrationEnabled())('SessionService', () => {
     const account = await newAccount({ role: 'editor' });
     const { token } = await sessions.create({ accountId: account.id, kind: 'viewer' });
     const context = await sessions.validate(token);
-    expect(context).toMatchObject({ accountId: account.id, role: 'editor', emailVerified: true, mfaVerified: false });
+    expect(context).toMatchObject({
+      accountId: account.id,
+      role: 'editor',
+      emailVerified: true,
+      mfaVerified: false,
+    });
   });
 
   it('returns null for unknown, empty and malformed tokens', async () => {
@@ -60,7 +73,10 @@ describe.skipIf(!integrationEnabled())('SessionService', () => {
     at(0);
     const account = await newAccount();
     const { token } = await sessions.create({ accountId: account.id, kind: 'viewer' });
-    expect(DEFAULT_SESSION_POLICIES.viewer).toEqual({ idleSeconds: 30 * 86400, absoluteSeconds: 90 * 86400 });
+    expect(DEFAULT_SESSION_POLICIES.viewer).toEqual({
+      idleSeconds: 30 * 86400,
+      absoluteSeconds: 90 * 86400,
+    });
     at(29 * 86400);
     expect(await sessions.validate(token)).not.toBeNull();
     at(29 * 86400 + 30 * 86400 + 1);
@@ -85,11 +101,17 @@ describe.skipIf(!integrationEnabled())('SessionService', () => {
     const { token } = await sessions.create({ accountId: account.id, kind: 'viewer' });
     at(10);
     await sessions.validate(token);
-    let [row] = await dbs.admin.db.select().from(schema.sessions).where(eq(schema.sessions.accountId, account.id));
+    let [row] = await dbs.admin.db
+      .select()
+      .from(schema.sessions)
+      .where(eq(schema.sessions.accountId, account.id));
     expect(row!.lastSeenAt.getTime()).toBe(START);
     at(61);
     await sessions.validate(token);
-    [row] = await dbs.admin.db.select().from(schema.sessions).where(eq(schema.sessions.accountId, account.id));
+    [row] = await dbs.admin.db
+      .select()
+      .from(schema.sessions)
+      .where(eq(schema.sessions.accountId, account.id));
     expect(row!.lastSeenAt.getTime()).toBe(START + 61_000);
   });
 
@@ -117,9 +139,15 @@ describe.skipIf(!integrationEnabled())('SessionService', () => {
     at(0);
     const account = await newAccount();
     const { token } = await sessions.create({ accountId: account.id, kind: 'viewer' });
-    await dbs.admin.db.update(schema.accounts).set({ status: 'suspended' }).where(eq(schema.accounts.id, account.id));
+    await dbs.admin.db
+      .update(schema.accounts)
+      .set({ status: 'suspended' })
+      .where(eq(schema.accounts.id, account.id));
     expect(await sessions.validate(token)).toBeNull();
-    const [row] = await dbs.admin.db.select().from(schema.sessions).where(eq(schema.sessions.accountId, account.id));
+    const [row] = await dbs.admin.db
+      .select()
+      .from(schema.sessions)
+      .where(eq(schema.sessions.accountId, account.id));
     expect(row!.revokedAt).not.toBeNull();
   });
 
@@ -206,8 +234,15 @@ describe.skipIf(!integrationEnabled())('SessionService', () => {
   it('truncates a very long user agent instead of failing', async () => {
     at(0);
     const account = await newAccount();
-    const { session } = await sessions.create({ accountId: account.id, kind: 'viewer', userAgent: 'x'.repeat(500) });
-    const [row] = await dbs.admin.db.select().from(schema.sessions).where(eq(schema.sessions.id, session.id));
+    const { session } = await sessions.create({
+      accountId: account.id,
+      kind: 'viewer',
+      userAgent: 'x'.repeat(500),
+    });
+    const [row] = await dbs.admin.db
+      .select()
+      .from(schema.sessions)
+      .where(eq(schema.sessions.id, session.id));
     expect(row!.userAgent).toHaveLength(200);
   });
 });

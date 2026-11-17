@@ -60,7 +60,8 @@ function countClasses(value: string): number {
 
 function hasSequence(value: string): boolean {
   const lower = value.toLowerCase();
-  if (/(?:0123|1234|2345|3456|4567|5678|6789|abcd|bcde|cdef|qwer|asdf|zxcv)/.test(lower)) return true;
+  if (/(?:0123|1234|2345|3456|4567|5678|6789|abcd|bcde|cdef|qwer|asdf|zxcv)/.test(lower))
+    return true;
   return /(19|20)\d{2}$/.test(lower);
 }
 
@@ -94,8 +95,16 @@ export function checkPassword(password: string, email: string): PasswordCheck {
       label: `At least ${PASSWORD_MIN_LENGTH} characters`,
       passed: empty ? null : length >= PASSWORD_MIN_LENGTH && length <= PASSWORD_MAX_LENGTH,
     },
-    { id: 'not_common', label: 'Not a very common password', passed: empty ? null : !isCommon(password) },
-    { id: 'not_email', label: 'Not the same as your email', passed: empty ? null : !matchesEmail(password, email) },
+    {
+      id: 'not_common',
+      label: 'Not a very common password',
+      passed: empty ? null : !isCommon(password),
+    },
+    {
+      id: 'not_email',
+      label: 'Not the same as your email',
+      passed: empty ? null : !matchesEmail(password, email),
+    },
   ];
   return {
     ok: rules.every((rule) => rule.passed === true),

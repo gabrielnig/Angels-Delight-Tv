@@ -9,7 +9,8 @@ export function normalizeEmail(input: string): string | null {
   if (!value || /[\s\r\n<>,;]/.test(value)) return null;
   if (value.split('@').length !== 2) return null;
   const [local = '', domain = ''] = value.split('@');
-  if (!local || !domain.includes('.') || domain.startsWith('.') || domain.endsWith('.')) return null;
+  if (!local || !domain.includes('.') || domain.startsWith('.') || domain.endsWith('.'))
+    return null;
   return emailSchema.safeParse(value).success ? value : null;
 }
 

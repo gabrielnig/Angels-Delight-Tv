@@ -13,7 +13,16 @@ describe('normalizeEmail', () => {
   });
 
   it('rejects malformed addresses', () => {
-    for (const bad of ['', 'plain', 'a@', '@b.com', 'a b@c.com', 'a@b', 'a@@b.com', 'a@b.com\r\nBcc: x@y.z']) {
+    for (const bad of [
+      '',
+      'plain',
+      'a@',
+      '@b.com',
+      'a b@c.com',
+      'a@b',
+      'a@@b.com',
+      'a@b.com\r\nBcc: x@y.z',
+    ]) {
       expect(normalizeEmail(bad), bad).toBeNull();
     }
   });
@@ -32,7 +41,9 @@ describe('emailHash', () => {
 
   it('depends on the pepper', () => {
     const other = new Uint8Array(32).fill(8);
-    expect(Buffer.from(emailHash('a@b.co', pepper)).equals(Buffer.from(emailHash('a@b.co', other)))).toBe(false);
+    expect(
+      Buffer.from(emailHash('a@b.co', pepper)).equals(Buffer.from(emailHash('a@b.co', other))),
+    ).toBe(false);
   });
 });
 

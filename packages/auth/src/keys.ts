@@ -70,12 +70,16 @@ export class KeyService {
 
   async seal(accountId: string, column: string, plaintext: string): Promise<Buffer> {
     const dek = await this.get(accountId);
-    return Buffer.from(encryptAesGcm(dek, enc.encode(plaintext), enc.encode(`${accountId}:${column}`)));
+    return Buffer.from(
+      encryptAesGcm(dek, enc.encode(plaintext), enc.encode(`${accountId}:${column}`)),
+    );
   }
 
   async open(accountId: string, column: string, sealed: Uint8Array): Promise<string> {
     const dek = await this.get(accountId);
-    return dec.decode(decryptAesGcm(dek, new Uint8Array(sealed), enc.encode(`${accountId}:${column}`)));
+    return dec.decode(
+      decryptAesGcm(dek, new Uint8Array(sealed), enc.encode(`${accountId}:${column}`)),
+    );
   }
 
   /** The crypto shredding step. Returns false when there was no key left, so a retry is harmless. */
