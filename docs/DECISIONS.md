@@ -214,6 +214,32 @@ Format: decision, options considered, why, reversible or not. Newest first. Deci
 
 ## D-044 Key loader keeps the hls.js context intact (lane G)
 - Decision: the ad-key:// loader passes a copy of the context to hls.js and returns the original to callbacks, because hls.js looks keys up by context.url. Found by the Playwright smoke.
+
+
+## D-045 Fonts through next/font, not fontBaseUrl (lane E)
+- Decision: the root layout loads Inter, Poppins, Nunito, Lora and Atkinson through `next/font/local` (latin and latin-ext woff2 in `apps/web/src/fonts`) and sets `--font-sans` inline on html. Lora is display only; body stays Inter, matching `buildThemeCss`. `getThemeInjection` is called without `fontBaseUrl`.
+- Options: serve `/fonts/{key}.woff2` as lane H expects.
+- Why: next/font gives hashed immutable URLs, preload and size-adjust fallbacks with no extra route.
+- Reversible: yes.
+
+## D-046 Fixture data layer behind swappable interfaces (lane E)
+- Decision: all viewer pages read through `lib/data` accessors (`getCatalog`, `getLibrary`, `getProfiles`, `getAuth`, `getAccount`, `getSite`) with in-memory fixtures. A fixture session in `lib/session.ts` uses cookies `ad_fixture` and `ad_profile`; default is signed in as the first profile. `setDataForTests` swaps implementations.
+- Why: lanes B and C were not on main when the pages were built. Replacing a fixture with the real service is a one file change per accessor.
+- Reversible: yes.
+
+## D-047 LinkProvider for ui links (lane E)
+- Decision: `@ad/ui` renders plain anchors by default. `LinkProvider` in the app supplies `next/link`.
+- Why: keeps the package free of a Next dependency and testable in plain jsdom.
+- Reversible: yes.
+
+## D-048 Password strength uses zxcvbn, loaded on demand (lane E)
+- Decision: `PasswordField` lazy loads `zxcvbn` on first typing and shows text plus a meter. Minimum length 10 stays the hard rule.
+- Why: keeps the initial bundle small; strength is advice, not a gate.
+- Reversible: yes.
+
+## D-049 Web vitest uses oxc JSX (lane E)
+- Decision: `apps/web/vitest.config.ts` sets `oxc: { jsx: { runtime: 'automatic' } }`; component tests opt into jsdom per file with a docblock.
+- Why: the esbuild option no longer parses tsx under Vitest 5.
 - Reversible: yes.
 
 ## D-045 Captions: audio bytes to Whisper, status mapping and public captions (lane D)
