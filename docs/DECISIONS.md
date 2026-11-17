@@ -215,3 +215,25 @@ Format: decision, options considered, why, reversible or not. Newest first. Deci
 ## D-044 Key loader keeps the hls.js context intact (lane G)
 - Decision: the ad-key:// loader passes a copy of the context to hls.js and returns the original to callbacks, because hls.js looks keys up by context.url. Found by the Playwright smoke.
 - Reversible: yes.
+
+## D-045 Captions: audio bytes to Whisper, status mapping and public captions (lane D)
+- Decision: the worker extracts mono 16 kHz WAV and posts the bytes to the Whisper service, so the service needs no storage credentials and no network path to storage. Drafts live in the originals bucket under `captions-draft/`, approved files are copied to the media bucket under `cap/{prefix}/` and served unsigned by the edge (captions are not secret). Review status `in_review` maps to the database value `needs_review`.
+- Options: send a presigned url to Whisper, or serve captions through the app.
+- Why: bytes keep the Whisper container isolated. Captions carry no secret and need caching.
+- Reversible: yes.
+
+## D-046 Thumbnails and probe re-download (lane D)
+- Decision: thumbnail candidates are stored as webp assets with raw key `candidates/{videoId}/{n}`, the poster defaults to the middle candidate. Probe, encode and thumbnails each download the source again instead of sharing scratch space, so any step can be retried alone on a fresh worker.
+- Why: retries and crash recovery stay simple, the cost is extra download time on the local network.
+- Reversible: yes.
+
+## D-047 Playback delivery: edge serves cap and img unsigned, segments signed (lane D)
+- Decision: `apps/edge` verifies HMAC only for `v/` keys, serves `cap/` and `img/` without a signature, drops `exp` and `sig` from the cache key, and allows CORS only for the app origin. Segment urls last 6 hours by default (`segmentTtlSeconds`) because a VOD playlist is fetched once. Missing, unpublished, deleted or kids-hidden videos return 404 from the session route, and the key route re-checks publish state and kids rules on every request.
+- Options: short segment urls with periodic playlist refresh.
+- Why: refresh adds player complexity and failure modes for no gain, the key route stays the real gate.
+- Reversible: yes.
+
+## D-048 Purge of deleted videos (lane D)
+- Decision: soft deleted videos are purged after 30 days (`graceDays`) by the nightly `videos.purge_deleted` cron, which queues one `video.purge` job per video. Purge deletes media, originals, templates, draft captions and the script, then hard deletes the row, and refuses to touch a video that is not soft deleted. Poster and hero assets are left to the image lane.
+- Why: gives staff a recovery window and keeps the destructive step small, repeatable and guarded.
+- Reversible: the grace period is configurable, deleted files are not recoverable.
