@@ -1,5 +1,5 @@
 import { Readable } from 'node:stream';
-import type { LocalStorage} from '@ad/storage';
+import type { LocalStorage } from '@ad/storage';
 import { verifyLocalUrl } from '@ad/storage';
 
 export interface DevStorageDeps {
