@@ -1,5 +1,6 @@
 import { and, desc, eq, gte, inArray, sql } from 'drizzle-orm';
-import { profiles, watchProgress, withAccount } from '@ad/db';
+import type { profiles} from '@ad/db';
+import { watchProgress, withAccount } from '@ad/db';
 import { isUuid, NotFound, RateLimited, type Actor } from '@ad/shared';
 import {
   episodeOrder,
