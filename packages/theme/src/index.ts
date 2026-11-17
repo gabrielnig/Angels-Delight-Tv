@@ -9,3 +9,7 @@ export * from './inject';
 export * from './logo';
 export * from './service';
 export * from './store';
+export * from './html-sanitize';
+export * from './settings-registry';
+export * from './settings-service';
+export * from './settings-store';

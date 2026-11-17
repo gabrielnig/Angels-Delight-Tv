@@ -1,0 +1,346 @@
+import { z } from 'zod';
+
+/**
+ * Typed registry of every key in the `settings` table (docs/DATA-MODEL.md 8.2, M29).
+ * Each key has a schema, a safe default (used when the row is missing or unreadable), whether the value is
+ * exposed to the browser, and which tier may change it. Secrets are never stored here.
+ */
+
+const text = (max: number) => z.string().trim().max(max);
+const bool = z.boolean();
+const int = (min: number, max: number) => z.number().int().min(min).max(max);
+
+const hostname = z
+  .string()
+  .trim()
+  .toLowerCase()
+  .max(253)
+  .refine(
+    (value) =>
+      value === '' || /^(?=.{1,253}$)([a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,}$/.test(value),
+    {
+      message: 'Enter a domain such as angelsdelight.tv, without https://',
+    },
+  );
+
+const email = z
+  .string()
+  .trim()
+  .max(254)
+  .refine((value) => value === '' || /^[^\s@<>"']+@[^\s@<>"']+\.[^\s@<>"']{2,}$/.test(value), {
+    message: 'Enter a valid email address',
+  });
+
+const language = z
+  .string()
+  .trim()
+  .regex(/^[a-z]{2,3}(-[A-Za-z]{2,4})?$/, 'Use a language code such as en or yo');
+
+const socialLink = z.object({
+  label: z.string().trim().min(1).max(30),
+  url: z
+    .string()
+    .trim()
+    .max(300)
+    .refine((value) => {
+      try {
+        return new URL(value).protocol === 'https:';
+      } catch {
+        return false;
+      }
+    }, 'Use a full https:// link'),
+});
+
+const maintenanceBanner = z.object({
+  enabled: bool,
+  message: text(200),
+  startsAt: z.string().datetime().nullable(),
+  endsAt: z.string().datetime().nullable(),
+});
+
+export type SettingTier = 'admin' | 'super';
+export type SettingGroup =
+  'platform' | 'features' | 'limits' | 'content' | 'legal' | 'analytics' | 'maintenance';
+
+interface Def<S extends z.ZodType> {
+  schema: S;
+  default: z.infer<S>;
+  isPublic: boolean;
+  tier: SettingTier;
+  group: SettingGroup;
+  label: string;
+  description: string;
+}
+
+function def<S extends z.ZodType>(value: Def<S>): Def<S> {
+  return value;
+}
+
+const GIB = 1024 ** 3;
+
+export const SETTING_DEFS = {
+  'platform.name': def({
+    schema: text(60).min(1, 'Platform name is required'),
+    default: 'Angels Delight TV',
+    isPublic: true,
+    tier: 'admin',
+    group: 'platform',
+    label: 'Platform name',
+    description: 'Shown in the header, page titles, emails and the app name',
+  }),
+  'platform.tagline': def({
+    schema: text(120),
+    default: '',
+    isPublic: true,
+    tier: 'admin',
+    group: 'platform',
+    label: 'Tagline',
+    description: 'One short line under the name',
+  }),
+  'platform.canonical_host': def({
+    schema: hostname,
+    default: '',
+    isPublic: false,
+    tier: 'admin',
+    group: 'platform',
+    label: 'Domain',
+    description: 'The public domain, without https://',
+  }),
+  'platform.support_email': def({
+    schema: email,
+    default: '',
+    isPublic: true,
+    tier: 'admin',
+    group: 'platform',
+    label: 'Support email',
+    description: 'Where viewers can reach you',
+  }),
+  'platform.footer_text': def({
+    schema: text(200),
+    default: '',
+    isPublic: true,
+    tier: 'admin',
+    group: 'platform',
+    label: 'Footer text',
+    description: 'Shown at the bottom of every page',
+  }),
+  'platform.social_links': def({
+    schema: z.array(socialLink).max(6),
+    default: [] as { label: string; url: string }[],
+    isPublic: true,
+    tier: 'admin',
+    group: 'platform',
+    label: 'Social links',
+    description: 'Up to six links',
+  }),
+  'features.signups_open': def({
+    schema: bool,
+    default: true,
+    isPublic: true,
+    tier: 'super',
+    group: 'features',
+    label: 'Open sign up',
+    description: 'Anyone can create an account. Off means invite code only.',
+  }),
+  'features.kids_profiles': def({
+    schema: bool,
+    default: true,
+    isPublic: true,
+    tier: 'super',
+    group: 'features',
+    label: 'Kids profiles',
+    description: 'Viewers can create kids profiles',
+  }),
+  'features.my_list': def({
+    schema: bool,
+    default: true,
+    isPublic: true,
+    tier: 'super',
+    group: 'features',
+    label: 'My List',
+    description: 'Viewers can save titles to My List',
+  }),
+  'features.autoplay_hero': def({
+    schema: bool,
+    default: false,
+    isPublic: true,
+    tier: 'super',
+    group: 'features',
+    label: 'Auto rotate hero',
+    description: 'The hero changes every 7 seconds',
+  }),
+  'features.data_saver_default': def({
+    schema: bool,
+    default: false,
+    isPublic: true,
+    tier: 'super',
+    group: 'features',
+    label: 'Data saver by default',
+    description: 'New viewers start with data saver on',
+  }),
+  'features.require_approved_captions': def({
+    schema: bool,
+    default: true,
+    isPublic: false,
+    tier: 'super',
+    group: 'features',
+    label: 'Require approved captions',
+    description: 'A video needs approved captions before it can be published',
+  }),
+  'limits.max_profiles': def({
+    schema: int(1, 10),
+    default: 5,
+    isPublic: false,
+    tier: 'super',
+    group: 'limits',
+    label: 'Profiles per account',
+    description: 'Between 1 and 10',
+  }),
+  'limits.max_sessions': def({
+    schema: int(1, 10),
+    default: 5,
+    isPublic: false,
+    tier: 'super',
+    group: 'limits',
+    label: 'Sessions per account',
+    description: 'Between 1 and 10',
+  }),
+  'limits.upload_max_bytes': def({
+    schema: int(10 * 1024 * 1024, 5 * GIB),
+    default: 5 * GIB,
+    isPublic: false,
+    tier: 'super',
+    group: 'limits',
+    label: 'Upload size limit',
+    description: 'Between 10 MB and 5 GB per file',
+  }),
+  'limits.lockout_attempts': def({
+    schema: int(3, 20),
+    default: 5,
+    isPublic: false,
+    tier: 'super',
+    group: 'limits',
+    label: 'Failed sign ins before lockout',
+    description: 'Between 3 and 20',
+  }),
+  'limits.lockout_minutes': def({
+    schema: int(1, 1440),
+    default: 15,
+    isPublic: false,
+    tier: 'super',
+    group: 'limits',
+    label: 'Lockout minutes',
+    description: 'Between 1 and 1440',
+  }),
+  'playback.finish_percent': def({
+    schema: int(80, 100),
+    default: 95,
+    isPublic: false,
+    tier: 'super',
+    group: 'limits',
+    label: 'Finished at percent',
+    description: 'A video counts as finished at this share watched',
+  }),
+  'playback.start_threshold_seconds': def({
+    schema: int(0, 60),
+    default: 5,
+    isPublic: false,
+    tier: 'super',
+    group: 'limits',
+    label: 'Start threshold seconds',
+    description: 'Under this, a video starts from the beginning',
+  }),
+  'playback.rewind_seconds': def({
+    schema: int(0, 30),
+    default: 3,
+    isPublic: false,
+    tier: 'super',
+    group: 'limits',
+    label: 'Rewind on resume seconds',
+    description: 'Resume this many seconds earlier',
+  }),
+  'content.default_language': def({
+    schema: language,
+    default: 'en',
+    isPublic: true,
+    tier: 'admin',
+    group: 'content',
+    label: 'Default language',
+    description: 'Language of captions and the interface',
+  }),
+  'content.languages': def({
+    schema: z.array(language).min(1).max(12),
+    default: ['en'],
+    isPublic: true,
+    tier: 'admin',
+    group: 'content',
+    label: 'Caption languages',
+    description: 'Languages offered for captions',
+  }),
+  'legal.terms_version': def({
+    schema: text(40),
+    default: 'v0',
+    isPublic: true,
+    tier: 'admin',
+    group: 'legal',
+    label: 'Terms version',
+    description: 'Changes when the terms page is published',
+  }),
+  'legal.privacy_version': def({
+    schema: text(40),
+    default: 'v0',
+    isPublic: true,
+    tier: 'admin',
+    group: 'legal',
+    label: 'Privacy version',
+    description: 'Changes when the privacy page is published',
+  }),
+  'analytics.raw_retention_days': def({
+    schema: int(7, 730),
+    default: 90,
+    isPublic: false,
+    tier: 'super',
+    group: 'analytics',
+    label: 'Raw view event retention (days)',
+    description: 'Between 7 and 730',
+  }),
+  'maintenance.banner': def({
+    schema: maintenanceBanner,
+    default: { enabled: false, message: '', startsAt: null, endsAt: null } as z.infer<
+      typeof maintenanceBanner
+    >,
+    isPublic: true,
+    tier: 'admin',
+    group: 'maintenance',
+    label: 'Notice banner',
+    description: 'A slim notice shown on every page',
+  }),
+  'maintenance.mode': def({
+    schema: bool,
+    default: false,
+    isPublic: true,
+    tier: 'super',
+    group: 'maintenance',
+    label: 'Maintenance mode',
+    description: 'Viewers see a maintenance page, admins can still sign in',
+  }),
+} as const;
+
+export type SettingKey = keyof typeof SETTING_DEFS;
+export type SettingValue<K extends SettingKey> = z.infer<(typeof SETTING_DEFS)[K]['schema']>;
+export type ResolvedSettings = { [K in SettingKey]: SettingValue<K> };
+
+export const SETTING_KEYS = Object.keys(SETTING_DEFS) as SettingKey[];
+export const PUBLIC_SETTING_KEYS = SETTING_KEYS.filter((key) => SETTING_DEFS[key].isPublic);
+
+export function isSettingKey(key: string): key is SettingKey {
+  return Object.prototype.hasOwnProperty.call(SETTING_DEFS, key);
+}
+
+export function defaultSettings(): ResolvedSettings {
+  return Object.fromEntries(
+    SETTING_KEYS.map((key) => [key, structuredClone(SETTING_DEFS[key].default)]),
+  ) as ResolvedSettings;
+}
+
+export type PublicSettings = Partial<{ [K in SettingKey]: SettingValue<K> }>;
