@@ -11,13 +11,19 @@ export async function updateNameAction(name: string) {
   return result;
 }
 
-export async function changePasswordAction(current: string, next: string, confirm: string) {
+export async function changePasswordAction(
+  current: string,
+  next: string,
+  confirm: string,
+  code: string,
+) {
   const actor = await requireActor('/admin/account');
   const result = await accountService.changePassword(
     actor,
     String(current),
     String(next),
     String(confirm),
+    String(code),
   );
   revalidatePath('/admin/account');
   return result;
@@ -30,9 +36,9 @@ export async function revokeSessionAction(sessionId: string) {
   return result;
 }
 
-export async function regenerateCodesAction(password: string) {
+export async function regenerateCodesAction(code: string) {
   const actor = await requireActor('/admin/account');
-  const result = await accountService.regenerateCodes(actor, String(password));
+  const result = await accountService.regenerateCodes(actor, String(code).replace(/\s/g, ''));
   revalidatePath('/admin/account');
   return result;
 }

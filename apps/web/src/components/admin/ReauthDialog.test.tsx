@@ -28,7 +28,11 @@ function Harness({
   );
 }
 
-const needsReauth: CommandResult = { ok: false, error: 'Confirm your password to continue.', reauth: true };
+const needsReauth: CommandResult = {
+  ok: false,
+  error: 'Confirm your password to continue.',
+  reauth: true,
+};
 
 describe('useReauth', () => {
   it('passes a result straight through when no confirmation is needed', async () => {
@@ -56,11 +60,7 @@ describe('useReauth', () => {
   it('shows a wrong password in the dialog and keeps it open', async () => {
     const reauthenticate = vi.fn().mockResolvedValue({ ok: false, error: 'Password is not right' });
     render(
-      <Harness
-        work={async () => needsReauth}
-        reauthenticate={reauthenticate}
-        onDone={vi.fn()}
-      />,
+      <Harness work={async () => needsReauth} reauthenticate={reauthenticate} onDone={vi.fn()} />,
     );
     fireEvent.click(screen.getByRole('button', { name: 'Go' }));
     fireEvent.change(await screen.findByLabelText('Password'), { target: { value: 'nope' } });
@@ -72,9 +72,7 @@ describe('useReauth', () => {
   it('also asks for the authenticator code when required', async () => {
     const work = vi.fn().mockResolvedValueOnce(needsReauth).mockResolvedValueOnce({ ok: true });
     const reauthenticate = vi.fn().mockResolvedValue({ ok: true });
-    render(
-      <Harness work={work} reauthenticate={reauthenticate} withCode onDone={vi.fn()} />,
-    );
+    render(<Harness work={work} reauthenticate={reauthenticate} withCode onDone={vi.fn()} />);
     fireEvent.click(screen.getByRole('button', { name: 'Go' }));
     fireEvent.change(await screen.findByLabelText('Password'), { target: { value: 'pw' } });
     fireEvent.change(screen.getByLabelText('Authenticator code'), { target: { value: '123 456' } });

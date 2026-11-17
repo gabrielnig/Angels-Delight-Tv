@@ -12,7 +12,10 @@ const minutes = (seconds: number) => Math.max(1, Math.ceil(seconds / 60));
  * Turns what the lane B services throw into the plain results the admin screens show.
  * Anything not listed is a real fault and is rethrown for the error page.
  */
-export function staffFailure(error: unknown, notFound = 'That person was not found.'): CommandResult {
+export function staffFailure(
+  error: unknown,
+  notFound = 'That person was not found.',
+): CommandResult {
   if (error instanceof ReauthRequired) return fail('Confirm your password to continue.', true);
   if (error instanceof FieldErrors) {
     const first = Object.values(error.fields)[0];
@@ -33,9 +36,7 @@ export function staffFailure(error: unknown, notFound = 'That person was not fou
   if (error instanceof NotFound) return fail(notFound);
   if (error instanceof Conflict) {
     return fail(
-      error.message.includes('Super admin')
-        ? 'There must be at least one admin.'
-        : error.message,
+      error.message.includes('Super admin') ? 'There must be at least one admin.' : error.message,
     );
   }
   throw error;

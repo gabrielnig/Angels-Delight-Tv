@@ -46,7 +46,7 @@ import {
   updateName,
 } from './account-commands';
 import type { FieldResult } from './account-commands';
-import { fixtureEmailOf } from './session';
+import { FIXTURE_CODE, fixtureEmailOf } from './session';
 import type { MyAccount } from './types';
 import type { DayRange } from '@ad/analytics';
 import { buildFixtureOverview, buildFixtureVideo } from './analytics-rules';
@@ -519,6 +519,8 @@ export interface PeopleService {
   staff(actor: AdminActor): Promise<{ staff: StaffRecord[]; invites: InviteRecord[] }>;
   /** Confirms the staff member's password so a sensitive action can follow (D-069). */
   reauthenticate(actor: AdminActor, password: string): Promise<CommandResult>;
+  /** An admin clears another person's authenticator after confirming with their own code. */
+  resetTwoFactor(actor: AdminActor, staffId: string, code: string): Promise<CommandResult>;
   invite(actor: AdminActor, email: string, role: 'editor' | 'admin'): Promise<CommandResult>;
   resendInvite(actor: AdminActor, id: string): Promise<CommandResult>;
   revokeInvite(actor: AdminActor, id: string): Promise<CommandResult>;
@@ -561,6 +563,16 @@ const fixturePeopleService: PeopleService = {
   async reauthenticate(actor, password) {
     need(actor, 'roles.change');
     return password.length > 0 ? { ok: true } : { ok: false, error: 'Password is not right' };
+  },
+  async resetTwoFactor(actor, staffId, code) {
+    need(actor, 'roles.change');
+    if (staffId === actor.accountId)
+      return { ok: false, error: 'Use a recovery code to reset your own two factor sign in' };
+    if (code !== FIXTURE_CODE) return { ok: false, error: 'That code is not right' };
+    const member = getStore().staff.find((m) => m.id === staffId);
+    if (!member) return { ok: false, error: 'That person was not found.' };
+    member.twoFactor = false;
+    return { ok: true };
   },
   async invite(actor, email, role) {
     need(actor, 'roles.change');
@@ -661,11 +673,14 @@ export interface AccountService {
     current: string,
     next: string,
     confirm: string,
+    /** The 6 digit authenticator code (D-069). */
+    code: string,
   ): Promise<FieldResult>;
   revokeSession(actor: AdminActor, sessionId: string): Promise<FieldResult>;
   regenerateCodes(
     actor: AdminActor,
-    password: string,
+    /** The 6 digit authenticator code (D-069). */
+    code: string,
   ): Promise<{ ok: false; field: string; error: string } | { ok: true; codes: string[] }>;
 }
 
@@ -673,7 +688,7 @@ const own = (actor: AdminActor) =>
   ensureAccount(getStore(), actor, fixtureEmailOf(actor.accountId), Date.now());
 
 /** Every call acts on the signed in person only. There is no account id parameter to forge. */
-export const accountService: AccountService = {
+const fixtureAccountService: AccountService = {
   async get(actor) {
     need(actor, 'account.own');
     return structuredClone(own(actor));
@@ -683,24 +698,24 @@ export const accountService: AccountService = {
     own(actor);
     return updateName(getStore(), actor, name, Date.now());
   },
-  async changePassword(actor, current, next, confirm) {
+  async changePassword(actor, current, next, confirm, code) {
     need(actor, 'account.own');
     own(actor);
-    return changePassword(getStore(), actor, current, next, confirm, Date.now());
+    return changePassword(getStore(), actor, current, next, confirm, code, Date.now());
   },
   async revokeSession(actor, sessionId) {
     need(actor, 'account.own');
     own(actor);
     return revokeSession(getStore(), actor, sessionId, Date.now());
   },
-  async regenerateCodes(actor, password) {
+  async regenerateCodes(actor, code) {
     need(actor, 'account.own');
     own(actor);
     const generate = () =>
       randomBytes(5)
         .toString('hex')
         .replace(/^(.{5})/, '$1-');
-    return regenerateRecoveryCodes(getStore(), actor, password, generate, Date.now());
+    return regenerateRecoveryCodes(getStore(), actor, code, generate, Date.now());
   },
 };
 
@@ -765,4 +780,8 @@ export const captionService: CaptionService = delegating(
 export const peopleService: PeopleService = delegating(
   fixturePeopleService,
   async () => (await import('./real/people')).realPeopleService,
+);
+export const accountService: AccountService = delegating(
+  fixtureAccountService,
+  async () => (await import('./real/account')).realAccountService,
 );

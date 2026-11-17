@@ -26,6 +26,8 @@ export interface AdminRuntime {
   names(actor: Actor, ids: readonly string[]): Promise<Map<string, string>>;
   /** The auth services behind people, roles and my account (lane B). */
   auth(): { staff: StaffService; sessions: SessionService; keys: KeyService };
+  /** Puts a new session cookie on the response, after a password change rotates the session. */
+  setSession(token: string): Promise<void>;
   /** The current time. Tests install a fixed clock. */
   now(): Date;
   /** Who is asking, for rate limits and audit. */
@@ -55,6 +57,9 @@ export function setAdminRuntime(
       throw new Error('This test did not provide the auth services');
     },
     now: () => new Date(),
+    setSession: async () => {
+      throw new Error('This test did not provide a session cookie writer');
+    },
     meta: async () => {
       throw new Error('This test did not provide request details');
     },
@@ -81,6 +86,46 @@ export function titleCaseFromEmail(email: string): string {
   return (words.length ? words : ['Staff'])
     .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
     .join(' ');
+}
+
+/** Display names for staff accounts through the `staff_directory` function. Unknown or unreadable ids are left out. */
+export async function staffNames(
+  db: Database,
+  keys: KeyService,
+  actor: Actor,
+  ids: readonly string[],
+): Promise<Map<string, string>> {
+  const out = new Map<string, string>();
+  const unique = [...new Set(ids)];
+  if (!unique.length) return out;
+  const result = await db.execute<{
+    id: string;
+    email_enc: Buffer;
+    display_name_enc: Buffer | null;
+  }>(
+    sql`SELECT id, email_enc, display_name_enc FROM staff_directory(${actor.accountId}::uuid, ${sql`ARRAY[${sql.join(
+      unique.map((id) => sql`${id}::uuid`),
+      sql`, `,
+    )}]`})`,
+  );
+  for (const row of result.rows) {
+    try {
+      if (row.display_name_enc) {
+        out.set(
+          row.id,
+          await keys.open(row.id, 'display_name', new Uint8Array(row.display_name_enc)),
+        );
+      } else {
+        out.set(
+          row.id,
+          titleCaseFromEmail(await keys.open(row.id, 'email', new Uint8Array(row.email_enc))),
+        );
+      }
+    } catch {
+      // A name that cannot be opened is shown as unknown rather than failing the page.
+    }
+  }
+  return out;
 }
 
 function build(): AdminRuntime {
@@ -135,30 +180,9 @@ function build(): AdminRuntime {
       return { staff, sessions, keys };
     },
     now: () => new Date(),
+    setSession: async (token) =>
+      (await import('@/server/auth/session')).setSessionCookie(token, 'staff'),
     meta: async () => (await import('@/server/auth/session')).requestMeta(),
-    async names(actor, ids) {
-      const out = new Map<string, string>();
-      const unique = [...new Set(ids)];
-      if (!unique.length) return out;
-      const result = await getServices().db.execute<{ id: string; email_enc: Buffer }>(
-        sql`SELECT id, email_enc FROM staff_directory(${actor.accountId}::uuid, ${sql`ARRAY[${sql.join(
-          unique.map((id) => sql`${id}::uuid`),
-          sql`, `,
-        )}]`})`,
-      );
-      for (const row of result.rows) {
-        try {
-          const email = await authRuntime().keys.open(
-            row.id,
-            'email',
-            new Uint8Array(row.email_enc),
-          );
-          out.set(row.id, titleCaseFromEmail(email));
-        } catch {
-          // A name that cannot be opened is shown as unknown rather than failing the page.
-        }
-      }
-      return out;
-    },
+    names: (actor, ids) => staffNames(getServices().db, authRuntime().keys, actor, ids),
   };
 }

@@ -8,7 +8,7 @@ import type { InviteRecord, StaffRecord } from '@/lib/data/admin/types';
 import type { CommandResult } from '@/lib/data/admin/video-commands';
 import { Badge } from './Badge';
 import { Button } from './Button';
-import { ConfirmDialog } from './Dialog';
+import { ConfirmDialog, Dialog } from './Dialog';
 import { SelectField, TextField } from './fields';
 import { Icon } from './Icon';
 import { useReauth } from './ReauthDialog';
@@ -22,6 +22,8 @@ export interface RoleActions {
   changeRole(id: string, role: string): Promise<CommandResult>;
   /** Confirms the signed in person's password before invites and role changes (D-069). */
   reauthenticate(password: string): Promise<CommandResult>;
+  /** Clears another person's authenticator. Needs the admin's own code. */
+  resetTwoFactor(id: string, code: string): Promise<CommandResult>;
 }
 
 const ROLE_OPTIONS = [
@@ -35,12 +37,15 @@ export function RolesInvites({
   invites,
   now,
   canManage,
+  selfId,
   actions,
 }: {
   staff: StaffRecord[];
   invites: InviteRecord[];
   now: number;
   canManage: boolean;
+  /** The signed in person. They cannot reset their own two factor here. */
+  selfId?: string;
   actions: RoleActions;
 }) {
   const { run, busy } = useCommand();
@@ -51,6 +56,9 @@ export function RolesInvites({
   const [pending, setPending] = useState<{ member: StaffRecord; role: string } | null>(null);
   const [cancelInvite, setCancelInvite] = useState<InviteRecord | null>(null);
   const [roleError, setRoleError] = useState<string>();
+  const [resetting, setResetting] = useState<StaffRecord | null>(null);
+  const [resetCode, setResetCode] = useState('');
+  const [resetError, setResetError] = useState<string>();
   const admins = staff.filter((m) => m.role === 'admin').length;
 
   async function invite(e: React.FormEvent) {
@@ -108,6 +116,20 @@ export function RolesInvites({
                     >
                       {m.twoFactor ? 'On' : 'Not set up'}
                     </Badge>
+                    {canManage && m.twoFactor && m.id !== selfId ? (
+                      <Button
+                        variant="ghost"
+                        disabled={busy}
+                        aria-label={`Reset two step sign in for ${m.name}`}
+                        onClick={() => {
+                          setResetCode('');
+                          setResetError(undefined);
+                          setResetting(m);
+                        }}
+                      >
+                        Reset
+                      </Button>
+                    ) : null}
                   </td>
                   <td>{m.lastSignInAt ? formatDateTime(m.lastSignInAt) : 'Never'}</td>
                 </tr>
@@ -177,7 +199,9 @@ export function RolesInvites({
                     <Button
                       disabled={!canManage || busy}
                       aria-label={`Resend invite to ${i.email}`}
-                      onClick={() => run(() => guard(() => actions.resend(i.id)), 'Invite sent again.')}
+                      onClick={() =>
+                        run(() => guard(() => actions.resend(i.id)), 'Invite sent again.')
+                      }
                     >
                       {expired ? 'Send a new invite' : 'Resend'}
                     </Button>
@@ -266,6 +290,54 @@ export function RolesInvites({
           setCancelInvite(null);
         }}
       />
+      <Dialog
+        open={resetting !== null}
+        onClose={() => setResetting(null)}
+        title={`Reset two step sign in for ${resetting?.name ?? 'this person'}?`}
+        description="They are signed out everywhere and must set up their authenticator again at their next sign in. Enter your own 6 digit code to confirm."
+        size="sm"
+        footer={
+          <>
+            <Button variant="ghost" onClick={() => setResetting(null)}>
+              Cancel
+            </Button>
+            <Button
+              variant="danger"
+              type="submit"
+              form="reset-2fa-form"
+              loading={busy}
+              disabled={!resetCode.trim()}
+            >
+              Reset
+            </Button>
+          </>
+        }
+      >
+        <form
+          id="reset-2fa-form"
+          className="adm-stack"
+          noValidate
+          onSubmit={async (e) => {
+            e.preventDefault();
+            if (!resetting) return;
+            const r = await run(
+              () => actions.resetTwoFactor(resetting.id, resetCode.replace(/\s/g, '')),
+              'Two step sign in reset.',
+            );
+            if (r.ok) setResetting(null);
+            else setResetError(r.error);
+          }}
+        >
+          <TextField
+            label="Your authenticator code"
+            inputMode="numeric"
+            autoComplete="one-time-code"
+            value={resetCode}
+            error={resetError}
+            onChange={(e) => setResetCode(e.target.value)}
+          />
+        </form>
+      </Dialog>
       {reauthDialog}
     </div>
   );
