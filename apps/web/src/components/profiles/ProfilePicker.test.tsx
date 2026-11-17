@@ -27,13 +27,21 @@ describe('ProfilePicker', () => {
     render(<ProfilePicker profiles={four} max={5} onSelect={vi.fn()} />);
     expect(screen.getByRole('heading', { level: 1, name: 'Who is watching?' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Switch to Adaeze' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Switch to Amina, Kids profile' })).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'Switch to Amina, Kids profile' }),
+    ).toBeInTheDocument();
   });
 
   it('shows Add profile and Manage profiles', () => {
     render(<ProfilePicker profiles={four} max={5} onSelect={vi.fn()} />);
-    expect(screen.getByRole('link', { name: 'Add profile' })).toHaveAttribute('href', '/profiles/new');
-    expect(screen.getByRole('link', { name: 'Manage profiles' })).toHaveAttribute('href', '/profiles/manage');
+    expect(screen.getByRole('link', { name: 'Add profile' })).toHaveAttribute(
+      'href',
+      '/profiles/new',
+    );
+    expect(screen.getByRole('link', { name: 'Manage profiles' })).toHaveAttribute(
+      'href',
+      '/profiles/manage',
+    );
   });
 
   it('selects a profile with click and with the keyboard', async () => {
@@ -60,13 +68,18 @@ describe('ProfilePicker', () => {
     const five = [...four, profile({ id: 'p5', name: 'Ngozi', owner: false })];
     render(<ProfilePicker profiles={five} max={5} onSelect={vi.fn()} />);
     expect(screen.queryByRole('link', { name: 'Add profile' })).toBeNull();
-    expect(screen.getByText('You have 5 profiles, the most we allow. Delete one to add another.')).toBeInTheDocument();
+    expect(
+      screen.getByText('You have 5 profiles, the most we allow. Delete one to add another.'),
+    ).toBeInTheDocument();
   });
 
   it('invites the first profile when there are none', () => {
     render(<ProfilePicker profiles={[]} max={5} onSelect={vi.fn()} />);
     expect(screen.getByRole('heading', { name: 'Create your first profile' })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Create profile' })).toHaveAttribute('href', '/profiles/new');
+    expect(screen.getByRole('link', { name: 'Create profile' })).toHaveAttribute(
+      'href',
+      '/profiles/new',
+    );
   });
 
   it('shows a skeleton of circles while loading', () => {
@@ -103,7 +116,10 @@ describe('ProfilePicker', () => {
     render(<ProfilePicker profiles={four} max={5} mode="manage" onSelect={vi.fn()} />);
     expect(screen.getByRole('heading', { name: 'Manage profiles' })).toBeInTheDocument();
     const tiles = screen.getByRole('list', { name: 'Profiles' });
-    expect(within(tiles).getByRole('link', { name: 'Edit Emeka' })).toHaveAttribute('href', '/profiles/p2/edit');
+    expect(within(tiles).getByRole('link', { name: 'Edit Emeka' })).toHaveAttribute(
+      'href',
+      '/profiles/p2/edit',
+    );
     expect(screen.getByRole('link', { name: 'Done' })).toHaveAttribute('href', '/profiles');
   });
 });

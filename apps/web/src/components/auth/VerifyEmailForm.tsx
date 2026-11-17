@@ -43,7 +43,8 @@ export function VerifyEmailForm({
       }
       if (result.reason === 'too_many') setState({ kind: 'too_many', minutes: result.minutes });
       else if (result.reason === 'expired') setState({ kind: 'expired' });
-      else if (result.reason === 'network' || result.reason === 'resend_limit') setState({ kind: 'network' });
+      else if (result.reason === 'network' || result.reason === 'resend_limit')
+        setState({ kind: 'network' });
       else setState({ kind: 'wrong' });
     } catch {
       setState({ kind: 'network' });
@@ -62,7 +63,10 @@ export function VerifyEmailForm({
             : undefined;
 
   async function resend() {
-    const result = await onResend().catch(() => ({ ok: false as const, reason: 'network' as const }));
+    const result = await onResend().catch(() => ({
+      ok: false as const,
+      reason: 'network' as const,
+    }));
     setCode('');
     setState({ kind: 'idle' });
     setResendKey((key) => key + 1);
@@ -93,7 +97,9 @@ export function VerifyEmailForm({
         disabled={state.kind === 'too_many'}
         autoFocus
       />
-      {state.kind === 'success' ? <Banner tone="success">Email confirmed. Taking you to choose a profile.</Banner> : null}
+      {state.kind === 'success' ? (
+        <Banner tone="success">Email confirmed. Taking you to choose a profile.</Banner>
+      ) : null}
       {resendNote ? <Banner tone="info">{resendNote}</Banner> : null}
       <div className="web-form__center">
         <ResendCode

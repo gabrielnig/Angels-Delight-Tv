@@ -29,7 +29,15 @@ const TABS = [
   { label: 'My List', href: '/my-list', icon: 'list' as const },
 ];
 
-export function ViewerChrome({ platformName, logoUrl, profileName, kids, footerLinks, year, children }: ChromeProps) {
+export function ViewerChrome({
+  platformName,
+  logoUrl,
+  profileName,
+  kids,
+  footerLinks,
+  year,
+  children,
+}: ChromeProps) {
   const pathname = usePathname();
   const router = useRouter();
   const [exitOpen, setExitOpen] = useState(false);

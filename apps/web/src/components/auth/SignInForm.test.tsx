@@ -4,7 +4,11 @@ import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import { SignInForm } from './SignInForm';
 
-async function fill(user: ReturnType<typeof userEvent.setup>, email = 'ngozi@example.com', password = 'some-password') {
+async function fill(
+  user: ReturnType<typeof userEvent.setup>,
+  email = 'ngozi@example.com',
+  password = 'some-password',
+) {
   await user.type(screen.getByLabelText(/^Email/), email);
   await user.type(screen.getByLabelText('Password'), password);
 }
@@ -21,8 +25,14 @@ describe('SignInForm', () => {
 
   it('links to forgot password and sign up', () => {
     render(<SignInForm onSubmit={vi.fn()} onDone={vi.fn()} signUpOpen />);
-    expect(screen.getByRole('link', { name: 'Forgot your password?' })).toHaveAttribute('href', '/forgot-password');
-    expect(screen.getByRole('link', { name: 'Create an account' })).toHaveAttribute('href', '/sign-up');
+    expect(screen.getByRole('link', { name: 'Forgot your password?' })).toHaveAttribute(
+      'href',
+      '/forgot-password',
+    );
+    expect(screen.getByRole('link', { name: 'Create an account' })).toHaveAttribute(
+      'href',
+      '/sign-up',
+    );
   });
 
   it('hides the sign up link when sign up is closed', () => {
@@ -47,7 +57,9 @@ describe('SignInForm', () => {
     const email = screen.getByLabelText(/^Email/);
     await user.type(email, 'ngozi.eze@gmail');
     await user.tab();
-    expect(screen.getByText('Enter your full email, for example name@example.com.')).toBeInTheDocument();
+    expect(
+      screen.getByText('Enter your full email, for example name@example.com.'),
+    ).toBeInTheDocument();
     await user.type(email, '.com');
     expect(screen.queryByText('Enter your full email, for example name@example.com.')).toBeNull();
   });
@@ -60,7 +72,11 @@ describe('SignInForm', () => {
     render(<SignInForm onSubmit={onSubmit} onDone={onDone} next="/my-list" signUpOpen />);
     await fill(user, ' ngozi@example.com ');
     await user.click(screen.getByRole('button', { name: 'Sign in' }));
-    expect(onSubmit).toHaveBeenCalledWith({ email: 'ngozi@example.com', password: 'some-password', next: '/my-list' });
+    expect(onSubmit).toHaveBeenCalledWith({
+      email: 'ngozi@example.com',
+      password: 'some-password',
+      next: '/my-list',
+    });
     expect(screen.getByRole('button', { name: /Signing in/ })).toHaveAttribute('aria-busy', 'true');
     resolve({ ok: true, next: '/my-list' });
     await waitFor(() => expect(onDone).toHaveBeenCalledWith('/my-list'));
@@ -68,42 +84,80 @@ describe('SignInForm', () => {
 
   it('shows one generic message for wrong credentials and keeps the values', async () => {
     const user = userEvent.setup();
-    render(<SignInForm onSubmit={vi.fn().mockResolvedValue({ ok: false, reason: 'invalid' })} onDone={vi.fn()} signUpOpen />);
+    render(
+      <SignInForm
+        onSubmit={vi.fn().mockResolvedValue({ ok: false, reason: 'invalid' })}
+        onDone={vi.fn()}
+        signUpOpen
+      />,
+    );
     await fill(user);
     await user.click(screen.getByRole('button', { name: 'Sign in' }));
-    expect(await screen.findByRole('alert')).toHaveTextContent('That email or password is not right. Check them and try again.');
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'That email or password is not right. Check them and try again.',
+    );
     expect(screen.getByLabelText(/^Email/)).toHaveValue('ngozi@example.com');
     expect(screen.getByLabelText('Password')).toHaveValue('some-password');
   });
 
   it('shows the network message and keeps values', async () => {
     const user = userEvent.setup();
-    render(<SignInForm onSubmit={vi.fn().mockRejectedValue(new Error('offline'))} onDone={vi.fn()} signUpOpen />);
+    render(
+      <SignInForm
+        onSubmit={vi.fn().mockRejectedValue(new Error('offline'))}
+        onDone={vi.fn()}
+        signUpOpen
+      />,
+    );
     await fill(user);
     await user.click(screen.getByRole('button', { name: 'Sign in' }));
-    expect(await screen.findByRole('alert')).toHaveTextContent('We could not reach the server. Check your data or Wi-Fi, then try again.');
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'We could not reach the server. Check your data or Wi-Fi, then try again.',
+    );
   });
 
   it('shows a lockout with minutes and a disabled button', async () => {
     const user = userEvent.setup();
-    render(<SignInForm onSubmit={vi.fn().mockResolvedValue({ ok: false, reason: 'locked', minutes: 12 })} onDone={vi.fn()} signUpOpen />);
+    render(
+      <SignInForm
+        onSubmit={vi.fn().mockResolvedValue({ ok: false, reason: 'locked', minutes: 12 })}
+        onDone={vi.fn()}
+        signUpOpen
+      />,
+    );
     await fill(user);
     await user.click(screen.getByRole('button', { name: 'Sign in' }));
-    expect(await screen.findByText(/Too many attempts\. Try again in 12 minutes\./)).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Reset your password' })).toHaveAttribute('href', '/forgot-password');
+    expect(
+      await screen.findByText(/Too many attempts\. Try again in 12 minutes\./),
+    ).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Reset your password' })).toHaveAttribute(
+      'href',
+      '/forgot-password',
+    );
     expect(screen.getByRole('button', { name: 'Try again in 12 min' })).toBeDisabled();
   });
 
   it('fails closed with a plain message when sign in is unavailable', async () => {
     const user = userEvent.setup();
-    render(<SignInForm onSubmit={vi.fn().mockResolvedValue({ ok: false, reason: 'unavailable' })} onDone={vi.fn()} signUpOpen />);
+    render(
+      <SignInForm
+        onSubmit={vi.fn().mockResolvedValue({ ok: false, reason: 'unavailable' })}
+        onDone={vi.fn()}
+        signUpOpen
+      />,
+    );
     await fill(user);
     await user.click(screen.getByRole('button', { name: 'Sign in' }));
-    expect(await screen.findByText('Sign in is temporarily unavailable. Try again in a moment.')).toBeInTheDocument();
+    expect(
+      await screen.findByText('Sign in is temporarily unavailable. Try again in a moment.'),
+    ).toBeInTheDocument();
   });
 
   it('asks for a security check before a hard block and sends the token on retry', async () => {
-    const onSubmit = vi.fn().mockResolvedValueOnce({ ok: false, reason: 'check_required' }).mockResolvedValue({ ok: true, next: '/' });
+    const onSubmit = vi
+      .fn()
+      .mockResolvedValueOnce({ ok: false, reason: 'check_required' })
+      .mockResolvedValue({ ok: true, next: '/' });
     const user = userEvent.setup();
     render(<SignInForm onSubmit={onSubmit} onDone={vi.fn()} signUpOpen />);
     await fill(user);
@@ -111,11 +165,20 @@ describe('SignInForm', () => {
     expect(await screen.findByText(/Complete the check below/)).toBeInTheDocument();
     await user.click(screen.getByRole('checkbox', { name: 'I am a person' }));
     await user.click(screen.getByRole('button', { name: 'Sign in' }));
-    expect(onSubmit).toHaveBeenLastCalledWith(expect.objectContaining({ challengeToken: 'checked' }));
+    expect(onSubmit).toHaveBeenLastCalledWith(
+      expect.objectContaining({ challengeToken: 'checked' }),
+    );
   });
 
   it('shows a success notice passed from password reset', () => {
-    render(<SignInForm onSubmit={vi.fn()} onDone={vi.fn()} signUpOpen notice="Your password was changed. Sign in with your new password." />);
+    render(
+      <SignInForm
+        onSubmit={vi.fn()}
+        onDone={vi.fn()}
+        signUpOpen
+        notice="Your password was changed. Sign in with your new password."
+      />,
+    );
     expect(screen.getByRole('status')).toHaveTextContent('Your password was changed.');
   });
 });

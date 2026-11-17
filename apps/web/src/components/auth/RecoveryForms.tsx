@@ -1,14 +1,25 @@
 'use client';
 
 import { useRef, useState, type FormEvent } from 'react';
-import { Banner, Button, ButtonLink, Input, Link, PasswordField, evaluatePassword, type PasswordScorer } from '@ad/ui';
+import {
+  Banner,
+  Button,
+  ButtonLink,
+  Input,
+  Link,
+  PasswordField,
+  evaluatePassword,
+  type PasswordScorer,
+} from '@ad/ui';
 import { NETWORK_MESSAGE, RATE_LIMIT_MESSAGE, emailError } from './shared';
 import { useFocusFirstInvalid } from './useFocusFirstInvalid';
 
 export function ForgotPasswordForm({
   onSubmit,
 }: {
-  onSubmit: (input: { email: string }) => Promise<{ ok: true } | { ok: false; reason: 'rate_limited' | 'network' }>;
+  onSubmit: (input: {
+    email: string;
+  }) => Promise<{ ok: true } | { ok: false; reason: 'rate_limited' | 'network' }>;
 }) {
   const formRef = useRef<HTMLFormElement>(null);
   const requestFocus = useFocusFirstInvalid(formRef);
@@ -43,7 +54,9 @@ export function ForgotPasswordForm({
       <div className="web-form">
         <h1 className="web-auth__title">Check your email</h1>
         <p>If that email has an account, we sent a link. It works for 1 hour.</p>
-        <p className="web-muted">Not there? Check your spam folder, or try again in a few minutes.</p>
+        <p className="web-muted">
+          Not there? Check your spam folder, or try again in a few minutes.
+        </p>
         <ButtonLink href="/sign-in" variant="secondary" fullWidth>
           Back to sign in
         </ButtonLink>
@@ -54,7 +67,9 @@ export function ForgotPasswordForm({
   return (
     <form ref={formRef} className="web-form" onSubmit={submit} noValidate>
       <h1 className="web-auth__title">Forgot your password?</h1>
-      <p className="web-muted">Enter your email. We will send you a link to choose a new password.</p>
+      <p className="web-muted">
+        Enter your email. We will send you a link to choose a new password.
+      </p>
       {banner ? <Banner tone="danger">{banner}</Banner> : null}
       <Input
         label="Email"
@@ -86,9 +101,10 @@ export function ResetPasswordForm({
   scorer,
 }: {
   token: string;
-  onSubmit: (input: { token: string; password: string }) => Promise<
-    { ok: true } | { ok: false; reason: 'expired' | 'weak_password' | 'network' }
-  >;
+  onSubmit: (input: {
+    token: string;
+    password: string;
+  }) => Promise<{ ok: true } | { ok: false; reason: 'expired' | 'weak_password' | 'network' }>;
   onDone: () => void;
   scorer?: PasswordScorer;
 }) {
@@ -122,7 +138,8 @@ export function ResetPasswordForm({
       const result = await onSubmit({ token, password });
       if (result.ok) onDone();
       else if (result.reason === 'expired') setExpired(true);
-      else if (result.reason === 'weak_password') setBanner('That password is too short or too common. Choose another.');
+      else if (result.reason === 'weak_password')
+        setBanner('That password is too short or too common. Choose another.');
       else setBanner(NETWORK_MESSAGE);
     } catch {
       setBanner(NETWORK_MESSAGE);

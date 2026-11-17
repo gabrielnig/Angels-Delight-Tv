@@ -6,12 +6,28 @@ import { getAuth, getSite } from '../../../../lib/data';
 export const metadata: Metadata = { title: 'Email link' };
 
 const COPY = {
-  confirmed: { icon: 'success' as const, title: 'Email confirmed', text: 'Your email is confirmed. You can sign in now.' },
-  used: { icon: 'info' as const, title: 'This link was already used', text: 'Your email is already confirmed. Sign in to continue.' },
-  expired: { icon: 'warning' as const, title: 'This link has expired', text: 'Links work for 24 hours. We can send you a new one.' },
+  confirmed: {
+    icon: 'success' as const,
+    title: 'Email confirmed',
+    text: 'Your email is confirmed. You can sign in now.',
+  },
+  used: {
+    icon: 'info' as const,
+    title: 'This link was already used',
+    text: 'Your email is already confirmed. Sign in to continue.',
+  },
+  expired: {
+    icon: 'warning' as const,
+    title: 'This link has expired',
+    text: 'Links work for 24 hours. We can send you a new one.',
+  },
 };
 
-export default async function ConfirmEmailPage({ searchParams }: { searchParams: Promise<Record<string, string | undefined>> }) {
+export default async function ConfirmEmailPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | undefined>>;
+}) {
   const [site, params] = await Promise.all([getSite().content(), searchParams]);
   const result = await getAuth().confirmEmailLink(params.token ?? '');
   const copy = COPY[result];

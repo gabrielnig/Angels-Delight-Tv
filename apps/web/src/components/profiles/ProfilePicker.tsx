@@ -1,11 +1,21 @@
 'use client';
 
 import { useEffect, type ReactNode } from 'react';
-import { AddProfileTile, Button, ButtonLink, ErrorState, ProfileTile, Skeleton, SkeletonRegion, type AvatarTone } from '@ad/ui';
+import {
+  AddProfileTile,
+  Button,
+  ButtonLink,
+  ErrorState,
+  ProfileTile,
+  Skeleton,
+  SkeletonRegion,
+  type AvatarTone,
+} from '@ad/ui';
 import type { Profile } from '../../lib/data';
 
 const TONES = ['sky', 'mint', 'lemon', 'peach', 'lavender'];
-const asTone = (tone?: string): AvatarTone | undefined => (tone && TONES.includes(tone) ? (tone as AvatarTone) : undefined);
+const asTone = (tone?: string): AvatarTone | undefined =>
+  tone && TONES.includes(tone) ? (tone as AvatarTone) : undefined;
 
 /** Screens 9 and 10: who is watching, and manage mode. */
 export function ProfilePicker({
@@ -74,7 +84,8 @@ export function ProfilePicker({
       <div className="web-first">
         <h1 className="web-picker__title">Create your first profile</h1>
         <p className="web-muted">
-          Profiles keep watch history and My List separate. Add one for yourself, then one for each child.
+          Profiles keep watch history and My List separate. Add one for yourself, then one for each
+          child.
         </p>
         <ButtonLink href="/profiles/new" size="lg">
           Create profile
