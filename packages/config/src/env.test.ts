@@ -247,6 +247,17 @@ describe('worker maintenance and fake whisper', () => {
     ).toEqual(['DATABASE_URL_MAINTENANCE']);
   });
 
+  it('reads the scratch free space ratio, default 15 percent', () => {
+    expect(loadWorkerEnv(devWorker).WORKER_SCRATCH_MIN_FREE_RATIO).toBe(0.15);
+    expect(
+      loadWorkerEnv({ ...devWorker, WORKER_SCRATCH_MIN_FREE_RATIO: '0.05' })
+        .WORKER_SCRATCH_MIN_FREE_RATIO,
+    ).toBe(0.05);
+    expect(
+      failureNames(() => loadWorkerEnv({ ...devWorker, WORKER_SCRATCH_MIN_FREE_RATIO: '1.5' })),
+    ).toEqual(['WORKER_SCRATCH_MIN_FREE_RATIO']);
+  });
+
   it('allows the fake transcriber outside production only', () => {
     expect(loadWorkerEnv(devWorker).WHISPER_FAKE).toBe(false);
     expect(loadWorkerEnv({ ...devWorker, WHISPER_FAKE: 'true' }).WHISPER_FAKE).toBe(true);

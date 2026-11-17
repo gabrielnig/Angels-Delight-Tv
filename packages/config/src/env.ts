@@ -124,6 +124,12 @@ const workerShape = {
   FFMPEG_PRESET: z.enum(FFMPEG_PRESETS).default('medium'),
   FFMPEG_THREADS: int(0, 0),
   WORKER_SCRATCH_DIR: z.string().min(1).default('/tmp/ad-work'),
+  /** Share of the scratch disk that must stay free before a job starts (M14-S07). Lower it on a small disk. */
+  WORKER_SCRATCH_MIN_FREE_RATIO: z
+    .string()
+    .regex(/^0(\.\d+)?$/, 'must be a number from 0 to below 1')
+    .transform(Number)
+    .default(0.15),
 };
 
 const migrateShape = {
