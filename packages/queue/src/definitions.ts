@@ -10,6 +10,9 @@ export const QUEUES = {
   videoPurge: 'video.purge',
   uploadsCleanup: 'uploads.cleanup',
   videosPurgeDeleted: 'videos.purge_deleted',
+  analyticsRollup: 'analytics.rollup',
+  analyticsPrune: 'analytics.prune',
+  auditPrune: 'audit.prune',
 } as const;
 
 export type QueueName = (typeof QUEUES)[keyof typeof QUEUES];
@@ -92,6 +95,28 @@ export const QUEUE_DEFINITIONS: Record<QueueName, QueueDefinition> = {
     retryBackoff: true,
     expireInSeconds: 30 * 60,
   },
+  // Maintenance jobs are idempotent and run on a schedule, so a few slow retries are enough.
+  'analytics.rollup': {
+    concurrency: 1,
+    retryLimit: 3,
+    retryDelaySeconds: 300,
+    retryBackoff: true,
+    expireInSeconds: 30 * 60,
+  },
+  'analytics.prune': {
+    concurrency: 1,
+    retryLimit: 2,
+    retryDelaySeconds: 600,
+    retryBackoff: true,
+    expireInSeconds: 60 * 60,
+  },
+  'audit.prune': {
+    concurrency: 1,
+    retryLimit: 2,
+    retryDelaySeconds: 600,
+    retryBackoff: true,
+    expireInSeconds: 60 * 60,
+  },
 };
 
 export function queueOptions(name: QueueName) {
@@ -127,6 +152,9 @@ const PAYLOADS = {
   'video.purge': videoPayload,
   'uploads.cleanup': z.strictObject({}),
   'videos.purge_deleted': z.strictObject({}),
+  'analytics.rollup': z.strictObject({}),
+  'analytics.prune': z.strictObject({}),
+  'audit.prune': z.strictObject({}),
 } satisfies Record<QueueName, z.ZodType>;
 
 export type PayloadOf<Q extends QueueName> = z.output<(typeof PAYLOADS)[Q]>;
@@ -146,4 +174,14 @@ export interface CronEntry {
 export const CRON_SCHEDULES: CronEntry[] = [
   { queue: 'uploads.cleanup', cron: '0 * * * *', timezone: 'Africa/Lagos' },
   { queue: 'videos.purge_deleted', cron: '30 3 * * *', timezone: 'Africa/Lagos' },
+];
+
+/**
+ * Lane I jobs (analytics rollup, raw event prune, audit prune). The cron expressions match `ROLLUP_SCHEDULE`,
+ * `RETENTION_SCHEDULE` and `AUDIT_RETENTION_SCHEDULE`, and a worker test pins that. Registered by `registerMaintenanceHandlers`.
+ */
+export const MAINTENANCE_CRON_SCHEDULES: CronEntry[] = [
+  { queue: 'analytics.rollup', cron: '0 2 * * *', timezone: 'Africa/Lagos' },
+  { queue: 'analytics.prune', cron: '0 3 1 * *', timezone: 'Africa/Lagos' },
+  { queue: 'audit.prune', cron: '30 3 1 * *', timezone: 'Africa/Lagos' },
 ];

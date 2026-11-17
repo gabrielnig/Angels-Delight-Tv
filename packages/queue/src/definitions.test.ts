@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   CRON_SCHEDULES,
+  MAINTENANCE_CRON_SCHEDULES,
   QUEUES,
   QUEUE_DEFINITIONS,
   parsePayload,
@@ -49,6 +50,26 @@ describe('queue definitions', () => {
     const cleanup = CRON_SCHEDULES.find((entry) => entry.queue === 'uploads.cleanup');
     expect(cleanup).toMatchObject({ cron: '0 * * * *', timezone: 'Africa/Lagos' });
     expect(CRON_SCHEDULES.some((entry) => entry.queue === 'videos.purge_deleted')).toBe(true);
+  });
+});
+
+describe('maintenance queues', () => {
+  it('defines rollup and both prunes with no payload fields', () => {
+    for (const name of ['analytics.rollup', 'analytics.prune', 'audit.prune'] as const) {
+      expect(QUEUE_DEFINITIONS[name]).toMatchObject({ concurrency: 1 });
+      expect(parsePayload(name, {})).toEqual({});
+      expect(() => parsePayload(name, { videoId: 'x' })).toThrow();
+    }
+  });
+
+  it('keeps their schedules apart from the lane D crons', () => {
+    expect(CRON_SCHEDULES.some((entry) => entry.queue === 'analytics.rollup')).toBe(false);
+    expect(MAINTENANCE_CRON_SCHEDULES.map((entry) => entry.queue).sort()).toEqual([
+      'analytics.prune',
+      'analytics.rollup',
+      'audit.prune',
+    ]);
+    for (const entry of MAINTENANCE_CRON_SCHEDULES) expect(entry.timezone).toBe('Africa/Lagos');
   });
 });
 

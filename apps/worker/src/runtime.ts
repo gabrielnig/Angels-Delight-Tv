@@ -1,5 +1,7 @@
+import { pruneViewEvents, runNightlyRollup } from '@ad/analytics';
+import { pruneAudit } from '@ad/audit';
 import type { WorkerEnv } from '@ad/config';
-import { createDb, createPool } from '@ad/db';
+import { createDb, createPool, type Database } from '@ad/db';
 import { DrizzleJobMirror, JobProducer, bossAdapter } from '@ad/queue';
 import type { Logger } from '@ad/shared';
 import { createStorage, storageConfigFromEnv } from '@ad/storage';
@@ -15,13 +17,41 @@ import {
 } from '@ad/video';
 import type { PgBoss } from 'pg-boss';
 import type { VideoHandlerDeps } from './handlers';
+import type { MaintenanceDeps } from './maintenance';
 
 // Cleanup never validates new uploads, so the limits here are placeholders.
 const MIB = 1024 * 1024;
 
 /** Builds the lane D services from the worker environment. Kept apart from boot so boot stays testable. */
-export function buildVideoHandlerDeps(env: WorkerEnv, boss: PgBoss, logger: Logger): VideoHandlerDeps {
-  const db = createDb(createPool(env.DATABASE_URL_WORKER, { max: 4 }));
+export function createWorkerDb(env: WorkerEnv): Database {
+  return createDb(createPool(env.DATABASE_URL_WORKER, { max: 4, applicationName: 'ad-worker' }));
+}
+
+/** The lane I jobs. The prunes run on their own `ad_maintenance` connection, which is the only role allowed to delete. */
+export function buildMaintenanceDeps(
+  env: WorkerEnv,
+  db: Database,
+  _logger: Logger,
+): Omit<MaintenanceDeps, 'mirror' | 'logger'> {
+  const maintenanceUrl = env.DATABASE_URL_MAINTENANCE;
+  if (!maintenanceUrl) return { rollup: () => runNightlyRollup(db) };
+  const maintenance = createDb(
+    createPool(maintenanceUrl, { max: 1, applicationName: 'ad-worker-maintenance' }),
+  );
+  return {
+    rollup: () => runNightlyRollup(db),
+    pruneViewEvents: () => pruneViewEvents(maintenance),
+    // The purge row is written by the worker role, because ad_maintenance cannot insert (migration 0012).
+    pruneAudit: () => pruneAudit(maintenance, db),
+  };
+}
+
+export function buildVideoHandlerDeps(
+  env: WorkerEnv,
+  boss: PgBoss,
+  logger: Logger,
+  db: Database = createWorkerDb(env),
+): VideoHandlerDeps {
   // The local driver only signs dev urls, which the worker never hands out, so any stable secret will do.
   const signing = env.HLS_KEK;
   const originals = createStorage(storageConfigFromEnv(env, env.BUCKET_ORIGINALS, signing));

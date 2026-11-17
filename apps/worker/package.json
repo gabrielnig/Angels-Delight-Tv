@@ -14,6 +14,8 @@
     "start": "tsx src/main.ts"
   },
   "dependencies": {
+    "@ad/analytics": "workspace:*",
+    "@ad/audit": "workspace:*",
     "@ad/config": "workspace:*",
     "@ad/db": "workspace:*",
     "@ad/queue": "workspace:*",
@@ -25,6 +27,7 @@
     "tsx": "^4.23.15"
   },
   "devDependencies": {
-    "@types/pg": "^8.23.1"
+    "@types/pg": "^8.23.1",
+    "drizzle-orm": "^0.45.4"
   }
 }
