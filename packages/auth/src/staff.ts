@@ -780,8 +780,13 @@ export class StaffService extends AccountService {
     }
     let previous: string;
     try {
-      const result = await this.deps.db.execute<{ staff_set_role: string }>(
-        sql`SELECT staff_set_role(${admin.id}::uuid, ${input.accountId}::uuid, ${input.role}::account_role, ${input.expectedRole}::account_role)`,
+      const result = await withAccount(
+        this.deps.db,
+        { accountId: admin.id, role: 'admin' },
+        (tx) =>
+          tx.execute<{ staff_set_role: string }>(
+            sql`SELECT staff_set_role(${admin.id}::uuid, ${input.accountId}::uuid, ${input.role}::account_role, ${input.expectedRole}::account_role)`,
+          ),
       );
       previous = result.rows[0]?.staff_set_role ?? input.expectedRole;
     } catch (error) {
