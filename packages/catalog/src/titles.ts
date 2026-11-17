@@ -163,7 +163,7 @@ function isKeysetCursor(value: unknown): value is KeysetCursor {
 
 /**
  * Browse a category (or everything). A duration filter or the shortest sort leaves series out, because a series has
- * no single duration (decision D-026).
+ * no single duration (decision D-050).
  */
 export async function listTitles(
   tx: Tx,

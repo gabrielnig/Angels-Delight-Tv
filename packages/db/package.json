@@ -14,7 +14,8 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "tsx src/migrate-cli.ts",
     "db:studio": "drizzle-kit studio",
-    "db:seed:admin": "pnpm --filter @ad/auth run seed:admin"
+    "db:seed:admin": "pnpm --filter @ad/auth run seed:admin",
+    "db:seed:demo": "pnpm --filter @ad/catalog run seed:demo"
   },
   "dependencies": {
     "@ad/config": "workspace:*",
