@@ -1,4 +1,4 @@
-import { DEFAULT_PREFERENCES, type RelatedItem } from '@ad/player';
+import { DEFAULT_PREFERENCES, type CaptionTrack, type RelatedItem } from '@ad/player';
 import { findTitle } from '@ad/catalog';
 import { withAccount } from '@ad/db';
 import { isUuid, NotFound } from '@ad/shared';
@@ -41,12 +41,24 @@ const secondsOf = (ms: number) => Math.round(ms / 1000);
 /**
  * Watch page data on the real viewer services. The audience comes from the stored profile, never from the
  * `kids` flag the caller passes, and every read goes through the same visibility rules as the rest of the site.
- * Captions are empty here: signed caption URLs arrive with the playback session (lane D routes, see K1 notes).
+ * Approved caption tracks come from `captionsFor` and point at the media origin, where `cap/` files are public and
+ * immutable (the same urls the playback session lists). Without it captions are empty.
  */
+/** An approved caption track as the playback store lists it. `key` is the object key under the media origin. */
+export interface ApprovedCaptionRow {
+  language: string;
+  label: string;
+  isDefault: boolean;
+  key: string;
+}
+
 export class RealPlaybackData implements PlaybackData {
   constructor(
     private readonly service: ServiceContext,
     private readonly settings: (accountId: string, profileId: string) => Promise<PlaybackSettings>,
+    private readonly captionsFor: (
+      videoId: string,
+    ) => Promise<ApprovedCaptionRow[]> = async () => [],
   ) {}
 
   private async detail(
@@ -103,10 +115,19 @@ export class RealPlaybackData implements PlaybackData {
           : null,
     ]);
     if (!data) return { status: 'not-found' };
+    const origin = this.service.mediaOrigin.replace(/\/+$/, '');
+    const captions: CaptionTrack[] = (await this.captionsFor(videoId)).map((track) => ({
+      id: track.language,
+      language: track.language,
+      label: track.label,
+      src: `${origin}/${track.key}`,
+      status: 'approved',
+    }));
     return {
       status: 'ok',
       data: {
         ...data,
+        captions,
         preferences: {
           ...DEFAULT_PREFERENCES,
           captionsOn: isKids || prefs.captionsDefault,

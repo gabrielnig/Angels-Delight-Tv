@@ -1,4 +1,5 @@
 import 'server-only';
+import { DrizzlePlaybackStore } from '@ad/video';
 import { redirect } from 'next/navigation';
 import { realDataEnabled } from '../../server/data/mode';
 import { accountViewerData } from '../../server/data/real-data';
@@ -23,8 +24,10 @@ export function getPlaybackData(): PlaybackData {
   const real = realDataEnabled();
   if (!instance || instanceIsReal !== real) {
     instance = real
-      ? new RealPlaybackData(viewerRuntime().ctx, (accountId, profileId) =>
-          accountViewerData().playback(accountId, profileId),
+      ? new RealPlaybackData(
+          viewerRuntime().ctx,
+          (accountId, profileId) => accountViewerData().playback(accountId, profileId),
+          (videoId) => new DrizzlePlaybackStore(viewerRuntime().ctx.db).captions(videoId),
         )
       : createFixturePlaybackData();
     instanceIsReal = real;
