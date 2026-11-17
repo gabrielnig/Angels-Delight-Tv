@@ -17,8 +17,12 @@ export interface AuthConfig {
   /** Versions recorded in `consents` at sign up. Content owned by the client (legal.*_version). */
   legalVersions: { terms: string; privacy: string; guardian_declaration: string };
   supportEmail: string;
+  /** Shown in authenticator apps next to the account name. Follows the platform name setting. */
+  issuerName: string;
   /** Closed sign up: when false, sign up is refused (M29 flag). */
   signUpOpen: boolean;
+  /** Development only: skips the second factor for staff. The web env schema rejects it in production. */
+  devSkipMfa: boolean;
 }
 
 export const DEFAULT_AUTH_CONFIG: AuthConfig = {
@@ -31,7 +35,9 @@ export const DEFAULT_AUTH_CONFIG: AuthConfig = {
   reauthWindowSeconds: 10 * 60,
   legalVersions: { terms: '1', privacy: '1', guardian_declaration: '1' },
   supportEmail: 'support@example.org',
+  issuerName: 'Angels Delight TV',
   signUpOpen: true,
+  devSkipMfa: false,
 };
 
 export interface Logger {

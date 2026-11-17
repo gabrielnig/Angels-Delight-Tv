@@ -15,6 +15,7 @@ export type TemplateName =
   | 'email_change_verify'
   | 'email_change_notice'
   | 'two_factor_reset'
+  | 'staff_lockout_alert'
   | 'account_deleted';
 
 export interface RenderedMail {
@@ -164,6 +165,17 @@ const DEFINITIONS: Record<TemplateName, Definition> = {
       ],
       action: { label: 'Sign in', url: v.signInUrl! },
       outro: ['If you did not expect this, contact the person who manages your team.'],
+    }),
+  },
+  staff_lockout_alert: {
+    required: ['account', 'minutes'],
+    build: (v, b) => ({
+      subject: `A staff account on ${b.appName} was locked`,
+      intro: [
+        `The staff account ${v.account} was locked for ${v.minutes} minutes after several failed sign-in attempts.`,
+        'No action is needed unless you did not expect this. If you did not, check the audit log.',
+      ],
+      outro: ['Existing sessions of that account were not ended.'],
     }),
   },
   account_deleted: {

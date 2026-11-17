@@ -1,5 +1,6 @@
 export * from './accounts';
 export * from './email-tokens';
+export * from './guards';
 export * from './hibp';
 export * from './identifiers';
 export * from './keys';
@@ -8,5 +9,7 @@ export * from './password';
 export * from './pending';
 export * from './policy';
 export * from './sessions';
+export * from './staff';
 export * from './tokens';
+export * from './totp';
 export * from './types';
