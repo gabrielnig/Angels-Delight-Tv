@@ -1,0 +1,72 @@
+import type { CaptionTrack, PlayerPreferences, RelatedItem, UpNextItem } from '@ad/player';
+
+/**
+ * Data access for the Watch page (screens 21 and 22). Lane C implements the real service
+ * behind this interface. Until then `playback.fixture.ts` answers, so the page and player
+ * work end to end with seeded data.
+ */
+
+export interface ViewerContext {
+  profileId: string;
+  /** True on a kids profile. */
+  kids: boolean;
+}
+
+export interface WatchSeries {
+  id: string;
+  title: string;
+  /** For example "S1 E4". */
+  episodeLabel: string;
+  lastEpisode: boolean;
+  href: string;
+}
+
+export interface WatchVideo {
+  id: string;
+  title: string;
+  description: string;
+  durationSeconds: number;
+  posterUrl: string | null;
+  categoryLabel: string;
+  /** Titles flagged for adults only are blocked on kids profiles. */
+  kidsSafe: boolean;
+  series: WatchSeries | null;
+  backHref: string;
+}
+
+export type Tint = 'sky' | 'mint' | 'lemon' | 'peach' | 'lavender';
+
+export interface UpNextTileData {
+  id: string;
+  title: string;
+  tag: string;
+  durationLabel: string;
+  href: string;
+  tint: Tint;
+}
+
+export interface NextVideo extends UpNextItem {
+  href: string;
+}
+
+export interface WatchData {
+  video: WatchVideo;
+  /** Approved and not yet approved tracks may both be present. The player attaches approved ones only. */
+  captions: CaptionTrack[];
+  saved: { positionSeconds: number; finished: boolean } | null;
+  next: NextVideo | null;
+  upNext: UpNextTileData[];
+  related: RelatedItem[];
+  preferences: PlayerPreferences;
+  inMyList: boolean;
+}
+
+export type WatchLookup =
+  { status: 'ok'; data: WatchData } | { status: 'not-found' } | { status: 'kids-blocked' };
+
+export interface PlaybackData {
+  getWatchData(videoId: string, viewer: ViewerContext): Promise<WatchLookup>;
+}
+
+/** How the browser talks to the playback API. `fixture` needs no server routes. */
+export type PlaybackTransport = 'fixture' | 'http';
