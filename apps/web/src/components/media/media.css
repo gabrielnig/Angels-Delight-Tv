@@ -1,0 +1,18 @@
+.ad-poster {
+  position: relative;
+  overflow: hidden;
+  width: 100%;
+  border-radius: var(--radius-md);
+  background: var(--color-surface-sunken);
+}
+
+.ad-poster__img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.ad-poster--empty {
+  background: var(--color-tile-sky);
+}
