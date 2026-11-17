@@ -1636,3 +1636,27 @@
 .adm-cue__index { min-width: var(--touch-target); min-height: var(--touch-target); border: 0; background: none; font: inherit; font-weight: var(--weight-semibold); color: var(--color-primary); cursor: pointer; font-variant-numeric: tabular-nums; }
 .adm-cue__time { width: 7.5rem; font-variant-numeric: tabular-nums; font-family: var(--font-mono); }
 .adm-cue__text[aria-invalid='true'] { border: 2px solid var(--color-danger); }
+
+/* ---- Lists of cards (categories, series) ---- */
+.adm-cardlist {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--space-3);
+}
+.adm-listrow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  align-items: center;
+  justify-content: space-between;
+}
+.adm-listrow__main {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-3);
+  align-items: center;
+  min-width: 0;
+  flex: 1 1 14rem;
+}
