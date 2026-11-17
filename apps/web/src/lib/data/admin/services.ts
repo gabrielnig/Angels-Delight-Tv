@@ -34,6 +34,9 @@ import {
   suspendUser,
 } from './users-commands';
 import { can } from '@/lib/admin/can';
+import type { DayRange } from '@ad/analytics';
+import { buildFixtureOverview, buildFixtureVideo } from './analytics-rules';
+import type { AnalyticsOverview, VideoAnalytics } from './analytics-rules';
 import { filterAudit } from './audit-adapter';
 import type { AuditQuery } from './audit-adapter';
 import type { AuditRow } from './types';
@@ -603,5 +606,28 @@ export const auditService: AuditService = {
     }
     const rows = filterAudit(getStore().audit, query);
     return { rows: structuredClone(rows), total: rows.length, truncated: false };
+  },
+};
+
+export interface AnalyticsService {
+  overview(actor: AdminActor, range: DayRange): Promise<AnalyticsOverview>;
+  video(actor: AdminActor, id: string, range: DayRange): Promise<VideoAnalytics>;
+}
+
+export const analyticsService: AnalyticsService = {
+  async overview(actor, range) {
+    need(actor, 'analytics.view');
+    if (adminDataMode() === 'real')
+      return (await import('./analytics-real')).realAnalytics.overview(range);
+    return buildFixtureOverview(getStore(), range);
+  },
+  async video(actor, id, range) {
+    need(actor, 'analytics.view');
+    const result =
+      adminDataMode() === 'real'
+        ? await (await import('./analytics-real')).realAnalytics.video(id, range)
+        : buildFixtureVideo(getStore(), id, range);
+    if (!result) throw new NotFound('Video not found');
+    return result;
   },
 };
