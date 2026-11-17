@@ -17,8 +17,18 @@ function retryPolicy() {
     default: {
       maxTimeToFirstByteMs: 10_000,
       maxLoadTimeMs: 30_000,
-      timeoutRetry: { maxNumRetry: 3, retryDelayMs: 1_000, maxRetryDelayMs: 4_000, backoff: 'exponential' as const },
-      errorRetry: { maxNumRetry: 3, retryDelayMs: 1_000, maxRetryDelayMs: 4_000, backoff: 'exponential' as const },
+      timeoutRetry: {
+        maxNumRetry: 3,
+        retryDelayMs: 1_000,
+        maxRetryDelayMs: 4_000,
+        backoff: 'exponential' as const,
+      },
+      errorRetry: {
+        maxNumRetry: 3,
+        retryDelayMs: 1_000,
+        maxRetryDelayMs: 4_000,
+        backoff: 'exponential' as const,
+      },
     },
   };
 }
@@ -39,10 +49,14 @@ export function createHlsConfig(opts: HlsConfigOptions): HlsJsConfig {
     playlistLoadPolicy: retryPolicy(),
     fragLoadPolicy: retryPolicy(),
     keyLoadPolicy: retryPolicy(),
-    loader: createKeyAwareLoader(opts.BaseLoader, opts.appOrigin) as unknown as HlsJsConfig['loader'],
+    loader: createKeyAwareLoader(
+      opts.BaseLoader,
+      opts.appOrigin,
+    ) as unknown as HlsJsConfig['loader'],
     xhrSetup: (xhr, url) => {
       const token = opts.getToken();
-      if (token && shouldAttachAuth(url, opts.appOrigin)) xhr.setRequestHeader('Authorization', `Bearer ${token}`);
+      if (token && shouldAttachAuth(url, opts.appOrigin))
+        xhr.setRequestHeader('Authorization', `Bearer ${token}`);
     },
   } as HlsJsConfig;
 }

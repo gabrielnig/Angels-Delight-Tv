@@ -1,0 +1,684 @@
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type KeyboardEvent,
+  type PointerEvent,
+  type Ref,
+} from 'react';
+import type { PlayerController } from '../controller';
+import { formatClock } from '../format';
+import { TapTracker } from '../gestures';
+import { resolveShortcut } from '../keyboard';
+import type { UpNextItem } from '../types';
+import { EndScreen, type EndScreenData } from './EndScreen';
+import {
+  Back10Icon,
+  CaptionsIcon,
+  Forward10Icon,
+  FullscreenExitIcon,
+  FullscreenIcon,
+  MutedIcon,
+  PauseIcon,
+  PipIcon,
+  PlayIcon,
+  SettingsIcon,
+  SpeedIcon,
+  VolumeIcon,
+} from './icons';
+import { CaptionRows, MenuShell, QualityRows, SpeedRows, type MenuId } from './Menus';
+import { ErrorOverlay, Spinner, Toast, UpNextTile, type OverlayLinks } from './Overlays';
+import { SeekBar } from './SeekBar';
+import { ShortcutsDialog } from './ShortcutsDialog';
+import { useControllerState } from './useControllerState';
+import { useMediaQuery } from './useMediaQuery';
+
+export interface PlayerViewProps {
+  controller: PlayerController | null;
+  title: string;
+  posterUrl?: string | undefined;
+  videoRef?: Ref<HTMLVideoElement>;
+  next?: UpNextItem | null;
+  end?: EndScreenData;
+  links?: OverlayLinks & { playbackSettings?: string };
+  onSignIn?: () => void;
+  /** Reference code shown on the "cannot play" screen. */
+  reference?: string;
+  autoplayNext?: boolean;
+  countdownSeconds?: number;
+}
+
+const HIDE_AFTER_MS = 3_000;
+
+type FsVideo = HTMLVideoElement & { webkitEnterFullscreen?: () => void };
+
+export function PlayerView(props: PlayerViewProps) {
+  const { controller, title, posterUrl, next = null, links = {}, reference = 'UNKNOWN' } = props;
+  const state = useControllerState(controller);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const videoEl = useRef<HTMLVideoElement | null>(null);
+  const openerRef = useRef<HTMLElement | null>(null);
+  const tapper = useRef(new TapTracker());
+  const pointerType = useRef('mouse');
+  const hideTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const rippleTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const playingRef = useRef(false);
+  playingRef.current = state.playing;
+
+  const [menu, setMenu] = useState<MenuId | null>(null);
+  const [helpOpen, setHelpOpen] = useState(false);
+  const [shown, setShown] = useState(true);
+  const [focusInside, setFocusInside] = useState(false);
+  const [fullscreen, setFullscreen] = useState(false);
+  const [showRemaining, setShowRemaining] = useState(false);
+  const [ripple, setRipple] = useState<{
+    side: 'left' | 'right';
+    total: number;
+    key: number;
+  } | null>(null);
+  const [pipSupported, setPipSupported] = useState(false);
+  const compact = useMediaQuery('(max-width: 640px)');
+
+  const setVideo = useCallback(
+    (el: HTMLVideoElement | null) => {
+      videoEl.current = el;
+      const r = props.videoRef;
+      if (typeof r === 'function') r(el);
+      else if (r) (r as { current: HTMLVideoElement | null }).current = el;
+    },
+    [props.videoRef],
+  );
+
+  // ---- controls visibility ----
+  const bump = useCallback(() => {
+    setShown(true);
+    if (hideTimer.current) clearTimeout(hideTimer.current);
+    hideTimer.current = setTimeout(() => {
+      if (playingRef.current) setShown(false);
+    }, HIDE_AFTER_MS);
+  }, []);
+
+  useEffect(() => {
+    if (state.playing) bump();
+    else setShown(true);
+    return () => {
+      if (hideTimer.current) clearTimeout(hideTimer.current);
+    };
+  }, [state.playing, bump]);
+
+  const controlsVisible =
+    shown || !state.playing || menu !== null || focusInside || state.phase !== 'ready';
+
+  // ---- fullscreen, orientation, pip ----
+  useEffect(() => {
+    setPipSupported(typeof document !== 'undefined' && Boolean(document.pictureInPictureEnabled));
+    const onChange = () => setFullscreen(document.fullscreenElement === containerRef.current);
+    document.addEventListener('fullscreenchange', onChange);
+    return () => document.removeEventListener('fullscreenchange', onChange);
+  }, []);
+
+  const toggleFullscreen = useCallback(async () => {
+    const el = containerRef.current;
+    const v = videoEl.current as FsVideo | null;
+    try {
+      if (document.fullscreenElement) {
+        await document.exitFullscreen();
+        (screen.orientation as { unlock?: () => void } | undefined)?.unlock?.();
+      } else if (el?.requestFullscreen) {
+        await el.requestFullscreen();
+        const orientation = screen.orientation as
+          { lock?: (o: string) => Promise<void> } | undefined;
+        if (compact) void orientation?.lock?.('landscape').catch(() => undefined);
+      } else if (v?.webkitEnterFullscreen) {
+        v.webkitEnterFullscreen();
+      } else {
+        controller?.notify('Full screen is not available on this device', 'error');
+      }
+    } catch {
+      controller?.notify('Full screen is not available on this device', 'error');
+    }
+  }, [compact, controller]);
+
+  const togglePip = useCallback(async () => {
+    try {
+      if (document.pictureInPictureElement) await document.exitPictureInPicture();
+      else await videoEl.current?.requestPictureInPicture();
+    } catch {
+      controller?.notify('Picture in picture is not available right now', 'error');
+    }
+  }, [controller]);
+
+  // ---- caption tracks ----
+  const tracks = state.captions.tracks;
+  const active = state.captions.active;
+  useEffect(() => {
+    const v = videoEl.current;
+    if (!v) return;
+    for (let i = 0; i < v.textTracks.length; i++) {
+      const t = v.textTracks[i];
+      if (t) t.mode = t.id === active ? 'showing' : 'disabled';
+    }
+  }, [active, tracks]);
+
+  const trackRef = useCallback(
+    (id: string) => (el: HTMLTrackElement | null) => {
+      if (!el) return;
+      const onError = () => controller?.captionFailed(id);
+      el.addEventListener('error', onError, { once: true });
+    },
+    [controller],
+  );
+
+  // ---- media session (lock screen controls) ----
+  useEffect(() => {
+    if (!controller || typeof navigator === 'undefined' || !('mediaSession' in navigator)) return;
+    const ms = navigator.mediaSession;
+    try {
+      if (typeof MediaMetadata !== 'undefined') {
+        ms.metadata = new MediaMetadata({ title, artwork: posterUrl ? [{ src: posterUrl }] : [] });
+      }
+      ms.setActionHandler('play', () => controller.play());
+      ms.setActionHandler('pause', () => controller.pause());
+      ms.setActionHandler('seekbackward', () => controller.seekBy(-10));
+      ms.setActionHandler('seekforward', () => controller.seekBy(10));
+      ms.setActionHandler('nexttrack', next ? () => controller.playNext() : null);
+    } catch {
+      // Some browsers throw for unsupported actions.
+    }
+    return () => {
+      try {
+        for (const a of ['play', 'pause', 'seekbackward', 'seekforward', 'nexttrack'] as const)
+          ms.setActionHandler(a, null);
+      } catch {
+        // ignore
+      }
+    };
+  }, [controller, title, posterUrl, next]);
+
+  // ---- menus ----
+  const closeMenu = useCallback(() => {
+    setMenu(null);
+    openerRef.current?.focus();
+  }, []);
+
+  const toggleMenu = (id: MenuId) => (e: { currentTarget: HTMLElement }) => {
+    openerRef.current = e.currentTarget;
+    setMenu((m) => (m === id ? null : id));
+  };
+
+  useEffect(() => {
+    if (menu === null) return;
+    const onDown = (e: Event) => {
+      const t = e.target as HTMLElement;
+      if (!t.closest?.('.adp-anchor')) setMenu(null);
+    };
+    document.addEventListener('pointerdown', onDown);
+    return () => document.removeEventListener('pointerdown', onDown);
+  }, [menu]);
+
+  // ---- input ----
+  const onKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
+    if (!controller) return;
+    const target = e.target as HTMLElement;
+    if (target.closest('[role="menu"], [role="dialog"]')) return;
+    bump();
+    if (state.upNext.countdown !== null) controller.cancelCountdown();
+    const onButton = target.closest('button, a');
+    if (onButton && (e.key === ' ' || e.key === 'Enter')) return;
+    const action = resolveShortcut(
+      {
+        key: e.key,
+        code: e.code,
+        shiftKey: e.shiftKey,
+        ctrlKey: e.ctrlKey,
+        metaKey: e.metaKey,
+        altKey: e.altKey,
+        target: e.target,
+      },
+      { hasNext: Boolean(next) },
+    );
+    if (!action) return;
+    e.preventDefault();
+    if (action.type === 'toggle-fullscreen') void toggleFullscreen();
+    else if (action.type === 'help') setHelpOpen(true);
+    else controller.dispatch(action);
+  };
+
+  const onSurfacePointerDown = (e: PointerEvent<HTMLDivElement>) => {
+    pointerType.current = e.pointerType;
+  };
+
+  const onSurfacePointerUp = (e: PointerEvent<HTMLDivElement>) => {
+    containerRef.current?.focus({ preventScroll: true });
+    if (!controller || e.pointerType === 'mouse') return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    const result = tapper.current.tap(e.clientX - rect.left, rect.width, performance.now());
+    if (result.kind === 'tap') {
+      if (controlsVisible && state.playing) setShown(false);
+      else bump();
+    } else if (result.kind === 'seek') {
+      controller.seekBy(result.seconds);
+      bump();
+      if (rippleTimer.current) clearTimeout(rippleTimer.current);
+      setRipple({ side: result.side, total: result.total, key: Date.now() });
+      rippleTimer.current = setTimeout(() => setRipple(null), 700);
+    } else {
+      controller.toggle();
+      bump();
+    }
+  };
+
+  const onSurfaceClick = () => {
+    if (menu) {
+      setMenu(null);
+      return;
+    }
+    if (pointerType.current === 'mouse') controller?.toggle();
+  };
+
+  const onFocus = () => {
+    let visible = false;
+    try {
+      visible = Boolean(document.activeElement?.matches(':focus-visible'));
+    } catch {
+      visible = false;
+    }
+    if (visible) {
+      setFocusInside(true);
+      setShown(true);
+    }
+  };
+
+  const speedLabel = state.rate === 1 ? 'Speed' : `Speed, ${state.rate}x`;
+  const multiLanguage = tracks.length > 1;
+  const time = useMemo(() => {
+    const total = formatClock(state.duration);
+    return showRemaining
+      ? `-${formatClock(Math.max(0, state.duration - state.currentTime))} / ${total}`
+      : `${formatClock(state.currentTime)} / ${total}`;
+  }, [showRemaining, state.currentTime, state.duration]);
+
+  const dataSaverNote = state.quality.dataSaver ? (
+    <p className="adp-menu__note">
+      {'Data saver is on. Quality is fixed at 360p. '}
+      {links.playbackSettings ? (
+        <a href={links.playbackSettings}>Change this in Playback settings.</a>
+      ) : (
+        'Change this in Playback settings.'
+      )}
+    </p>
+  ) : null;
+
+  const qualityMenu = state.quality.menu;
+  const showQuality = qualityMenu.visible;
+
+  return (
+    <div
+      ref={containerRef}
+      className="adp"
+      role="region"
+      aria-label={`Video player: ${title}`}
+      tabIndex={-1}
+      data-compact={compact || undefined}
+      data-fullscreen={fullscreen || undefined}
+      data-controls={controlsVisible ? 'visible' : 'hidden'}
+      data-phase={state.phase}
+      onKeyDown={onKeyDown}
+      onPointerMove={(e) => e.pointerType === 'mouse' && bump()}
+      onFocus={onFocus}
+      onBlur={(e) => {
+        if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setFocusInside(false);
+        else if (!(e.relatedTarget as HTMLElement | null)?.closest?.('.adp-controls'))
+          setFocusInside(false);
+      }}
+    >
+      <video
+        ref={setVideo}
+        className="adp-video"
+        poster={posterUrl}
+        preload="metadata"
+        playsInline
+        aria-hidden="true"
+      >
+        {tracks.map((t) => (
+          <track
+            key={t.id}
+            ref={trackRef(t.id)}
+            id={t.id}
+            kind="captions"
+            srcLang={t.language}
+            label={t.label}
+            src={t.src}
+          />
+        ))}
+      </video>
+
+      <div
+        className="adp-surface"
+        aria-hidden="true"
+        onPointerDown={onSurfacePointerDown}
+        onPointerUp={onSurfacePointerUp}
+        onClick={onSurfaceClick}
+        onDoubleClick={() => pointerType.current === 'mouse' && void toggleFullscreen()}
+      />
+
+      {ripple ? (
+        <div className="adp-ripple" data-side={ripple.side} key={ripple.key} aria-hidden="true">
+          {`${ripple.total > 0 ? '+' : '-'}${Math.abs(ripple.total)}`}
+        </div>
+      ) : null}
+
+      {state.buffering && !state.error ? (
+        <Spinner
+          label={state.slowNotice ? 'Slow connection. Switching to lower quality' : undefined}
+        />
+      ) : null}
+
+      {!state.playing && state.phase === 'ready' && !state.buffering ? (
+        <button
+          type="button"
+          className="adp-bigplay"
+          aria-hidden="true"
+          tabIndex={-1}
+          onClick={() => controller?.play()}
+        >
+          <PlayIcon size={32} />
+        </button>
+      ) : null}
+
+      {state.error ? (
+        <ErrorOverlay
+          kind={state.error}
+          position={state.currentTime}
+          reference={reference}
+          links={links}
+          onRetry={() => controller?.retry()}
+          onSignIn={props.onSignIn}
+        />
+      ) : null}
+
+      {state.backOnline && !state.error ? (
+        <div className="adp-banner" role="status">
+          <span>Back online.</span>
+          <button
+            type="button"
+            className="adp-btn adp-btn--primary"
+            onClick={() => controller?.play()}
+          >
+            Resume
+          </button>
+        </div>
+      ) : null}
+
+      {state.phase === 'ended' && !state.error ? (
+        <EndScreen
+          data={props.end ?? {}}
+          next={next}
+          countdown={state.upNext.countdown}
+          countdownTotal={props.countdownSeconds ?? 5}
+          cancelled={state.upNext.cancelled}
+          autoplayNext={props.autoplayNext ?? false}
+          onPlayNext={() => controller?.playNext()}
+          onCancel={() => controller?.cancelCountdown()}
+          onReplay={() => controller?.replay()}
+        />
+      ) : null}
+
+      {state.upNext.tile && next && state.phase === 'ready' ? (
+        <UpNextTile
+          item={next}
+          onPlay={() => controller?.playNext()}
+          onDismiss={() => controller?.dismissUpNextTile()}
+        />
+      ) : null}
+
+      {state.toast ? (
+        <Toast
+          toast={state.toast}
+          onDismiss={() => controller?.dismissToast()}
+          onAction={() => controller?.startOver()}
+        />
+      ) : null}
+
+      {fullscreen || compact ? (
+        <div className="adp-top" data-visible={controlsVisible || undefined}>
+          <span className="adp-top__title">{title}</span>
+        </div>
+      ) : null}
+
+      <div
+        className="adp-controls"
+        data-visible={controlsVisible || undefined}
+        hidden={state.phase === 'ended' && !state.error ? true : undefined}
+      >
+        <button
+          type="button"
+          className="adp-ctl adp-ctl--primary"
+          aria-label={state.playing ? 'Pause' : 'Play'}
+          onClick={() => controller?.toggle()}
+        >
+          {state.playing ? <PauseIcon size={32} /> : <PlayIcon size={32} />}
+        </button>
+        <SeekBar
+          currentTime={state.currentTime}
+          duration={state.duration}
+          bufferedEnd={state.bufferedEnd}
+          onSeek={(t) => controller?.seekTo(t)}
+        />
+        <button
+          type="button"
+          className="adp-ctl"
+          aria-label="Back 10 seconds"
+          onClick={() => controller?.seekBy(-10)}
+        >
+          <Back10Icon />
+        </button>
+        <button
+          type="button"
+          className="adp-ctl"
+          aria-label="Forward 10 seconds"
+          onClick={() => controller?.seekBy(10)}
+        >
+          <Forward10Icon />
+        </button>
+        <div className="adp-volume">
+          <button
+            type="button"
+            className="adp-ctl"
+            aria-label={state.muted ? 'Unmute' : 'Mute'}
+            aria-pressed={state.muted}
+            onClick={() => controller?.toggleMute()}
+          >
+            {state.muted || state.volume === 0 ? <MutedIcon /> : <VolumeIcon />}
+          </button>
+          {!compact ? (
+            <input
+              className="adp-volume__slider"
+              type="range"
+              min={0}
+              max={1}
+              step={0.05}
+              value={state.muted ? 0 : state.volume}
+              aria-label="Volume"
+              aria-valuetext={`${Math.round((state.muted ? 0 : state.volume) * 100)} percent`}
+              onChange={(e) => controller?.setVolume(Number(e.target.value))}
+            />
+          ) : null}
+        </div>
+        <button
+          type="button"
+          className="adp-time"
+          aria-label={
+            showRemaining ? 'Time remaining, show elapsed' : 'Time elapsed, show remaining'
+          }
+          onClick={() => setShowRemaining((v) => !v)}
+        >
+          {time}
+        </button>
+        <span className="adp-spacer" />
+
+        {state.captions.available ? (
+          <div className="adp-anchor">
+            {multiLanguage ? (
+              <button
+                type="button"
+                className="adp-ctl"
+                aria-haspopup="menu"
+                aria-expanded={menu === 'captions'}
+                aria-label={`Captions, ${active ? 'on' : 'off'}`}
+                data-on={active ? true : undefined}
+                onClick={toggleMenu('captions')}
+              >
+                <CaptionsIcon />
+              </button>
+            ) : (
+              <button
+                type="button"
+                className="adp-ctl"
+                aria-label="Captions"
+                aria-pressed={active !== null}
+                data-on={active ? true : undefined}
+                onClick={() => controller?.toggleCaptions()}
+              >
+                <CaptionsIcon />
+              </button>
+            )}
+            {menu === 'captions' ? (
+              <MenuShell id="adp-menu-captions" label="Captions" onClose={closeMenu}>
+                <CaptionRows
+                  tracks={tracks}
+                  active={active}
+                  onSelect={(id) => {
+                    controller?.selectCaption(id);
+                    closeMenu();
+                  }}
+                />
+              </MenuShell>
+            ) : null}
+          </div>
+        ) : null}
+
+        {!compact ? (
+          <div className="adp-anchor">
+            <button
+              type="button"
+              className="adp-ctl"
+              aria-haspopup="menu"
+              aria-expanded={menu === 'speed'}
+              aria-label={speedLabel}
+              onClick={toggleMenu('speed')}
+            >
+              <SpeedIcon />
+            </button>
+            {menu === 'speed' ? (
+              <MenuShell id="adp-menu-speed" label="Speed" onClose={closeMenu}>
+                <SpeedRows
+                  rate={state.rate}
+                  onSelect={(r) => {
+                    controller?.setRate(r);
+                    closeMenu();
+                  }}
+                />
+              </MenuShell>
+            ) : null}
+          </div>
+        ) : null}
+
+        {!compact && showQuality ? (
+          <div className="adp-anchor">
+            <button
+              type="button"
+              className="adp-ctl adp-ctl--text"
+              aria-haspopup="menu"
+              aria-expanded={menu === 'quality'}
+              aria-label={`Quality, ${qualityMenu.buttonLabel}`}
+              onClick={toggleMenu('quality')}
+            >
+              <SettingsIcon />
+              <span className="adp-ctl__label">{qualityMenu.buttonLabel}</span>
+            </button>
+            {menu === 'quality' ? (
+              <MenuShell
+                id="adp-menu-quality"
+                label="Quality"
+                onClose={closeMenu}
+                footer={dataSaverNote}
+              >
+                <QualityRows
+                  menu={qualityMenu}
+                  onSelect={(sel) => {
+                    controller?.selectQuality(sel);
+                    closeMenu();
+                  }}
+                />
+              </MenuShell>
+            ) : null}
+          </div>
+        ) : null}
+
+        {compact ? (
+          <div className="adp-anchor">
+            <button
+              type="button"
+              className="adp-ctl"
+              aria-haspopup="menu"
+              aria-expanded={menu === 'settings'}
+              aria-label="Settings"
+              onClick={toggleMenu('settings')}
+            >
+              <SettingsIcon />
+            </button>
+            {menu === 'settings' ? (
+              <MenuShell
+                id="adp-menu-settings"
+                label="Settings"
+                onClose={closeMenu}
+                footer={dataSaverNote}
+              >
+                <p className="adp-menu__section">Speed</p>
+                <SpeedRows rate={state.rate} onSelect={(r) => controller?.setRate(r)} />
+                {showQuality ? (
+                  <>
+                    <p className="adp-menu__section">Quality</p>
+                    <QualityRows
+                      menu={qualityMenu}
+                      onSelect={(sel) => controller?.selectQuality(sel)}
+                    />
+                  </>
+                ) : null}
+              </MenuShell>
+            ) : null}
+          </div>
+        ) : null}
+
+        {pipSupported ? (
+          <button
+            type="button"
+            className="adp-ctl"
+            aria-label="Picture in picture"
+            onClick={() => void togglePip()}
+          >
+            <PipIcon />
+          </button>
+        ) : null}
+
+        <button
+          type="button"
+          className="adp-ctl"
+          aria-label={fullscreen ? 'Exit full screen' : 'Full screen'}
+          onClick={() => void toggleFullscreen()}
+        >
+          {fullscreen ? <FullscreenExitIcon /> : <FullscreenIcon />}
+        </button>
+      </div>
+
+      {helpOpen ? <ShortcutsDialog onClose={() => setHelpOpen(false)} /> : null}
+
+      <div className="adp-sr" role="status" aria-live="polite">
+        {state.announce}
+      </div>
+    </div>
+  );
+}

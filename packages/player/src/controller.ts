@@ -1,4 +1,11 @@
-import type { EngineError, EngineEvent, NetworkMonitor, PageEvents, PlayerEngine, PlayerMedia } from './engine';
+import type {
+  EngineError,
+  EngineEvent,
+  NetworkMonitor,
+  PageEvents,
+  PlayerEngine,
+  PlayerMedia,
+} from './engine';
 import type { ShortcutAction } from './keyboard';
 import { ProgressReporter, type ProgressSink } from './progress';
 import {
@@ -206,7 +213,8 @@ export class PlayerController {
       this.cleanups.push(() => media.removeEventListener(ev, handler));
     }
     this.cleanups.push(engine.on((e) => this.onEngine(e)));
-    if (this.network) this.cleanups.push(this.network.subscribe((online) => this.onNetwork(online)));
+    if (this.network)
+      this.cleanups.push(this.network.subscribe((online) => this.onNetwork(online)));
     if (this.o.page) {
       this.cleanups.push(
         this.o.page.onVisibility((hidden) => {
@@ -234,7 +242,14 @@ export class PlayerController {
 
     const resume = computeStartPosition(this.o.resume ?? {});
     if (resume.resumedFrom !== null) {
-      this.toast({ kind: 'resume', message: `Resumed from ${formatClock(resume.resumedFrom)}`, action: 'start-over' }, 8_000);
+      this.toast(
+        {
+          kind: 'resume',
+          message: `Resumed from ${formatClock(resume.resumedFrom)}`,
+          action: 'start-over',
+        },
+        8_000,
+      );
     }
     this.initialStart = resume.start;
 
@@ -337,7 +352,9 @@ export class PlayerController {
   }
 
   setRate(rate: number): void {
-    const nearest = PLAYBACK_RATES.reduce((best, r) => (Math.abs(r - rate) < Math.abs(best - rate) ? r : best));
+    const nearest = PLAYBACK_RATES.reduce((best, r) =>
+      Math.abs(r - rate) < Math.abs(best - rate) ? r : best,
+    );
     this.o.media.playbackRate = nearest;
     this.prefs.rate = nearest;
     this.set({ rate: nearest });
@@ -362,7 +379,8 @@ export class PlayerController {
   setDataSaver(on: boolean): void {
     this.prefs.dataSaver = on;
     const cap = this.cap();
-    if (typeof this.selected === 'number' && cap !== null && this.selected > cap) this.selected = 'auto';
+    if (typeof this.selected === 'number' && cap !== null && this.selected > cap)
+      this.selected = 'auto';
     this.o.engine.setQuality(this.selected, cap);
     this.set({ quality: this.qualityState() });
     this.persist();
@@ -405,7 +423,12 @@ export class PlayerController {
     const kind = this.state.error;
     if (!kind || kind === 'unsupported-browser') return;
     const { engine, media } = this.o;
-    this.set({ error: null, backOnline: false, phase: this.firstFrame ? 'ready' : 'loading', announce: '' });
+    this.set({
+      error: null,
+      backOnline: false,
+      phase: this.firstFrame ? 'ready' : 'loading',
+      announce: '',
+    });
     if (!this.loaded) {
       this.load();
       return;
@@ -416,6 +439,11 @@ export class PlayerController {
     if (this.wasPlaying) this.play();
   }
 
+  /** Show a short message in the toast slot, for example when full screen is refused. */
+  notify(message: string, kind: PlayerToast['kind'] = 'info'): void {
+    this.toast({ kind, message }, 6_000);
+  }
+
   dismissToast(): void {
     if (this.toastTimer) clearTimeout(this.toastTimer);
     this.set({ toast: null });
@@ -424,7 +452,10 @@ export class PlayerController {
   cancelCountdown(): void {
     if (this.state.upNext.countdown === null) return;
     this.clearCountdown();
-    this.set({ upNext: { ...this.state.upNext, countdown: null, cancelled: true }, announce: 'Autoplay cancelled' });
+    this.set({
+      upNext: { ...this.state.upNext, countdown: null, cancelled: true },
+      announce: 'Autoplay cancelled',
+    });
   }
 
   dismissUpNextTile(): void {
@@ -466,7 +497,8 @@ export class PlayerController {
         if (Number.isFinite(this.o.media.duration)) this.seekTo(this.o.media.duration - 1);
         break;
       case 'seek-fraction':
-        if (Number.isFinite(this.o.media.duration)) this.seekTo(this.o.media.duration * action.fraction);
+        if (Number.isFinite(this.o.media.duration))
+          this.seekTo(this.o.media.duration * action.fraction);
         break;
       case 'volume-by':
         this.adjustVolume(action.delta);
@@ -507,7 +539,10 @@ export class PlayerController {
         if (type === 'playing') this.onFirstFrame();
         this.clearStall();
         this.reporter.setPlaying(!media.paused);
-        this.set({ playing: !media.paused, ...(this.state.error ? {} : { buffering: false, slowNotice: false }) });
+        this.set({
+          playing: !media.paused,
+          ...(this.state.error ? {} : { buffering: false, slowNotice: false }),
+        });
         this.sync();
         break;
       }
@@ -593,7 +628,11 @@ export class PlayerController {
     const remaining = media.duration - media.currentTime;
     const next = this.o.upNext;
     const tile =
-      !!next && !this.tileDismissed && Number.isFinite(remaining) && remaining <= UP_NEXT_TILE_SECONDS && remaining > 0;
+      !!next &&
+      !this.tileDismissed &&
+      Number.isFinite(remaining) &&
+      remaining <= UP_NEXT_TILE_SECONDS &&
+      remaining > 0;
     if (tile !== this.state.upNext.tile) this.set({ upNext: { ...this.state.upNext, tile } });
     this.checkPendingStop();
   }
@@ -618,7 +657,10 @@ export class PlayerController {
     this.stallStartedAt = Date.now();
     this.stallAt = this.o.media.currentTime;
     this.rebufferCount += 1;
-    this.spinnerTimer = setTimeout(() => this.set({ buffering: true, announce: 'Buffering' }), SPINNER_AFTER_MS);
+    this.spinnerTimer = setTimeout(
+      () => this.set({ buffering: true, announce: 'Buffering' }),
+      SPINNER_AFTER_MS,
+    );
     this.slowTimer = setTimeout(() => {
       if (this.selected !== 'auto') return;
       this.o.engine.dropQuality();
@@ -757,7 +799,9 @@ export class PlayerController {
       if (!this.o.media.paused || this.wasPlaying) this.play();
     } catch (e) {
       const k = e instanceof SessionError ? e.kind : 'network';
-      this.setError(k === 'auth' ? 'session-expired' : k === 'gone' ? 'removed' : 'connection-lost');
+      this.setError(
+        k === 'auth' ? 'session-expired' : k === 'gone' ? 'removed' : 'connection-lost',
+      );
     } finally {
       this.refreshing = false;
     }
@@ -790,7 +834,7 @@ export class PlayerController {
   private setError(kind: PlayerErrorKind): void {
     if (this.state.error === kind) return;
     if (!this.state.error) this.wasPlaying = !this.o.media.paused;
-    this.syncProgress();
+    this.sync();
     void this.reporter.flush('manual');
     this.clearStall();
     this.clearCountdown();
@@ -818,7 +862,10 @@ export class PlayerController {
   }
 
   private cap(): number | null {
-    return effectiveCap({ dataSaver: this.prefs.dataSaver, dataSaverMaxHeight: this.dataSaverMaxHeight });
+    return effectiveCap({
+      dataSaver: this.prefs.dataSaver,
+      dataSaverMaxHeight: this.dataSaverMaxHeight,
+    });
   }
 
   private pickTrack(): CaptionTrack | undefined {
@@ -843,7 +890,9 @@ export class PlayerController {
   private reportMetrics(final: boolean): void {
     if (!this.o.metrics) return;
     const stalled = this.stallStartedAt !== null ? Date.now() - this.stallStartedAt : 0;
-    const avg = this.bitrates.length ? this.bitrates.reduce((a, b) => a + b, 0) / this.bitrates.length : null;
+    const avg = this.bitrates.length
+      ? this.bitrates.reduce((a, b) => a + b, 0) / this.bitrates.length
+      : null;
     this.o.metrics.report({
       startupMs: this.startupMs,
       rebufferCount: this.rebufferCount,

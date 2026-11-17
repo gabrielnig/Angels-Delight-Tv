@@ -18,7 +18,11 @@ class FakeHls implements HlsInstanceLike {
   static supported = true;
   static Events = { MANIFEST_PARSED: 'parsed', LEVEL_SWITCHED: 'switched', ERROR: 'error' };
   static ErrorTypes = ERROR_TYPES;
-  static DefaultConfig = { loader: class { load() {} } };
+  static DefaultConfig = {
+    loader: class {
+      load() {}
+    },
+  };
   static isSupported() {
     return FakeHls.supported;
   }
@@ -79,17 +83,34 @@ function engine() {
 describe('mapHlsError', () => {
   const t = ERROR_TYPES;
   it('maps statuses', () => {
-    expect(mapHlsError({ type: t.NETWORK_ERROR, details: 'keyLoadError', response: { code: 401 } }, t)).toMatchObject({ kind: 'auth', fatal: true, status: 401 });
-    expect(mapHlsError({ type: t.NETWORK_ERROR, details: 'fragLoadError', response: { code: 403 } }, t)).toMatchObject({ kind: 'forbidden', fatal: true });
-    expect(mapHlsError({ type: t.NETWORK_ERROR, details: 'manifestLoadError', response: { code: 404 } }, t)).toMatchObject({ kind: 'gone' });
+    expect(
+      mapHlsError({ type: t.NETWORK_ERROR, details: 'keyLoadError', response: { code: 401 } }, t),
+    ).toMatchObject({ kind: 'auth', fatal: true, status: 401 });
+    expect(
+      mapHlsError({ type: t.NETWORK_ERROR, details: 'fragLoadError', response: { code: 403 } }, t),
+    ).toMatchObject({ kind: 'forbidden', fatal: true });
+    expect(
+      mapHlsError(
+        { type: t.NETWORK_ERROR, details: 'manifestLoadError', response: { code: 404 } },
+        t,
+      ),
+    ).toMatchObject({ kind: 'gone' });
   });
   it('keeps fatal flags for network and media errors', () => {
-    expect(mapHlsError({ type: t.NETWORK_ERROR, details: 'fragLoadError', fatal: false }, t)).toMatchObject({ kind: 'network', fatal: false });
-    expect(mapHlsError({ type: t.NETWORK_ERROR, details: 'fragLoadError', fatal: true }, t)).toMatchObject({ kind: 'network', fatal: true });
-    expect(mapHlsError({ type: t.MEDIA_ERROR, details: 'bufferAppendError', fatal: true }, t)).toMatchObject({ kind: 'media', fatal: true });
+    expect(
+      mapHlsError({ type: t.NETWORK_ERROR, details: 'fragLoadError', fatal: false }, t),
+    ).toMatchObject({ kind: 'network', fatal: false });
+    expect(
+      mapHlsError({ type: t.NETWORK_ERROR, details: 'fragLoadError', fatal: true }, t),
+    ).toMatchObject({ kind: 'network', fatal: true });
+    expect(
+      mapHlsError({ type: t.MEDIA_ERROR, details: 'bufferAppendError', fatal: true }, t),
+    ).toMatchObject({ kind: 'media', fatal: true });
   });
   it('reads the status from networkDetails when there is no response', () => {
-    expect(mapHlsError({ type: t.NETWORK_ERROR, networkDetails: { status: 401 } }, t).kind).toBe('auth');
+    expect(mapHlsError({ type: t.NETWORK_ERROR, networkDetails: { status: 401 } }, t).kind).toBe(
+      'auth',
+    );
   });
 });
 
@@ -152,7 +173,12 @@ describe('createHlsEngine with a fake hls.js', () => {
 
   it('maps hls errors to engine errors', () => {
     const { events, hls } = engine();
-    hls.fire('error', { type: ERROR_TYPES.NETWORK_ERROR, details: 'keyLoadError', response: { code: 401 }, fatal: true });
+    hls.fire('error', {
+      type: ERROR_TYPES.NETWORK_ERROR,
+      details: 'keyLoadError',
+      response: { code: 401 },
+      fatal: true,
+    });
     expect(events.at(-1)).toMatchObject({ type: 'error', error: { kind: 'auth', status: 401 } });
   });
 
@@ -178,7 +204,10 @@ describe('createHlsEngine with a fake hls.js', () => {
     const { e, hls } = engine();
     e.setToken('NEW');
     const xhr = { setRequestHeader: vi.fn() } as unknown as XMLHttpRequest;
-    (hls.config as { xhrSetup: (x: XMLHttpRequest, u: string) => void }).xhrSetup(xhr, `${APP}/api/hls/keys/v1`);
+    (hls.config as { xhrSetup: (x: XMLHttpRequest, u: string) => void }).xhrSetup(
+      xhr,
+      `${APP}/api/hls/keys/v1`,
+    );
     expect(xhr.setRequestHeader).toHaveBeenCalledWith('Authorization', 'Bearer NEW');
   });
 });

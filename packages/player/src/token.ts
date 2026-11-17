@@ -105,7 +105,8 @@ export class TokenManager {
 
   private schedule(s: PlaybackSession, attempt = 0): void {
     if (this.timer) clearTimeout(this.timer);
-    const delay = attempt === 0 ? Math.max(0, s.expiresAt - Date.now() - this.lead) : this.retryDelay;
+    const delay =
+      attempt === 0 ? Math.max(0, s.expiresAt - Date.now() - this.lead) : this.retryDelay;
     this.timer = setTimeout(() => {
       this.refresh().catch((e: SessionError) => {
         if (this.disposed) return;
