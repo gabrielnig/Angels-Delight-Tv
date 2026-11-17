@@ -14,13 +14,22 @@ async function run(
   return result;
 }
 
-export const createCategoryAction = (name: string) =>
-  run((a) => collectionService.createCategory(a, String(name)));
-export const renameCategoryAction = (id: string, name: string) =>
-  run((a) => collectionService.renameCategory(a, String(id), String(name)));
-export const hideCategoryAction = (id: string, hidden: boolean) =>
-  run((a) => collectionService.setCategoryHidden(a, String(id), Boolean(hidden)));
-export const moveCategoryAction = (id: string, delta: -1 | 1) =>
-  run((a) => collectionService.moveCategory(a, String(id), delta === -1 ? -1 : 1));
-export const deleteCategoryAction = (id: string) =>
-  run((a) => collectionService.deleteCategory(a, String(id)));
+export async function createCategoryAction(name: string) {
+  return run((a) => collectionService.createCategory(a, String(name)));
+}
+
+export async function renameCategoryAction(id: string, name: string) {
+  return run((a) => collectionService.renameCategory(a, String(id), String(name)));
+}
+
+export async function hideCategoryAction(id: string, hidden: boolean) {
+  return run((a) => collectionService.setCategoryHidden(a, String(id), Boolean(hidden)));
+}
+
+export async function moveCategoryAction(id: string, delta: -1 | 1) {
+  return run((a) => collectionService.moveCategory(a, String(id), delta === -1 ? -1 : 1));
+}
+
+export async function deleteCategoryAction(id: string) {
+  return run((a) => collectionService.deleteCategory(a, String(id)));
+}
