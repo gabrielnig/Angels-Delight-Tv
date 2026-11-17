@@ -289,14 +289,12 @@ describe.skipIf(!integrationEnabled())('profiles', () => {
     it('removes the profile together with its progress and list', async () => {
       const user = await h.makeUser();
       const video = await seedVideo(h.db.setup);
-      await h.db.setup
-        .insert(watchProgress)
-        .values({
-          profileId: user.kidsProfileId,
-          videoId: video.id,
-          positionMs: 9000,
-          durationMs: 120000,
-        });
+      await h.db.setup.insert(watchProgress).values({
+        profileId: user.kidsProfileId,
+        videoId: video.id,
+        positionMs: 9000,
+        durationMs: 120000,
+      });
       await h.db.setup.insert(myList).values({ profileId: user.kidsProfileId, videoId: video.id });
 
       await deleteProfile(h.ctx, user.actor, user.kidsProfileId);
