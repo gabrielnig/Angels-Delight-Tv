@@ -7,6 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 ## [Unreleased]
 
 ### Added
+- Lane B auth: `@ad/auth` (Argon2id passwords, opaque sessions, per account keys with crypto-shredding, sign up and verification, sign in, reset, account changes and deletion, staff TOTP two factor, recovery codes, invites, role changes, `db:seed:admin`), `@ad/security` (rate limiter, lockouts, CSRF, CSP, audit writer), `@ad/mailer` (SMTP and templates), the nonce CSP `proxy.ts`, and the real auth gateway behind the viewer and admin screens.
 - Lane C viewer API: `@ad/catalog` and `@ad/viewer` services (profiles, kids mode, home, browse, search, title detail, Continue Watching, My List, publishing), `/api/*` viewer routes, and `pnpm db:seed:demo`.
 - Lane A foundation: pnpm workspace with `apps/web` (Next.js, `/api/health`), `apps/worker` (pg-boss boot) and packages `db`, `config`, `storage`, `ui`, `shared`.
 - Drizzle schema for every DATA-MODEL table, generated migrations, and hand-written SQL for deferrable constraints, triggers, row level security on accounts, profiles, watch_progress and my_list, and role grants. `withAccount` sets the row level security context.
