@@ -1,0 +1,118 @@
+.ads-layout {
+  display: grid;
+  gap: var(--space-4);
+  align-items: start;
+}
+@media (min-width: 64rem) {
+  .ads-layout {
+    grid-template-columns: minmax(0, 1fr) 20rem;
+  }
+  .ads-checklist {
+    position: sticky;
+    top: calc(var(--nav-height) + var(--space-4));
+  }
+}
+.ads-main {
+  min-width: 0;
+}
+.ads-check {
+  display: flex;
+  gap: var(--space-2);
+  align-items: flex-start;
+}
+.ads-check > svg {
+  flex: none;
+  margin-top: 2px;
+}
+.ads-check .adm-list__sub {
+  display: block;
+}
+.ads-flags {
+  display: grid;
+}
+.ads-flag {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-3) 0;
+  border-top: 1px solid var(--color-border);
+}
+.ads-flags .ads-flag:first-child {
+  border-top: 0;
+}
+.ads-flag .adm-field__hint {
+  margin: 0;
+  max-width: 32rem;
+}
+.ads-numbers {
+  display: grid;
+  gap: var(--space-4);
+}
+@media (min-width: 48rem) {
+  .ads-numbers {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+.ads-links {
+  border: 0;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--space-2);
+  min-width: 0;
+}
+.ads-link-row {
+  display: grid;
+  gap: var(--space-2);
+  align-items: end;
+}
+@media (min-width: 48rem) {
+  .ads-link-row {
+    grid-template-columns: 1fr 2fr auto;
+  }
+}
+.ads-pages {
+  display: grid;
+  gap: var(--space-4);
+}
+.ads-pages__grid {
+  display: grid;
+  gap: var(--space-4);
+  align-items: start;
+}
+@media (min-width: 64rem) {
+  .ads-pages__grid {
+    grid-template-columns: minmax(0, 1fr) 16rem;
+  }
+}
+.ads-editor {
+  display: grid;
+  gap: var(--space-3);
+  min-width: 0;
+}
+.ads-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+.ads-link {
+  display: grid;
+  gap: var(--space-2);
+}
+.ads-preview {
+  padding: var(--space-4);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  min-height: 14rem;
+  max-width: 70ch;
+}
+.ads-preview a {
+  color: var(--color-primary);
+}
+.ads-versions {
+  display: grid;
+  gap: var(--space-2);
+}
