@@ -43,7 +43,7 @@ Changes required before the findings below are cleared; after the fixes merged i
 
 1. Account overview (`/account`, mockup S27) is a bare definition list. The mockup has a profile card, stats, a profiles card, link rows with icons and a Sign out card, and a side nav with icons and an active state. Fix: build the cards from `@ad/ui` surfaces. Doc 12.
 2. Title page (`/title/[slug]`, S18) is a single column with a small poster. The mockup is two columns from 960px (poster left, title, meta, actions and progress right), has a breadcrumb, a Show more description and a More like this row. Fix: two column layout, breadcrumb.
-3. No route level `loading.tsx` for viewer pages. Skeleton components exist and Home and Profiles use them, but Browse, Search, Title, Series, My List and Account show nothing until data arrives. Fix: add `loading.tsx` with `SkeletonRegion` matching final geometry, shown after 300ms (doc 11.14).
+3. Fixed: viewer and account routes now have a `loading.tsx` (`PageLoading`, skeleton after 300ms). Page specific skeleton geometry (browse grid, title two column) should follow the layout work in items 1 and 2.
 4. Sign in and sign up (S01, S02) render the form with no card surface. The mockup puts the form in a white card with border and shadow, and a states strip. Fix: wrap in the auth card surface.
 
 ### Minor
