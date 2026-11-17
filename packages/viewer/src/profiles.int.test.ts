@@ -422,7 +422,10 @@ describe.skipIf(!integrationEnabled())('profiles', () => {
 
     it('stops PIN guessing when the rate limiter says no', async () => {
       const limited = await createHarness({
-        rateLimit: async () => ({ allowed: false, retryAfterSeconds: 30 }),
+        rateLimit: async (bucket) =>
+          bucket === 'profile_pin'
+            ? { allowed: false, retryAfterSeconds: 30 }
+            : { allowed: true, retryAfterSeconds: 0 },
       });
       try {
         const user = await limited.makeUser();

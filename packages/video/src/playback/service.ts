@@ -136,9 +136,14 @@ export class PlaybackService {
 
   /** A viewer session. Unpublished, deleted and not kids safe titles are all a plain not found. */
   async startSession(
-    viewer: { accountId: string; profileId: string },
+    viewer: { accountId: string; profileId: string; activeProfileId?: string },
     videoId: string,
   ): Promise<SessionInfo> {
+    // The signed active profile cookie wins over a profile id the client names: a kids profile cannot ask for a grown-up one.
+    if (viewer.activeProfileId && viewer.activeProfileId !== viewer.profileId) {
+      const active = await this.deps.store.profile(viewer.activeProfileId, viewer.accountId);
+      if (active?.isKids) throw new Forbidden('That profile is not available.');
+    }
     const profile = await this.deps.store.profile(viewer.profileId, viewer.accountId);
     if (!profile) throw new Forbidden('That profile is not available.');
     await this.deps.limiter?.enforce(PLAY_POLICIES.sessionProfile, profile.id);
