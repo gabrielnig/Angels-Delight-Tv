@@ -35,7 +35,7 @@ export const homeQuery = profileIdQuery.extend({ cursor: cursor.optional() });
 
 export const browseQuery = profileIdQuery.extend({
   category: z.string().max(80).optional(),
-  sort: z.enum(['newest', 'az', 'shortest']).optional(),
+  sort: z.enum(['newest', 'az', 'shortest', 'longest']).optional(),
   duration: z.enum(['short', 'medium', 'long']).optional(),
   limit: z.coerce.number().int().min(1).max(60).optional(),
   cursor: cursor.optional(),
