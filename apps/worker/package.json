@@ -16,7 +16,10 @@
   "dependencies": {
     "@ad/config": "workspace:*",
     "@ad/db": "workspace:*",
+    "@ad/queue": "workspace:*",
     "@ad/shared": "workspace:*",
+    "@ad/storage": "workspace:*",
+    "@ad/video": "workspace:*",
     "pg": "^8.23.1",
     "pg-boss": "^12.38.2",
     "tsx": "^4.23.15"
