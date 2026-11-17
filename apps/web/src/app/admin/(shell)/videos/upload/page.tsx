@@ -12,15 +12,24 @@ export const metadata: Metadata = { title: 'Upload videos' };
 
 export default async function UploadPage() {
   const actor = await requireActor('/admin/videos/upload');
-  if (!can(actor.role, 'video.upload')) return <NoAccess pageName="Upload" roleLabel={ROLE_LABELS[actor.role]} needed="editors and admins" />;
+  if (!can(actor.role, 'video.upload'))
+    return (
+      <NoAccess pageName="Upload" roleLabel={ROLE_LABELS[actor.role]} needed="editors and admins" />
+    );
   return (
     <>
       <PageHeader
-        crumbs={[{ label: 'Admin', href: '/admin' }, { label: 'Videos', href: '/admin/videos' }, { label: 'Upload' }]}
+        crumbs={[
+          { label: 'Admin', href: '/admin' },
+          { label: 'Videos', href: '/admin/videos' },
+          { label: 'Upload' },
+        ]}
         title="Upload videos"
         lead="Many at once is fine. A lost connection never loses your progress."
       />
-      <UploadScreen registerUpload={uploadTransportMode() === 'fixture' ? registerUploadAction : undefined} />
+      <UploadScreen
+        registerUpload={uploadTransportMode() === 'fixture' ? registerUploadAction : undefined}
+      />
     </>
   );
 }

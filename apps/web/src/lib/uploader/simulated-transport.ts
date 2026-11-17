@@ -27,7 +27,11 @@ export function createSimulatedTransport(options: SimulatedOptions = {}): Upload
       if (!uploadId || !parts.has(uploadId)) {
         uploadId = `sim_${++counter}`;
         parts.set(uploadId, new Set());
-        meta.set(uploadId, { name: input.name, size: input.size, broken: input.name.toLowerCase().includes(flaky) });
+        meta.set(uploadId, {
+          name: input.name,
+          size: input.size,
+          broken: input.name.toLowerCase().includes(flaky),
+        });
       }
       // A manual Retry (start with a known upload id) is what mends a flaky file.
       if (input.resumeUploadId) meta.get(uploadId)!.broken = false;

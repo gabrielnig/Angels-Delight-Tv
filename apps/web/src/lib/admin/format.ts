@@ -25,11 +25,19 @@ export function formatCount(value: number): string {
 const TZ = 'Africa/Lagos';
 
 export function formatDate(iso: string): string {
-  return new Intl.DateTimeFormat('en-NG', { month: 'short', day: 'numeric', timeZone: TZ }).format(new Date(iso));
+  return new Intl.DateTimeFormat('en-NG', { month: 'short', day: 'numeric', timeZone: TZ }).format(
+    new Date(iso),
+  );
 }
 
 export function formatDateTime(iso: string): string {
-  return new Intl.DateTimeFormat('en-NG', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', timeZone: TZ })
+  return new Intl.DateTimeFormat('en-NG', {
+    month: 'short',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+    timeZone: TZ,
+  })
     .format(new Date(iso))
     .replace(/\s?(am|pm)/i, (m) => m.trim().toUpperCase().padStart(3, ' '));
 }

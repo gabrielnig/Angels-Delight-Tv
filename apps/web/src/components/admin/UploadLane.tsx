@@ -42,7 +42,8 @@ export function laneStatusText(lane: Lane): string {
 
 /** Ten percent steps for screen readers, so progress is not read on every tick. */
 export function announcement(lane: Lane): string {
-  if (lane.status === 'uploading') return `${lane.name}: ${Math.floor(lane.percent / 10) * 10} percent uploaded`;
+  if (lane.status === 'uploading')
+    return `${lane.name}: ${Math.floor(lane.percent / 10) * 10} percent uploaded`;
   if (lane.status === 'failed') return `${lane.name}: ${lane.message ?? 'upload failed'}`;
   if (lane.status === 'done') return `${lane.name}: upload finished`;
   if (lane.status === 'paused') return `${lane.name}: paused`;
@@ -50,9 +51,24 @@ export function announcement(lane: Lane): string {
   return '';
 }
 
-export function UploadLane({ lane, actions, videoId }: { lane: Lane; actions: LaneActions; videoId?: string }) {
+export function UploadLane({
+  lane,
+  actions,
+  videoId,
+}: {
+  lane: Lane;
+  actions: LaneActions;
+  videoId?: string;
+}) {
   const replaceInput = useRef<HTMLInputElement>(null);
-  const tone = lane.status === 'failed' ? 'danger' : lane.status === 'paused' || lane.status === 'offline' ? 'paused' : lane.status === 'done' ? 'success' : 'primary';
+  const tone =
+    lane.status === 'failed'
+      ? 'danger'
+      : lane.status === 'paused' || lane.status === 'offline'
+        ? 'paused'
+        : lane.status === 'done'
+          ? 'success'
+          : 'primary';
   const text = laneStatusText(lane);
   const step = Math.floor(lane.percent / 10) * 10;
 
@@ -61,14 +77,23 @@ export function UploadLane({ lane, actions, videoId }: { lane: Lane; actions: La
       <li className="adm-lane adm-lane--done">
         <PosterTile title={lane.name} seed={seedOf(lane.name)} size="md" />
         <div className="adm-lane__main">
-          <p className="adm-lane__name" title={lane.name}>{lane.name}</p>
-          <p className="adm-muted">
-            {lane.type || 'video/mp4'} , {formatBytes(lane.size)} ({lane.size.toLocaleString('en-NG')} bytes)
+          <p className="adm-lane__name" title={lane.name}>
+            {lane.name}
           </p>
-          <Badge tone="success" icon="check">{text}</Badge>
+          <p className="adm-muted">
+            {lane.type || 'video/mp4'} , {formatBytes(lane.size)} (
+            {lane.size.toLocaleString('en-NG')} bytes)
+          </p>
+          <Badge tone="success" icon="check">
+            {text}
+          </Badge>
         </div>
         <div className="adm-lane__actions">
-          <Link className="adm-btn adm-btn--primary" href={videoId ? `/admin/videos/${videoId}` : '/admin/videos'} aria-label={`Edit details for ${lane.name}`}>
+          <Link
+            className="adm-btn adm-btn--primary"
+            href={videoId ? `/admin/videos/${videoId}` : '/admin/videos'}
+            aria-label={`Edit details for ${lane.name}`}
+          >
             Edit details
           </Link>
           <input
@@ -85,7 +110,11 @@ export function UploadLane({ lane, actions, videoId }: { lane: Lane; actions: La
           <Button onClick={() => replaceInput.current?.click()} aria-label={`Replace ${lane.name}`}>
             Replace
           </Button>
-          <Button variant="ghost" onClick={() => actions.remove(lane.id)} aria-label={`Remove ${lane.name}`}>
+          <Button
+            variant="ghost"
+            onClick={() => actions.remove(lane.id)}
+            aria-label={`Remove ${lane.name}`}
+          >
             Remove
           </Button>
         </div>
@@ -97,8 +126,14 @@ export function UploadLane({ lane, actions, videoId }: { lane: Lane; actions: La
     return (
       <li className="adm-lane adm-lane--rejected">
         <Icon name="alert" />
-        <p className="adm-lane__main" role="alert">{lane.message}</p>
-        <Button variant="ghost" onClick={() => actions.remove(lane.id)} aria-label={`Dismiss ${lane.name}`}>
+        <p className="adm-lane__main" role="alert">
+          {lane.message}
+        </p>
+        <Button
+          variant="ghost"
+          onClick={() => actions.remove(lane.id)}
+          aria-label={`Dismiss ${lane.name}`}
+        >
           Dismiss
         </Button>
       </li>
@@ -118,34 +153,64 @@ export function UploadLane({ lane, actions, videoId }: { lane: Lane; actions: La
           label={`Upload of ${lane.name}`}
           indeterminate={lane.status === 'processing'}
         />
-        <p className={lane.status === 'failed' ? 'adm-lane__text adm-field__error' : 'adm-lane__text adm-muted'}>{text}</p>
+        <p
+          className={
+            lane.status === 'failed'
+              ? 'adm-lane__text adm-field__error'
+              : 'adm-lane__text adm-muted'
+          }
+        >
+          {text}
+        </p>
         <span className="adm-sr" aria-live="polite" data-step={step}>
           {announcement(lane)}
         </span>
       </div>
       <div className="adm-lane__actions">
         {lane.status === 'uploading' ? (
-          <Button onClick={() => actions.pause(lane.id)} icon="pause" aria-label={`Pause ${lane.name}`}>
+          <Button
+            onClick={() => actions.pause(lane.id)}
+            icon="pause"
+            aria-label={`Pause ${lane.name}`}
+          >
             Pause
           </Button>
         ) : null}
         {lane.status === 'paused' ? (
-          <Button variant="primary" onClick={() => actions.resume(lane.id)} icon="play" aria-label={`Resume ${lane.name}`}>
+          <Button
+            variant="primary"
+            onClick={() => actions.resume(lane.id)}
+            icon="play"
+            aria-label={`Resume ${lane.name}`}
+          >
             Resume
           </Button>
         ) : null}
         {lane.status === 'failed' ? (
-          <Button variant="primary" onClick={() => actions.retry(lane.id)} icon="retry" aria-label={`Retry ${lane.name}`}>
+          <Button
+            variant="primary"
+            onClick={() => actions.retry(lane.id)}
+            icon="retry"
+            aria-label={`Retry ${lane.name}`}
+          >
             Retry
           </Button>
         ) : null}
         {lane.status === 'offline' ? (
-          <Button onClick={() => actions.retry(lane.id)} icon="retry" aria-label={`Try now ${lane.name}`}>
+          <Button
+            onClick={() => actions.retry(lane.id)}
+            icon="retry"
+            aria-label={`Try now ${lane.name}`}
+          >
             Try now
           </Button>
         ) : null}
         {lane.status !== 'processing' ? (
-          <Button variant="ghost" aria-label={`${lane.status === 'failed' ? 'Remove' : 'Cancel'} ${lane.name}`} onClick={() => actions.cancel(lane.id)}>
+          <Button
+            variant="ghost"
+            aria-label={`${lane.status === 'failed' ? 'Remove' : 'Cancel'} ${lane.name}`}
+            onClick={() => actions.cancel(lane.id)}
+          >
             {lane.status === 'failed' ? 'Remove' : 'Cancel'}
           </Button>
         ) : null}

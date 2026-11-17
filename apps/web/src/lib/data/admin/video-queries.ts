@@ -18,7 +18,16 @@ export interface VideoQuery {
   limit?: number;
 }
 
-const STATUSES: AdminVideoStatus[] = ['draft', 'uploading', 'processing', 'needs_captions', 'ready', 'scheduled', 'published', 'failed'];
+const STATUSES: AdminVideoStatus[] = [
+  'draft',
+  'uploading',
+  'processing',
+  'needs_captions',
+  'ready',
+  'scheduled',
+  'published',
+  'failed',
+];
 const CAPTIONS: CaptionState[] = ['none', 'generating', 'needs_review', 'approved', 'failed'];
 const SUITABILITY: Suitability[] = ['everyone', 'kids', 'older'];
 const SORTS: VideoSort[] = ['updated', 'title', 'views', 'published'];
@@ -26,7 +35,10 @@ const SORTS: VideoSort[] = ['updated', 'title', 'views', 'published'];
 export function queryVideos(all: VideoRecord[], query: VideoQuery): Page<VideoRecord> {
   const q = query.q?.trim().toLowerCase();
   let items = all.filter((video) => video.deletedAt === null);
-  if (q) items = items.filter((v) => v.title.toLowerCase().includes(q) || v.tags.some((t) => t.toLowerCase().includes(q)));
+  if (q)
+    items = items.filter(
+      (v) => v.title.toLowerCase().includes(q) || v.tags.some((t) => t.toLowerCase().includes(q)),
+    );
   if (query.status) items = items.filter((v) => adminStatusOf(v) === query.status);
   if (query.categoryId) items = items.filter((v) => v.categoryIds.includes(query.categoryId!));
   if (query.captions) items = items.filter((v) => v.captionState === query.captions);
@@ -35,18 +47,29 @@ export function queryVideos(all: VideoRecord[], query: VideoQuery): Page<VideoRe
   const sort = query.sort ?? 'updated';
   const dir = query.dir ?? (sort === 'title' ? 'asc' : 'desc');
   const key = (v: VideoRecord): number | string =>
-    sort === 'title' ? v.title : sort === 'views' ? v.views : sort === 'published' ? Date.parse(v.publishedAt ?? v.publishAt ?? '') || 0 : Date.parse(v.updatedAt);
+    sort === 'title'
+      ? v.title
+      : sort === 'views'
+        ? v.views
+        : sort === 'published'
+          ? Date.parse(v.publishedAt ?? v.publishAt ?? '') || 0
+          : Date.parse(v.updatedAt);
   items = [...items].sort((a, b) => {
     const x = key(a);
     const y = key(b);
-    const cmp = typeof x === 'string' ? x.localeCompare(y as string) : (x as number) - (y as number);
+    const cmp =
+      typeof x === 'string' ? x.localeCompare(y as string) : (x as number) - (y as number);
     return dir === 'asc' ? cmp : -cmp;
   });
 
   const limit = Math.min(50, Math.max(1, query.limit ?? 10));
   const start = Math.max(0, Number.parseInt(query.cursor ?? '0', 10) || 0);
   const slice = items.slice(start, start + limit);
-  return { items: slice, total: items.length, nextCursor: start + limit < items.length ? String(start + limit) : null };
+  return {
+    items: slice,
+    total: items.length,
+    nextCursor: start + limit < items.length ? String(start + limit) : null,
+  };
 }
 
 type Raw = Record<string, string | string[] | undefined>;
@@ -110,7 +133,12 @@ export function applyBulk(
   now: number,
 ): BulkResult {
   const result: BulkResult = { succeeded: [], failed: [] };
-  const needed = action.type === 'trash' ? 'video.delete' : action.type === 'publish' || action.type === 'unpublish' ? 'video.publish' : 'video.edit';
+  const needed =
+    action.type === 'trash'
+      ? 'video.delete'
+      : action.type === 'publish' || action.type === 'unpublish'
+        ? 'video.publish'
+        : 'video.edit';
   for (const id of ids) {
     const fail = (reason: string) => result.failed.push({ id, reason });
     const video = videos.find((v) => v.id === id && v.deletedAt === null);
@@ -119,7 +147,11 @@ export function applyBulk(
       continue;
     }
     if (!can(role, needed)) {
-      fail(action.type === 'trash' && can(role, 'video.edit') ? 'Only an admin can move videos to Trash.' : 'You do not have permission for this.');
+      fail(
+        action.type === 'trash' && can(role, 'video.edit')
+          ? 'Only an admin can move videos to Trash.'
+          : 'You do not have permission for this.',
+      );
       continue;
     }
     const stamp = new Date(now).toISOString();

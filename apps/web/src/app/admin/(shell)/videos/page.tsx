@@ -9,18 +9,36 @@ import { bulkVideosAction } from './actions';
 
 export const metadata: Metadata = { title: 'Videos' };
 
-export default async function VideosPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
+export default async function VideosPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
   const actor = await requireActor('/admin/videos');
   const query = parseVideoQuery(await searchParams);
-  const [page, categories] = await Promise.all([videoService.list(actor, query), videoService.categories(actor)]);
+  const [page, categories] = await Promise.all([
+    videoService.list(actor, query),
+    videoService.categories(actor),
+  ]);
   return (
     <>
       <PageHeader
         crumbs={[{ label: 'Admin', href: '/admin' }, { label: 'Videos' }]}
         title="Videos"
-        actions={<LinkButton href="/admin/videos/upload" variant="accent" icon="upload">Upload videos</LinkButton>}
+        actions={
+          <LinkButton href="/admin/videos/upload" variant="accent" icon="upload">
+            Upload videos
+          </LinkButton>
+        }
       />
-      <VideosList page={page} query={query} categories={categories} role={actor.role} bulk={bulkVideosAction} now={Date.now()} />
+      <VideosList
+        page={page}
+        query={query}
+        categories={categories}
+        role={actor.role}
+        bulk={bulkVideosAction}
+        now={Date.now()}
+      />
     </>
   );
 }

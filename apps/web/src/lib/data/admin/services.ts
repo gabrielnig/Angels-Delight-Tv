@@ -3,7 +3,13 @@ import { adminStatusOf, videoStub } from './video-rules';
 import { Forbidden, NotFound, ValidationFailed } from '@ad/shared';
 import type { BulkAction, BulkResult, VideoQuery } from './video-queries';
 import { applyBulk, queryVideos } from './video-queries';
-import { purgeVideo, restoreVideo, retryEncode, schedulePublish, validateVideoPatch } from './video-commands';
+import {
+  purgeVideo,
+  restoreVideo,
+  retryEncode,
+  schedulePublish,
+  validateVideoPatch,
+} from './video-commands';
 import type { PublishRequest, VideoPatch, CommandResult } from './video-commands';
 import type { CategoryRecord, Page, VideoRecord } from './types';
 import { can } from '@/lib/admin/can';
@@ -59,7 +65,10 @@ export interface VideoService {
   purge(actor: AdminActor, id: string): Promise<CommandResult>;
   encodingQueue(actor: AdminActor): Promise<VideoRecord[]>;
   /** Fixture only: the real upload API creates the draft video itself. */
-  createFromUpload(actor: AdminActor, input: { name: string; sizeBytes: number }): Promise<{ id: string }>;
+  createFromUpload(
+    actor: AdminActor,
+    input: { name: string; sizeBytes: number },
+  ): Promise<{ id: string }>;
 }
 
 function need(actor: AdminActor, action: Parameters<typeof can>[1]) {
@@ -87,7 +96,10 @@ export const videoService: VideoService = {
     const video = store.videos.find((v) => v.id === id && v.deletedAt === null);
     if (!video) throw new NotFound('Video not found');
     const result = validateVideoPatch(patch, new Set(store.categories.map((c) => c.id)));
-    if (!result.ok) throw new ValidationFailed(Object.fromEntries(Object.entries(result.errors).map(([k, v]) => [k, [v]])));
+    if (!result.ok)
+      throw new ValidationFailed(
+        Object.fromEntries(Object.entries(result.errors).map(([k, v]) => [k, [v]])),
+      );
     Object.assign(video, result.value, { updatedAt: new Date().toISOString() });
     return { ...video };
   },
@@ -127,7 +139,9 @@ export const videoService: VideoService = {
   },
   async trashed(actor) {
     need(actor, 'video.restore');
-    return getStore().videos.filter((v) => v.deletedAt !== null).map((v) => ({ ...v }));
+    return getStore()
+      .videos.filter((v) => v.deletedAt !== null)
+      .map((v) => ({ ...v }));
   },
   async restore(actor, id) {
     return restoreVideo(getStore().videos, id, actor.role);
@@ -139,7 +153,10 @@ export const videoService: VideoService = {
     need(actor, 'video.upload');
     const store = getStore();
     const stamp = new Date().toISOString();
-    const title = input.name.replace(/\.[^.]+$/, '').replace(/[_-]+/g, ' ').trim();
+    const title = input.name
+      .replace(/\.[^.]+$/, '')
+      .replace(/[_-]+/g, ' ')
+      .trim();
     const video = videoStub({
       id: `vid_${Math.random().toString(36).slice(2, 10)}`,
       title,
@@ -168,7 +185,11 @@ export const videoService: VideoService = {
       }
     }
     return getStore()
-      .videos.filter((v) => v.deletedAt === null && ['uploaded', 'validating', 'encoding', 'failed'].includes(v.status))
+      .videos.filter(
+        (v) =>
+          v.deletedAt === null &&
+          ['uploaded', 'validating', 'encoding', 'failed'].includes(v.status),
+      )
       .map((v) => ({ ...v }));
   },
 };

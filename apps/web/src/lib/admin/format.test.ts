@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { formatCount, formatDuration, formatRelative, fromLagosInput, spokenDuration, toLagosInput } from './format';
+import {
+  formatCount,
+  formatDuration,
+  formatRelative,
+  fromLagosInput,
+  spokenDuration,
+  toLagosInput,
+} from './format';
 
 describe('format', () => {
   it('formats durations', () => {
