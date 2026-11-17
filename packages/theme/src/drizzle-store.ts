@@ -121,6 +121,26 @@ export function createDrizzleThemeStore(db: Database): ThemeStore {
 
 export function createDrizzleAssetStore(db: Database): AssetStore {
   return {
+    async get(id) {
+      if (!/^[0-9a-f-]{36}$/i.test(id)) return null;
+      const [row] = await db.select().from(assets).where(eq(assets.id, id)).limit(1);
+      if (!row || row.status !== 'ready' || !row.mediaKeyBase || !row.sha256) return null;
+      return {
+        id: row.id,
+        purpose: row.purpose,
+        status: 'ready',
+        mime: 'image/webp',
+        bytes: row.bytes ?? 0,
+        width: row.width ?? 0,
+        height: row.height ?? 0,
+        sha256: row.sha256,
+        placeholderColor: row.placeholderColor ?? '#000000',
+        altText: row.altText,
+        mediaKeyBase: row.mediaKeyBase,
+        variants: row.variants,
+        createdBy: row.createdBy ?? '',
+      };
+    },
     async insert(asset) {
       await db.insert(assets).values({
         id: asset.id,
