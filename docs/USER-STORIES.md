@@ -1,0 +1,2512 @@
+# User Stories
+
+Stories for every module in `docs/MODULES.md`. Business rules (thresholds, limits, lockouts) come from section 8 of `docs/PRD.md`. Screens are in `docs/SCREEN-ARCHITECTURE.md`, where each screen lists the stories it realises.
+
+## How to read this document
+
+- **Id.** `Mxx-Syy`: module and story number.
+- **Priority.** Must (needed for launch), Should (wanted for launch if time allows), Could (later or optional).
+- **AC.** Acceptance criteria in Given, When, Then form. Each AC line is a testable statement and maps to a failing test written first.
+- **Edge.** Unusual but valid situations.
+- **Error.** What the viewer or admin sees when something fails. Error copy never blames the user and never reveals private facts.
+- **Empty.** What shows when there is nothing yet.
+- Personas: Viewer (Tobi), Diaspora viewer (Chidinma), Kid (Kemi), Parent, Admin (Sister Vanessa), Super admin (ARKDEV).
+- Numbers shown (5 attempts, 15 minutes, 95 percent and so on) are configurable defaults from M29.
+
+---
+
+## M01 Auth (viewer)
+
+### M01-S01 Sign up with email and password (Must)
+As a new viewer, I want to create an account with my email and a password, so that I can save my profiles and progress.
+- AC1: Given I am on `/sign-up`, When I enter a valid email and a password of at least 10 characters and submit, Then an account is created with status `unverified` and I am taken to `/verify-email`.
+- AC2: Given I submit an email that already has an account, When the request completes, Then I see the same "Check your email" screen as for a new account, and the existing owner receives a "someone tried to sign up" email (no account existence leak).
+- AC3: Given I leave a field, When I blur it, Then validation runs on blur first and then on change to clear errors as I correct them, with `aria-invalid` and `aria-describedby`.
+- AC4: Given I am on a 360 px wide phone, When the on-screen keyboard opens, Then the submit button stays reachable and the email field uses `inputmode="email"` and `autocomplete="email"`.
+- Edge: email with capital letters or trailing spaces is normalised (trimmed, lowercased domain, whole address lowercased for matching). Plus addressing (`a+b@x.com`) is allowed. Disposable email domains are allowed unless a blocklist flag is on (Could).
+- Error: network failure shows "Could not reach the server. Your details are still here. Try again." and keeps the form values (never the password in storage). Server validation failure maps to the matching field.
+- Empty: not applicable.
+
+### M01-S02 Live password guidance (Must)
+As a new viewer, I want live feedback while I type my password, so that I choose one that is strong and I can fix problems early.
+- AC1: Given I type in the password field, When the value changes, Then a checklist shows "At least 10 characters", "Not a very common password", "Not the same as your email", updating live.
+- AC2: Given the zxcvbn score is below 3, When I look at the meter, Then it shows a multi-segment indicator with a plain word (Weak, Fair, Good, Strong) and a hint, and submit is allowed only when the checklist passes (the meter is advice, the checklist is the gate).
+- AC3: Given I paste a password, When I paste, Then paste works (never blocked) and the checklist updates.
+- AC4: Given I tap the visibility toggle, When toggled, Then the field switches between password and text, with an accessible label "Show password" or "Hide password", and `autocomplete="new-password"` is set.
+- Edge: passwords up to 128 characters accepted, spaces and unicode allowed. Password manager fill works.
+- Error: if the common password list cannot load, the length rule still applies and sign up continues (the list is bundled server side, so this is a server check only).
+- Empty: with an empty field the checklist shows neutral (not red) states.
+
+### M01-S03 Verify email with a code (Must)
+As a new viewer, I want to enter a 6 digit code from my email, so that I confirm the address is mine.
+- AC1: Given I am on `/verify-email`, When I enter the correct code within 15 minutes, Then the account becomes `active` and I go to the profile picker.
+- AC2: Given I paste a 6 digit code, When I paste, Then non-numeric characters are removed and the digits fill the slots, with focus on the last slot.
+- AC3: Given I type a digit, When the slot fills, Then focus advances; When I press Backspace on an empty slot, Then focus moves back.
+- AC4: Given the field uses `inputmode="numeric"` and `autocomplete="one-time-code"`, When the phone offers an SMS or email code suggestion, Then I can accept it.
+- Edge: code expired shows "That code has expired. Send a new one." Code used twice is rejected. Entering the code from an older email after a resend is rejected (only the newest code is valid).
+- Error: wrong code shows "That code is not right" and counts toward a limit of 5 wrong attempts per code, after which the code is voided and I must resend.
+- Empty: not applicable.
+
+### M01-S04 Verify email with a link (Must)
+As a new viewer, I want to tap the link in the email instead of typing a code, so that verification takes one tap on my phone.
+- AC1: Given the email has a verification link, When I open it within 24 hours on any device, Then the account becomes `active` and I see "Email verified" with a Continue button.
+- AC2: Given I open the link on a device where I am not signed in, When it succeeds, Then I am sent to `/sign-in` with a success notice, not signed in automatically.
+- AC3: Given the link was already used, When I open it, Then I see "This link was already used" with a Sign in button.
+- Edge: link opened in an in-app browser (WhatsApp, Gmail) works without cookies, because the token is the credential.
+- Error: expired or tampered link shows an explanation and a "Send a new email" action.
+- Empty: not applicable.
+
+### M01-S05 Resend verification email (Must)
+As a new viewer, I want to resend the verification email, so that I can recover if it did not arrive.
+- AC1: Given I am on `/verify-email`, When I tap Resend, Then a new code and link are sent, the old ones are invalidated, and the button is disabled with a visible 60 second countdown.
+- AC2: Given I have requested 3 resends in 1 hour, When I tap again, Then I see "Too many requests. Try again in X minutes." and no email is sent.
+- AC3: Given the account is already active, When I open `/verify-email`, Then I am redirected to `/profiles`.
+- Edge: the screen offers "Wrong email? Change it" which lets an unverified account fix a typo (re-verifies the new address).
+- Error: provider failure shows "We could not send the email. Try again in a minute" and logs the failure (M24), the countdown does not start.
+- Empty: not applicable.
+
+### M01-S06 Sign in (Must)
+As a returning viewer, I want to sign in with email and password, so that I can reach my profiles.
+- AC1: Given valid credentials for an active account, When I submit, Then a session cookie (HttpOnly, Secure, SameSite=Lax) is set and I go to `/profiles` (or to the page I was trying to open).
+- AC2: Given invalid credentials, When I submit, Then I see "Email or password is incorrect" without saying which, and the response time is similar whether or not the email exists.
+- AC3: Given the account is unverified, When I sign in with the right password, Then I am sent to `/verify-email` with a new code sent automatically (respecting resend limits).
+- AC4: Given I came from a deep link such as `/title/xyz`, When I sign in, Then I return to that page afterward (only same-origin paths allowed as `next`).
+- Edge: a "Show password" toggle exists. Email field remembers last used email on the device (not the password). Browser password managers can fill.
+- Error: network failure keeps the form and offers retry. A suspended account sees "This account is not available. Contact support" with the support address.
+- Empty: not applicable.
+
+### M01-S07 Sign-in rate limit and lockout (Must)
+As the platform owner, I want repeated failed sign-ins to lock the attempt temporarily, so that guessing passwords is not practical.
+- AC1: Given 5 failed attempts for one account within 15 minutes, When the 6th attempt arrives, Then the account is locked for 15 minutes, even a correct password is refused during the lock, and the response is the same generic "Too many attempts. Try again in 15 minutes" message.
+- AC2: Given 20 failed attempts from one IP within 15 minutes across any accounts, When another attempt arrives, Then that IP is limited for 15 minutes.
+- AC3: Given the lock expires, When I sign in with the correct password, Then it succeeds and counters reset.
+- AC4: Given an account becomes locked, When the lock starts, Then the owner receives an email "There were several failed sign-in attempts" with a reset link (rate limited to one such email per hour) and an audit entry is written (M20).
+- AC5: Given the lock message is shown, When I look at the screen, Then it shows the minutes remaining (rounded up) without naming the account state beyond "try again".
+- Edge: a lock does not log out existing sessions. Shared IPs (mobile carriers use carrier grade NAT) are handled by the higher IP threshold, and the IP limit shows a captcha challenge (Turnstile) before a hard block (Could).
+- Error: if the rate limit store is unreachable, the system fails closed for sign in and shows "Sign in is temporarily unavailable" (never open silently).
+- Empty: not applicable.
+
+### M01-S08 Forgot password request (Must)
+As a viewer who forgot my password, I want to request a reset link, so that I can get back in.
+- AC1: Given I enter any well formed email on `/forgot-password`, When I submit, Then I always see "If an account exists, we sent a link" and nothing reveals whether it exists.
+- AC2: Given the account exists, When I submit, Then an email with a single use link valid for 1 hour is sent, and previous reset links are invalidated.
+- AC3: Given I request more than 3 times in an hour for one address, When I submit again, Then the same message shows but no further email is sent.
+- Edge: for an unverified account, the email offers to verify instead. For a suspended account no email is sent.
+- Error: provider failure is logged and the viewer still sees the generic message (no leak), plus a "Didn't get it?" help line with the support address.
+- Empty: not applicable.
+
+### M01-S09 Reset password (Must)
+As a viewer with a reset link, I want to set a new password, so that I can sign in again.
+- AC1: Given I open a valid link, When I enter a new password that passes the rules and submit, Then the password changes, all other sessions are revoked, the link is consumed, and I am sent to `/sign-in` with a success notice.
+- AC2: Given the link is expired, used or invalid, When I open it, Then I see "This link is no longer valid" with a button to request a new one.
+- AC3: Given I choose the same password as my current one, When I submit, Then I am told to choose a different one (Should).
+- AC4: Given the password changed, When it completes, Then a "Your password was changed" email is sent (M21) and an audit entry is written.
+- Edge: if a lock is active on the account, a successful reset clears the lock.
+- Error: network failure keeps the typed password in memory only and offers retry.
+- Empty: not applicable.
+
+### M01-S10 Sign out (Must)
+As a viewer, I want to sign out, so that nobody else uses my account on a shared device.
+- AC1: Given I am signed in, When I choose Sign out from the profile menu, Then the session is revoked server side, cookies cleared, and I land on the Landing page.
+- AC2: Given I sign out, When I press Back, Then protected pages do not show cached content and redirect to sign in.
+- AC3: Given I am offline, When I choose Sign out, Then the local session is cleared immediately and the server revocation is queued for when I am online.
+- Edge: signing out clears the "last profile" remembered for that device only if the user chooses "Forget this device" (Could).
+- Error: if revocation fails server side, the cookie is still cleared locally and the failure is logged.
+- Empty: not applicable.
+
+### M01-S11 Sign out of all devices (Should)
+As a viewer, I want to end every session of my account, so that a lost phone cannot be used.
+- AC1: Given I am in Account settings, When I choose "Sign out everywhere" and confirm with my password, Then all sessions are revoked (including this one) and I land on sign in.
+- AC2: Given another device is playing, When its session is revoked, Then within 5 minutes (next token refresh) playback stops and it shows sign in.
+- Edge: shows a list of sessions with device name, approximate location (country only), last active, and a per-session Revoke.
+- Error: wrong password shows the generic incorrect password message and counts toward lockout.
+- Empty: a single session shows "This device" only.
+
+### M01-S12 Session expiry and refresh (Must)
+As a viewer, I want my session to last without surprise sign-outs, so that I am not interrupted mid-video.
+- AC1: Given I use the site at least once in 30 days, When I return, Then I am still signed in (sliding expiry).
+- AC2: Given my session expires while I watch, When the next progress write fails with 401, Then the player pauses, I see "Sign in again to keep watching" and sign in returns me to the same video and position.
+- AC3: Given the password changed elsewhere, When my next request arrives, Then I am signed out with an explanation.
+- Edge: clock differences on cheap phones do not matter because expiry is validated server side.
+- Error: a failed refresh with network error is treated as offline, not as sign out.
+- Empty: not applicable.
+
+### M01-S13 Return to intended page after auth (Should)
+As a visitor following a shared link, I want to land on the title after signing in, so that the link works.
+- AC1: Given I open `/title/slug` while signed out, When I am redirected to sign in, Then the `next` parameter holds the path and I return to it after sign in and profile pick.
+- AC2: Given `next` is an external URL, When I sign in, Then it is ignored and I go to `/profiles`.
+- Edge: the title page itself shows a public preview (title, description, poster) for signed-out visitors with a Sign in to watch button (and Open Graph tags for sharing).
+- Error: `next` pointing to an unpublished title ends on a 404 page.
+- Empty: not applicable.
+
+### M01-S14 Bot protection on sign up (Could)
+As the owner, I want a light bot check on sign up, so that fake accounts do not flood my email sending.
+- AC1: Given sign up is attempted at a rate above threshold from one IP, When the threshold is crossed, Then a Cloudflare Turnstile challenge is required.
+- AC2: Given the challenge is unavailable, When the viewer retries, Then the form remains usable once a fallback (email code only) is satisfied, and the issue is logged.
+- Edge: a honeypot field that real users never fill silently rejects bot submissions with the normal success message.
+- Error: challenge failure shows "We could not confirm you are human. Try again."
+- Empty: not applicable.
+
+---
+
+## M02 Accounts
+
+### M02-S01 View account overview (Must)
+As a viewer, I want one page showing my account details, so that I know what is set.
+- AC1: Given I am on `/account`, When it loads, Then I see my email (with verified state), plan "Free", member since date, profile count, and links to Security, Playback, Data and Privacy.
+- AC2: Given I am in a kids profile, When I try to open `/account`, Then I am shown the password gate (M35) and not the page.
+- Edge: long emails truncate in the middle with the full value on tap.
+- Error: load failure shows an inline retry card.
+- Empty: not applicable.
+
+### M02-S02 Change email (Should)
+As a viewer, I want to change my email, so that I keep access if I lose the old one.
+- AC1: Given I enter a new email and my current password, When I submit, Then a verification code is sent to the new address and the old address receives a notice, and the change applies only after the code is entered.
+- AC2: Given the new email already belongs to another account, When I submit, Then I see the same pending screen (no leak) and the other owner is notified.
+- AC3: Given the change completes, When it applies, Then all other sessions are revoked and an audit entry is written.
+- Edge: if I never verify, the old email stays valid and the pending change expires after 24 hours.
+- Error: wrong password counts toward lockout.
+- Empty: not applicable.
+
+### M02-S03 Change password (Must)
+As a viewer, I want to change my password while signed in, so that I keep my account safe.
+- AC1: Given I give my current password and a valid new one, When I submit, Then the password changes, other sessions are revoked, this session stays, and I get a confirmation email.
+- AC2: Given the new password fails rules, When I submit, Then the live checklist shows the failing rules (same component as M01-S02).
+- Edge: the new password cannot equal the current one.
+- Error: wrong current password shows "Current password is not right" and counts toward lockout.
+- Empty: not applicable.
+
+### M02-S04 Playback and display settings per profile (Should)
+As a viewer, I want to set autoplay, data saver, default captions and speed memory for each profile, so that each person gets their own habits.
+- AC1: Given I open `/settings/playback`, When I toggle autoplay next, Then the change saves instantly (optimistic) for the current profile only.
+- AC2: Given the save fails, When the server rejects, Then the toggle rolls back and a persistent error toast appears.
+- AC3: Given I use a kids profile, When I look at the screen, Then only parent-approved controls show (Data saver) and the rest are hidden.
+- Edge: settings sync across devices for the same profile within a minute.
+- Error: offline changes queue locally and sync later with a notice "Saved on this device".
+- Empty: not applicable.
+
+### M02-S05 Export my data (Should)
+As a viewer, I want to download my data, so that I can see what the platform holds.
+- AC1: Given I request an export, When I confirm with my password, Then a job starts and I receive an email with a link valid for 24 hours to a JSON file containing account, profiles, list items and progress.
+- AC2: Given I request more than one export in 24 hours, When I tap again, Then I am told the earlier export is still valid.
+- Edge: the export excludes password hash and tokens.
+- Error: job failure sends "We could not build your export" and keeps the request retryable.
+- Empty: a new account exports a small file with account and one profile.
+
+### M02-S06 Delete my account (Should)
+As a viewer, I want to delete my account, so that my data is removed when I leave.
+- AC1: Given I choose Delete account and confirm with my password and by typing DELETE, When I submit, Then the account moves to `pending_deletion`, I am signed out everywhere, and I receive an email with a cancel link valid for 14 days.
+- AC2: Given I sign in within 14 days, When I open the notice, Then I can cancel the deletion and the account becomes active again.
+- AC3: Given 14 days pass, When the scheduled job runs, Then account, profiles, progress and list data are purged and an audit entry keeps only a hashed identifier.
+- Edge: kids profile cannot reach this screen.
+- Error: purge failure retries via the job queue and alerts the developer (M24).
+- Empty: not applicable.
+
+### M02-S07 Profile count limit (Must)
+As the owner, I want the number of profiles per account capped, so that accounts are not abused as storage.
+- AC1: Given an account has 5 profiles, When I try to add another, Then the Add profile tile is hidden and a message "Up to 5 profiles per account" explains.
+- AC2: Given the limit is changed in site config to 6, When the next page loads, Then 6 profiles are allowed.
+- Edge: server side enforcement exists regardless of the UI.
+- Error: a race that creates a 6th profile fails with a clear error and no partial record.
+- Empty: not applicable.
+
+### M02-S08 Account status handling (Must)
+As the owner, I want account states to be enforced, so that suspended or locked accounts cannot watch.
+- AC1: Given an account is `suspended`, When the viewer signs in, Then they see "This account is not available" and no session is created.
+- AC2: Given an account is `pending_deletion`, When the viewer signs in, Then they see the cancel deletion screen only.
+- AC3: Given an admin suspends an account while a session is active, When the next request arrives, Then it is rejected and the user is signed out.
+- Edge: status changes are audited.
+- Error: unknown status defaults to deny.
+- Empty: not applicable.
+
+---
+
+## M03 Profiles
+
+### M03-S01 Profile picker after sign in (Must)
+As a viewer, I want to choose who is watching after I sign in, so that my history and list are mine.
+- AC1: Given I have two or more profiles, When I finish sign in, Then I see `/profiles` with each profile as a large avatar tile and name, and an Add profile tile if under the limit, plus a Manage profiles link.
+- AC2: Given I tap a profile, When it loads, Then the profile is stored for this device and I go to Home.
+- AC3: Given I have exactly one profile, When I sign in, Then I skip the picker and go to Home (setting "Always ask who is watching" off by default for single profiles).
+- AC4: Given a device remembers the last profile, When I open the site while signed in, Then I go straight to that profile's Home, and the header menu offers Switch profile.
+- Edge: kids profile tile shows a "Kids" badge. Long names are truncated with an ellipsis.
+- Error: failure to load profiles shows a retry card; sign out is still available.
+- Empty: a brand new account shows the Create your first profile flow (M03-S02).
+
+### M03-S02 Create a profile (Must)
+As a viewer, I want to create a profile with a name and avatar, so that others in my home can have their own space.
+- AC1: Given I tap Add profile, When I enter a name (1 to 20 characters) and choose an avatar, Then the profile is created and appears in the picker.
+- AC2: Given a name already exists in my account, When I submit, Then I see "You already have a profile with that name".
+- AC3: Given I toggle "Kids profile", When I save, Then the profile is created with the kids flag and a short explanation of what it changes.
+- AC4: Given I have no profiles (new account), When the flow starts, Then the name is pre-filled from the email prefix, editable, and the avatar is pre-selected.
+- Edge: names are trimmed, internal double spaces collapsed, emoji not allowed (keeps copy clean), slurs blocked by a small word list (Could).
+- Error: server failure keeps the form and shows retry.
+- Empty: avatar picker always has presets.
+
+### M03-S03 Choose an avatar (Must)
+As a viewer, I want to pick an avatar from a set, so that profiles are easy to tell apart.
+- AC1: Given the avatar picker is open, When I tap one, Then it is selected with a visible ring and an accessible "selected" state.
+- AC2: Given I use keyboard, When I move with arrow keys, Then focus moves between avatars and Space selects.
+- AC3: Given a kids profile, When I open the picker, Then it can show a friendlier subset (Could).
+- Edge: avatar images are tiny (under 6 KB each) and lazy loaded.
+- Error: an avatar that fails to load shows initials on the profile colour.
+- Empty: not applicable.
+
+### M03-S04 Edit a profile (Must)
+As a viewer, I want to rename or change a profile, so that it stays accurate.
+- AC1: Given I open Edit profile, When I change name or avatar and save, Then the change applies at once everywhere (picker, header).
+- AC2: Given I change the kids flag from off to on, When I save, Then the profile switches to kids rules at once and Continue Watching and My List hide non-kid titles (the data is kept, just hidden).
+- AC3: Given I change the kids flag from on to off, When I save, Then I must enter the account password.
+- AC4: Given I leave with unsaved changes, When I press Back, Then I am asked to discard or keep editing.
+- Edge: editing a profile from inside a kids profile is blocked (M35).
+- Error: validation errors map to fields; concurrent edit from another device shows "This profile changed. Reload."
+- Empty: not applicable.
+
+### M03-S05 Delete a profile (Must)
+As a viewer, I want to delete a profile, so that unused ones disappear with their data.
+- AC1: Given I choose Delete on a profile, When I confirm in a dialog that names the profile and says history and list will be removed, Then the profile and its progress and list items are deleted.
+- AC2: Given only one profile remains, When I look at it, Then Delete is disabled with the reason "You need at least one profile".
+- AC3: Given the profile is currently used on another device, When it is deleted, Then that device returns to the picker on its next request.
+- Edge: deleting the last used profile clears the device memory for it.
+- Error: server failure leaves the profile untouched with an error toast that persists.
+- Empty: not applicable.
+
+### M03-S06 Manage profiles mode (Must)
+As a viewer, I want a manage mode in the picker, so that I can edit tiles quickly.
+- AC1: Given I tap Manage profiles, When the picker enters manage mode, Then each tile shows a pencil overlay and tapping opens Edit profile; Done returns to normal.
+- AC2: Given I am in manage mode, When I press Escape, Then manage mode ends.
+- Edge: on desktop the tiles show an Edit label for screen readers.
+- Error: not applicable.
+- Empty: with one profile, manage shows Edit only.
+
+### M03-S07 Switch profile from the header (Must)
+As a viewer, I want to switch profile without signing out, so that the next person can use the device.
+- AC1: Given I open the header profile menu, When I choose another profile, Then the app switches to that profile and returns to its Home, clearing profile scoped caches.
+- AC2: Given I am watching, When I switch profile, Then playback stops, progress for the current profile is saved first, and then the switch happens.
+- Edge: if a PIN is set on the target profile, it is requested (M03-S12).
+- Error: switching offline is allowed only for profiles already cached, else a message.
+- Empty: not applicable.
+
+### M03-S08 Per profile data separation (Must)
+As a viewer, I want my history and list to stay separate from other profiles, so that my recommendations and resume points are mine.
+- AC1: Given two profiles on one account, When profile A watches a video, Then profile B's Continue Watching and watched ticks are unaffected.
+- AC2: Given the same video is in A's list, When B opens My List, Then it is not there.
+- AC3: Given an API call is made with a profile id that is not in the account, When it arrives, Then it returns 403 and is logged.
+- Edge: caches (service worker, local storage) are keyed by profile id.
+- Error: mismatch of profile and session returns to the picker.
+- Empty: new profile starts with empty rows (see M09-S10).
+
+### M03-S09 Profile language and caption defaults (Should)
+As a viewer, I want each profile to remember caption preference, so that captions on or off persists.
+- AC1: Given I turn captions on in the player, When I watch another video in this profile, Then captions are on by default.
+- AC2: Given I change the caption language (phase 2), When I save, Then it applies to this profile only.
+- Edge: kids profile defaults captions to on, parent can change.
+- Error: save failure falls back to local storage and syncs later.
+- Empty: new profiles default to captions off (adult) or on (kids).
+
+### M03-S10 Kids profile creation rules (Must)
+As a parent, I want to mark a profile as kids when I create it, so that children only see suitable titles.
+- AC1: Given I create a profile with Kids on, When I save, Then the profile has `is_kids = true` and the picker tile shows a Kids badge.
+- AC2: Given I create a kids profile, When the summary is shown, Then it lists the rules: kid suitable titles only, no account access, password needed to leave.
+- Edge: at least one non-kids profile must exist in the account so someone can manage it (the last non-kids profile cannot be set to kids or deleted).
+- Error: attempting to remove the last adult profile shows "Keep at least one grown-up profile".
+- Empty: not applicable.
+
+### M03-S11 Remember last profile per device (Should)
+As a viewer, I want the site to open directly in my profile, so that I do not pick each time.
+- AC1: Given I picked a profile on this device, When I reopen the site within the session lifetime, Then Home loads for that profile.
+- AC2: Given the remembered profile was deleted, When I open the site, Then the picker shows.
+- Edge: a shared family tablet can turn on "Always ask who is watching" in Account settings.
+- Error: local storage blocked means the picker always shows.
+- Empty: not applicable.
+
+### M03-S12 Profile PIN (Could)
+As a parent, I want to lock a profile with a 4 digit PIN, so that a child cannot open the adult profile.
+- AC1: Given I set a PIN on an adult profile, When anyone selects it, Then a PIN screen appears (numeric keypad, `inputmode="numeric"`).
+- AC2: Given 5 wrong PIN entries, When the fifth fails, Then PIN entry is locked for 5 minutes on that device and the account password can override.
+- Edge: PIN stored as a hash, never shown, reset requires the account password.
+- Error: network failure still validates locally only when cached hash available, else asks to retry.
+- Empty: not applicable.
+
+### M03-S13 Profile picker on slow networks (Should)
+As a viewer on a weak network, I want the picker to appear fast, so that I can start watching.
+- AC1: Given a 3G connection, When I land on `/profiles`, Then the tiles show within 2 seconds using the cached profile list from the previous visit, then refresh in the background.
+- AC2: Given avatars are not yet loaded, When tiles render, Then initials appear on coloured circles.
+- Edge: stale cache beyond 7 days is ignored.
+- Error: when the refresh fails, the cached list stays with a small "May be out of date" note.
+- Empty: not applicable.
+
+### M03-S14 Profile switch resets the player context (Must)
+As a viewer, I want the previous profile's settings and position to never leak, so that privacy is kept.
+- AC1: Given I switch profiles, When the next profile opens a video, Then the player uses the new profile's speed, caption and autoplay settings.
+- AC2: Given I switch profile mid-session, When I press Back, Then I never see the previous profile's pages from cache.
+- Edge: the service worker cache is partitioned by profile for personal endpoints.
+- Error: a failed cache purge forces a full reload.
+- Empty: not applicable.
+
+---
+
+## M35 Kids mode and content suitability
+
+### M35-S01 Kids profile sees only kid titles (Must)
+As a parent, I want kids profiles to show only kid suitable titles, so that children are safe.
+- AC1: Given a kids profile is active, When any list is requested (Home, Browse, Search, Related, My List, Continue Watching), Then results contain only titles with suitability `kids`, enforced in the query, not in the UI.
+- AC2: Given a direct link to a non-kid title, When a kids profile opens it, Then it shows "This is not available on this profile" with a Back button.
+- AC3: Given a title's suitability changes to non-kid, When a kids profile has it in My List, Then it disappears from view at once.
+- Edge: a series is shown on a kids profile only when all its published episodes are kid suitable (or by series flag).
+- Error: filter failure returns an empty list, never an unfiltered one (fail closed).
+- Empty: when no kid titles exist, Home shows "Nothing here yet. Ask a grown-up to switch profile."
+
+### M35-S02 Kids navigation limits (Must)
+As a parent, I want kids profiles to avoid account and profile management, so that settings are not changed by accident.
+- AC1: Given a kids profile is active, When I open the header menu, Then it shows Switch profile and Exit kids mode only.
+- AC2: Given a kids profile, When the URL `/account` or `/profiles/manage` is opened, Then the password gate appears.
+- Edge: Search is available but limited to kid titles.
+- Error: not applicable.
+- Empty: not applicable.
+
+### M35-S03 Exit kids profile with password (Must)
+As a parent, I want to need my password to leave kids mode, so that children cannot skip it.
+- AC1: Given I choose Exit kids mode, When I enter the correct account password, Then I go to the profile picker.
+- AC2: Given I enter a wrong password 5 times, When the fifth fails, Then the same lockout as sign in applies (M01-S07).
+- AC3: Given the password dialog, When it opens, Then focus is in the field and Escape closes it.
+- Edge: switching to another kids profile does not need a password.
+- Error: network failure shows retry and keeps kids mode.
+- Empty: not applicable.
+
+### M35-S04 Admin sets title suitability (Must)
+As an admin, I want to mark each title as kids, general or mature, so that kids profiles are filtered correctly.
+- AC1: Given I edit a video, When I set suitability, Then it saves and an audit entry records the change.
+- AC2: Given suitability is not set, When I try to publish, Then a warning requires me to choose a value (default for new videos is `general`, not `kids`).
+- AC3: Given I bulk select videos, When I apply suitability, Then all selected update atomically.
+- Edge: for a series, setting suitability can cascade to episodes with a confirm step.
+- Error: partial bulk failure reports the failed ids and rolls back none or all (all or nothing).
+- Empty: not applicable.
+
+---
+## M04 Catalog
+
+### M04-S01 Only published titles reach viewers (Must)
+As a viewer, I want to see only finished, published titles, so that I never hit a broken or half ready video.
+- AC1: Given a video is `draft`, `processing`, `ready`, `unpublished` or `archived`, When any viewer API is called, Then it is not returned.
+- AC2: Given a video is `scheduled` with a future time, When viewers browse, Then it is hidden until the scheduled time.
+- AC3: Given a direct URL to a hidden title, When opened, Then it returns the 404 page with the same layout as any missing page (no leak that it exists).
+- Edge: an admin previewing as a viewer (M16-S08) sees hidden titles only inside the preview mode.
+- Error: a query failure returns the error state, never a partial list.
+- Empty: an empty catalog shows the "Coming soon" Home (M05-S07).
+
+### M04-S02 Stable slugs and redirects (Should)
+As a viewer who shared a link, I want links to keep working after a title is renamed, so that shared links do not break.
+- AC1: Given a title is renamed, When the slug changes, Then the old slug redirects with 301 to the new slug.
+- AC2: Given two titles would share a slug, When saved, Then a numeric suffix is added (`-2`).
+- Edge: slugs are lowercase ASCII, hyphen separated, up to 80 characters, accents transliterated.
+- Error: reserved words (`admin`, `api`, `watch`) are refused.
+- Empty: not applicable.
+
+### M04-S03 Series structure (Must)
+As the owner, I want series with seasons and ordered episodes, so that multi-part courses play in order.
+- AC1: Given a series with episodes, When the series page loads, Then episodes are ordered by season number then episode number.
+- AC2: Given a series with no published episodes, When viewers browse, Then the series is hidden.
+- AC3: Given a single video is later turned into an episode, When saved, Then its title page redirects to the series page with that episode focused.
+- Edge: episodes without a season are treated as season 1.
+- Error: duplicate episode numbers in one season are rejected on save.
+- Empty: not applicable.
+
+### M04-S04 Category assignment (Must)
+As the owner, I want a title in more than one category, so that it appears wherever it is useful.
+- AC1: Given a title has categories A and B, When browsing A or B, Then the title appears in both.
+- AC2: Given a category is hidden, When viewers browse, Then it is not listed and its titles still appear elsewhere.
+- Edge: category with zero published titles is hidden from viewers automatically.
+- Error: unknown category id returns 422.
+- Empty: not applicable.
+
+### M04-S05 Catalog read performance (Should)
+As a viewer on a slow network, I want catalog pages to respond quickly, so that Home feels fast.
+- AC1: Given the launch catalog (about 100 videos), When Home data is requested, Then p95 server time is under 300 ms and the payload under 40 KB gzip for the first 3 rows.
+- AC2: Given catalog data rarely changes, When requests repeat, Then responses are cached for 60 seconds at the server and revalidated with ETag, except personal rows.
+- Edge: cache is invalidated when admin publishes or edits.
+- Error: stale cache is never served beyond 5 minutes if the database is unreachable (shows error instead).
+- Empty: not applicable.
+
+---
+
+## M05 Home and rows
+
+### M05-S01 Hero banner (Must)
+As a viewer, I want a featured title at the top of Home, so that I see something worth watching at once.
+- AC1: Given Home loads, When a hero is configured, Then I see poster art, title, a one-line description, a Play (or Resume) button and a More info button.
+- AC2: Given multiple hero titles are set, When I wait, Then they rotate every 8 seconds with visible dots and a Pause control, and rotation stops when reduced motion is on.
+- AC3: Given I tap Play, When the title is a series, Then it plays the next unwatched episode for my profile.
+- Edge: text over the image keeps WCAG contrast through a gradient scrim.
+- Error: if the hero image fails to load, a solid theme colour with the title still shows.
+- Empty: with no hero configured, the newest published title is used.
+
+### M05-S02 Horizontal rows (Must)
+As a viewer, I want rows of titles I can scroll sideways, so that I can scan many titles quickly.
+- AC1: Given a desktop at 1280 px or wider, When a row renders, Then 5 cards are visible with a partial peek of the next.
+- AC2: Given a touch device, When I swipe the row, Then it scrolls with momentum and snaps to cards, and the page does not scroll vertically while I swipe horizontally.
+- AC3: Given a desktop, When I hover the row, Then previous and next arrows appear, and Left and Right arrows scroll when a card is focused.
+- AC4: Given a row has more than 20 items, When I reach the end, Then a "See all" card opens the category or list page.
+- Edge: row heading is a real heading (h2) and cards are in a list for screen readers.
+- Error: a row that fails shows an inline "Could not load this row. Retry" while other rows still render.
+- Empty: rows with no items are not rendered.
+
+### M05-S03 Title cards (Must)
+As a viewer, I want each card to show poster, title and duration, so that I can choose.
+- AC1: Given a card renders, When I look at it, Then I see a 16:9 poster, title (two lines max), duration, and a progress bar if started.
+- AC2: Given a card is hovered on desktop, When 400 ms pass, Then a lightweight overlay shows description and quick actions (Play, My List) with no video preview (data friendly).
+- AC3: Given a touch device, When I tap a card, Then it opens the Title detail page.
+- Edge: Data saver loads the smallest poster (320 px).
+- Error: missing poster shows a branded placeholder with the title text.
+- Empty: not applicable.
+
+### M05-S04 Rows load lazily (Must)
+As a viewer on mobile data, I want below-the-fold rows to load only when needed, so that I use less data.
+- AC1: Given Home loads, When the first screen renders, Then only the hero and the first 2 rows request data and posters, and further rows load when within 1 viewport of the screen.
+- AC2: Given rows are loading, When they appear, Then skeletons with matched geometry show after 300 ms with no layout shift.
+- Edge: with Save-Data on, rows load on explicit scroll proximity of 0.5 viewport.
+- Error: a failed row can be retried individually.
+- Empty: not applicable.
+
+### M05-S05 Personal rows first (Must)
+As a viewer, I want Continue Watching and My List at the top, so that my own things are one tap away.
+- AC1: Given I have Continue Watching items, When Home loads, Then the Continue Watching row is first below the hero (or above it on mobile per curation setting).
+- AC2: Given My List has items, When Home loads, Then My List row follows.
+- AC3: Given the editor moved these rows in curation (M17), When Home loads, Then the configured order applies.
+- Edge: rows are hidden when empty (no empty headings).
+- Error: personal rows failing do not block the curated rows.
+- Empty: new profile sees curated rows only.
+
+### M05-S06 Home on a kids profile (Must)
+As a child, I want a simple Home with big cards, so that I can find videos on my own.
+- AC1: Given a kids profile, When Home loads, Then only kid titles appear and the hero comes from kid titles.
+- AC2: Given the profile, When the header renders, Then it shows no search suggestions of adult titles and no account link.
+- Edge: cards are larger on kids Home (3 per row on mobile).
+- Error: same as adult Home, retry per row.
+- Empty: see M35-S01.
+
+### M05-S07 Empty catalog state (Must)
+As a first visitor before launch content exists, I want a friendly page, so that the site is not broken.
+- AC1: Given no published titles exist, When I open Home, Then I see "New videos are on the way" with the platform name and a link to About.
+- AC2: Given an admin views Home with no content, When it loads, Then an extra link "Add your first video" shows only for admins.
+- Edge: no empty rows are shown.
+- Error: not applicable.
+- Empty: this is the empty state.
+
+### M05-S08 Home error and offline states (Must)
+As a viewer, I want clear messages when Home cannot load, so that I know what to do.
+- AC1: Given the API fails, When Home loads, Then an error card says "We could not load Home" with a Retry button and the header remains usable.
+- AC2: Given I am offline, When I open Home, Then the cached shell plus last known rows show with an "Offline. Showing saved view" banner, and Play shows a not available offline message.
+- Edge: retry uses exponential backoff on automatic attempts (1 s, 3 s, 9 s, then manual).
+- Error: this is the error state.
+- Empty: not applicable.
+
+---
+
+## M06 Browse and search
+
+### M06-S01 Browse by category (Must)
+As a viewer, I want to browse titles by category, so that I can find a subject I care about.
+- AC1: Given I open `/browse`, When it loads, Then I see category chips (scrollable on mobile) and a grid or rows of titles.
+- AC2: Given I select a category, When it applies, Then the URL becomes `/browse/<slug>`, the list updates without a full reload, and the chip shows active state (solid fill).
+- AC3: Given I use Back, When I return, Then the previous state and scroll position restore.
+- Edge: category names with long text wrap inside the chip or truncate with a tooltip.
+- Error: failed load shows retry in the grid area, chips remain.
+- Empty: a category with no published titles is hidden. If reached by URL, it shows "Nothing in this category yet".
+
+### M06-S02 Sort and filter (Should)
+As a viewer, I want to sort by newest, shortest or A to Z and filter by length, so that I can pick something that fits my time.
+- AC1: Given I choose "Under 3 minutes", When it applies, Then only titles with duration under 180 seconds show and the filter appears as a removable chip.
+- AC2: Given I choose Sort: Newest, When it applies, Then the order is by publish date descending, with the choice kept in the URL.
+- AC3: Given filters produce nothing, When the grid renders, Then it shows "No videos match. Clear filters" with a Clear button.
+- Edge: filter and sort persist per session, not per account.
+- Error: invalid query values in the URL are ignored with defaults applied.
+- Empty: see AC3.
+
+### M06-S03 Search as I type (Must)
+As a viewer, I want results to appear as I type, so that I find titles quickly.
+- AC1: Given I open Search, When I type 2 or more characters and pause 250 ms, Then results update (debounced) and a loading state appears only if the wait exceeds 300 ms.
+- AC2: Given I press Enter, When results show, Then the URL is `/search?q=...` so the page can be shared and restored.
+- AC3: Given I clear the field, When it empties, Then recent searches or suggestions show.
+- Edge: queries are trimmed, case and accent insensitive, up to 80 characters.
+- Error: failure shows "Search is unavailable right now. Try again" and keeps the query.
+- Empty: with no query, show popular categories and recent searches.
+
+### M06-S04 Tolerant matching (Should)
+As a viewer who mistypes, I want search to forgive small errors, so that I still find the video.
+- AC1: Given I type "budgetng", When searching, Then "budgeting" titles appear (trigram similarity).
+- AC2: Given I search by a category name or tag, When results return, Then titles in that category appear.
+- AC3: Given Pidgin or Yoruba words appear in descriptions, When I search them, Then matches are found (no stemming that breaks them).
+- Edge: results rank title matches above description matches, then by popularity (recent views) as a tie break.
+- Error: not applicable.
+- Empty: see M06-S05.
+
+### M06-S05 No results state (Must)
+As a viewer, I want help when nothing matches, so that I do not hit a dead end.
+- AC1: Given a query with no matches, When results render, Then I see "No results for 'xyz'" with tips (check spelling, try fewer words) and a row of popular titles.
+- AC2: Given I am on a kids profile, When results are empty, Then only kid popular titles show.
+- Edge: queries are logged anonymously for the admin "searches with no results" report (Could, M19).
+- Error: not applicable.
+- Empty: this is the empty state.
+
+### M06-S06 Search suggestions (Could)
+As a viewer, I want suggestions as I type, so that I type less on a phone.
+- AC1: Given I type 2 characters, When suggestions load, Then up to 5 title and category suggestions show and arrow keys plus Enter select.
+- AC2: Given I tap a suggestion, When selected, Then I go directly to that title or category.
+- Edge: suggestions use the same kids filter.
+- Error: suggestion failure is silent (full search still works).
+- Empty: not applicable.
+
+### M06-S07 Recent searches per profile (Could)
+As a viewer, I want my last searches listed, so that I can repeat them.
+- AC1: Given I searched before, When I focus the search box, Then up to 8 recent searches show with a remove icon each and Clear all.
+- AC2: Given I switch profile, When I open Search, Then I see that profile's searches only.
+- Edge: kids profiles store none.
+- Error: storage failure hides the list silently.
+- Empty: nothing shown, only categories.
+
+### M06-S08 Search from keyboard and mobile (Must)
+As a viewer, I want to open search quickly, so that I can search from anywhere.
+- AC1: Given I am on desktop, When I press `/`, Then the search box focuses (unless typing in a field).
+- AC2: Given I am on mobile, When I tap the search icon in the header, Then a full screen search opens with the keyboard visible and the Cancel action reachable.
+- Edge: Escape closes search and returns focus to the trigger.
+- Error: not applicable.
+- Empty: not applicable.
+
+### M06-S09 Search result layout and loading (Must)
+As a viewer, I want results presented as a clear list of cards, so that I can scan them.
+- AC1: Given results exist, When they render, Then titles and series are shown in one grid with a type badge (Series, Video), count shown "12 results".
+- AC2: Given results are loading after the first, When new input arrives, Then the old results stay until new ones are ready (no flicker) with a thin progress line.
+- Edge: pagination loads in pages of 24 by cursor with a "Show more" button (data friendly, no infinite scroll when Save-Data is on).
+- Error: partial page failure keeps earlier results and shows retry at the bottom.
+- Empty: see M06-S05.
+
+### M06-S10 Search rate limiting and abuse safety (Should)
+As the owner, I want search protected from abuse, so that the database stays responsive.
+- AC1: Given an IP makes more than 60 searches per minute, When the next arrives, Then it returns 429 and the UI shows "Slow down a little".
+- AC2: Given a query contains special characters, When it runs, Then it is parameterised and cannot alter the query.
+- Edge: signed out search is not available (viewer is signed in).
+- Error: 429 handling shows a countdown.
+- Empty: not applicable.
+
+---
+
+## M07 Title detail and series page
+
+### M07-S01 Title detail page (Must)
+As a viewer, I want a page that explains a video before I play it, so that I know if it suits me.
+- AC1: Given I open `/title/<slug>`, When it loads, Then I see the poster, title, duration, categories, description, caption badge (CC), and primary button Play (or Resume from 2:14).
+- AC2: Given I started the video, When I look at the page, Then a progress bar shows with remaining time.
+- AC3: Given I tap My List, When it toggles, Then the button updates at once (optimistic) with an accessible pressed state.
+- Edge: long descriptions collapse after 4 lines with "More".
+- Error: not found shows the 404 page. Load failure shows retry.
+- Empty: not applicable.
+
+### M07-S02 Series page with seasons and episodes (Must)
+As a viewer, I want to see all episodes of a series, so that I can watch in order or choose one.
+- AC1: Given I open `/series/<slug>`, When it loads, Then I see the series header and an episode list with number, poster, title, duration, description snippet, and progress.
+- AC2: Given multiple seasons exist, When I use the season selector, Then the list switches without a full reload and the choice is in the URL.
+- AC3: Given I have progress, When the page loads, Then the primary button says "Resume S1 E3" or "Play S1 E1" and the unfinished episode is highlighted.
+- AC4: Given an episode is finished, When shown, Then it has a watched tick.
+- Edge: a series with one season hides the selector.
+- Error: unpublished episodes are not listed.
+- Empty: a series with no published episode is a 404.
+
+### M07-S03 Play or Resume button logic (Must)
+As a viewer, I want the main button to do the right thing, so that I never have to think.
+- AC1: Given I have never watched, When I tap Play, Then playback starts at 0.
+- AC2: Given I have a saved position of 5 seconds or more and not finished, When I tap Resume, Then playback starts at position minus 3 seconds.
+- AC3: Given I finished the title, When I view the page, Then the button says "Watch again" and starts at 0.
+- AC4: Given the title is a series, When I tap Play, Then the next unwatched episode starts.
+- Edge: a "Start from beginning" secondary link appears when resuming.
+- Error: not applicable.
+- Empty: not applicable.
+
+### M07-S04 Share a title (Should)
+As a viewer, I want to share a title link, so that friends can open it from WhatsApp.
+- AC1: Given I tap Share on a phone, When the Web Share API is available, Then the native sheet opens with title and URL.
+- AC2: Given Web Share is not available, When I tap Share, Then the link is copied and a toast "Link copied" shows.
+- AC3: Given the link is pasted in WhatsApp, When it renders, Then the preview shows poster, title and description via Open Graph tags.
+- Edge: shared links carry no personal data, only the slug.
+- Error: clipboard failure shows the URL in a selectable box.
+- Empty: not applicable.
+
+### M07-S05 Related titles (Should)
+As a viewer, I want suggestions on a title page, so that I can keep learning.
+- AC1: Given a title, When the page loads, Then a "More like this" row shows up to 12 titles sharing a category, excluding the current one and respecting kids filter.
+- AC2: Given no related titles exist, When the page loads, Then the row is not rendered.
+- Edge: results are cached 5 minutes.
+- Error: failure hides the row silently.
+- Empty: see AC2.
+
+### M07-S06 Public preview for signed out visitors (Should)
+As a visitor with a shared link, I want to see what the title is before signing up, so that I decide to join.
+- AC1: Given I am signed out, When I open `/title/<slug>`, Then I see poster, title, description and a Sign in to watch button, with no player.
+- AC2: Given I tap the button, When I go through sign in, Then I return to the title.
+- Edge: search engines can index the page (title, description, Open Graph).
+- Error: not applicable.
+- Empty: not applicable.
+
+### M07-S07 Episode list actions (Should)
+As a viewer, I want to play any episode directly, so that I can skip or revisit.
+- AC1: Given an episode row, When I tap it, Then the Watch page opens for that episode.
+- AC2: Given an episode is partly watched, When shown, Then a progress bar sits under the thumbnail.
+- AC3: Given I long-press or open the menu, When I choose "Mark as watched" (Could), Then the episode is marked finished for my profile.
+- Edge: keyboard users move through episodes with Tab and Enter.
+- Error: failure on mark shows a toast and rolls back.
+- Empty: not applicable.
+
+---
+
+## M08 Player
+
+### M08-S01 Start playback (Must)
+As a viewer, I want a video to start quickly when I press Play, so that I do not wait.
+- AC1: Given I open `/watch/<id>`, When the page loads, Then the player shell (with poster) renders in under 1 second on broadband and playback begins as soon as the first segments arrive.
+- AC2: Given autoplay is blocked by the browser, When the page opens from a tap, Then playback still starts (user gesture), else a large Play button is shown.
+- AC3: Given the master playlist request returns a signed URL, When the player loads, Then it uses hls.js (or native HLS on Safari).
+- AC4: Given a 3G connection, When playback starts, Then the first rendition is the 360p (start low, then adapt up).
+- Edge: Startup time and first frame time are measured and sent to observability (M24).
+- Error: see M08-S20 to M08-S24.
+- Empty: not applicable.
+
+### M08-S02 Play and pause (Must)
+As a viewer, I want to play and pause, so that I control the video.
+- AC1: Given the video plays, When I tap or click the video area, Then it pauses and the control bar shows. On desktop a click toggles, on touch a single tap shows controls and a second tap on the play icon toggles.
+- AC2: Given I press Space or K, When focus is in the player, Then it toggles.
+- AC3: Given the page loses visibility (tab hidden), When it hides, Then audio keeps playing unless the viewer paused (default), and progress is saved.
+- Edge: pausing saves progress at once.
+- Error: not applicable.
+- Empty: not applicable.
+
+### M08-S03 Seek bar and time (Must)
+As a viewer, I want to drag to any point, so that I can move through the video.
+- AC1: Given the seek bar, When I drag or tap a point, Then playback jumps there and the buffered range shows.
+- AC2: Given I use Left and Right arrows, When pressed, Then it seeks 5 seconds (J and L seek 10 seconds), and Home and End jump to start or near end.
+- AC3: Given I hover or drag, When over the bar, Then a time tooltip shows (and a preview image when sprites exist).
+- AC4: Given time labels, When shown, Then they display current and remaining time, with a toggle for total.
+- Edge: seeking beyond the buffered range shows buffering without losing the position.
+- Error: seek failure retries once then falls back to the nearest segment start.
+- Empty: not applicable.
+
+### M08-S04 Double tap seek on touch (Should)
+As a mobile viewer, I want to double tap the left or right side to skip, so that I can jump quickly.
+- AC1: Given touch on the video, When I double tap the right third, Then it seeks forward 10 seconds with a ripple and "+10" label; left third seeks back 10 seconds.
+- AC2: Given repeated double taps, When continuing, Then seek accumulates (20, 30 seconds).
+- Edge: double tap in the centre toggles play.
+- Error: not applicable.
+- Empty: not applicable.
+
+### M08-S05 Volume and mute (Must)
+As a viewer, I want to change volume and mute, so that I control sound.
+- AC1: Given a desktop, When I use the slider or Up and Down arrows, Then volume changes by 5 percent steps, M toggles mute.
+- AC2: Given mobile, When I look at controls, Then no volume slider shows (device volume is used) and a mute button remains.
+- AC3: Given I mute and return, When I reload, Then the mute state persists in this profile on this device.
+- Edge: videos without an audio track hide the volume control.
+- Error: not applicable.
+- Empty: not applicable.
+
+### M08-S06 Full screen and orientation (Must)
+As a viewer, I want full screen playback, so that I can see detail.
+- AC1: Given I tap the full screen button or press F, When toggled, Then the player enters full screen and Escape exits.
+- AC2: Given a phone in portrait, When I enter full screen, Then it requests landscape orientation lock where supported and releases it on exit.
+- AC3: Given iOS Safari, When I go full screen, Then native full screen is used with captions retained.
+- Edge: double click on desktop toggles full screen.
+- Error: if the browser denies full screen, a toast explains and the inline player stays.
+- Empty: not applicable.
+
+### M08-S07 Controls auto hide (Must)
+As a viewer, I want controls to disappear while playing, so that the video is unobstructed.
+- AC1: Given playback is running, When 3 seconds pass without input, Then controls fade out (and the cursor hides on desktop).
+- AC2: Given I move the pointer, tap, or press a key, When input occurs, Then they return at once.
+- AC3: Given a keyboard user focuses a control, When focus is inside the controls, Then they stay visible.
+- Edge: with reduced motion on, controls hide without animation.
+- Error: not applicable.
+- Empty: not applicable.
+
+### M08-S08 Keyboard shortcuts (Must)
+As a keyboard or desktop viewer, I want standard shortcuts, so that I can control playback without a mouse.
+- AC1: Given focus is in or on the player, When I press Space or K, Then play or pause; F full screen; M mute; C captions; Left or Right 5 seconds; J or L 10 seconds; Up or Down volume; 0 to 9 jump to 0 to 90 percent; Shift plus Comma or Period slower or faster; N next episode.
+- AC2: Given I press the question mark key, When pressed, Then a shortcuts help dialog opens (focus trapped, Escape closes).
+- AC3: Given I type in an input elsewhere, When a shortcut key is pressed, Then it is ignored.
+- Edge: shortcuts do not clash with screen reader keys (they work only when the player region has focus).
+- Error: not applicable.
+- Empty: not applicable.
+
+### M08-S09 Touch controls and tap targets (Must)
+As a mobile viewer, I want large controls, so that I can use the player with one thumb.
+- AC1: Given a phone, When controls show, Then each button is at least 44 by 44 CSS pixels with 8 px spacing.
+- AC2: Given portrait, When controls show, Then the primary row (play, seek bar, full screen) is within the lower third of the screen.
+- AC3: Given a notch or gesture bar, When rendering, Then safe area insets are respected.
+- Edge: one handed use does not need precise taps on a thin seek bar (touch area is extended vertically to 32 px).
+- Error: not applicable.
+- Empty: not applicable.
+
+### M08-S10 Playback speed (Must)
+As a viewer, I want to change playback speed, so that I can learn at my pace.
+- AC1: Given the speed menu, When I open it, Then options are 0.5x, 0.75x, 1x, 1.25x, 1.5x, 2x with 1x marked default.
+- AC2: Given I choose 1.5x, When applied, Then audio pitch is preserved and the choice persists for this profile.
+- AC3: Given captions are on, When speed changes, Then captions remain in sync.
+- Edge: a kids profile limits speed to 0.75x to 1.25x (Could).
+- Error: unsupported speed in a browser falls back to the nearest and informs by toast.
+- Empty: not applicable.
+
+### M08-S11 Quality menu (Must)
+As a viewer, I want to choose video quality, so that I balance clarity and data.
+- AC1: Given the quality menu, When I open it, Then I see Auto (current level in brackets), 1080p, 720p, 480p, 360p, listing only renditions that exist for the video.
+- AC2: Given I choose 480p, When applied, Then ABR is locked to 480p and switching happens at the next segment boundary, with the choice shown on the button.
+- AC3: Given Data saver is on, When the menu opens, Then 720p and 1080p are disabled with a hint "Turn off Data saver to use higher quality".
+- AC4: Given Auto, When the network changes, Then the player switches up or down automatically without interrupting playback.
+- Edge: the manual choice is not persisted across videos by default (Auto each time) unless "Remember quality" is on (Could).
+- Error: a rung that fails to load is skipped and Auto continues.
+- Empty: a video with a single rendition hides the menu.
+
+### M08-S12 Captions control in the player (Must)
+As a viewer, I want to turn captions on or off from the player, so that I can read along.
+- AC1: Given an approved caption track exists, When I tap the CC button, Then captions toggle and the button shows state.
+- AC2: Given the menu has languages (phase 2), When I choose one, Then the track switches immediately.
+- AC3: Given no approved track exists, When I look at the controls, Then the CC button is hidden (not disabled) and the title page shows no CC badge.
+- Edge: captions render above the control bar when controls show.
+- Error: a track that fails to load shows a toast "Captions could not load" and playback continues.
+- Empty: see AC3.
+
+### M08-S13 Autoplay next episode or suggestion (Must)
+As a viewer, I want the next episode to start by itself, so that I can keep learning without touching the phone.
+- AC1: Given an episode finishes and Autoplay next is on, When the end is reached, Then an "Up next" card with title, poster and a 5 second countdown shows with Play now and Cancel.
+- AC2: Given I tap Cancel, When pressed, Then the countdown stops and the card stays with Play next and Back to series.
+- AC3: Given Autoplay is off, When the video ends, Then the end screen shows the Up next card without a countdown.
+- AC4: Given the video is a standalone title, When it ends, Then Up next shows the best related title in the same category (not already finished), skipped when none exists.
+- AC5: Given Data saver is on, When the countdown begins, Then the next video is not prefetched until Play now or the countdown completes.
+- Edge: after 3 consecutive autoplayed episodes with no interaction, ask "Still watching?" (Could) to avoid wasted data.
+- Error: next episode fetch failure shows the error state with Retry and Back to series.
+- Empty: with no next title, the end screen shows Replay and Back.
+
+### M08-S14 Up next tile during playback (Should)
+As a viewer, I want to see what is next while I am finishing, so that I can jump ahead.
+- AC1: Given the remaining time is 15 seconds or less, When the video plays, Then a small "Next: <title>" tile slides in at the bottom right and can be dismissed.
+- AC2: Given I tap the tile, When pressed, Then the next title starts.
+- Edge: tile is not shown on the last episode.
+- Error: not applicable.
+- Empty: not applicable.
+
+### M08-S15 Resume from saved position (Must)
+As a viewer, I want the video to start where I stopped, so that I never find my place.
+- AC1: Given a saved position of 5 seconds or more, When I open the watch page, Then playback starts at position minus 3 seconds with a toast "Resumed from 2:14. Start over" action.
+- AC2: Given I tap Start over, When pressed, Then playback seeks to 0 and the saved position resets.
+- AC3: Given the URL has `?t=90`, When opened, Then it overrides saved position for that load.
+- Edge: if the saved position is beyond the current duration (video replaced), it is ignored and starts at 0.
+- Error: failure to fetch the position starts at 0 and does not block playback.
+- Empty: not applicable.
+
+### M08-S16 Progress reporting (Must)
+As a viewer, I want my place saved reliably, so that I can resume on any device.
+- AC1: Given playback runs, When 10 seconds elapse, Then the client sends the position (idempotent) with profile id, video id, position and duration.
+- AC2: Given I pause, seek, or hide the tab, When that happens, Then a write is sent at once.
+- AC3: Given the page closes, When `pagehide` fires, Then a `sendBeacon` write is attempted.
+- AC4: Given the network is offline, When writes fail, Then the latest position is queued locally (only the newest per video) and sent when back online.
+- Edge: writes are rate limited per profile to 1 per 5 seconds on the server, extra ones coalesced.
+- Error: a 401 pauses playback and prompts sign in (M01-S12). A 403 for profile mismatch returns to the picker.
+- Empty: not applicable.
+
+### M08-S17 Buffering indicators (Must)
+As a viewer, I want to know the player is loading, so that I am not confused by a frozen screen.
+- AC1: Given the video stalls, When it exceeds 500 ms, Then a spinner shows over the video (no text), and after 8 seconds the text "Slow connection. Switching to lower quality" shows if Auto is on.
+- AC2: Given a stall lasts more than 20 seconds, When time passes, Then the error recovery flow begins (M08-S20).
+- AC3: Given the stall ends, When playback resumes, Then the spinner disappears within 300 ms.
+- Edge: stalls are counted for the rebuffer ratio metric.
+- Error: see recovery.
+- Empty: not applicable.
+
+### M08-S18 Poor network adaptation (Must)
+As a viewer on 3G, I want the player to drop quality instead of freezing, so that I keep watching.
+- AC1: Given measured bandwidth falls below the current rendition bitrate, When two segments are late, Then ABR drops one level and the buffer target is kept at 30 seconds.
+- AC2: Given Data saver is on, When ABR runs, Then it never goes above 360p.
+- AC3: Given bandwidth recovers, When it is stable for 3 segments, Then ABR steps up one level at a time.
+- Edge: initial bandwidth estimate is seeded from the last session on this device to avoid a too-high first rung.
+- Error: not applicable.
+- Empty: not applicable.
+
+### M08-S19 Picture in picture and lock screen controls (Should)
+As a viewer, I want to keep watching while I use another app, so that I can multitask.
+- AC1: Given PiP is supported, When I tap the PiP button, Then the video floats and controls remain.
+- AC2: Given the Media Session API, When playing, Then the lock screen shows title, poster, play and pause, seek forward and back.
+- Edge: the PiP button is hidden where unsupported.
+- Error: PiP denial shows a toast.
+- Empty: not applicable.
+
+### M08-S20 Network error recovery (Must)
+As a viewer, I want the video to recover from a brief network failure, so that I do not have to reload.
+- AC1: Given a segment request fails, When retried, Then the player retries 3 times with backoff (1 s, 2 s, 4 s) and continues if one succeeds.
+- AC2: Given all retries fail, When the buffer empties, Then I see "Connection lost" with a Retry button, the position is kept, and the player auto retries when the network returns.
+- AC3: Given the browser fires `online`, When connectivity returns, Then playback resumes from the same position without a page reload.
+- Edge: if the failure is on one rendition only, the player drops to a lower rendition before showing the error.
+- Error: this story defines the error state.
+- Empty: not applicable.
+
+### M08-S21 Expired URL and key refresh (Must)
+As a viewer, I want long sessions to continue past the signed URL lifetime, so that playback is not cut off.
+- AC1: Given signed URLs last 2 hours (tokens refresh every 30 minutes), When a token nears expiry during playback, Then the player silently requests a fresh one and continues.
+- AC2: Given a 403 on a segment or key, When it occurs, Then the player fetches a fresh signature once and retries before showing an error.
+- AC3: Given the refresh is refused (video unpublished or session revoked), When it fails, Then the player stops and shows "This video is no longer available" or "Sign in again".
+- Edge: key requests count against a rate limit that allows normal seeking.
+- Error: see AC3.
+- Empty: not applicable.
+
+### M08-S22 Unsupported format or decode failure (Must)
+As a viewer on an old device, I want a clear message and a fallback, so that I am not left with a black box.
+- AC1: Given the media element reports a decode error, When it occurs, Then the player tries a lower rendition and then shows "This video cannot play on this device" with a link to Help.
+- AC2: Given the browser lacks MSE and native HLS, When the page loads, Then a plain message lists supported browsers.
+- Edge: errors are reported with codes to observability (M24).
+- Error: this story defines the error state.
+- Empty: not applicable.
+
+### M08-S23 Video not found or removed (Must)
+As a viewer opening an old link, I want a clear message if the video is gone, so that I can go elsewhere.
+- AC1: Given the video is unpublished or deleted, When I open its watch URL, Then I see the not found page with Search and Home links.
+- AC2: Given it becomes unpublished mid-watch, When the next token refresh runs, Then playback stops after the current segment with a message.
+- Edge: current progress is still saved.
+- Error: see AC1.
+- Empty: not applicable.
+
+### M08-S24 Offline behaviour in the player (Must)
+As a viewer who loses signal, I want to see what happened and keep my place, so that I can continue later.
+- AC1: Given I go offline while playing, When buffered video runs out, Then the player pauses with "You are offline" and a Retry button.
+- AC2: Given I go offline before opening a video, When I open the watch page, Then I see the Offline screen with Back (no playback offline in phase 1).
+- AC3: Given I return online, When connectivity is detected, Then I am offered "Back online. Resume" or it auto resumes if I was playing.
+- Edge: the buffered video continues to play offline until it is exhausted.
+- Error: queued progress writes are sent on return.
+- Empty: not applicable.
+
+### M08-S25 Player accessibility (Must)
+As a viewer who uses a screen reader or keyboard, I want the player to be fully operable, so that I can watch.
+- AC1: Given a screen reader, When I focus a control, Then it announces its name, role and state ("Play, button", "Captions, on").
+- AC2: Given state changes (buffering, error, up next), When they occur, Then a polite live region announces them.
+- AC3: Given Tab order, When I tab, Then it flows play, seek, time, volume, captions, speed, quality, full screen with a visible focus ring.
+- AC4: Given reduced motion, When on, Then control fades and autoplay countdown animation are minimised.
+- Edge: seek bar is a slider with `aria-valuetext` like "2 minutes 14 seconds of 6 minutes".
+- Error: not applicable.
+- Empty: not applicable.
+
+### M08-S26 Watch page layout (Must)
+As a viewer, I want a clean watch page with the video first, so that I can focus.
+- AC1: Given a desktop, When the page loads, Then a dark player area sits on the off-white page with title and description below, and pastel Up next tiles to the right (or below on narrow widths).
+- AC2: Given a phone in portrait, When it loads, Then the player is full width at 16:9 at the top, with title, actions (My List, Share) and Up next below, and the page scrolls.
+- AC3: Given a phone in landscape, When it loads, Then the player fills the screen and the rest is hidden until scroll.
+- Edge: layout shift is avoided by reserving the 16:9 box.
+- Error: not applicable.
+- Empty: with no Up next items, the right column is hidden.
+
+### M08-S27 Poster and first frame (Should)
+As a viewer, I want to see the poster while the video starts, so that the screen is never blank.
+- AC1: Given the player loads, When no frame is ready, Then the poster shows with a Play icon and a spinner only after 500 ms of waiting.
+- AC2: Given the first frame renders, When ready, Then the poster fades out within 200 ms.
+- Edge: the poster size matches the viewport (responsive image).
+- Error: poster failure shows a dark neutral box.
+- Empty: not applicable.
+
+### M08-S28 End screen (Must)
+As a viewer, I want a useful screen after the video ends, so that I know what to do next.
+- AC1: Given a standalone title ends, When the end screen shows, Then I see Replay, Add to My List, and a related row, with the finished state saved.
+- AC2: Given the last episode of a series ends, When it shows, Then it says "You finished <series>" with related series.
+- Edge: leaving the end screen within 2 seconds still counts as finished.
+- Error: not applicable.
+- Empty: not applicable.
+
+### M08-S29 Seek preview thumbnails (Could)
+As a viewer, I want a preview image when I hover or drag the seek bar, so that I can find a moment.
+- AC1: Given a sprite sheet exists, When I hover or drag, Then the image for that time shows above the bar.
+- AC2: Given Data saver is on, When playing, Then the sprite is not downloaded.
+- Edge: videos without a sprite show only the time tooltip.
+- Error: sprite failure is silent.
+- Empty: not applicable.
+
+### M08-S30 Player quality metrics (Should)
+As the developer, I want the player to report startup and stalls, so that I can see real viewer experience.
+- AC1: Given a playback session, When it ends or every 60 seconds, Then the client sends startup time, rebuffer count and duration, average bitrate, errors, and device class (no personal data).
+- AC2: Given the beacon fails, When offline, Then it is dropped (metrics are best effort).
+- Edge: metrics are sampled at 100 percent at launch scale.
+- Error: not applicable.
+- Empty: not applicable.
+
+### M08-S31 Resume across devices (Should)
+As a viewer, I want to start on my phone and continue on my laptop, so that I can switch devices.
+- AC1: Given I watched to 3:10 on phone, When I open the video on laptop in the same profile, Then playback starts from 3:07.
+- AC2: Given both devices play at once, When writes conflict, Then the later server timestamp wins (see M09-S06).
+- Edge: a sync delay up to 15 seconds is acceptable.
+- Error: not applicable.
+- Empty: not applicable.
+
+---
+
+## M09 Continue Watching
+
+### M09-S01 Continue Watching row (Must)
+As a viewer, I want a row of videos I have started, so that I can resume with one tap.
+- AC1: Given I have unfinished videos with a position of 5 seconds or more, When I open Home, Then Continue Watching lists them most recent first with a progress bar.
+- AC2: Given I tap a card, When pressed, Then the watch page opens and resumes at saved position minus 3 seconds.
+- AC3: Given the row has more than 20 items, When I view it, Then the oldest are dropped from the row (history is kept).
+- Edge: the row is per profile.
+- Error: load failure hides the row and leaves the rest of Home.
+- Empty: the row is not shown when empty.
+
+### M09-S02 Start threshold (Must)
+As a viewer, I want a brief accidental play not to clutter my row, so that the row only shows real progress.
+- AC1: Given I watched fewer than 5 seconds, When I leave, Then no Continue Watching entry is created and any existing entry is left unchanged.
+- AC2: Given I reach 5 seconds or more, When progress is saved, Then the entry is created.
+- Edge: scrubbing to 6 seconds without watching still counts (position based).
+- Error: not applicable.
+- Empty: not applicable.
+
+### M09-S03 Finish threshold (Must)
+As a viewer, I want finished videos to leave the row, so that I only see what I have not completed.
+- AC1: Given the position reaches 95 percent of duration or 10 seconds or fewer remain (whichever comes first), When progress is saved, Then `finished_at` is set, the position resets to 0 and the title leaves Continue Watching.
+- AC2: Given a very short video (under 40 seconds), When 10 seconds remain, Then the rule still applies (95 percent or last 10 seconds).
+- AC3: Given I seek back from the finished zone, When I resume a finished video, Then it counts as a new watch and the entry returns only if progress passes the start threshold again and I leave before the finish zone.
+- Edge: reaching the credits at 94 percent and leaving keeps the entry; this is accepted.
+- Error: duration unknown (live or bad metadata) never marks finished by percent; only by `ended` event.
+- Empty: not applicable.
+
+### M09-S04 Rewind on resume (Must)
+As a viewer, I want a short rewind when resuming, so that I regain context.
+- AC1: Given saved position P of 5 seconds or more, When I resume, Then playback begins at max(0, P minus 3).
+- AC2: Given rewind is configured to 0 in site config, When resuming, Then it starts at P.
+- Edge: with `?t=` in the URL, no rewind is applied.
+- Error: not applicable.
+- Empty: not applicable.
+
+### M09-S05 Series next episode logic (Must)
+As a viewer, I want a finished episode to be replaced by the next one, so that I continue the series.
+- AC1: Given I finish episode 3 of a series with 6 episodes, When progress is saved, Then Continue Watching shows episode 4 at position 0 with the label "Next: E4".
+- AC2: Given I finish the last episode, When saved, Then the series leaves Continue Watching.
+- AC3: Given I am part way through episode 2 and episode 4 earlier, When the row renders, Then only one card per series shows: the most recently watched unfinished episode, or the next episode if the last one finished.
+- Edge: if the next episode is not published, the series leaves the row.
+- Error: not applicable.
+- Empty: not applicable.
+
+### M09-S06 Conflicting writes from two devices (Should)
+As a viewer using two devices, I want a sane result, so that I do not lose place.
+- AC1: Given two writes for the same profile and video arrive, When processing, Then the later client timestamp (validated within a 5 minute skew of the server time) wins.
+- AC2: Given a write moves the position backwards by more than 30 seconds without a seek flag within 5 seconds of a forward write from another device, When received, Then it is ignored.
+- Edge: a finish event always wins over positions.
+- Error: invalid timestamps are replaced by server time.
+- Empty: not applicable.
+
+### M09-S07 Remove from Continue Watching (Should)
+As a viewer, I want to remove an item from the row, so that I can tidy it.
+- AC1: Given a card, When I open its menu and choose "Remove from row", Then it disappears at once (optimistic) with an Undo toast for 6 seconds.
+- AC2: Given I removed it, When I open the title, Then my position is cleared (it starts at 0).
+- Edge: kids profiles can remove but only inside their own profile.
+- Error: failure restores the card with an error toast.
+- Empty: not applicable.
+
+### M09-S08 Continue Watching expiry (Could)
+As a viewer, I want old unfinished items to drop off, so that the row stays relevant.
+- AC1: Given an entry not updated for 60 days, When the row loads, Then it is not shown (history retained).
+- AC2: Given the period is changed in config, When saved, Then it applies to all profiles.
+- Edge: opening the title directly still resumes if a position exists.
+- Error: not applicable.
+- Empty: not applicable.
+
+### M09-S09 Watched indicators (Should)
+As a viewer, I want to see which episodes I finished, so that I can pick up a series.
+- AC1: Given an episode is finished, When I view the series page, Then it shows a tick and "Watched".
+- AC2: Given an episode is partly watched, When shown, Then a progress bar shows.
+- Edge: standalone title cards show a small tick when finished.
+- Error: not applicable.
+- Empty: not applicable.
+
+### M09-S10 New profile has empty history (Must)
+As a viewer who just made a profile, I want a clean start, so that nothing from other profiles appears.
+- AC1: Given a new profile, When I open Home, Then no Continue Watching and no My List rows appear.
+- AC2: Given I watch 10 seconds of a video, When I return to Home, Then Continue Watching appears.
+- Edge: deleting a profile deletes its history.
+- Error: not applicable.
+- Empty: this is the empty state.
+
+---
+
+## M10 My List
+
+### M10-S01 Add to My List (Must)
+As a viewer, I want to save a title for later, so that I can find it again.
+- AC1: Given a title card, detail page or watch page, When I tap the plus button, Then it is added at once, the icon changes to a tick with accessible state "In My List", and a toast "Added to My List" shows.
+- AC2: Given the server rejects the add, When it fails, Then the icon reverts and a persistent error toast shows.
+- AC3: Given I am offline, When I tap, Then the change is queued and applied on reconnect with a "Saved on this device" note.
+- Edge: adding the same title twice is idempotent.
+- Error: limit of 500 items per profile; beyond it shows "My List is full".
+- Empty: not applicable.
+
+### M10-S02 Remove from My List (Must)
+As a viewer, I want to remove a saved title, so that the list stays tidy.
+- AC1: Given an item in My List, When I tap the tick or Remove, Then it disappears at once with an Undo toast for 6 seconds.
+- AC2: Given I tap Undo, When within the window, Then it returns at its original position.
+- Edge: removal from the card on Home also removes it from the page.
+- Error: failure restores with an error toast.
+- Empty: not applicable.
+
+### M10-S03 My List page (Must)
+As a viewer, I want a page listing everything I saved, so that I can choose.
+- AC1: Given I open `/my-list`, When it loads, Then items show as a grid newest added first with card details.
+- AC2: Given a title is later unpublished, When I open the list, Then it is hidden but remains stored and returns if republished.
+- AC3: Given many items, When scrolling, Then items load in pages of 24 with Show more.
+- Edge: kids profile sees only kid titles.
+- Error: load failure shows retry.
+- Empty: "Your list is empty. Tap + on any video to save it here" with a Browse button.
+
+### M10-S04 My List row on Home (Should)
+As a viewer, I want my list on Home, so that I can reach it fast.
+- AC1: Given I have at least one item, When Home loads, Then a My List row shows the latest 20 and a See all card.
+- AC2: Given the list is empty, When Home loads, Then the row is not rendered.
+- Edge: row updates immediately when I add an item and return to Home.
+- Error: ignored silently, with the rest of Home unaffected.
+- Empty: see AC2.
+
+### M10-S05 My List for series (Should)
+As a viewer, I want to save a whole series, so that I follow it.
+- AC1: Given a series page, When I tap My List, Then the series is saved (not individual episodes).
+- AC2: Given I open the saved series, When I tap it, Then it opens the series page.
+- Edge: adding an individual standalone video and a series are both supported.
+- Error: not applicable.
+- Empty: not applicable.
+
+### M10-S06 My List consistency across devices (Should)
+As a viewer, I want my list the same everywhere, so that I trust it.
+- AC1: Given I add on phone, When I open the laptop within 15 seconds of refresh, Then it appears.
+- AC2: Given simultaneous changes, When both arrive, Then the latest action per title wins.
+- Edge: per profile.
+- Error: not applicable.
+- Empty: not applicable.
+
+---
+
+## M11 Captions (viewer side)
+
+### M11-S01 Load approved captions only (Must)
+As a viewer, I want captions I can trust, so that I am not shown wrong text.
+- AC1: Given a video has tracks `approved` and `needs_review`, When the player loads, Then only the approved track is attached.
+- AC2: Given a track is later set back to `rejected`, When the next playback starts, Then it is not served.
+- AC3: Given captions files are requested, When served, Then they come from a signed URL with the same access rules as video.
+- Edge: caption files are cached by the CDN with a version suffix, so approved edits show quickly.
+- Error: if the file fails, playback continues with an informative toast.
+- Empty: no tracks means no CC button.
+
+### M11-S02 Caption toggle and persistence (Must)
+As a viewer, I want my caption choice remembered, so that I do not set it each time.
+- AC1: Given I turn captions on, When I play another video, Then they are on.
+- AC2: Given I turn them off, When I play another, Then they are off.
+- Edge: first time default is off for adults and on for kids profiles.
+- Error: not applicable.
+- Empty: not applicable.
+
+### M11-S03 Caption styling (Could)
+As a viewer with low vision, I want to change caption size and background, so that I can read them.
+- AC1: Given Caption settings, When I choose size (Small, Medium, Large, Extra large) and background (None, Dark, Solid), Then captions update live in a preview.
+- AC2: Given high contrast presets, When chosen, Then colours meet 7 to 1 contrast.
+- Edge: settings are per profile.
+- Error: not applicable.
+- Empty: not applicable.
+
+### M11-S04 Caption language menu (Could)
+As a viewer, I want to choose among caption languages once translations exist, so that I read in my language.
+- AC1: Given several approved tracks, When I open the menu, Then each language shows by its own name (Yoruba, Igbo, Hausa, Pidgin, English) with Off.
+- AC2: Given the profile language is set, When a track in that language exists, Then it is chosen by default.
+- Edge: only approved tracks per language are listed.
+- Error: a language track failing falls back to English with a toast.
+- Empty: with only English, no menu, just a toggle.
+
+### M11-S05 Caption badge on titles (Should)
+As a viewer, I want to see which titles have captions, so that I can pick one I can follow.
+- AC1: Given a title has an approved track, When shown on a card or detail page, Then a small CC badge appears with a text alternative "Captions available".
+- AC2: Given a series, When some episodes lack captions, Then the badge shows only for the episodes that have them.
+- Edge: filter "With captions" in Browse (Could).
+- Error: not applicable.
+- Empty: not applicable.
+
+### M11-S06 Captions positioning and legibility (Must)
+As a viewer, I want captions readable on any background, so that I can follow.
+- AC1: Given captions show, When rendered, Then they use a semi-opaque dark background, white text, a minimum 16 px size on mobile, and stay above the control bar.
+- AC2: Given portrait mobile, When captions show, Then lines wrap to the video width and at most 2 lines show.
+- Edge: cues longer than 42 characters per line are reflowed at the authoring step (M15), not at runtime.
+- Error: not applicable.
+- Empty: not applicable.
+
+### M11-S07 Captions with speed and seeking (Must)
+As a viewer, I want captions in sync, so that they match what I hear.
+- AC1: Given speed is 1.5x, When captions run, Then they follow the media clock.
+- AC2: Given I seek, When the new position loads, Then the current cue appears within 200 ms.
+- Edge: a negative or overlapping cue is handled by the browser, and flagged during review (M15).
+- Error: not applicable.
+- Empty: not applicable.
+
+---
+## M12 Admin auth and roles
+
+Role summary used in these stories: **Super admin** (ARKDEV): everything. **Admin** (Sister Vanessa): content, captions, curation, theme, publishing, users overview (read, safe support actions), analytics. **Editor**: videos, captions, curation (no theme, no users, no site settings, no publish override). **Analyst**: read only analytics and lists.
+
+### M12-S01 Admin sign in (Must)
+As an admin, I want a separate, stricter sign in at `/admin/login`, so that the back office is protected.
+- AC1: Given an account with an admin role, When I enter valid email and password, Then I am asked for my 6 digit authenticator code before the session starts.
+- AC2: Given an account without an admin role, When it signs in here, Then it sees the same generic "Email or password is incorrect" and no session is created.
+- AC3: Given 3 failed attempts in 15 minutes, When another is made, Then the admin account is locked for 30 minutes and the Super admin is notified by email.
+- AC4: Given a successful sign in, When the session starts, Then it lasts 8 hours absolute with a 30 minute idle timeout and shows a warning 2 minutes before expiry.
+- Edge: viewer sessions are separate from admin sessions (a viewer signing in does not grant admin).
+- Error: network failure keeps the form and offers retry.
+- Empty: not applicable.
+
+### M12-S02 Two factor authentication enrolment (Must)
+As an admin, I want to set up an authenticator app, so that a stolen password is not enough.
+- AC1: Given my first admin sign in, When I reach enrolment, Then I see a QR code and a manual key, and must enter a valid code to complete.
+- AC2: Given enrolment completes, When shown, Then 10 single use recovery codes display once with Copy and Download, and I must confirm I saved them.
+- AC3: Given I lose my device, When I use a recovery code, Then it works once and is then crossed off.
+- Edge: authenticator codes allow 1 step clock drift.
+- Error: wrong code shows "That code is not right", 5 wrong codes lock for 15 minutes.
+- Empty: not applicable.
+
+### M12-S03 Reset an admin's 2FA (Should)
+As a Super admin, I want to reset another admin's 2FA, so that a lost phone does not lock them out.
+- AC1: Given I open an admin in Roles, When I choose Reset 2FA and confirm with my own code, Then their 2FA is cleared, their sessions end and they must re-enrol at next sign in.
+- AC2: Given the reset happens, When it completes, Then an audit entry is written and the admin is emailed.
+- Edge: a Super admin cannot reset their own 2FA this way (uses recovery codes).
+- Error: not applicable.
+- Empty: not applicable.
+
+### M12-S04 Role based access (Must)
+As the owner, I want each role limited to what it needs, so that mistakes and abuse are limited.
+- AC1: Given the permission matrix, When an Editor opens `/admin/theme`, Then they see a "You do not have access" screen and the menu item is hidden.
+- AC2: Given an Analyst, When they call a write endpoint directly, Then the server returns 403 and logs it.
+- AC3: Given the permission matrix is defined in one place, When a new action is added, Then a test fails until it has an explicit role mapping.
+- Edge: permissions are checked on the server for every action and again in the UI only for display.
+- Error: unknown role defaults to no access.
+- Empty: not applicable.
+
+### M12-S05 Invite an admin user (Must)
+As a Super admin, I want to invite someone by email with a role, so that they can help manage the platform.
+- AC1: Given I enter an email and choose a role, When I send, Then an invite email with a link valid for 72 hours is sent.
+- AC2: Given the invitee opens the link, When they set a password and enrol 2FA, Then the account gets the role and the invite is consumed.
+- AC3: Given I revoke an unused invite, When confirmed, Then the link stops working.
+- Edge: inviting an existing viewer email grants the role on that account after they confirm.
+- Error: invalid or expired invite shows a clear message and asks the Super admin to resend.
+- Empty: the invites list shows "No pending invites".
+
+### M12-S06 Change or remove a role (Must)
+As a Super admin, I want to change someone's role or remove access, so that access matches responsibility.
+- AC1: Given I change a role and confirm, When saved, Then permissions apply on the user's next request and the change is audited with old and new role.
+- AC2: Given I remove admin access, When confirmed, Then the user's admin sessions end at once.
+- AC3: Given the last Super admin, When I try to demote or remove them, Then it is blocked with "There must be at least one Super admin".
+- Edge: an admin cannot change their own role.
+- Error: concurrent changes show a conflict message.
+- Empty: not applicable.
+
+### M12-S07 Roles screen (Must)
+As a Super admin, I want one screen listing admins and the permission matrix, so that I can see who can do what.
+- AC1: Given I open `/admin/roles`, When it loads, Then I see admins with role, last sign in, 2FA state, and the read only matrix of permissions by role.
+- AC2: Given a non Super admin, When they open the URL, Then they get the no access screen.
+- Edge: the matrix explains each permission in plain language.
+- Error: load failure shows retry.
+- Empty: only the Super admin listed.
+
+### M12-S08 Admin session timeout (Must)
+As the owner, I want idle admin sessions to end, so that an unattended laptop is not a risk.
+- AC1: Given 30 minutes of no activity, When it passes, Then the next action redirects to login with a message and my unsaved form is kept in memory for restoring after login (Should).
+- AC2: Given a long upload is running, When it runs, Then upload activity counts as activity so the session stays open, and uploads continue with their own presigned authority.
+- Edge: absolute lifetime of 8 hours ends the session even while active, with a 2 minute warning.
+- Error: not applicable.
+- Empty: not applicable.
+
+### M12-S09 My admin account (Should)
+As an admin, I want a page for my own password and 2FA, so that I can manage my security.
+- AC1: Given `/admin/account`, When I change my password with current password and 2FA code, Then it changes and my other sessions end.
+- AC2: Given I regenerate recovery codes, When confirmed with my 2FA code, Then old codes stop working.
+- Edge: shows my active admin sessions with Revoke.
+- Error: wrong code or password counts toward the admin lockout.
+- Empty: not applicable.
+
+---
+
+## M13 Upload
+
+### M13-S01 Open the upload screen (Must)
+As an admin, I want a clear place to add videos, so that I know how to start.
+- AC1: Given I open `/admin/videos/upload`, When it loads, Then I see a large drop zone with "Drop videos here or choose files", accepted types (MP4, MOV, MKV, WebM) and the 5 GB limit.
+- AC2: Given an Analyst role, When they open it, Then they get the no access screen.
+- Edge: on mobile the drop zone becomes a Choose files button.
+- Error: load failure shows retry.
+- Empty: the queue area shows "No uploads yet".
+
+### M13-S02 Drag and drop feedback (Must)
+As an admin, I want the screen to react when I drag a file over it, so that I know it will accept the drop.
+- AC1: Given I drag a file over the zone, When over it, Then the border changes, a tint overlay glows and the text changes from "Drop your file" to "Release to upload" simultaneously.
+- AC2: Given I drag away, When leaving, Then the zone returns to normal.
+- AC3: Given I drop an unsupported file, When released, Then it is not queued and a clear inline message says which file and why.
+- Edge: dropping a folder queues the supported files inside it (where the browser allows).
+- Error: not applicable.
+- Empty: not applicable.
+
+### M13-S03 Multi-file independent queue (Must)
+As an admin, I want to add many files at once, so that I can load the launch library in a few sessions.
+- AC1: Given I add 20 files, When queued, Then each shows as its own row with name, size, status and progress, and by default 2 files upload at once, the rest are "Waiting".
+- AC2: Given one file fails, When it errors, Then the others continue unaffected.
+- AC3: Given I use Pause all or Pause on a row, When paused, Then in-flight parts finish and the file keeps its progress.
+- AC4: Given I change the parallel files setting (1 to 4), When saved, Then the queue adapts.
+- Edge: reordering the queue by drag is allowed (Could).
+- Error: per file errors are shown in the row, not as a global modal.
+- Empty: see M13-S01.
+
+### M13-S04 Honest progress (Must)
+As an admin, I want exact progress, so that I can decide whether to wait.
+- AC1: Given an upload runs, When it progresses, Then the row shows percentage, uploaded and total size, transfer speed (for example 2.4 MB/s) and time left (ETA), updated at least once a second, with a smoothed estimate.
+- AC2: Given progress changes, When the bar updates, Then it animates `width` over 300 ms ease-out.
+- AC3: Given speed drops to near zero, When 15 seconds pass, Then the row shows "Connection is slow or lost. Still trying" rather than an infinite spinner.
+- Edge: the browser tab title shows overall percentage while uploading.
+- Error: not applicable.
+- Empty: not applicable.
+
+### M13-S05 Resumable multipart upload (Must)
+As an admin on a poor connection, I want uploads to resume where they stopped, so that I never restart from zero.
+- AC1: Given a 1 GB file, When uploading, Then it is split into 8 MB parts, 3 in parallel, each part uses a presigned URL and its ETag is recorded.
+- AC2: Given the network drops at 90 percent, When it returns, Then the upload resumes from the first missing part, not from 0.
+- AC3: Given I reload the page or close the browser, When I return and re-select the same file, Then the app matches it (name, size, modified time, first MB hash) to the stored upload id and offers "Resume from 90 percent".
+- AC4: Given presigned URLs expire after 1 hour, When a part URL expires, Then a fresh one is requested automatically.
+- Edge: the laptop sleeping mid upload resumes when it wakes.
+- Error: a part fails 5 times with backoff, then the row shows "Upload failed at 90 percent" with Retry.
+- Empty: not applicable.
+
+### M13-S06 Inline retry (Must)
+As an admin, I want a Retry button on the failed row, so that I can recover without redoing others.
+- AC1: Given a failed row, When I tap Retry, Then the upload resumes from the failed part and the row shows the progress.
+- AC2: Given retry fails again, When it does, Then the error message explains the likely cause (offline, file changed on disk, URL expired) in plain words.
+- AC3: Given the source file was moved or edited, When I retry, Then I am asked to re-select it and the app checks that it matches.
+- Edge: Retry all failed button for the batch.
+- Error: see AC2.
+- Empty: not applicable.
+
+### M13-S07 File validation (Must)
+As an admin, I want bad files rejected early, so that I do not wait for a failed encode.
+- AC1: Given a file over 5 GB, When added, Then it is rejected before upload with the limit shown.
+- AC2: Given a file with a wrong extension or MIME type, When added, Then it is rejected.
+- AC3: Given the file uploaded, When the server probes it, Then a file with no video stream, zero duration or an unreadable container is marked "Could not read this file" with Replace.
+- AC4: Given a video longer than 60 minutes, When probed, Then a warning shows (platform is built for short videos) but it is allowed.
+- Edge: same name and size as an existing source triggers a duplicate warning with options Upload anyway or Skip.
+- Error: see AC3.
+- Empty: not applicable.
+
+### M13-S08 Upload completion preview card (Must)
+As an admin, I want a card when the upload finishes, so that I can confirm it is the right file.
+- AC1: Given an upload completes, When finished, Then the row becomes a card with a thumbnail (first frame or a generated frame once available, else a video icon), file type and exact size, duration, a badge "Uploaded just now", and the encoding status.
+- AC2: Given the card, When I tap Replace, Then I can choose another file and the previous source is removed after the new one completes.
+- AC3: Given the card, When I tap Remove, Then I confirm and the draft record and uploaded source are deleted.
+- Edge: the card has an Edit details link that opens Video edit.
+- Error: thumbnail generation failure shows the icon and does not block.
+- Empty: not applicable.
+
+### M13-S09 Create draft on upload (Must)
+As an admin, I want each upload to become a draft video automatically, so that nothing goes live by accident.
+- AC1: Given an upload completes, When the server verifies the parts, Then a draft video is created with title from the filename (cleaned), status `processing`, suitability `general`, and an encoding job is queued.
+- AC2: Given the completion request is retried, When duplicated, Then it is idempotent (one video, one job).
+- AC3: Given the draft exists, When I open the Videos list, Then it appears with a Draft badge.
+- Edge: title cleaning replaces underscores, removes extension and trims.
+- Error: if verification finds a missing part, the upload returns to the failed state and resumes.
+- Empty: not applicable.
+
+### M13-S10 Leave the page safely (Should)
+As an admin, I want a warning before I leave during an upload, so that I do not lose work by accident.
+- AC1: Given uploads are active, When I try to close the tab or navigate away, Then a browser confirmation appears.
+- AC2: Given I confirm leaving, When I return, Then unfinished uploads show as "Paused. Re-select the file to resume".
+- AC3: Given I navigate inside `/admin` (single page), When switching sections, Then uploads continue in the background and a small global progress chip stays visible.
+- Edge: the chip links back to the upload screen.
+- Error: not applicable.
+- Empty: not applicable.
+
+### M13-S11 Cancel and clean up (Should)
+As an admin, I want to cancel an upload, so that unwanted files are not stored.
+- AC1: Given an active upload, When I tap Cancel and confirm, Then the multipart upload is aborted and parts removed from R2.
+- AC2: Given an abandoned multipart upload older than 7 days, When the cleanup job runs, Then it is aborted and its parts deleted.
+- Edge: cancelled rows remain visible briefly with Undo only before abort.
+- Error: abort failure is retried by the job and alerts if it fails 3 times.
+- Empty: not applicable.
+
+### M13-S12 Upload from a phone (Could)
+As an admin on a phone, I want to upload a video from my gallery, so that I can add content away from my laptop.
+- AC1: Given a phone, When I choose a file from the gallery, Then upload works with the same resumable logic and keeps running while the screen is on.
+- AC2: Given the app is in the background, When the browser suspends, Then the upload pauses and resumes on return.
+- Edge: a Wi-Fi only option warns before large uploads on mobile data.
+- Error: same as desktop.
+- Empty: not applicable.
+
+---
+
+## M14 Encoding worker
+
+### M14-S01 Queue an encoding job (Must)
+As the system, I want an encoding job created for each uploaded source, so that every video gets renditions.
+- AC1: Given a draft video with a verified source, When created, Then a job is queued with status `queued` and the video status becomes `processing`.
+- AC2: Given the same video is queued twice, When detected, Then only one active job exists.
+- Edge: priority is first in first out, with manual bump (Could).
+- Error: queue write failure rolls back the draft creation response with a retryable error.
+- Empty: not applicable.
+
+### M14-S02 Probe the source (Must)
+As the system, I want to read the source's properties first, so that bad files fail early and the ladder is correct.
+- AC1: Given a job starts, When ffprobe runs, Then duration, width, height, frame rate, codecs and audio presence are stored.
+- AC2: Given a source with height 720, When planning the ladder, Then renditions are 360, 480, 720 only (no upscale).
+- AC3: Given a source without audio, When planning, Then video only renditions are produced and flagged "No audio".
+- Edge: portrait or odd dimensions are padded or scaled to even numbers.
+- Error: probe failure marks the job failed with reason "Could not read file" and notifies the admin.
+- Empty: not applicable.
+
+### M14-S03 Encode HLS ladder (Must)
+As the system, I want a four rung HLS ladder, so that every device and network can play.
+- AC1: Given a 1080p source, When encoded, Then outputs are 360p (about 400 kbps total), 480p (about 800 kbps), 720p (about 1.8 Mbps) and 1080p (about 3.5 Mbps), H.264 and AAC, 6 second segments with keyframes aligned, and a master playlist.
+- AC2: Given the ladder, When completed, Then all rungs have the same segment boundaries so ABR can switch cleanly.
+- AC3: Given audio, When encoded, Then loudness is normalised to a consistent level (EBU R128 target) so videos play at similar volume.
+- Edge: bitrates and rungs are configuration, not constants in code.
+- Error: an encode failure on one rung retries that rung, not the whole job.
+- Empty: not applicable.
+
+### M14-S04 Encrypt segments (Must)
+As the owner, I want HLS encryption, so that segment files cannot be played without a key.
+- AC1: Given encoding, When packaging, Then each video gets its own AES-128 key stored encrypted at rest, playlists reference the key endpoint, and segments are encrypted.
+- AC2: Given a key rotation request, When run, Then new videos use a new key and old keys stay valid for existing videos.
+- Edge: the key URI is relative to the app domain, not the CDN.
+- Error: key generation failure stops the job (never publishes unencrypted).
+- Empty: not applicable.
+
+### M14-S05 Progress and stages (Must)
+As an admin, I want to see what the worker is doing, so that I trust it is working.
+- AC1: Given a running job, When it advances, Then stage (Queued, Reading file, Encoding 360p, Encoding 480p, Encoding 720p, Encoding 1080p, Packaging, Uploading, Done) and percent update at least every 5 seconds.
+- AC2: Given the job finishes, When done, Then the video becomes `ready` and the admin sees a notice.
+- Edge: ETA is shown after 10 percent progress.
+- Error: stalled jobs (no heartbeat for 5 minutes) are flagged "Stalled" and re-queued.
+- Empty: not applicable.
+
+### M14-S06 Failure, retry and backoff (Must)
+As an admin, I want failures handled and explained, so that I know what to do.
+- AC1: Given a job fails, When it does, Then it retries up to 3 times with backoff (1, 5, 15 minutes) and then becomes `failed`.
+- AC2: Given a failed job, When I open it, Then I see a plain reason ("The video file is damaged. Try exporting it again") and a technical detail section for the developer, and Retry and Replace file buttons.
+- AC3: Given Retry, When pressed, Then the job restarts from the last good stage.
+- Edge: out of disk or CPU limit errors alert the developer, not only the admin.
+- Error: never show raw stack traces to admins.
+- Empty: not applicable.
+
+### M14-S07 Resource limits on the VPS (Should)
+As the developer, I want encoding not to starve the website, so that viewers are unaffected.
+- AC1: Given an encode runs, When CPU is high, Then the worker runs at lower priority and concurrency is 1 by default.
+- AC2: Given disk free space falls below 15 percent, When a job is about to start, Then it waits and alerts.
+- Edge: working files are removed after each job, even on failure.
+- Error: cleanup failure is logged and retried.
+- Empty: not applicable.
+
+### M14-S08 Publish renditions to R2 (Must)
+As the system, I want renditions uploaded to R2 in a predictable layout, so that the CDN can serve them.
+- AC1: Given encoding done, When uploading, Then files go to `hls/<videoId>/<rendition>/` and `hls/<videoId>/master.m3u8`, with correct content types and cache headers (segments immutable, playlists short).
+- AC2: Given upload interrupted, When the job resumes, Then already uploaded objects are verified and skipped.
+- Edge: the source stays under `sources/` until the video is deleted.
+- Error: a verification mismatch re-uploads the object.
+- Empty: not applicable.
+
+### M14-S09 Encoding queue screen (Must)
+As an admin, I want one screen showing every encoding job, so that I can see what is waiting, running or failed.
+- AC1: Given `/admin/encoding`, When it loads, Then jobs list with video title, stage, percent, ETA, started time and status (Queued, Running, Done, Failed, Stalled), updating live (polling every 5 seconds, or server sent events) without a full reload.
+- AC2: Given a failed job, When I open its row, Then I see the plain language reason and Retry and Replace file buttons (see M14-S06).
+- AC3: Given filters (status, date), When I change them, Then the list updates and the filter is in the URL.
+- AC4: Given an Editor, When they open it, Then they see jobs and can Retry but not change worker settings.
+- Edge: a job that finishes while I watch moves to Done with a subtle highlight, no jump in layout.
+- Error: if live updates fail, a banner says "Live updates paused" and manual Refresh remains.
+- Empty: "No encoding jobs. Upload a video to begin".
+
+---
+
+## M15 Caption pipeline and review
+
+### M15-S01 Auto generate English captions (Must)
+As an admin, I want captions generated automatically, so that I only have to review them.
+- AC1: Given encoding has produced audio, When the caption job runs, Then faster-whisper creates a WebVTT track in English with word level timing, and the track state becomes `needs_review`.
+- AC2: Given generation finishes, When done, Then an admin notification "Captions ready to review" appears (and an email if enabled).
+- AC3: Given silence or music only, When no speech is found, Then the track is `needs_review` with a note "No speech detected".
+- Edge: cues are reflowed to at most 2 lines of 42 characters and 1 to 7 seconds long.
+- Error: failure marks the track `generating_failed` with Retry.
+- Empty: not applicable.
+
+### M15-S02 Align an existing script (Should)
+As an admin who has the script, I want captions aligned to it, so that wording is exact.
+- AC1: Given I upload a plain text script on the video, When I run Align, Then timings are computed against the audio and the text from my script is used.
+- AC2: Given alignment confidence is low in places, When done, Then those cues are highlighted for review.
+- Edge: scripts with speaker names or stage directions are cleaned by a simple rule with a preview.
+- Error: very different script and audio shows "The script does not match the audio" and offers free recognition.
+- Empty: not applicable.
+
+### M15-S03 Caption review list (Must)
+As an admin, I want to see which videos need caption review, so that none slip through.
+- AC1: Given `/admin/captions`, When it loads, Then videos are listed with caption state, language, cue count, and last edited, filterable by state.
+- AC2: Given I tap a row, When opened, Then the review screen opens.
+- AC3: Given the nav badge, When videos need review, Then it shows the count.
+- Edge: sorted by oldest waiting first.
+- Error: load failure shows retry.
+- Empty: "No captions waiting. Nice work."
+
+### M15-S04 Review screen layout (Must)
+As an admin, I want to watch the video and read the captions side by side, so that I can check accuracy.
+- AC1: Given the review screen, When it loads, Then the video (with caption overlay) sits at the top or left, the cue list sits beside or below, and the current cue is highlighted and scrolls into view.
+- AC2: Given I click a cue, When clicked, Then the video seeks to its start.
+- AC3: Given the review screen on a phone, When opened, Then the layout stacks vertically with a sticky video.
+- Edge: playback speed control up to 2x for faster review.
+- Error: video load failure shows an error but the cue list stays usable.
+- Empty: not applicable.
+
+### M15-S05 Edit cue text and timing (Must)
+As an admin, I want to correct words and timing, so that captions are accurate.
+- AC1: Given a cue, When I edit the text, Then it saves automatically after 1 second (draft) and a "Saved" indicator shows.
+- AC2: Given timing fields (start and end), When I adjust them, Then values validate (end after start, no overlap with neighbours) with inline errors.
+- AC3: Given Split and Merge actions, When used, Then cues split at the cursor or merge with the next, and timings are adjusted sensibly.
+- AC4: Given I edit with the keyboard, When I press Ctrl and Enter, Then it moves to the next cue and plays it (Could).
+- Edge: undo and redo for the last 50 edits.
+- Error: save failure shows a persistent warning and keeps local edits, with Retry.
+- Empty: not applicable.
+
+### M15-S06 Find and replace (Should)
+As an admin, I want to fix a repeated mistake everywhere, so that I save time on names and terms.
+- AC1: Given the find box, When I enter a word and a replacement, Then matches highlight and Replace all shows the count before applying.
+- AC2: Given I apply it, When done, Then it is one undo step.
+- Edge: match case option.
+- Error: no matches shows "Nothing found".
+- Empty: not applicable.
+
+### M15-S07 Approve a caption track (Must)
+As an admin, I want to approve a track, so that viewers can see it.
+- AC1: Given a track in `needs_review`, When I press Approve and confirm, Then its state becomes `approved`, a version is stored, the VTT is published to R2 and the CDN, and an audit entry is written.
+- AC2: Given the track has validation warnings (overlaps, empty cues, cues over 7 seconds), When I approve, Then I see the warnings and must confirm to continue.
+- AC3: Given I edit an approved track, When I save, Then it returns to `needs_review` unless I choose "Save and keep approved" (Admin role only).
+- Edge: approver name and time are shown on the track.
+- Error: publish failure leaves the state unchanged and shows an error.
+- Empty: not applicable.
+
+### M15-S08 Reject or regenerate (Should)
+As an admin, I want to reject poor captions and try again, so that I can improve them.
+- AC1: Given a track, When I choose Regenerate, Then a new job creates a fresh track and the old one is kept as a revision.
+- AC2: Given I choose Reject with a note, When saved, Then the state becomes `rejected` and it is never shown to viewers.
+- Edge: regenerating warns that manual edits will be replaced.
+- Error: job failure keeps the previous track.
+- Empty: not applicable.
+
+### M15-S09 Upload or download a caption file (Should)
+As an admin, I want to import or export a caption file, so that I can edit elsewhere.
+- AC1: Given I choose Download, When pressed, Then a `.vtt` file downloads.
+- AC2: Given I upload a `.vtt` or `.srt`, When processed, Then it is converted to WebVTT, validated and set to `needs_review`.
+- Edge: files over 2 MB are rejected.
+- Error: parse failure shows the line number and reason.
+- Empty: not applicable.
+
+### M15-S10 Caption gate before publish (Must)
+As the owner, I want videos to need approved captions before going live, so that no viewer sees unreviewed text and every title has captions.
+- AC1: Given a video without an approved English track, When I try to publish, Then publish is blocked with "Approve captions first" and a link to the review screen.
+- AC2: Given an Admin overrides with a reason, When confirmed, Then the video publishes without captions and the override is audited (setting `captions_required` can be turned off by Super admin).
+- Edge: Editors cannot override.
+- Error: not applicable.
+- Empty: not applicable.
+
+### M15-S11 Caption translations (Could, phase 2)
+As an admin, I want to add translated tracks, so that more people can follow.
+- AC1: Given an approved English track, When I choose Add translation and pick a language, Then a job creates a draft track in that language (NLLB-200 or the paid service per config).
+- AC2: Given the draft, When created, Then it follows the same review and approval, per language.
+- AC3: Given a translation is not approved, When viewers watch, Then it is never listed.
+- Edge: changing the English text after translation flags translations as "Source changed".
+- Error: unsupported language pair shows a clear message.
+- Empty: not applicable.
+
+---
+
+## M16 Content management (videos, series, categories)
+
+### M16-S01 Videos list (Must)
+As an admin, I want a searchable list of all videos, so that I can find and manage them.
+- AC1: Given `/admin/videos`, When it loads, Then I see a table (cards on mobile) with thumbnail, title, status badge, duration, categories, captions state, published date, with search and filters (status, category, captions state, suitability).
+- AC2: Given more than 25 rows, When paging, Then cursor pagination is used, page and filters are in the URL query string, and the scroll position is restored on return.
+- AC3: Given I select rows, When I use bulk actions (publish, unpublish, set category, set suitability, delete), Then a confirmation shows the count and the action runs with a progress summary.
+- AC4: Given a long running list load, When waiting over 300 ms, Then skeleton rows with matched geometry show.
+- Edge: status badges use colour plus text (not colour alone).
+- Error: load failure shows retry inside the table area.
+- Empty: "No videos yet. Upload your first video" with a button.
+
+### M16-S02 Edit video details (Must)
+As an admin, I want to edit a video's information, so that viewers see good titles and descriptions.
+- AC1: Given `/admin/videos/<id>`, When I edit title (3 to 100 chars), description (up to 1000 chars), categories, tags, suitability, and poster, Then changes save on pressing Save with a clear "Saved" confirmation and an audit entry with before and after.
+- AC2: Given I leave with unsaved changes, When I navigate, Then I am asked to save or discard.
+- AC3: Given validation is lazy then eager, When I blur a field, Then errors show with `aria-describedby`.
+- AC4: Given a live preview card, When I type, Then the card preview updates beside the form (how it looks on Home).
+- Edge: character counters; descriptions trimmed.
+- Error: save failure keeps the form and shows a persistent error toast.
+- Empty: not applicable.
+
+### M16-S03 Choose or upload a poster (Must)
+As an admin, I want to choose the poster image, so that titles look right.
+- AC1: Given generated candidates (6 frames), When I select one, Then it becomes the poster and responsive sizes are generated.
+- AC2: Given I upload my own image (JPG, PNG, WebP, up to 5 MB, at least 1280 by 720), When processed, Then crops for card and hero are created and I can adjust the focus point.
+- AC3: Given the image is too small, When uploaded, Then it is rejected with the minimum size.
+- Edge: text safe area overlay is shown while cropping.
+- Error: processing failure keeps the previous poster.
+- Empty: not applicable.
+
+### M16-S04 Create and edit a series (Must)
+As an admin, I want to group videos into a series, so that viewers can follow them in order.
+- AC1: Given `/admin/series`, When I create a series with title, description, poster and categories, Then it appears in the list as Draft.
+- AC2: Given a series, When I add videos as episodes, Then I set season and episode number, with drag to reorder.
+- AC3: Given I remove an episode, When confirmed, Then the video returns to standalone.
+- Edge: a video can belong to one series only.
+- Error: duplicate episode number blocks save with the field highlighted.
+- Empty: "No series yet" with a Create series button.
+
+### M16-S05 Manage categories (Must)
+As an admin, I want to create and organise categories, so that browsing is clear.
+- AC1: Given `/admin/categories`, When I add a category (name, slug auto), Then it appears and can be reordered by drag and by Up and Down buttons (keyboard).
+- AC2: Given I rename a category, When saved, Then the slug stays unless I change it (old slug redirects).
+- AC3: Given I delete a category in use, When confirmed, Then I choose another category to reassign, or remove it from titles.
+- AC4: Given I hide a category, When saved, Then viewers do not see it.
+- Edge: category names unique, 2 to 30 characters.
+- Error: delete failure keeps the category.
+- Empty: "No categories yet".
+
+### M16-S06 Soft delete and undo (Should)
+As an admin, I want deleted videos recoverable for a while, so that mistakes are not final.
+- AC1: Given I delete a video, When confirmed, Then it moves to Trash for 30 days, is unpublished at once, and an Undo toast shows for 10 seconds.
+- AC2: Given the Trash view, When I choose Restore, Then it returns as Draft.
+- AC3: Given 30 days pass, When the cleanup job runs, Then renditions and source are deleted from R2 and the record is purged.
+- Edge: Super admin can Delete forever with a typed confirmation.
+- Error: R2 deletion failure retries and alerts.
+- Empty: "Trash is empty".
+
+### M16-S07 Video detail status panel (Must)
+As an admin, I want one status panel per video, so that I see what is left to do.
+- AC1: Given a video, When I open it, Then a checklist shows Uploaded, Encoded, Poster chosen, Captions approved, Details complete, Suitability set, each with state and a link to fix.
+- AC2: Given all items are complete, When shown, then the Publish button becomes enabled.
+- Edge: checklist items that block publish are marked "Required".
+- Error: not applicable.
+- Empty: not applicable.
+
+### M16-S08 Preview as viewer (Should)
+As an admin, I want to preview a draft as a viewer, so that I check it before it goes live.
+- AC1: Given a draft or ready video, When I choose Preview, Then it opens the real watch page in preview mode with a banner "Preview. Not public" and uses a short lived preview token.
+- AC2: Given the preview link is shared, When someone without admin sign in opens it, Then it fails.
+- Edge: preview does not write watch progress or analytics.
+- Error: not applicable.
+- Empty: not applicable.
+
+### M16-S09 Bulk edit (Should)
+As an admin, I want to change many videos at once, so that large clean ups are quick.
+- AC1: Given selected rows, When I choose Add category, Then it applies to all, with a summary of changes.
+- AC2: Given an error on some items, When it completes, Then I see which failed and can retry them.
+- Edge: bulk delete needs typing the count.
+- Error: network failure reports partial result clearly.
+- Empty: not applicable.
+
+### M16-S10 Duplicate and replace source (Could)
+As an admin, I want to replace the video file while keeping its details, so that I can fix a render.
+- AC1: Given a video, When I choose Replace source and upload a new file, Then it re-encodes and keeps title, description, categories and views, and the old renditions are removed after the new ones are ready.
+- AC2: Given captions exist, When the new source differs in length, Then captions are flagged "Needs review".
+- Edge: progress for viewers is reset for that video (positions may no longer match) with the finished flag kept.
+- Error: failure keeps the old version live.
+- Empty: not applicable.
+
+### M16-S11 Admin dashboard (Must)
+As an admin, I want a dashboard when I sign in, so that I see what needs attention.
+- AC1: Given `/admin`, When it loads, Then I see counts (published, drafts, processing, failed), "Needs attention" list (failed encodes, captions to review, scheduled today), recent uploads, storage used, and last 7 days views.
+- AC2: Given an Editor, When it loads, Then it hides analytics and storage tiles.
+- Edge: each tile links to the filtered list.
+- Error: a tile failure shows retry only for that tile.
+- Empty: new platform shows "Start here" with three steps (Upload, Review captions, Publish).
+
+---
+
+## M17 Home curation
+
+### M17-S01 Choose hero titles (Must)
+As an editor, I want to pick the featured title, so that Home highlights what matters.
+- AC1: Given `/admin/home`, When I choose up to 5 published titles for the hero, Then they are saved with order and shown with rotation on Home.
+- AC2: Given a hero title is unpublished, When viewers load Home, Then it is skipped automatically.
+- Edge: each hero slot can override the headline text and button label (80 chars).
+- Error: more than 5 shows a limit message.
+- Empty: with none chosen, the newest title is used (preview shows this).
+
+### M17-S02 Create and order rows (Must)
+As an editor, I want to build and reorder rows, so that Home tells the story I want.
+- AC1: Given I add a row, When I choose a type (Manual list, Category, Newest, Series, Most watched this week) and a name, Then it appears in the list.
+- AC2: Given rows, When I drag one (or use Move up and Move down buttons), Then the order saves and the preview updates.
+- AC3: Given I hide a row, When saved, Then it disappears from Home but is kept.
+- Edge: maximum 12 rows to protect performance.
+- Error: save failure keeps local order with retry.
+- Empty: "No rows yet" with a Create row button.
+
+### M17-S03 Manage titles in a manual row (Must)
+As an editor, I want to add, remove and order titles in a row, so that I control it exactly.
+- AC1: Given a manual row, When I search and add a title, Then it joins at the end and can be dragged or moved with keyboard buttons.
+- AC2: Given I remove a title, When confirmed, Then it leaves the row (not deleted from the catalog).
+- AC3: Given a title is later unpublished, When the row renders, Then it is skipped but kept in the editor with a warning icon.
+- Edge: maximum 30 titles per row.
+- Error: duplicates are blocked.
+- Empty: "Add titles to this row".
+
+### M17-S04 Live preview (Should)
+As an editor, I want to see Home change as I edit, so that I know how it will look.
+- AC1: Given the preview pane, When I change anything, Then the preview updates in under 1 second with a toggle for desktop and mobile widths.
+- AC2: Given I have unsaved changes, When I look at the toolbar, Then it says "Unsaved changes" with Save and Discard.
+- Edge: preview shows as an adult profile with a toggle for kids.
+- Error: preview failure shows a message but editing continues.
+- Empty: not applicable.
+
+### M17-S05 Personal row positions (Should)
+As an editor, I want to set where Continue Watching and My List sit, so that Home order is right.
+- AC1: Given the row list, When I move these fixed rows, Then viewers see the new order (hidden when empty).
+- Edge: these rows cannot be deleted, only hidden.
+- Error: not applicable.
+- Empty: not applicable.
+
+### M17-S06 Smart rows (Could)
+As an editor, I want rows that fill themselves, so that Home stays fresh with little work.
+- AC1: Given a Newest row, When new titles publish, Then the row includes them automatically (limit 20).
+- AC2: Given Most watched this week, When rolled up daily, Then top titles by views of the last 7 days appear.
+- Edge: tie break by newer publish date.
+- Error: no data falls back to newest.
+- Empty: not applicable.
+
+### M17-S07 Publish curation changes (Should)
+As an editor, I want to review before changes go live, so that mistakes do not reach viewers.
+- AC1: Given I changed rows, When I press Publish changes, Then they go live and an audit entry records before and after.
+- AC2: Given I want to revert, When I choose Restore previous, Then the last published layout returns.
+- Edge: autosave keeps a draft layout separate from the live one.
+- Error: failure keeps the live layout unchanged.
+- Empty: not applicable.
+
+---
+
+## M28 Publishing and scheduling
+
+### M28-S01 Publish now (Must)
+As an admin, I want to publish a ready video, so that viewers can watch it.
+- AC1: Given a video passes the checklist, When I press Publish and confirm, Then its status becomes `published`, `published_at` is set, caches are invalidated and it appears to viewers within 60 seconds.
+- AC2: Given the checklist fails, When I try, Then Publish is disabled with reasons listed and links to fix.
+- Edge: publishing a series episode makes the series visible if it was hidden.
+- Error: failure leaves status unchanged with an error.
+- Empty: not applicable.
+
+### M28-S02 Schedule publication (Must)
+As an admin, I want to schedule a release, so that content goes live when I choose.
+- AC1: Given I pick a date and time (default zone Africa/Lagos, shown clearly), When I confirm, Then status becomes `scheduled` and the time is stored in UTC.
+- AC2: Given the time arrives, When the scheduler runs (every minute), Then the video publishes within 2 minutes.
+- AC3: Given a scheduled time in the past, When I try to save, Then it is rejected.
+- Edge: scheduled items show a countdown in the list and on the dashboard.
+- Error: scheduler outage is caught up on restart (overdue items publish at once, with an alert).
+- Empty: not applicable.
+
+### M28-S03 Unpublish and republish (Must)
+As an admin, I want to hide a live video, so that I can fix a problem fast.
+- AC1: Given a published video, When I choose Unpublish and confirm, Then it disappears for viewers within 60 seconds, playback tokens stop refreshing and an audit entry is written.
+- AC2: Given an unpublished video, When I Republish, Then it returns with its original publish date retained.
+- Edge: viewers' progress and lists are kept.
+- Error: not applicable.
+- Empty: not applicable.
+
+### M28-S04 Cancel or change a schedule (Should)
+As an admin, I want to change my mind about a scheduled release, so that plans can move.
+- AC1: Given a scheduled video, When I change the time, Then the new time applies and the old schedule is replaced.
+- AC2: Given I cancel the schedule, When confirmed, Then status returns to `ready`.
+- Edge: changes within 2 minutes of the time warn that it may already be running.
+- Error: not applicable.
+- Empty: not applicable.
+
+### M28-S05 Publish checklist gate (Must)
+As the owner, I want the publish rules enforced on the server, so that no incomplete video goes live.
+- AC1: Given a publish request, When any required item fails (encoding, poster, title, description, category, suitability, approved captions), Then the server returns 422 listing each missing item regardless of the UI.
+- AC2: Given an Admin override for captions, When used, Then it requires a reason and is audited.
+- Edge: checks are re-run by the scheduler at publish time (a scheduled video that lost its poster does not go live and alerts).
+- Error: not applicable.
+- Empty: not applicable.
+
+### M28-S06 Series visibility rule (Should)
+As the owner, I want a series to appear only when it has something to watch, so that empty series are not shown.
+- AC1: Given a series, When all episodes are unpublished, Then it is hidden from viewers.
+- AC2: Given the first episode publishes, When it goes live, Then the series appears.
+- Edge: series publishing status can be set Draft by the admin even if episodes are published.
+- Error: not applicable.
+- Empty: not applicable.
+
+---
+## M18 Theme settings
+
+### M18-S01 Edit colours (Must)
+As an admin, I want to change the site colours, so that the look matches my brand.
+- AC1: Given `/admin/theme`, When I open it, Then I see colour fields for background, ink, muted, border, banner and accent, showing current values (defaults `#F5F5F2`, `#1A1C22`, `#5B606B`, `#DEDDD6`, `#1F6FB5`, `#FFC93C`).
+- AC2: Given I pick a colour (picker or hex), When valid, Then the preview updates at once without saving.
+- AC3: Given an invalid hex, When I blur, Then an inline error shows and the preview keeps the last valid value.
+- Edge: Hex accepts 3 or 6 digits with or without the hash.
+- Error: save failure keeps edits locally with Retry.
+- Empty: not applicable.
+
+### M18-S02 Contrast warning (Must)
+As an admin, I want a warning when colours are hard to read, so that viewers can read the site.
+- AC1: Given a pair such as ink on background, When contrast is below 4.5 to 1 (3 to 1 for large text), Then a warning shows the ratio and which pair fails, with a suggested fix.
+- AC2: Given warnings exist, When I save, Then I may continue after confirming (Admin) but the warning remains visible on the screen and in the audit entry.
+- AC3: Given extreme failures (below 2 to 1), When I save, Then it is blocked.
+- Edge: the banner colour is checked against white text, and accent against ink text.
+- Error: not applicable.
+- Empty: not applicable.
+
+### M18-S03 Fonts from a curated list (Must)
+As an admin, I want to choose fonts from a safe list, so that the site stays fast and readable.
+- AC1: Given the font selectors (headings and body), When I open them, Then I see a curated list (for example 6 families) with a preview line each.
+- AC2: Given a font is selected, When saved, Then it is self hosted (no third party font request) as WOFF2 subsets, with a system font fallback stack.
+- AC3: Given the total font weight, When added up, Then it stays within a budget of 100 KB for the first load.
+- Edge: no arbitrary font upload (keeps performance and licensing safe).
+- Error: font file missing falls back to the system stack.
+- Empty: not applicable.
+
+### M18-S04 Sizes (Should)
+As an admin, I want to adjust base text size and card radius, so that I can tune density.
+- AC1: Given a base size control (14 to 18 px) and corner radius (0 to 16 px), When I change them, Then the preview updates.
+- AC2: Given reset, When pressed for a field, Then it returns to default.
+- Edge: limits prevent unreadable sizes.
+- Error: out of range values are clamped with a message.
+- Empty: not applicable.
+
+### M18-S05 Logo and platform name (Must)
+As an admin, I want to set my logo and platform name, so that the site carries my identity.
+- AC1: Given I upload a logo (SVG or PNG, up to 500 KB), When processed, Then the SVG is sanitised, sizes for header, favicon and PWA icons are generated.
+- AC2: Given I change the platform name, When saved, Then it updates headings, the page title, emails and manifest name.
+- AC3: Given there is no logo, When the header renders, Then the platform name shows as text.
+- Edge: logo is shown in preview on light and dark backgrounds.
+- Error: invalid or unsafe SVG is rejected with a reason.
+- Empty: default text logo.
+
+### M18-S06 Live preview (Must)
+As an admin, I want to see the effect while editing, so that I do not need to guess.
+- AC1: Given the preview, When I change anything, Then Home, Watch and Sign in previews update live (tabs), at desktop and mobile widths.
+- AC2: Given I have not saved, When I leave, Then I am warned about unsaved changes.
+- Edge: preview uses the real components and sample content when the catalog is empty.
+- Error: preview failure shows a message but editing remains.
+- Empty: not applicable.
+
+### M18-S07 Save, publish and reset (Must)
+As an admin, I want to save a draft theme, publish it, or reset to default, so that I can experiment safely.
+- AC1: Given I press Publish theme and confirm, When saved, Then the theme is stored as CSS variables in the database, applied on the next page load for all viewers (cache bust within 60 seconds), and an audit entry is written.
+- AC2: Given Reset to default, When confirmed, Then default values are restored (draft only until published).
+- AC3: Given an invalid stored theme, When rendering, Then the system falls back to defaults and logs an error (never a broken page).
+- Edge: the published theme is injected inline in the first HTML so there is no flash of default colours.
+- Error: publish failure keeps the previous theme live.
+- Empty: not applicable.
+
+### M18-S08 Theme history (Should)
+As an admin, I want to restore a previous theme, so that I can undo a change.
+- AC1: Given `Theme history`, When I open it, Then I see the last 20 versions with date, editor, and a colour swatch strip.
+- AC2: Given I press Restore on one, When confirmed, Then it becomes the draft, and I publish when ready.
+- Edge: compare view of two versions (Could).
+- Error: not applicable.
+- Empty: the default theme is the only version.
+
+### M18-S09 Safe theming rules (Must)
+As the developer, I want the theme to be only CSS variables, so that it cannot break layout or security.
+- AC1: Given the theme data, When rendered, Then only whitelisted variable names with validated values are output, escaped, in a single style element with a CSP nonce.
+- AC2: Given a malicious value is submitted, When saved, Then validation rejects it (no `url()`, no expressions, no braces).
+- Edge: tests cover injection attempts.
+- Error: validation failure returns 422.
+- Empty: not applicable.
+
+---
+
+## M19 Analytics
+
+### M19-S01 Record play events (Must)
+As the owner, I want views and watch time recorded, so that I can see what is used.
+- AC1: Given a playback starts, When 3 seconds have played, Then a view is recorded once per play session.
+- AC2: Given playback continues, When each 10 second progress is saved, Then watch time accumulates (seconds actually played, not seek jumps).
+- AC3: Given the finish threshold, When reached, Then a completion is recorded once per session.
+- Edge: previews by admins and bots are excluded.
+- Error: event write failure never affects playback.
+- Empty: not applicable.
+
+### M19-S02 Overview dashboard (Must)
+As an admin, I want a summary of performance, so that I can see the trend.
+- AC1: Given `/admin/analytics`, When it loads, Then I see total views, unique viewers, total watch time, average watch time per viewer and completion rate for the selected range (default last 30 days) with a comparison to the previous period.
+- AC2: Given a range picker (7, 30, 90 days, custom), When changed, Then all tiles and charts update and the range is in the URL.
+- AC3: Given charts, When rendered, Then they have text alternatives and a table view toggle.
+- Edge: numbers use `en-NG` formatting and Africa/Lagos days.
+- Error: partial failure shows retry per tile.
+- Empty: "No views yet. Data will appear once people watch".
+
+### M19-S03 Top titles and per video analytics (Must)
+As an admin, I want to see which titles do best, so that I can make more of them.
+- AC1: Given the Top titles table, When shown, Then it lists title, views, watch time, completion rate, average percent watched, sortable.
+- AC2: Given I open a video, When the detail loads, Then I see a daily views chart and a retention curve (percent still watching by time).
+- Edge: archived titles can be included with a toggle.
+- Error: load failure shows retry.
+- Empty: titles with no views show zero rows or the empty message.
+
+### M19-S04 Audience splits (Should)
+As an admin, I want device and country splits, so that I know who is watching.
+- AC1: Given the split charts, When shown, Then device class (phone, desktop, tablet, TV), connection class (Save-Data on or off), and country (coarse, from the CDN header) show as percentages.
+- AC2: Given fewer than 10 viewers in a group, When shown, Then it is grouped into Other (privacy).
+- Edge: no IP address is stored.
+- Error: not applicable.
+- Empty: see M19-S02.
+
+### M19-S05 CSV export (Should)
+As an admin, I want to export data, so that I can share a report.
+- AC1: Given I press Export CSV, When the range is set, Then a CSV of daily views and watch time per title downloads.
+- AC2: Given the export is large, When requested, Then it is generated in the background and a download link appears.
+- Edge: formula injection characters are neutralised in cells.
+- Error: failure shows retry.
+- Empty: a CSV with headers only.
+
+### M19-S06 Daily rollups (Must)
+As the developer, I want aggregates precomputed, so that dashboards are fast.
+- AC1: Given the job runs nightly at 02:00 Africa/Lagos, When complete, Then daily per title and per site stats are written idempotently.
+- AC2: Given a rerun for a past date, When run, Then results are replaced, not duplicated.
+- Edge: today's numbers are computed live with a small cache.
+- Error: job failure alerts the developer.
+- Empty: not applicable.
+
+### M19-S07 Privacy of analytics (Must)
+As a viewer, I want analytics to respect my privacy, so that I am not tracked across the web.
+- AC1: Given the platform, When it records events, Then it stores profile id and video id for resume only and uses an anonymous daily rotating id for analytics counts.
+- AC2: Given the privacy page, When viewed, Then it states what is measured.
+- Edge: no third party scripts.
+- Error: not applicable.
+- Empty: not applicable.
+
+---
+
+## M20 Audit log
+
+### M20-S01 Record audit entries (Must)
+As the owner, I want every important action recorded, so that I can see who did what.
+- AC1: Given an admin creates, edits, deletes, publishes, approves captions, changes theme, roles or settings, When it succeeds, Then an entry stores actor, role, action, target type and id, summary, before and after (secrets redacted), IP, user agent and time.
+- AC2: Given viewer sensitive events (password change, email change, lockout, deletion request), When they occur, Then entries are written with the account id.
+- AC3: Given the write fails, When the main action succeeded, Then the action is rolled back (audit and action in one transaction) for admin writes.
+- Edge: entries cannot be edited or deleted through the app.
+- Error: failure surfaces to the admin as an error and is logged.
+- Empty: not applicable.
+
+### M20-S02 Browse the audit log (Must)
+As a Super admin, I want a searchable log screen, so that I can investigate.
+- AC1: Given `/admin/audit-log`, When it loads, Then entries show newest first with filters for actor, action type, target, and date range, and cursor pagination.
+- AC2: Given an entry, When I open it, Then a detail panel shows before and after as a readable diff.
+- AC3: Given an Admin role, When they open it, Then they see content actions only (not security entries) unless Super admin.
+- Edge: URL holds filters.
+- Error: load failure shows retry.
+- Empty: "No activity matches these filters".
+
+### M20-S03 Export audit log (Should)
+As a Super admin, I want to export entries, so that I can keep records.
+- AC1: Given filters, When I press Export, Then a CSV for the filtered range downloads (background job if over 10,000 rows).
+- Edge: neutralise spreadsheet formulas.
+- Error: failure shows retry.
+- Empty: a CSV with headers only.
+
+### M20-S04 Retention (Should)
+As the owner, I want old entries removed after a period, so that the log does not grow forever.
+- AC1: Given a retention setting (default 24 months), When the monthly job runs, Then older entries are purged and the purge itself is logged.
+- Edge: legal hold flag pauses purge (Could).
+- Error: failure alerts.
+- Empty: not applicable.
+
+### M20-S05 Tamper evidence (Could)
+As the owner, I want to detect edits to the log, so that I can trust it.
+- AC1: Given each entry stores a hash of its content and the previous entry's hash, When verification runs, Then a broken chain is reported.
+- Edge: verification runs weekly.
+- Error: broken chain alerts the developer.
+- Empty: not applicable.
+
+---
+
+## M21 Notifications and email
+
+### M21-S01 Send transactional email reliably (Must)
+As the owner, I want emails to be sent reliably, so that people get their codes and links.
+- AC1: Given an email is requested, When queued in the outbox, Then the worker sends via the provider, records the provider message id and status, and retries on failure with backoff up to 5 times.
+- AC2: Given a bounce or complaint, When the webhook arrives, Then the address is flagged and further non-essential emails stop.
+- AC3: Given templates, When rendered, Then each has HTML and plain text, a single column layout under 30 KB, and no tracking pixels.
+- Edge: sender name and address come from site configuration.
+- Error: provider outage queues emails and alerts the developer after 10 minutes.
+- Empty: not applicable.
+
+### M21-S02 Email templates (Must)
+As a viewer, I want clear, short emails, so that I know what to do.
+- AC1: Given each template (verification, welcome, password reset, password changed, sign-in lockout notice, account deletion confirmation, export ready), When sent, Then the subject states the purpose, the main action is a button and a plain link, and a support address is included.
+- AC2: Given the code email, When shown, Then the 6 digit code appears large and also in the subject preview is avoided (not shown in the subject).
+- Edge: copy follows UI writing rules (no dashes, no emojis).
+- Error: missing variable fails the send and logs (never sends "undefined").
+- Empty: not applicable.
+
+### M21-S03 Admin notices (Should)
+As an admin, I want in-app and email notices for jobs, so that I know when to act.
+- AC1: Given encoding completes or fails, or captions are ready, When it happens, Then a notice appears in the admin bell and the uploader receives an email if enabled in their preferences (default: failures only).
+- AC2: Given I open the bell, When I mark all as read, Then the badge clears.
+- Edge: batched into a single summary email per hour to avoid spam.
+- Error: notice failure does not affect the job.
+- Empty: "Nothing new".
+
+### M21-S04 Email deliverability setup (Must)
+As the developer, I want proper domain authentication, so that emails reach inboxes.
+- AC1: Given the sending domain, When configured, Then SPF, DKIM and DMARC records are documented in DEPLOYMENT and a check script verifies them.
+- AC2: Given a test send, When delivered to major providers, Then it lands in inbox (manual checklist).
+- Edge: until the final domain exists, a developer domain is used and marked in config.
+- Error: failing check blocks go live (checklist item).
+- Empty: not applicable.
+
+### M21-S05 Notification preferences (Could)
+As an admin, I want to choose which emails I get, so that my inbox is not flooded.
+- AC1: Given `/admin/account`, When I toggle categories (failures, captions ready, daily summary), Then they save per admin.
+- Edge: security emails cannot be turned off.
+- Error: not applicable.
+- Empty: not applicable.
+
+---
+
+## M22 Storage and CDN
+
+### M22-S01 Bucket layout and CDN domain (Must)
+As the developer, I want a clear storage layout, so that everything is findable and safe.
+- AC1: Given R2, When configured, Then sources are under a private prefix, renditions and captions under a CDN fronted prefix, backups in a separate bucket, and images under `images/`.
+- AC2: Given the custom domain (for example `video.<domain>`), When a request arrives, Then it is served by Cloudflare CDN from R2 with correct CORS for the site origin only.
+- AC3: Given the architecture rule, When reviewed, Then no video bytes are served from the VPS or proxied through Cloudflare from the VPS.
+- Edge: domain is configuration, not code.
+- Error: misconfigured CORS is caught by a deploy smoke test.
+- Empty: not applicable.
+
+### M22-S02 Presigned upload URLs (Must)
+As the system, I want short lived presigned URLs for uploads, so that admins upload straight to R2 without exposing keys.
+- AC1: Given an authorised admin, When an upload starts, Then the server issues part URLs valid for 1 hour for that object key only.
+- AC2: Given a viewer or a non-admin requests one, When made, Then it is refused with 403.
+- Edge: keys are generated server side (never client supplied paths).
+- Error: R2 outage shows "Storage is unavailable. Try again shortly".
+- Empty: not applicable.
+
+### M22-S03 Storage usage and lifecycle (Should)
+As an admin, I want to see storage used, so that costs are not a surprise.
+- AC1: Given the dashboard, When it loads, Then storage by type (sources, renditions, captions, images, backups) is shown with a monthly estimate.
+- AC2: Given lifecycle rules, When set, Then abandoned multipart parts are cleaned after 7 days.
+- Edge: warning at 80 percent of the chosen budget.
+- Error: usage query failure shows "Not available".
+- Empty: zero state.
+
+---
+
+## M23 Security
+
+### M23-S01 Password and session security (Must)
+As the owner, I want strong default protections, so that accounts are hard to take over.
+- AC1: Given a password, When stored, Then it is hashed with argon2id with tuned parameters and never logged.
+- AC2: Given a session cookie, When issued, Then it is HttpOnly, Secure, SameSite=Lax, with a random 256 bit id stored hashed server side.
+- AC3: Given a password change or reset, When completed, Then other sessions are revoked.
+- Edge: constant time comparison for tokens.
+- Error: any failure in hashing or session creation fails closed.
+- Empty: not applicable.
+
+### M23-S02 Security headers and CSRF (Must)
+As the owner, I want browsers to enforce safe behaviour, so that common attacks fail.
+- AC1: Given any page response, When served, Then it includes CSP (nonce based), HSTS, X-Content-Type-Options, Referrer-Policy, Permissions-Policy, and frame-ancestors none.
+- AC2: Given a state changing request, When it lacks a valid CSRF token or same-origin signal, Then it is rejected with 403.
+- Edge: Report-only mode is used first for CSP, then enforced.
+- Error: CSP violations are logged.
+- Empty: not applicable.
+
+### M23-S03 Rate limiting (Must)
+As the owner, I want limits on sensitive endpoints, so that abuse is blunted.
+- AC1: Given limits (sign in, sign up, reset, resend, search, progress, key requests), When exceeded, Then 429 with Retry-After is returned and the UI shows a plain wait message.
+- AC2: Given the limiter store fails, When it is unreachable, Then auth endpoints fail closed and read endpoints fail open with a log (documented decision).
+- Edge: carrier grade NAT is considered (IP limits are generous, account limits are strict).
+- Error: see AC2.
+- Empty: not applicable.
+
+### M23-S04 Input validation and uploads (Must)
+As the developer, I want all external input validated at the boundary, so that injection and abuse fail.
+- AC1: Given any request body, When received, Then it is validated against a schema, with unknown fields rejected, and queries are parameterised.
+- AC2: Given images and SVG uploaded by admins, When processed, Then they are re-encoded or sanitised and size limited.
+- AC3: Given file names, When stored, Then user supplied names never become object keys.
+- Edge: errors do not echo raw input.
+- Error: 422 with field errors.
+- Empty: not applicable.
+
+### M23-S05 Dependency and secrets hygiene (Should)
+As the developer, I want known issues caught early, so that we ship safely.
+- AC1: Given CI, When it runs, Then dependency audit and secret scanning run and block on high severity.
+- AC2: Given secrets, When deployed, Then they come from environment files outside git with least privilege R2 keys (separate keys for upload, worker and backup).
+- Edge: key rotation procedure documented.
+- Error: a leaked secret triggers the rotation runbook.
+- Empty: not applicable.
+
+---
+
+## M24 Observability
+
+### M24-S01 Logs and request ids (Must)
+As the developer, I want structured logs with request ids, so that I can trace a problem.
+- AC1: Given each request, When handled, Then a request id is generated, logged and returned in a response header, and errors include it.
+- AC2: Given the error page, When shown, Then it displays the request id as "Reference" so a viewer can quote it.
+- Edge: no passwords, tokens or full emails in logs.
+- Error: logging failure never breaks requests.
+- Empty: not applicable.
+
+### M24-S02 Health checks and alerts (Must)
+As the developer, I want automatic alerts, so that I know before the client does.
+- AC1: Given `/healthz` and `/readyz`, When polled by an uptime monitor every minute, Then failure for 3 checks alerts me by email and push.
+- AC2: Given the worker, When it misses heartbeats for 5 minutes, Then an alert is sent.
+- AC3: Given disk above 85 percent, error rate spikes, or certificate expiry within 14 days, When detected, Then alerts are sent.
+- Edge: alerts are deduplicated.
+- Error: not applicable.
+- Empty: not applicable.
+
+### M24-S03 Error tracking (Should)
+As the developer, I want exceptions captured with context, so that I can fix them.
+- AC1: Given an unhandled error on server or client, When it occurs, Then it is captured with release version, route and request id (no personal data).
+- Edge: noisy errors are grouped.
+- Error: tracking outage is ignored silently by the app.
+- Empty: not applicable.
+
+### M24-S04 Player quality dashboard (Should)
+As the developer, I want to see startup and rebuffer trends, so that I know viewer experience.
+- AC1: Given player metrics, When aggregated, Then an admin view (Super admin) shows p50 and p75 startup time, rebuffer ratio, error rate by code, and rendition distribution, per day.
+- Edge: filter by device class and connection class.
+- Error: not applicable.
+- Empty: "No playback data yet".
+
+---
+
+## M25 PWA and low-data
+
+### M25-S01 Install to home screen (Should)
+As Tobi, I want to add the site to my home screen, so that it opens like an app.
+- AC1: Given the site meets installability rules, When I have visited at least twice and 3 days apart (or manually via the menu), Then an unobtrusive install banner appears once and can be dismissed for 30 days.
+- AC2: Given I install, When opened, Then it runs in standalone mode with the theme colour, platform name and icons from site settings.
+- Edge: iOS shows instructions for Add to Home Screen.
+- Error: not applicable.
+- Empty: not applicable.
+
+### M25-S02 App shell caching and speed (Must)
+As Tobi, I want the site to open fast on repeat visits, so that I do not waste data.
+- AC1: Given the service worker, When active, Then the app shell, fonts and static assets are cached with versioning, and repeat visits load with no network for those assets.
+- AC2: Given an update is deployed, When detected, Then it applies at next load with a small "Updated" notice (never mid-playback).
+- AC3: Given performance budgets, When CI runs Lighthouse mobile, Then the first screen JavaScript is under 300 KB and LCP is within budget or the build fails.
+- Edge: video segments and personal API responses are never cached by the service worker.
+- Error: a broken service worker can be disabled by a kill switch in config.
+- Empty: not applicable.
+
+### M25-S03 Data saver mode (Must)
+As Tobi, I want a Data saver setting, so that I use less of my bundle.
+- AC1: Given Data saver is on, When I watch, Then quality is capped at 360p, hero rotation and hover previews are off, posters load at 320 px, and next episode is not prefetched.
+- AC2: Given the browser sends Save-Data, When I first visit, Then Data saver defaults to on and I am told once.
+- AC3: Given I toggle it in the player menu or settings, When changed, Then it applies at once and persists for the profile.
+- Edge: the player shows an estimate "About 3 MB per minute at 360p" in settings.
+- Error: not applicable.
+- Empty: not applicable.
+
+### M25-S04 Offline screen (Must)
+As Tobi, I want a friendly screen when I have no signal, so that I know it is my network.
+- AC1: Given I am offline, When I open a page not in cache, Then the Offline screen shows "You are offline", a Retry button, and a link to cached pages (Home shell, My List last view).
+- AC2: Given I come back online, When detected, Then a toast "Back online" shows and pending writes sync.
+- Edge: the page works with JavaScript disabled for its static text.
+- Error: not applicable.
+- Empty: not applicable.
+
+### M25-S05 Queue writes while offline (Should)
+As Tobi, I want my list and progress changes to survive a signal drop, so that nothing is lost.
+- AC1: Given I add to My List or progress is saved while offline, When connectivity returns, Then queued writes send in order, deduplicated (latest per item).
+- AC2: Given a queued write is rejected (401 or 403), When it fails, Then it is dropped and I am informed once.
+- Edge: the queue is capped at 100 items and keyed by profile.
+- Error: storage quota exceeded drops oldest and logs.
+- Empty: not applicable.
+
+### M25-S06 Image efficiency (Must)
+As Tobi, I want small images, so that pages load quickly.
+- AC1: Given posters, When served, Then AVIF or WebP in 320, 640, 960 widths with `srcset` and `sizes`, lazy loaded below the fold, with a blur or colour placeholder.
+- AC2: Given the hero image, When Home loads, Then it is preloaded at the right size for the viewport.
+- Edge: a total initial image budget of 300 KB on mobile.
+- Error: format fallback to JPEG.
+- Empty: not applicable.
+
+### M25-S07 Unsupported browser notice (Could)
+As a viewer on Opera Mini or a very old browser, I want a plain explanation, so that I know what to do.
+- AC1: Given a browser lacking required features, When the site loads, Then a static page lists supported browsers and a link to install Chrome.
+- Edge: no JavaScript needed.
+- Error: not applicable.
+- Empty: not applicable.
+
+---
+
+## M26 Settings and legal pages
+
+### M26-S01 Legal pages (Must)
+As a viewer, I want to read the terms and privacy policy, so that I know how my data is used.
+- AC1: Given the footer, When I tap Terms or Privacy, Then the page opens at `/terms` or `/privacy` with last updated date and a table of contents.
+- AC2: Given sign up, When I look at the form, Then a line "By creating an account you agree to the Terms and Privacy Policy" links to them.
+- AC3: Given content is not yet supplied by the client, When shown, Then placeholder text is clearly marked "Draft" and the admin dashboard warns before launch.
+- Edge: pages are readable offline after the first visit.
+- Error: not found shows 404.
+- Empty: not applicable.
+
+### M26-S02 Edit pages in admin (Should)
+As an admin, I want to edit the legal and About pages, so that I can keep them current.
+- AC1: Given `/admin/site-settings` pages tab, When I edit with a simple editor (headings, paragraphs, lists, links), Then I can save a draft and publish, each publish creating a version.
+- AC2: Given sanitising, When saved, Then HTML is cleaned to a safe subset.
+- AC3: Given I restore an earlier version, When confirmed, Then it becomes the draft.
+- Edge: the last updated date updates on publish.
+- Error: save failure keeps text.
+- Empty: not applicable.
+
+### M26-S03 About, Contact and Help (Should)
+As a viewer, I want to know who runs the platform and how to get help, so that I can trust it.
+- AC1: Given About, When opened, Then it shows the platform story, mission and contact details from site config.
+- AC2: Given Help, When opened, Then it answers common questions (verify email, reset password, data use, captions, install).
+- Edge: a contact form is not included at launch (email address only), to avoid spam handling.
+- Error: not applicable.
+- Empty: not applicable.
+
+### M26-S04 Error pages (Must)
+As a viewer, I want helpful 404 and error pages, so that I can recover.
+- AC1: Given a missing page, When opened, Then the 404 shows a message, Search and Home links, and keeps the header.
+- AC2: Given a server error, When shown, Then the page says what happened in plain words, offers Retry and Home, and shows a Reference id.
+- Edge: pages are lightweight and work offline from cache.
+- Error: this is the error state.
+- Empty: not applicable.
+
+### M26-S05 Viewer settings hub (Should)
+As a viewer, I want one place for settings, so that I can find them.
+- AC1: Given `/account` and `/settings/playback`, When I navigate, Then they are linked with a tab or list and consistent layout.
+- AC2: Given language, When shown, Then English is the only option with a note "More languages are coming".
+- Edge: a kids profile cannot access this hub.
+- Error: load failure shows retry.
+- Empty: not applicable.
+
+### M26-S06 Cookie and storage notice (Could)
+As a viewer in a region that needs consent, I want to be informed about storage, so that rules are respected.
+- AC1: Given the site only uses essential cookies and local storage, When first visited, Then a short notice appears once with a link to Privacy and no tracking choices (none exist).
+- Edge: shown only where config says so.
+- Error: not applicable.
+- Empty: not applicable.
+
+---
+
+## M27 Admin users and profiles overview
+
+### M27-S01 Search viewer accounts (Should)
+As an admin, I want to find a viewer's account, so that I can help them.
+- AC1: Given `/admin/users`, When I search by email (partial) or id, Then matching accounts show with status, created date, last active and profile count.
+- AC2: Given an Analyst role, When they open it, Then they see counts only, not emails.
+- Edge: emails are partially masked for the Editor role.
+- Error: load failure shows retry.
+- Empty: "No accounts match".
+
+### M27-S02 View an account (Should)
+As an admin, I want to see an account's state, so that I can diagnose sign in problems.
+- AC1: Given an account, When I open it, Then I see email verified state, lock state, last sign in, active session count, and profiles (name, kids flag, created).
+- AC2: Given privacy, When shown, Then watch history is not shown.
+- Edge: no passwords or tokens are ever shown.
+- Error: not found shows 404.
+- Empty: not applicable.
+
+### M27-S03 Support actions (Should)
+As an admin, I want safe actions on an account, so that I can fix common problems.
+- AC1: Given an account, When I choose Resend verification, Unlock, Send password reset, Force sign out or Suspend, Then a confirmation shows and the action runs.
+- AC2: Given any action, When done, Then an audit entry is written with a reason (required for Suspend).
+- AC3: Given Delete account, When requested by the owner, Then only a Super admin can run it after a typed confirmation.
+- Edge: an admin cannot act on their own account here.
+- Error: failure shows a message and nothing changes.
+- Empty: not applicable.
+
+### M27-S04 Users overview figures (Could)
+As an admin, I want a summary of sign ups, so that I can see growth.
+- AC1: Given the Users header, When loaded, Then it shows total accounts, verified percentage, new in 7 days, and active in 30 days.
+- Edge: figures exclude test accounts flagged by an admin.
+- Error: retry per tile.
+- Empty: zeros.
+
+---
+
+## M29 Site configuration
+
+### M29-S01 Platform details (Must)
+As an admin, I want to set platform name, tagline and contacts, so that nothing is hardcoded.
+- AC1: Given `/admin/site-settings`, When I edit name, tagline, support email, social links, and default language, Then they are saved and used in the header, emails, titles, manifest and footer.
+- AC2: Given empty required values, When saving, Then validation shows which are missing.
+- Edge: changing the name does not change the technical identifiers.
+- Error: save failure keeps edits.
+- Empty: defaults are placeholders marked "Not set" with a launch checklist warning.
+
+### M29-S02 Feature flags and limits (Must)
+As a Super admin, I want switches and limits, so that I can change behaviour without a deploy.
+- AC1: Given the flags, When I change them (sign up open or invite only, kids profiles on, My List on, autoplay default, data saver default, captions required, profile limit, lockout thresholds, finish and start thresholds, rewind seconds), Then they apply within 60 seconds.
+- AC2: Given an invalid value (negative, too large), When saving, Then it is rejected with limits shown.
+- Edge: every change is audited with old and new values.
+- Error: config read failure falls back to compiled safe defaults and logs.
+- Empty: defaults shown.
+
+### M29-S03 Invite only sign up (Should)
+As the owner, I want to close public sign up during a soft launch, so that I can control who joins.
+- AC1: Given sign up is invite only, When a visitor opens `/sign-up`, Then they see "Sign up is by invitation" and an invite code field.
+- AC2: Given an invite code is valid, When used, Then sign up proceeds and the code usage is counted.
+- Edge: codes have a use limit and an expiry; admin can create and revoke codes.
+- Error: invalid code shows a generic message.
+- Empty: no codes yet.
+
+### M29-S04 Maintenance banner (Could)
+As an admin, I want to show a notice or maintenance mode, so that viewers know about planned work.
+- AC1: Given a banner message and window, When enabled, Then a slim banner shows on all pages for viewers.
+- AC2: Given maintenance mode, When on, Then viewers see a maintenance page (HTTP 503) and admins can still sign in.
+- Edge: playback in progress is not interrupted by the banner.
+- Error: not applicable.
+- Empty: not applicable.
+
+---
+
+## M30 Job queue and scheduler
+
+### M30-S01 Reliable jobs (Must)
+As the developer, I want background jobs with retry, so that work completes despite failures.
+- AC1: Given a job, When it fails, Then it retries with exponential backoff up to its limit, then becomes `dead`.
+- AC2: Given a worker crashes mid job, When its visibility timeout ends, Then another worker takes it.
+- AC3: Given jobs are idempotent, When run twice, Then the outcome is the same.
+- Edge: jobs have a type, payload schema and timeout.
+- Error: dead jobs raise an alert.
+- Empty: not applicable.
+
+### M30-S02 Scheduled jobs (Must)
+As the developer, I want recurring jobs, so that routine work happens by itself.
+- AC1: Given schedules, When time passes, Then jobs run for: publish scheduled videos (every minute), analytics rollup (nightly), orphan upload cleanup (daily), expired sessions and tokens cleanup (daily), trash purge (daily), backups (nightly), audit retention (monthly).
+- AC2: Given two app instances, When both schedule, Then a lock ensures a job runs once.
+- Edge: missed runs are caught up.
+- Error: failures alert.
+- Empty: not applicable.
+
+### M30-S03 Dead jobs screen (Should)
+As a Super admin, I want to see failed jobs and retry them, so that I can recover.
+- AC1: Given the Jobs tab in System, When I open it, Then I see dead and failed jobs with type, reason, attempts, time and Retry and Discard actions.
+- AC2: Given I retry, When pressed, Then the job re-queues and the action is audited.
+- Edge: payloads are shown redacted.
+- Error: not applicable.
+- Empty: "No failed jobs".
+
+### M30-S04 Job concurrency control (Should)
+As the developer, I want heavy jobs limited, so that the server stays responsive.
+- AC1: Given encoding and captioning are heavy, When queued, Then at most 1 encode and 1 caption job run at once (configurable).
+- AC2: Given light jobs, When queued, Then they are not blocked by heavy ones (separate queues).
+- Edge: priorities per queue.
+- Error: not applicable.
+- Empty: not applicable.
+
+---
+
+## M31 Playback authorization
+
+### M31-S01 Signed playlist for authorised viewers (Must)
+As the owner, I want only signed in viewers with an active profile to get a playable URL, so that videos are not freely hot-linked.
+- AC1: Given an authorised profile requests playback, When the server verifies session, profile and video visibility (published, kids filter), Then it returns a signed master playlist URL valid for 2 hours.
+- AC2: Given no session, a suspended account, or a hidden video, When requested, Then it returns 401 or 404 with no URL.
+- AC3: Given a kids profile and a non-kid video, When requested, Then it returns 403.
+- Edge: URLs are bound to the video id and expire.
+- Error: failure to sign returns 500 with a request id.
+- Empty: not applicable.
+
+### M31-S02 HLS key endpoint (Must)
+As the owner, I want the AES key served only to authorised players, so that stolen segments are useless.
+- AC1: Given the player requests the key, When the session cookie is valid and the video visible, Then the 16 byte key is returned with no-store caching.
+- AC2: Given an invalid request, When denied, Then 403 and an audit-light log line are written.
+- AC3: Given key requests exceed 30 per minute per session, When exceeded, Then 429.
+- Edge: the key URL cannot be used from another origin (CORS and cookie).
+- Error: key missing for a video blocks publish.
+- Empty: not applicable.
+
+### M31-S03 Segment access control (Must)
+As the owner, I want segments to need a valid token, so that direct links expire.
+- AC1: Given signed cookies or query tokens issued with the playlist, When segment requests arrive at the CDN, Then Cloudflare validates them (token auth) and rejects expired ones.
+- AC2: Given a token near expiry during playback, When 30 minutes remain of lifetime, Then the player refreshes it silently (M08-S21).
+- Edge: tokens are scoped to the video path prefix.
+- Error: CDN misconfiguration is caught by a smoke test in deploy.
+- Empty: not applicable.
+
+### M31-S04 Preview tokens for admin (Should)
+As an admin, I want to preview unpublished videos, so that I can check them.
+- AC1: Given admin sign in with the right permission, When requesting a preview, Then a token valid for 1 hour is issued for that video and role.
+- AC2: Given a viewer session, When requesting a preview of a hidden video, Then it is denied.
+- Edge: previews do not record analytics or progress.
+- Error: not applicable.
+- Empty: not applicable.
+
+---
+
+## M32 Data lifecycle: backup, export, deletion
+
+### M32-S01 Nightly backups (Must)
+As the owner, I want automatic backups, so that I can recover from loss.
+- AC1: Given 03:00 Africa/Lagos daily, When the job runs, Then the Postgres database is dumped, compressed, encrypted and uploaded to the backup bucket, with 14 daily and 8 weekly copies kept.
+- AC2: Given a backup, When it finishes, Then a manifest records size, checksum and time, and failure alerts the developer.
+- Edge: backup bucket credentials cannot delete outside the retention policy.
+- Error: a missing backup for 36 hours triggers an alert.
+- Empty: not applicable.
+
+### M32-S02 Restore drill (Must)
+As the developer, I want a tested restore procedure, so that backups are real.
+- AC1: Given the runbook in DEPLOYMENT, When a restore is run to a scratch server, Then the app starts with restored data and a checklist passes.
+- AC2: Given the drill, When done each quarter, Then the date is recorded in `ai-context.md`.
+- Edge: restore time is measured.
+- Error: failed drill opens an issue.
+- Empty: not applicable.
+
+### M32-S03 Account deletion purge (Should)
+As a viewer, I want deletion to really remove my data, so that I can leave.
+- AC1: Given the grace period ends, When the purge job runs, Then rows for account, profiles, sessions, progress, lists and search history are deleted, and backups age out under the retention policy (documented in the Privacy page).
+- AC2: Given audit entries, When purged, Then only hashed identifiers remain.
+- Edge: cancelling within the grace period restores everything.
+- Error: partial purge retries until complete.
+- Empty: not applicable.
+
+### M32-S04 Source video safekeeping (Could)
+As the owner, I want a second copy of source videos, so that I never lose the masters.
+- AC1: Given sources in R2, When the weekly job runs, Then new sources are copied to a second bucket (ideally another provider account) and verified by checksum.
+- Edge: the client keeps the originals on her own storage too.
+- Error: copy failure alerts.
+- Empty: not applicable.
+
+---
+
+## M33 Deployment and CI
+
+### M33-S01 Reproducible deploy (Must)
+As the developer, I want one command to deploy, so that releases are safe.
+- AC1: Given a merged pull request to main, When CI passes, Then an image is built, migrations run, and the Compose stack restarts with health checks, rolling back on failure.
+- AC2: Given staging and production, When deploying, Then each has its own environment config and database.
+- Edge: deploy output is logged and the release version is visible in the admin footer.
+- Error: failed health check rolls back automatically.
+- Empty: not applicable.
+
+### M33-S02 CI checks (Must)
+As the developer, I want automated checks on each pull request, so that problems are found early.
+- AC1: Given a pull request, When opened, Then lint, typecheck, scoped tests for changed paths, a dash and emoji grep, secret scanning and a build run.
+- AC2: Given any em or en dash in the diff, When detected, Then CI fails.
+- Edge: the full suite is not run by contributors locally (rule in `CLAUDE.md`).
+- Error: failures block merging.
+- Empty: not applicable.
+
+### M33-S03 Domain and HTTPS (Should)
+As the developer, I want HTTPS and DNS set up cleanly, so that the site is trusted.
+- AC1: Given the domain, When DNS is configured, Then the site and the CDN subdomain have valid certificates with auto renewal and HSTS.
+- Edge: the domain is configuration and can change without code edits.
+- Error: expiry alert at 14 days.
+- Empty: not applicable.
+
+---
+
+## M34 Accessibility and internationalisation
+
+### M34-S01 Keyboard and focus (Must)
+As a keyboard user, I want to reach and use every control, so that I can use the site without a mouse.
+- AC1: Given any screen, When I press Tab, Then focus order follows visual order with a visible focus ring (at least 3 to 1 contrast), and a Skip to content link is first.
+- AC2: Given dialogs and menus, When opened, Then focus is trapped and returns to the trigger on close, and Escape closes them.
+- Edge: rows are operable by keyboard (arrows scroll).
+- Error: axe checks in CI fail on regressions.
+- Empty: not applicable.
+
+### M34-S02 Screen reader support (Must)
+As a screen reader user, I want meaningful labels and announcements, so that I know what is happening.
+- AC1: Given images, When rendered, Then posters have alt text (title) or are decorative when the title is adjacent.
+- AC2: Given toasts, loading and errors, When they appear, Then they are announced politely (assertive for errors).
+- AC3: Given forms, When invalid, Then errors are associated with fields and focus moves to the first error.
+- Edge: page titles change on route changes and focus is moved to the main heading.
+- Error: not applicable.
+- Empty: not applicable.
+
+### M34-S03 Motion, contrast and text size (Must)
+As a viewer with sensitivity or low vision, I want the site to respect my settings, so that it is comfortable.
+- AC1: Given reduced motion, When on, Then rotations, shimmer and slides are reduced or removed.
+- AC2: Given browser text zoom to 200 percent, When used, Then no content is lost or overlapping.
+- AC3: Given the default theme, When tested, Then text meets 4.5 to 1.
+- Edge: dark player area controls meet contrast on any poster.
+- Error: not applicable.
+- Empty: not applicable.
+
+### M34-S04 Text in catalogs (Should)
+As the developer, I want all UI text in message catalogs, so that new languages are easy later.
+- AC1: Given UI strings, When added, Then they live in a message catalog keyed by id, with plural and number formatting by locale `en-NG`.
+- AC2: Given a lint rule, When a hardcoded user-facing string is found in a component, Then CI warns.
+- Edge: dates and durations use locale formatting ("6 min").
+- Error: a missing key falls back to English and logs.
+- Empty: not applicable.
+
+---
+
+## M36 Artwork and thumbnails
+
+### M36-S01 Generate poster candidates (Must)
+As an admin, I want automatic poster options, so that I do not need an image editor.
+- AC1: Given encoding finishes, When the artwork step runs, Then 6 frames are extracted at evenly spaced points (avoiding black frames and blur by a simple score) and saved as candidates.
+- AC2: Given I open the video, When candidates exist, Then I choose one in a grid.
+- Edge: if all frames score low, a warning suggests uploading a custom image.
+- Error: failure shows the placeholder and allows custom upload.
+- Empty: not applicable.
+
+### M36-S02 Responsive image variants (Must)
+As Tobi, I want the right size image for my screen, so that pages are light.
+- AC1: Given a chosen poster, When saved, Then variants in 320, 640 and 960 pixel widths (AVIF or WebP plus JPEG) and a 16 by 9 card crop and a hero crop are created.
+- AC2: Given variants, When served, Then they have immutable cache headers with a content hash in the path.
+- Edge: a blur placeholder of under 1 KB is stored.
+- Error: processing failure retries via the job queue.
+- Empty: not applicable.
+
+### M36-S03 Hero image and focus point (Should)
+As an admin, I want to control how a hero image is cropped, so that faces and text are not cut.
+- AC1: Given the hero crop tool, When I move a focus point, Then the 21 by 9 and 16 by 9 crops follow it with a preview.
+- AC2: Given overlay text, When shown, Then a safe area guide is displayed.
+- Edge: saved focus applies to all variants.
+- Error: not applicable.
+- Empty: not applicable.
+
+### M36-S04 Seek preview sprite (Could)
+As a viewer, I want preview thumbnails on the seek bar, so that I can find a moment.
+- AC1: Given encoding, When the optional sprite step is enabled, Then one frame every 5 seconds is packed into sprite sheets (max 5 columns) with a VTT map.
+- AC2: Given the player, When Data saver is off, Then it fetches the sprite lazily on first hover.
+- Edge: disabled by default to save encoding time.
+- Error: failure is non-blocking.
+- Empty: not applicable.
+
+---
+
+## Coverage summary
+
+Total stories: 271. Must: 176. Should: 75. Could: 20.
+
+| Module | Stories |
+|---|---|
+| M01 | 14 |
+| M02 | 8 |
+| M03 | 14 |
+| M04 | 5 |
+| M05 | 8 |
+| M06 | 10 |
+| M07 | 7 |
+| M08 | 31 |
+| M09 | 10 |
+| M10 | 6 |
+| M11 | 7 |
+| M12 | 9 |
+| M13 | 12 |
+| M14 | 9 |
+| M15 | 11 |
+| M16 | 11 |
+| M17 | 7 |
+| M18 | 9 |
+| M19 | 7 |
+| M20 | 5 |
+| M21 | 5 |
+| M22 | 3 |
+| M23 | 5 |
+| M24 | 4 |
+| M25 | 7 |
+| M26 | 6 |
+| M27 | 4 |
+| M28 | 6 |
+| M29 | 4 |
+| M30 | 4 |
+| M31 | 4 |
+| M32 | 4 |
+| M33 | 3 |
+| M34 | 4 |
+| M35 | 4 |
+| M36 | 4 |
+
+Modules with no viewer or admin screen of their own (M04, M22, M23, M24, M30, M31, M33) still carry stories because their behaviour is testable and has user visible effects.
