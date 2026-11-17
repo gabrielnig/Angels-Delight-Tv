@@ -3,6 +3,7 @@ import { mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { createLogger, type Logger } from '@ad/shared';
+import { realDataEnabled } from '../../../server/data/mode';
 import { LocalStorage, type StorageAdapter } from '@ad/storage';
 import {
   LogoUploader,
@@ -23,9 +24,17 @@ export interface ThemeRuntime {
 
 const KEY = Symbol.for('ad.theme.runtime');
 
+/** ADMIN_THEME_STORE=db|memory decides. Unset follows viewer data: real data means the database store. */
+function useDatabase(): boolean {
+  const flag = process.env.ADMIN_THEME_STORE;
+  if (flag === 'db') return true;
+  if (flag === 'memory') return false;
+  return realDataEnabled();
+}
+
 async function createRuntime(): Promise<ThemeRuntime> {
   const logger = createLogger({ bindings: { module: 'theme' } });
-  if (process.env.ADMIN_THEME_STORE === 'db') {
+  if (useDatabase()) {
     const [
       { loadWebEnv },
       { createDb, createPool },
@@ -50,7 +59,7 @@ async function createRuntime(): Promise<ThemeRuntime> {
       logger,
     };
   }
-  // Fixture mode (default until the integration pass): in memory stores, files in a temp folder.
+  // Memory mode (fixtures, tests): in memory stores, files in a temp folder.
   const storage = new LocalStorage({
     root: mkdtempSync(join(tmpdir(), 'ad-theme-fixture-')),
     bucket: 'media',

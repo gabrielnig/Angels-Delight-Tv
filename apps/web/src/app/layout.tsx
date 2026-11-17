@@ -1,43 +1,42 @@
 import type { Metadata, Viewport } from 'next';
+import { headers } from 'next/headers';
 import type { CSSProperties, ReactNode } from 'react';
 import '@ad/ui/tokens.css';
 import '@ad/ui/components.css';
 import './globals.css';
-import { themeStyleProps } from '@ad/theme';
 import { WebVitals } from '../components/observability/WebVitals';
 import { PwaClient } from '../components/pwa/PwaClient';
-import { getSite } from '../lib/data';
-import { getThemeForLayout } from '../lib/data/theme';
-import { getPwaSettings } from '../lib/data/pwa-settings';
 import { selectFonts } from '../lib/fonts';
+import { getRootTheme } from '../lib/theme/root';
 import { Providers } from './providers';
 
 export async function generateMetadata(): Promise<Metadata> {
-  const site = await getSite().content();
+  const { platformName } = await getRootTheme();
   return {
-    title: { default: site.platformName, template: `%s | ${site.platformName}` },
+    title: { default: platformName, template: `%s | ${platformName}` },
     description: 'Free learning videos for everyone.',
     icons: { apple: '/icons/apple-touch-icon.png' },
-    appleWebApp: { capable: true, title: site.platformName, statusBarStyle: 'default' },
+    appleWebApp: { capable: true, title: platformName, statusBarStyle: 'default' },
   };
 }
 
 export async function generateViewport(): Promise<Viewport> {
-  const theme = await getThemeForLayout();
-  return { themeColor: theme.themeColor, width: 'device-width', initialScale: 1 };
+  const { injection } = await getRootTheme();
+  return { themeColor: injection.themeColor, width: 'device-width', initialScale: 1 };
 }
 
 export default async function RootLayout({ children }: { children: ReactNode }) {
-  const [theme, pwa] = await Promise.all([getThemeForLayout(), getPwaSettings()]);
-  const fonts = selectFonts(theme.fontKey);
+  const nonce = (await headers()).get('x-nonce') ?? undefined;
+  const theme = await getRootTheme(nonce);
+  const fonts = selectFonts(theme.injection.fontKey);
   return (
     <html lang="en" className={fonts.classNames} style={fonts.variables as CSSProperties}>
       <head>
-        <style {...themeStyleProps(theme)} />
+        <style {...theme.styleProps} />
       </head>
       <body>
         <Providers>{children}</Providers>
-        <PwaClient platformName={pwa.name} />
+        <PwaClient platformName={theme.platformName} />
         <WebVitals />
       </body>
     </html>
