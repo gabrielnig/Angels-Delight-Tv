@@ -1,8 +1,14 @@
 import { schema, withAccount } from '@ad/db';
 import { LimiterUnavailable, LOCKOUT_POLICIES, RATE_POLICIES } from '@ad/security';
-import { hmacSha256, RateLimited, uuidv7 } from '@ad/shared';
-import { and, eq, isNull } from 'drizzle-orm';
-import { checkCode, findEmailToken, issueEmailToken, voidEmailTokens } from './email-tokens';
+import { Conflict, hmacSha256, RateLimited, sha256, uuidv7 } from '@ad/shared';
+import { and, count, eq, isNull } from 'drizzle-orm';
+import {
+  checkCode,
+  findEmailToken,
+  issueEmailToken,
+  voidEmailTokens,
+  type EmailTokenRow,
+} from './email-tokens';
 import { emailHash, maskEmail, normalizeEmail } from './identifiers';
 import { findAccountByEmailHash, isUniqueViolation } from './lookup';
 import { checkPassword } from './policy';
@@ -291,12 +297,34 @@ export class AccountService {
     return { status: 'verified', purpose: 'verify_email' };
   }
 
-  /** Placeholder replaced by the account change slice. */
+  /** Moves the account to the address held by a change_email token. False when it cannot be applied. */
   protected async applyEmailChange(
-    _row: NonNullable<Awaited<ReturnType<typeof findEmailToken>>>,
-    _meta: RequestMeta,
+    row: EmailTokenRow,
+    meta: RequestMeta,
+    options: { exceptSessionId?: string } = {},
   ): Promise<boolean> {
-    return false;
+    if (!row.newEmailHash || !row.newEmailEnc) return false;
+    const account = await this.loadOwn(row.accountId);
+    if (!account || account.status !== 'active') return false;
+    const now = this.now();
+    try {
+      await withAccount(this.deps.db, { accountId: account.id, role: account.role }, (tx) =>
+        tx
+          .update(schema.accounts)
+          .set({ emailHash: row.newEmailHash, emailEnc: row.newEmailEnc, emailVerifiedAt: now })
+          .where(eq(schema.accounts.id, account.id)),
+      );
+    } catch (error) {
+      if (isUniqueViolation(error)) return false;
+      throw error;
+    }
+    await this.consumeToken(row.id, now);
+    await this.deps.sessions.revokeAll(account.id, { exceptSessionId: options.exceptSessionId });
+    await this.audit('auth.email_changed', 'success', meta, {
+      accountId: account.id,
+      role: account.role,
+    });
+    return true;
   }
 
   async resendVerification(input: { email: string }, meta: RequestMeta): Promise<{ sent: true }> {
@@ -782,6 +810,269 @@ export class AccountService {
       accountId: actor.accountId,
       role: actor.role,
     });
+  }
+
+  // ---------------------------------------------------------------------------------------------
+  // Account area (screens 27 to 30)
+  // ---------------------------------------------------------------------------------------------
+
+  async getOverview(actor: Actor): Promise<{
+    email: string;
+    emailVerified: boolean;
+    memberSince: Date;
+    profileCount: number;
+    role: string;
+  }> {
+    const account = await this.loadOwn(actor.accountId);
+    if (!account || !account.emailEnc) throw new AccountUnavailable();
+    const email = await this.deps.keys.open(account.id, 'email', account.emailEnc);
+    const [profiles] = await withAccount(
+      this.deps.db,
+      { accountId: actor.accountId, role: actor.role },
+      (tx) =>
+        tx
+          .select({ total: count() })
+          .from(schema.profiles)
+          .where(eq(schema.profiles.accountId, actor.accountId)),
+    );
+    return {
+      email,
+      emailVerified: account.emailVerifiedAt !== null,
+      memberSince: account.createdAt,
+      profileCount: profiles?.total ?? 0,
+      role: account.role,
+    };
+  }
+
+  /**
+   * Starts an email change (M02-S02). The new address gets a code, the old one gets a notice, and nothing
+   * changes until the code is entered. A taken address looks identical and its owner is warned instead.
+   */
+  async requestEmailChange(
+    actor: Actor,
+    input: { newEmail: string; password: string },
+    meta: RequestMeta,
+  ): Promise<{ pendingEmail: string }> {
+    const confirmed = await this.confirmPassword(
+      actor,
+      input.password,
+      meta,
+      'password',
+      'Password is not right',
+    );
+    const oldEmail = await confirmed.email();
+    const target = normalizeEmail(input.newEmail);
+    if (!target) throw new FieldErrors({ newEmail: 'Enter a valid email address' });
+    if (target === oldEmail) throw new FieldErrors({ newEmail: 'That is already your email' });
+    const hash = emailHash(target, this.deps.pepper);
+    const existing = await findAccountByEmailHash(this.deps.db, hash);
+    if (existing) {
+      const allowed = await this.deps.limiter.consume(
+        RATE_POLICIES.resetRequestEmail,
+        this.subject('mail', target),
+      );
+      if (allowed.allowed)
+        await this.deps.mailer.sendAlreadyRegistered({ to: target }).catch(() => undefined);
+      return { pendingEmail: target };
+    }
+    const issued = await issueEmailToken(this.deps.db, {
+      accountId: actor.accountId,
+      purpose: 'change_email',
+      ttlSeconds: this.cfg.emailChangeTtlSeconds,
+      withCode: true,
+      newEmail: { enc: await this.deps.keys.seal(actor.accountId, 'email', target), hash },
+      ipTrunc: meta.ipTrunc,
+      now: this.now(),
+      pepper: this.deps.pepper,
+    });
+    const sent = await this.sendVerification(target, issued, { change: true });
+    if (!sent) {
+      const { MailDeliveryError } = await import('@ad/mailer');
+      throw new MailDeliveryError();
+    }
+    this.run(() => this.deps.mailer.sendEmailChangeNotice({ to: oldEmail }));
+    await this.audit('auth.email_change_requested', 'success', meta, {
+      accountId: actor.accountId,
+      role: actor.role,
+    });
+    return { pendingEmail: target };
+  }
+
+  async confirmEmailChange(
+    actor: Actor,
+    input: { code: string },
+    meta: RequestMeta,
+  ): Promise<{ status: 'changed' } | { status: 'invalid' | 'expired' | 'too_many' }> {
+    const check = await checkCode(this.deps.db, {
+      accountId: actor.accountId,
+      purpose: 'change_email',
+      code: input.code,
+      now: this.now(),
+      ttlSeconds: this.cfg.emailChangeTtlSeconds,
+      maxAttempts: this.cfg.verifyCodeMaxAttempts,
+      pepper: this.deps.pepper,
+    });
+    if (check.status !== 'ok') return { status: check.status };
+    const applied = await this.applyEmailChange(check.token, meta, {
+      exceptSessionId: actor.sessionId,
+    });
+    return applied ? { status: 'changed' } : { status: 'invalid' };
+  }
+
+  /** M01-S05 edge: fix a typo in the address while the account is still unverified. */
+  async changeUnverifiedEmail(
+    input: { email: string; password: string; newEmail: string },
+    meta: RequestMeta,
+  ): Promise<{ email: string }> {
+    const current = normalizeEmail(input.email);
+    const target = normalizeEmail(input.newEmail);
+    if (!target) throw new FieldErrors({ newEmail: 'Enter a valid email address' });
+    if (!current) throw new InvalidCredentials();
+    const hash = emailHash(current, this.deps.pepper);
+    const ipKey = this.ipSubject(meta);
+    await this.closed(() =>
+      this.deps.limiter.enforce(RATE_POLICIES.verifyResendAccount, this.subject('mail', current)),
+    );
+    const lock = await this.closed(() => this.deps.lockouts.status(this.lockKey(hash)));
+    if (lock.locked) throw new RateLimited(lock.retryAfterSeconds);
+    const account = await findAccountByEmailHash(this.deps.db, hash);
+    const own = account ? await this.loadOwn(account.id) : null;
+    const ok = Boolean(
+      account?.passwordHash &&
+      own &&
+      own.emailVerifiedAt === null &&
+      account.status === 'active' &&
+      (await this.deps.hasher.verify(account.passwordHash, input.password)),
+    );
+    if (!ok || !account) {
+      await this.deps.hasher.verifyDummy(input.password);
+      await this.loginFailed(current, hash, account?.id ?? null, meta, ipKey);
+      throw new InvalidCredentials();
+    }
+    const targetHash = emailHash(target, this.deps.pepper);
+    if (await findAccountByEmailHash(this.deps.db, targetHash)) {
+      await this.deps.mailer.sendAlreadyRegistered({ to: target }).catch(() => undefined);
+      return { email: target };
+    }
+    const now = this.now();
+    await withAccount(this.deps.db, { accountId: account.id, role: account.role }, async (tx) => {
+      await tx
+        .update(schema.accounts)
+        .set({
+          emailHash: Buffer.from(targetHash),
+          emailEnc: await this.deps.keys.seal(account.id, 'email', target),
+        })
+        .where(eq(schema.accounts.id, account.id));
+    });
+    await voidEmailTokens(this.deps.db, account.id, 'verify_email', now);
+    await this.sendNewVerification(account.id, target, meta, true);
+    await this.audit('auth.email_changed', 'success', meta, {
+      accountId: account.id,
+      role: account.role,
+      metadata: { unverified: true },
+    });
+    return { email: target };
+  }
+
+  /**
+   * Deletes the account (M02-S06, SECURITY.md section 10). Personal data goes in one transaction, then the
+   * account key is destroyed, which makes every remaining ciphertext (backups included) unreadable.
+   * If key destruction fails the row stays in account_deletions and destroyPendingKeys finishes the job.
+   */
+  async deleteAccount(
+    actor: Actor,
+    input: { password: string; confirmation: string },
+    meta: RequestMeta,
+  ): Promise<void> {
+    if (input.confirmation !== 'DELETE') {
+      throw new FieldErrors({ confirmation: 'Type DELETE in capital letters to confirm' });
+    }
+    const confirmed = await this.confirmPassword(
+      actor,
+      input.password,
+      meta,
+      'password',
+      'Password is not right',
+    );
+    const email = await confirmed.email();
+    const now = this.now();
+    try {
+      await withAccount(
+        this.deps.db,
+        { accountId: actor.accountId, role: actor.role },
+        async (tx) => {
+          await tx.delete(schema.profiles).where(eq(schema.profiles.accountId, actor.accountId));
+          await tx.delete(schema.sessions).where(eq(schema.sessions.accountId, actor.accountId));
+          await tx
+            .delete(schema.emailTokens)
+            .where(eq(schema.emailTokens.accountId, actor.accountId));
+          await tx.delete(schema.consents).where(eq(schema.consents.accountId, actor.accountId));
+          await tx
+            .delete(schema.mfaFactors)
+            .where(eq(schema.mfaFactors.accountId, actor.accountId));
+          await tx
+            .delete(schema.mfaRecoveryCodes)
+            .where(eq(schema.mfaRecoveryCodes.accountId, actor.accountId));
+          await tx
+            .update(schema.accounts)
+            .set({
+              status: 'deleted',
+              deletedAt: now,
+              emailHash: null,
+              emailEnc: null,
+              displayNameEnc: null,
+              passwordHash: null,
+            })
+            .where(eq(schema.accounts.id, actor.accountId));
+          await tx.insert(schema.accountDeletions).values({
+            accountId: actor.accountId,
+            requestedAt: now,
+            mainDataPurgedAt: now,
+            backupsClearAfter: new Date(now.getTime() + 14 * 86400_000),
+          });
+        },
+      );
+    } catch (error) {
+      if (
+        (error as { cause?: { code?: string }; code?: string }).code === '23514' ||
+        (error as { cause?: { code?: string } }).cause?.code === '23514'
+      ) {
+        throw new Conflict('There must be at least one active admin');
+      }
+      throw error;
+    }
+    await this.shredKey(actor.accountId);
+    await this.audit('account.deleted', 'success', meta, {
+      metadata: { subject: Buffer.from(sha256(actor.accountId)).toString('hex').slice(0, 24) },
+    });
+    this.run(() => this.deps.mailer.sendAccountDeleted({ to: email }));
+  }
+
+  private async shredKey(accountId: string): Promise<boolean> {
+    try {
+      await this.deps.keys.destroy(accountId);
+      await this.deps.db
+        .update(schema.accountDeletions)
+        .set({ dekDestroyedAt: this.now() })
+        .where(eq(schema.accountDeletions.accountId, accountId));
+      return true;
+    } catch (error) {
+      this.logger.error('key destruction failed, will retry', { error: String(error) });
+      return false;
+    }
+  }
+
+  /** The retry job: destroys the key of every deleted account that still has one. Returns how many it finished. */
+  async destroyPendingKeys(): Promise<number> {
+    const pending = await this.deps.db
+      .select({ accountId: schema.accountDeletions.accountId })
+      .from(schema.accountDeletions)
+      .where(isNull(schema.accountDeletions.dekDestroyedAt));
+    let finished = 0;
+    for (const row of pending) {
+      if (await this.shredKey(row.accountId)) finished++;
+    }
+    return finished;
   }
 
   /** Display helper for the verify screen. */
