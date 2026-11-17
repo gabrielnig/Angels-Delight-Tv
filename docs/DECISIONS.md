@@ -424,3 +424,9 @@ Format: decision, options considered, why, reversible or not. Newest first. Deci
 - Options: read `X-Forwarded-For` (spoofable), or skip the per IP limit.
 - Why: the per profile limit still applies, a spoofable address would let one client dodge the limit, and development traffic is far below the shared cap.
 - Reversible: yes.
+
+## D-079 Caption review saves revisions and previews with the real player (lane K3)
+- Decision: the caption review screen talks to lane D's `CaptionService`. Every autosave pause stores a new revision (earlier unapproved ones become superseded), Approve approves the newest revision and accepts warnings as the screen already says, and Upload and Save are the same call on the English track. Cue ids on screen are positional (`cue_1`, `cue_2`), so "changes since approval" compares by position and id. The playhead is `usePreviewClock`: the `@ad/player` controller on a staff preview session (`POST /api/play/{id}/session` with `{preview:true}`), falling back to the old timer when no session can be minted.
+- Options: coalesce autosaves into one working revision, or build a separate preview player.
+- Why: the service already owns revision numbers and the approved copy, and the viewer controller already handles tokens, stalls and quality. A revision per pause is noisy but safe, and coalescing needs a change in lane D.
+- Reversible: yes. Coalescing is a follow up in `storeRevision`.

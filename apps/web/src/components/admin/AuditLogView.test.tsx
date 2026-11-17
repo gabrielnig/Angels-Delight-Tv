@@ -12,7 +12,9 @@ describe('AuditLogView', () => {
   it('lists entries with the result in words', () => {
     render(<AuditLogView rows={rows} nextCursor={null} query={{}} selected={null} />);
     expect(screen.getByRole('table', { name: /Audit log/ })).toBeTruthy();
-    expect(within(screen.getByRole('table', { name: /Audit log/ })).getByText('Failed')).toBeTruthy();
+    expect(
+      within(screen.getByRole('table', { name: /Audit log/ })).getByText('Failed'),
+    ).toBeTruthy();
   });
   it('shows an empty state with a next step when filtered', () => {
     render(<AuditLogView rows={[]} nextCursor={null} query={{ action: 'nope' }} selected={null} />);

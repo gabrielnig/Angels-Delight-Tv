@@ -2,6 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { usePreviewClock } from './usePreviewClock';
 import type { AccountRole } from '@ad/shared';
 import { can } from '@/lib/admin/can';
 import { formatDateTime } from '@/lib/admin/format';
@@ -46,39 +47,16 @@ type SaveState = 'saved' | 'dirty' | 'saving' | 'error';
 let idCounter = 0;
 const newId = () => `cue_new_${Date.now().toString(36)}_${++idCounter}`;
 
-/** Clock that stands in for the player until the player lane provides a real one. */
-function useClock(durationMs: number) {
-  const [ms, setMs] = useState(0);
-  const [playing, setPlaying] = useState(false);
-  useEffect(() => {
-    if (!playing) return;
-    const timer = setInterval(() => {
-      setMs((current) => {
-        if (current + 100 >= durationMs) {
-          setPlaying(false);
-          return durationMs;
-        }
-        return current + 100;
-      });
-    }, 100);
-    return () => clearInterval(timer);
-  }, [playing, durationMs]);
-  return {
-    ms,
-    playing,
-    toggle: () => setPlaying((p) => !p),
-    seek: (value: number) => setMs(Math.max(0, Math.min(durationMs, value))),
-  };
-}
-
 interface Props {
   video: VideoRecord;
   track: CaptionTrack | null;
   role: AccountRole;
   actions: ReviewActions;
+  /** True when staff preview sessions are available for this video (real data and finished encoding). */
+  preview?: boolean;
 }
 
-export function CaptionReview({ video, track, role, actions }: Props) {
+export function CaptionReview({ video, track, role, actions, preview = false }: Props) {
   const router = useRouter();
   const toast = useToast();
   const canEdit = can(role, 'caption.review');
@@ -105,7 +83,12 @@ export function CaptionReview({ video, track, role, actions }: Props) {
 
   const cues = history.present;
   const durationMs = Math.max(video.durationSeconds * 1000, (cues.at(-1)?.end ?? 0) + 1000);
-  const clock = useClock(durationMs);
+  const clock = usePreviewClock({
+    videoId: video.id,
+    durationMs,
+    enabled: preview && video.status === 'ready',
+    appOrigin: typeof window === 'undefined' ? '' : window.location.origin,
+  });
   const active = findActiveCue(cues, clock.ms);
   const warnings = useMemo(() => validateCues(cues), [cues]);
   const warningTotals = useMemo(() => {
@@ -430,6 +413,19 @@ export function CaptionReview({ video, track, role, actions }: Props) {
       <div className="adm-review">
         <div className="adm-review__video">
           <div className="adm-sim" aria-label="Video preview">
+            {clock.status !== 'off' && clock.status !== 'unavailable' ? (
+              <video
+                ref={clock.videoRef}
+                className="adm-sim__video"
+                playsInline
+                preload="metadata"
+              />
+            ) : null}
+            {clock.status === 'unavailable' ? (
+              <p className="adm-sim__note">
+                The video preview could not start. Timing still works.
+              </p>
+            ) : null}
             <button
               type="button"
               className="adm-sim__play"

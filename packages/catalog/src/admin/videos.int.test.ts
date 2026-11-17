@@ -66,6 +66,7 @@ describe.skipIf(!integrationEnabled())('admin videos', () => {
       publishState: 'published',
       progress: 100,
     });
+    expect(found.updatedAt).toMatch(/^\d{4}-\d{2}-\d{2}T[\d:.]+Z$/);
     expect(list.some((v) => v.id === gone.id)).toBe(false);
     const trashed = await listAdminVideos(ctx, editor, { trashed: true });
     expect(trashed.some((v) => v.id === gone.id)).toBe(true);

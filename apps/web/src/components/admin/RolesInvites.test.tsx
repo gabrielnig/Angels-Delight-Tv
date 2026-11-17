@@ -66,12 +66,10 @@ describe('RolesInvites', () => {
 describe('UserDetail', () => {
   it('needs a reason before suspending', async () => {
     const actions = {
-      suspend: vi
-        .fn()
-        .mockResolvedValue({
-          ok: false,
-          error: 'Write a short reason. It is kept in the audit log.',
-        }),
+      suspend: vi.fn().mockResolvedValue({
+        ok: false,
+        error: 'Write a short reason. It is kept in the audit log.',
+      }),
       reinstate: ok(),
       revokeSessions: ok(),
     };
@@ -82,6 +80,8 @@ describe('UserDetail', () => {
     );
     fireEvent.click(screen.getByRole('button', { name: 'Suspend account' }));
     fireEvent.click(screen.getAllByRole('button', { name: 'Suspend account' }).at(-1)!);
-    await waitFor(() => expect(screen.getAllByText(/Write a short reason/).length).toBeGreaterThan(0));
+    await waitFor(() =>
+      expect(screen.getAllByText(/Write a short reason/).length).toBeGreaterThan(0),
+    );
   });
 });
