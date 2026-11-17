@@ -2,10 +2,10 @@
 
 import { revalidatePath } from 'next/cache';
 import { accountService } from '@/lib/data/admin/services';
-import { requireActor } from '@/lib/data/admin/session-next';
+import { requireActionActor } from '@/lib/data/admin/session-next';
 
 export async function updateNameAction(name: string) {
-  const actor = await requireActor('/admin/account');
+  const actor = await requireActionActor('/admin/account');
   const result = await accountService.updateName(actor, String(name));
   revalidatePath('/admin', 'layout');
   return result;
@@ -17,7 +17,7 @@ export async function changePasswordAction(
   confirm: string,
   code: string,
 ) {
-  const actor = await requireActor('/admin/account');
+  const actor = await requireActionActor('/admin/account');
   const result = await accountService.changePassword(
     actor,
     String(current),
@@ -30,14 +30,14 @@ export async function changePasswordAction(
 }
 
 export async function revokeSessionAction(sessionId: string) {
-  const actor = await requireActor('/admin/account');
+  const actor = await requireActionActor('/admin/account');
   const result = await accountService.revokeSession(actor, String(sessionId));
   revalidatePath('/admin/account');
   return result;
 }
 
 export async function regenerateCodesAction(code: string) {
-  const actor = await requireActor('/admin/account');
+  const actor = await requireActionActor('/admin/account');
   const result = await accountService.regenerateCodes(actor, String(code).replace(/\s/g, ''));
   revalidatePath('/admin/account');
   return result;

@@ -8,6 +8,8 @@ export interface RequestAuthDeps {
   secureCookies: boolean;
   /** Key for the active profile cookie, the same one the viewer routes use. */
   profileSecret: Uint8Array;
+  /** Runs for every staff request after the session checks pass. Used for the per staff admin rate limit. */
+  beforeStaff?(accountId: string): Promise<void>;
 }
 
 /**
@@ -49,6 +51,7 @@ export function createRequestAuth(deps: RequestAuthDeps) {
       const found = await session(request);
       if (found.role !== 'editor' && found.role !== 'admin') throw new Forbidden();
       if (!found.mfaVerified) throw new Unauthorized();
+      await deps.beforeStaff?.(found.accountId);
       return { accountId: found.accountId, role: found.role };
     },
   };

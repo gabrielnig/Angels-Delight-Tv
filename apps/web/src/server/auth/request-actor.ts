@@ -1,7 +1,13 @@
 import 'server-only';
 import { activeProfileKey } from '../viewer/runtime';
 import { createRequestAuth, type RequestAuth } from './request-auth';
+import { createAdminBudget } from '../admin/budget';
 import { authRuntime } from './runtime';
+
+/** The per staff admin limit, shared with server actions through `spendAdminBudget`. */
+export function adminBudget() {
+  return createAdminBudget((policy, subject) => authRuntime().limiter.consume(policy, subject));
+}
 
 let cached: RequestAuth | undefined;
 
@@ -12,6 +18,7 @@ function requestAuth(): RequestAuth {
       sessions: runtime.sessions,
       secureCookies: runtime.secureCookies,
       profileSecret: activeProfileKey(runtime.env.PLAYBACK_TOKEN_SECRET),
+      beforeStaff: (accountId) => adminBudget().spend(accountId),
     });
   }
   return cached;
