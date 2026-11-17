@@ -39,7 +39,23 @@ const req = (cookie?: string) =>
 describe('getViewer', () => {
   it('resolves the account and the active profile cookie', async () => {
     const cookie = `ad_session=good; ad_profile=${signActiveProfile(SECRET, 'a1', PID)}`;
-    expect(await auth(base).getViewer(req(cookie))).toEqual({ accountId: 'a1', profileId: PID });
+    expect(await auth(base).getViewer(req(cookie))).toEqual({
+      accountId: 'a1',
+      profileId: PID,
+      kidsLocked: false,
+    });
+  });
+
+  it('uses the profile on the session while it is kids locked and ignores the cookie', async () => {
+    const KIDS = '0192f0a0-0000-7000-8000-0000000000k1';
+    const cookie = `ad_session=good; ad_profile=${signActiveProfile(SECRET, 'a1', PID)}`;
+    const locked = { ...base, kidsLocked: true, activeProfileId: KIDS };
+    expect(await auth(locked).getViewer(req(cookie))).toEqual({
+      accountId: 'a1',
+      profileId: KIDS,
+      kidsLocked: true,
+    });
+    expect(await auth(locked).getViewer(req('ad_session=good'))).toMatchObject({ profileId: KIDS });
   });
 
   it('returns an empty profile hint when the cookie is missing or forged', async () => {

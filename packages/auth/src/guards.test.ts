@@ -13,6 +13,8 @@ const context = (overrides: Partial<SessionContext> = {}): SessionContext => ({
   reauthAt: null,
   idleExpiresAt: new Date(),
   absoluteExpiresAt: new Date(),
+  activeProfileId: null,
+  kidsLocked: false,
   ...overrides,
 });
 

@@ -245,4 +245,70 @@ describe.skipIf(!integrationEnabled())('SessionService', () => {
       .where(eq(schema.sessions.id, session.id));
     expect(row!.userAgent).toHaveLength(200);
   });
+
+  describe('kids lock', () => {
+    async function withProfiles() {
+      const account = await newAccount();
+      const mine = await dbs.admin.db
+        .insert(schema.profiles)
+        .values({ accountId: account.id, nameEnc: Buffer.from('a'), avatarId: 'sun', isKids: true })
+        .returning({ id: schema.profiles.id });
+      const stranger = await newAccount();
+      const theirs = await dbs.admin.db
+        .insert(schema.profiles)
+        .values({ accountId: stranger.id, nameEnc: Buffer.from('b'), avatarId: 'sun' })
+        .returning({ id: schema.profiles.id });
+      at(0);
+      const { token, session } = await sessions.create({ accountId: account.id, kind: 'viewer' });
+      return {
+        account,
+        token,
+        sessionId: session.id,
+        profileId: mine[0]!.id,
+        foreignId: theirs[0]!.id,
+      };
+    }
+
+    it('stores the active profile and lock on the session and reads them back', async () => {
+      const u = await withProfiles();
+      expect((await sessions.validate(u.token))?.kidsLocked).toBe(false);
+
+      await sessions.setProfile(u.sessionId, u.account.id, u.profileId, true);
+
+      const context = await sessions.validate(u.token);
+      expect(context).toMatchObject({ activeProfileId: u.profileId, kidsLocked: true });
+    });
+
+    it('refuses a profile that belongs to another account', async () => {
+      const u = await withProfiles();
+
+      await expect(
+        sessions.setProfile(u.sessionId, u.account.id, u.foreignId, false),
+      ).rejects.toThrow();
+      expect((await sessions.validate(u.token))?.activeProfileId).toBeNull();
+    });
+
+    it('keeps the lock for the same session and never leaks it to a new session', async () => {
+      const u = await withProfiles();
+      await sessions.setProfile(u.sessionId, u.account.id, u.profileId, true);
+
+      const again = await sessions.validate(u.token);
+      const fresh = await sessions.create({ accountId: u.account.id, kind: 'viewer' });
+
+      expect(again?.kidsLocked).toBe(true);
+      expect((await sessions.validate(fresh.token))?.kidsLocked).toBe(false);
+    });
+
+    it('clears the lock and the active profile', async () => {
+      const u = await withProfiles();
+      await sessions.setProfile(u.sessionId, u.account.id, u.profileId, true);
+
+      await sessions.clearKidsLock(u.sessionId, u.account.id);
+
+      expect(await sessions.validate(u.token)).toMatchObject({
+        kidsLocked: false,
+        activeProfileId: null,
+      });
+    });
+  });
 });

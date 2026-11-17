@@ -83,6 +83,19 @@ function setup(
 const viewer = { accountId: ACCOUNT, profileId: PROFILE };
 
 describe('PlaybackService kids gate', () => {
+  it('refuses any profile but the locked one when the session is kids locked, even with no active id', async () => {
+    const { service } = setup({ kids: true });
+    await expect(
+      service.startSession({ accountId: ACCOUNT, profileId: ADULT, kidsLocked: true }, VID),
+    ).rejects.toBeInstanceOf(Forbidden);
+    await expect(
+      service.startSession(
+        { accountId: ACCOUNT, profileId: PROFILE, activeProfileId: PROFILE, kidsLocked: true },
+        VID,
+      ),
+    ).resolves.toBeTruthy();
+  });
+
   it('refuses a session for another profile while the active profile is a kids profile', async () => {
     const { service } = setup({ kids: true });
     await expect(

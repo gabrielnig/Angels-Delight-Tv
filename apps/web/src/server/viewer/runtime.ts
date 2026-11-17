@@ -61,6 +61,25 @@ function build(): ViewerRuntime {
     appOrigin: services.env.APP_ORIGIN,
     secureCookies: auth.secureCookies,
     profileSecret: activeProfileKey(services.env.PLAYBACK_TOKEN_SECRET),
+    lock: {
+      async read(request) {
+        const token = cookieValue(
+          request.headers.get('cookie'),
+          sessionCookieName(auth.secureCookies),
+        );
+        const session = token ? await auth.sessions.validate(token) : null;
+        return session
+          ? {
+              sessionId: session.sessionId,
+              profileId: session.activeProfileId,
+              kidsLocked: session.kidsLocked,
+            }
+          : null;
+      },
+      set: (sessionId, accountId, profileId, kidsLocked) =>
+        auth.sessions.setProfile(sessionId, accountId, profileId, kidsLocked),
+      clear: (sessionId, accountId) => auth.sessions.clearKidsLock(sessionId, accountId),
+    },
     async resolveActor(request) {
       const token = cookieValue(
         request.headers.get('cookie'),
