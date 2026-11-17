@@ -61,8 +61,9 @@ export async function registerMaintenanceHandlers(
       ...base,
       queue: QUEUES.auditPrune,
       async handle() {
-        const result = await pruneAudit();
-        logger.info('audit prune finished', { result });
+        const result = (await pruneAudit()) as
+          { deleted?: number; skipped?: string | null } | undefined;
+        logger.info('audit prune finished', { deleted: result?.deleted, skipped: result?.skipped });
       },
     });
     scheduled.push(entry(QUEUES.auditPrune));

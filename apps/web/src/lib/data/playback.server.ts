@@ -33,14 +33,17 @@ export function getPlaybackData(): PlaybackData {
 }
 
 /**
- * How the browser gets its playback session. PLAYBACK_TRANSPORT=http uses the lane D routes, and production
- * always does. Outside production the sample streams answer until those routes are wired (see K1 notes).
+ * How the browser gets its playback session. Production always uses http. Elsewhere `PLAYBACK_TRANSPORT=http|fixture` decides when set. Otherwise the real
+ * lane D routes (`/api/play/...`) are used in production and whenever viewer data is real, because real titles have
+ * no sample stream to fall back on. Fixture data keeps the sample streams.
  */
 export function getTransport(
   env: Record<string, string | undefined> = process.env,
 ): PlaybackTransport {
   if (env.NODE_ENV === 'production') return 'http';
-  return env.PLAYBACK_TRANSPORT === 'http' ? 'http' : 'fixture';
+  if (env.PLAYBACK_TRANSPORT === 'http' || env.PLAYBACK_TRANSPORT === 'fixture')
+    return env.PLAYBACK_TRANSPORT;
+  return realDataEnabled(env) ? 'http' : 'fixture';
 }
 
 /** Progress is stored by the server whenever viewer data is real, whatever the session transport is. */

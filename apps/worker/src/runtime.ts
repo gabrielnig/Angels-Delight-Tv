@@ -57,7 +57,10 @@ export function buildVideoHandlerDeps(
   const mirror = new DrizzleJobMirror(db);
   const producer = new JobProducer({ boss: bossAdapter(boss), mirror });
   const limits = { maxSeconds: env.MAX_VIDEO_SECONDS, warnSeconds: 3600 };
-  const scratch = { root: env.WORKER_SCRATCH_DIR };
+  const scratch = {
+    root: env.WORKER_SCRATCH_DIR,
+    minFreeRatio: env.WORKER_SCRATCH_MIN_FREE_RATIO,
+  };
 
   const pipeline = new VideoPipeline({
     db,
