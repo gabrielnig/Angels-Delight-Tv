@@ -1,0 +1,248 @@
+import { DEFAULT_PREFERENCES, type RelatedItem } from '@ad/player';
+import { findTitle } from '@ad/catalog';
+import { withAccount } from '@ad/db';
+import { isUuid, NotFound } from '@ad/shared';
+import {
+  catalogContext,
+  getTitleDetail,
+  loadOwnedProfile,
+  type SeriesDetailDto,
+  type TitleCardDto,
+  type TitleDetailDto,
+  type ViewerContext as ServiceContext,
+} from '@ad/viewer';
+import type {
+  NextVideo,
+  PlaybackData,
+  Tint,
+  UpNextTileData,
+  ViewerContext,
+  WatchData,
+  WatchLookup,
+  WatchVideo,
+} from '../../lib/data/playback';
+import type { PlaybackSettings } from '../../lib/data/types';
+import { viewerActor } from './actor';
+import { toThumb } from './mappers';
+
+const TINTS: Tint[] = ['sky', 'mint', 'lemon', 'peach', 'lavender'];
+const UP_NEXT_TILES = 5;
+const RELATED_ITEMS = 4;
+
+export function durationLabel(seconds: number): string {
+  if (seconds < 60) return `${seconds} sec`;
+  const m = Math.floor(seconds / 60);
+  const s = seconds % 60;
+  return s === 0 ? `${m} min` : `${m} min ${s} sec`;
+}
+
+const secondsOf = (ms: number) => Math.round(ms / 1000);
+
+/**
+ * Watch page data on the real viewer services. The audience comes from the stored profile, never from the
+ * `kids` flag the caller passes, and every read goes through the same visibility rules as the rest of the site.
+ * Captions are empty here: signed caption URLs arrive with the playback session (lane D routes, see K1 notes).
+ */
+export class RealPlaybackData implements PlaybackData {
+  constructor(
+    private readonly service: ServiceContext,
+    private readonly settings: (accountId: string, profileId: string) => Promise<PlaybackSettings>,
+  ) {}
+
+  private async detail(
+    accountId: string,
+    profileId: string,
+    key: { id: string } | { slug: string; kind: 'series' },
+  ): Promise<TitleDetailDto | null> {
+    try {
+      return await getTitleDetail(this.service, viewerActor(accountId), { profileId, ...key });
+    } catch (error) {
+      if (error instanceof NotFound) return null;
+      throw error;
+    }
+  }
+
+  /** True when a grown-up could open this id. Used to tell "not for kids" from "not there". */
+  private async existsForAdults(id: string): Promise<boolean> {
+    const found = await this.service.db.transaction((tx) =>
+      findTitle(tx, catalogContext(this.service), { kids: false }, { id }),
+    );
+    return found !== null;
+  }
+
+  async getWatchData(videoId: string, viewer: ViewerContext): Promise<WatchLookup> {
+    if (!viewer.accountId || !isUuid(videoId)) return { status: 'not-found' };
+    const { accountId, profileId } = viewer;
+    const actor = viewerActor(accountId);
+
+    let isKids: boolean;
+    try {
+      isKids = await withAccount(
+        this.service.db,
+        actor,
+        async (tx) => (await loadOwnedProfile(tx, actor, profileId)).isKids,
+      );
+    } catch (error) {
+      if (error instanceof NotFound) return { status: 'not-found' };
+      throw error;
+    }
+
+    const found = await this.detail(accountId, profileId, { id: videoId });
+    if (!found) {
+      return isKids && (await this.existsForAdults(videoId))
+        ? { status: 'kids-blocked' }
+        : { status: 'not-found' };
+    }
+
+    const [prefs, data] = await Promise.all([
+      this.settings(accountId, profileId),
+      found.type === 'video'
+        ? this.forStandalone(found)
+        : found.type === 'redirect' && found.to.kind === 'series' && found.to.episodeId
+          ? this.forEpisode(accountId, profileId, found.to.slug, found.to.episodeId)
+          : null,
+    ]);
+    if (!data) return { status: 'not-found' };
+    return {
+      status: 'ok',
+      data: {
+        ...data,
+        preferences: {
+          ...DEFAULT_PREFERENCES,
+          captionsOn: isKids || prefs.captionsDefault,
+          rate: prefs.speed,
+          dataSaver: prefs.dataSaver,
+          autoplayNext: prefs.autoplayNext,
+        },
+      },
+    };
+  }
+
+  private async forStandalone(
+    detail: Extract<TitleDetailDto, { type: 'video' }>,
+  ): Promise<Omit<WatchData, 'preferences'>> {
+    const category = detail.categories[0]?.name ?? '';
+    const card = detail.card;
+    const video: WatchVideo = {
+      id: card.id,
+      title: card.title,
+      description: card.description ?? '',
+      durationSeconds: secondsOf(card.durationMs ?? 0),
+      posterUrl: toThumb(card.poster)?.src ?? null,
+      categoryLabel: category,
+      kidsSafe: card.kidsSafe,
+      series: null,
+      backHref: `/title/${card.slug}`,
+    };
+    const tiles = tilesFrom(detail.related, category);
+    return {
+      video,
+      captions: [],
+      saved: detail.progress
+        ? {
+            positionSeconds: secondsOf(detail.progress.positionMs),
+            finished: detail.progress.completed,
+          }
+        : null,
+      next: null,
+      upNext: tiles,
+      related: relatedFrom(tiles),
+      inMyList: card.inMyList,
+    };
+  }
+
+  private async forEpisode(
+    accountId: string,
+    profileId: string,
+    seriesSlug: string,
+    episodeId: string,
+  ): Promise<Omit<WatchData, 'preferences'> | null> {
+    const found = await this.detail(accountId, profileId, { slug: seriesSlug, kind: 'series' });
+    if (!found || found.type !== 'series') return null;
+    const flat = flatEpisodes(found);
+    const index = flat.findIndex((e) => e.video.id === episodeId);
+    const current = flat[index];
+    if (!current) return null;
+    const next = flat[index + 1];
+    const label = (e: (typeof flat)[number]) => `S${e.season} E${e.video.episode?.number ?? 0}`;
+    const category = found.categories[0]?.name ?? '';
+
+    const video: WatchVideo = {
+      id: current.video.id,
+      title: current.video.title,
+      description: current.video.description ?? '',
+      durationSeconds: secondsOf(current.video.durationMs),
+      posterUrl: toThumb(current.video.poster)?.src ?? null,
+      categoryLabel: category || found.card.title,
+      kidsSafe: current.video.kidsSafe,
+      series: {
+        id: found.card.id,
+        title: found.card.title,
+        episodeLabel: label(current),
+        lastEpisode: next === undefined,
+        href: `/series/${found.card.slug}`,
+      },
+      backHref: `/series/${found.card.slug}`,
+    };
+    const nextVideo: NextVideo | null = next
+      ? {
+          id: next.video.id,
+          title: next.video.title,
+          posterUrl: toThumb(next.video.poster)?.src,
+          meta: `${found.card.title}, ${label(next)}, ${durationLabel(secondsOf(next.video.durationMs))}`,
+          href: `/watch/${next.video.id}`,
+        }
+      : null;
+    const later: UpNextTileData[] = flat
+      .slice(index + 1, index + 1 + UP_NEXT_TILES)
+      .map((e, i) => ({
+        id: e.video.id,
+        title: e.video.title,
+        tag: found.card.title,
+        durationLabel: durationLabel(secondsOf(e.video.durationMs)),
+        href: `/watch/${e.video.id}`,
+        tint: TINTS[i % TINTS.length] as Tint,
+      }));
+    const tiles = later.length > 0 ? later : tilesFrom(found.related, category);
+    return {
+      video,
+      captions: [],
+      saved: current.progress
+        ? { positionSeconds: secondsOf(current.progress.positionMs), finished: current.completed }
+        : null,
+      next: nextVideo,
+      upNext: tiles,
+      related: relatedFrom(tiles),
+      inMyList: found.card.inMyList,
+    };
+  }
+}
+
+function flatEpisodes(detail: SeriesDetailDto) {
+  return detail.seasons.flatMap((season) =>
+    season.episodes.map((e) => ({
+      season: season.number,
+      video: e.video,
+      progress: e.progress,
+      completed: e.watched,
+    })),
+  );
+}
+
+function tilesFrom(cards: readonly TitleCardDto[], tag: string): UpNextTileData[] {
+  return cards
+    .filter((card) => card.kind === 'video')
+    .slice(0, UP_NEXT_TILES)
+    .map((card, i) => ({
+      id: card.id,
+      title: card.title,
+      tag,
+      durationLabel: durationLabel(secondsOf(card.durationMs ?? 0)),
+      href: `/watch/${card.id}`,
+      tint: TINTS[i % TINTS.length] as Tint,
+    }));
+}
+
+function relatedFrom(tiles: readonly UpNextTileData[]): RelatedItem[] {
+  return tiles.slice(0, RELATED_ITEMS).map((t) => ({ id: t.id, title: t.title, href: t.href }));
+}
