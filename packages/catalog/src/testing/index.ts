@@ -22,6 +22,9 @@ import {
   type TestDatabase,
 } from '@ad/db/testing';
 import pg from 'pg';
+import type { Tx } from '../types';
+import { withAccount } from '@ad/db';
+import type { Actor } from '@ad/shared';
 
 export { integrationEnabled };
 
@@ -168,4 +171,9 @@ export async function seedAsset(
     ...overrides,
   });
   return id;
+}
+
+/** Runs service code inside withAccount as `actor`, through the ad_app connection. */
+export function runAs(app: Database, actor: Actor) {
+  return <T>(fn: (tx: Tx) => Promise<T>): Promise<T> => withAccount(app, actor, fn);
 }
