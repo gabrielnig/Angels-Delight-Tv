@@ -1,7 +1,7 @@
-import { schema } from '@ad/db';
+import { schema, withAccount } from '@ad/db';
 import { integrationEnabled } from '@ad/db/testing';
 import { Conflict, Forbidden, RateLimited } from '@ad/shared';
-import { eq } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { StaffService } from './staff';
 import { base32Decode, totpAt } from './totp';
@@ -435,6 +435,27 @@ describe.skipIf(!integrationEnabled())('staff sign in, two factor, invites and r
         h.meta,
       );
       expect(await h.deps.sessions.validate(other.token)).toBeNull();
+    });
+
+    it('the SQL role and status functions refuse a caller id that is not the request context (L-2)', async () => {
+      const boss = await staffMember('admin');
+      const editor = await staffMember('editor');
+      const victim = await registerMember(h, staff);
+      const call = (ctx: { accountId: string; role: 'admin' | 'viewer' } | null) => {
+        const q = sql`SELECT staff_set_role(${boss.member.id}::uuid, ${editor.member.id}::uuid, 'viewer'::account_role, 'editor'::account_role)`;
+        return ctx ? withAccount(h.dbs.app.db, ctx, (tx) => tx.execute(q)) : h.dbs.app.db.execute(q);
+      };
+      // No context at all, and a context for somebody else: both are refused even though p_actor is a real admin.
+      await expect(call(null)).rejects.toThrow();
+      await expect(call({ accountId: editor.member.id, role: 'admin' })).rejects.toThrow();
+      const status = withAccount(h.dbs.app.db, { accountId: editor.member.id, role: 'admin' }, (tx) =>
+        tx.execute(
+          sql`SELECT staff_set_account_status(${boss.member.id}::uuid, ${victim.id}::uuid, 'suspended'::account_status, 'x')`,
+        ),
+      );
+      await expect(status).rejects.toThrow();
+      // The matching context works.
+      await expect(call({ accountId: boss.member.id, role: 'admin' })).resolves.toBeDefined();
     });
 
     it('refuses a change to your own role, a stale view, and a caller who is not an admin', async () => {
