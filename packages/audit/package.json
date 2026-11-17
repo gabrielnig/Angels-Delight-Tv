@@ -1,0 +1,23 @@
+{
+  "name": "@ad/audit",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "test:file": "vitest run"
+  },
+  "dependencies": {
+    "@ad/db": "workspace:*",
+    "@ad/shared": "workspace:*",
+    "drizzle-orm": "^0.45.4",
+    "@ad/security": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/pg": "^8.23.1"
+  }
+}
