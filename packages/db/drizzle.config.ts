@@ -11,6 +11,7 @@ export default defineConfig({
     './src/schema/identity.ts',
     './src/schema/pipeline.ts',
     './src/schema/platform.ts',
+    './src/schema/viewer.ts',
   ],
   out: './migrations/main',
 });
