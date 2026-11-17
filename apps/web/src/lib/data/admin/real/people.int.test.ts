@@ -155,7 +155,11 @@ describe.skipIf(!integrationEnabled())('real people service', () => {
 
   it('refuses unknown people and staff accounts with the screen message', async () => {
     expect(
-      await realPeopleService.suspend(admin, '0190a1b2-0000-7000-8000-000000000000', 'valid reason'),
+      await realPeopleService.suspend(
+        admin,
+        '0190a1b2-0000-7000-8000-000000000000',
+        'valid reason',
+      ),
     ).toEqual({ ok: false, error: 'User not found.' });
     expect(await realPeopleService.suspend(admin, editor.accountId, 'valid reason')).toEqual({
       ok: false,

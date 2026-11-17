@@ -6,7 +6,7 @@ import {
   revokeSession,
   updateName,
 } from './account-commands';
-import { FIXTURE_PASSWORD } from './session';
+import { FIXTURE_CODE, FIXTURE_PASSWORD } from './session';
 import { getStore } from './store';
 
 const NOW = Date.parse('2026-11-17T10:00:00Z');
@@ -40,27 +40,45 @@ describe('changePassword', () => {
     ensureAccount(s, actor, 'chiamaka@example.test', NOW);
     return s;
   };
+  it('needs the authenticator code', () => {
+    const r = changePassword(setup(), actor, FIXTURE_PASSWORD, STRONG, STRONG, '000000', NOW);
+    expect(r).toMatchObject({ ok: false, field: 'code' });
+  });
   it('needs the current password', () => {
-    const r = changePassword(setup(), actor, 'wrong', STRONG, STRONG, NOW);
+    const r = changePassword(setup(), actor, 'wrong', STRONG, STRONG, FIXTURE_CODE, NOW);
     expect(r).toEqual({ ok: false, field: 'current', error: 'That is not your current password.' });
   });
   it('rejects weak, mismatched and unchanged passwords', () => {
     const s = setup();
-    expect(changePassword(s, actor, FIXTURE_PASSWORD, 'short', 'short', NOW)).toMatchObject({
+    expect(
+      changePassword(s, actor, FIXTURE_PASSWORD, 'short', 'short', FIXTURE_CODE, NOW),
+    ).toMatchObject({
       ok: false,
       field: 'next',
     });
-    expect(changePassword(s, actor, FIXTURE_PASSWORD, STRONG, STRONG + 'x', NOW)).toMatchObject({
+    expect(
+      changePassword(s, actor, FIXTURE_PASSWORD, STRONG, STRONG + 'x', FIXTURE_CODE, NOW),
+    ).toMatchObject({
       ok: false,
       field: 'confirm',
     });
     expect(
-      changePassword(s, actor, FIXTURE_PASSWORD, FIXTURE_PASSWORD, FIXTURE_PASSWORD, NOW),
+      changePassword(
+        s,
+        actor,
+        FIXTURE_PASSWORD,
+        FIXTURE_PASSWORD,
+        FIXTURE_PASSWORD,
+        FIXTURE_CODE,
+        NOW,
+      ),
     ).toMatchObject({ ok: false, field: 'next' });
   });
   it('signs out other devices and audits it', () => {
     const s = setup();
-    expect(changePassword(s, actor, FIXTURE_PASSWORD, STRONG, STRONG, NOW).ok).toBe(true);
+    expect(changePassword(s, actor, FIXTURE_PASSWORD, STRONG, STRONG, FIXTURE_CODE, NOW).ok).toBe(
+      true,
+    );
     expect(s.accounts[actor.accountId]!.sessions.every((x) => x.current)).toBe(true);
     expect(s.accounts[actor.accountId]!.passwordChangedAt).toBe(new Date(NOW).toISOString());
     expect(s.audit[0]).toMatchObject({
@@ -83,13 +101,13 @@ describe('sessions', () => {
 });
 
 describe('recovery codes', () => {
-  it('needs the password and returns ten fresh codes', () => {
+  it('needs the authenticator code and returns ten fresh codes', () => {
     const s = fresh();
     ensureAccount(s, actor, 'c@example.test', NOW);
     let n = 0;
     const gen = () => `code-${++n}`;
-    expect(regenerateRecoveryCodes(s, actor, 'nope', gen, NOW).ok).toBe(false);
-    const r = regenerateRecoveryCodes(s, actor, FIXTURE_PASSWORD, gen, NOW);
+    expect(regenerateRecoveryCodes(s, actor, '000000', gen, NOW).ok).toBe(false);
+    const r = regenerateRecoveryCodes(s, actor, FIXTURE_CODE, gen, NOW);
     expect(r.ok && r.codes).toHaveLength(10);
     expect(s.accounts[actor.accountId]!.recoveryCodesLeft).toBe(10);
     expect(JSON.stringify(s.audit[0])).not.toContain('code-1');

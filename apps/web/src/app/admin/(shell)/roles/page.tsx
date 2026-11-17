@@ -11,6 +11,7 @@ import {
   inviteStaffAction,
   reauthenticateAction,
   resendInviteAction,
+  resetTwoFactorAction,
   revokeInviteAction,
 } from './actions';
 
@@ -35,12 +36,14 @@ export default async function RolesPage() {
         invites={invites}
         now={Date.now()}
         canManage
+        selfId={actor.accountId}
         actions={{
           invite: inviteStaffAction,
           resend: resendInviteAction,
           revoke: revokeInviteAction,
           changeRole: changeRoleAction,
           reauthenticate: reauthenticateAction,
+          resetTwoFactor: resetTwoFactorAction,
         }}
       />
     </>

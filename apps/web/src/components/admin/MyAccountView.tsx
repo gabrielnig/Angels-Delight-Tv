@@ -16,10 +16,15 @@ import { useRouter } from 'next/navigation';
 
 export interface AccountActions {
   updateName(name: string): Promise<FieldResult>;
-  changePassword(current: string, next: string, confirm: string): Promise<FieldResult>;
+  changePassword(
+    current: string,
+    next: string,
+    confirm: string,
+    code: string,
+  ): Promise<FieldResult>;
   revokeSession(id: string): Promise<FieldResult>;
   regenerateCodes(
-    password: string,
+    code: string,
   ): Promise<{ ok: false; field: string; error: string } | { ok: true; codes: string[] }>;
 }
 
@@ -41,10 +46,11 @@ export function MyAccountView({
   const [cur, setCur] = useState('');
   const [next, setNext] = useState('');
   const [confirm, setConfirm] = useState('');
+  const [passwordCode, setPasswordCode] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState<string | null>(null);
   const [codesOpen, setCodesOpen] = useState(false);
-  const [codePassword, setCodePassword] = useState('');
+  const [codeValue, setCodeValue] = useState('');
   const [codeError, setCodeError] = useState<string>();
   const [codes, setCodes] = useState<string[] | null>(null);
   const check = checkPassword(next, account.email);
@@ -73,13 +79,16 @@ export function MyAccountView({
   }
   async function savePassword(e: React.FormEvent) {
     e.preventDefault();
-    const r = await guard('password', () => actions.changePassword(cur, next, confirm));
+    const r = await guard('password', () =>
+      actions.changePassword(cur, next, confirm, passwordCode),
+    );
     if (!r) return;
     if (r.ok) {
       setErrors({});
       setCur('');
       setNext('');
       setConfirm('');
+      setPasswordCode('');
       toast.show({
         tone: 'success',
         message: 'Password changed. Your other devices were signed out.',
@@ -88,11 +97,11 @@ export function MyAccountView({
     } else setErrors({ [r.field]: r.error });
   }
   async function makeCodes() {
-    const r = await guard('codes', () => actions.regenerateCodes(codePassword));
+    const r = await guard('codes', () => actions.regenerateCodes(codeValue));
     if (!r) return;
     if (r.ok) {
       setCodes(r.codes);
-      setCodePassword('');
+      setCodeValue('');
       setCodeError(undefined);
       router.refresh();
     } else setCodeError(r.error);
@@ -100,7 +109,7 @@ export function MyAccountView({
   const closeCodes = () => {
     setCodesOpen(false);
     setCodes(null);
-    setCodePassword('');
+    setCodeValue('');
     setCodeError(undefined);
   };
 
@@ -190,12 +199,21 @@ export function MyAccountView({
             error={errors.confirm}
             onChange={(e) => setConfirm(e.target.value)}
           />
+          <TextField
+            label="Authenticator code"
+            hint="The 6 digit code from your authenticator app."
+            inputMode="numeric"
+            autoComplete="one-time-code"
+            value={passwordCode}
+            error={errors.code}
+            onChange={(e) => setPasswordCode(e.target.value)}
+          />
           <div>
             <Button
               type="submit"
               variant="primary"
               loading={busy === 'password'}
-              disabled={!cur || !next || !confirm}
+              disabled={!cur || !next || !confirm || !passwordCode.trim()}
             >
               Change password
             </Button>
@@ -322,15 +340,16 @@ export function MyAccountView({
         ) : (
           <>
             <p style={{ margin: 0 }}>
-              Your old codes stop working. Enter your password to continue.
+              Your old codes stop working. Enter the 6 digit code from your authenticator app to
+              continue.
             </p>
             <TextField
-              label="Password"
-              type="password"
-              autoComplete="current-password"
-              value={codePassword}
+              label="Authenticator code"
+              inputMode="numeric"
+              autoComplete="one-time-code"
+              value={codeValue}
               error={codeError}
-              onChange={(e) => setCodePassword(e.target.value)}
+              onChange={(e) => setCodeValue(e.target.value)}
             />
           </>
         )}

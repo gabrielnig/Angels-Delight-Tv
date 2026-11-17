@@ -1,5 +1,5 @@
 import { checkPassword } from '@ad/auth/policy';
-import { FIXTURE_PASSWORD } from './session';
+import { FIXTURE_CODE, FIXTURE_PASSWORD } from './session';
 import type { AdminStore } from './store';
 import type { AdminActor, MyAccount } from './types';
 import { pushAudit } from './users-commands';
@@ -91,10 +91,12 @@ export function changePassword(
   current: string,
   next: string,
   confirm: string,
+  code: string,
   now: number,
 ): FieldResult {
   const account = mine(s, actor);
   if (!account) return fail('current', 'Account not found.');
+  if (code !== FIXTURE_CODE) return fail('code', 'That code is not right.');
   if (current !== FIXTURE_PASSWORD) return fail('current', 'That is not your current password.');
   const check = checkPassword(next, account.email);
   if (!check.ok)
@@ -151,13 +153,13 @@ export function revokeSession(
 export function regenerateRecoveryCodes(
   s: AdminStore,
   actor: AdminActor,
-  password: string,
+  code: string,
   generate: () => string,
   now: number,
 ): { ok: false; field: string; error: string } | { ok: true; codes: string[] } {
   const account = mine(s, actor);
-  if (!account) return fail('password', 'Account not found.');
-  if (password !== FIXTURE_PASSWORD) return fail('password', 'That is not your password.');
+  if (!account) return fail('code', 'Account not found.');
+  if (code !== FIXTURE_CODE) return fail('code', 'That code is not right.');
   const codes = Array.from({ length: 10 }, generate);
   account.recoveryCodesLeft = 10;
   pushAudit(
