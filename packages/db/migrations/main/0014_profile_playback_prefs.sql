@@ -1,0 +1,1 @@
+ALTER TABLE "profiles" ADD COLUMN "playback_prefs" jsonb DEFAULT '{}'::jsonb NOT NULL;
