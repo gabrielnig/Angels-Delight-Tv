@@ -146,3 +146,8 @@ Format: decision, options considered, why, reversible or not. Newest first. Deci
 - Options: sign the full pathname.
 - Why: the same signature works on the Cloudflare Worker (path is the key), on MinIO behind a prefix and on the local dev route.
 - Reversible: yes.
+## D-031 Theme save gate thresholds (lane H)
+- Decision: ink and muted text on the page and card colours below 4.5:1 block save and publish (D-007). Button text is auto chosen as white or ink (whichever is higher): below 2:1 blocks, 2 to 4.5 warns, and the admin must confirm warnings to publish (recorded in the audit entry). Primary as link text on the page below 4.5 only warns. Border strong and focus rings are auto derived to reach 3:1, never shown as failures. Lora is applied to `--font-display` only, body stays Inter.
+- Options: block everything under 4.5 (too strict for brand colours that pass with the other text colour), warn only (breaks D-007).
+- Why: matches DESIGN-SYSTEM 4.3, M18-S02 and the S56 mockup states.
+- Reversible: yes, thresholds are constants in `packages/theme/src/gate.ts`.
