@@ -219,6 +219,8 @@ export interface AuthGateway {
   }): Promise<AuthResult>;
   signUp(input: { email: string; password: string; inviteCode?: string }): Promise<SignUpResult>;
   verifyEmail(input: { code: string }): Promise<CodeResult>;
+  /** The address waiting for a verification code (set by sign up or sign in), or null. */
+  pendingEmail(): Promise<string | null>;
   resendCode(): Promise<{ ok: true } | { ok: false; reason: 'resend_limit' | 'network' }>;
   requestPasswordReset(input: {
     email: string;
