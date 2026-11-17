@@ -16,6 +16,8 @@ export interface RoleDb {
 
 export function connectAs(url: string, role: string): RoleDb {
   const pool = new pg.Pool({ connectionString: url, max: 4, options: `-c role=${role}` });
+  // An idle connection cut by DROP DATABASE must not surface as an unhandled error after a test file ends.
+  pool.on('error', () => undefined);
   return { db: createDb(pool), pool };
 }
 
@@ -136,6 +138,9 @@ export async function createAuthHarness(overrides: Partial<AuthDeps> = {}): Prom
       return decodeURIComponent(match[1]);
     },
     mailsTo: (email) => outboxFor(email).length,
-    drop: () => dbs.drop(),
+    async drop() {
+      await Promise.all(pending.splice(0));
+      await dbs.drop();
+    },
   };
 }
