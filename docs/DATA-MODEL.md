@@ -581,3 +581,23 @@ Fail closed: `current_setting('app.account_id', true)` returns NULL when never s
 | `rate_limit_buckets` | 1 day idle | n/a |
 | Soft-deleted videos | 30 days then purged with storage | n/a |
 | `upload_sessions` | 30 days after completion | Cascade by creator |
+
+## 12. Added after the first schema (migrations 0006 to 0016)
+
+The schema in `packages/db/src/schema` is the source of truth. These changes were made by later lanes with additive migrations and are not yet folded into the sections above.
+
+| Migration | Change |
+|---|---|
+| 0006 | New tables `admin_invites` (`email_hash`, `email_enc`, staff `role`, `token_hash`, `invited_by`, `expires_at`, `accepted_at`, `revoked_at`), `auth_lockouts` (`key`, `failures`, `window_started_at`, `locked_until`) and `verification_codes` (`token_id`, `code_hash`, `attempts`). App role grants. |
+| 0007 | `jobs.heartbeat_at` (timestamptz, nullable) for stuck job detection. |
+| 0008 | `view_events` gains `viewer_hash`, `device_class` (phone, tablet, desktop, tv, other) and `save_data`, with a check that kids rows never carry a `viewer_hash`. New tables `site_daily_stats` (`day`, `views`, `uniques`, `watch_ms`, `completions`) and `analytics_counters` (`day`, `kind`, `key`, `count`). |
+| 0009 | New tables `search_history` (`profile_id`, `query` 2 to 80 chars, `searched_at`, primary key `(profile_id, query)`) and `slug_redirects` (`old_slug`, exactly one of `video_id` or `series_id`). |
+| 0010 | `unaccent` extension and the immutable `ad_unaccent()` wrapper, GIN indexes for accent insensitive search on `videos` and `series`, and row level security on `search_history` (`owns_profile(profile_id)`). |
+| 0011 | `staff_set_role()`, a SECURITY DEFINER function that re-checks an active admin caller in SQL and refuses self changes and stale expected roles. |
+| 0012 | `videos.tags` (text array, at most 10), `videos.suitability` (everyone, kids or older), `videos.caption_override_reason`, `videos.poster_focus` (jsonb), `accounts.suspended_reason` and `accounts.suspended_at`. |
+| 0013 | `staff_set_account_status()`, SECURITY DEFINER, admin only, viewers only, active or suspended only. |
+| 0014 | `profiles.playback_prefs` (jsonb, default empty object). |
+| 0015 | `staff_directory()`, SECURITY DEFINER, returns the sealed email of staff accounts to an active staff caller so editors can see who uploaded a video. |
+| 0016 | `INSERT` on `audit_log` for `ad_worker`, so the monthly purge job can record itself. The append only trigger still blocks updates and deletes. |
+
+Row level security summary additions: `search_history` is on and forced like `watch_progress`. `admin_invites`, `auth_lockouts`, `verification_codes`, `site_daily_stats`, `analytics_counters` and `slug_redirects` have no policies and are reached only by their own modules.
