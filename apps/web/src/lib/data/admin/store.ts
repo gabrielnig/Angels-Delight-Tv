@@ -5,6 +5,7 @@ import type {
   CaptionTrack,
   CategoryRecord,
   InviteRecord,
+  MyAccount,
   SeriesRecord,
   StaffRecord,
   UserRecord,
@@ -23,6 +24,7 @@ export interface AdminStore {
   staff: StaffRecord[];
   invites: InviteRecord[];
   audit: AuditRow[];
+  accounts: Record<string, MyAccount>;
   captions: Record<string, CaptionTrack>;
   settings: { requireApprovedCaptions: boolean };
   /** Oldest first. Last entry is yesterday. Deterministic so charts are stable. */
@@ -245,6 +247,7 @@ export function seedStore(now = Date.now()): AdminStore {
     series,
     home: homeState,
     ...seedPeople(now),
+    accounts: {},
     captions: {},
     settings: { requireApprovedCaptions: true },
     dailyViews,

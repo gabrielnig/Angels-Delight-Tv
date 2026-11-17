@@ -95,3 +95,8 @@ export function fixtureAuthEnabled(env: Record<string, string | undefined> = pro
   if (env.ADMIN_FIXTURE_AUTH === 'off') return false;
   return env.NODE_ENV !== 'production';
 }
+
+/** Email of a fixture account, for screens that show it. */
+export function fixtureEmailOf(accountId: string): string {
+  return ACCOUNTS.find((a) => a.accountId === accountId)?.email ?? 'unknown@example.test';
+}
