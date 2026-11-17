@@ -166,13 +166,31 @@ type LoaderCtor = new () => LoaderLike;
 
 /**
  * Wraps an hls.js loader class so `ad-key://` key URIs resolve to the key route.
- * The base class is injected so the wrapper is testable without hls.js.
+ * hls.js keeps its own bookkeeping keyed by `context.url`, so the caller's context is never
+ * changed: the base loader gets a copy with the real url, and every callback gets the original
+ * context back. The base class is injected so the wrapper is testable without hls.js.
  */
 export function createKeyAwareLoader(Base: LoaderCtor, appOrigin: string): LoaderCtor {
   return class KeyAwareLoader extends Base {
     override load(context: LoaderContext, ...rest: never[]): void {
-      context.url = resolveKeyUrl(context.url, appOrigin);
-      super.load(context, ...rest);
+      const target = resolveKeyUrl(context.url, appOrigin);
+      if (target === context.url) {
+        super.load(context, ...rest);
+        return;
+      }
+      const inner = { ...context, url: target };
+      const callbacks = rest[1] as Record<string, unknown> | undefined;
+      let wrapped: Record<string, unknown> | undefined;
+      if (callbacks) {
+        wrapped = {};
+        for (const [name, fn] of Object.entries(callbacks)) {
+          wrapped[name] =
+            typeof fn === 'function'
+              ? (...args: unknown[]) => fn(...args.map((a) => (a === inner ? context : a)))
+              : fn;
+        }
+      }
+      super.load(inner, ...(wrapped ? ([rest[0], wrapped] as unknown as never[]) : rest));
     }
   };
 }

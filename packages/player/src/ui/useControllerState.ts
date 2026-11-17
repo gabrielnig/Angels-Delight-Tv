@@ -1,3 +1,5 @@
+'use client';
+
 import { useSyncExternalStore } from 'react';
 import type { PlayerController } from '../controller';
 import { buildQualityMenu } from '../quality';

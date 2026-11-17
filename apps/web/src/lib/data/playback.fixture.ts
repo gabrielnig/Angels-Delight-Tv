@@ -43,11 +43,11 @@ function video(
 
 const CATALOG: Array<{ video: WatchVideo; captions: CaptionTrack[] }> = [
   {
-    video: video('v-plants', 'How Plants Make Their Own Food', 'Science Made Simple', 352),
+    video: video('v-plants', 'How Plants Make Their Own Food', 'Science Made Simple', 24),
     captions: [englishApproved],
   },
   {
-    video: video('v-rain', 'How Rain Is Made', 'Science Made Simple', 262, { posterUrl: null }),
+    video: video('v-rain', 'How Rain Is Made', 'Science Made Simple', 24, { posterUrl: null }),
     captions: [
       englishApproved,
       {
@@ -61,7 +61,7 @@ const CATALOG: Array<{ video: WatchVideo; captions: CaptionTrack[] }> = [
     ],
   },
   {
-    video: video('v-sky', 'Why the Sky Is Blue', 'Everyday Science', 300, {
+    video: video('v-sky', 'Why the Sky Is Blue', 'Everyday Science', 24, {
       series: {
         id: 's-everyday',
         title: 'Everyday Science',
@@ -74,7 +74,7 @@ const CATALOG: Array<{ video: WatchVideo; captions: CaptionTrack[] }> = [
     captions: [englishApproved],
   },
   {
-    video: video('v-sun', 'Why the Sun Rises', 'Everyday Science', 288, {
+    video: video('v-sun', 'Why the Sun Rises', 'Everyday Science', 24, {
       series: {
         id: 's-everyday',
         title: 'Everyday Science',
@@ -86,13 +86,13 @@ const CATALOG: Array<{ video: WatchVideo; captions: CaptionTrack[] }> = [
     }),
     captions: [englishApproved],
   },
-  { video: video('v-magnets', 'Magnets at Work', 'Science Made Simple', 241), captions: [] },
+  { video: video('v-magnets', 'Magnets at Work', 'Science Made Simple', 24), captions: [] },
   {
     video: video('v-encrypted', 'Sample with AES-128 keys', 'Test', 24),
     captions: [englishApproved],
   },
   {
-    video: video('v-adult', 'Money and Tax Basics for Adults', 'Learn About Money', 410, {
+    video: video('v-adult', 'Money and Tax Basics for Adults', 'Learn About Money', 24, {
       kidsSafe: false,
     }),
     captions: [englishApproved],
@@ -102,6 +102,7 @@ const CATALOG: Array<{ video: WatchVideo; captions: CaptionTrack[] }> = [
 const TINTS: Tint[] = ['sky', 'mint', 'lemon', 'peach', 'lavender'];
 
 function durationLabel(seconds: number): string {
+  if (seconds < 60) return `${seconds} sec`;
   const m = Math.floor(seconds / 60);
   const s = seconds % 60;
   return s === 0 ? `${m} min` : `${m} min ${s} sec`;
@@ -120,10 +121,11 @@ function tiles(excludeId: string): UpNextTileData[] {
     }));
 }
 
-/** Seeded playback data. Saved positions let resume be exercised: v-rain has 2:14 saved. */
+/** Seeded playback data. Every video is the same 24 second generated sample (scripts/make-sample-hls.sh), so durations
+ * match it. v-rain has 0:14 saved so resume can be exercised. */
 export function createFixturePlaybackData(): PlaybackData {
   const saved: Record<string, { positionSeconds: number; finished: boolean }> = {
-    'v-rain': { positionSeconds: 134, finished: false },
+    'v-rain': { positionSeconds: 14, finished: false },
     'v-magnets': { positionSeconds: 3, finished: false },
   };
 
@@ -147,7 +149,7 @@ export function createFixturePlaybackData(): PlaybackData {
           ? {
               id: nextEntry.video.id,
               title: nextEntry.video.title,
-              meta: `${nextEntry.video.series?.title ?? ''}, ${nextEntry.video.series?.episodeLabel ?? ''}, ${Math.round(nextEntry.video.durationSeconds / 60)} min`,
+              meta: `${nextEntry.video.series?.title ?? ''}, ${nextEntry.video.series?.episodeLabel ?? ''}, ${nextEntry.video.durationSeconds} sec`,
               href: `/watch/${nextEntry.video.id}`,
             }
           : null,

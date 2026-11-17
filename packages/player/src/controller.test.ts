@@ -415,6 +415,34 @@ describe('PlayerController', () => {
       expect(c.getState().error).toBeNull();
     });
 
+    it('keeps playing after the reload even though tearing down the engine paused the element', async () => {
+      const { engine, media } = await started();
+      media.advance(30);
+      const original = engine.reload.bind(engine);
+      engine.reload = (pos: number) => {
+        original(pos);
+        // Destroying hls.js detaches the source, which resets paused on a real element.
+        media.paused = true;
+      };
+      engine.emit({ type: 'error', error: auth });
+      await vi.advanceTimersByTimeAsync(0);
+      expect(media.paused).toBe(false);
+    });
+
+    it('starts playing after a reload that happened before the first frame', async () => {
+      const s = setup();
+      s.media.autoStart = false;
+      s.c.start();
+      const original = s.engine.reload.bind(s.engine);
+      s.engine.reload = (pos: number) => {
+        original(pos);
+        s.media.paused = true;
+      };
+      s.engine.emit({ type: 'error', error: auth });
+      await vi.advanceTimersByTimeAsync(0);
+      expect(s.media.playCalls).toBeGreaterThanOrEqual(2);
+    });
+
     it('treats a 403 on a segment the same way', async () => {
       const { engine, tokens } = await started();
       engine.emit({

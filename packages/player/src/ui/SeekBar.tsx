@@ -1,3 +1,5 @@
+'use client';
+
 import { useRef, useState, type KeyboardEvent, type PointerEvent } from 'react';
 import { formatClock, seekValueText } from '../format';
 
