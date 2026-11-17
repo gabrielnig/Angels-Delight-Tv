@@ -91,3 +91,39 @@ describe('player preferences storage', () => {
     ).not.toThrow();
   });
 });
+
+describe('loadPreferences with profile defaults', () => {
+  const none = null;
+  it('uses the profile settings from the server when the device has none', () => {
+    const prefs = loadPreferences(
+      none,
+      'p1',
+      { kids: false },
+      { autoplayNext: true, dataSaver: true, rate: 1.5 },
+    );
+    expect(prefs).toMatchObject({
+      autoplayNext: true,
+      dataSaver: true,
+      rate: 1.5,
+      captionsOn: false,
+    });
+  });
+
+  it('lets the device choices win over the server defaults', () => {
+    const store = {
+      getItem: () => JSON.stringify({ rate: 0.75, dataSaver: false }),
+      setItem: () => undefined,
+    };
+    const prefs = loadPreferences(
+      store,
+      'p1',
+      { kids: false },
+      { dataSaver: true, rate: 1.5, autoplayNext: true },
+    );
+    expect(prefs).toMatchObject({ rate: 0.75, dataSaver: false, autoplayNext: true });
+  });
+
+  it('still defaults captions on for kids', () => {
+    expect(loadPreferences(none, 'p1', { kids: true }, {}).captionsOn).toBe(true);
+  });
+});

@@ -17,6 +17,7 @@ import {
   createLocalProgressSink,
   readLocalProgress,
 } from './fixture-adapters';
+import { toViewerProgressBody } from './progress-body';
 import { loadPreferences, savePreferences } from './preferences';
 import {
   BROWSE_PATH,
@@ -34,6 +35,8 @@ export interface WatchClientProps {
   data: WatchData;
   viewer: { profileId: string; kids: boolean };
   transport: PlaybackTransport;
+  /** Where progress goes when it differs from the session transport. Real viewer data always posts to /api/progress. */
+  progressTransport?: PlaybackTransport;
   /** Value of ?t= in seconds, overrides the saved position for this load. */
   startAt: number | null;
   /** Details rendered between the player and the action buttons. */
@@ -67,6 +70,7 @@ export function WatchClient({
   data,
   viewer,
   transport,
+  progressTransport = transport,
   startAt,
   children,
   testing,
@@ -86,14 +90,15 @@ export function WatchClient({
 
   const progressSink = useMemo(
     () =>
-      transport === 'http'
-        ? createHttpProgressSink({ endpoint: PROGRESS_ENDPOINT })
+      progressTransport === 'http'
+        ? createHttpProgressSink({ endpoint: PROGRESS_ENDPOINT, toBody: toViewerProgressBody })
         : createLocalProgressSink(storage()),
-    [transport],
+    [progressTransport],
   );
 
   const preferences = useMemo(
-    () => loadPreferences(storage(), viewer.profileId, { kids: viewer.kids }),
+    () => loadPreferences(storage(), viewer.profileId, { kids: viewer.kids }, data.preferences),
+    // The server defaults are part of this video's data, so they cannot change while the player is open.
     [viewer.profileId, viewer.kids],
   );
   const onPreferencesChange = useCallback(
@@ -103,7 +108,9 @@ export function WatchClient({
 
   const resume = useMemo(() => {
     const local =
-      transport === 'fixture' ? readLocalProgress(storage(), viewer.profileId, video.id) : null;
+      progressTransport === 'fixture'
+        ? readLocalProgress(storage(), viewer.profileId, video.id)
+        : null;
     const saved = local ?? data.saved;
     return {
       urlT: startAt,

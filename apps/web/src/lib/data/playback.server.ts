@@ -1,21 +1,51 @@
 import 'server-only';
+import { redirect } from 'next/navigation';
+import { realDataEnabled } from '../../server/data/mode';
+import { accountViewerData } from '../../server/data/real-data';
+import { cookieProfileIo } from '../../server/data/profile-io';
+import { RealPlaybackData } from '../../server/data/real-playback';
+import { getSession } from '../../server/auth/session';
+import { viewerRuntime } from '../../server/viewer/runtime';
 import { createFixturePlaybackData } from './playback.fixture';
 import type { PlaybackData, PlaybackTransport, ViewerContext } from './playback';
+import { loadOwnedProfile } from '@ad/viewer';
+import { withAccount } from '@ad/db';
+import { viewerActor } from '../../server/data/actor';
 
 /**
- * Server side wiring for the Watch page. Swap the fixture for the real service here during the
- * integration pass. Nothing else in the page changes.
+ * Server side wiring for the Watch page. Real viewer data when `realDataEnabled()`, the fixture otherwise.
+ * Nothing else in the page changes.
  */
 let instance: PlaybackData | null = null;
+let instanceIsReal = false;
 
 export function getPlaybackData(): PlaybackData {
-  instance ??= createFixturePlaybackData();
+  const real = realDataEnabled();
+  if (!instance || instanceIsReal !== real) {
+    instance = real
+      ? new RealPlaybackData(viewerRuntime().ctx, (accountId, profileId) =>
+          accountViewerData().playback(accountId, profileId),
+        )
+      : createFixturePlaybackData();
+    instanceIsReal = real;
+  }
   return instance;
 }
 
-/** PLAYBACK_TRANSPORT=http makes the browser use the real session and progress routes. */
-export function getTransport(): PlaybackTransport {
-  return process.env.PLAYBACK_TRANSPORT === 'http' ? 'http' : 'fixture';
+/**
+ * How the browser gets its playback session. PLAYBACK_TRANSPORT=http uses the lane D routes, and production
+ * always does. Outside production the sample streams answer until those routes are wired (see K1 notes).
+ */
+export function getTransport(
+  env: Record<string, string | undefined> = process.env,
+): PlaybackTransport {
+  if (env.NODE_ENV === 'production') return 'http';
+  return env.PLAYBACK_TRANSPORT === 'http' ? 'http' : 'fixture';
+}
+
+/** Progress is stored by the server whenever viewer data is real, whatever the session transport is. */
+export function getProgressTransport(): PlaybackTransport {
+  return realDataEnabled() ? 'http' : getTransport();
 }
 
 interface CookieReader {
@@ -23,10 +53,33 @@ interface CookieReader {
 }
 
 /**
- * Fixture viewer until the auth and profile lanes merge. The cookie `ad_fixture_kids=1` simulates a
- * kids profile so the kids rules can be tried by hand.
+ * Who is watching. Real mode: the signed in account and its active profile, with `kids` read from the database.
+ * A request with no valid session or profile gets an id no profile has, so the lookup answers not found.
+ * Fixture mode: the cookie `ad_fixture_kids=1` simulates a kids profile so the kids rules can be tried by hand.
  */
-export async function getViewerContext(cookies: CookieReader): Promise<ViewerContext> {
+export async function getViewerContext(
+  cookies: CookieReader,
+  /** The page path. When given, a missing session or profile redirects to sign in or the picker instead of answering not found. */
+  next?: string,
+): Promise<ViewerContext> {
+  if (realDataEnabled()) {
+    const session = await getSession();
+    const signedIn = session !== null && session.status === 'active';
+    if (next && !signedIn) redirect(`/sign-in?next=${encodeURIComponent(next)}`);
+    if (next && session && !session.emailVerified) redirect('/verify-email');
+    const profileId = signedIn ? await cookieProfileIo().activeProfileId() : null;
+    if (next && signedIn && !profileId) redirect('/profiles');
+    if (!session || !signedIn || !profileId) return { profileId: 'none', kids: false };
+    const actor = viewerActor(session.accountId);
+    try {
+      const profile = await withAccount(viewerRuntime().ctx.db, actor, (tx) =>
+        loadOwnedProfile(tx, actor, profileId),
+      );
+      return { accountId: session.accountId, profileId: profile.id, kids: profile.isKids };
+    } catch {
+      return { profileId: 'none', kids: false };
+    }
+  }
   const kids = cookies.get('ad_fixture_kids')?.value === '1';
   return { profileId: kids ? 'prof_fixture_kids' : 'prof_fixture', kids };
 }

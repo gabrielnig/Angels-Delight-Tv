@@ -71,8 +71,10 @@ export function createHttpSessionProvider(opts: HttpSessionOptions): SessionProv
 }
 
 export interface HttpProgressOptions {
-  /** Idempotent write route. Receives the JSON of a ProgressUpdate by POST. */
+  /** Idempotent write route. Receives the JSON of a ProgressUpdate by POST, or of `toBody` when given. */
   endpoint: string;
+  /** Shapes the request body for a server whose route does not take a ProgressUpdate (for example `positionMs`). */
+  toBody?: (update: ProgressUpdate) => unknown;
   fetchFn?: FetchFn;
   sendBeacon?: (url: string, data: Blob) => boolean;
 }
@@ -88,7 +90,7 @@ export function createHttpProgressSink(opts: HttpProgressOptions): ProgressSink 
 
   return {
     async save(update: ProgressUpdate, options) {
-      const body = JSON.stringify(update);
+      const body = JSON.stringify(opts.toBody ? opts.toBody(update) : update);
       if (
         options?.beacon &&
         beacon &&
