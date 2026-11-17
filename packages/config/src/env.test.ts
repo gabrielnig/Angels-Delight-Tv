@@ -227,6 +227,36 @@ describe('loadWorkerEnv', () => {
   });
 });
 
+describe('worker maintenance and fake whisper', () => {
+  const prodWorker = {
+    ...devWorker,
+    ...s3Vars,
+    NODE_ENV: 'production',
+    APP_ORIGIN: 'https://app.example.com',
+    MEDIA_ORIGIN: 'https://video.example.com',
+  };
+
+  it('treats the maintenance connection as optional and checks its shape', () => {
+    expect(loadWorkerEnv(devWorker).DATABASE_URL_MAINTENANCE).toBeUndefined();
+    const url = 'postgres://ad_maintenance:dev@localhost:5432/ad';
+    expect(
+      loadWorkerEnv({ ...devWorker, DATABASE_URL_MAINTENANCE: url }).DATABASE_URL_MAINTENANCE,
+    ).toBe(url);
+    expect(
+      failureNames(() => loadWorkerEnv({ ...devWorker, DATABASE_URL_MAINTENANCE: 'nope' })),
+    ).toEqual(['DATABASE_URL_MAINTENANCE']);
+  });
+
+  it('allows the fake transcriber outside production only', () => {
+    expect(loadWorkerEnv(devWorker).WHISPER_FAKE).toBe(false);
+    expect(loadWorkerEnv({ ...devWorker, WHISPER_FAKE: 'true' }).WHISPER_FAKE).toBe(true);
+    expect(() => loadWorkerEnv(prodWorker)).not.toThrow();
+    expect(failureNames(() => loadWorkerEnv({ ...prodWorker, WHISPER_FAKE: 'true' }))).toEqual([
+      'WHISPER_FAKE',
+    ]);
+  });
+});
+
 describe('loadMigrateEnv', () => {
   it('needs only the owner database url', () => {
     const env = loadMigrateEnv({ DATABASE_URL_MIGRATE: 'postgres://ad_migrator:dev@localhost/ad' });
