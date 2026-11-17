@@ -27,12 +27,6 @@ export const themedPwaSettings: PwaSettingsSource = {
   },
 };
 
-let override: PwaSettingsSource | null = null;
-
-export function setPwaSettingsSource(next: PwaSettingsSource | null): void {
-  override = next;
-}
-
 export function getPwaSettings(): Promise<PwaSettings> {
-  return (override ?? (realDataEnabled() ? themedPwaSettings : fixturePwaSettings)).get();
+  return (realDataEnabled() ? themedPwaSettings : fixturePwaSettings).get();
 }

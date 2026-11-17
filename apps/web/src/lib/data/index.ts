@@ -61,8 +61,3 @@ export const getProfiles = () => data().profiles;
 export const getAuth = () => data().auth;
 export const getAccount = () => data().account;
 export const getSite = () => data().site;
-
-/** Tests and the integration pass can replace any part. */
-export function setDataForTests(overrides: Partial<Registry>) {
-  Object.assign(data(), overrides);
-}
