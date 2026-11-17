@@ -275,3 +275,45 @@ Format: decision, options considered, why, reversible or not. Newest first. Deci
 - Decision: kids mode uses the `kids_safe` flag from DATA-MODEL, not the suitability labels in the stories. The duration filter and the "shortest" sort apply to standalone videos only, series are left out. My List holds 500 titles (configurable, DATA-MODEL says 200). Search uses Postgres full text (weighted title and description, `simple` config) plus trigram and prefix matching through an IMMUTABLE `ad_unaccent` wrapper, with an offset cursor. Home injects Continue Watching and My List first unless the editor placed them. "Remove from row" deletes the progress record, which also clears the watched tick. A scheduled title that fails the publish checklist at release time goes back to draft and is audited. Republishing keeps the first publish date. Approved captions are required to publish unless an admin gives a reason.
 - Why: matches the schema we have, keeps queries index friendly, and fails closed.
 - Reversible: yes.
+
+## D-051 Roles and staff model (lane B)
+- Decision: three roles only (viewer, editor, admin). Super admin is the admin role and there is no analyst role, in line with D-025. Staff sessions last 30 minutes idle and 8 hours absolute. A staff account that signs in at the viewer endpoint gets a viewer session with no second factor, and admin pages require a session that passed it. Role changes go through the SECURITY DEFINER function `staff_set_role`, which rechecks the actor in SQL and refuses self change and removal of the last admin.
+- Options: add a separate super admin role, or let the app update roles directly under row level security.
+- Why: matches the permission matrix already in the admin UI, and keeps role escalation in one audited place.
+- Reversible: yes.
+
+## D-052 Account lifecycle and deletion (lane B)
+- Decision: an unverified account is an account with `email_verified_at` null, with no extra status. Account deletion is immediate: personal data is removed in one transaction and the per account key is destroyed, which makes every remaining ciphertext unreadable. If key destruction fails, a row in `account_deletions` is retried by `destroyPendingKeys`. The 14 day grace period in the stories is deferred.
+- Options: a pending_deletion state with a grace period and a restore link.
+- Why: SECURITY.md section 10 asks for crypto-shredding, and a grace period needs a scheduled job and a restore flow that no story depends on.
+- Reversible: yes, by adding the state later.
+
+## D-053 Token lifetimes and codes (lane B)
+- Decision: password reset links last 30 minutes (SECURITY.md), not the 1 hour in the stories. Email verification codes last 15 minutes with 5 attempts, verification links 24 hours, email change links 24 hours, admin invites 72 hours. All are values in `AuthConfig`. Recovery codes look like `xxxxx-xxxxx` and are stored as HMACs. The invite mail links to `/admin/invite/<token>`.
+- Options: follow the story values.
+- Why: the security document is the stricter source. All values are configurable.
+- Reversible: yes.
+
+## D-054 Own primitives instead of heavy libraries (lane B)
+- Decision: password strength uses a small estimator with a common password list and a rule checklist, not zxcvbn. TOTP (RFC 6238, plus or minus one step, replay guard) is written on node:crypto. QR codes use the `qrcode` package. Passwords use Argon2id through @node-rs/argon2 (m=19456, t=2, p=1) behind a concurrency cap of 2, with a dummy verify for unknown accounts.
+- Options: zxcvbn, otplib.
+- Why: fewer dependencies in the auth path and a client safe policy module (`@ad/auth/policy`).
+- Reversible: yes.
+
+## D-055 Rate limits and lockouts (lane B)
+- Decision: a Postgres token bucket (`FOR UPDATE` in a transaction) plus an `auth_lockouts` table keyed by email hash, so unknown addresses lock exactly like real ones. Limiter or lockout store failure fails closed on auth routes. There is no global API limit in the proxy because Cloudflare handles that. The client address is read only from CF-Connecting-IP when `TRUSTED_PROXY_MODE=cloudflare`, and only the truncated address is stored.
+- Options: Redis, an in memory limiter.
+- Why: no new infrastructure, and it survives restarts and multiple web processes.
+- Reversible: yes.
+
+## D-056 Auth data placement and config (lane B)
+- Decision: verification codes live in `verification_codes` (migration 0006), the role function in migration 0011. `AuditWriter` lives in `@ad/security`. New web env variables: `KEYS_DATABASE_URL_SHRED` (optional, only processes that delete accounts need it), `CSP_REPORT_ONLY` (default false) and `SUPPORT_EMAIL` (defaults to the From address). Real auth runs when DATABASE_URL, FIELD_KEK and EMAIL_HASH_PEPPER exist, otherwise the UI falls back to fixtures. `AUTH_FIXTURES=on|off` overrides this outside production, and production always runs real auth.
+- Options: a hard switch per environment.
+- Why: lets UI work continue without a database while production can never serve fixtures.
+- Reversible: yes.
+
+## D-057 Sign up consent and other viewer UI limits (lane B)
+- Decision: the sign up screen states that creating an account accepts the terms and confirms an adult or guardian, so the gateway records both consents as given. "Sign out other devices" in the account area does not ask for the password (the separate sign out everywhere method does). Playback settings, the data export request and profiles stay on the fixture repositories until the viewer data integration.
+- Options: add checkboxes to the sign up form.
+- Why: keeps the existing screens unchanged. A checkbox is a small follow up if the client wants explicit consent.
+- Reversible: yes.
