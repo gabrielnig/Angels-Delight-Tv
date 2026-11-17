@@ -1,11 +1,11 @@
 import type { Metadata } from 'next';
+import { forbidden } from 'next/navigation';
 import { AnalyticsOverviewView } from '@/components/admin/AnalyticsView';
 import { PageHeader } from '@/components/admin/PageHeader';
-import { ErrorState, NoAccess } from '@/components/admin/states';
+import { ErrorState } from '@/components/admin/states';
 import { can } from '@/lib/admin/can';
 import { parseRange } from '@/lib/data/admin/analytics-rules';
 import { analyticsService } from '@/lib/data/admin/services';
-import { ROLE_LABELS } from '@/lib/data/admin/session';
 import { requireActor } from '@/lib/data/admin/session-next';
 
 export const metadata: Metadata = { title: 'Analytics' };
@@ -17,14 +17,7 @@ export default async function AnalyticsPage({
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const actor = await requireActor('/admin/analytics');
-  if (!can(actor.role, 'analytics.view'))
-    return (
-      <NoAccess
-        pageName="Analytics"
-        roleLabel={ROLE_LABELS[actor.role]}
-        needed="editors and admins"
-      />
-    );
+  if (!can(actor.role, 'analytics.view')) forbidden();
   const sp = await searchParams;
   const { preset, range } = parseRange(sp);
   const crumbs = [{ label: 'Admin', href: '/admin' }, { label: 'Analytics' }];

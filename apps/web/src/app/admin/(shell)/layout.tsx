@@ -6,6 +6,11 @@ import { dashboardService, uploadTransportMode } from '@/lib/data/admin/services
 import { ROLE_LABELS } from '@/lib/data/admin/session';
 import { getActor } from '@/lib/data/admin/session-next';
 import { DEFAULT_PLATFORM_NAME } from '@/lib/platform';
+import { DEFAULT_SESSION_POLICIES } from '@ad/auth';
+import { realAuthEnabled } from '@/server/auth/mode';
+import { realSessionTimes } from '@/server/auth/admin';
+import { SessionExpiryWarning } from '@/components/admin/SessionExpiryWarning';
+import { extendSessionAction } from '../session-actions';
 import { signOutAction } from '../login/actions';
 
 export const dynamic = 'force-dynamic';
@@ -15,6 +20,7 @@ export default async function ShellLayout({ children }: { children: ReactNode })
   // Every page calls requireActor with its own path, so the sign in redirect keeps ?next=.
   if (!actor) return <>{children}</>;
   const counts = await dashboardService.navCounts(actor);
+  const times = realAuthEnabled() ? await realSessionTimes() : null;
   return (
     <UploaderProvider mode={uploadTransportMode()}>
       <ToastProvider>
@@ -26,6 +32,15 @@ export default async function ShellLayout({ children }: { children: ReactNode })
         >
           {children}
         </AdminShell>
+        {times ? (
+          <SessionExpiryWarning
+            remainingMs={Math.min(times.idleMs, times.absoluteMs)}
+            idleMs={DEFAULT_SESSION_POLICIES.staff.idleSeconds * 1000}
+            absoluteMs={times.absoluteMs}
+            extend={extendSessionAction}
+            signInHref="/admin/login?expired=1"
+          />
+        ) : null}
       </ToastProvider>
     </UploaderProvider>
   );

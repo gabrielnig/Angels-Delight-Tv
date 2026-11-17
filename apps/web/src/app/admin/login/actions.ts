@@ -31,7 +31,11 @@ export async function signInAction(_prev: LoginState, form: FormData): Promise<L
   if (realAuthEnabled()) {
     await assertActionOrigin();
     if (!email || !password) return { email, error: 'Enter your email and password.' };
-    const real = await realAdminSignIn(email, password);
+    const real = await realAdminSignIn(
+      email,
+      password,
+      String(form.get('cf-turnstile-response') ?? ''),
+    );
     if (!real.ok) return { email, error: real.error, locked: real.retryAfter !== undefined };
     redirect(`/admin/login/2fa?next=${encodeURIComponent(next)}`);
   }

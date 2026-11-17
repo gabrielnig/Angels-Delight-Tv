@@ -6,6 +6,7 @@ import { classifyCode } from './admin-code';
 import { type FormState, toFormState } from './form-errors';
 import { adminRuntime, titleCaseFromEmail } from '@/server/admin/runtime';
 import { authRuntime } from './runtime';
+import { turnstileFromEnv, verifyTurnstile } from './turnstile';
 import {
   clearSessionCookie,
   getSession,
@@ -42,6 +43,17 @@ export async function realAdminActor(): Promise<AdminActor | null> {
   };
 }
 
+/** How long the signed in staff session has left, read on the server clock. Null when there is none. */
+export async function realSessionTimes(): Promise<{ idleMs: number; absoluteMs: number } | null> {
+  const session = await currentStaff();
+  if (!session?.mfaVerified) return null;
+  const now = Date.now();
+  return {
+    idleMs: Math.max(0, session.idleExpiresAt.getTime() - now),
+    absoluteMs: Math.max(0, session.absoluteExpiresAt.getTime() - now),
+  };
+}
+
 /** A staff session that is waiting for its second factor. */
 export async function realPendingActor() {
   const session = await currentStaff();
@@ -56,7 +68,11 @@ export async function realPendingActor() {
 export async function realAdminSignIn(
   email: string,
   password: string,
+  challengeToken?: string,
 ): Promise<FormState & { ok?: true }> {
+  const keys = turnstileFromEnv(authRuntime().env);
+  if (keys && !(await verifyTurnstile(keys, challengeToken, (await requestMeta()).ip)))
+    return { error: 'We could not confirm the security check. Try again.' };
   try {
     const result = await authRuntime().staff.adminSignIn({ email, password }, await requestMeta());
     await setSessionCookie(

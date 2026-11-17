@@ -1,10 +1,9 @@
 import type { Metadata } from 'next';
+import { forbidden } from 'next/navigation';
 import { PageHeader } from '@/components/admin/PageHeader';
 import { RolesInvites } from '@/components/admin/RolesInvites';
-import { NoAccess } from '@/components/admin/states';
 import { can } from '@/lib/admin/can';
 import { peopleService } from '@/lib/data/admin/services';
-import { ROLE_LABELS } from '@/lib/data/admin/session';
 import { requireActor } from '@/lib/data/admin/session-next';
 import {
   changeRoleAction,
@@ -19,10 +18,7 @@ export const metadata: Metadata = { title: 'Roles and invites' };
 
 export default async function RolesPage() {
   const actor = await requireActor('/admin/roles');
-  if (!can(actor.role, 'roles.change'))
-    return (
-      <NoAccess pageName="Roles and invites" roleLabel={ROLE_LABELS[actor.role]} needed="admins" />
-    );
+  if (!can(actor.role, 'roles.change')) forbidden();
   const { staff, invites } = await peopleService.staff(actor);
   return (
     <>

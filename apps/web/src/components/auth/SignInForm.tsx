@@ -5,6 +5,7 @@ import { Banner, Button, Checkbox, Input, Link, PasswordField } from '@ad/ui';
 import type { AuthResult } from '../../lib/data';
 import { NETWORK_MESSAGE, RATE_LIMIT_MESSAGE, emailError } from './shared';
 import { useFocusFirstInvalid } from './useFocusFirstInvalid';
+import { CHECK_RUNNING_MESSAGE, useTurnstile } from './useTurnstile';
 
 export interface SignInValues {
   email: string;
@@ -19,7 +20,8 @@ type Problem =
   | { kind: 'locked'; minutes: number }
   | { kind: 'rate_limited'; minutes: number }
   | { kind: 'unavailable' }
-  | { kind: 'check' };
+  | { kind: 'check' }
+  | { kind: 'checking' };
 
 export function SignInForm({
   onSubmit,
@@ -27,6 +29,7 @@ export function SignInForm({
   next,
   signUpOpen,
   notice,
+  turnstileSiteKey,
 }: {
   onSubmit: (values: SignInValues) => Promise<AuthResult>;
   onDone: (next: string) => void;
@@ -34,7 +37,10 @@ export function SignInForm({
   signUpOpen: boolean;
   /** Success notice, for example after a password reset. */
   notice?: string;
+  /** Turns on the Cloudflare Turnstile check. Leave out when no keys are configured. */
+  turnstileSiteKey?: string;
 }) {
+  const turnstile = useTurnstile(turnstileSiteKey);
   const formRef = useRef<HTMLFormElement>(null);
   const requestFocus = useFocusFirstInvalid(formRef);
   const [email, setEmail] = useState('');
@@ -57,11 +63,16 @@ export function SignInForm({
       requestFocus();
       return;
     }
+    if (turnstile.enabled && !turnstile.token) {
+      setProblem({ kind: 'checking' });
+      return;
+    }
     setBusy(true);
     setProblem(null);
     try {
       const values: SignInValues = { email: email.trim(), password, next };
-      if (problem?.kind === 'check' && checked) values.challengeToken = 'checked';
+      if (turnstile.token) values.challengeToken = turnstile.token;
+      else if (problem?.kind === 'check' && checked) values.challengeToken = 'checked';
       const result = await onSubmit(values);
       if (result.ok) {
         onDone(result.next);
@@ -90,6 +101,7 @@ export function SignInForm({
       setProblem({ kind: 'network' });
     } finally {
       setBusy(false);
+      turnstile.spent();
     }
   }
 
@@ -114,6 +126,7 @@ export function SignInForm({
           <Link href="/forgot-password">Reset your password</Link> if you cannot remember it.
         </Banner>
       ) : null}
+      {problem?.kind === 'checking' ? <Banner tone="info">{CHECK_RUNNING_MESSAGE}</Banner> : null}
       {problem?.kind === 'check' ? (
         <Banner tone="info" title="One more step">
           Too many attempts from this connection. Complete the check below, then try again.
@@ -146,7 +159,8 @@ export function SignInForm({
       <Link href="/forgot-password" className="web-link">
         Forgot your password?
       </Link>
-      {problem?.kind === 'check' ? (
+      {turnstile.widget}
+      {problem?.kind === 'check' && !turnstile.enabled ? (
         <Checkbox
           label="I am a person"
           checked={checked}

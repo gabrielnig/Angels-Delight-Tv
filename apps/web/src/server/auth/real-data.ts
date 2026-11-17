@@ -3,6 +3,7 @@ import { readPending, signPending } from '@ad/auth';
 import { type AccountViewerSource, RealAccountRepository } from './account-repo';
 import { type GatewayIo, RealAuthGateway } from './gateway';
 import { authRuntime } from './runtime';
+import { turnstileFromEnv, verifyTurnstile } from './turnstile';
 import {
   clearSessionCookie,
   getSession,
@@ -40,7 +41,14 @@ export function requestIo(): GatewayIo {
   };
 }
 
-export const createRealAuth = () => new RealAuthGateway(authRuntime().staff, requestIo());
+export const createRealAuth = () => {
+  const keys = turnstileFromEnv(authRuntime().env);
+  return new RealAuthGateway(
+    authRuntime().staff,
+    requestIo(),
+    keys ? (token, ip) => verifyTurnstile(keys, token, ip) : undefined,
+  );
+};
 
 /** `viewer` is the stats, playback settings and export source. Pass it when viewer data is real. */
 export const createRealAccount = (viewer?: AccountViewerSource) => {
