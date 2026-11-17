@@ -105,3 +105,49 @@ export interface CaptionTrack {
   failure: string | null;
   progress: { step: number; of: number; minutesLeft: number } | null;
 }
+
+export interface UserRecord {
+  id: string;
+  email: string;
+  status: 'active' | 'suspended';
+  createdAt: string;
+  lastActiveAt: string | null;
+  profiles: Array<{ id: string; name: string; kids: boolean }>;
+  sessions: number;
+  suspendedReason: string | null;
+}
+
+export interface StaffRecord {
+  id: string;
+  name: string;
+  email: string;
+  role: 'editor' | 'admin';
+  twoFactor: boolean;
+  lastSignInAt: string | null;
+}
+
+export interface InviteRecord {
+  id: string;
+  email: string;
+  role: 'editor' | 'admin';
+  invitedBy: string;
+  createdAt: string;
+  expiresAt: string;
+}
+
+export interface AuditRow {
+  id: number;
+  at: string;
+  actorId: string | null;
+  actorName: string;
+  actorRole: string | null;
+  action: string;
+  outcome: 'success' | 'failure' | 'denied';
+  targetType: string | null;
+  targetId: string | null;
+  summary: string;
+  before: Record<string, unknown> | null;
+  after: Record<string, unknown> | null;
+  ip: string | null;
+  requestId: string | null;
+}
