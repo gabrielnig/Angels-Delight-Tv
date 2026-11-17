@@ -1,0 +1,64 @@
+import type { Database } from '@ad/db';
+import type { PublishState, VideoStatus } from '@ad/shared';
+
+/** Context for the staff side of the catalog. Every call also takes the actor, and runs inside `withAccount`. */
+export interface AdminContext {
+  db: Database;
+  now?: () => Date;
+  /** `features.require_approved_captions`. Default true (D-005). */
+  requireApprovedCaptions?: boolean;
+}
+
+export type AdminCaptionState = 'none' | 'generating' | 'needs_review' | 'approved' | 'failed';
+export type Suitability = 'everyone' | 'kids' | 'older';
+
+/** A video as the admin screens show it. Times are ISO strings. `createdBy` is an account id for the caller to name. */
+export interface AdminVideo {
+  id: string;
+  title: string;
+  description: string;
+  tags: string[];
+  categoryIds: string[];
+  status: VideoStatus;
+  publishState: PublishState;
+  publishAt: string | null;
+  publishedAt: string | null;
+  durationSeconds: number;
+  sizeBytes: number;
+  captionState: AdminCaptionState;
+  captionCueCount: number;
+  posterId: string | null;
+  posterAlt: string | null;
+  posterFocus: { x: number; y: number; zoom: number } | null;
+  suitability: Suitability | null;
+  seriesId: string | null;
+  seasonNumber: number | null;
+  episodeNumber: number | null;
+  views: number;
+  createdBy: string | null;
+  createdAt: string;
+  updatedAt: string;
+  deletedAt: string | null;
+  failure: { stage: string; reason: string } | null;
+  progress: number;
+  captionOverrideReason: string | null;
+}
+
+export type CommandResult = { ok: true } | { ok: false; error: string };
+export const OK: CommandResult = { ok: true };
+export const fail = (error: string): CommandResult => ({ ok: false, error });
+
+export const clean = (value: string) => value.trim().replace(/\s+/g, ' ');
+
+/** A url safe slug of at least 3 characters, built from a title. */
+export function slugOf(text: string, fallback: string): string {
+  const base = text
+    .normalize('NFKD')
+    .replace(/[̀-ͯ]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 80)
+    .replace(/-+$/g, '');
+  return base.length >= 3 ? base : fallback;
+}

@@ -92,6 +92,17 @@ export const videos = pgTable(
     heroAssetId: uuid('hero_asset_id').references(() => assets.id, { onDelete: 'set null' }),
     failureCode: text('failure_code'),
     failureMessage: text('failure_message'),
+    /** Free tags set by editors. Shown on the admin edit screen only. */
+    tags: text('tags')
+      .array()
+      .notNull()
+      .default(sql`'{}'::text[]`),
+    /** Who the editor says this is for. kidsSafe is true for 'kids' and 'everyone'. */
+    suitability: text('suitability'),
+    /** Set when an admin published without approved captions. Audited at the same time. */
+    captionOverrideReason: text('caption_override_reason'),
+    /** Poster crop focus chosen in the poster picker: x and y from 0 to 1, zoom from 1. */
+    posterFocus: jsonb('poster_focus').$type<{ x: number; y: number; zoom: number }>(),
     createdBy: uuid('created_by').references(() => accounts.id, { onDelete: 'set null' }),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
@@ -102,6 +113,11 @@ export const videos = pgTable(
   },
   (t) => [
     check('videos_slug_format', slugCheck('slug')),
+    check(
+      'videos_suitability_known',
+      sql`${t.suitability} IS NULL OR ${t.suitability} IN ('everyone', 'kids', 'older')`,
+    ),
+    check('videos_tags_count', sql`cardinality(${t.tags}) <= 10`),
     check('videos_title_length', sql`char_length(${t.title}) BETWEEN 1 AND 200`),
     check(
       'videos_description_length',
