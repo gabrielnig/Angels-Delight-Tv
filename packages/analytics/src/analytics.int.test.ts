@@ -8,12 +8,12 @@ import {
   makeVideo,
   type TestDatabase,
 } from '@ad/db/testing';
-import { accounts, profiles, videos } from '@ad/db';
+import { accounts, profiles, schema, videos } from '@ad/db';
+import { RateLimiter } from '@ad/security';
 import { drizzle } from 'drizzle-orm/node-postgres';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { deriveAnalyticsSecret } from './identity';
 import { ingestBatch } from './ingest';
-import { createPgRateLimiter } from './rate-limit';
 import { createAnalyticsQueries } from './queries';
 import { pruneViewEvents, rollupDay, runNightlyRollup } from './rollup';
 import { createPgEventStore } from './store';
@@ -56,7 +56,7 @@ describe.skipIf(!integrationEnabled())('analytics on Postgres', () => {
           audience: over.audience ?? 'general',
         },
         store: createPgEventStore(db),
-        limiter: createPgRateLimiter(db),
+        limiter: new RateLimiter(drizzle(client, { schema }) as never),
         secret,
         now: () => new Date(now),
       });
@@ -201,14 +201,5 @@ describe.skipIf(!integrationEnabled())('analytics on Postgres', () => {
       '2026-03-10',
       '2026-03-11',
     ]);
-  });
-
-  it('rate limits with the atomic Postgres bucket', async () => {
-    const limiter = createPgRateLimiter(t.db);
-    const policy = { capacity: 2, refillPerSecond: 0.001 };
-    const results = [];
-    for (let i = 0; i < 3; i += 1)
-      results.push((await limiter.consume('test:key', policy)).allowed);
-    expect(results).toEqual([true, true, false]);
   });
 });
