@@ -77,12 +77,27 @@ export interface ViewerRuntime {
   profileSecret: Uint8Array;
   /** The signed in account for this request, or null. Staff browsing as viewers are included. */
   resolveActor(request: Request): Promise<Actor | null>;
+  /** The kids lock on the session row. Server side state, so no cookie can change it. */
+  lock: KidsLockStore;
+}
+
+export interface KidsLock {
+  sessionId: string;
+  profileId: string | null;
+  kidsLocked: boolean;
+}
+
+export interface KidsLockStore {
+  read(request: Request): Promise<KidsLock | null>;
+  set(sessionId: string, accountId: string, profileId: string, kidsLocked: boolean): Promise<void>;
+  clear(sessionId: string, accountId: string): Promise<void>;
 }
 
 type Handler = (
   request: Request,
   actor: Actor,
   params: Record<string, string>,
+  lock: KidsLock,
 ) => Promise<Response>;
 
 function serialize(
@@ -100,12 +115,29 @@ function serialize(
 export function createViewerApi(rt: ViewerRuntime) {
   const cookieName = activeProfileCookieName(rt.secureCookies);
 
-  function activeProfileOf(request: Request, actor: Actor): string | null {
+  /** The profile in use. A kids lock on the session wins over the cookie, which is only a hint. */
+  function activeProfileOf(request: Request, actor: Actor, lock: KidsLock): string | null {
+    if (lock.kidsLocked) return lock.profileId;
     return readActiveProfile(
       rt.profileSecret,
       actor.accountId,
       cookieValue(request.headers.get('cookie'), cookieName),
     );
+  }
+
+  /** The profile id a request names, in the query or the JSON body. Checked against the lock before any handler. */
+  async function claimedProfile(request: Request): Promise<string | undefined> {
+    const fromQuery = new URL(request.url).searchParams.get('profileId');
+    if (fromQuery) return fromQuery;
+    if (request.method === 'GET' || request.method === 'HEAD') return undefined;
+    try {
+      const text = await request.clone().text();
+      if (text.length > 16_384) return undefined;
+      const value = (JSON.parse(text) as { profileId?: unknown }).profileId;
+      return typeof value === 'string' ? value : undefined;
+    } catch {
+      return undefined;
+    }
   }
 
   /** Same origin check for anything that changes state, then sign in, then the handler. Errors become JSON. */
@@ -123,7 +155,16 @@ export function createViewerApi(rt: ViewerRuntime) {
         const actor = await rt.resolveActor(request);
         if (!actor) throw new Unauthorized();
         await spendAttempt(rt.ctx, 'api', actor.accountId);
-        return await handler(request, actor, params);
+        const lock = (await rt.lock.read(request)) ?? {
+          sessionId: '',
+          profileId: null,
+          kidsLocked: false,
+        };
+        if (lock.kidsLocked) {
+          const claimed = await claimedProfile(request);
+          if (claimed !== undefined && claimed !== lock.profileId) throw new Forbidden('kids_gate');
+        }
+        return await handler(request, actor, params, lock);
       } catch (error) {
         const mapped = errorResponse(error);
         if (mapped) return mapped;
@@ -142,23 +183,23 @@ export function createViewerApi(rt: ViewerRuntime) {
     profiles: {
       list: guard(async (_req, actor) => json({ profiles: await listProfiles(rt.ctx, actor) })),
       create: guard(
-        async (req, actor) => {
+        async (req, actor, _params, lock) => {
           const body = parseWith(createProfileBody, await readJson(req));
           const profile = await createProfile(rt.ctx, actor, body, {
-            activeProfileId: activeProfileOf(req, actor),
+            activeProfileId: activeProfileOf(req, actor, lock),
           });
           return json({ profile }, { status: 201 });
         },
         { mutating: true },
       ),
       update: guard(
-        async (req, actor, params) => {
+        async (req, actor, params, lock) => {
           const { password, expectedUpdatedAt, ...input } = parseWith(
             updateProfileBody,
             await readJson(req),
           );
           const profile = await updateProfile(rt.ctx, actor, idParam(params), input, {
-            activeProfileId: activeProfileOf(req, actor),
+            activeProfileId: activeProfileOf(req, actor, lock),
             password,
             expectedUpdatedAt,
           });
@@ -167,21 +208,23 @@ export function createViewerApi(rt: ViewerRuntime) {
         { mutating: true },
       ),
       remove: guard(
-        async (req, actor, params) => {
+        async (req, actor, params, lock) => {
           await deleteProfile(rt.ctx, actor, idParam(params), {
-            activeProfileId: activeProfileOf(req, actor),
+            activeProfileId: activeProfileOf(req, actor, lock),
           });
           return json({ ok: true });
         },
         { mutating: true },
       ),
       select: guard(
-        async (req, actor, params) => {
+        async (req, actor, params, lock) => {
           const { pin } = parseWith(selectProfileBody, await readJson(req));
           const profile = await selectProfile(rt.ctx, actor, idParam(params), {
             pin,
-            activeProfileId: activeProfileOf(req, actor),
+            kidsLocked: lock.kidsLocked,
           });
+          if (lock.sessionId)
+            await rt.lock.set(lock.sessionId, actor.accountId, profile.id, profile.isKids);
           const cookie = serialize(
             cookieName,
             signActiveProfile(rt.profileSecret, actor.accountId, profile.id),
@@ -192,9 +235,10 @@ export function createViewerApi(rt: ViewerRuntime) {
         { mutating: true },
       ),
       exitKids: guard(
-        async (req, actor) => {
+        async (req, actor, _params, lock) => {
           const body = parseWith(exitKidsBody, await readJson(req));
           await exitKidsMode(rt.ctx, actor, body);
+          if (lock.sessionId) await rt.lock.clear(lock.sessionId, actor.accountId);
           const cookie = serialize(
             cookieName,
             '',

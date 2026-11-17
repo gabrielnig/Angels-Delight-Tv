@@ -9,7 +9,7 @@ Method: read auth, sessions, staff, viewer, playback, upload, edge, theme, confi
 | Rank | Count | Status |
 |---|---|---|
 | High | 1 | fixed |
-| Medium | 6 | 5 fixed, 1 partly fixed (M-1) |
+| Medium | 6 | fixed |
 | Low | 14 | open, listed below |
 
 ## High
@@ -23,11 +23,11 @@ Method: read auth, sessions, staff, viewer, playback, upload, edge, theme, confi
 ## Medium
 
 ### M-1 Kids gate could be skipped with a client chosen profile id
-- Location: `packages/viewer/src/profiles.ts` (`selectProfile`), `packages/video/src/playback/service.ts` and `http.ts` (`startSession`), viewer API.
-- Risk: the signed active profile cookie was only a hint. A child on a kids profile could POST `/api/profiles/{grown-up id}/select`, or ask for a playback session with a grown-up `profileId` in the body, and get non kids-safe video and its key.
-- Fix: select refuses to leave a kids profile (`kids_gate`), and a playback session refuses a profile that differs from an active kids profile. Tests: `packages/viewer/src/adversarial.int.test.ts`, `packages/video/src/playback/service.test.ts`.
-- Residual (open): the cookie is client controlled. Deleting it, then picking a grown-up profile that has no PIN, still works. A real boundary needs the kids lock stored server side on the session, cleared only by the account password. Owner question below.
-- Status: partly fixed.
+- Location: `packages/viewer/src/profiles.ts` (`selectProfile`), `packages/video/src/playback/service.ts` and `http.ts`, viewer API guard, `packages/auth/src/sessions.ts`.
+- Risk: the signed active profile cookie was only a hint. A child on a kids profile could select a grown-up profile, name one in any request, or delete the cookie, and reach non kids-safe video and its key.
+- Fix: the lock is now server side. Migration 0018 adds `sessions.active_profile_id` and `kids_locked`. Selecting a kids profile sets the lock. While it holds, the viewer API guard refuses any `profileId` (query or body) other than the locked one, select refuses a grown-up profile, profile management is refused, the playback session refuses any other profile, and the cookie is ignored. Only exit kids mode with the account password clears it (rate limited, M-2). D-088.
+- Tests: `apps/web/src/server/viewer/api-kids-lock.int.test.ts` (deleted cookie, forged cookie, forged profile id in read and write, wrong password, replay on the same session), `packages/auth/src/sessions.int.test.ts` (persistence, foreign profile refused, no leak to a new session), `packages/viewer/src/adversarial.int.test.ts`, `packages/video/src/playback/service.test.ts`.
+- Status: fixed. Limit: a locked session that is still signed in is protected. A child who knows the account password, or a device already signed in without a kids lock, is out of scope.
 
 ### M-2 Password oracle without a rate limit in profile update
 - Location: `packages/viewer/src/profiles.ts` (`updateProfile`, PIN change or leaving kids).
@@ -94,4 +94,4 @@ Method: read auth, sessions, staff, viewer, playback, upload, edge, theme, confi
 
 ## Most urgent open question
 
-Should the kids lock move server side (stored on the session, cleared only by the account password), or is a PIN on every grown-up profile the accepted protection? Until one is chosen, M-1 stays partly open.
+None from M-1 any more (decided: server side lock, D-088). Remaining open work is the Low list, led by L-14 (strict Origin check on the viewer API) and L-6 (staff sign in through the viewer form).

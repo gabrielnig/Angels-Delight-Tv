@@ -121,6 +121,12 @@ export const sessions = pgTable(
     reauthAt: timestamptz('reauth_at'),
     ipTrunc: text('ip_trunc'),
     userAgent: text('user_agent'),
+    /** The profile this session is using. Server side, so a client cookie cannot change who is watching. */
+    activeProfileId: uuid('active_profile_id').references(() => profiles.id, {
+      onDelete: 'set null',
+    }),
+    /** True while a kids profile is active. Cleared only by the account password (exit kids mode). */
+    kidsLocked: boolean('kids_locked').notNull().default(false),
   },
   (t) => [
     uniqueIndex('sessions_token_hash_uniq').on(t.tokenHash),
