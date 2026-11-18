@@ -18,7 +18,14 @@ async function dataFor(id: string): Promise<WatchData> {
   return r.data;
 }
 
-function mount(data: WatchData, extra: { startAt?: number | null; network?: FakeNetwork } = {}) {
+function mount(
+  data: WatchData,
+  extra: {
+    startAt?: number | null;
+    network?: FakeNetwork;
+    prefsSync?: NonNullable<Parameters<typeof WatchClient>[0]['prefsSync']>;
+  } = {},
+) {
   const engine = new FakeEngine();
   const network = extra.network ?? new FakeNetwork();
   const utils = render(
@@ -27,6 +34,7 @@ function mount(data: WatchData, extra: { startAt?: number | null; network?: Fake
       viewer={viewer}
       transport="fixture"
       startAt={extra.startAt ?? null}
+      prefsSync={extra.prefsSync}
       testing={{ createEngine: async () => engine, network }}
     >
       <h1>{data.video.title}</h1>
@@ -102,6 +110,75 @@ describe('WatchClient', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Mute' }));
     expect(JSON.parse(localStorage.getItem(preferencesKey('p1')) ?? '{}')).toMatchObject({
       muted: true,
+    });
+  });
+
+  describe('server side preferences (M03-S09)', () => {
+    const settings = {
+      autoplayNext: true,
+      dataSaver: false,
+      quality: 'auto' as const,
+      speed: 1,
+      captionsDefault: false,
+      captionSize: 'medium' as const,
+      captionLanguage: 'en',
+    };
+
+    it('starts at the speed the profile has on the server, not the one on this device', async () => {
+      localStorage.setItem(preferencesKey('p1'), JSON.stringify({ volume: 0.5 }));
+      const data = await dataFor('v-plants');
+      data.preferences = { ...data.preferences, rate: 1.5 };
+      const { engine } = mount(data);
+      await waitFor(() => expect(engine.loads).toHaveLength(1));
+      expect(document.querySelector('video')?.playbackRate).toBe(1.5);
+    });
+
+    it('moves choices an older version kept on the device to the server before playing, then clears them', async () => {
+      localStorage.setItem(
+        preferencesKey('p1'),
+        JSON.stringify({ rate: 1.25, dataSaver: true, volume: 0.4 }),
+      );
+      const migrate = vi.fn(async () => ({ ...settings, speed: 1.25, dataSaver: true }));
+      const { engine } = mount(await dataFor('v-plants'), {
+        prefsSync: { save: vi.fn(async () => undefined), migrate },
+      });
+      await waitFor(() => expect(engine.loads).toHaveLength(1));
+      expect(migrate).toHaveBeenCalledWith('p1', { speed: 1.25, dataSaver: true });
+      expect(document.querySelector('video')?.playbackRate).toBe(1.25);
+      expect(JSON.parse(localStorage.getItem(preferencesKey('p1')) ?? '{}')).toEqual({
+        volume: 0.4,
+      });
+    });
+
+    it('still plays when the move fails, and keeps the device values for next time', async () => {
+      localStorage.setItem(preferencesKey('p1'), JSON.stringify({ rate: 1.25 }));
+      const { engine } = mount(await dataFor('v-plants'), {
+        prefsSync: {
+          save: vi.fn(async () => undefined),
+          migrate: vi.fn(async () => {
+            throw new Error('offline');
+          }),
+        },
+      });
+      await waitFor(() => expect(engine.loads).toHaveLength(1));
+      expect(JSON.parse(localStorage.getItem(preferencesKey('p1')) ?? '{}')).toMatchObject({
+        rate: 1.25,
+      });
+    });
+
+    it('sends a speed change to the server and keeps volume on the device', async () => {
+      const save = vi.fn(async () => undefined);
+      const { engine } = mount(await dataFor('v-plants'), {
+        prefsSync: { save, migrate: vi.fn(async () => settings) },
+      });
+      await waitFor(() => expect(engine.loads).toHaveLength(1));
+      const region = screen.getByRole('region', { name: /Video player/ });
+      act(() => region.focus());
+      fireEvent.keyDown(region, { key: '>', shiftKey: true });
+      await waitFor(() => expect(save).toHaveBeenCalledWith('p1', { speed: 1.25 }));
+      expect(JSON.parse(localStorage.getItem(preferencesKey('p1')) ?? '{}')).not.toHaveProperty(
+        'rate',
+      );
     });
   });
 

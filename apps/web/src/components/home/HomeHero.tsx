@@ -8,11 +8,14 @@ export function HomeHero({
   items,
   label,
   profileId,
+  dataSaver,
 }: {
   items: HeroItem[];
   label: string;
   profileId: string;
+  /** The profile's saved Data saver choice. */
+  dataSaver?: boolean;
 }) {
-  const saver = useDataSaver(profileId);
+  const saver = useDataSaver(profileId, { profileSetting: dataSaver });
   return <Hero items={items} label={label} autoRotateMs={saver.on ? undefined : 8000} />;
 }

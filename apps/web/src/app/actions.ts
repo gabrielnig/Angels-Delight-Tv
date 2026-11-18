@@ -197,6 +197,16 @@ export async function loadMoreSearchAction(q: string, cursor: string) {
 
 // ---- Account ----
 
+/** The player saves one profile's speed, captions, data saver and autoplay choices here (M03-S09). */
+export async function savePlayerPrefsAction(profileId: string, patch: Partial<PlaybackSettings>) {
+  await getAccount().savePlayback(profileId, patch);
+}
+
+/** One time move of choices an older version kept in this browser. The server applies it once per profile. */
+export async function migrateDevicePrefsAction(profileId: string, legacy: Record<string, unknown>) {
+  return getAccount().migrateDevicePlayback(profileId, legacy);
+}
+
 export async function savePlaybackAction(patch: Partial<PlaybackSettings>) {
   const { ctx } = await context();
   return getAccount().savePlayback(ctx.profileId, patch);

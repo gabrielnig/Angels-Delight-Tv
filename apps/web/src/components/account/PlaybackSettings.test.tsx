@@ -14,6 +14,7 @@ const initial = {
   captionSize: 'medium' as const,
   captionBackground: 'dark' as const,
   captionContrast: 'standard' as const,
+  captionLanguage: 'en',
 };
 const wrap = (save: (p: object) => Promise<unknown>) =>
   render(

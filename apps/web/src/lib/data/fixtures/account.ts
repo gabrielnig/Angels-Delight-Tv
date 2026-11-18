@@ -15,6 +15,7 @@ const DEFAULTS: PlaybackSettings = {
   captionSize: 'medium',
   captionBackground: 'dark',
   captionContrast: 'standard',
+  captionLanguage: 'en',
 };
 
 const globalStore = globalThis as unknown as {
@@ -23,6 +24,7 @@ const globalStore = globalThis as unknown as {
     devices: DeviceSession[];
     exportState: ExportState;
     deletionPending: boolean;
+    migrated: Set<string>;
   };
 };
 
@@ -53,6 +55,7 @@ const state = (globalStore.__adFixtureAccount ??= {
   ],
   exportState: { status: 'none' },
   deletionPending: false,
+  migrated: new Set<string>(),
 });
 
 export class FixtureAccount implements AccountRepository {
@@ -77,6 +80,14 @@ export class FixtureAccount implements AccountRepository {
     const next = { ...(state.playback.get(profileId) ?? DEFAULTS), ...patch };
     state.playback.set(profileId, next);
     return next;
+  }
+
+  async migrateDevicePlayback(profileId: string, legacy: Record<string, unknown>) {
+    if (state.migrated.has(profileId)) return state.playback.get(profileId) ?? DEFAULTS;
+    state.migrated.add(profileId);
+    const allowed = ['speed', 'captionsDefault', 'captionLanguage', 'dataSaver', 'autoplayNext'];
+    const patch = Object.fromEntries(Object.entries(legacy).filter(([k]) => allowed.includes(k)));
+    return this.savePlayback(profileId, patch as Partial<PlaybackSettings>);
   }
 
   async devices() {
@@ -131,6 +142,7 @@ export class FixtureAccount implements AccountRepository {
 
   async cancelDeletion(_accountId?: string) {
     state.deletionPending = false;
+    state.migrated.clear();
     return { ok: true as const };
   }
 }
@@ -139,4 +151,5 @@ export function resetFixtureAccount() {
   state.playback.clear();
   state.exportState = { status: 'none' };
   state.deletionPending = false;
+  state.migrated.clear();
 }

@@ -42,7 +42,7 @@ function cards(items: CatalogItem[], inList: Set<string>) {
 }
 
 /** Screens 14 and 15. Hero, Continue watching, My List, then curated rows. */
-export async function HomeView({ ctx }: { ctx: ViewerContext }) {
+export async function HomeView({ ctx, dataSaver }: { ctx: ViewerContext; dataSaver?: boolean }) {
   const catalog = getCatalog();
   const library = getLibrary();
   const [home, continueResult, listResult, idsResult] = await Promise.all([
@@ -71,7 +71,12 @@ export async function HomeView({ ctx }: { ctx: ViewerContext }) {
   return (
     <>
       <h1 className="ad-sr-only">Home</h1>
-      <HomeHero items={heroItems(home, progress)} label="Featured" profileId={ctx.profileId} />
+      <HomeHero
+        items={heroItems(home, progress)}
+        label="Featured"
+        profileId={ctx.profileId}
+        dataSaver={dataSaver}
+      />
       <div className="web-wide web-stack web-rows">
         {continueResult.ok ? (
           continueResult.value.length > 0 ? (
