@@ -5,7 +5,13 @@ import { generateHlsKey, keyring, wrapHlsKey } from '../hls-key';
 import { secretRing } from '../playback-token';
 import { buildMasterTemplate, buildVariantTemplate } from '../playlist';
 import { verifyMediaSignature } from '../signing';
-import { PLAY_POLICIES, PlaybackService, type PlayableVideo, type PlaybackStore } from './service';
+import {
+  PLAY_POLICIES,
+  PlaybackService,
+  SEGMENT_URL_SECONDS,
+  type PlayableVideo,
+  type PlaybackStore,
+} from './service';
 
 const VID = '0192f0a0-0000-7000-8000-0000000000aa';
 const PROFILE = '0192f0a0-0000-7000-8000-0000000000b1';
@@ -49,7 +55,8 @@ function setup(
     captions: async () => [
       { language: 'en', label: 'English', isDefault: true, key: `cap/abc/en.vtt` },
     ],
-    spriteKey: async () => over.sprite === undefined ? 'cap/abc/sprites/map-1234abcd.vtt' : over.sprite,
+    spriteKey: async () =>
+      over.sprite === undefined ? 'cap/abc/sprites/map-1234abcd.vtt' : over.sprite,
   };
   const files: Record<string, string> = {
     [`templates/${VID}/master.m3u8`]: buildMasterTemplate([
@@ -190,6 +197,16 @@ describe('PlaybackService sessions', () => {
 });
 
 describe('PlaybackService playlists and key', () => {
+  it('signs segment urls for 2 hours by default (M31-S01 AC1, L-3)', async () => {
+    const { service, clock } = setup();
+    const { token } = await service.startSession(viewer, VID);
+    const variant = await service.variant(token, VID, '720');
+    const line = variant.split('\n').find((l) => l.includes('seg_00001.ts'))!;
+    const exp = Number(new URL(line).searchParams.get('exp'));
+    expect(exp).toBe(Math.floor(clock()) + 2 * 3600);
+    expect(SEGMENT_URL_SECONDS).toBe(7200);
+  });
+
   it('rewrites the master and the variant with signed segment urls', async () => {
     const { service, clock } = setup();
     const { token } = await service.startSession(viewer, VID);

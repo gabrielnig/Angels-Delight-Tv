@@ -55,6 +55,9 @@ const perMinutes = (name: string, capacity: number, minutes: number) => ({
 });
 
 /** ARCHITECTURE section 11. Constants so tests pin them and a change is reviewed in one place. */
+/** How long signed segment urls last. Past it the player fetches a fresh playlist on its own (D-120). */
+export const SEGMENT_URL_SECONDS = 2 * 3600;
+
 export const PLAY_POLICIES = {
   sessionProfile: perMinutes('play-session-profile', 60, 1),
   keyProfile: perMinutes('play-key-profile', 20, 10),
@@ -72,7 +75,7 @@ export interface PlaybackDeps {
   appOrigin: string;
   /** Origin that serves `v/`, `cap/` and `img/`: the edge worker, or the dev media route. */
   mediaOrigin: string;
-  /** How long signed segment urls last. A VOD playlist is fetched once, so this must cover a full watch. */
+  /** How long signed segment urls last. Defaults to 2 hours. An expired url is refreshed by the player (D-120). */
   segmentTtlSeconds?: number;
   now?: () => number;
 }
@@ -241,7 +244,7 @@ export class PlaybackService {
     await this.authorize(token, videoId);
     const video = (await this.deps.store.video(videoId)) as PlayableVideo;
     const template = await this.template(videoId, `${height}.m3u8`);
-    const exp = Math.floor(this.now()) + (this.deps.segmentTtlSeconds ?? 6 * 3600);
+    const exp = Math.floor(this.now()) + (this.deps.segmentTtlSeconds ?? SEGMENT_URL_SECONDS);
     return rewriteVariant(template, {
       videoId,
       appOrigin: this.deps.appOrigin,

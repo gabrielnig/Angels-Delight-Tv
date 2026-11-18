@@ -7,7 +7,10 @@ import { latestCode, startSmtpSink } from './support/smtp-sink';
  * docs/lanes/K1-viewer-integration.md. Skipped otherwise, so the fixture suite is not affected.
  */
 const smtpPort = Number(process.env.E2E_SMTP_PORT ?? 0);
-test.skip(!process.env.E2E_REAL || !smtpPort, 'set E2E_REAL=1 and E2E_SMTP_PORT for the real services smoke');
+test.skip(
+  !process.env.E2E_REAL || !smtpPort,
+  'set E2E_REAL=1 and E2E_SMTP_PORT for the real services smoke',
+);
 test.describe.configure({ mode: 'serial' });
 
 const stamp = Date.now();
@@ -60,7 +63,10 @@ test('My List saves a title and shows it', async () => {
   await expect(page).toHaveURL(/\/title\//);
   const title = await page.getByRole('heading', { level: 1 }).innerText();
   await page.getByRole('button', { name: 'My List', exact: true }).click();
-  await expect(page.getByRole('button', { name: 'My List', exact: true })).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.getByRole('button', { name: 'My List', exact: true })).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  );
 
   await page.goto('/my-list');
   await expect(page.getByText(title).first()).toBeVisible();
@@ -78,7 +84,9 @@ test('progress saved through the API shows as Continue Watching and resumes', as
 
   const profiles = await (await page.request.get('/api/profiles')).json();
   const profileId = profiles.profiles[0].id as string;
-  const detail = await (await page.request.get(`/api/titles/${slug}?profileId=${profileId}&kind=video`)).json();
+  const detail = await (
+    await page.request.get(`/api/titles/${slug}?profileId=${profileId}&kind=video`)
+  ).json();
   const videoId = detail.card.id as string;
   const origin = new URL(page.url()).origin;
   const saved = await page.request.post('/api/progress', {
@@ -88,7 +96,9 @@ test('progress saved through the API shows as Continue Watching and resumes', as
   expect(saved.status()).toBe(200);
 
   await page.goto('/');
-  await expect(page.getByRole('heading', { name: 'Continue watching', exact: false }).first()).toBeVisible();
+  await expect(
+    page.getByRole('heading', { name: 'Continue watching', exact: false }).first(),
+  ).toBeVisible();
   await page.reload();
   await page.goto(`/title/${slug}`);
   await expect(page.getByRole('link', { name: /^Continue/ })).toBeVisible();
@@ -99,7 +109,9 @@ test('progress saved through the API shows as Continue Watching and resumes', as
   await expect(page.getByText(title).first()).toBeVisible();
 });
 
-test('a signed out visitor sees the public preview and is sent to sign in for the player', async ({ browser }) => {
+test('a signed out visitor sees the public preview and is sent to sign in for the player', async ({
+  browser,
+}) => {
   const anon = await browser.newPage();
   await anon.goto('/browse');
   await expect(anon).toHaveURL(/\/sign-in/);
