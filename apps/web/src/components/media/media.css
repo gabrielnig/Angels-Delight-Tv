@@ -16,3 +16,29 @@
 .ad-poster--empty {
   background: var(--color-tile-sky);
 }
+
+/* Generated poster: a gradient from theme tokens with the title, shown until a picture exists. */
+.ad-poster--generated {
+  display: flex;
+  align-items: flex-end;
+  padding: var(--space-3);
+  color: var(--color-ink);
+  background: linear-gradient(135deg, var(--ad-poster-from, var(--color-tile-sky)), var(--color-primary-tint));
+}
+
+.ad-poster--generated[data-tone='0'] { --ad-poster-from: var(--color-tile-sky); }
+.ad-poster--generated[data-tone='1'] { --ad-poster-from: var(--color-tile-mint); }
+.ad-poster--generated[data-tone='2'] { --ad-poster-from: var(--color-tile-lemon); }
+.ad-poster--generated[data-tone='3'] { --ad-poster-from: var(--color-tile-peach); }
+.ad-poster--generated[data-tone='4'] { --ad-poster-from: var(--color-tile-lavender); }
+
+.ad-poster__title {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  font-family: var(--font-display);
+  font-size: var(--text-body);
+  font-weight: var(--weight-semibold);
+  line-height: 1.25;
+}

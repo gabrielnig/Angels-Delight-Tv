@@ -42,4 +42,35 @@ describe('ResponsivePoster', () => {
     render(<ResponsivePoster variants={[]} alt="Poster coming soon" />);
     expect(screen.getByRole('img', { name: 'Poster coming soon' }).tagName).toBe('DIV');
   });
+
+  it('offers webp first and jpeg to browsers that cannot read it', () => {
+    const { container } = render(
+      <ResponsivePoster
+        alt="Mixed"
+        variants={[
+          { width: 320, height: 180, url: 'a.webp', format: 'webp' },
+          { width: 320, height: 180, url: 'a.jpg', format: 'jpeg' },
+        ]}
+      />,
+    );
+    const source = container.querySelector('picture source')!;
+    expect(source).toHaveAttribute('type', 'image/webp');
+    expect(source).toHaveAttribute('srcset', 'a.webp 320w');
+    expect(screen.getByRole('img', { name: 'Mixed' })).toHaveAttribute('src', 'a.jpg');
+  });
+
+  it('draws a generated poster with the title when there is no picture', () => {
+    render(<ResponsivePoster variants={[]} alt="Plants" fallbackTitle="Plants and light" fallbackSeed={3} />);
+    const box = screen.getByRole('img', { name: 'Plants' });
+    expect(box).toHaveTextContent('Plants and light');
+    expect(box.className).toContain('ad-poster--generated');
+    expect(box.getAttribute('data-tone')).toBe('3');
+  });
+
+  it('keeps the same tone for the same seed', () => {
+    const { rerender } = render(<ResponsivePoster variants={[]} alt="a" fallbackTitle="T" fallbackSeed={7} />);
+    const first = screen.getByRole('img').getAttribute('data-tone');
+    rerender(<ResponsivePoster variants={[]} alt="a" fallbackTitle="T" fallbackSeed={7} />);
+    expect(screen.getByRole('img').getAttribute('data-tone')).toBe(first);
+  });
 });

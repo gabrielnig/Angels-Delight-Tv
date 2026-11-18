@@ -2,10 +2,10 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { NotFound } from '@ad/shared';
 import { PageHeader } from '@/components/admin/PageHeader';
-import { PosterPicker } from '@/components/admin/PosterPicker';
 import { videoService } from '@/lib/data/admin/services';
 import { requireActor } from '@/lib/data/admin/session-next';
-import { setPosterAction } from '../actions';
+import { PosterPickerClient } from './PosterPickerClient';
+import { setPosterAction, uploadPosterAction, posterStatusAction } from '../actions';
 
 export const metadata: Metadata = { title: 'Choose a poster' };
 
@@ -16,6 +16,7 @@ export default async function PosterPage({ params }: { params: Promise<{ id: str
     if (error instanceof NotFound) notFound();
     throw error;
   });
+  const assets = await videoService.posterAssets(actor, id);
   return (
     <>
       <PageHeader
@@ -28,12 +29,15 @@ export default async function PosterPage({ params }: { params: Promise<{ id: str
         title="Choose a poster"
         lead={video.title}
       />
-      <PosterPicker
+      <PosterPickerClient
         videoId={id}
         title={video.title}
         durationSeconds={video.durationSeconds}
         initial={{ posterId: video.posterId, alt: video.posterAlt, focus: video.posterFocus }}
         save={setPosterAction.bind(null, id)}
+        assets={assets}
+        uploadAction={uploadPosterAction.bind(null, id)}
+        statusAction={posterStatusAction.bind(null, id)}
       />
     </>
   );

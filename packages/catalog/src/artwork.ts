@@ -2,6 +2,8 @@ export interface ArtworkVariant {
   width: number;
   height: number;
   url: string;
+  /** Absent on rows made before jpeg variants existed, which are webp. */
+  format?: 'webp' | 'jpeg';
 }
 
 /** What the UI needs to draw an image without layout shift: sized variants, a placeholder colour and alt text (M36). */
@@ -20,7 +22,9 @@ export interface ArtworkRow {
   poster_color: string | null;
   poster_width: number | null;
   poster_height: number | null;
-  poster_variants: { width: number; height: number; key: string; bytes: number }[] | null;
+  poster_variants:
+    | { width: number; height: number; key: string; bytes: number; format?: 'webp' | 'jpeg' }[]
+    | null;
 }
 
 export const ARTWORK_COLUMNS = `pa.id AS poster_id, pa.alt_text AS poster_alt, pa.placeholder_color AS poster_color,
@@ -34,11 +38,12 @@ export function mediaUrl(mediaOrigin: string, key: string): string {
 export function artworkFromRow(row: ArtworkRow, mediaOrigin: string): ArtworkDto | null {
   if (row.poster_id === null) return null;
   const variants = [...(row.poster_variants ?? [])]
-    .sort((a, b) => a.width - b.width)
+    .sort((a, b) => a.width - b.width || (a.format ?? 'webp').localeCompare(b.format ?? 'webp'))
     .map((variant) => ({
       width: variant.width,
       height: variant.height,
       url: mediaUrl(mediaOrigin, variant.key),
+      ...(variant.format ? { format: variant.format } : {}),
     }));
   return {
     id: row.poster_id,

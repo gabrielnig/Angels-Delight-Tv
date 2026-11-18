@@ -9,11 +9,17 @@ import {
 } from '@ad/queue';
 import type { Logger } from '@ad/shared';
 import { classifyPipelineError } from '@ad/video';
-import type { CaptionGenerator, LifecycleService, UploadService, VideoPipeline } from '@ad/video';
+import type {
+  CaptionGenerator,
+  ImageService,
+  LifecycleService, UploadService,
+  VideoPipeline,
+} from '@ad/video';
 
 export interface VideoHandlerDeps {
   pipeline: Pick<VideoPipeline, 'probe' | 'encode' | 'thumbnails' | 'rewrapKey' | 'failVideo'>;
   captions: Pick<CaptionGenerator, 'generate'>;
+  images: Pick<ImageService, 'process'>;
   lifecycle: Pick<LifecycleService, 'purge' | 'enqueueExpired'>;
   uploads: Pick<UploadService, 'cleanupExpired'>;
   mirror: JobMirror;
@@ -22,7 +28,7 @@ export interface VideoHandlerDeps {
 
 /** Creates the queues, schedules the crons and registers one worker per lane D queue. */
 export async function registerVideoHandlers(boss: BossLike, deps: VideoHandlerDeps): Promise<void> {
-  const { pipeline, captions, lifecycle, uploads, mirror, logger } = deps;
+  const { pipeline, captions, images, lifecycle, uploads, mirror, logger } = deps;
   await ensureQueues(boss);
   await scheduleCrons(boss);
 
@@ -52,6 +58,11 @@ export async function registerVideoHandlers(boss: BossLike, deps: VideoHandlerDe
     ...base,
     queue: QUEUES.captionGenerate,
     handle: (p, job) => captions.generate(p.videoId, p.mode, job.progress, job.signal),
+  });
+  await registerWorker(boss, {
+    ...base,
+    queue: QUEUES.imageProcess,
+    handle: (p) => images.process(p.assetId),
   });
   await registerWorker(boss, {
     ...base,

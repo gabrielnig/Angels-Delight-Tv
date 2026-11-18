@@ -1,4 +1,6 @@
 import 'server-only';
+import type { PosterAssetDto } from '@ad/catalog';
+import { checkPosterUpload } from '@/lib/admin/poster-upload';
 import { validatePosterChoice } from '@/lib/admin/poster-rules';
 import type { PosterChoice } from '@/lib/admin/poster-rules';
 import { adminStatusOf, videoStub } from './video-rules';
@@ -119,6 +121,18 @@ export interface VideoService {
   publish(actor: AdminActor, id: string, request: PublishRequest): Promise<CommandResult>;
   unpublish(actor: AdminActor, id: string): Promise<CommandResult>;
   setPoster(actor: AdminActor, id: string, choice: PosterChoice): Promise<CommandResult>;
+  /** Real frames and uploaded pictures for the poster picker. Empty means the picker shows placeholders. */
+  posterAssets(actor: AdminActor, id: string): Promise<PosterAssetDto[]>;
+  /** Stores a custom poster and queues its processing. The bytes are checked here, not only in the browser. */
+  uploadPoster(
+    actor: AdminActor,
+    id: string,
+    bytes: Uint8Array,
+  ): Promise<{ ok: true; assetId: string } | { ok: false; error: string }>;
+  posterStatus(
+    actor: AdminActor,
+    assetId: string,
+  ): Promise<{ status: 'processing' | 'ready' | 'failed' }>;
   retryEncode(actor: AdminActor, id: string): Promise<CommandResult>;
   trashed(actor: AdminActor): Promise<VideoRecord[]>;
   restore(actor: AdminActor, id: string): Promise<CommandResult>;
@@ -198,6 +212,24 @@ const fixtureVideoService: VideoService = {
     video.posterFocus = { ...choice.focus, zoom: choice.zoom };
     video.updatedAt = new Date().toISOString();
     return { ok: true };
+  },
+  async posterAssets(actor, id) {
+    need(actor, 'video.edit');
+    if (!getStore().videos.some((v) => v.id === id && v.deletedAt === null))
+      throw new NotFound('Video not found');
+    return [];
+  },
+  async uploadPoster(actor, id, bytes) {
+    need(actor, 'video.edit');
+    if (!getStore().videos.some((v) => v.id === id && v.deletedAt === null))
+      throw new NotFound('Video not found');
+    const check = await checkPosterUpload(bytes);
+    if (!check.ok) return check;
+    return { ok: true, assetId: `upload_${id}_${Date.now()}` };
+  },
+  async posterStatus(actor) {
+    need(actor, 'video.edit');
+    return { status: 'ready' };
   },
   async retryEncode(actor, id) {
     need(actor, 'video.edit');

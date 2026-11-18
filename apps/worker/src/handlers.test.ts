@@ -19,6 +19,7 @@ function setup(overrides: Record<string, unknown> = {}) {
       failVideo: async (...a: unknown[]) => void failed.push(a),
     },
     captions: { generate: rec('caption') },
+    images: { process: rec('image') },
     lifecycle: {
       purge: rec('purge'),
       enqueueExpired: async () => (calls.push(['expired']), { queued: 0 }),
@@ -39,6 +40,7 @@ describe('registerVideoHandlers', () => {
     expect([...boss.handlers.keys()].sort()).toEqual(
       [
         'caption.generate',
+        'image.process',
         'uploads.cleanup',
         'video.encode',
         'video.probe',
@@ -58,6 +60,14 @@ describe('registerVideoHandlers', () => {
     await boss.drain('video.probe');
     expect(calls[0]?.[0]).toBe('probe');
     expect(calls[0]?.[1]).toBe(VID);
+  });
+
+  it('runs an image job through the image service', async () => {
+    const { boss, deps, calls } = setup();
+    await registerVideoHandlers(boss, deps as never);
+    await boss.send('image.process', { assetId: VID });
+    await boss.drain('image.process');
+    expect(calls[0]).toEqual(['image', VID]);
   });
 
   it('passes the caption mode through', async () => {

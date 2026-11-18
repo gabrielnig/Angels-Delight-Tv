@@ -162,3 +162,21 @@ describe('SeriesCard My List', () => {
     expect(screen.queryByRole('button')).toBeNull();
   });
 });
+
+describe('Thumb formats', () => {
+  it('offers webp in a source and jpeg on the image', () => {
+    const { container } = render(
+      <VideoCard
+        {...base}
+        thumbnail={{
+          src: 'a.webp',
+          srcSet: 'a.webp 320w',
+          fallbackSrc: 'a.jpg',
+          fallbackSrcSet: 'a.jpg 320w',
+        }}
+      />,
+    );
+    expect(container.querySelector('picture source')).toHaveAttribute('type', 'image/webp');
+    expect(container.querySelector('picture img')).toHaveAttribute('src', 'a.jpg');
+  });
+});

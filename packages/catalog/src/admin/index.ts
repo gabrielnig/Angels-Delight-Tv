@@ -4,3 +4,4 @@ export * from './categories';
 export * from './series';
 export * from './home';
 export * from './captions';
+export * from './posters';

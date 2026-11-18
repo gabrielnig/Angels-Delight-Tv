@@ -6,6 +6,7 @@ import type { Logger } from '@ad/shared';
 import { createStorage, storageConfigFromEnv } from '@ad/storage';
 import {
   CaptionGenerator,
+  ImageService,
   LifecycleService,
   UploadService,
   VideoPipeline,
@@ -76,6 +77,7 @@ export function buildVideoHandlerDeps(
   return {
     pipeline,
     captions,
+    images: new ImageService({ db, originals, media, logger }),
     lifecycle: new LifecycleService({ db, originals, media, producer, logger }),
     uploads: new UploadService({
       db,

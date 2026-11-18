@@ -8,7 +8,7 @@ import { eq } from 'drizzle-orm';
 import type { Actor } from '@ad/shared';
 import { CaptionService } from '@ad/video';
 import { recordAudit } from '@ad/audit';
-import { createStorage, storageConfigFromEnv } from '@ad/storage';
+import { createStorage, storageConfigFromEnv, type StorageAdapter } from '@ad/storage';
 import type { KeyService, SessionService, StaffService } from '@ad/auth';
 import type { RequestMeta } from '@ad/auth';
 import { getServices } from '@/lib/runtime/services';
@@ -20,6 +20,10 @@ export interface AdminRuntime {
   /** Catalog context with the current caption approval setting (D-005). */
   ctx(): Promise<AdminContext>;
   enqueue: JobProducer['enqueue'];
+  /** The private bucket for uploaded sources (posters, later other images). */
+  originals(): StorageAdapter;
+  /** Public base url of the media bucket, for picker previews. */
+  mediaOrigin(): string;
   /** Review and approval of caption revisions (lane D). */
   captions(): Promise<CaptionService>;
   /** Display names for staff accounts, by account id. Unknown ids are left out. */
@@ -50,6 +54,10 @@ export function setAdminRuntime(
     ctx: async () => ({ db: runtime.db() }),
     enqueue: (async () => ({ jobId: 'test-job', deduped: false })) as AdminRuntime['enqueue'],
     names: async () => new Map(),
+    originals: () => {
+      throw new Error('This test did not provide originals storage');
+    },
+    mediaOrigin: () => 'https://media.test',
     captions: async () => {
       throw new Error('This test did not provide a caption service');
     },
@@ -130,6 +138,7 @@ export async function staffNames(
 
 function build(): AdminRuntime {
   let producer: Promise<JobProducer> | undefined;
+  let originalsStorage: StorageAdapter | undefined;
   const getProducer = () =>
     (producer ??= createProducerBoss({
       connectionString: getServices().env.DATABASE_URL,
@@ -150,6 +159,13 @@ function build(): AdminRuntime {
     },
     enqueue: (async (...args: Parameters<JobProducer['enqueue']>) =>
       (await getProducer()).enqueue(...args)) as JobProducer['enqueue'],
+    originals() {
+      const { env } = getServices();
+      return (originalsStorage ??= createStorage(
+        storageConfigFromEnv(env, env.BUCKET_ORIGINALS, env.MEDIA_URL_SECRET),
+      ));
+    },
+    mediaOrigin: () => getServices().env.MEDIA_ORIGIN,
     captions: async () => {
       const services = getServices();
       const { env, db } = services;
