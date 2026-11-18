@@ -40,6 +40,7 @@ import {
 import type { StaffRoleName } from './users-commands';
 import { randomBytes } from 'node:crypto';
 import { can } from '@/lib/admin/can';
+import { INLINE_EXPORT_MAX } from './exports-rules';
 import { discardJob, fixtureQuality, retryJob } from './system-rules';
 import type { Quality } from './system-rules';
 import type { CleanupResult, FailedEncodeRecord, JobRecord, StorageUsage } from './types';
@@ -703,7 +704,8 @@ const fixturePeopleService: PeopleService = {
 };
 
 export const AUDIT_PAGE_SIZE = 25;
-export const AUDIT_EXPORT_MAX = 5000;
+/** An export up to this many rows is built in the request. More goes to the worker (M20-S03). */
+export const AUDIT_EXPORT_MAX = INLINE_EXPORT_MAX;
 
 export { adminDataMode };
 
@@ -717,6 +719,8 @@ export interface AuditService {
     actor: AdminActor,
     query: AuditQuery,
   ): Promise<{ rows: AuditRow[]; total: number; truncated: boolean }>;
+  /** How many rows an export would have, so the route can choose between a download and a background job. */
+  exportPlan(actor: AdminActor, query: AuditQuery): Promise<{ rows: number }>;
 }
 
 export const auditService: AuditService = {
@@ -755,6 +759,16 @@ export const auditService: AuditService = {
     const rows = filterAudit(getStore().audit, query, auditScopeFor(actor.role));
     return { rows: structuredClone(rows), total: rows.length, truncated: false };
   },
+  async exportPlan(actor, query) {
+    need(actor, 'audit.export');
+    if (adminDataMode() === 'real')
+      return {
+        rows: await (
+          await import('./audit-real')
+        ).realAudit.count(query, auditScopeFor(actor.role)),
+      };
+    return { rows: filterAudit(getStore().audit, query, auditScopeFor(actor.role)).length };
+  },
 };
 
 export interface AnalyticsService {
@@ -762,6 +776,8 @@ export interface AnalyticsService {
   video(actor: AdminActor, id: string, range: DayRange): Promise<VideoAnalytics>;
   /** Every title with views on each day of the range, for the CSV export. */
   exportRows(actor: AdminActor, range: DayRange): Promise<TitleDailyRow[]>;
+  /** How many rows the CSV would have, so the route can choose between a download and a background job. */
+  exportPlan(actor: AdminActor, range: DayRange): Promise<{ rows: number }>;
 }
 
 export const analyticsService: AnalyticsService = {
@@ -785,6 +801,12 @@ export const analyticsService: AnalyticsService = {
     if (adminDataMode() === 'real')
       return (await import('./analytics-real')).realAnalytics.exportRows(range);
     return buildFixtureTitleDaily(getStore(), range);
+  },
+  async exportPlan(actor, range) {
+    need(actor, 'analytics.view');
+    if (adminDataMode() === 'real')
+      return { rows: await (await import('./analytics-real')).realAnalytics.exportCount(range) };
+    return { rows: buildFixtureTitleDaily(getStore(), range).length };
   },
 };
 

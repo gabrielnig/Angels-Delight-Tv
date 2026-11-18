@@ -15,6 +15,8 @@ export const QUEUES = {
   auditPrune: 'audit.prune',
   emailOutbox: 'email.outbox',
   emailDigest: 'email.digest',
+  exportsGenerate: 'exports.generate',
+  exportsCleanup: 'exports.cleanup',
 } as const;
 
 export type QueueName = (typeof QUEUES)[keyof typeof QUEUES];
@@ -134,6 +136,21 @@ export const QUEUE_DEFINITIONS: Record<QueueName, QueueDefinition> = {
     retryBackoff: true,
     expireInSeconds: 10 * 60,
   },
+  // One export at a time. A large audit log takes minutes, and a failed run is retried once.
+  'exports.generate': {
+    concurrency: 1,
+    retryLimit: 1,
+    retryDelaySeconds: 120,
+    retryBackoff: false,
+    expireInSeconds: 60 * 60,
+  },
+  'exports.cleanup': {
+    concurrency: 1,
+    retryLimit: 2,
+    retryDelaySeconds: 600,
+    retryBackoff: true,
+    expireInSeconds: 30 * 60,
+  },
 };
 
 export function queueOptions(name: QueueName) {
@@ -174,6 +191,8 @@ const PAYLOADS = {
   'audit.prune': z.strictObject({}),
   'email.outbox': z.strictObject({}),
   'email.digest': z.strictObject({}),
+  'exports.generate': z.strictObject({ exportId: uuid, ...tracking }),
+  'exports.cleanup': z.strictObject({}),
 } satisfies Record<QueueName, z.ZodType>;
 
 export type PayloadOf<Q extends QueueName> = z.output<(typeof PAYLOADS)[Q]>;
@@ -209,4 +228,9 @@ export const MAINTENANCE_CRON_SCHEDULES: CronEntry[] = [
 export const MAIL_CRON_SCHEDULES: CronEntry[] = [
   { queue: 'email.outbox', cron: '* * * * *', timezone: 'Africa/Lagos' },
   { queue: 'email.digest', cron: '5 * * * *', timezone: 'Africa/Lagos' },
+];
+
+/** Deletes expired export files and rows (M19-S05, M20-S03). */
+export const EXPORT_CRON_SCHEDULES: CronEntry[] = [
+  { queue: 'exports.cleanup', cron: '45 3 * * *', timezone: 'Africa/Lagos' },
 ];

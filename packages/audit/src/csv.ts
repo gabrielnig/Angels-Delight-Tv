@@ -24,27 +24,57 @@ const HEADERS = [
   'summary',
 ] as const;
 
+/** The header line, without the line break. */
+export const AUDIT_CSV_HEADER = HEADERS.join(',');
+
+/** One row, without the line break. Used by the background export, which writes row by row. */
+export function auditCsvLine(row: AuditRecord): string {
+  const summary = typeof row.metadata.summary === 'string' ? row.metadata.summary : '';
+  return [
+    row.id,
+    row.occurredAt,
+    row.actorAccountId,
+    row.actorRole,
+    row.action,
+    row.outcome,
+    row.targetType,
+    row.targetId,
+    row.ipTrunc,
+    row.requestId,
+    summary,
+  ]
+    .map(csvCell)
+    .join(',');
+}
+
 export function auditCsv(rows: AuditRecord[]): string {
-  const lines = [HEADERS.join(',')];
-  for (const row of rows) {
-    const summary = typeof row.metadata.summary === 'string' ? row.metadata.summary : '';
-    lines.push(
-      [
-        row.id,
-        row.occurredAt,
-        row.actorAccountId,
-        row.actorRole,
-        row.action,
-        row.outcome,
-        row.targetType,
-        row.targetId,
-        row.ipTrunc,
-        row.requestId,
-        summary,
-      ]
-        .map(csvCell)
-        .join(','),
-    );
-  }
+  const lines = [AUDIT_CSV_HEADER, ...rows.map(auditCsvLine)];
   return `${lines.join('\n')}\n`;
+}
+
+export const TITLE_DAILY_CSV_HEADER = 'day,video_id,title,archived,views,watch_seconds,completions';
+
+export interface TitleDailyCsvRow {
+  day: string;
+  videoId: string;
+  title: string;
+  archived: boolean;
+  views: number;
+  watchMs: number;
+  completions: number;
+}
+
+/** One analytics export row (M19-S05), without the line break. */
+export function titleDailyCsvLine(row: TitleDailyCsvRow): string {
+  return [
+    row.day,
+    row.videoId,
+    row.title,
+    row.archived ? 'yes' : 'no',
+    row.views,
+    Math.round(row.watchMs / 1000),
+    row.completions,
+  ]
+    .map(csvCell)
+    .join(',');
 }

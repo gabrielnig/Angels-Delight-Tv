@@ -23,6 +23,7 @@ describe('navForRole', () => {
         'Trash',
         'Home curation',
         'Analytics',
+        'Exports',
       ]),
     );
     for (const hidden of [

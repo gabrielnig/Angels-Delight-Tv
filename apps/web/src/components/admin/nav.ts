@@ -96,6 +96,13 @@ export const NAV_ITEMS: NavItem[] = [
     action: 'analytics.view',
   },
   {
+    label: 'Exports',
+    href: '/admin/exports',
+    icon: 'download',
+    group: 'Insight and control',
+    action: 'analytics.view',
+  },
+  {
     label: 'Users',
     href: '/admin/users',
     icon: 'users',
@@ -170,6 +177,7 @@ const SEGMENT_LABELS: Record<string, string> = {
   theme: 'Theme',
   users: 'Users',
   analytics: 'Analytics',
+  exports: 'Exports',
   'audit-log': 'Audit log',
   roles: 'Roles and invites',
   'site-settings': 'Site settings',

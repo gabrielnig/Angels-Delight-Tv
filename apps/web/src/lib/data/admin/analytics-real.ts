@@ -1,7 +1,8 @@
 import 'server-only';
-import { createAnalyticsQueries } from '@ad/analytics';
+import { createAnalyticsQueries, monthChunks } from '@ad/analytics';
 import type { DayRange } from '@ad/analytics';
 import { getServices } from '@/lib/runtime/services';
+import { INLINE_EXPORT_MAX } from './exports-rules';
 import type { AnalyticsOverview, VideoAnalytics } from './analytics-rules';
 
 let queries: ReturnType<typeof createAnalyticsQueries> | undefined;
@@ -18,6 +19,15 @@ export const realAnalytics = {
     return { ...overview, top, splits };
   },
   exportRows: (range: DayRange) => q().titleDaily(range),
+  /** Rows the CSV would have, read a month at a time and stopped once it is past the inline limit. */
+  async exportCount(range: DayRange): Promise<number> {
+    let rows = 0;
+    for (const chunk of monthChunks(range)) {
+      rows += (await q().titleDaily(chunk)).length;
+      if (rows > INLINE_EXPORT_MAX) break;
+    }
+    return rows;
+  },
   async video(id: string, range: DayRange): Promise<VideoAnalytics | null> {
     const [detail, titles] = await Promise.all([
       q().videoDetail(id, range),

@@ -1,6 +1,7 @@
 import { RateLimited } from '@ad/shared';
 import { parseRange } from '@/lib/data/admin/analytics-rules';
 import { titleDailyCsv } from '@/lib/data/admin/analytics-export';
+import { INLINE_EXPORT_MAX, toQueryString } from '@/lib/data/admin/exports-rules';
 import { analyticsService } from '@/lib/data/admin/services';
 import { allowed, getActor, spendAdminBudget } from '@/lib/data/admin/session-next';
 
@@ -28,6 +29,15 @@ export async function GET(request: Request) {
     from: url.searchParams.get('from') ?? '',
     to: url.searchParams.get('to') ?? '',
   });
+  // Up to 10,000 rows go straight back. More is built by the worker and emailed (M19-S05).
+  const plan = await analyticsService.exportPlan(actor, range);
+  if (plan.rows > INLINE_EXPORT_MAX) {
+    const query = toQueryString({ kind: 'analytics', params: { from: range.from, to: range.to } });
+    return new Response(null, {
+      status: 303,
+      headers: { location: `/admin/exports/new?${query}` },
+    });
+  }
   const rows = await analyticsService.exportRows(actor, range);
   return new Response(titleDailyCsv(rows), {
     headers: {

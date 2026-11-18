@@ -42,3 +42,20 @@ export function previousPeriod(range: DayRange): DayRange {
   const length = daysBetween(range.from, range.to);
   return { from: addDays(range.from, -length), to: addDays(range.from, -1) };
 }
+
+/** Cuts an inclusive range at month ends, so a large export can read one month at a time. */
+export function monthChunks(range: DayRange): DayRange[] {
+  if (parseDay(range.to) < parseDay(range.from)) return [];
+  const chunks: DayRange[] = [];
+  let from = range.from;
+  while (parseDay(from) <= parseDay(range.to)) {
+    const next = new Date(parseDay(from));
+    const monthEnd = new Date(Date.UTC(next.getUTCFullYear(), next.getUTCMonth() + 1, 0))
+      .toISOString()
+      .slice(0, 10);
+    const to = parseDay(monthEnd) < parseDay(range.to) ? monthEnd : range.to;
+    chunks.push({ from, to });
+    from = addDays(to, 1);
+  }
+  return chunks;
+}

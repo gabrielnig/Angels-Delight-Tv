@@ -21,7 +21,7 @@ export function sealPrefsAddress(kek: Uint8Array, accountId: string, address: st
   return sealAddress(kek, `prefs:${accountId}`, address);
 }
 
-function openPrefsAddress(kek: Uint8Array, accountId: string, sealed: Uint8Array): string {
+export function openPrefsAddress(kek: Uint8Array, accountId: string, sealed: Uint8Array): string {
   return openAddress(kek, `prefs:${accountId}`, sealed);
 }
 
@@ -223,4 +223,24 @@ export async function buildDigests(deps: DigestDeps): Promise<DigestResult> {
     }
   }
   return { queued, skipped };
+}
+
+/** The requester's address from the sealed copy next to their notification choices, or null when none is saved. */
+export async function openStaffAddress(
+  db: Database,
+  kek: Uint8Array,
+  accountId: string,
+): Promise<string | null> {
+  const rows = rowsOf<{ address_enc: Buffer | null }>(
+    await db.execute(
+      sql`SELECT address_enc FROM staff_notification_prefs WHERE account_id = ${accountId}::uuid`,
+    ),
+  );
+  const sealed = rows[0]?.address_enc;
+  if (!sealed) return null;
+  try {
+    return openPrefsAddress(kek, accountId, sealed);
+  } catch {
+    return null;
+  }
 }

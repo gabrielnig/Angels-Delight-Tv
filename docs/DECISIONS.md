@@ -764,4 +764,9 @@ Format: decision, options considered, why, reversible or not. Newest first. Deci
 - Decision: with `skin="soft"` the profile button has no aria-label. Its accessible name is the visible name followed by a hidden ", profile menu".
 - Options: keep "Profile menu, Name" (fails label in name, WCAG 2.5.3), hide the visible name.
 - Why: axe flagged the mismatch once the name became visible beside the avatar.
+
+## D-130 Large exports are background jobs with a row ceiling (lane f1)
+- Decision: audit and analytics exports over 10,000 rows go through a confirm page, a `staff_exports` row and the `exports.generate` job, and the requester gets a `staff_export_ready` outbox email with a download link. Files expire after 72 hours, failed rows after 7 days. The ceiling is 2,000,000 rows because the S3 `put` buffers the stream in memory. A requester may hold 3 open exports. The fixture data mode lists none and refuses requests.
+- Options: keep inline with a cap, stream straight to the browser, background job with email.
+- Why: the old cap truncated silently. A job removes the cap without holding a request open, and row level security plus a permission re-check on every open keeps files private to the requester.
 - Reversible: yes.
