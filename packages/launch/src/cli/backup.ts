@@ -45,12 +45,21 @@ async function main(): Promise<number> {
       await fetch(url, { method: 'GET', signal: AbortSignal.timeout(10_000) });
     },
     targets: [
-      { target: 'db', url: env.dbUrl, publicKey: env.publicKeyDb, retainDays: env.retainDbDays },
       {
+        target: 'db',
+        url: env.dbUrl,
+        publicKey: env.publicKeyDb,
+        keepDaily: env.keepDaily,
+        keepWeekly: env.keepWeekly,
+      },
+      {
+        // Keys database backups must not outlive shredded keys: daily only, 14 days at most (SECURITY section 10, D-132).
         target: 'keys',
         url: env.keysDbUrl,
         publicKey: env.publicKeyKeys,
-        retainDays: env.retainKeysDays,
+        keepDaily: Math.min(env.keepDaily, 14),
+        keepWeekly: 0,
+        maxAgeDays: 14,
       },
     ],
   });

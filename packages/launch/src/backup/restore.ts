@@ -3,6 +3,7 @@ import { join } from 'node:path';
 import type { StorageAdapter } from '@ad/storage';
 import pg from 'pg';
 import { decryptBackupFile } from './crypto';
+import { manifestKey, parseManifest, sha256Hex } from './manifest';
 import { pgEnv, type CommandRunner } from './run';
 import { parseBackupKey, type BackupTarget } from './retention';
 
@@ -37,6 +38,27 @@ export interface RestoreReport {
 }
 
 /**
+ * When the backup has a manifest, the stored bytes must match its size and checksum before anything is decrypted. A backup
+ * from before manifests existed has none and is restored as before.
+ */
+async function verifyAgainstManifest(
+  storage: StorageAdapter,
+  key: string,
+  stored: Buffer,
+): Promise<void> {
+  if (!(await storage.head(manifestKey(key)))) return;
+  const text: Buffer[] = [];
+  for await (const chunk of await storage.get(manifestKey(key))) text.push(Buffer.from(chunk));
+  const manifest = parseManifest(Buffer.concat(text).toString());
+  if (!manifest || manifest.key !== key)
+    throw new RestoreRefused('The backup manifest is unreadable. Do not restore from this copy.');
+  if (manifest.bytes !== stored.length || manifest.sha256 !== sha256Hex(stored))
+    throw new RestoreRefused(
+      'The backup does not match its manifest (size or checksum). Do not restore from this copy.',
+    );
+}
+
+/**
  * Restores one encrypted backup into a database. Used for the rehearsal before launch and the quarterly drill: restore
  * into a scratch database, start the app against it, sign in, play a video. Refuses the live database names.
  */
@@ -66,7 +88,9 @@ export async function runRestore(deps: RestoreDeps): Promise<RestoreReport> {
   try {
     const chunks: Buffer[] = [];
     for await (const chunk of await deps.storage.get(key)) chunks.push(Buffer.from(chunk));
-    await writeFile(encrypted, Buffer.concat(chunks), { mode: 0o600 });
+    const stored = Buffer.concat(chunks);
+    await verifyAgainstManifest(deps.storage, key, stored);
+    await writeFile(encrypted, stored, { mode: 0o600 });
     await decryptBackupFile(encrypted, plain, deps.privateKey);
     const restored = await deps.runner(
       'pg_restore',
