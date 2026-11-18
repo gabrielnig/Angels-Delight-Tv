@@ -23,3 +23,20 @@ export async function register(): Promise<void> {
     });
   }
 }
+
+/** Next calls this for errors in pages, layouts and server actions (M24-S03). Route handlers report through withRequest. */
+export async function onRequestError(
+  error: unknown,
+  request: { path: string; method: string; headers: Record<string, string | string[] | undefined> },
+  context: { routePath: string; routeType: string; routerKind: string },
+): Promise<void> {
+  if (process.env.NEXT_RUNTIME !== 'nodejs') return;
+  try {
+    const { reportRequestError } = await import('./lib/observability/request-error');
+    const { getServices } = await import('./lib/runtime/services');
+    const { reporter, logger } = getServices();
+    reportRequestError(error, request, context, { reporter, logger });
+  } catch {
+    // Missing configuration or a tracker outage is ignored silently (M24-S03 Error).
+  }
+}
