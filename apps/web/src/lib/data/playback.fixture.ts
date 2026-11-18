@@ -1,4 +1,9 @@
-import { DEFAULT_PREFERENCES, type CaptionTrack, type RelatedItem } from '@ad/player';
+import {
+  DEFAULT_CAPTION_STYLE,
+  DEFAULT_PREFERENCES,
+  type CaptionTrack,
+  type RelatedItem,
+} from '@ad/player';
 import type {
   PlaybackData,
   Tint,
@@ -156,6 +161,7 @@ export function createFixturePlaybackData(): PlaybackData {
         upNext: tiles(entry.video.id),
         related,
         preferences: { ...DEFAULT_PREFERENCES, captionsOn: viewer.kids },
+        captionStyle: DEFAULT_CAPTION_STYLE,
         inMyList: false,
       };
       return { status: 'ok', data };
