@@ -19,9 +19,11 @@ export default async function ProfilesPage({
   const [session, params] = await Promise.all([requireSession('/profiles'), searchParams]);
   const alwaysAsk = alwaysAskFromCookie((await cookies()).get(ALWAYS_ASK_COOKIE)?.value);
   const repo = getProfiles();
-  const profiles = await repo.list(session.accountId);
+  // A failed refresh hands the picker null so it can fall back to its cached list (M03-S13).
+  const profiles = await repo.list(session.accountId).catch(() => null);
   return (
     <PickerScreen
+      accountId={session.accountId}
       profiles={profiles}
       max={repo.maxProfiles}
       mode="pick"

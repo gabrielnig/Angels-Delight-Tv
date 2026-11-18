@@ -5,7 +5,13 @@
 export const PENDING_SIGN_OUT_KEY = 'ad.pendingsignout.v1';
 
 /** Key prefixes that hold one person's data. Device level settings (install prompt, theme) stay. */
-const PRIVATE_PREFIXES = ['ad.writequeue', 'ad.progress.', 'ad.datasaver.p', 'ad-recent-searches'];
+const PRIVATE_PREFIXES = [
+  'ad.pickercache',
+  'ad.writequeue',
+  'ad.progress.',
+  'ad.datasaver.p',
+  'ad-recent-searches',
+];
 
 export interface KeyStore {
   readonly length: number;
