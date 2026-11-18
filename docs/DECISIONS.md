@@ -562,3 +562,8 @@ Format: decision, options considered, why, reversible or not. Newest first. Deci
 - Options: refresh the copied row items whenever an episode changes, or point the row at the series card.
 - Why: refreshing needs a hook in every place an episode can change and still goes stale if one is missed; reading at view time cannot drift. A single series card would not be a row of lessons.
 - Reversible: yes.
+## D-107 Placeholder brand kit generated from one SVG source with sharp (lane M3)
+- Decision: `packages/launch/src/brand/kit.ts` holds one icon SVG and one wordmark SVG and builds the favicon, home screen icons, Open Graph image and email header from them (`pnpm brand:generate`, output in `apps/web/public/icons`). Files are named placeholder, the site name in the wordmark is a parameter, and colours default to the old placeholder blue and yellow but can be passed in. The client's logo replaces the home screen icons through the admin logo upload and `launch:apply`, and `PWA_ICONS_DIR` still wins over the bundled files. The favicon and Open Graph image are served through `/brand-icons/` so they can be replaced the same way.
+- Options: a Node only PNG writer as before, a design file checked in, a separate brand package.
+- Why: sharp is already a dependency, SVG renders crisply at every size, and one source keeps every asset consistent. The old zlib script is removed.
+- Reversible: yes. Regenerate or replace the files.

@@ -71,7 +71,7 @@ Duplicates between lanes, none of which are bugs but all of which will drift:
 
 ### 4.3 Unused dependency check, reviewed and kept
 
-`tsx` at the root looks unused to `knip` but is the runner for the `seed:admin`, `seed:demo`, `db:migrate` and worker scripts in other packages. `wrangler` in `apps/edge` and the Python tooling in `apps/whisper` are real. `scripts/generate-pwa-icons.mjs` is a manual tool, referenced in the lane I notes.
+`tsx` at the root looks unused to `knip` but is the runner for the `seed:admin`, `seed:demo`, `db:migrate` and worker scripts in other packages. `wrangler` in `apps/edge` and the Python tooling in `apps/whisper` are real. `scripts/generate-brand-kit.ts` (`pnpm brand:generate`) is a manual tool, referenced in the lane I notes.
 
 ### 4.4 Over-validation and speculative abstractions
 
