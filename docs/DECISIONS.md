@@ -567,3 +567,9 @@ Format: decision, options considered, why, reversible or not. Newest first. Deci
 - Options: a Node only PNG writer as before, a design file checked in, a separate brand package.
 - Why: sharp is already a dependency, SVG renders crisply at every size, and one source keeps every asset consistent. The old zlib script is removed.
 - Reversible: yes. Regenerate or replace the files.
+
+## D-106 Site pages come from the editor table, seeded with marked placeholders (lane M2)
+- Decision: terms, privacy, about and help are the pages the admin editor publishes (`settings` rows `pages.<slug>`). Migration 0026 seeds each with one published version of `[Add your ... here before launch]`, which the page shows under a Draft banner and the launch checklist reports as placeholder text. If a row is missing, the same placeholder text from `@ad/theme` stands in, never fixture text. Footer links, the sign in value lines and the common help questions are product defaults in `lib/site/defaults.ts`, shown under the editable help text. The fixture site is used only with the dev flags.
+- Options: seed through a CLI step, or keep the fixture text as the fallback.
+- Why: a migration runs on every deploy without a manual step, and is idempotent (`ON CONFLICT DO NOTHING`), so launch needs only the client's text.
+- Reversible: yes.
