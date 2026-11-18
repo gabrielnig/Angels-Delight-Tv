@@ -12,7 +12,8 @@ import { classifyPipelineError } from '@ad/video';
 import type {
   CaptionGenerator,
   ImageService,
-  LifecycleService, UploadService,
+  LifecycleService,
+  UploadService,
   VideoPipeline,
 } from '@ad/video';
 
@@ -24,17 +25,37 @@ export interface VideoHandlerDeps {
   uploads: Pick<UploadService, 'cleanupExpired'>;
   mirror: JobMirror;
   logger: Logger;
+  /** Puts job results in the staff bell (M21-S03). Optional so a worker without it still runs jobs. */
+  notifier?: StaffNotifier;
+}
+
+export interface StaffNotifier {
+  encodeDone(videoId: string): Promise<void>;
+  encodeFailed(videoId: string, reason: string): Promise<void>;
+  captionsReady(videoId: string): Promise<void>;
+  captionsFailed(videoId: string): Promise<void>;
 }
 
 /** Creates the queues, schedules the crons and registers one worker per lane D queue. */
 export async function registerVideoHandlers(boss: BossLike, deps: VideoHandlerDeps): Promise<void> {
-  const { pipeline, captions, images, lifecycle, uploads, mirror, logger } = deps;
+  const { pipeline, captions, images, lifecycle, uploads, mirror, logger, notifier } = deps;
   await ensureQueues(boss);
   await scheduleCrons(boss);
 
   const base = { mirror, logger, classify: classifyPipelineError };
-  const failVideo = async (payload: { videoId: string }, failure: ClassifiedFailure) =>
-    pipeline.failVideo(payload.videoId, failure);
+  /** A notice never decides whether a job worked: a failure to send is logged and the job result stands. */
+  const tell = async (send: (n: StaffNotifier) => Promise<void>) => {
+    if (!notifier) return;
+    try {
+      await send(notifier);
+    } catch (err) {
+      logger.warn('staff notice not sent', { err });
+    }
+  };
+  const failVideo = async (payload: { videoId: string }, failure: ClassifiedFailure) => {
+    await pipeline.failVideo(payload.videoId, failure);
+    await tell((n) => n.encodeFailed(payload.videoId, failure.plain));
+  };
 
   await registerWorker(boss, {
     ...base,
@@ -45,7 +66,10 @@ export async function registerVideoHandlers(boss: BossLike, deps: VideoHandlerDe
   await registerWorker(boss, {
     ...base,
     queue: QUEUES.videoEncode,
-    handle: (p, job) => pipeline.encode(p.videoId, job.progress),
+    async handle(p, job) {
+      await pipeline.encode(p.videoId, job.progress);
+      await tell((n) => n.encodeDone(p.videoId));
+    },
     onFailed: failVideo,
   });
   await registerWorker(boss, {
@@ -57,7 +81,11 @@ export async function registerVideoHandlers(boss: BossLike, deps: VideoHandlerDe
   await registerWorker(boss, {
     ...base,
     queue: QUEUES.captionGenerate,
-    handle: (p, job) => captions.generate(p.videoId, p.mode, job.progress, job.signal),
+    async handle(p, job) {
+      await captions.generate(p.videoId, p.mode, job.progress, job.signal);
+      await tell((n) => n.captionsReady(p.videoId));
+    },
+    onFailed: (p) => tell((n) => n.captionsFailed(p.videoId)),
   });
   await registerWorker(boss, {
     ...base,
@@ -79,8 +107,7 @@ export async function registerVideoHandlers(boss: BossLike, deps: VideoHandlerDe
     queue: QUEUES.uploadsCleanup,
     async handle() {
       const result = await uploads.cleanupExpired();
-      if (result.failed > 0)
-        throw new Error(`${result.failed} idle uploads could not be aborted`);
+      if (result.failed > 0) throw new Error(`${result.failed} idle uploads could not be aborted`);
     },
   });
   await registerWorker(boss, {
@@ -91,4 +118,3 @@ export async function registerVideoHandlers(boss: BossLike, deps: VideoHandlerDe
     },
   });
 }
-

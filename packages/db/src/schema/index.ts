@@ -4,6 +4,7 @@ export * from './captions';
 export * from './content';
 export * from './enums';
 export * from './identity';
+export * from './notices';
 export * from './pipeline';
 export * from './platform';
 export { userKeys } from './keys';

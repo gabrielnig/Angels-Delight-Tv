@@ -9,6 +9,7 @@ export default defineConfig({
     './src/schema/content.ts',
     './src/schema/enums.ts',
     './src/schema/identity.ts',
+    './src/schema/notices.ts',
     './src/schema/pipeline.ts',
     './src/schema/platform.ts',
     './src/schema/viewer.ts',

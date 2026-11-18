@@ -1,3 +1,4 @@
+import { makeNotifier } from './notifier';
 import { runNightlyRollup } from '@ad/analytics';
 import type { WorkerEnv } from '@ad/config';
 import { createDb, createPool, type Database } from '@ad/db';
@@ -89,5 +90,6 @@ export function buildVideoHandlerDeps(
     }),
     mirror,
     logger,
+    notifier: makeNotifier(db, logger),
   };
 }
