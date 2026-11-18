@@ -1972,6 +1972,8 @@
   font-size: var(--text-caption);
   white-space: pre-wrap;
   overflow-wrap: anywhere;
+}
+
 .adm-cue--check {
   border-inline-start: 4px solid var(--color-warning);
   background: var(--color-warning-tint);
