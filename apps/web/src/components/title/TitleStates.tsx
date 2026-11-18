@@ -14,7 +14,7 @@ function StateCard({
   tone: Tone;
   icon: IconName;
   title: string;
-  text: string;
+  text: ReactNode;
   children: ReactNode;
 }) {
   return (
@@ -54,7 +54,12 @@ export function TitleNotFound() {
       tone="neutral"
       icon="search"
       title="We could not find that video"
-      text="The link may be old, or the video may have been removed. Try browsing by subject instead."
+      text={
+        <>
+          The link may be old, or the video may have been removed.
+          <span className="tv-state__wide"> Try browsing by subject instead.</span>
+        </>
+      }
     >
       <ButtonLink href="/browse">Browse subjects</ButtonLink>
     </StateCard>
@@ -67,10 +72,16 @@ export function TitleError({ reference, onRetry }: { reference?: string; onRetry
       tone="danger"
       icon="warning"
       title="We could not load this video"
-      text={`Something went wrong on our side. Your place in the video is safe.${reference ? ` Reference ${reference}.` : ''}`}
+      text={
+        <>
+          Something went wrong on our side.
+          <span className="tv-state__wide"> Your place in the video is safe.</span>
+          {reference ? ` Reference ${reference}.` : ''}
+        </>
+      }
     >
       <Button onClick={onRetry}>Try again</Button>
-      <ButtonLink href="/" variant="secondary">
+      <ButtonLink href="/" variant="secondary" className="tv-state__wide">
         Back to Home
       </ButtonLink>
     </StateCard>
