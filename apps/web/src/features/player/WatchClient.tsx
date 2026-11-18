@@ -18,7 +18,7 @@ import {
   readLocalProgress,
 } from './fixture-adapters';
 import { getAnalyticsClient } from '@/lib/analytics/browser';
-import { createWatchTelemetry } from './telemetry';
+import { createWatchMetrics, createWatchTelemetry } from './telemetry';
 import { toViewerProgressBody } from './progress-body';
 import {
   clearLegacyPreferences,
@@ -202,6 +202,15 @@ export function WatchClient({
     }
   }, [origin, video.id, video.durationSeconds]);
 
+  const metrics = useMemo(() => {
+    if (!origin) return undefined;
+    try {
+      return createWatchMetrics({ videoId: video.id, client: getAnalyticsClient() });
+    } catch {
+      return undefined;
+    }
+  }, [origin, video.id]);
+
   const onNext = useCallback((item: UpNextItem) => router.push(watchPath(item.id)), [router]);
 
   const end: EndScreenData = {
@@ -254,6 +263,7 @@ export function WatchClient({
             }}
             onForbidden={() => router.push('/profiles')}
             {...(telemetry ? { telemetry } : {})}
+            {...(metrics ? { metrics } : {})}
             deviceClass={viewer.kids ? 'kids' : 'standard'}
             {...testing}
           />

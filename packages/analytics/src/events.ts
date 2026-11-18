@@ -59,6 +59,13 @@ export const startupEvent = z.strictObject({
   rebufferMs: z.number().int().min(0).max(MAX_WATCH_MS).optional(),
 });
 
+/** Stall time since the last report for this play, so the dashboard can show a true rebuffer ratio (M08-S30). */
+export const rebufferEvent = z.strictObject({
+  kind: z.literal('rebuffer'),
+  videoId: id,
+  rebufferMs: z.number().int().min(1).max(MAX_WATCH_MS),
+});
+
 export const analyticsEvent = z.discriminatedUnion('kind', [
   viewStartEvent,
   progressEvent,
@@ -67,6 +74,7 @@ export const analyticsEvent = z.discriminatedUnion('kind', [
   errorEvent,
   vitalsEvent,
   startupEvent,
+  rebufferEvent,
 ]);
 export type AnalyticsEvent = z.infer<typeof analyticsEvent>;
 export type AnalyticsEventKind = AnalyticsEvent['kind'];

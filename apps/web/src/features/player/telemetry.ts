@@ -1,5 +1,5 @@
 import { createPlayTracker, type AnalyticsClient } from '@ad/analytics/client';
-import type { PlaybackTelemetry } from '@ad/player';
+import type { MetricsSink, PlaybackTelemetry } from '@ad/player';
 
 type AnalyticsTrack = AnalyticsClient['track'];
 
@@ -37,6 +37,29 @@ export function createWatchTelemetry(options: {
     onError: (code) => {
       if (!CODE.test(code)) return;
       safe(() => client.track({ kind: 'error', code, videoId }));
+    },
+  };
+}
+
+/**
+ * The 60 second quality report from the player (M08-S30). The player's numbers are running totals, so this sends
+ * only the stall time added since the last report, which the dashboard adds up into a rebuffer ratio.
+ */
+export function createWatchMetrics(options: {
+  videoId: string;
+  client: { track: AnalyticsTrack };
+}): MetricsSink {
+  let sent = 0;
+  return {
+    report(metrics) {
+      const added = Math.round(metrics.rebufferMs) - sent;
+      if (added < 1) return;
+      sent += added;
+      try {
+        options.client.track({ kind: 'rebuffer', videoId: options.videoId, rebufferMs: added });
+      } catch {
+        // Metrics are best effort and never reach the viewer.
+      }
     },
   };
 }

@@ -19,6 +19,7 @@ export class FakeMedia extends EventTarget implements PlayerMedia {
   volume = 1;
   muted = false;
   playbackRate = 1;
+  preservesPitch = true;
   error: { code: number } | null = null;
   bufferedRanges: Array<[number, number]> = [];
   playCalls = 0;

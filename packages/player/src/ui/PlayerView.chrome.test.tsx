@@ -278,3 +278,24 @@ describe('PlayerView chrome', () => {
     });
   });
 });
+
+describe('touch layout in the stylesheet (M08-S09)', () => {
+  it('sizes every control to the 44 px touch target token', () => {
+    expect(
+      readFileSync(join(__dirname, '..', '..', '..', 'ui', 'src', 'tokens.css'), 'utf8'),
+    ).toMatch(/--touch-target:\s*2\.75rem/);
+    expect(css).toMatch(
+      /\.adp-ctl\s*\{[^}]*min-width:\s*var\(--touch-target\)[^}]*min-height:\s*var\(--touch-target\)/s,
+    );
+  });
+
+  it('keeps a 32 px tall hit area on the seek bar', () => {
+    expect(css).toMatch(/\.adp-seek\s*\{[^}]*height:\s*2rem/s);
+  });
+
+  it('respects the notch and the gesture bar', () => {
+    expect(css).toMatch(/\.adp-controls\s*\{[^}]*env\(safe-area-inset-bottom\)/s);
+    expect(css).toMatch(/env\(safe-area-inset-left\)/);
+    expect(css).toMatch(/env\(safe-area-inset-right\)/);
+  });
+});
