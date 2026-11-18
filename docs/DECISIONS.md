@@ -663,3 +663,9 @@ Format: decision, options considered, why, reversible or not. Newest first. Deci
 - Options: keep the in memory undo, add a soft delete flag to `watch_progress`, a separate table.
 - Why: the memory stash was lost on restart and on a second instance. A flag on `watch_progress` would touch every progress query. A small table with the same owner RLS keeps the change local.
 - Reversible: yes. The table is small and only the undo reads it.
+
+## D-123 Progress and key rate limits stay as built, with the reasons on record (lane a3)
+- Decision: M08-S16 asks for 1 progress write per 5 seconds per profile with extras coalesced. The server keeps a bucket of 30 writes per minute per profile (`VIEWER_RATE_POLICIES.progress`) and answers 429 beyond it. M31-S02 AC3 asks for 30 key requests per minute per session. The key route keeps 20 per 10 minutes per profile and 300 per minute per address (ARCHITECTURE section 11, D-082).
+- Options: a strict 1 per 5 seconds bucket that drops extras, a coalescing layer that holds the newest write, keep the current buckets.
+- Why: pause, seek and tab hide each write at once (M08-S16 AC2), so a strict 1 per 5 seconds bucket would drop the final position, which is the one write that matters for resume. 30 per minute allows that burst, is five times the 6 per minute the 15 second tick (D-043) produces, and still caps abuse. The player keeps only the newest write per video while a write fails (progress.test.ts), so a 429 costs one retry, not data. For keys, hls.js asks once per video and the real browser seek storm in `hls-real.stack.ts` made at most 10 key requests across 10 seeks, so 20 per 10 minutes per profile blocks scraping, which 30 per minute would not.
+- Reversible: yes, constants.
