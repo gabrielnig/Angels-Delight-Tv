@@ -776,3 +776,9 @@ Format: decision, options considered, why, reversible or not. Newest first. Deci
 - Options: a separate budget setting, a linear fit over a longer window, reuse the dashboard cap with a 30 day pace.
 - Why: one budget keeps the dashboard and System consistent, and the 30 day pace needs no new data. The estimate is rough by design and slightly behind because sizes come from catalog records.
 - Reversible: yes.
+
+## D-132 Backup retention is 14 daily plus 8 weekly, and the keys database stays at 14 days (lane f1)
+- Decision: the main database keeps the newest backup of each of the last 14 days that have one, then one per week for 8 older weeks. The keys database keeps 14 daily and no weekly copies, with a hard 14 day age limit, because SECURITY section 10 says backups must not outlive shredded keys. Each backup gets a manifest (key, time, size, SHA-256) written after the upload, removed with it, and checked by the restore tool. `BACKUP_RETAIN_DB_DAYS` and `BACKUP_RETAIN_KEYS_DAYS` are replaced by `BACKUP_KEEP_DAILY` and `BACKUP_KEEP_WEEKLY`. A backup with no manifest (made before this change) restores as before.
+- Options: apply 14 plus 8 to both databases (keeps shredded keys for 8 weeks, breaks the erasure promise), keep age based retention, a manifest only on the main database.
+- Why: slots count days and weeks that have a backup, so an outage of the job cannot erode the good copies. The keys exception protects the account deletion promise.
+- Reversible: yes.

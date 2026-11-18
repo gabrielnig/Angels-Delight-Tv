@@ -77,7 +77,15 @@ describe.skipIf(!adminUrl)('backup and restore with a real Postgres', () => {
       localDir: join(work, 'local'),
       workDir: join(work, 'work'),
       writePart: localPartWriter(storage, secret),
-      targets: [{ target: 'db', url: withDb(source), publicKey: keys.publicKey, retainDays: 35 }],
+      targets: [
+        {
+          target: 'db',
+          url: withDb(source),
+          publicKey: keys.publicKey,
+          keepDaily: 14,
+          keepWeekly: 8,
+        },
+      ],
       retainLocalDays: 7,
     });
     expect(report.ok, JSON.stringify(report)).toBe(true);
@@ -122,6 +130,44 @@ describe.skipIf(!adminUrl)('backup and restore with a real Postgres', () => {
         protectedDatabases: ['ad', 'ad_keys'],
       }),
     ).rejects.toThrow(RestoreRefused);
+  });
+
+  it('refuses a backup whose bytes no longer match its manifest, and restores a legacy one with no manifest', async () => {
+    const key = 'db/ad-20261118T023000Z.dump.enc';
+    const read = async (k: string) => {
+      const chunks: Buffer[] = [];
+      for await (const c of await storage.get(k)) chunks.push(Buffer.from(c));
+      return Buffer.concat(chunks);
+    };
+    const original = await read(key);
+    const manifest = await read(`${key}.manifest.json`);
+    const attempt = () =>
+      runRestore({
+        storage,
+        runner: nodeRunner,
+        workDir: join(work, 'restore-manifest'),
+        target: 'db',
+        key,
+        privateKey: keys.privateKey,
+        targetUrl: withDb(scratch),
+        protectedDatabases: [],
+      });
+    try {
+      const flipped = Buffer.from(original);
+      flipped[flipped.length - 1] = flipped[flipped.length - 1]! ^ 0xff;
+      await storage.put(key, flipped);
+      await expect(attempt()).rejects.toThrow(/does not match its manifest/);
+      await storage.put(key, original);
+      await storage.put(`${key}.manifest.json`, Buffer.from('not json'));
+      await expect(attempt()).rejects.toThrow(/manifest is unreadable/);
+      // No manifest at all: an older backup restores as before (the scratch database already has the data, so pg_restore
+      // fails on the duplicate objects, which proves it got past the manifest check).
+      await storage.delete(`${key}.manifest.json`);
+      await expect(attempt()).rejects.toThrow(/pg_restore failed/);
+    } finally {
+      await storage.put(key, original);
+      await storage.put(`${key}.manifest.json`, manifest);
+    }
   });
 
   it('fails clearly with the wrong private key and leaves the scratch database untouched', async () => {

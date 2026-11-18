@@ -51,3 +51,67 @@ export function selectExpired<T extends StoredBackup>(
     .filter((entry) => entry.parsed!.takenAt.getTime() < cutoff)
     .map((entry) => entry.item);
 }
+
+export interface GfsPolicy {
+  target: BackupTarget;
+  /** Newest backup of each of this many most recent days that have a backup. */
+  daily: number;
+  /** Then the newest older backup of each of this many most recent weeks (Monday to Sunday, UTC). */
+  weekly: number;
+  /** Hard age limit. Used for the keys database, whose backups must not outlive the shredded keys (SECURITY section 10). */
+  maxAgeDays?: number;
+}
+
+const DAY_MS = 86_400_000;
+const dayKey = (date: Date) => date.toISOString().slice(0, 10);
+function weekKey(date: Date): string {
+  const monday = Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate());
+  return dayKey(new Date(monday - ((date.getUTCDay() + 6) % 7) * DAY_MS));
+}
+
+/**
+ * The backups to delete under a grandfather rule: 14 daily plus 8 weekly by default. Slots count days and weeks that
+ * actually have a backup, so a long outage of the job never erodes the good copies. The newest backup is never selected.
+ * Only well formed names of the policy's own target are ever returned.
+ */
+export function selectExpiredGfs<T extends StoredBackup>(
+  all: T[],
+  policy: GfsPolicy,
+  now: Date,
+): T[] {
+  if (!(policy.daily >= 1)) throw new Error('daily must be at least 1');
+  if (!(policy.weekly >= 0)) throw new Error('weekly cannot be negative');
+  if (policy.maxAgeDays !== undefined && !(policy.maxAgeDays >= 1))
+    throw new Error('maxAgeDays must be at least 1');
+  const own = all
+    .map((item) => ({ item, takenAt: parseBackupKey(item.key) }))
+    .filter(
+      (entry): entry is { item: T; takenAt: { target: BackupTarget; takenAt: Date } } =>
+        entry.takenAt?.target === policy.target,
+    )
+    .map((entry) => ({ item: entry.item, at: entry.takenAt.takenAt }))
+    .sort((a, b) => b.at.getTime() - a.at.getTime());
+
+  const keep = new Set<T>();
+  const days = new Set<string>();
+  for (const entry of own) {
+    const day = dayKey(entry.at);
+    if (days.has(day) || days.size >= policy.daily) continue;
+    days.add(day);
+    keep.add(entry.item);
+  }
+  const weeks = new Set<string>();
+  for (const entry of own) {
+    if (keep.has(entry.item) || dayKey(entry.at) >= [...days].sort()[0]!) continue;
+    const week = weekKey(entry.at);
+    if (weeks.has(week) || weeks.size >= policy.weekly) continue;
+    weeks.add(week);
+    keep.add(entry.item);
+  }
+  if (policy.maxAgeDays !== undefined) {
+    const cutoff = now.getTime() - policy.maxAgeDays * DAY_MS;
+    for (const entry of own.slice(1)) if (entry.at.getTime() < cutoff) keep.delete(entry.item);
+    if (own[0] && own[0].at.getTime() < cutoff) keep.add(own[0].item);
+  }
+  return own.filter((entry) => !keep.has(entry.item)).map((entry) => entry.item);
+}

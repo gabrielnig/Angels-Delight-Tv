@@ -172,12 +172,14 @@ Maintenance mode: Caddy serves a 503 page from `MAINTENANCE_DIR` (default `/opt/
 
 | What | How | Where | Retention |
 |---|---|---|---|
-| Main database | Nightly `pg_dump --format=custom` as the postgres superuser, encrypted with AES-256-GCM whose key is wrapped with the owner's RSA public key (D-116) | `ad-backups/db/` and 7 days on the VPS | 35 days |
-| Keys database | Nightly dump, encrypted with a different RSA keypair | `ad-backups/keys/` | 14 days maximum, so shredded DEKs leave backups quickly |
+| Main database | Nightly `pg_dump --format=custom` as the postgres superuser, encrypted with AES-256-GCM whose key is wrapped with the owner's RSA public key (D-116) | `ad-backups/db/` and 7 days on the VPS | 14 daily plus 8 weekly (D-132) |
+| Keys database | Nightly dump, encrypted with a different RSA keypair | `ad-backups/keys/` | 14 daily, 14 days maximum and no weekly copies, so shredded DEKs leave backups quickly |
 | R2 media and originals | No copy of media (re-derivable from originals). Originals: ask the client to keep a second copy of source files | Client drive | n/a |
 | Configuration | `compose.prod.yaml`, Caddyfile, Worker config are in git. `.env` is stored by the owner | Password manager | n/a |
 
 Targets: RPO 24 hours, RTO 4 hours. A restore is rehearsed before launch and then quarterly: restore both dumps to a scratch Postgres, start the app against it, log in, play a video. Upgrade path if RPO matters more: WAL archiving with pgBackRest.
+
+Every backup has a manifest next to it (`<name>.manifest.json`) with its key, time, size and SHA-256. The restore tool checks the stored bytes against it before decrypting and refuses a mismatch. Retention keeps the newest backup of each of the last 14 days that have one, then one per week for the 8 weeks before that (main database only), and deletes a backup together with its manifest. Counts come from `BACKUP_KEEP_DAILY` and `BACKUP_KEEP_WEEKLY`.
 
 Backup credentials use the `ad-backup` token only. The private keys never sit on the VPS. Backups run nightly from cron (`ops/backup.sh`), pick files by the UTC timestamp in the name, and ping `BACKUP_PING_URL` on success so a missed night raises an alert. Restore with `pnpm backup:restore --target db --private-key <file> --target-url <scratch database url>`. It refuses the live database names (D-118). The restore test is `packages/launch/src/backup/restore.int.test.ts`, which needs `TEST_DATABASE_ADMIN_URL` and `pg_dump`/`pg_restore` on the path.
 

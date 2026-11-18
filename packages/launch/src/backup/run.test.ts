@@ -6,6 +6,7 @@ import { LocalStorage } from '@ad/storage';
 import { describe, expect, it } from 'vitest';
 import { localPartWriter } from '../import/service-ports';
 import { decryptBackupFile } from './crypto';
+import { manifestKey, parseManifest, sha256Hex } from './manifest';
 import { backupKey } from './retention';
 import { runBackup, type CommandRunner } from './run';
 
@@ -58,13 +59,16 @@ async function setup() {
         target: 'db' as const,
         url: 'postgres://postgres:pw@postgres:5432/ad',
         publicKey: dbKeys.publicKey,
-        retainDays: 35,
+        keepDaily: 14,
+        keepWeekly: 8,
       },
       {
         target: 'keys' as const,
         url: 'postgres://postgres:pw@postgres:5432/ad_keys',
         publicKey: keysKeys.publicKey,
-        retainDays: 14,
+        keepDaily: 14,
+        keepWeekly: 0,
+        maxAgeDays: 14,
       },
     ],
     retainLocalDays: 7,
@@ -85,7 +89,12 @@ describe('runBackup', () => {
 
     const stored = await s.storage.list('');
     expect(stored.map((o) => o.key).sort()).toEqual(
-      [backupKey('db', s.now), backupKey('keys', s.now)].sort(),
+      [
+        backupKey('db', s.now),
+        manifestKey(backupKey('db', s.now)),
+        backupKey('keys', s.now),
+        manifestKey(backupKey('keys', s.now)),
+      ].sort(),
     );
 
     // Each opens only with its own private key and holds that database's dump.
@@ -138,17 +147,80 @@ describe('runBackup', () => {
     expect(second.targets[0]!.deletedLocal).toEqual(['ad-20261101T023000Z.dump.enc']);
   });
 
-  it('applies remote retention per target and never deletes the newest copies', async () => {
+  it('writes a manifest with the size and checksum of the stored file', async () => {
     const s = await setup();
-    for (const days of [100, 90, 80, 40, 2]) {
-      await runBackup({ ...s.deps, now: () => new Date(s.now.getTime() - days * 86_400_000) });
-    }
     await runBackup(s.deps);
-    const at = (days: number) => new Date(s.now.getTime() - days * 86_400_000);
-    const keys = (await s.storage.list('')).map((o) => o.key).sort();
-    // The newest three of each target stay even though one of them is past the window, everything older goes.
-    const newest = (target: 'db' | 'keys') => [0, 2, 40].map((d) => backupKey(target, at(d)));
-    expect(keys).toEqual([...newest('db'), ...newest('keys')].sort());
+    const key = backupKey('db', s.now);
+    const chunks: Buffer[] = [];
+    for await (const c of await s.storage.get(key)) chunks.push(Buffer.from(c));
+    const stored = Buffer.concat(chunks);
+    const text: Buffer[] = [];
+    for await (const c of await s.storage.get(manifestKey(key))) text.push(Buffer.from(c));
+    const manifest = parseManifest(Buffer.concat(text).toString());
+    expect(manifest).toEqual({
+      version: 1,
+      key,
+      target: 'db',
+      takenAt: s.now.toISOString(),
+      bytes: stored.length,
+      sha256: sha256Hex(stored),
+    });
+  });
+
+  it('fails and removes the backup when the manifest cannot be written', async () => {
+    const s = await setup();
+    const put = s.storage.put.bind(s.storage);
+    const failing = Object.assign(Object.create(s.storage), {
+      put: async (key: string, ...rest: unknown[]) => {
+        if (key.endsWith('.manifest.json')) throw new Error('disk full');
+        return (put as (...args: unknown[]) => Promise<unknown>)(key, ...rest);
+      },
+    });
+    const report = await runBackup({ ...s.deps, storage: failing });
+    expect(report.ok).toBe(false);
+    expect(s.pings).toEqual([]);
+    expect(await s.storage.list('')).toEqual([]);
+  });
+
+  it('keeps 14 daily and 8 weekly for the main database and only 14 days of the keys database', async () => {
+    const s = await setup();
+    const DAY = 86_400_000;
+    // One backup a night for 100 nights, ending today.
+    for (let d = 99; d >= 0; d--) {
+      await runBackup({ ...s.deps, now: () => new Date(s.now.getTime() - d * DAY) });
+    }
+    const list = await s.storage.list('');
+    const dumps = (target: string) =>
+      list.filter((o) => o.key.startsWith(`${target}/`) && o.key.endsWith('.dump.enc'));
+    const manifests = (target: string) =>
+      list.filter((o) => o.key.startsWith(`${target}/`) && o.key.endsWith('.manifest.json'));
+    expect(dumps('db')).toHaveLength(22);
+    expect(manifests('db')).toHaveLength(22);
+    expect(dumps('keys')).toHaveLength(14);
+    expect(manifests('keys')).toHaveLength(14);
+    const oldestKeys = Math.min(
+      ...dumps('keys').map((o) =>
+        Date.parse(
+          o.key
+            .match(/(\d{8}T\d{6}Z)/)![1]!
+            .replace(/(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})Z/, '$1-$2-$3T$4:$5:$6Z'),
+        ),
+      ),
+    );
+    expect(s.now.getTime() - oldestKeys).toBeLessThanOrEqual(14 * DAY);
+    expect(list.some((o) => o.key === backupKey('db', s.now))).toBe(true);
+  }, 60_000);
+
+  it('removes a manifest whose backup is gone and never deletes a backup that has no manifest', async () => {
+    const s = await setup();
+    // A backup from before manifests existed, and a manifest left behind.
+    const legacy = backupKey('db', new Date(s.now.getTime() - 1 * 86_400_000));
+    await s.storage.put(legacy, Buffer.from('legacy'));
+    await s.storage.put('db/ad-20200101T000000Z.dump.enc.manifest.json', Buffer.from('{}'));
+    await runBackup(s.deps);
+    const keys = (await s.storage.list('db/')).map((o) => o.key);
+    expect(keys).toContain(legacy);
+    expect(keys).not.toContain('db/ad-20200101T000000Z.dump.enc.manifest.json');
   });
 
   it('does not ping and reports failure when one dump fails, but still backs up the other', async () => {
@@ -160,7 +232,9 @@ describe('runBackup', () => {
     expect(report.targets.find((t) => t.target === 'keys')!.error).toContain('pg_dump failed');
     expect(report.targets.find((t) => t.target === 'db')).toMatchObject({ ok: true });
     expect(s.pings).toEqual([]);
-    expect((await s.storage.list('')).map((o) => o.key)).toEqual([backupKey('db', s.now)]);
+    expect((await s.storage.list('')).map((o) => o.key).sort()).toEqual(
+      [backupKey('db', s.now), manifestKey(backupKey('db', s.now))].sort(),
+    );
   });
 
   it('removes the plain dump from the work folder, even when something fails', async () => {
