@@ -157,8 +157,9 @@ describe('colours and contrast', () => {
 describe('fonts and sizes', () => {
   it('lists the curated fonts and applies the choice to the preview', async () => {
     const { user } = setup();
-    const radios = screen.getAllByRole('radio', { name: /Inter|DM Sans|Poppins|Nunito|Lora/ });
+    const radios = screen.getAllByRole('radio', { name: /Space Grotesk|Inter|DM Sans|Poppins|Nunito|Lora/ });
     expect(radios.map((radio) => (radio as HTMLInputElement).value)).toEqual([
+      'space-grotesk',
       'inter',
       'dm-sans',
       'poppins',

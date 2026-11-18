@@ -31,6 +31,17 @@ describe('buildThemeVariables', () => {
     }
   });
 
+  it('uses Space Grotesk for headings only and keeps Inter for body text (D-158)', () => {
+    const vars = buildThemeVariables(DEFAULT_THEME);
+    expect(vars['--font-display']).toMatch(/^"Space Grotesk", /);
+    expect(vars['--font-sans']).toMatch(/^"Inter", /);
+  });
+
+  it('lets an admin switch headings back to the body font', () => {
+    const vars = buildThemeVariables(parseTheme({ fontKey: 'inter' }));
+    expect(vars['--font-display']).toBe('var(--font-sans)');
+  });
+
   it('uses the serif only for the display font when Lora is chosen', () => {
     const vars = buildThemeVariables(parseTheme({ fontKey: 'lora' }));
     expect(vars['--font-display']).toContain('"Lora"');

@@ -28,7 +28,7 @@ export const DEFAULT_THEME: ThemeValues = {
     primary: '#1F6FB5',
     accent: '#FFC93C',
   },
-  fontKey: 'inter',
+  fontKey: 'space-grotesk',
   typeScale: 1,
   radiusScale: 1,
   density: 'comfortable',
@@ -63,6 +63,7 @@ export interface FontOption {
 
 /** The curated list of D-007. Adding a font needs a logged decision and a self hosted WOFF2 subset. */
 export const FONT_OPTIONS: readonly FontOption[] = [
+  { key: 'space-grotesk', label: 'Space Grotesk', description: 'Geometric headings, body text stays Inter' },
   { key: 'inter', label: 'Inter', description: 'Neutral, easy to read on small phones' },
   { key: 'dm-sans', label: 'DM Sans', description: 'Geometric and friendly' },
   { key: 'poppins', label: 'Poppins', description: 'Rounded and bold, wider' },

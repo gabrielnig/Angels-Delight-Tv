@@ -3,6 +3,11 @@ import { deriveColors } from './derive';
 import type { ThemeValues } from './model';
 
 const SERIF_STACK = '"Lora", Georgia, "Times New Roman", serif';
+const GROTESK_STACK =
+  '"Space Grotesk", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
+
+/** Display only fonts: they set headings and the body keeps Inter (D-158, D-005). */
+const DISPLAY_ONLY: Partial<Record<FontKey, string>> = { lora: SERIF_STACK, 'space-grotesk': GROTESK_STACK };
 
 /**
  * Every CSS variable a theme sets. The themeable subset goes through the validator in @ad/ui, so a value
@@ -12,14 +17,13 @@ const SERIF_STACK = '"Lora", Georgia, "Times New Roman", serif';
 export function buildThemeVariables(theme: ThemeValues): Record<string, string> {
   const vars = themeVariables({
     colors: theme.colors,
-    // Lora is display only (docs/DESIGN-SYSTEM.md 5.1): body text keeps Inter.
-    fontKey: (theme.fontKey === 'lora' ? 'inter' : theme.fontKey) as FontKey,
+    // Lora and Space Grotesk are display only (docs/DESIGN-SYSTEM.md 5.1): body text keeps Inter.
+    fontKey: (DISPLAY_ONLY[theme.fontKey] ? 'inter' : theme.fontKey) as FontKey,
     typeScale: theme.typeScale,
     radiusScale: theme.radiusScale,
     density: theme.density,
   });
-  if (theme.fontKey === 'lora') vars['--font-display'] = SERIF_STACK;
-  else vars['--font-display'] = 'var(--font-sans)';
+  vars['--font-display'] = DISPLAY_ONLY[theme.fontKey] ?? 'var(--font-sans)';
 
   const derived = deriveColors(theme.colors);
   vars['--color-on-primary'] = derived.onPrimary;

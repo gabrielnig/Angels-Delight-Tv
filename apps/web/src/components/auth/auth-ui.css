@@ -5,7 +5,7 @@
 */
 
 .auth-root {
-  --auth-display: var(--font-auth-display), var(--font-auth-display-ext), var(--font-sans);
+  --auth-display: var(--font-display);
   --auth-card-shadow: 0 1px 2px rgb(26 28 34 / 5%);
   --auth-logo-glyph: #12263a;
   background: var(--color-bg);

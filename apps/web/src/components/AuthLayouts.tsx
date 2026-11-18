@@ -1,7 +1,6 @@
 import type { ReactNode } from 'react';
 import { Icon, Link } from '@ad/ui';
 import type { SiteContent } from '../lib/data';
-import { authDisplayClasses } from '../lib/auth-font';
 import { AuthIcon } from './auth/AuthParts';
 import './auth/auth-ui.css';
 
@@ -42,7 +41,7 @@ export function AuthBrand({ site, inverse = false }: { site: SiteContent; invers
 /** Landing and sign in (S01): brand panel on the left from 960px, the card on the right, a plain header below that. */
 export function AuthSplit({ site, children }: { site: SiteContent; children: ReactNode }) {
   return (
-    <div className={`auth-root auth-split ${authDisplayClasses}`}>
+    <div className={`auth-root auth-split`}>
       <aside className="auth-split__panel">
         <AuthBrand site={site} inverse />
         <div className="auth-pitch">
@@ -86,7 +85,7 @@ export function AuthSplit({ site, children }: { site: SiteContent; children: Rea
 /** Sign up (S02): a bar with the brand and a Have an account link, then the centred card; plain page on mobile. */
 export function AuthSignUpPage({ site, children }: { site: SiteContent; children: ReactNode }) {
   return (
-    <div className={`auth-root auth-page ${authDisplayClasses}`}>
+    <div className={`auth-root auth-page`}>
       <header className="auth-header">
         <AuthBrand site={site} />
         <div className="auth-header__account">

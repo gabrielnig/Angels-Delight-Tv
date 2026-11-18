@@ -84,7 +84,7 @@
 
   /* ---- Typography: themeable family, fixed fallbacks ---- */
   --font-sans: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  --font-display: var(--font-sans);
+  --font-display: "Space Grotesk", var(--font-sans);
   --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 
   /* Themeable: base size scale factor (0.9 to 1.15) */
