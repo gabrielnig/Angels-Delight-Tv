@@ -44,7 +44,7 @@ Status rules: **done with test** means every acceptance criterion is implemented
 | M21-S01 Send transactional email reliably | Must | partial | packages/mailer delivery.test.ts (5 attempts with backoff, no retry on 5xx, outage alert after 10 min, suppression); templates.test.ts (size under 30 KB, no pixels); apps/web/src/server/email/webhook.test.ts and suppression.int.test.ts (signed bounce, hashed list) | `f1`: staff notification mail now uses `email_outbox` with retry, provider message id and status (D-129, `packages/queue/src/outbox.int.test.ts`). Sign in and account mail is still sent in the request (D-122, D-129), so its provider message id is not recorded |
 | M21-S02 Email templates | Must | done with test | templates.test.ts (all templates, code not in subject, missing variable fails, no dashes or emojis); mailer.test.ts; signup.int.test.ts (welcome) |  |
 | M21-S03 Admin notices | Should | done with test | packages/video/src/notices.int.test.ts (also as the worker role); NoticeBell.test.tsx; apps/web/src/lib/data/admin/notices.test.ts; `f1`: packages/queue/src/digest.int.test.ts (at once, hourly, daily at 07:00 Lagos, 50 line cap), outbox.int.test.ts (batching, retry), apps/worker/src/mail.test.ts | Immediate means within a minute (the drain runs every minute) |
-| M21-S04 Email deliverability setup | Must | partial | docs/DEPLOYMENT.md lists SPF, DKIM, DMARC | `m1`: no check script in the repo yet |
+| M21-S04 Email deliverability setup | Must | done with test | docs/DEPLOYMENT.md lists SPF, DKIM, DMARC; `f1`: packages/launch/src/dns/check.test.ts (SPF, DKIM, DMARC, app domain, media domain, offline with an injected resolver); `pnpm dns:check`; docs/LAUNCH-RUNBOOK.md step 1 and the smoke checklist | Inbox placement is a manual smoke step. A proxied app domain cannot be compared with the VPS address (D-133) |
 | M22-S01 Bucket layout and CDN domain | Must | done with test | packages/storage contract suite; apps/edge/src/worker.miniflare.test.ts (CORS for the app origin only); apps/edge/src/smoke.test.ts (deploy smoke for CORS and signatures, `pnpm edge:smoke`) | Smoke is not yet in deploy.sh (`m1`) |
 | M22-S02 Presigned upload URLs | Must | done with test | packages/storage/src/s3.server.test.ts (S3 driver over HTTP against s3rver and moto, multipart resume); packages/video upload tests | Real R2 stays a launch check |
 | M22-S03 Storage usage and lifecycle | Should | done with test | apps/web/src/lib/data/admin/real/system.int.test.ts (usage by type, estimate, 80 percent warning); system-rules.test.ts (storageBudget); SystemView.test.tsx (warning, Not available) | `f1`: the budget is the `limits.storage_cap_bytes` setting (D-131). The 7 day multipart rule is an R2 setting in DEPLOYMENT, not code |
@@ -78,7 +78,7 @@ Status rules: **done with test** means every acceptance criterion is implemented
 
 ## Counts
 
-Rows: 69. done with test: 57. done without test: 3. partial: 9. missing: 0.
+Rows: 69. done with test: 58. done without test: 3. partial: 8. missing: 0.
 
 m1 and m3 had not merged when this table was written. Their rows (M21-S04, M24-S02 alerts, M32, M33-S01, M33-S03, M36) must be re-checked against their merged work.
 

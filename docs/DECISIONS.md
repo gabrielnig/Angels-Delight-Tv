@@ -782,3 +782,9 @@ Format: decision, options considered, why, reversible or not. Newest first. Deci
 - Options: apply 14 plus 8 to both databases (keeps shredded keys for 8 weeks, breaks the erasure promise), keep age based retention, a manifest only on the main database.
 - Why: slots count days and weeks that have a backup, so an outage of the job cannot erode the good copies. The keys exception protects the account deletion promise.
 - Reversible: yes.
+
+## D-133 The DNS check treats Cloudflare addresses as a proxied pass and uses injected resolvers (lane f1)
+- Decision: `pnpm dns:check` takes its lookups from an injected resolver, so the tests run offline. An app domain that resolves to Cloudflare addresses passes as proxied, because DNS cannot show the VPS behind the proxy; one that resolves to the given `--vps-ip` passes as direct; anything else fails. The media domain must resolve to Cloudflare and must not resolve to the VPS. A lookup that times out fails with a retry message and is never read as a missing record. DKIM selectors, the VPS address and the SPF include are flags, not production env variables, because they are launch time inputs and the provider names them. Cloudflare's published IPv4 ranges are listed in code and can be overridden.
+- Options: require the VPS address to match (breaks when proxied), skip the address checks, read the selectors from new env variables.
+- Why: Cloudflare proxying is the documented setup, and a check that fails on it would be ignored. A stale range list can only cause a false failure that is easy to see.
+- Reversible: yes.
