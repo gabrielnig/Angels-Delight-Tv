@@ -7,6 +7,7 @@ import { PlaybackSettingsForm } from './PlaybackSettings';
 
 const initial = {
   autoplayNext: true,
+  autoplayPreviews: false,
   dataSaver: false,
   quality: 'auto' as const,
   speed: 1,

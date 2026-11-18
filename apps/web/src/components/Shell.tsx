@@ -1,3 +1,4 @@
+import './account/account.css';
 import type { ReactNode } from 'react';
 import { ButtonLink, Link, SiteFooter } from '@ad/ui';
 import { getSite } from '../lib/data';
@@ -6,7 +7,7 @@ import { Brand } from './AuthLayouts';
 import { ViewerChrome } from './ViewerChrome';
 
 /** Signed in with a profile: the full viewer chrome. Otherwise a light public header and footer. */
-export async function AppShell({ children }: { children: ReactNode }) {
+export async function AppShell({ children, skin }: { children: ReactNode; skin?: 'soft' }) {
   const [site, session] = await Promise.all([getSite().content(), getSession()]);
   const year = new Date().getUTCFullYear();
   if (session?.profile) {
@@ -20,6 +21,8 @@ export async function AppShell({ children }: { children: ReactNode }) {
         kids={session.profile.kids}
         footerLinks={site.footerLinks}
         year={year}
+        skin={skin}
+        supportEmail={site.supportEmail}
       >
         {children}
       </ViewerChrome>

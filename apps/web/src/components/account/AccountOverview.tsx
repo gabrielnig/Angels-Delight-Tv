@@ -1,10 +1,13 @@
-import { Icon, type IconName } from '@ad/ui';
-import { formatDate, maskEmail } from '../../lib/format';
+import type { Profile } from '../../lib/data';
+import { AcctAvatar } from './AcctAvatar';
+import { AcctIcon, type AcctIconName } from './icons';
+import { EditName } from './EditName';
 import { SignOutButton } from '../SignOutButton';
 
 export interface AccountOverviewData {
   displayName: string;
   email: string;
+  verified: boolean;
   memberSince: string;
   watchedThisMonth: number;
   minutesLearning: number;
@@ -12,63 +15,146 @@ export interface AccountOverviewData {
   devices: number;
 }
 
-const ROWS: { href: string; label: string; hint: string; icon: IconName }[] = [
-  { href: '/account/security', label: 'Security', hint: 'Password and sign in', icon: 'lock' },
-  { href: '/settings/playback', label: 'Playback', hint: 'Speed, captions and data saver', icon: 'settings' },
-  { href: '/account/data', label: 'Your data', hint: 'Download or delete your account', icon: 'shield' },
+const ROWS: { href: string; label: string; hint: string; icon: AcctIconName }[] = [
+  {
+    href: '/account/security',
+    label: 'Security',
+    hint: 'Password, email and signed in devices',
+    icon: 'shield',
+  },
+  {
+    href: '/settings/playback',
+    label: 'Playback settings',
+    hint: 'Autoplay, video quality and captions',
+    icon: 'play',
+  },
+  {
+    href: '/account/data',
+    label: 'Data and privacy',
+    hint: 'Export your data or delete your account',
+    icon: 'download',
+  },
 ];
 
-export function AccountOverview({ overview: o }: { overview: AccountOverviewData }) {
-  const stats: [string, number][] = [
-    ['Watched this month', o.watchedThisMonth],
-    ['Minutes learning', o.minutesLearning],
-    ['Saved in My List', o.myListCount],
-    ['Signed in devices', o.devices],
-  ];
+const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
+
+/** 220 becomes "3 hr 40 min", 60 becomes "1 hr", 40 becomes "40 min". */
+export function formatMinutes(minutes: number): string {
+  const hours = Math.floor(minutes / 60);
+  const rest = minutes % 60;
+  if (hours === 0) return `${rest} min`;
+  return rest === 0 ? `${hours} hr` : `${hours} hr ${rest} min`;
+}
+
+export function AccountOverview({
+  overview: o,
+  profiles,
+  maxProfiles,
+  currentDevice,
+}: {
+  overview: AccountOverviewData;
+  profiles: Pick<Profile, 'id' | 'name' | 'kids' | 'owner' | 'tone'>[];
+  maxProfiles: number;
+  currentDevice: string | null;
+}) {
   return (
     <>
-      <h1 className="web-page__title">Account</h1>
-      <section className="web-card web-acct-profile" aria-labelledby="acct-you">
-        <span className="web-acct-profile__icon" aria-hidden="true">
-          <Icon name="user" size={28} />
-        </span>
-        <div>
-          <h2 id="acct-you" className="web-card__title">
-            Your account
-          </h2>
-          <p className="web-acct-profile__name">{o.displayName}</p>
-          <p className="web-card__sub">{maskEmail(o.email)}</p>
-          <p className="web-card__sub">Member since {formatDate(o.memberSince)}</p>
-        </div>
-      </section>
-      <section className="web-card" aria-labelledby="acct-stats">
-        <h2 id="acct-stats" className="web-card__title">
-          Your learning
-        </h2>
-        <dl className="web-stats">
-          {stats.map(([label, value]) => (
-            <div key={label} className="web-stats__item">
-              <dt>{label}</dt>
-              <dd>{value}</dd>
+      <section className="acct-card" data-gap="5" aria-labelledby="acct-who">
+        <div className="acct-row" data-between data-top data-wrap>
+          <div className="acct-row">
+            <AcctAvatar name={o.displayName} />
+            <div className="acct-who">
+              <h2 id="acct-who" className="acct-who__name">
+                {o.displayName}
+              </h2>
+              <span className="acct-muted">{o.email}</span>
+              <span className="acct-who__meta">
+                {o.verified ? (
+                  <span className="acct-badge" data-tone="ok">
+                    <AcctIcon name="check" size={14} strokeWidth={3} />
+                    Email verified
+                  </span>
+                ) : null}
+                <span className="acct-muted acct-small">{`Member since ${o.memberSince}`}</span>
+              </span>
             </div>
-          ))}
+          </div>
+          <EditName name={o.displayName} />
+        </div>
+        <dl className="acct-stats" role="group" aria-label="Your learning">
+          <div>
+            <dt>Watched this month</dt>
+            <dd>{plural(o.watchedThisMonth, 'video', 'videos')}</dd>
+          </div>
+          <div>
+            <dt>Time learning</dt>
+            <dd>{formatMinutes(o.minutesLearning)}</dd>
+          </div>
+          <div>
+            <dt>My List</dt>
+            <dd>{plural(o.myListCount, 'title', 'titles')}</dd>
+          </div>
         </dl>
       </section>
-      <ul className="web-card web-linkrows">
+
+      <section className="acct-card" aria-labelledby="acct-profiles">
+        <div className="acct-row" data-between>
+          <h2 id="acct-profiles" className="acct-h2">
+            Profiles
+          </h2>
+          <a href="/profiles/manage" className="acct-link">
+            Manage profiles
+          </a>
+        </div>
+        <ul className="acct-profiles">
+          {profiles.map((p) => (
+            <li key={p.id}>
+              <AcctAvatar name={p.name} tone={p.tone} />
+              <span className="acct-profiles__name">{p.name}</span>
+              {p.owner ? (
+                <span className="acct-muted acct-small">Owner</span>
+              ) : p.kids ? (
+                <span className="acct-badge" data-tone="info">
+                  Kids
+                </span>
+              ) : (
+                <span className="acct-profiles__gap" />
+              )}
+            </li>
+          ))}
+        </ul>
+        <p className="acct-muted acct-small">{`Up to ${maxProfiles} profiles per account. Kids profiles show only content made for children.`}</p>
+      </section>
+
+      <nav className="acct-card acct-linklist" data-flush="list" aria-label="Account settings">
         {ROWS.map((r) => (
-          <li key={r.href}>
-            <a href={r.href} className="web-linkrow">
-              <Icon name={r.icon} size={20} />
-              <span>
-                <span className="web-linkrow__label">{r.label}</span>
-                <span className="web-card__sub">{r.hint}</span>
+          <a key={r.href} href={r.href} className="acct-linkrow">
+            <span className="acct-linkrow__lead">
+              <AcctIcon name={r.icon} size={22} />
+              <span className="acct-col">
+                <span className="acct-linkrow__label">{r.label}</span>
+                <span className="acct-muted acct-small">{r.hint}</span>
               </span>
-            </a>
-          </li>
+            </span>
+            <AcctIcon name="chevron" />
+          </a>
         ))}
-      </ul>
-      <section className="web-card web-acct-signout" aria-label="Sign out">
-        <SignOutButton />
+      </nav>
+
+      <section
+        className="acct-card acct-row"
+        data-between
+        data-wrap
+        data-tight
+        aria-label={`Signed in on ${plural(o.devices, 'device', 'devices')}`}
+      >
+        <div className="acct-col">
+          <span className="acct-linkrow__label">{`Signed in on ${plural(o.devices, 'device', 'devices')}`}</span>
+          {currentDevice ? (
+            <span className="acct-muted acct-small">{`This device: ${currentDevice}`}</span>
+          ) : null}
+        </div>
+        <SignOutButton variant="secondary" />
       </section>
     </>
   );
