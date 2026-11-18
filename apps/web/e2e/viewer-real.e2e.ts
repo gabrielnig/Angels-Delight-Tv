@@ -32,7 +32,7 @@ test.afterAll(async () => {
 test('sign up, verify the email code and create a profile', async () => {
   await page.goto('/sign-up');
   await page.getByLabel('Email').fill(email);
-  await page.getByLabel(/^Password/).fill(password);
+  await page.locator('input[name="password"]').fill(password);
   await page.getByRole('button', { name: 'Create account' }).click();
   await expect(page).toHaveURL(/\/verify-email/, { timeout: 20_000 });
 
@@ -63,10 +63,8 @@ test('My List saves a title and shows it', async () => {
   await expect(page).toHaveURL(/\/title\//);
   const title = await page.getByRole('heading', { level: 1 }).innerText();
   await page.getByRole('button', { name: 'My List', exact: true }).click();
-  await expect(page.getByRole('button', { name: 'My List', exact: true })).toHaveAttribute(
-    'aria-pressed',
-    'true',
-  );
+  // The label changes to In My List when the title is saved.
+  await expect(page.getByRole('button', { name: 'In My List', pressed: true })).toBeVisible();
   // The button flips at once and the save follows. Leave the page only after the confirmation toast.
   await expect(page.getByText('Added to My List', { exact: true })).toBeVisible();
 
@@ -117,10 +115,16 @@ test('progress saved through the API shows as Continue Watching and resumes', as
   ).toBeVisible();
   await page.reload();
   await page.goto(`/title/${slug}`);
-  await expect(page.getByRole('link', { name: /^Resume/ })).toBeVisible();
-  await expect(page.getByRole('link', { name: 'Start over' })).toHaveAttribute('href', /\?t=0$/);
+  await expect(page.getByRole('link', { name: /^Resume/ }).first()).toBeVisible();
+  // The S18 phone layout has no Start over link, only the Resume button.
+  if (test.info().project.name === 'desktop') {
+    await expect(page.getByRole('link', { name: 'Start over' })).toHaveAttribute('href', /\?t=0$/);
+  }
 
-  await page.getByRole('link', { name: /^Resume/ }).click();
+  await page
+    .getByRole('link', { name: /^Resume/ })
+    .first()
+    .click();
   await expect(page).toHaveURL(new RegExp(`/watch/${videoId}`));
   await expect(page.getByText(title).first()).toBeVisible();
 });

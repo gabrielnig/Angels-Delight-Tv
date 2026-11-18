@@ -92,7 +92,8 @@ const SCREENS: Array<[string, string]> = [
 ];
 
 test('every admin screen opens for an admin with its heading and no error', async ({ page }) => {
-  await signIn(page);
+  // Roles, audit log and system are for the Super admin since M12 and M20.
+  await signIn(page, 'arkdev@example.test');
   for (const [path, heading] of SCREENS) {
     await page.goto(path);
     await expect(page.getByRole('heading', { level: 1, name: heading })).toBeVisible();
