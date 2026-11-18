@@ -60,7 +60,7 @@ const maintenanceBanner = z.object({
 
 export type SettingTier = 'admin' | 'super';
 export type SettingGroup =
-  'platform' | 'features' | 'limits' | 'content' | 'legal' | 'analytics' | 'maintenance';
+  'platform' | 'features' | 'limits' | 'content' | 'legal' | 'analytics' | 'audit' | 'maintenance';
 
 interface Def<S extends z.ZodType> {
   schema: S;
@@ -303,6 +303,15 @@ export const SETTING_DEFS = {
     group: 'analytics',
     label: 'Raw view event retention (days)',
     description: 'Between 7 and 730',
+  }),
+  'audit.retention_months': def({
+    schema: int(6, 120),
+    default: 24,
+    isPublic: false,
+    tier: 'super',
+    group: 'audit',
+    label: 'Audit log retention (months)',
+    description: 'Between 6 and 120. Older entries are purged monthly',
   }),
   'maintenance.banner': def({
     schema: maintenanceBanner,
