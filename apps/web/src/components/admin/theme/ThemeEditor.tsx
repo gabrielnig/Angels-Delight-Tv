@@ -26,6 +26,7 @@ import { Tabs } from '../Tabs';
 import { useToast } from '../Toast';
 import { ColorField } from './ColorField';
 import { FontPicker } from './FontPicker';
+import { PresetPicker } from './PresetPicker';
 import { ThemePreview, type PreviewDevice, type PreviewScreen } from './ThemePreview';
 import './theme.css';
 
@@ -333,6 +334,14 @@ export function ThemeEditor({
 
       <div className="adt-layout">
         <div className="adt-controls">
+          <Card>
+            <PresetPicker
+              colors={theme.colors}
+              onPick={(preset) => setTheme((c) => ({ ...c, colors: { ...preset.theme.colors } }))}
+              readOnly={readOnly}
+            />
+          </Card>
+
           <Card
             title="Colours"
             aside={<span className="adm-muted">Ratios use WCAG 2.2, 4.5:1 needed for text</span>}

@@ -15,3 +15,4 @@ export * from './settings-service';
 export * from './settings-store';
 export { MemoryAudit, MemorySettingsStore, MemoryThemeStore } from './testing';
 export * from './settings-read';
+export * from './presets';
