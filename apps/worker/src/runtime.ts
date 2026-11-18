@@ -1,5 +1,4 @@
-import { pruneViewEvents, runNightlyRollup } from '@ad/analytics';
-import { pruneAudit } from '@ad/audit';
+import { runNightlyRollup } from '@ad/analytics';
 import type { WorkerEnv } from '@ad/config';
 import { createDb, createPool, type Database } from '@ad/db';
 import { DrizzleJobMirror, JobProducer, bossAdapter } from '@ad/queue';
@@ -16,6 +15,7 @@ import type { PgBoss } from 'pg-boss';
 import type { VideoHandlerDeps } from './handlers';
 import { chooseTranscriber } from './transcriber';
 import type { MaintenanceDeps } from './maintenance';
+import { makePrunes } from './prunes';
 
 // Cleanup never validates new uploads, so the limits here are placeholders.
 const MIB = 1024 * 1024;
@@ -36,12 +36,8 @@ export function buildMaintenanceDeps(
   const maintenance = createDb(
     createPool(maintenanceUrl, { max: 1, applicationName: 'ad-worker-maintenance' }),
   );
-  return {
-    rollup: () => runNightlyRollup(db),
-    pruneViewEvents: () => pruneViewEvents(maintenance),
-    // The purge row is written by the worker role, because ad_maintenance cannot insert (migration 0012).
-    pruneAudit: () => pruneAudit(maintenance, db),
-  };
+  // The purge row is written by the worker role, because ad_maintenance cannot insert (migration 0012).
+  return { rollup: () => runNightlyRollup(db), ...makePrunes(maintenance, db) };
 }
 
 export function buildVideoHandlerDeps(
