@@ -729,3 +729,39 @@ Format: decision, options considered, why, reversible or not. Newest first. Deci
 - Options: pad the footer links to 44px wide (spacing no longer matches), turn the inline links into blocks (breaks the wrap), keep F2's copy.
 - Why: the mockups are the spec and each deviation is invisible or tiny. All other targets are at least 44 by 44, checked in `e2e/touch-targets.e2e.ts` and `e2e/auth-pages.e2e.ts`.
 - Reversible: yes.
+
+## D-147 The account and site screens keep Inter as the display face (lane p3)
+- Decision: S27 to S31 use `--font-display` (Inter), not the mockups' Space Grotesk. This is the one accepted visual difference on those screens. Sign in and sign up keep their scoped Space Grotesk from D-144.
+- Options: copy D-144 and scope Space Grotesk to the account pages, add Space Grotesk to the curated theme list, keep Inter.
+- Why: docs/DESIGN-SYSTEM.md and the review in DESIGN-REVIEW item 10 settle on the theme font for every signed in screen, so the client's font choice in the theme editor still applies. Sizes, weights and line heights are matched to the mockup.
+- Reversible: yes. One `font-family` token in `account.css` and the site rules.
+
+## D-148 Export keeps a password dialog; extra caption rows and the Password card stay (lane p3)
+- Decision: requesting an export opens "Confirm your password" (M02-S07 needs the password), the mockup's single button stays as the entry point. The Password card on S28 stays visible after a successful change, with the success toast above it. Caption background and high contrast rows stay on S29 below caption size, because the player supports both.
+- Options: remove the password step from export, replace the dialog with an inline field, keep the dialog; hide the Password card after success; drop the two extra caption rows.
+- Why: the behaviour in the stories wins over a visual shortcut, and the dialog uses the same look as the mockup's delete dialog.
+- Reversible: yes.
+
+## D-149 Kids locked playback rows are enforced on the server (lane p3)
+- Decision: `lib/playback-lock.ts` lists the rows a Kids profile cannot change (autoplay next episode, data saver). `savePlaybackAction` drops those keys before saving, and the page shows them as locked switches with "Set by your parent account."
+- Options: disable the switches only in the UI, enforce in the action, enforce in the repository.
+- Why: a disabled switch is not a rule, and the action is the one place every write passes through.
+- Reversible: yes.
+
+## D-150 The pending deletion screen moves to a closing layout (lane p3)
+- Decision: `/account/deletion` now lives in the `(closing)` route group with the soft header (logo only, no links the account cannot use) and the support footer, as drawn in S30 state 6. The behaviour (Cancel deletion, Sign out, redirect when nothing is pending) is unchanged.
+- Options: keep the logo and sign out bar of the profiles layout, show the full header, add a closing layout.
+- Why: the mockup shows the header and footer; the full header links would all redirect back to this screen.
+- Reversible: yes.
+
+## D-151 About copy comes from the editable page, with an optional lead line (lane p3)
+- Decision: S31 About draws the page title as the headline, the new optional `lead` as the intro and one card per section. Pages with admin HTML keep the article layout. Legal pages read "Last updated D. Reading time N min." as drawn.
+- Options: hardcode the About text, store it in the theme, keep it in the legal page record.
+- Why: the owner edits these pages; the mockup text is the fixture. `lead` is optional so existing saved pages still render.
+- Reversible: yes.
+
+## D-152 The soft header names the profile button from its visible text (lane p3)
+- Decision: with `skin="soft"` the profile button has no aria-label. Its accessible name is the visible name followed by a hidden ", profile menu".
+- Options: keep "Profile menu, Name" (fails label in name, WCAG 2.5.3), hide the visible name.
+- Why: axe flagged the mismatch once the name became visible beside the avatar.
+- Reversible: yes.
