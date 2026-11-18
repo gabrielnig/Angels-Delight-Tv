@@ -193,6 +193,33 @@ describe('SiteFooter', () => {
     expect(screen.getByRole('link', { name: 'Privacy' })).toHaveAttribute('href', '/privacy');
     expect(screen.getByText(/Angels Delight TV 2026/)).toBeInTheDocument();
   });
+
+  it('shows the illustrated profile avatar instead of a letter when the profile has one (M3)', () => {
+    const { container, rerender } = render(
+      <TopNav
+        brand={{ name: 'Angels Delight TV', href: '/' }}
+        links={links}
+        currentPath="/"
+        profileName="Ada"
+        profileAvatarId="sun"
+        menu={menu}
+      />,
+    );
+    const avatar = container.querySelector('.ad-nav__avatar .ad-avatar');
+    expect(avatar?.getAttribute('data-art')).toBe('sun');
+    rerender(
+      <TopNav
+        brand={{ name: 'Angels Delight TV', href: '/' }}
+        links={links}
+        currentPath="/"
+        profileName="Ada"
+        menu={menu}
+      />,
+    );
+    expect(
+      container.querySelector('.ad-nav__avatar .ad-avatar')?.getAttribute('data-art'),
+    ).toBeNull();
+  });
 });
 
 describe('TopNav back button (S18 phone)', () => {

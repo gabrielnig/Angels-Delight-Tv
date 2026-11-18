@@ -5,6 +5,7 @@ import { useState, useTransition, type ReactNode } from 'react';
 import { BottomTabBar, SiteFooter, TopNav, type MenuItem } from '@ad/ui';
 import { signOutAction } from '../app/actions';
 import { clearServiceWorkerCaches } from '../lib/pwa/purge';
+import { requestSignOut } from '../lib/pwa/sign-out';
 import { useSearchShortcut } from './browse/useSearchShortcut';
 import { ProfileIdProvider } from '../lib/profile-context';
 import { KidsExitDialog } from './KidsExitDialog';
@@ -14,6 +15,7 @@ export interface ChromeProps {
   platformName: string;
   logoUrl?: string;
   profileName: string;
+  profileAvatarId?: string;
   profileId: string;
   kids: boolean;
   footerLinks: Array<{ label: string; href: string }>;
@@ -38,6 +40,7 @@ export function ViewerChrome({
   platformName,
   logoUrl,
   profileName,
+  profileAvatarId,
   profileId,
   kids,
   footerLinks,
@@ -62,8 +65,12 @@ export function ViewerChrome({
       label: 'Sign out',
       onSelect: () =>
         startTransition(async () => {
-          await signOutAction();
-          clearServiceWorkerCaches(navigator);
+          await requestSignOut({
+            store: localStorage,
+            online: () => navigator.onLine,
+            signOut: signOutAction,
+            clearCaches: () => clearServiceWorkerCaches(navigator),
+          });
           router.push('/');
           router.refresh();
         }),
@@ -79,6 +86,7 @@ export function ViewerChrome({
           links={LINKS}
           currentPath={pathname}
           profileName={profileName}
+          profileAvatarId={profileAvatarId}
           menu={menu}
           overHero={pathname === '/'}
           kids={kids}
