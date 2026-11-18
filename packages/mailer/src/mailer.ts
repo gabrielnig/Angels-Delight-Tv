@@ -74,7 +74,15 @@ export interface MailerSettings extends BrandContext {
    * next email without a deploy. A failure falls back to the values above.
    */
   brand?: () => Promise<Partial<BrandContext>>;
+  /**
+   * True for an address that bounced or complained (M21-S01 AC2). Only non essential mail is held back; codes,
+   * resets and security notices always go. A failed lookup sends anyway.
+   */
+  isSuppressed?: (address: string) => Promise<boolean>;
 }
+
+/** Mail the person can live without. Everything else is a code, a link or a security notice. */
+const NON_ESSENTIAL: ReadonlySet<TemplateName> = new Set<TemplateName>(['welcome']);
 
 /**
  * Typed transactional emails (M21). Sends directly from the calling process, one attempt. Callers decide how
@@ -97,6 +105,13 @@ export class Mailer {
     name: TemplateName,
     vars: Record<string, string | number>,
   ): Promise<void> {
+    if (NON_ESSENTIAL.has(name) && this.settings.isSuppressed) {
+      try {
+        if (await this.settings.isSuppressed(to)) return;
+      } catch {
+        // an unavailable list must not stop mail
+      }
+    }
     let live: Partial<BrandContext> = {};
     try {
       live = (await this.settings.brand?.()) ?? {};
@@ -122,6 +137,10 @@ export class Mailer {
       code: input.code,
       linkUrl: this.url('/verify-email/confirm', { token: input.token }),
     });
+  }
+
+  sendWelcome(input: { to: string }) {
+    return this.deliver(input.to, 'welcome', { homeUrl: this.url('/') });
   }
 
   sendAlreadyRegistered(input: { to: string }) {

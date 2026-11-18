@@ -38,6 +38,7 @@ const MAIN_TABLES = [
   'categories',
   'consents',
   'data_exports',
+  'email_suppressions',
   'email_tokens',
   'episodes',
   'jobs',

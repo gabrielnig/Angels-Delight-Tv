@@ -273,6 +273,7 @@ export class AccountService {
       return { status: check.status };
     }
     await this.completeVerification(account.id, now);
+    this.run(() => this.deps.mailer.sendWelcome({ to: email }));
     const session = await this.deps.sessions.create({
       accountId: account.id,
       kind: 'viewer',
@@ -289,6 +290,18 @@ export class AccountService {
       accountId: account.id,
       session: { token: session.token, id: session.session.id },
     };
+  }
+
+  private async welcomeById(accountId: string): Promise<void> {
+    const enc = await withAccount(this.deps.db, { accountId, role: 'viewer' }, async (tx) => {
+      const [row] = await tx
+        .select({ enc: schema.accounts.emailEnc })
+        .from(schema.accounts)
+        .where(eq(schema.accounts.id, accountId));
+      return row?.enc ?? null;
+    });
+    if (!enc) return;
+    await this.deps.mailer.sendWelcome({ to: await this.deps.keys.open(accountId, 'email', enc) });
   }
 
   private async completeVerification(accountId: string, now: Date): Promise<void> {
@@ -313,6 +326,7 @@ export class AccountService {
       return applied ? { status: 'verified', purpose: 'change_email' } : { status: 'invalid' };
     }
     await this.completeVerification(row.accountId, now);
+    this.run(() => this.welcomeById(row.accountId));
     await this.audit('auth.verify_email', 'success', meta, {
       accountId: row.accountId,
       metadata: { method: 'link' },
@@ -826,7 +840,14 @@ export class AccountService {
     if (lock.locked) throw new RateLimited(lock.retryAfterSeconds);
     if (!(await this.deps.hasher.verify(account.passwordHash, password))) {
       const email = await this.deps.keys.open(account.id, 'email', account.emailEnc);
-      await this.registerPasswordFailure(account.emailHash, account.id, account.role, email, meta, policy);
+      await this.registerPasswordFailure(
+        account.emailHash,
+        account.id,
+        account.role,
+        email,
+        meta,
+        policy,
+      );
       await this.audit('auth.reauth', 'failure', meta, {
         accountId: account.id,
         role: account.role,

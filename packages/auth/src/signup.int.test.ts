@@ -179,6 +179,18 @@ describe.skipIf(!integrationEnabled())('sign up and email verification', () => {
       expect((await auth.verifyCode({ email, code }, h.meta)).status).toBe('invalid');
     });
 
+    it('sends a welcome email after the first verification and not a second time', async () => {
+      const email = fresh();
+      await auth.signUp(input(email), h.meta);
+      const code = h.codeFor(email);
+      await auth.verifyCode({ email, code }, h.meta);
+      await h.settle();
+      expect(h.mailsTo(email)).toBe(2);
+      await auth.verifyCode({ email, code }, h.meta);
+      await h.settle();
+      expect(h.mailsTo(email)).toBe(2);
+    });
+
     it('rejects a wrong code, and voids the code after five wrong tries', async () => {
       const email = fresh();
       await auth.signUp(input(email), h.meta);
@@ -274,6 +286,8 @@ describe.skipIf(!integrationEnabled())('sign up and email verification', () => {
       const result = await auth.verifyLink(h.tokenFor(email), h.meta);
       expect(result).toEqual({ status: 'verified', purpose: 'verify_email' });
       expect((await accountRow(email))?.emailVerifiedAt).not.toBeNull();
+      await h.settle();
+      expect(h.mailsTo(email)).toBe(2);
     });
 
     it('says already used the second time and invalid for a tampered link', async () => {
