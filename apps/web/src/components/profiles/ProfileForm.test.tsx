@@ -193,7 +193,10 @@ describe('ProfileForm suggested name and unsaved changes', () => {
     const user = userEvent.setup();
     const onDone = vi.fn();
     render(<ProfileForm profile={emeka} onSave={vi.fn()} onDone={onDone} />);
-    expect(screen.getByRole('link', { name: 'Cancel' })).toHaveAttribute('href', '/profiles/manage');
+    expect(screen.getByRole('link', { name: 'Cancel' })).toHaveAttribute(
+      'href',
+      '/profiles/manage',
+    );
     await user.click(screen.getByRole('link', { name: 'Cancel' }));
     expect(screen.queryByRole('dialog')).toBeNull();
   });
@@ -223,6 +226,8 @@ describe('ProfileForm suggested name and unsaved changes', () => {
     const dirty = new Event('beforeunload', { cancelable: true });
     window.dispatchEvent(dirty);
     expect(dirty.defaultPrevented).toBe(true);
+  });
+});
 
 describe('ProfileForm PIN (M03-S12)', () => {
   it('sets a four digit PIN and needs the account password for it', async () => {
