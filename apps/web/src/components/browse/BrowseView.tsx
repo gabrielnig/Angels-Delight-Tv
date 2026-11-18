@@ -2,33 +2,16 @@ import { EmptyState, Pill, PillRow } from '@ad/ui';
 import { getCatalog, getLibrary } from '../../lib/data';
 import type { BrowseLength, BrowseSort, ViewerContext } from '../../lib/data';
 import { BrowseGrid } from './BoundGrids';
+import {
+  LENGTHS,
+  SORTS,
+  activeChips,
+  browseHref as href,
+  parseLength,
+  parseSort,
+} from './browse-filters';
 
-const LENGTHS: Array<{ value: BrowseLength; label: string }> = [
-  { value: 'any', label: 'Any length' },
-  { value: 'short', label: 'Under 5 min' },
-  { value: 'medium', label: '5 to 15 min' },
-  { value: 'long', label: 'Over 15 min' },
-];
-const SORTS: Array<{ value: BrowseSort; label: string }> = [
-  { value: 'newest', label: 'Newest' },
-  { value: 'shortest', label: 'Shortest' },
-  { value: 'longest', label: 'Longest' },
-];
-
-export function parseLength(v: string | undefined): BrowseLength {
-  return LENGTHS.some((l) => l.value === v) ? (v as BrowseLength) : 'any';
-}
-export function parseSort(v: string | undefined): BrowseSort {
-  return SORTS.some((s) => s.value === v) ? (v as BrowseSort) : 'newest';
-}
-
-function href(base: string, length: BrowseLength, sort: BrowseSort) {
-  const params = new URLSearchParams();
-  if (length !== 'any') params.set('length', length);
-  if (sort !== 'newest') params.set('sort', sort);
-  const qs = params.toString();
-  return qs ? `${base}?${qs}` : base;
-}
+export { parseLength, parseSort };
 
 /** Browse by category with URL-driven length and sort filters. */
 export async function BrowseView({
@@ -50,6 +33,7 @@ export async function BrowseView({
   ]);
   const base = categorySlug ? `/browse/${categorySlug}` : '/browse';
   const filtered = length !== 'any';
+  const chips = activeChips(base, length, sort);
 
   return (
     <div className="web-page">
@@ -84,6 +68,19 @@ export async function BrowseView({
           ))}
         </PillRow>
       </div>
+      {chips.length > 0 ? (
+        <ul className="web-chips" aria-label="Active filters">
+          {chips.map((chip) => (
+            <li key={chip.label}>
+              <a className="web-chip" href={chip.removeHref}>
+                <span>{chip.label}</span>
+                <span className="ad-sr-only">, remove filter</span>
+                <span aria-hidden="true">x</span>
+              </a>
+            </li>
+          ))}
+        </ul>
+      ) : null}
       {page.items.length === 0 ? (
         filtered ? (
           <EmptyState
