@@ -33,6 +33,7 @@ export function SearchGrid({ q, ...base }: Base & { q: string }) {
     <CardGrid
       {...base}
       countLabel="results"
+      showType
       loadMore={(cursor) => loadMoreSearchAction(q, cursor)}
     />
   );

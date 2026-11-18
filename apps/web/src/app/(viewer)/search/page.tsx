@@ -1,4 +1,5 @@
 import { EmptyState, ErrorState } from '@ad/ui';
+import { NoResults } from '../../../components/browse/NoResults';
 import { AppShell } from '../../../components/Shell';
 import { SearchGrid } from '../../../components/browse/BoundGrids';
 import { SearchScreen } from '../../../components/browse/SearchScreen';
@@ -41,12 +42,12 @@ export default async function SearchPage({
       ]);
       body =
         page.items.length === 0 ? (
-          <EmptyState
-            live
-            icon="search"
-            title={`No results for "${q}"`}
-            description="Check the spelling or try fewer words."
-            action={{ label: 'Browse categories', href: '/browse' }}
+          <NoResults
+            query={q}
+            inList={inList}
+            popular={await getCatalog()
+              .popular(ctx)
+              .catch(() => [])}
           />
         ) : (
           <SearchGrid

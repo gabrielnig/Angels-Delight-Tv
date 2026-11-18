@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Button } from '@ad/ui';
+import { Badge, Button } from '@ad/ui';
 import type { CatalogItem, Page } from '../../lib/data';
 import { itemKey } from '../../lib/format';
 import { CatalogCard } from '../CatalogCard';
@@ -14,6 +14,8 @@ export interface CardGridProps {
   loadMore: (cursor: string) => Promise<Page<CatalogItem>>;
   /** Plural noun, for example "videos". */
   countLabel: string;
+  /** Adds a Video or Series label to each card (search results, M06-S09). */
+  showType?: boolean;
 }
 
 function countText(total: number, noun: string) {
@@ -28,6 +30,7 @@ export function CardGrid({
   inList,
   loadMore,
   countLabel,
+  showType = false,
 }: CardGridProps) {
   const [items, setItems] = useState(initialItems);
   const [cursor, setCursor] = useState(nextCursor);
@@ -61,6 +64,9 @@ export function CardGrid({
         {items.map((item) => (
           <li key={itemKey(item)}>
             <CatalogCard item={item} inList={saved.has(itemKey(item))} showMeta />
+            {showType ? (
+              <Badge variant="neutral">{item.kind === 'series' ? 'Series' : 'Video'}</Badge>
+            ) : null}
           </li>
         ))}
       </ul>

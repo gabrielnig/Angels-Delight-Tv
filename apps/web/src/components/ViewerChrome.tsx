@@ -5,6 +5,7 @@ import { useState, useTransition, type ReactNode } from 'react';
 import { BottomTabBar, SiteFooter, TopNav, type MenuItem } from '@ad/ui';
 import { signOutAction } from '../app/actions';
 import { clearServiceWorkerCaches } from '../lib/pwa/purge';
+import { useSearchShortcut } from './browse/useSearchShortcut';
 import { KidsExitDialog } from './KidsExitDialog';
 
 export interface ChromeProps {
@@ -43,6 +44,7 @@ export function ViewerChrome({
   const router = useRouter();
   const [exitOpen, setExitOpen] = useState(false);
   const [, startTransition] = useTransition();
+  useSearchShortcut(router.push);
 
   const menu: MenuItem[] = [
     { label: 'Switch profile', href: '/profiles?switch=1' },
