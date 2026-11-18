@@ -505,3 +505,9 @@ Format: decision, options considered, why, reversible or not. Newest first. Deci
 - Options: change the token to 400 ms; let staff sessions open the viewer site.
 - Why: the design system doc wins over a story number, and mixing staff and viewer sessions was rejected in L-6.
 - Reversible: yes, a token value and one prop.
+
+## D-098 Seek preview sprites: one frame per 5 seconds, public like captions, off with Data saver (lane M3)
+- Decision: the `video.thumbnails` job also cuts one frame every 5 seconds (wider for videos over about 20 minutes, at most 10 sheets), packs them 5 by 5 at 160 px wide into jpeg sheets and writes a WebVTT map with `#xywh` cues. Files live under `cap/{mediaPrefix}/sprites/` so they are public, immutable and removed by the existing purge. `videos.sprite_key` (migration 0022) points at the map. The playback session returns `sprite` and the watch data returns `spriteUrl`. The player fetches the map on the first pointer move over the seek bar, never with Data saver on, and failure is silent.
+- Options: a separate `video.sprites` queue, signed sprite urls, hover preview clips.
+- Why: reusing the thumbnails job and its downloaded source avoids a second download, sprites are 160 px stills so they leak no more than the poster does, and clips would break the low data rules.
+- Reversible: yes. Clear `sprite_key` and the player shows only the time tip.
