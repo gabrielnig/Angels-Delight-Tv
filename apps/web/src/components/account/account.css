@@ -1133,6 +1133,7 @@
 .acct-skel-line {
   display: flex;
   flex: 1;
+  min-width: 0;
   flex-direction: column;
   gap: var(--space-2);
 }

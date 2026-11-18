@@ -32,7 +32,8 @@ const CONTROLS = '.acct a, .acct button, .acct input, .acct select, .acct [role=
 for (const path of ['/account', '/account/security', '/settings/playback', '/account/data']) {
   test(`${path} tap targets and overflow`, async ({ page }) => {
     await page.goto(path);
-    await expect(page.locator('.acct h1')).toBeVisible();
+    // The loading fallback and the page both render the frame, so wait until only one heading is visible.
+    await expect(page.locator('.acct h1:visible')).toHaveCount(1);
     await expectBig(page, CONTROLS, 'account control');
     const overflow = await page.evaluate(
       () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
@@ -69,8 +70,14 @@ test('export password dialog is accessible', async ({ page }) => {
 
 test('password rules show as the field is typed', async ({ page }) => {
   await page.goto('/account/security');
-  await page.getByLabel('New password').first().pressSequentially('Abcdefgh1!xyz');
-  await expect(page.getByText(/\(met\)/).first()).toBeVisible();
+  // Typing before hydration is dropped, so retype until the rules react.
+  await expect(async () => {
+    await page.getByLabel('New password').first().fill('');
+    await page.getByLabel('New password').first().pressSequentially('Abcdefgh1!xyz');
+    await expect(page.getByText(/\(met\)/).first()).toBeVisible({ timeout: 1500 });
+  }).toPass({ timeout: 15_000 });
+  // Let the rule colour transitions finish so axe reads the settled colours.
+  await page.waitForTimeout(500);
   await expectNoAxeViolations(page);
 });
 
