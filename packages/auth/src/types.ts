@@ -13,6 +13,8 @@ export interface AuthConfig {
   resetTtlSeconds: number;
   emailChangeTtlSeconds: number;
   inviteTtlSeconds: number;
+  /** Days between a deletion request and the purge (M02-S06). A site setting in the app. */
+  deletionGraceDays: number;
   /** Password confirmation stays valid for sensitive actions this long (SECURITY.md section 4). */
   reauthWindowSeconds: number;
   /** Versions recorded in `consents` at sign up. Content owned by the client (legal.*_version). */
@@ -33,6 +35,7 @@ export const DEFAULT_AUTH_CONFIG: AuthConfig = {
   resetTtlSeconds: 30 * 60,
   emailChangeTtlSeconds: 24 * 3600,
   inviteTtlSeconds: 72 * 3600,
+  deletionGraceDays: 14,
   reauthWindowSeconds: 10 * 60,
   legalVersions: { terms: '1', privacy: '1', guardian_declaration: '1' },
   supportEmail: 'support@example.org',

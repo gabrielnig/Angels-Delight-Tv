@@ -139,7 +139,7 @@ export class SessionService {
         return row;
       },
     );
-    if (!account || account.status !== 'active') {
+    if (!account || (account.status !== 'active' && account.status !== 'pending_deletion')) {
       if (account?.status === 'suspended') await this.revoke(session.id);
       return { ended: 'unavailable' };
     }

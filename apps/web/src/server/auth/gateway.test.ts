@@ -16,6 +16,7 @@ function setup(service: Record<string, unknown>, extra: Partial<GatewayIo> = {})
     })),
     setPending: vi.fn(async () => undefined),
     readPending: vi.fn(async () => 'me@example.org'),
+    pendingDeletionActor: vi.fn(async () => null),
     ...extra,
   };
   return { gateway: new RealAuthGateway(service as never, io), io };
@@ -59,6 +60,23 @@ describe('RealAuthGateway.signIn', () => {
     });
     expect(io.setSession).not.toHaveBeenCalled();
     expect(io.setPending).not.toHaveBeenCalled();
+  });
+
+  it('opens the cancel only session for an account waiting to be deleted (M02-S08)', async () => {
+    const { gateway, io } = setup({
+      signIn: async () => ({
+        status: 'pending_deletion',
+        accountId: 'a1',
+        role: 'viewer',
+        purgeAfter: new Date('2026-12-01T00:00:00Z'),
+        session: { token: 'T', id: 's' },
+      }),
+    });
+    expect(await gateway.signIn({ email: 'a@b.co', password: 'x', next: '/browse' })).toEqual({
+      ok: true,
+      next: '/account/deletion',
+    });
+    expect(io.setSession).toHaveBeenCalledWith('T', 'viewer');
   });
 
   it('maps failures without revealing which part was wrong', async () => {

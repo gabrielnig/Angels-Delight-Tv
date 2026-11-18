@@ -215,6 +215,10 @@ export async function requestExportAction() {
   return getAccount().requestExport(await currentAccountId());
 }
 
+export async function cancelDeletionAction() {
+  return getAccount().cancelDeletion(await currentAccountId());
+}
+
 export async function deleteAccountAction(input: { password: string; confirm: string }) {
   return getAccount().deleteAccount(await currentAccountId(), input);
 }

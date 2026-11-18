@@ -28,3 +28,23 @@ export function startShredRetry(options: ShredRetryOptions): () => void {
   timer.unref?.();
   return () => clearInterval(timer);
 }
+
+/**
+ * One tick of the account deletion job (M02-S06, M32-S03): purge every account whose grace period is over, then
+ * destroy any key still left. The key step runs even when the purge fails, and the failure is still raised.
+ */
+export async function runDeletionJobs(service: {
+  purgeDueDeletions(): Promise<number>;
+  destroyPendingKeys(): Promise<number>;
+}): Promise<number> {
+  let purged = 0;
+  let failure: unknown = null;
+  try {
+    purged = await service.purgeDueDeletions();
+  } catch (error) {
+    failure = error;
+  }
+  const shredded = await service.destroyPendingKeys();
+  if (failure) throw failure;
+  return purged + shredded;
+}

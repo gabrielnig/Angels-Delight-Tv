@@ -16,7 +16,8 @@ export type TemplateName =
   | 'email_change_notice'
   | 'two_factor_reset'
   | 'staff_lockout_alert'
-  | 'account_deleted';
+  | 'account_deleted'
+  | 'deletion_scheduled';
 
 export interface RenderedMail {
   subject: string;
@@ -187,6 +188,21 @@ const DEFINITIONS: Record<TemplateName, Definition> = {
         'Backups are cleared within 14 days.',
       ],
       outro: ['Thank you for learning with us.'],
+    }),
+  },
+  deletion_scheduled: {
+    required: ['cancelUrl', 'purgeDate', 'days'],
+    links: ['cancelUrl'],
+    build: (v, b) => ({
+      subject: `Your ${b.appName} account will be deleted on ${v.purgeDate}`,
+      intro: [
+        `We got your request to delete your account. You were signed out everywhere, and your account will be removed on ${v.purgeDate}, in ${v.days} days.`,
+        'To keep it, sign in before then and choose Cancel deletion. Everything comes back as it was.',
+      ],
+      action: { label: 'Sign in to cancel', url: v.cancelUrl! },
+      outro: [
+        `After ${v.purgeDate} your profiles, list and watch progress are removed and cannot be restored. If you did not ask for this, sign in and cancel, then change your password.`,
+      ],
     }),
   },
 };

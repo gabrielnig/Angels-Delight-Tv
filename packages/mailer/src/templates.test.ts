@@ -39,6 +39,10 @@ const cases: Array<[TemplateName, Record<string, string | number>]> = [
   ['two_factor_reset', { signInUrl: 'https://tv.example.org/admin/login' }],
   ['staff_lockout_alert', { account: 'e***@example.org', minutes: 30 }],
   ['account_deleted', {}],
+  [
+    'deletion_scheduled',
+    { cancelUrl: 'https://tv.example.org/account/deletion', purgeDate: '1 Dec 2026', days: 14 },
+  ],
 ];
 
 describe('renderTemplate', () => {
