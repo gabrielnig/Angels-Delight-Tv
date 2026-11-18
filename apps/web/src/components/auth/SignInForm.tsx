@@ -156,7 +156,7 @@ export function SignInForm({
         onBlur={() => setTouched((current) => ({ ...current, password: true }))}
         error={shownPasswordError}
       />
-      <Link href="/forgot-password" className="web-link">
+      <Link href="/forgot-password" className="web-link web-link--end">
         Forgot your password?
       </Link>
       {turnstile.widget}
