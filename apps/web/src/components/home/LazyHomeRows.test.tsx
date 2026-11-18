@@ -103,4 +103,59 @@ describe('LazyHomeRows', () => {
     expect(await screen.findByRole('heading', { name: 'Row b' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Row a' })).toBeInTheDocument();
   });
+
+  it('retries a failed page by itself with backoff, then stops and leaves the button (M05-S08)', async () => {
+    const load = vi
+      .fn()
+      .mockRejectedValueOnce(new Error('down'))
+      .mockRejectedValueOnce(new Error('down'))
+      .mockRejectedValueOnce(new Error('down'))
+      .mockResolvedValue({ rows: [row('z')], nextCursor: null });
+    wrap(
+      <LazyHomeRows
+        initialCursor="c1"
+        inList={[]}
+        profileId="p1"
+        load={load}
+        retryDelaysMs={[5, 5]}
+      />,
+    );
+    show();
+    await waitFor(() => expect(load).toHaveBeenCalledTimes(3));
+    await new Promise((resolve) => setTimeout(resolve, 40));
+    expect(load).toHaveBeenCalledTimes(3);
+    expect(screen.getByRole('button', { name: /Try again|Retry/ })).toBeInTheDocument();
+  });
+
+  it('succeeds on an automatic retry without a tap', async () => {
+    const load = vi
+      .fn()
+      .mockRejectedValueOnce(new Error('down'))
+      .mockResolvedValue({ rows: [row('z')], nextCursor: null });
+    wrap(
+      <LazyHomeRows
+        initialCursor="c1"
+        inList={[]}
+        profileId="p1"
+        load={load}
+        retryDelaysMs={[5]}
+      />,
+    );
+    show();
+    expect(await screen.findByRole('heading', { name: 'Row z' })).toBeInTheDocument();
+  });
+
+  it('retries at once when the network returns', async () => {
+    const load = vi
+      .fn()
+      .mockRejectedValueOnce(new Error('down'))
+      .mockResolvedValue({ rows: [row('z')], nextCursor: null });
+    wrap(
+      <LazyHomeRows initialCursor="c1" inList={[]} profileId="p1" load={load} retryDelaysMs={[]} />,
+    );
+    show();
+    await screen.findByRole('button', { name: /Try again|Retry/ });
+    await act(async () => void window.dispatchEvent(new Event('online')));
+    expect(await screen.findByRole('heading', { name: 'Row z' })).toBeInTheDocument();
+  });
 });
