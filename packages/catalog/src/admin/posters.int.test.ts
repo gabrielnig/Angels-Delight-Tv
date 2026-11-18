@@ -94,11 +94,12 @@ describe.skipIf(!integrationEnabled())('admin poster assets', () => {
   });
 
   it('reports the status of one asset', async () => {
-    const [{ id }] = await t.setup
+    const [created] = await t.setup
       .insert(assets)
       .values({ purpose: 'thumbnail', status: 'failed', rawKey: `uploads/${videoId}/x`, mime: 'image/png' })
       .returning({ id: assets.id });
-    expect(await getPosterAssetStatus(ctx, editor, id!)).toEqual({ status: 'failed' });
-    await expect(getPosterAssetStatus(ctx, viewer, id!)).rejects.toThrow();
+    const id = created!.id;
+    expect(await getPosterAssetStatus(ctx, editor, id)).toEqual({ status: 'failed' });
+    await expect(getPosterAssetStatus(ctx, viewer, id)).rejects.toThrow();
   });
 });
