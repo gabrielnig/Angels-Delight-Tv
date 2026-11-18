@@ -10,8 +10,7 @@ export class FixtureAuth implements AuthGateway {
 
   async signIn({ email, password, next }: { email: string; password: string; next?: string }) {
     if (!email.includes('@')) return { ok: false as const, reason: 'invalid' as const };
-    if (password === 'lock-me-out')
-      return { ok: false as const, reason: 'locked' as const, minutes: 12 };
+    if (password === 'lock-me-out') return { ok: false as const, reason: 'locked' as const, minutes: 12 };
     if (password === 'offline-please') return { ok: false as const, reason: 'network' as const };
     if (password === 'wrong-password') return { ok: false as const, reason: 'invalid' as const };
     return { ok: true as const, next: safeNext(next) };
@@ -56,8 +55,7 @@ export class FixtureAuth implements AuthGateway {
   async signOut() {}
 
   async checkPassword(password: string) {
-    if (password === 'lock-me-out')
-      return { ok: false as const, reason: 'locked' as const, minutes: 15 };
+    if (password === 'lock-me-out') return { ok: false as const, reason: 'locked' as const, minutes: 15 };
     if (password.length < 10 || password === 'wrong-password') {
       this.triesLeft = Math.max(0, this.triesLeft - 1);
       return { ok: false as const, reason: 'wrong' as const, triesLeft: this.triesLeft };
@@ -69,7 +67,6 @@ export class FixtureAuth implements AuthGateway {
 
 /** Same origin paths only, never an absolute or protocol relative URL. */
 export function safeNext(next: string | undefined | null): string {
-  if (!next || !next.startsWith('/') || next.startsWith('//') || next.includes('\\'))
-    return '/profiles';
+  if (!next || !next.startsWith('/') || next.startsWith('//') || next.includes('\\')) return '/profiles';
   return next;
 }
