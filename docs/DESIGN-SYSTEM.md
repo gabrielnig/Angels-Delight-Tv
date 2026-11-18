@@ -176,13 +176,14 @@ Free Google Fonts under the SIL Open Font License. Self-host WOFF2, subset to La
 
 | Font | Feel | Default | Notes |
 |---|---|---|---|
-| Inter | Neutral, close to Netflix style grotesque | Yes | Best legibility on small Android screens |
+| Space Grotesk | Geometric grotesque, as in the mockups | Yes (headings) | Display only (D-162). Body stays Inter |
+| Inter | Neutral, close to Netflix style grotesque | Yes (body) | Best legibility on small Android screens |
 | DM Sans | Geometric, friendly | | Good for headings |
 | Poppins | Rounded geometric, bold | | Heavier, wider, check line length |
 | Nunito | Soft, rounded | | Warm, suits kids profile |
 | Lora | Serif, editorial | | Use for display only. Body stays sans |
 
-Admin chooses one family for `--font-sans`. Fallback stack is always `system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif`, so first paint never waits on a font. Do not add fonts outside this list without a decision logged in `docs/DECISIONS.md`. Serif choice applies to `--font-display` only.
+Admin chooses one family for `--font-sans`. Fallback stack is always `system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif`, so first paint never waits on a font. Do not add fonts outside this list without a decision logged in `docs/DECISIONS.md`. Serif and Space Grotesk choices apply to `--font-display` only.
 
 ### 5.2 Type scale (base 16px, mobile first)
 

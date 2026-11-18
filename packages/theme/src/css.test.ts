@@ -31,7 +31,7 @@ describe('buildThemeVariables', () => {
     }
   });
 
-  it('uses Space Grotesk for headings only and keeps Inter for body text (D-158)', () => {
+  it('uses Space Grotesk for headings only and keeps Inter for body text (D-162)', () => {
     const vars = buildThemeVariables(DEFAULT_THEME);
     expect(vars['--font-display']).toMatch(/^"Space Grotesk", /);
     expect(vars['--font-sans']).toMatch(/^"Inter", /);
