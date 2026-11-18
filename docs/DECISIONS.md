@@ -589,3 +589,9 @@ Format: decision, options considered, why, reversible or not. Newest first. Deci
 - Why: emails are rare and one small read per send is cheap, a cache would delay the change admins just published, and build time branding contradicts "no deploy".
 - Reversible: yes.
 - Gap: the logo variants are WebP. Outlook desktop does not show WebP, so it shows the alt text name there.
+
+## D-111 Caption autosaves share one working revision (lane A2, refines D-083)
+- Decision: when an editor saves and the newest revision is their own manual save, still in review and under 10 minutes old, the save overwrites it in place instead of adding a revision. A different editor, a revision past the window, an approved or rejected or AI revision, an upload, and Save and keep approved all add a new revision as before.
+- Options: a revision per pause (D-083), coalescing for everyone, or coalescing for the same editor within a window.
+- Why: a long edit session produced dozens of near identical revisions and buried the real history. The window bounds how much work a single revision can absorb, and other people's work is never overwritten.
+- Reversible: yes. Set the window to 0 (`AUTOSAVE_WINDOW_MS`) to return to a revision per save.
