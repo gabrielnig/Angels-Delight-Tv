@@ -401,6 +401,8 @@ export interface LegalPage {
   readingMinutes: number;
   draft: boolean;
   sections: Array<{ id: string; heading: string; body: string[] }>;
+  /** Sanitised HTML from the admin pages editor. When present it replaces the section bodies. */
+  html?: string;
 }
 
 export interface SiteRepository {
