@@ -63,6 +63,24 @@ describe.skipIf(!integrationEnabled())('real profiles repository', () => {
     expect(again).toEqual({ ok: false, reason: 'duplicate' });
   });
 
+  it('stores the chosen illustrated avatar and lets it be changed', async () => {
+    const user = await h.makeUser();
+    active = user.profileId;
+    const made = await repo().create(user.accountId, {
+      name: 'Ngozi',
+      kids: false,
+      avatarId: 'drum',
+    });
+    expect(made).toMatchObject({ ok: true, profile: { avatarId: 'drum' } });
+    if (!made.ok) return;
+    const changed = await repo().update(user.accountId, made.profile.id, {
+      name: 'Ngozi',
+      kids: false,
+      avatarId: 'kite',
+    });
+    expect(changed).toMatchObject({ ok: true, profile: { avatarId: 'kite' } });
+  });
+
   it('reports the profile limit', async () => {
     const user = await h.makeUser();
     active = user.profileId;

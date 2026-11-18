@@ -22,39 +22,56 @@ export function TitleView({ detail, inList }: { detail: TitleDetail; inList: boo
   const related = new Set<string>();
   return (
     <div className="web-page web-title">
-      <div className="web-title__media">
-        {video.thumbnail ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={video.thumbnail.src} srcSet={video.thumbnail.srcSet} alt={video.title} />
-        ) : null}
-      </div>
-      <h1 className="web-title__name">{video.title}</h1>
-      <p className="web-title__meta">
-        <Badge variant="duration" srText={spokenLength(video.durationSeconds)}>
-          {formatDuration(video.durationSeconds)}
-        </Badge>{' '}
-        <span>{video.categoryName}</span>
-        {video.ageLabel ? <Badge variant="neutral">{video.ageLabel}</Badge> : null}
-        {video.kidsSafe ? <Badge variant="kids">Kids</Badge> : null}
-        {video.hasCaptions ? <Badge variant="neutral">Captions</Badge> : null}
-      </p>
-      {started ? (
-        <div className="web-title__progress">
-          <ProgressBar value={percent(progress)} label={`${video.title} progress`} size="sm" />
-          <span>{timeLeftLabel(progress)}</span>
+      <nav aria-label="Breadcrumb" className="web-crumbs">
+        <ol>
+          <li>
+            <a href="/">Home</a>
+          </li>
+          <li>
+            <a href={`/browse/${video.categorySlug}`}>{video.categoryName}</a>
+          </li>
+          <li>
+            <span aria-current="page">{video.title}</span>
+          </li>
+        </ol>
+      </nav>
+      <div className="web-title__layout">
+        <div className="web-title__media">
+          {video.thumbnail ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={video.thumbnail.src} srcSet={video.thumbnail.srcSet} alt={video.title} />
+          ) : null}
         </div>
-      ) : null}
-      <TitleActions
-        primary={primaryAction({
-          label: play.label,
-          startSeconds: play.startSeconds,
-          watchHref: `/watch/${video.id}`,
-        })}
-        itemKey={itemKey(video)}
-        inList={inList}
-        shareTitle={video.title}
-      />
-      <ExpandableText className="web-title__desc" text={video.description} />
+        <div className="web-title__info">
+          <h1 className="web-title__name">{video.title}</h1>
+          <p className="web-title__meta">
+            <Badge variant="duration" srText={spokenLength(video.durationSeconds)}>
+              {formatDuration(video.durationSeconds)}
+            </Badge>{' '}
+            <span>{video.categoryName}</span>
+            {video.ageLabel ? <Badge variant="neutral">{video.ageLabel}</Badge> : null}
+            {video.kidsSafe ? <Badge variant="kids">Kids</Badge> : null}
+            {video.hasCaptions ? <Badge variant="neutral">Captions</Badge> : null}
+          </p>
+          {started ? (
+            <div className="web-title__progress">
+              <ProgressBar value={percent(progress)} label={`${video.title} progress`} size="sm" />
+              <span>{timeLeftLabel(progress)}</span>
+            </div>
+          ) : null}
+          <TitleActions
+            primary={primaryAction({
+              label: play.label,
+              startSeconds: play.startSeconds,
+              watchHref: `/watch/${video.id}`,
+            })}
+            itemKey={itemKey(video)}
+            inList={inList}
+            shareTitle={video.title}
+          />
+          <ExpandableText className="web-title__desc" text={video.description} />
+        </div>
+      </div>
       <Tabs
         label="Title details"
         tabs={[

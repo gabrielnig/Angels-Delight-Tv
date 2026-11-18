@@ -135,6 +135,8 @@
   --motion-fast: 150ms;
   --motion-base: 200ms;
   --motion-slow: 350ms;
+  --motion-spin: 700ms;
+  --motion-shimmer: 1.4s;
   --ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
   --ease-enter: cubic-bezier(0, 0, 0.2, 1);
   --ease-exit: cubic-bezier(0.4, 0, 1, 1);

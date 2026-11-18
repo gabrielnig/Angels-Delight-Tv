@@ -625,3 +625,10 @@ Format: decision, options considered, why, reversible or not. Newest first. Deci
 - Options: grant a role BYPASSRLS for backups; dump with the owner role; restore in place.
 - Why: BYPASSRLS on an application role would widen the blast radius of the role the worker runs as. A restore in place is the failure that turns a bad day into a lost database.
 - Reversible: yes.
+
+## D-119 Twelve original inline SVG avatars keyed by the stored avatar id (lane M2)
+- Decision: profiles keep storing only `avatar_id`, one of the twelve existing ids (sun, moon, star, leaf, drum, book, kite, bird, fish, tree, cloud, spark). `@ad/ui` draws each as an original inline SVG on a tone tile, using ink, surface and accent tokens only, so it follows the theme. The profile form picks by avatar id. The old tone still works for profiles that have no illustrated id and for the letter fallback.
+- Options: wait for client artwork, image files per avatar, inline SVG now.
+- Why: the client has not supplied art, image files add requests on low data connections, and the id is the stable contract, so the drawings can be replaced later with no data change.
+- Reversible: yes. Replace the shapes in `AvatarArt.tsx`.
+- Gap: the top nav still shows the letter avatar, and the account overview has no profiles card yet.

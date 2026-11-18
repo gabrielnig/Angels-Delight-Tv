@@ -180,15 +180,15 @@ export function ContinueCard({
             <Badge variant="duration">{formatClock(durationSeconds)}</Badge>
           </span>
           {known ? (
-            <span className="ad-card__progress">
+            <span className="ad-card__progress" aria-hidden="true">
               <ProgressBar value={rounded} label="Watched" tone="accent" size="sm" />
-              <span className="ad-sr-only">{rounded} percent watched</span>
             </span>
           ) : null}
         </Thumb>
         <span className="ad-card__title">{title}</span>
         <span className="ad-sr-only">
           , {spokenLength(durationSeconds)}
+          {known ? `, ${rounded} percent watched` : ''}
           {timeLeftLabel ? `, ${timeLeftLabel}` : ''}
         </span>
         {timeLeftLabel ? (

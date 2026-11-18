@@ -434,6 +434,9 @@
   padding: 0 var(--space-2);
 }
 .adm-crumbs a {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--touch-target);
   color: var(--color-muted);
 }
 .adm-crumbs [aria-current='page'] {
@@ -530,7 +533,7 @@
   border: 2px solid currentColor;
   border-right-color: transparent;
   border-radius: var(--radius-circle);
-  animation: adm-spin 0.8s linear infinite;
+  animation: adm-spin var(--motion-spin) linear infinite;
 }
 @keyframes adm-spin {
   to {
@@ -658,7 +661,7 @@
   text-align: right;
 }
 .adm-progress__rail.is-indeterminate .adm-progress__fill {
-  animation: adm-sweep 1.4s var(--ease-standard) infinite;
+  animation: adm-sweep var(--motion-shimmer) var(--ease-standard) infinite;
 }
 @keyframes adm-sweep {
   from {
@@ -728,7 +731,7 @@
   );
   background-size: 200% 100%;
   animation:
-    adm-shimmer 1.4s linear infinite,
+    adm-shimmer var(--motion-shimmer) linear infinite,
     adm-delay 0s 0.3s backwards;
 }
 @keyframes adm-shimmer {
@@ -1053,6 +1056,9 @@
   flex: 1 1 14rem;
 }
 .adm-list__title {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--touch-target);
   font-weight: var(--weight-semibold);
   margin: 0;
 }
@@ -1311,6 +1317,9 @@
   gap: var(--space-3);
 }
 .adm-vtitle {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--touch-target);
   font-weight: var(--weight-semibold);
   color: var(--color-ink);
 }
