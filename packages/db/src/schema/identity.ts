@@ -4,6 +4,7 @@ import {
   bigint,
   check,
   doublePrecision,
+  integer,
   index,
   jsonb,
   pgTable,
@@ -72,6 +73,31 @@ export const accountDeletions = pgTable(
     index('account_deletions_pending_idx')
       .on(t.dekDestroyedAt)
       .where(sql`${t.dekDestroyedAt} IS NULL`),
+  ],
+);
+
+/** One row per data export request (M02-S05). Holds state only, the file is rebuilt on download. No personal data. */
+export const dataExports = pgTable(
+  'data_exports',
+  {
+    id: pk(),
+    accountId: uuid('account_id')
+      .notNull()
+      .references(() => accounts.id, { onDelete: 'cascade' }),
+    status: text('status').notNull().default('pending'),
+    attempts: smallint('attempts').notNull().default(0),
+    sizeBytes: integer('size_bytes'),
+    requestedAt: timestamptz('requested_at').notNull(),
+    readyAt: timestamptz('ready_at'),
+    expiresAt: timestamptz('expires_at'),
+    failedAt: timestamptz('failed_at'),
+  },
+  (t) => [
+    check('data_exports_status_known', sql`${t.status} IN ('pending', 'ready', 'failed')`),
+    index('data_exports_account_idx').on(t.accountId, t.requestedAt.desc()),
+    index('data_exports_pending_idx')
+      .on(t.requestedAt)
+      .where(sql`${t.status} = 'pending'`),
   ],
 );
 

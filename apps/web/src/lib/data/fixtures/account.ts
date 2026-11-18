@@ -104,9 +104,13 @@ export class FixtureAccount implements AccountRepository {
     return { ...state.exportState };
   }
 
-  async requestExport() {
+  async requestExport(_accountId?: string, input?: { password: string }) {
+    if (input?.password === 'wrong-password')
+      return { ok: false as const, reason: 'wrong_password' as const };
+    if (state.exportState.status === 'pending' || state.exportState.status === 'ready')
+      return { ok: true as const, already: true, state: { ...state.exportState } };
     state.exportState = { status: 'pending', requestedAt: 'today at 9:14 am' };
-    return { ...state.exportState };
+    return { ok: true as const, already: false, state: { ...state.exportState } };
   }
 
   async deleteAccount(_accountId: string, input: { password: string; confirm: string }) {

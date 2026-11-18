@@ -1199,6 +1199,7 @@ export class AccountService {
       await tx.delete(schema.sessions).where(eq(schema.sessions.accountId, accountId));
       await tx.delete(schema.emailTokens).where(eq(schema.emailTokens.accountId, accountId));
       await tx.delete(schema.consents).where(eq(schema.consents.accountId, accountId));
+      await tx.delete(schema.dataExports).where(eq(schema.dataExports.accountId, accountId));
       await tx.delete(schema.mfaFactors).where(eq(schema.mfaFactors.accountId, accountId));
       await tx
         .delete(schema.mfaRecoveryCodes)

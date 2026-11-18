@@ -493,3 +493,9 @@ Format: decision, options considered, why, reversible or not. Newest first. Deci
 - Options: write icons into `apps/web/public` and rebuild the image; upload icons to R2 and point the manifest at the media origin; make the applier a web route.
 - Why: images are built in CI and the VPS never builds, so a rebuild per client change would add a CI round trip to a two hour launch. A mounted folder is the smallest runtime path. A command line tool needs no new attack surface.
 - Reversible: yes. The manifest can point back at `/icons/*`.
+
+## D-096 Data export is a background job that stores state, not the file (lane M2)
+- Decision: a request needs the account password and is refused with "an earlier export is still valid" while a pending or unexpired ready export exists (one per 24 hours, a failed one can be retried at once). `data_exports` (migration 0021) holds status, attempts, size and expiry only. The job runs in the web process (kicked by the request and retried every 2 minutes, up to 3 builds), builds the file to check and size it, then mails a link that works 24 hours. Download rebuilds the file from live data behind the signed token and the session. A signed out visitor of the mailed link is sent to sign in and back. Failure after 3 builds mails "We could not build your export".
+- Options: store the JSON in R2 with an expiry, or run the job in the worker.
+- Why: storing the file puts personal data at rest outside the account key. The worker role has no identity grants, and the web process already holds the viewer data and keys.
+- Reversible: yes.
