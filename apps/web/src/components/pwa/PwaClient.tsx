@@ -50,7 +50,7 @@ export function PwaClient({
       const response = await fetch(item.url, {
         method: item.method,
         headers: { 'content-type': 'application/json' },
-        body: item.method === 'DELETE' ? undefined : JSON.stringify(item.body),
+        body: JSON.stringify(item.body),
       });
       return response.status;
     });
