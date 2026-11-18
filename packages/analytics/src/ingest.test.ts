@@ -176,6 +176,23 @@ describe('ingestBatch', () => {
     expect(keys).toContain('rebuffer_ms:all:400');
   });
 
+  it('adds the stall time of a rebuffer event to the rebuffer counter without touching startup', async () => {
+    const deps = base();
+    await ingestBatch({
+      body: {
+        v: 1,
+        deviceClass: 'phone',
+        events: [{ kind: 'rebuffer', videoId, rebufferMs: 2500 }],
+      },
+      context: ctx(),
+      ...deps,
+      store: deps.store.store,
+    });
+    const keys = deps.store.bumps.map((b) => `${b.kind}:${b.key}:${b.by ?? 1}`);
+    expect(keys).toContain('rebuffer_ms:all:2500');
+    expect(keys.some((k) => k.startsWith('startup:'))).toBe(false);
+  });
+
   it('rejects a malformed body with 400 and rate limits with 429 and Retry-After', async () => {
     const deps = base();
     expect(

@@ -127,6 +127,16 @@ describe('PlayerController', () => {
       expect(media.playbackRate).toBe(1.5);
     });
 
+    it('keeps the pitch natural at any speed (M08-S10 AC2)', () => {
+      const { c, media } = setup({ preferences: { rate: 1.5 } });
+      media.preservesPitch = false;
+      c.start();
+      expect(media.preservesPitch).toBe(true);
+      media.preservesPitch = false;
+      c.setRate(2);
+      expect(media.preservesPitch).toBe(true);
+    });
+
     it('stays paused with a play button when autoplay is blocked', async () => {
       const s = setup();
       s.media.playRejects = true;
