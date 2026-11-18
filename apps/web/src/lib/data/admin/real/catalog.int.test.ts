@@ -93,7 +93,16 @@ describe.skipIf(!integrationEnabled())('real admin services over the catalog', (
       const byCat = await realVideoService.list(editor, { categoryId: cat.id });
       expect(byCat.items.map((v) => v.id)).toEqual([mine.id]);
       const small = await realVideoService.list(editor, { q: 'facts', limit: 1 });
-      expect(small.nextCursor).toBe('1');
+      // The cursor is keyset based (names the last row seen), not an offset, so it is opaque. Following it gives the rest.
+      expect(small.items).toHaveLength(1);
+      expect(small.nextCursor).toEqual(expect.any(String));
+      const rest = await realVideoService.list(editor, {
+        q: 'facts',
+        limit: 1,
+        cursor: small.nextCursor!,
+      });
+      expect(rest.items).toHaveLength(1);
+      expect(rest.items[0]!.id).not.toBe(small.items[0]!.id);
     });
 
     it('edits through the same validation as the fixtures', async () => {
@@ -267,6 +276,7 @@ describe.skipIf(!integrationEnabled())('real admin services over the catalog', (
           label: 'Your image',
           status: 'processing',
           url: null,
+          score: null,
         },
       ]);
       await expect(realVideoService.uploadPoster(viewer, video.id, bytes)).rejects.toThrow();
