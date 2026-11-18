@@ -25,6 +25,7 @@ export interface HlsInstanceLike {
   nextAutoLevel: number;
   autoLevelCapping: number;
   startLevel: number;
+  bandwidthEstimate?: number;
   on(event: string, listener: (event: string, data: HlsEventData) => void): void;
   loadSource(url: string): void;
   attachMedia(media: HTMLVideoElement): void;
@@ -72,6 +73,10 @@ export interface HlsEngineOptions {
   video: HTMLVideoElement;
   appOrigin: string;
   getToken: () => string | null;
+  /** Last measured bandwidth on this device, used as the first estimate. */
+  initialBandwidth?: number | null;
+  /** Called with hls.js's estimate when the level changes and when the engine is destroyed. */
+  onBandwidth?: (bps: number) => void;
 }
 
 /** Undefined when the playlist does not say. False only when every rendition names a video codec and no audio codec. */
@@ -109,13 +114,20 @@ export function createHlsEngine(opts: HlsEngineOptions): PlayerEngine {
     return best;
   };
 
+  const reportBandwidth = () => {
+    const bps = hls?.bandwidthEstimate;
+    if (bps && Number.isFinite(bps)) opts.onBandwidth?.(bps);
+  };
+
   function start(o: EngineLoadOptions): void {
+    reportBandwidth();
     hls?.destroy();
     last = o;
     const instance = new Hls(
       createHlsConfig({
         appOrigin: opts.appOrigin,
         getToken: () => token ?? opts.getToken(),
+        initialBandwidth: opts.initialBandwidth ?? null,
         BaseLoader: Hls.DefaultConfig.loader,
       }),
     );
@@ -130,6 +142,7 @@ export function createHlsEngine(opts: HlsEngineOptions): PlayerEngine {
       instance.startLoad(o.startPosition);
     });
     instance.on(Hls.Events.LEVEL_SWITCHED, (_e, data) => {
+      reportBandwidth();
       const level = instance.levels[data.level ?? -1];
       if (level) emit({ type: 'level', height: level.height, bitrate: level.bitrate });
     });
@@ -188,6 +201,7 @@ export function createHlsEngine(opts: HlsEngineOptions): PlayerEngine {
       return () => listeners.delete(listener);
     },
     destroy() {
+      reportBandwidth();
       hls?.destroy();
       hls = null;
       listeners.clear();
@@ -280,6 +294,8 @@ export function createUnsupportedEngine(): PlayerEngine {
 }
 
 export interface CreateEngineOptions extends NativeEngineOptions {
+  initialBandwidth?: number | null;
+  onBandwidth?: (bps: number) => void;
   /** Loads the hls.js class. Defaults to the pinned build inside @videojs/hlsjs-video. */
   loadHls?: () => Promise<HlsStatic>;
 }
