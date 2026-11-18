@@ -1,6 +1,6 @@
 import { and, eq, like, or, sql } from 'drizzle-orm';
 import { assets, videos, withAccount } from '@ad/db';
-import { writeAudit } from '@ad/audit';
+import { writeAudit } from '../audit';
 import { Forbidden, NotFound, isUuid, uuidv7, type Actor } from '@ad/shared';
 import { mediaUrl } from '../artwork';
 import { OK, fail, type AdminContext, type CommandResult } from './types';
