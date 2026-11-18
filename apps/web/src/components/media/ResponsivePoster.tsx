@@ -1,4 +1,5 @@
 import { buildPosterSources, type PosterVariant } from '@/lib/media/poster';
+import { safePlaceholderBlur, safePlaceholderColor, useImageLoaded } from '@ad/ui';
 import { DATA_SAVER_POSTER_WIDTH } from '@/lib/lowdata/connection';
 import './media.css';
 
@@ -21,6 +22,10 @@ export interface ResponsivePosterProps {
   fallbackTitle?: string;
   /** Picks the gradient tone, so a video keeps the same colours on every screen. */
   fallbackSeed?: number;
+  /** Stored blur (ArtworkDto.placeholderBlur) drawn under the image until it loads. Wins over the colour. */
+  placeholderBlur?: string | null;
+  /** Stored colour (ArtworkDto.placeholderColor) drawn under the image when there is no blur. */
+  placeholderColor?: string | null;
 }
 
 const TONES = 5;
@@ -42,7 +47,12 @@ export function ResponsivePoster({
   className,
   fallbackTitle,
   fallbackSeed = 0,
+  placeholderBlur,
+  placeholderColor,
 }: ResponsivePosterProps) {
+  const fade = useImageLoaded();
+  const blur = safePlaceholderBlur(placeholderBlur);
+  const color = safePlaceholderColor(placeholderColor);
   const sources = buildPosterSources(variants, {
     maxWidth: dataSaver ? DATA_SAVER_POSTER_WIDTH : null,
   });
@@ -69,6 +79,7 @@ export function ResponsivePoster({
       <div className={`${classes} ad-poster--empty`} style={style} role="img" aria-label={alt} />
     );
   }
+  const hasPlaceholder = Boolean(blur || color);
   const image = (
     // Posters come from our own pipeline with webp srcSet and exact sizes, next/image adds nothing here.
     // eslint-disable-next-line @next/next/no-img-element
@@ -83,10 +94,20 @@ export function ResponsivePoster({
       loading={priority ? 'eager' : 'lazy'}
       decoding={priority ? 'sync' : 'async'}
       fetchPriority={priority ? 'high' : 'auto'}
+      ref={hasPlaceholder ? fade.ref : undefined}
+      onLoad={hasPlaceholder ? fade.onLoad : undefined}
+      data-loaded={hasPlaceholder ? String(fade.loaded) : undefined}
     />
   );
   return (
-    <div className={classes} style={style}>
+    <div className={classes} style={color ? { ...style, backgroundColor: color } : style}>
+      {blur ? (
+        <span
+          className="ad-poster__blur"
+          aria-hidden="true"
+          style={{ backgroundImage: `url("${blur}")` }}
+        />
+      ) : null}
       {sources.fallback || sources.avif ? (
         <picture>
           {sources.avif ? (

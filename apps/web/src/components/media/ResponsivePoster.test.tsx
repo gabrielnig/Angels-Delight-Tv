@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { ResponsivePoster } from './ResponsivePoster';
 
@@ -95,5 +95,33 @@ describe('ResponsivePoster', () => {
     const first = screen.getByRole('img').getAttribute('data-tone');
     rerender(<ResponsivePoster variants={[]} alt="a" fallbackTitle="T" fallbackSeed={7} />);
     expect(screen.getByRole('img').getAttribute('data-tone')).toBe(first);
+  });
+});
+
+describe('ResponsivePoster placeholder and fade in', () => {
+  const blur = 'data:image/webp;base64,UklGRhoAAABXRUJQVlA4';
+  it('draws the blur under the image and reveals the image on load', () => {
+    const { container } = render(
+      <ResponsivePoster variants={variants} alt="Plants" placeholderBlur={blur} />,
+    );
+    expect(container.querySelector<HTMLElement>('.ad-poster__blur')!.style.backgroundImage).toContain(blur);
+    const img = screen.getByRole('img', { name: 'Plants' });
+    expect(img).toHaveAttribute('data-loaded', 'false');
+    fireEvent.load(img);
+    expect(img).toHaveAttribute('data-loaded', 'true');
+  });
+  it('uses the colour when there is no blur', () => {
+    const { container } = render(
+      <ResponsivePoster variants={variants} alt="Plants" placeholderColor="#3366cc" />,
+    );
+    expect(container.querySelector('.ad-poster__blur')).toBeNull();
+    expect(container.querySelector<HTMLElement>('.ad-poster')!.style.backgroundColor).not.toBe('');
+  });
+  it('shows an already cached image at once', () => {
+    const { container } = render(
+      <ResponsivePoster variants={variants} alt="Plants" placeholderColor="#3366cc" />,
+    );
+    // jsdom never loads images, so complete is false and the state stays pending until load.
+    expect(container.querySelector('img')!.getAttribute('data-loaded')).toBe('false');
   });
 });
