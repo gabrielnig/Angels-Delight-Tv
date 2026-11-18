@@ -8,7 +8,8 @@ import { formatClock, spokenLength } from './format';
 import { Icon } from './Icon';
 import { Link } from './Link';
 import { ProgressBar } from './ProgressBar';
-import { safePlaceholderBlur, safePlaceholderColor, useImageLoaded } from './placeholder';
+import { safePlaceholderBlur, safePlaceholderColor } from './placeholder-safe';
+import { useImageLoaded } from './placeholder';
 
 export interface Thumbnail {
   src: string;

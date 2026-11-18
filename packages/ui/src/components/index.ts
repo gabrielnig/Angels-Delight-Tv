@@ -23,7 +23,8 @@ export {
 export * from './Tabs';
 export * from './Toast';
 export * from './Cards';
-export { safePlaceholderBlur, safePlaceholderColor, useImageLoaded } from './placeholder';
+export { safePlaceholderBlur, safePlaceholderColor } from './placeholder-safe';
+export { useImageLoaded } from './placeholder';
 export * from './format';
 export * from './Hero';
 export * from './Row';
