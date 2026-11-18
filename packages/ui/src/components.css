@@ -1392,6 +1392,10 @@
   z-index: 1;
 }
 
+.ad-card__peek {
+  display: none;
+}
+
 /* Hover actions: touch devices always see them at low emphasis, desktop reveals on hover and focus. */
 @media (hover: hover) and (pointer: fine) {
   .ad-card__action:not(.ad-card__action--always) {
@@ -1401,6 +1405,32 @@
   .ad-card:hover .ad-card__action,
   .ad-card:focus-within .ad-card__action {
     opacity: 1;
+  }
+  .ad-card__peek {
+    position: absolute;
+    inset: auto 0 0 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    padding: var(--space-3);
+    background: var(--color-scrim-top);
+    color: var(--color-on-primary);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity var(--motion-fast) var(--ease-standard) var(--hover-intent-delay);
+  }
+  .ad-card:hover .ad-card__peek {
+    opacity: 1;
+  }
+  .ad-card__peek-text {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    font-size: var(--text-small);
+  }
+  .ad-card__peek-play {
+    font-weight: 600;
   }
   .ad-card:hover .ad-card__thumb {
     transform: translateY(-4px);

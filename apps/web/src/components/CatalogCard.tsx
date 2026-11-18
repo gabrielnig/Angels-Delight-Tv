@@ -68,6 +68,7 @@ export function CatalogCard({
       durationSeconds={item.durationSeconds}
       thumbnail={item.thumbnail}
       meta={showMeta ? metaLine(item) : undefined}
+      description={item.description}
       priority={priority}
       inList={inList}
       onToggleList={onToggle}

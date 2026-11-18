@@ -1,0 +1,18 @@
+'use client';
+
+import { Hero, type HeroItem } from '@ad/ui';
+import { useDataSaver } from '../../lib/lowdata/useDataSaver';
+
+/** Rotates every 8 seconds, except under Data saver (M05-S01 AC2, M25-S03 AC1). Reduced motion is handled by Hero. */
+export function HomeHero({
+  items,
+  label,
+  profileId,
+}: {
+  items: HeroItem[];
+  label: string;
+  profileId: string;
+}) {
+  const saver = useDataSaver(profileId);
+  return <Hero items={items} label={label} autoRotateMs={saver.on ? undefined : 8000} />;
+}
