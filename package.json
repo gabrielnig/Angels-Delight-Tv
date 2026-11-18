@@ -16,6 +16,7 @@
     "test:related": "vitest related --run",
     "footprint": "scripts/footprint-check.sh",
     "sast": "scripts/sast.sh",
+    "edge:smoke": "tsx apps/edge/src/smoke-cli.ts",
     "sbom": "node scripts/sbom.mjs sbom.cdx.json",
     "hooks:install": "scripts/install-hooks.sh",
     "db:seed:admin": "pnpm --filter @ad/auth run seed:admin",
