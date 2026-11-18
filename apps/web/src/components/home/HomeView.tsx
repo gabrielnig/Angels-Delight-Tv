@@ -8,6 +8,7 @@ import {
   type Progress,
   type ViewerContext,
 } from '../../lib/data';
+import { reloadContinueRowAction, reloadMyListRowAction } from '../../app/actions';
 import { itemHref, itemKey, metaLine, timeLeftLabel } from '../../lib/format';
 import { CatalogCard, ContinueRow } from '../CatalogCard';
 import { RowError } from '../RowError';
@@ -98,7 +99,7 @@ export async function HomeView({
             <ContinueRow items={continueResult.value} />
           ) : null
         ) : (
-          <RowError title="Continue watching" />
+          <RowError title="Continue watching" kind="continue" load={reloadContinueRowAction} />
         )}
         {listResult.ok ? (
           listResult.value.items.length > 0 ? (
@@ -107,7 +108,13 @@ export async function HomeView({
             </Row>
           ) : null
         ) : (
-          <RowError title="My List" />
+          <RowError
+            title="My List"
+            kind="list"
+            seeAllHref="/my-list"
+            inList={idsResult}
+            load={reloadMyListRowAction}
+          />
         )}
         {home.rows.map((row) => (
           <Row key={row.id} title={row.title} seeAllHref={row.seeAllHref}>
