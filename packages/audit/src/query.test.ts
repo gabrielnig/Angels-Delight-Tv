@@ -21,4 +21,20 @@ describe('isSecurityAction', () => {
     expect(isSecurityAction('video.publish')).toBe(false);
     expect(isSecurityAction('theme.publish')).toBe(false);
   });
+  it('treats staff, role, invite and job entries as security (D-125)', () => {
+    for (const action of [
+      'admin.role_changed',
+      'admin.mfa_reset',
+      'admin.invite_sent',
+      'admin.lockout',
+      'admin.account_deletion_requested',
+      'staff.invite',
+      'role.change',
+      'job.retry',
+      'job.discard',
+    ])
+      expect(isSecurityAction(action), action).toBe(true);
+    for (const action of ['video.edit', 'caption.review', 'settings.site', 'home.curate'])
+      expect(isSecurityAction(action), action).toBe(false);
+  });
 });

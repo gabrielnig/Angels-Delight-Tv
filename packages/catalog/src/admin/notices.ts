@@ -1,10 +1,10 @@
 import { and, desc, eq, inArray, isNull, sql } from 'drizzle-orm';
 import { adminNotices, staffNotificationPrefs, withAccount } from '@ad/db';
-import { Forbidden, isUuid, type Actor } from '@ad/shared';
+import { Forbidden, isUuid, type Actor, isStaffRole } from '@ad/shared';
 import type { AdminContext } from './types';
 
 function assertStaff(actor: Actor): void {
-  if (actor.role !== 'editor' && actor.role !== 'admin') throw new Forbidden('Staff only');
+  if (!isStaffRole(actor.role)) throw new Forbidden('Staff only');
 }
 
 export interface AdminNotice {

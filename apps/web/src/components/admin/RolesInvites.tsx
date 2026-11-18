@@ -29,8 +29,22 @@ export interface RoleActions {
 const ROLE_OPTIONS = [
   { value: 'editor', label: 'Editor' },
   { value: 'admin', label: 'Admin' },
+  { value: 'super_admin', label: 'Super admin' },
 ];
-const roleLabel = (role: string) => (role === 'admin' ? 'Admin' : 'Editor');
+const ROLE_LABELS: Record<string, string> = {
+  editor: 'Editor',
+  admin: 'Admin',
+  super_admin: 'Super admin',
+};
+const roleLabel = (role: string) => ROLE_LABELS[role] ?? 'Editor';
+const ROLE_CONSEQUENCE: Record<string, string> = {
+  super_admin:
+    'Super admins can invite people, change roles, reset two step sign in, read the full audit log, change features and limits and retry failed jobs.',
+  admin:
+    'Admins can suspend accounts, change the theme and settings and read content actions in the audit log.',
+  editor:
+    'Editors lose access to users, roles, settings and the audit log. They keep video and home work.',
+};
 
 export function RolesInvites({
   staff,
@@ -59,7 +73,7 @@ export function RolesInvites({
   const [resetting, setResetting] = useState<StaffRecord | null>(null);
   const [resetCode, setResetCode] = useState('');
   const [resetError, setResetError] = useState<string>();
-  const admins = staff.filter((m) => m.role === 'admin').length;
+  const supers = staff.filter((m) => m.role === 'super_admin').length;
 
   async function invite(e: React.FormEvent) {
     e.preventDefault();
@@ -77,6 +91,12 @@ export function RolesInvites({
         <h2 className="adm-h3" id="staff-h" style={{ padding: 'var(--space-4) var(--space-4) 0' }}>
           Admins
         </h2>
+        {supers <= 1 ? (
+          <p className="adm-muted" style={{ margin: 0, padding: '0 var(--space-4)' }}>
+            Only one person is a Super admin, so that role is locked. Make someone else a Super
+            admin first.
+          </p>
+        ) : null}
         <table className="adm-table" style={{ display: 'table' }}>
           <caption className="adm-sr">People with admin access</caption>
           <thead>
@@ -90,7 +110,8 @@ export function RolesInvites({
           </thead>
           <tbody>
             {staff.map((m) => {
-              const lastAdmin = m.role === 'admin' && admins <= 1;
+              const lastSuper = m.role === 'super_admin' && supers <= 1;
+              const own = m.id === selfId;
               return (
                 <tr key={m.id}>
                   <th scope="row">{m.name}</th>
@@ -99,9 +120,15 @@ export function RolesInvites({
                     <SelectField
                       label={`Role for ${m.name}`}
                       value={m.role}
-                      disabled={!canManage || busy}
+                      disabled={!canManage || busy || own || lastSuper}
                       options={ROLE_OPTIONS}
-                      hint={lastAdmin ? 'The only admin' : undefined}
+                      hint={
+                        lastSuper
+                          ? 'The only Super admin'
+                          : own
+                            ? 'You cannot change your own role'
+                            : undefined
+                      }
                       onChange={(e) => {
                         setRoleError(undefined);
                         if (e.target.value !== m.role)
@@ -141,7 +168,7 @@ export function RolesInvites({
 
       <section className="adm-card adm-stack" aria-labelledby="invite-h">
         <h2 className="adm-h3" id="invite-h">
-          Invite an admin
+          Invite a team member
         </h2>
         <form className="adm-row" style={{ alignItems: 'flex-end' }} onSubmit={invite} noValidate>
           <TextField
@@ -232,13 +259,14 @@ export function RolesInvites({
               <th scope="col">Action</th>
               <th scope="col">Editor</th>
               <th scope="col">Admin</th>
+              <th scope="col">Super admin</th>
             </tr>
           </thead>
           <tbody>
             {ADMIN_ACTIONS.map((a) => (
               <tr key={a}>
                 <th scope="row">{ACTION_LABELS[a]}</th>
-                {(['editor', 'admin'] as const).map((r) => (
+                {(['editor', 'admin', 'super_admin'] as const).map((r) => (
                   <td key={r}>
                     {can(r, a) ? (
                       <>
@@ -257,12 +285,8 @@ export function RolesInvites({
 
       <ConfirmDialog
         open={pending !== null}
-        title={`Make ${pending?.member.name ?? 'this person'} an ${pending?.role === 'admin' ? 'admin' : 'editor'}?`}
-        consequence={
-          pending?.role === 'admin'
-            ? 'Admins can invite people, suspend accounts and change settings.'
-            : 'Editors lose access to users, roles, settings and the audit log. They keep video and home work.'
-        }
+        title={`Make ${pending?.member.name ?? 'this person'} ${pending?.role === 'super_admin' ? 'a' : 'an'} ${pending ? roleLabel(pending.role).toLowerCase() : 'editor'}?`}
+        consequence={ROLE_CONSEQUENCE[pending?.role ?? 'editor'] ?? ''}
         confirmLabel="Change role"
         busy={busy}
         onClose={() => setPending(null)}

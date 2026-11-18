@@ -1,4 +1,4 @@
-import { Forbidden, NotFound, Unauthorized, type Actor } from '@ad/shared';
+import { Forbidden, NotFound, Unauthorized, type Actor, isStaffRole } from '@ad/shared';
 import type { StorageAdapter } from '@ad/storage';
 import { unwrapHlsKey, type Keyring } from '../hls-key';
 import {
@@ -182,8 +182,7 @@ export class PlaybackService {
 
   /** Admin preview: any non deleted video that finished encoding, no profile, no analytics. */
   async startPreview(actor: Actor, videoId: string): Promise<SessionInfo> {
-    if (actor.role !== 'admin' && actor.role !== 'editor')
-      throw new Forbidden('Previews are for staff.');
+    if (!isStaffRole(actor.role)) throw new Forbidden('Previews are for staff.');
     const video = await this.deps.store.video(videoId);
     if (!video || video.deletedAt || video.status !== 'ready')
       throw new NotFound('This video is not ready to preview.');

@@ -18,7 +18,7 @@ export const metadata: Metadata = { title: 'Roles and invites' };
 
 export default async function RolesPage() {
   const actor = await requireActor('/admin/roles');
-  if (!can(actor.role, 'roles.change')) forbidden();
+  if (!can(actor.role, 'roles.view')) forbidden();
   const { staff, invites } = await peopleService.staff(actor);
   return (
     <>
@@ -31,7 +31,7 @@ export default async function RolesPage() {
         staff={staff}
         invites={invites}
         now={Date.now()}
-        canManage
+        canManage={can(actor.role, 'roles.change')}
         selfId={actor.accountId}
         actions={{
           invite: inviteStaffAction,

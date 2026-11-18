@@ -1,6 +1,13 @@
 import { createHash } from 'node:crypto';
 import sharp, { type Metadata, type Sharp } from 'sharp';
-import { Forbidden, ValidationFailed, uuidv7, type Actor, type AssetPurpose } from '@ad/shared';
+import {
+  Forbidden,
+  ValidationFailed,
+  uuidv7,
+  type Actor,
+  type AssetPurpose,
+  isAdminRole,
+} from '@ad/shared';
 import type { StorageAdapter } from '@ad/storage';
 import { toHex } from './contrast';
 
@@ -170,7 +177,7 @@ export class LogoUploader {
     bytes: Uint8Array,
     input: { purpose: BrandImageKind; altText?: string | null },
   ): Promise<StoredAsset> {
-    if (actor.role !== 'admin') throw new Forbidden('Only an admin can upload a logo');
+    if (!isAdminRole(actor.role)) throw new Forbidden('Only an admin can upload a logo');
     const altText = input.altText?.trim() || null;
     if (altText && altText.length > 200) {
       throw new ValidationFailed(

@@ -102,7 +102,7 @@ function staffActor(actor: { accountId: string; role: string; sessionId?: string
   if (!actor.sessionId) throw new Error('This action needs a signed in staff session');
   return {
     accountId: actor.accountId,
-    role: actor.role as 'editor' | 'admin',
+    role: actor.role as 'editor' | 'admin' | 'super_admin',
     sessionId: actor.sessionId,
   };
 }
@@ -197,7 +197,7 @@ export const realPeopleService: PeopleService = {
   },
 
   async staff(actor) {
-    need(actor, 'roles.change');
+    need(actor, 'roles.view');
     const { staff } = adminRuntime().auth();
     const who = staffActor(actor);
     const members = await staff.listStaff(who);
@@ -294,6 +294,25 @@ export const realPeopleService: PeopleService = {
       if (!(await rt.auth().staff.listInvites(who)).some((i) => i.id === id))
         return fail('That invite is no longer pending.');
       await rt.auth().staff.revokeInvite(who, id, await rt.meta());
+      return OK;
+    } catch (error) {
+      return staffFailure(error);
+    }
+  },
+
+  async deleteAccount(actor, id, confirmation) {
+    try {
+      need(actor, 'users.delete');
+      const rt = adminRuntime();
+      const [current] = await loadUsers(catalogActor(actor), eq(schema.accounts.id, id));
+      if (!current) return fail(NOT_FOUND);
+      await rt
+        .auth()
+        .staff.deleteViewerAccount(
+          staffActor(actor),
+          { accountId: id, confirmation },
+          await rt.meta(),
+        );
       return OK;
     } catch (error) {
       return staffFailure(error);

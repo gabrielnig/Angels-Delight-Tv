@@ -6,7 +6,12 @@ import { UserDetail } from '@/components/admin/UserDetail';
 import { can } from '@/lib/admin/can';
 import { peopleService } from '@/lib/data/admin/services';
 import { requireActor } from '@/lib/data/admin/session-next';
-import { reinstateUserAction, revokeSessionsAction, suspendUserAction } from '../actions';
+import {
+  deleteUserAccountAction,
+  reinstateUserAction,
+  revokeSessionsAction,
+  suspendUserAction,
+} from '../actions';
 
 export const metadata: Metadata = { title: 'User' };
 
@@ -31,10 +36,12 @@ export default async function UserPage({ params }: { params: Promise<{ id: strin
       <UserDetail
         user={user}
         canAct={can(actor.role, 'users.suspend')}
+        canDelete={can(actor.role, 'users.delete')}
         actions={{
           suspend: suspendUserAction,
           reinstate: reinstateUserAction,
           revokeSessions: revokeSessionsAction,
+          deleteAccount: deleteUserAccountAction,
         }}
       />
     </>

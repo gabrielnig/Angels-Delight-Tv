@@ -6,6 +6,10 @@ import { MemorySettingsStore } from './testing';
 
 const admin = { accountId: '0198c000-0000-7000-8000-000000000001', role: 'admin' as const };
 const editor = { accountId: '0198c000-0000-7000-8000-000000000002', role: 'editor' as const };
+const superAdmin = {
+  accountId: '0198c000-0000-7000-8000-000000000003',
+  role: 'super_admin' as const,
+};
 const logger = () => ({
   error: vi.fn(),
   warn: vi.fn(),
@@ -97,11 +101,11 @@ describe('reading', () => {
 describe('update', () => {
   it('saves changed values with the registry is_public flag and audits old and new values', async () => {
     const { service, store } = setup();
-    await service.update(admin, { 'platform.name': 'Sister V TV', 'limits.max_profiles': 4 });
+    await service.update(superAdmin, { 'platform.name': 'Sister V TV', 'limits.max_profiles': 4 });
     expect(store.rows.get('platform.name')).toMatchObject({
       value: 'Sister V TV',
       isPublic: true,
-      updatedBy: admin.accountId,
+      updatedBy: superAdmin.accountId,
     });
     expect(store.rows.get('limits.max_profiles')).toMatchObject({ value: 4, isPublic: false });
     const entry = store.audit.entries.at(-1)!;
@@ -114,7 +118,7 @@ describe('update', () => {
 
   it('does nothing and writes no audit entry when nothing changed', async () => {
     const { service, store } = setup();
-    await service.update(admin, { 'limits.max_profiles': 5 });
+    await service.update(superAdmin, { 'limits.max_profiles': 5 });
     expect(store.rows.size).toBe(0);
     expect(store.audit.entries).toHaveLength(0);
   });
@@ -122,7 +126,7 @@ describe('update', () => {
   it('rejects the whole update with per key messages and saves nothing', async () => {
     const { service, store } = setup();
     const error = (await service
-      .update(admin, {
+      .update(superAdmin, {
         'platform.name': 'Fine',
         'limits.max_sessions': 11,
         'platform.support_email': 'nope',
@@ -164,9 +168,29 @@ describe('update', () => {
     expect(store.rows.has('platform.tagline')).toBe(true);
   });
 
+  it('by default only a Super admin may change features and limits (M29-S02, D-125)', async () => {
+    const { service, store } = setup();
+    await expect(service.update(admin, { 'limits.max_profiles': 3 })).rejects.toBeInstanceOf(
+      Forbidden,
+    );
+    expect(store.rows.has('limits.max_profiles')).toBe(false);
+    await service.update(superAdmin, { 'limits.max_profiles': 3 });
+    expect(store.rows.get('limits.max_profiles')?.value).toBe(3);
+    await service.update(admin, { 'platform.tagline': 'ok' });
+    expect(store.rows.has('platform.tagline')).toBe(true);
+  });
+
+  it('refuses an unknown role even when it looks high', async () => {
+    const { service } = setup();
+    const forged = { ...admin, role: 'owner' as never };
+    await expect(service.update(forged, { 'platform.tagline': 'x' })).rejects.toBeInstanceOf(
+      Forbidden,
+    );
+  });
+
   it('returns the resolved settings after saving', async () => {
     const { service } = setup();
-    const result = await service.update(admin, { 'features.autoplay_hero': true });
+    const result = await service.update(superAdmin, { 'features.autoplay_hero': true });
     expect(result['features.autoplay_hero']).toBe(true);
   });
 });

@@ -1,6 +1,15 @@
 import { schema, type Database } from '@ad/db';
 import type { JobProducer } from '@ad/queue';
-import { Conflict, Forbidden, NotFound, ValidationFailed, isUuid, type Actor } from '@ad/shared';
+import {
+  Conflict,
+  Forbidden,
+  NotFound,
+  ValidationFailed,
+  isUuid,
+  type Actor,
+  isStaffRole,
+  isAdminRole,
+} from '@ad/shared';
 import type { StorageAdapter } from '@ad/storage';
 import { and, asc, desc, eq, inArray, sql } from 'drizzle-orm';
 import {
@@ -85,8 +94,7 @@ export interface ReviewQueueRow {
 const IMPORT_MAX_BYTES = 2 * 1024 * 1024;
 
 function assertStaff(actor: Actor): void {
-  if (actor.role !== 'editor' && actor.role !== 'admin')
-    throw new Forbidden('Only editors and admins manage captions');
+  if (!isStaffRole(actor.role)) throw new Forbidden('Only editors and admins manage captions');
 }
 
 async function readText(storage: StorageAdapter, key: string): Promise<string> {
@@ -183,7 +191,7 @@ export class CaptionService {
     options: { keepApproved?: boolean } = {},
   ): Promise<CaptionRow> {
     assertStaff(actor);
-    if (options.keepApproved && actor.role !== 'admin') {
+    if (options.keepApproved && !isAdminRole(actor.role)) {
       throw new Forbidden('Only an admin can save and keep captions approved');
     }
     const [track] = await this.db

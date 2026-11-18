@@ -82,7 +82,7 @@ export async function readStorageCap(): Promise<number> {
 
 export const realSystemService: SystemService = {
   async jobs(actor) {
-    need(actor, 'system.view');
+    need(actor, 'system.jobs');
     const rows = await adminRuntime().db().execute(sql`
         SELECT j.id, j.queue, j.status, j.attempts, j.error_message, j.finished_at, j.created_at, v.title
         FROM jobs j LEFT JOIN videos v ON v.id = j.video_id
@@ -106,7 +106,7 @@ export const realSystemService: SystemService = {
   },
 
   async retryJob(actor, id) {
-    need(actor, 'system.view');
+    need(actor, 'system.jobs');
     const db = adminRuntime().db();
     const who = catalogActor(actor);
     const job = await withAccount(db, who, async (tx) => {
@@ -143,7 +143,7 @@ export const realSystemService: SystemService = {
   },
 
   async discardJob(actor, id, reason) {
-    need(actor, 'system.view');
+    need(actor, 'system.jobs');
     if (reason.trim().length < 3)
       return { ok: false, error: 'Write a short reason. It is kept in the audit log.' };
     return withAccount(adminRuntime().db(), catalogActor(actor), async (tx) => {

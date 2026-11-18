@@ -8,6 +8,28 @@ import { AuditLogView } from './AuditLogView';
 afterEach(cleanup);
 const rows = structuredClone(getStore().audit);
 
+describe('AuditLogView by role', () => {
+  it('tells an admin the log is limited to content actions and hides Export', () => {
+    render(
+      <AuditLogView
+        rows={rows}
+        nextCursor={null}
+        query={{}}
+        selected={null}
+        restricted
+        canExport={false}
+      />,
+    );
+    expect(screen.getByText(/content actions only/i)).toBeTruthy();
+    expect(screen.queryByRole('link', { name: 'Export CSV' })).toBeNull();
+  });
+  it('shows the full log with Export to a Super admin', () => {
+    render(<AuditLogView rows={rows} nextCursor={null} query={{}} selected={null} />);
+    expect(screen.queryByText(/content actions only/i)).toBeNull();
+    expect(screen.getByRole('link', { name: 'Export CSV' })).toBeTruthy();
+  });
+});
+
 describe('AuditLogView', () => {
   it('lists entries with the result in words', () => {
     render(<AuditLogView rows={rows} nextCursor={null} query={{}} selected={null} />);

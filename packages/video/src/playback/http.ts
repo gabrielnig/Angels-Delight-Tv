@@ -1,5 +1,6 @@
 import { errorResponse, jsonResponse } from '../http/respond';
 import type { PlaybackService } from './service';
+import type { AccountRole } from '@ad/shared';
 
 export interface PlaybackHttpDeps {
   service: Pick<PlaybackService, 'startSession' | 'startPreview' | 'master' | 'variant' | 'key'>;
@@ -8,7 +9,7 @@ export interface PlaybackHttpDeps {
     request: Request,
   ): Promise<{ accountId: string; profileId: string; kidsLocked?: boolean }>;
   /** The signed in admin or editor, or throws Unauthorized. */
-  getActor(request: Request): Promise<{ accountId: string; role: 'admin' | 'editor' | 'viewer' }>;
+  getActor(request: Request): Promise<{ accountId: string; role: AccountRole }>;
   assertSameOrigin?(request: Request): void;
   /** Client address after trusted proxy handling. */
   clientIp(request: Request): string;

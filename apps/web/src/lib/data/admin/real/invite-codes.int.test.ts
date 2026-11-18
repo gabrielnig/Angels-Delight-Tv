@@ -47,7 +47,12 @@ describe.skipIf(!integrationEnabled())('real invite codes service', () => {
     const result = await realInviteCodes.create(admin, input);
     if (!result.ok) throw new Error(result.error);
     expect(result.code).toMatch(/^[A-Z2-9]{4}-[A-Z2-9]{4}-[A-Z2-9]{2}$/);
-    expect(result.invites[0]).toMatchObject({ label: 'Soft launch', maxUses: 3, uses: 0, status: 'active' });
+    expect(result.invites[0]).toMatchObject({
+      label: 'Soft launch',
+      maxUses: 3,
+      uses: 0,
+      status: 'active',
+    });
     expect(JSON.stringify(await realInviteCodes.list(admin))).not.toContain(result.code!);
   });
 
@@ -76,8 +81,9 @@ describe.skipIf(!integrationEnabled())('real invite codes service', () => {
   });
 
   it('reports a missing code on revoke', async () => {
-    expect(
-      await realInviteCodes.revoke(admin, '0194d3c0-0000-7000-8000-000000000099'),
-    ).toEqual({ ok: false, error: 'That code no longer exists.' });
+    expect(await realInviteCodes.revoke(admin, '0194d3c0-0000-7000-8000-000000000099')).toEqual({
+      ok: false,
+      error: 'That code no longer exists.',
+    });
   });
 });

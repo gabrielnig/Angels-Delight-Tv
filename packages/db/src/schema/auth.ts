@@ -51,7 +51,7 @@ export const adminInvites = pgTable(
     createdAt: createdAt(),
   },
   (t) => [
-    check('admin_invites_staff_role', sql`${t.role} IN ('editor', 'admin')`),
+    check('admin_invites_staff_role', sql`${t.role}::text IN ('editor', 'admin', 'super_admin')`),
     uniqueIndex('admin_invites_token_hash_uniq').on(t.tokenHash),
     index('admin_invites_pending_idx')
       .on(t.emailHash)

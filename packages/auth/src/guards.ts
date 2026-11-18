@@ -1,4 +1,4 @@
-import { Forbidden, Unauthorized } from '@ad/shared';
+import { Forbidden, Unauthorized, isStaffRole, isAdminRole } from '@ad/shared';
 import type { SessionContext } from './sessions';
 
 /**
@@ -7,11 +7,18 @@ import type { SessionContext } from './sessions';
  */
 export function assertStaff(context: SessionContext | null): asserts context is SessionContext {
   if (!context) throw new Unauthorized();
-  if (context.role !== 'editor' && context.role !== 'admin') throw new Forbidden();
+  if (!isStaffRole(context.role)) throw new Forbidden();
   if (!context.mfaVerified) throw new Forbidden('Second factor required');
 }
 
 export function assertAdmin(context: SessionContext | null): asserts context is SessionContext {
   assertStaff(context);
-  if (context.role !== 'admin') throw new Forbidden();
+  if (!isAdminRole(context.role)) throw new Forbidden();
+}
+
+export function assertSuperAdmin(
+  context: SessionContext | null,
+): asserts context is SessionContext {
+  assertStaff(context);
+  if (context.role !== 'super_admin') throw new Forbidden();
 }

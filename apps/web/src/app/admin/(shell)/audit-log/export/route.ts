@@ -8,8 +8,8 @@ export const dynamic = 'force-dynamic';
 export async function GET(request: Request) {
   const actor = await getActor();
   if (!actor) return new Response('Sign in first.', { status: 401 });
-  if (!allowed(actor, 'audit.read'))
-    return new Response('Only admins can export the audit log.', { status: 403 });
+  if (!allowed(actor, 'audit.export'))
+    return new Response('Only a Super admin can export the audit log.', { status: 403 });
   try {
     await spendAdminBudget(actor);
   } catch (error) {

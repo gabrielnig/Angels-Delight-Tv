@@ -37,6 +37,14 @@ export function seedPeople(now: number): {
   }));
   const staff: StaffRecord[] = [
     {
+      id: 'acc_arkdev',
+      name: 'Arkdev',
+      email: 'arkdev@example.test',
+      role: 'super_admin',
+      twoFactor: true,
+      lastSignInAt: ago(now, 0),
+    },
+    {
       id: 'stf_1',
       name: 'Chiamaka',
       email: 'chiamaka@example.test',

@@ -1,7 +1,7 @@
 import { and, asc, eq, sql } from 'drizzle-orm';
 import { categories, videoCategories, withAccount } from '@ad/db';
 import { writeAudit } from '../audit';
-import { Forbidden, isUuid, type Actor } from '@ad/shared';
+import { Forbidden, isUuid, type Actor, isStaffRole } from '@ad/shared';
 import { rowsOf } from '../sql';
 import type { Tx } from '../types';
 import { OK, clean, fail, slugOf, type AdminContext, type CommandResult } from './types';
@@ -15,7 +15,7 @@ export interface AdminCategory {
 }
 
 function assertStaff(actor: Actor): void {
-  if (actor.role !== 'editor' && actor.role !== 'admin') throw new Forbidden('Editors only');
+  if (!isStaffRole(actor.role)) throw new Forbidden('Editors only');
 }
 
 function nameProblem(name: string): string | null {

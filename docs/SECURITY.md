@@ -96,20 +96,21 @@ Authenticated is not authorized. Three layers, all required:
 
 Roles:
 
-| Capability | Anonymous | viewer | editor | admin |
-|---|---|---|---|---|
-| Landing page, sign up, sign in | yes | yes | yes | yes |
-| Browse, watch, search (own visible catalog) | no | yes | yes | yes |
-| Manage own profiles, list, progress | no | yes | yes | yes |
-| `/admin` access | no | no | yes | yes |
-| Upload, edit videos, series, categories, home rows | no | no | yes | yes |
-| Review and approve captions | no | no | yes | yes |
-| Publish and unpublish | no | no | yes | yes |
-| Delete video (soft) | no | no | admin only | yes |
-| View users and profiles overview, suspend users | no | no | no | yes |
-| Change roles | no | no | no | yes (re-auth, not self) |
-| Theme and platform settings | no | no | no | yes |
-| Read audit log | no | no | no | yes |
+| Capability | Anonymous | viewer | editor | admin | super_admin |
+|---|---|---|---|---|---|
+| Landing page, sign up, sign in | yes | yes | yes | yes | yes |
+| Browse, watch, search (own visible catalog) | no | yes | yes | yes | yes |
+| Manage own profiles, list, progress | no | yes | yes | yes | yes |
+| `/admin` access | no | no | yes | yes | yes |
+| Upload, edit videos, series, categories, home rows | no | no | yes | yes | yes |
+| Review and approve captions | no | no | yes | yes | yes |
+| Publish and unpublish | no | no | yes | yes | yes |
+| Delete video (soft) | no | no | admin only | yes | yes |
+| View users and profiles overview, suspend users | no | no | no | yes | yes |
+| Invite staff, change roles, reset another admin's 2FA | no | no | no | no | yes (re-auth, not self) |
+| Theme and platform settings | no | no | no | yes | yes |
+| Features and limits, retry or discard failed jobs, delete a viewer account at the owner request | no | no | no | no | yes |
+| Read audit log | no | no | no | content actions only | yes, all entries and export |
 
 Rules:
 - Profile ownership: any route with a profile id loads it through `getOwnedProfile(actor, id)`, which returns 404 (not 403) when the profile belongs to someone else, to avoid leaking existence.
@@ -117,7 +118,7 @@ Rules:
 - Mass assignment: update schemas whitelist fields. `role`, `status`, `email_verified_at` are never accepted from user bodies.
 - No sequential or guessable public ids: UUIDs, and slugs only for already-public catalog items.
 - Do not rely on middleware for authorization. Re-check inside the handler.
-- Admin cannot demote or delete the last admin, and cannot change their own role.
+- Only a Super admin can invite staff, change roles, reset another admin's 2FA, read security entries in the audit log, export it, change features and limits, retry failed jobs and delete a viewer account (D-125). The database refuses to lose the last active Super admin (trigger) and `staff_set_role` re-checks the caller in SQL. Nobody can change their own role.
 - The worker role has no grants on identity tables. A compromised worker cannot read accounts.
 
 Every route has an authorization test with at least: anonymous, wrong role, other account's resource.

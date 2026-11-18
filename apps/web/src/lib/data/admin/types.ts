@@ -127,7 +127,7 @@ export interface StaffRecord {
   id: string;
   name: string;
   email: string;
-  role: 'editor' | 'admin';
+  role: 'editor' | 'admin' | 'super_admin';
   twoFactor: boolean;
   lastSignInAt: string | null;
 }
@@ -135,7 +135,7 @@ export interface StaffRecord {
 export interface InviteRecord {
   id: string;
   email: string;
-  role: 'editor' | 'admin';
+  role: 'editor' | 'admin' | 'super_admin';
   invitedBy: string;
   createdAt: string;
   expiresAt: string;

@@ -36,7 +36,6 @@ describe('can(role, action)', () => {
       'caption.override',
       'users.view',
       'users.suspend',
-      'roles.change',
       'settings.theme',
       'settings.site',
       'audit.read',
@@ -44,6 +43,35 @@ describe('can(role, action)', () => {
     ] as const) {
       expect(can('editor', action), action).toBe(false);
       expect(can('admin', action), action).toBe(true);
+      expect(can('super_admin', action), action).toBe(true);
+    }
+  });
+
+  it('reserves the Super admin stories for super_admin (D-125)', () => {
+    for (const action of [
+      'roles.view',
+      'roles.change',
+      'users.delete',
+      'settings.flags',
+      'audit.security',
+      'audit.export',
+      'system.jobs',
+    ] as const) {
+      expect(requiredRole(action), action).toBe('super_admin');
+      expect(can('viewer', action), action).toBe(false);
+      expect(can('editor', action), action).toBe(false);
+      expect(can('admin', action), action).toBe(false);
+      expect(can('super_admin', action), action).toBe(true);
+    }
+  });
+
+  it('gives a Super admin every action', () => {
+    for (const action of ADMIN_ACTIONS) expect(can('super_admin', action), action).toBe(true);
+  });
+
+  it('never lets a name that only looks like a role through', () => {
+    for (const role of ['Super_Admin', 'superadmin', 'super admin', 'constructor', '__proto__']) {
+      for (const action of ADMIN_ACTIONS) expect(can(role as never, action)).toBe(false);
     }
   });
 
