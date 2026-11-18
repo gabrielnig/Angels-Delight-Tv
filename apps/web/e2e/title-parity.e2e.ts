@@ -28,7 +28,9 @@ for (const path of PAGES) {
     await page.goto(path, { waitUntil: 'networkidle' });
     const result = await new AxeBuilder({ page }).withTags(TAGS).analyze();
     expect(
-      result.violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(' ')).join(' | ')}`),
+      result.violations.map(
+        (v) => `${v.id}: ${v.nodes.map((n) => n.target.join(' ')).join(' | ')}`,
+      ),
     ).toEqual([]);
     await page.setViewportSize({ width: 320, height: 640 });
     const overflow = await page.evaluate(
@@ -44,10 +46,13 @@ test('title page touch targets', async ({ page }) => {
   await expectBig(page, '.tv-desc .web-expandable__toggle', 'show more');
   await expectBig(page, '.tv-related__card', 'related card');
   await expectBig(page, '.tv-poster__button', 'poster play');
-  if (await page.locator('.tv-crumbs').isVisible()) await expectBig(page, '.tv-crumbs a', 'breadcrumb link');
+  if (await page.locator('.tv-crumbs').isVisible())
+    await expectBig(page, '.tv-crumbs a', 'breadcrumb link');
 });
 
-test('phones get a sticky Play bar and a Back button instead of the tab bar', async ({ page }, info) => {
+test('phones get a sticky Play bar and a Back button instead of the tab bar', async ({
+  page,
+}, info) => {
   test.skip(info.project.name !== 'mobile', 'phone only');
   await page.goto('/title/how-rain-is-made', { waitUntil: 'networkidle' });
   const bar = page.locator('.tv-sticky a');
@@ -73,6 +78,9 @@ test('desktop hides the sticky bar and the Back button', async ({ page }, info) 
 test('a missing title shows the not found card inside the page chrome', async ({ page }) => {
   await page.goto('/title/no-such-video');
   await expect(page.getByRole('heading', { name: 'We could not find that video' })).toBeVisible();
-  await expect(page.getByRole('link', { name: 'Browse subjects' })).toHaveAttribute('href', '/browse');
+  await expect(page.getByRole('link', { name: 'Browse subjects' })).toHaveAttribute(
+    'href',
+    '/browse',
+  );
   await expect(page.locator('header')).toBeVisible();
 });
