@@ -764,6 +764,44 @@ a {
 .web-episode__done {
   font-weight: 600;
 }
+.web-episode__now {
+  font-weight: 600;
+  color: var(--color-primary);
+}
+.web-episode__link[data-current='true'] {
+  background: var(--color-surface-sunken);
+}
+.web-expandable[data-collapsed='true'] {
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.web-expandable__toggle {
+  min-height: 44px;
+  padding-inline: var(--space-2);
+  background: none;
+  border: 0;
+  color: var(--color-primary);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+.web-title__progress {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  max-width: 44rem;
+  margin-block: var(--space-3);
+}
+.web-title__progress > :first-child {
+  flex: 1;
+}
+.web-title-actions__url {
+  min-height: 44px;
+  flex: 1 1 16rem;
+  padding-inline: var(--space-3);
+}
 @media (hover: hover) {
   .web-episode__link:hover {
     background: var(--color-surface-sunken);

@@ -1,21 +1,31 @@
-import { Badge, ButtonLink, EmptyState, Row, Tabs, formatDuration, spokenLength } from '@ad/ui';
-import type { TitleDetail } from '../../lib/data';
-import { itemKey, timeLeftLabel } from '../../lib/format';
+import {
+  Badge,
+  ButtonLink,
+  EmptyState,
+  ProgressBar,
+  Row,
+  Tabs,
+  formatDuration,
+  spokenLength,
+} from '@ad/ui';
+import type { Thumb, TitleDetail } from '../../lib/data';
+import { itemKey, percent, timeLeftLabel } from '../../lib/format';
+import { primaryAction } from '../../lib/title-cta';
 import { CatalogCard } from '../CatalogCard';
+import { ExpandableText } from './ExpandableText';
 import { TitleActions } from './TitleActions';
 
 /** Screen 18. Viewer title page with Play or Continue, My List, details tabs and a related row. */
 export function TitleView({ detail, inList }: { detail: TitleDetail; inList: boolean }) {
-  const { video, progress } = detail;
-  const resume =
-    progress && progress.positionSeconds > 0 && progress.positionSeconds < progress.durationSeconds;
+  const { video, progress, play } = detail;
+  const started = play.label === 'resume' && progress;
   const related = new Set<string>();
   return (
     <div className="web-page web-title">
-      <div className="web-title__media" role="img" aria-label={`${video.title} preview`}>
+      <div className="web-title__media">
         {video.thumbnail ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={video.thumbnail.src} srcSet={video.thumbnail.srcSet} alt="" />
+          <img src={video.thumbnail.src} srcSet={video.thumbnail.srcSet} alt={video.title} />
         ) : null}
       </div>
       <h1 className="web-title__name">{video.title}</h1>
@@ -28,13 +38,23 @@ export function TitleView({ detail, inList }: { detail: TitleDetail; inList: boo
         {video.kidsSafe ? <Badge variant="kids">Kids</Badge> : null}
         {video.hasCaptions ? <Badge variant="neutral">Captions</Badge> : null}
       </p>
+      {started ? (
+        <div className="web-title__progress">
+          <ProgressBar value={percent(progress)} label={`${video.title} progress`} size="sm" />
+          <span>{timeLeftLabel(progress)}</span>
+        </div>
+      ) : null}
       <TitleActions
-        watchHref={`/watch/${video.id}`}
+        primary={primaryAction({
+          label: play.label,
+          startSeconds: play.startSeconds,
+          watchHref: `/watch/${video.id}`,
+        })}
         itemKey={itemKey(video)}
         inList={inList}
-        resume={resume && progress ? { timeLeft: timeLeftLabel(progress) } : undefined}
+        shareTitle={video.title}
       />
-      <p className="web-title__desc">{video.description}</p>
+      <ExpandableText className="web-title__desc" text={video.description} />
       <Tabs
         label="Title details"
         tabs={[
@@ -73,11 +93,15 @@ export function TitleBlocked() {
 }
 
 export function PublicTitle({
+  slug,
   title,
   description,
   minutes,
   category,
+  thumbnail,
 }: {
+  slug: string;
+  thumbnail?: Thumb;
   title: string;
   description: string;
   minutes: string;
@@ -85,13 +109,21 @@ export function PublicTitle({
 }) {
   return (
     <div className="web-page web-title">
+      <div className="web-title__media">
+        {thumbnail ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={thumbnail.src} srcSet={thumbnail.srcSet} alt={title} />
+        ) : null}
+      </div>
       <h1 className="web-title__name">{title}</h1>
       <p className="web-title__meta">
         {minutes} <span>{category}</span>
       </p>
       <p className="web-title__desc">{description}</p>
       <div className="web-title-actions">
-        <ButtonLink href="/sign-in">Sign in to watch</ButtonLink>
+        <ButtonLink href={`/sign-in?next=${encodeURIComponent(`/title/${slug}`)}`}>
+          Sign in to watch
+        </ButtonLink>
         <ButtonLink href="/sign-up" variant="secondary">
           Create account
         </ButtonLink>

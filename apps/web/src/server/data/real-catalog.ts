@@ -299,6 +299,7 @@ function toTitleDetail(detail: VideoDetailDto): TitleDetail {
     progress: detail.progress
       ? progressOf(video.id, detail.progress, detail.progress.updatedAt)
       : undefined,
+    play: { label: detail.play.label, startSeconds: Math.round(detail.play.startMs / 1000) },
   };
 }
 
@@ -320,6 +321,7 @@ function toSeriesDetail(detail: SeriesDetailDto): SeriesDetail {
       blurb: e.video.description ?? '',
       progress: e.progress ? progressOf(e.video.id, e.progress) : undefined,
       watched: e.watched,
+      current: e.isCurrent,
     })),
   }));
   const flat = seasons.flatMap((s) => s.episodes.map((e) => ({ season: s.number, episode: e })));
@@ -337,6 +339,7 @@ function toSeriesDetail(detail: SeriesDetailDto): SeriesDetail {
       episode: target?.episode.number ?? 1,
       resume,
       secondsLeft: resume ? left : undefined,
+      label: detail.play?.label ?? 'play',
     },
   };
 }

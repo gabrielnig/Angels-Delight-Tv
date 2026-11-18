@@ -217,6 +217,37 @@ describe.skipIf(!integrationEnabled())('real catalog repository', () => {
         positionSeconds: 120,
         durationSeconds: 600,
       });
+      expect(detail.play).toEqual({ label: 'resume', startSeconds: 117 });
+    });
+
+    it('offers Watch again for a finished video and Play for one nobody started', async () => {
+      const done = await seedVideo(h.db.setup, {
+        title: 'Finished one',
+        slug: 'finished-one',
+        durationMs: 600_000,
+        kidsSafe: true,
+      });
+      const fresh = await seedVideo(h.db.setup, {
+        title: 'Fresh one',
+        slug: 'fresh-one',
+        durationMs: 600_000,
+        kidsSafe: true,
+      });
+      await h.db.setup.insert(watchProgress).values({
+        profileId: user.profileId,
+        videoId: done.id,
+        positionMs: 0,
+        durationMs: 600_000,
+        completed: true,
+        updatedAt: NOW,
+      });
+      const finished = await catalog.title(adultCtx(user), 'finished-one');
+      const untouched = await catalog.title(adultCtx(user), 'fresh-one');
+      if (!finished || 'blocked' in finished || 'redirect' in finished) throw new Error('detail');
+      if (!untouched || 'blocked' in untouched || 'redirect' in untouched) throw new Error('detail');
+      expect(finished.play).toEqual({ label: 'watch_again', startSeconds: 0 });
+      expect(untouched.play).toEqual({ label: 'play', startSeconds: 0 });
+      expect(fresh.id).not.toBe(done.id);
     });
 
     it('is null for unknown or hidden titles, never leaking that they exist', async () => {
@@ -280,7 +311,10 @@ describe.skipIf(!integrationEnabled())('real catalog repository', () => {
         episode: 2,
         resume: true,
         secondsLeft: 200,
+        label: 'resume',
       });
+      expect(detail!.seasons[0]!.episodes.map((e) => e.current)).toEqual([false, true]);
+      expect(detail!.seasons[1]!.episodes.map((e) => e.current)).toEqual([false]);
     });
 
     it('starts at the first episode when nothing was watched, and hides it from kids when unsafe', async () => {

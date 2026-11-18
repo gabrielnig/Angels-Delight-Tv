@@ -6,53 +6,75 @@ import { ToastProvider } from '@ad/ui';
 import { TitleActions } from './TitleActions';
 
 const wrap = (ui: React.ReactElement) => render(<ToastProvider>{ui}</ToastProvider>);
+const play = { text: 'Play', href: '/watch/a' };
 
 describe('TitleActions', () => {
-  it('offers Play linking to the watch page when nothing is in progress', () => {
-    wrap(<TitleActions watchHref="/watch/a" itemKey="video:a" inList={false} toggle={vi.fn()} />);
+  it('offers the primary action as a link and no Start over by default', () => {
+    wrap(<TitleActions primary={play} itemKey="video:a" inList={false} toggle={vi.fn()} />);
     expect(screen.getByRole('link', { name: 'Play' })).toHaveAttribute('href', '/watch/a');
     expect(screen.queryByRole('link', { name: 'Start over' })).toBeNull();
   });
 
-  it('offers Continue with time left and Start over when in progress', () => {
+  it('shows Resume with Start over when a start over link is given', () => {
     wrap(
       <TitleActions
-        watchHref="/watch/a"
+        primary={{ text: 'Resume from 2:14', href: '/watch/a', startOverHref: '/watch/a?t=0' }}
         itemKey="video:a"
         inList={false}
         toggle={vi.fn()}
-        resume={{ timeLeft: '3 min left' }}
       />,
     );
-    expect(screen.getByRole('link', { name: /Continue/ })).toHaveAccessibleName(/3 min left/);
-    expect(screen.getByRole('link', { name: 'Start over' })).toHaveAttribute(
+    expect(screen.getByRole('link', { name: 'Resume from 2:14' })).toHaveAttribute(
       'href',
-      '/watch/a?t=0',
+      '/watch/a',
     );
+    expect(screen.getByRole('link', { name: 'Start over' })).toHaveAttribute('href', '/watch/a?t=0');
   });
 
-  it('toggles My List optimistically with aria-pressed', async () => {
+  it('toggles My List optimistically with aria-pressed and says so', async () => {
     const toggle = vi.fn().mockResolvedValue(undefined);
-    const user = userEvent.setup();
-    wrap(<TitleActions watchHref="/watch/a" itemKey="video:a" inList={false} toggle={toggle} />);
-    const button = screen.getByRole('button', { name: 'My List' });
+    wrap(<TitleActions primary={play} itemKey="video:a" inList={false} toggle={toggle} />);
+    const button = screen.getByRole('button', { name: /My List/ });
     expect(button).toHaveAttribute('aria-pressed', 'false');
-    await user.click(button);
+    await userEvent.click(button);
     expect(button).toHaveAttribute('aria-pressed', 'true');
     expect(toggle).toHaveBeenCalledWith('video:a', true);
+    expect(await screen.findByText('Added to My List')).toBeInTheDocument();
   });
 
   it('rolls back and says so when saving fails', async () => {
-    const toggle = vi.fn().mockRejectedValue(new Error('x'));
-    const user = userEvent.setup();
-    wrap(<TitleActions watchHref="/watch/a" itemKey="video:a" inList={false} toggle={toggle} />);
-    await user.click(screen.getByRole('button', { name: 'My List' }));
-    await waitFor(() =>
-      expect(screen.getByRole('button', { name: 'My List' })).toHaveAttribute(
-        'aria-pressed',
-        'false',
-      ),
+    const toggle = vi.fn().mockRejectedValue(new Error('no'));
+    wrap(<TitleActions primary={play} itemKey="video:a" inList={false} toggle={toggle} />);
+    const button = screen.getByRole('button', { name: /My List/ });
+    await userEvent.click(button);
+    await waitFor(() => expect(button).toHaveAttribute('aria-pressed', 'false'));
+    expect(await screen.findByText(/could not update My List/i)).toBeInTheDocument();
+  });
+
+  it('shares with the Web Share API when it exists', async () => {
+    const share = vi.fn().mockResolvedValue(undefined);
+    Object.assign(navigator, { share });
+    wrap(
+      <TitleActions primary={play} itemKey="video:a" inList={false} toggle={vi.fn()} shareTitle="Rivers" />,
     );
-    expect(await screen.findByText('We could not update My List. Try again.')).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Share' }));
+    expect(share).toHaveBeenCalledWith(expect.objectContaining({ title: 'Rivers' }));
+    Object.assign(navigator, { share: undefined });
+  });
+
+  it('copies the link with a toast, and shows the URL in a selectable box when copying fails', async () => {
+    Object.assign(navigator, { share: undefined });
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true });
+    wrap(
+      <TitleActions primary={play} itemKey="video:a" inList={false} toggle={vi.fn()} shareTitle="Rivers" />,
+    );
+    await userEvent.click(screen.getByRole('button', { name: 'Share' }));
+    expect(await screen.findByText('Link copied')).toBeInTheDocument();
+
+    writeText.mockRejectedValue(new Error('denied'));
+    await userEvent.click(screen.getByRole('button', { name: 'Share' }));
+    const box = await screen.findByRole('textbox', { name: 'Link to share' });
+    expect((box as HTMLInputElement).value).toContain('http');
   });
 });
