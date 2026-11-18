@@ -19,10 +19,19 @@ describe('generateSecretValues', () => {
     ];
     for (const name of keys) expect(Buffer.from(values[name]!, 'base64')).toHaveLength(32);
     expect(new Set(keys.map((name) => values[name])).size).toBe(keys.length);
-    for (const name of ['POSTGRES_PASSWORD', 'DB_ROLE_PASSWORD']) {
+    for (const name of ['POSTGRES_PASSWORD', 'DB_PASSWORD_APP', 'DB_PASSWORD_MIGRATOR']) {
       expect(values[name]).toMatch(/^[A-Za-z0-9_-]{32}$/);
     }
     expect(Object.keys(values).sort()).toEqual([...GENERATED_SECRET_NAMES].sort());
+  });
+
+  it('gives each database role its own password', () => {
+    const values = generateSecretValues();
+    const passwords = Object.entries(values)
+      .filter(([name]) => name.startsWith('DB_PASSWORD_'))
+      .map(([, value]) => value);
+    expect(passwords).toHaveLength(6);
+    expect(new Set(passwords).size).toBe(6);
   });
 
   it('is different every call', () => {

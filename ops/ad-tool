@@ -1,0 +1,28 @@
+#!/bin/sh
+# Dispatcher for the tools image. Usage: ad-tool <apply|import|secrets|backup|restore|seed-admin|help> [args]
+set -eu
+cd /app
+tsx=node_modules/.bin/tsx
+cmd="${1:-help}"
+[ $# -gt 0 ] && shift
+case "$cmd" in
+  apply) exec "$tsx" src/cli/apply.ts "$@" ;;
+  import) exec "$tsx" src/cli/import.ts "$@" ;;
+  secrets) exec "$tsx" src/cli/secrets.ts "$@" ;;
+  backup) exec "$tsx" src/cli/backup.ts "$@" ;;
+  restore) exec "$tsx" src/cli/restore.ts "$@" ;;
+  seed-admin) exec "$tsx" node_modules/@ad/auth/src/seed-admin-cli.ts "$@" ;;
+  help | -h | --help)
+    echo "Usage: ad-tool <command> [args]"
+    echo "  apply       apply client.json to settings, theme and icons (--config /client/client.json, --dry-run)"
+    echo "  import      bulk import videos (--dir /content --manifest /content/videos.csv, --dry-run)"
+    echo "  secrets     generate secrets for the production env file"
+    echo "  backup      encrypted dump of both databases to the backup bucket"
+    echo "  restore     restore a dump into a scratch database (never the live one)"
+    echo "  seed-admin  create the first owner account"
+    ;;
+  *)
+    echo "Unknown command: $cmd" >&2
+    exit 2
+    ;;
+esac
