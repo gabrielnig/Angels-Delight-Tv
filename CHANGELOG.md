@@ -71,3 +71,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 ### Lane M1: launch tooling
 
 - Added `pnpm launch:apply`, `pnpm secrets:generate`, `pnpm content:import`, `pnpm backup:run` and `pnpm backup:restore` in the new `@ad/launch` package, `client.example.json`, the production compose file, Caddyfile, `ops/` scripts, tools image and `.env.production.example`, `/healthz` and `/readyz`, a Lighthouse mobile budget, and `docs/LAUNCH-RUNBOOK.md` and `docs/CLIENT-INPUTS.md`. `docs/DEPLOYMENT.md` and `docs/DEV-SETUP.md` now match what was built.
+### Lane A2: admin stories audit
+
+- Audit M12 to M20 and M27 to M30 stories, merge the audit writers, read retention from settings, add invite codes, fix analytics export rows, keep series rows on Home in step, page the video list in the database, coalesce caption autosaves, and add the staff bell with email choices.
