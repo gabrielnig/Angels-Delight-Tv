@@ -62,6 +62,8 @@ export const accountDeletions = pgTable(
   {
     accountId: uuid('account_id').primaryKey(),
     requestedAt: timestamptz('requested_at').notNull(),
+    /** End of the grace period. The purge job removes the account once this has passed (M02-S06, D-092). */
+    purgeAfter: timestamptz('purge_after'),
     mainDataPurgedAt: timestamptz('main_data_purged_at'),
     dekDestroyedAt: timestamptz('dek_destroyed_at'),
     backupsClearAfter: timestamptz('backups_clear_after'),

@@ -1,6 +1,6 @@
 /** Enum values from docs/DATA-MODEL.md section 3. The database schema and the app both build on these. */
 export const ACCOUNT_ROLES = ['viewer', 'editor', 'admin'] as const;
-export const ACCOUNT_STATUSES = ['active', 'suspended', 'deleted'] as const;
+export const ACCOUNT_STATUSES = ['active', 'suspended', 'pending_deletion', 'deleted'] as const;
 export const VIDEO_KINDS = ['standalone', 'episode'] as const;
 export const VIDEO_STATUSES = [
   'uploading',

@@ -477,3 +477,9 @@ Format: decision, options considered, why, reversible or not. Newest first. Deci
 - Options: keep a compiled default, or pass the window as a job payload.
 - Why: M20-S04 asks for a retention setting, and a change should apply without a deploy. The analytics prune had the same gap (`analytics.raw_retention_days` existed but was never read), so the registry default (90 days) now governs raw events instead of the 730 day compiled constant.
 - Reversible: yes.
+
+## D-092 Account deletion has a 14 day grace period, superseding D-059 and D-075 (lane M2)
+- Decision: requesting deletion (password and typed DELETE) moves the account to the new `pending_deletion` status, ends every session and mails the purge date with a link to `/account/deletion`. Nothing is removed yet. Signing in with the right password opens a session that only sees that cancel screen (all other checks still require `active`, so they fail closed); Cancel deletion makes the account active and removes the `account_deletions` row. `purgeDueDeletions` runs in the web process with the key retry job (`runDeletionJobs`), removes personal data in one transaction, destroys the account key (crypto shredding) and mails "was deleted". The grace length is `AuthConfig.deletionGraceDays` (default 14). Migration 0020 adds the enum value and `account_deletions.purge_after`.
+- Options: a signed cancel link in the mail, or a worker job.
+- Why: sign in already proves ownership, so no second token type is needed. The web process already holds the shred connection and runs the retry job, and the worker role has no identity grants.
+- Reversible: yes. Pending accounts do not show in the admin users list.

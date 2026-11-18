@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { startShredRetry } from './shred-retry';
+import { runDeletionJobs, startShredRetry } from './shred-retry';
 
 afterEach(() => vi.useRealTimers());
 
@@ -37,5 +37,36 @@ describe('startShredRetry', () => {
     release();
     await vi.advanceTimersByTimeAsync(1000);
     expect(run).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe('runDeletionJobs', () => {
+  it('purges accounts past the grace period first, then finishes pending key destruction', async () => {
+    const order: string[] = [];
+    const total = await runDeletionJobs({
+      purgeDueDeletions: async () => {
+        order.push('purge');
+        return 2;
+      },
+      destroyPendingKeys: async () => {
+        order.push('shred');
+        return 3;
+      },
+    });
+    expect(order).toEqual(['purge', 'shred']);
+    expect(total).toBe(5);
+  });
+
+  it('still destroys pending keys when the purge fails, then reports the failure', async () => {
+    const destroyPendingKeys = vi.fn(async () => 1);
+    await expect(
+      runDeletionJobs({
+        purgeDueDeletions: async () => {
+          throw new Error('db down');
+        },
+        destroyPendingKeys,
+      }),
+    ).rejects.toThrow('db down');
+    expect(destroyPendingKeys).toHaveBeenCalled();
   });
 });

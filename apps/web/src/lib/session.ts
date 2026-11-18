@@ -32,6 +32,8 @@ async function selectedProfileId(): Promise<string | null | undefined> {
 
 async function getRealViewerSession(): Promise<ViewerSession | null> {
   const real = await getRealSession();
+  // M02-S08: an account waiting to be deleted can only use the cancel screen.
+  if (real?.status === 'pending_deletion') redirect('/account/deletion');
   if (!real || real.status !== 'active') return null;
   const [overview, profiles, selected] = await Promise.all([
     getAccount().overview(real.accountId),

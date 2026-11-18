@@ -1,7 +1,7 @@
 import { schema } from '@ad/db';
 import { integrationEnabled } from '@ad/db/testing';
 import { RateLimited, uuidv7 } from '@ad/shared';
-import { eq } from 'drizzle-orm';
+import { eq, inArray } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { AccountService } from './accounts';
 import { emailHash } from './identifiers';
@@ -248,15 +248,137 @@ describe.skipIf(!integrationEnabled())('account overview, email change and delet
       expect((await auth.getOverview(actor)).email).toBe(m.email);
     });
 
-    it('purges personal data, ends sessions, shreds the key and sends a notice', async () => {
+    const DAY = 86400;
+
+    it('moves the account to pending deletion, ends every session and mails the cancel notice', async () => {
       const m = await registerMember(h, auth);
       const { actor, session } = await signInActor(h, auth, m);
+      await withProfiles(m);
+      const before = h.mailsTo(m.email);
+      const result = await auth.deleteAccount(
+        actor,
+        { password: m.password, confirmation: 'DELETE' },
+        h.meta,
+      );
+      await h.settle();
+      expect(result.purgeAfter.getTime()).toBe(h.deps.clock!().getTime() + 14 * DAY * 1000);
+
+      const [row] = await h.dbs.admin.db
+        .select()
+        .from(schema.accounts)
+        .where(eq(schema.accounts.id, m.id));
+      expect(row?.status).toBe('pending_deletion');
+      expect(row?.emailEnc).not.toBeNull();
+      expect(
+        await h.dbs.admin.db
+          .select()
+          .from(schema.profiles)
+          .where(eq(schema.profiles.accountId, m.id)),
+      ).toHaveLength(2);
+      expect(await h.deps.sessions.validate(session.token)).toBeNull();
+      const [deletion] = await h.dbs.admin.db
+        .select()
+        .from(schema.accountDeletions)
+        .where(eq(schema.accountDeletions.accountId, m.id));
+      expect(deletion?.purgeAfter?.getTime()).toBe(result.purgeAfter.getTime());
+      expect(deletion?.mainDataPurgedAt).toBeNull();
+      expect(deletion?.dekDestroyedAt).toBeNull();
+      expect(h.mailsTo(m.email)).toBe(before + 1);
+      expect(h.transport.outbox.at(-1)?.subject).toMatch(/will be deleted/i);
+      expect(h.transport.outbox.at(-1)?.text).toContain('/account/deletion');
+    });
+
+    it('lets the owner sign in to a cancel only session, and nothing else works', async () => {
+      const m = await registerMember(h, auth);
+      const { actor } = await signInActor(h, auth, m);
+      const { purgeAfter } = await auth.deleteAccount(
+        actor,
+        { password: m.password, confirmation: 'DELETE' },
+        h.meta,
+      );
+      const result = await auth.signIn({ email: m.email, password: m.password }, h.meta);
+      expect(result.status).toBe('pending_deletion');
+      if (result.status !== 'pending_deletion') throw new Error('unreachable');
+      expect(result.purgeAfter.getTime()).toBe(purgeAfter.getTime());
+      expect(await h.deps.sessions.validate(result.session.token)).toMatchObject({
+        status: 'pending_deletion',
+      });
+      await expect(
+        auth.signIn({ email: m.email, password: 'wrong-password-12' }, h.meta),
+      ).rejects.toBeInstanceOf(InvalidCredentials);
+    });
+
+    it('cancels the deletion and restores the account with its profiles', async () => {
+      const m = await registerMember(h, auth);
+      const { actor } = await signInActor(h, auth, m);
+      await withProfiles(m);
+      await auth.deleteAccount(actor, { password: m.password, confirmation: 'DELETE' }, h.meta);
+      const result = await auth.signIn({ email: m.email, password: m.password }, h.meta);
+      if (result.status !== 'pending_deletion') throw new Error('expected pending');
+      const pendingActor = {
+        accountId: m.id,
+        role: 'viewer' as const,
+        sessionId: result.session.id,
+      };
+      expect(await auth.getDeletionState(pendingActor)).toMatchObject({ pending: true });
+      await auth.cancelDeletion(pendingActor, h.meta);
+      expect(await auth.getDeletionState(pendingActor)).toEqual({ pending: false });
+      const [row] = await h.dbs.admin.db
+        .select()
+        .from(schema.accounts)
+        .where(eq(schema.accounts.id, m.id));
+      expect(row?.status).toBe('active');
+      expect(
+        await h.dbs.admin.db
+          .select()
+          .from(schema.accountDeletions)
+          .where(eq(schema.accountDeletions.accountId, m.id)),
+      ).toHaveLength(0);
+      expect(await auth.purgeDueDeletions()).toBe(0);
+      expect((await auth.signIn({ email: m.email, password: m.password }, h.meta)).status).toBe(
+        'signed_in',
+      );
+      expect(
+        await h.dbs.admin.db
+          .select()
+          .from(schema.profiles)
+          .where(eq(schema.profiles.accountId, m.id)),
+      ).toHaveLength(2);
+    });
+
+    it('refuses to cancel an account that is not pending', async () => {
+      const m = await registerMember(h, auth);
+      const { actor } = await signInActor(h, auth, m);
+      await expect(auth.cancelDeletion(actor, h.meta)).rejects.toMatchObject({
+        name: 'Conflict',
+      });
+    });
+
+    it('leaves the account alone until the 14 days are over', async () => {
+      const m = await registerMember(h, auth);
+      const { actor } = await signInActor(h, auth, m);
+      await auth.deleteAccount(actor, { password: m.password, confirmation: 'DELETE' }, h.meta);
+      h.advance(14 * DAY - 60);
+      expect(await auth.purgeDueDeletions()).toBe(0);
+      const [row] = await h.dbs.admin.db
+        .select()
+        .from(schema.accounts)
+        .where(eq(schema.accounts.id, m.id));
+      expect(row?.status).toBe('pending_deletion');
+    });
+
+    it('purges personal data, shreds the key and sends the final notice when the grace period ends', async () => {
+      const m = await registerMember(h, auth);
+      const { actor } = await signInActor(h, auth, m);
       await withProfiles(m);
       const sealedEmail = (
         await h.dbs.admin.db.select().from(schema.accounts).where(eq(schema.accounts.id, m.id))
       )[0]!.emailEnc!;
-      const before = h.mailsTo(m.email);
       await auth.deleteAccount(actor, { password: m.password, confirmation: 'DELETE' }, h.meta);
+      await h.settle();
+      const before = h.mailsTo(m.email);
+      h.advance(14 * DAY + 1);
+      expect(await auth.purgeDueDeletions()).toBeGreaterThanOrEqual(1);
       await h.settle();
 
       const [row] = await h.dbs.admin.db
@@ -288,7 +410,6 @@ describe.skipIf(!integrationEnabled())('account overview, email change and delet
           await h.dbs.admin.db.select().from(table).where(eq(table.accountId, m.id)),
         ).toHaveLength(0);
       }
-      expect(await h.deps.sessions.validate(session.token)).toBeNull();
       const keys = await h.dbs.admin.keysPool.query(
         'SELECT 1 FROM user_keys WHERE account_id = $1',
         [m.id],
@@ -304,27 +425,47 @@ describe.skipIf(!integrationEnabled())('account overview, email change and delet
       expect(deletion?.mainDataPurgedAt).not.toBeNull();
       expect(deletion?.dekDestroyedAt).not.toBeNull();
       expect(deletion?.backupsClearAfter?.getTime()).toBe(
-        h.deps.clock!().getTime() + 14 * 86400_000,
+        h.deps.clock!().getTime() + 14 * DAY * 1000,
       );
       await expect(
         auth.signIn({ email: m.email, password: m.password }, h.meta),
       ).rejects.toBeInstanceOf(InvalidCredentials);
       expect(h.mailsTo(m.email)).toBe(before + 1);
       expect(h.transport.outbox.at(-1)?.subject).toMatch(/was deleted/i);
+      expect(await auth.purgeDueDeletions()).toBe(0);
     });
 
-    it('audits the deletion under a hashed identifier, not the account id', async () => {
+    it('audits the request, the cancel and the purge under a hashed identifier, not the account id', async () => {
       const m = await registerMember(h, auth);
       const { actor } = await signInActor(h, auth, m);
       await auth.deleteAccount(actor, { password: m.password, confirmation: 'DELETE' }, h.meta);
+      h.advance(14 * DAY + 1);
+      await auth.purgeDueDeletions();
       const rows = await h.dbs.admin.db
         .select()
         .from(schema.auditLog)
-        .where(eq(schema.auditLog.action, 'account.deleted'));
-      const mine = rows.find((r) => r.metadata && JSON.stringify(r).includes('deleted'));
-      expect(mine).toBeDefined();
+        .where(inArray(schema.auditLog.action, ['account.deletion_requested', 'account.deleted']));
+      const mine = rows.filter((r) => r.metadata && JSON.stringify(r.metadata).includes('subject'));
+      expect(mine.length).toBeGreaterThanOrEqual(2);
       expect(JSON.stringify(rows)).not.toContain(m.id);
       expect(JSON.stringify(rows)).not.toContain(m.email);
+    });
+
+    it('records a cancel in the audit log', async () => {
+      const m = await registerMember(h, auth);
+      const { actor } = await signInActor(h, auth, m);
+      await auth.deleteAccount(actor, { password: m.password, confirmation: 'DELETE' }, h.meta);
+      const result = await auth.signIn({ email: m.email, password: m.password }, h.meta);
+      if (result.status !== 'pending_deletion') throw new Error('expected pending');
+      await auth.cancelDeletion(
+        { accountId: m.id, role: 'viewer', sessionId: result.session.id },
+        h.meta,
+      );
+      const rows = await h.dbs.admin.db
+        .select()
+        .from(schema.auditLog)
+        .where(eq(schema.auditLog.action, 'account.deletion_cancelled'));
+      expect(rows.length).toBeGreaterThanOrEqual(1);
     });
 
     it('keeps the record retryable when the key cannot be destroyed, and a retry finishes the job', async () => {
@@ -333,6 +474,8 @@ describe.skipIf(!integrationEnabled())('account overview, email change and delet
       const m = await registerMember(h, cautious);
       const { actor } = await signInActor(h, cautious, m);
       await cautious.deleteAccount(actor, { password: m.password, confirmation: 'DELETE' }, h.meta);
+      h.advance(14 * DAY + 1);
+      await cautious.purgeDueDeletions();
       const [pending] = await h.dbs.admin.db
         .select()
         .from(schema.accountDeletions)

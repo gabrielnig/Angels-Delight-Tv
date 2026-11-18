@@ -28,6 +28,11 @@ export function requestIo(): GatewayIo {
       if (!session || session.status !== 'active') return null;
       return { accountId: session.accountId, role: session.role, sessionId: session.sessionId };
     },
+    async pendingDeletionActor() {
+      const session = await getSession();
+      if (!session || session.status !== 'pending_deletion') return null;
+      return { accountId: session.accountId, role: session.role, sessionId: session.sessionId };
+    },
     async setPending(email) {
       const value = signPending(authRuntime().pepper, {
         email,

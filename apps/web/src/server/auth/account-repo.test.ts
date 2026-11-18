@@ -17,6 +17,7 @@ function setup(
     clearSession: vi.fn(async () => undefined),
     readSessionToken: async () => 'tok',
     currentActor: async () => actor,
+    pendingDeletionActor: async () => actor,
     setPending: async () => undefined,
     readPending: async () => null,
   };
@@ -127,12 +128,14 @@ describe('RealAccountRepository', () => {
     });
   });
 
-  it('deletes the account and clears the cookie', async () => {
-    const deleteAccount = vi.fn(async (..._a: unknown[]) => undefined);
+  it('requests deletion, reports the grace days and clears the cookie', async () => {
+    const deleteAccount = vi.fn(async (..._a: unknown[]) => ({
+      purgeAfter: new Date('2026-03-24T12:00:00Z'),
+    }));
     const { repo, io } = setup({ deleteAccount });
     expect(await repo.deleteAccount('a1', { password: 'p', confirm: 'DELETE' })).toEqual({
       ok: true,
-      days: 0,
+      days: 14,
     });
     expect(deleteAccount.mock.calls[0]?.[1]).toEqual({ password: 'p', confirmation: 'DELETE' });
     expect(io.clearSession).toHaveBeenCalled();
@@ -229,12 +232,44 @@ describe('RealAccountRepository with viewer data', () => {
     expect(state.sizeLabel).toMatch(/KB|bytes/);
   });
 
-  it('says deletion is immediate', async () => {
-    const del = vi.fn(async () => undefined);
+  it('reports the grace period instead of an immediate deletion', async () => {
+    const del = vi.fn(async () => ({ purgeAfter: new Date('2026-03-24T12:00:00Z') }));
     const { repo } = setup({ ...service, deleteAccount: del }, {}, viewer());
     expect(await repo.deleteAccount('a1', { password: 'pw', confirm: 'DELETE' })).toEqual({
       ok: true,
-      days: 0,
+      days: 14,
     });
+  });
+
+  it('shows the pending deletion and cancels it', async () => {
+    const cancelDeletion = vi.fn(async () => undefined);
+    const { repo } = setup(
+      {
+        ...service,
+        getDeletionState: async () => ({
+          pending: true,
+          purgeAfter: new Date('2026-03-24T12:00:00Z'),
+        }),
+        cancelDeletion,
+      },
+      {},
+      viewer(),
+    );
+    expect(await repo.deletionState('a1')).toEqual({
+      pending: true,
+      purgeDate: '24 Mar 2026',
+      days: 14,
+    });
+    expect(await repo.cancelDeletion('a1')).toEqual({ ok: true });
+    expect(cancelDeletion).toHaveBeenCalled();
+  });
+
+  it('says nothing is pending when the account is active', async () => {
+    const { repo } = setup(
+      { ...service, getDeletionState: async () => ({ pending: false }) },
+      {},
+      viewer(),
+    );
+    expect(await repo.deletionState('a1')).toEqual({ pending: false });
   });
 });

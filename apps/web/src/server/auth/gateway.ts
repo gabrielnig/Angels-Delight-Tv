@@ -19,6 +19,8 @@ export interface GatewayIo {
   clearSession(): Promise<void>;
   readSessionToken(): Promise<string | undefined>;
   currentActor(): Promise<Actor | null>;
+  /** The actor of a session whose account waits to be deleted. Only the cancel screen may use it (M02-S08). */
+  pendingDeletionActor(): Promise<Actor | null>;
   setPending(email: string): Promise<void>;
   readPending(): Promise<string | null>;
 }
@@ -69,6 +71,10 @@ export class RealAuthGateway implements AuthGateway {
         return { ok: true as const, next: '/verify-email' };
       }
       if (result.status === 'use_admin_login') return { ok: true as const, next: '/admin/login' };
+      if (result.status === 'pending_deletion') {
+        await this.io.setSession(result.session.token, 'viewer');
+        return { ok: true as const, next: '/account/deletion' };
+      }
       await this.io.setSession(result.session.token, 'viewer');
       return { ok: true as const, next: safeViewerNext(input.next) };
     } catch (error) {
