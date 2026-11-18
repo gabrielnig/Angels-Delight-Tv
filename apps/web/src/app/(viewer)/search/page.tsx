@@ -1,4 +1,6 @@
 import { EmptyState, ErrorState } from '@ad/ui';
+import { RateLimited } from '@ad/shared';
+import { SlowDownRefresh } from '../../../components/browse/SlowDown';
 import { NoResults } from '../../../components/browse/NoResults';
 import { AppShell } from '../../../components/Shell';
 import { SearchGrid } from '../../../components/browse/BoundGrids';
@@ -59,14 +61,17 @@ export default async function SearchPage({
             inList={inList}
           />
         );
-    } catch {
-      body = (
-        <ErrorState
-          variant="inline"
-          title="Search is not working right now"
-          description="Try again in a moment."
-        />
-      );
+    } catch (error) {
+      body =
+        error instanceof RateLimited ? (
+          <SlowDownRefresh seconds={error.retryAfterSeconds} />
+        ) : (
+          <ErrorState
+            variant="inline"
+            title="Search is not working right now"
+            description="Try again in a moment."
+          />
+        );
     }
   }
   return (
