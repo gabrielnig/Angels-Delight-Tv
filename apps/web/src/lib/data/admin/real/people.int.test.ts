@@ -19,9 +19,10 @@ describe.skipIf(!integrationEnabled())('real people service', () => {
   let staff: StaffService;
   let admin: AdminActor;
   let editor: AdminActor;
-  let adminMember: TestMember;
+  let boss: AdminActor;
+  let bossMember: TestMember;
 
-  async function promote(role: 'editor' | 'admin') {
+  async function promote(role: 'editor' | 'admin' | 'super_admin') {
     const member = await registerMember(h, staff, {
       email: `${role}.${Math.random().toString(36).slice(2, 7)}@example.org`,
     });
@@ -69,7 +70,9 @@ describe.skipIf(!integrationEnabled())('real people service', () => {
     });
     const a = await promote('admin');
     admin = a.actor;
-    adminMember = a.member;
+    const b = await promote('super_admin');
+    boss = b.actor;
+    bossMember = b.member;
     editor = (await promote('editor')).actor;
   });
   afterAll(async () => {
@@ -180,52 +183,52 @@ describe.skipIf(!integrationEnabled())('real people service', () => {
 
   describe('staff, invites and roles behind a recent password confirmation', () => {
     it('lists staff with names and two factor state, and starts with no invites', async () => {
-      const result = await realPeopleService.staff(admin);
-      const me = result.staff.find((m) => m.id === admin.accountId);
-      expect(me).toMatchObject({ role: 'admin', twoFactor: false, email: adminMember.email });
+      const result = await realPeopleService.staff(boss);
+      const me = result.staff.find((m) => m.id === boss.accountId);
+      expect(me).toMatchObject({ role: 'super_admin', twoFactor: false, email: bossMember.email });
       expect(me!.name.length).toBeGreaterThan(0);
       expect(result.invites).toEqual([]);
     });
 
     it('asks for the password before inviting and accepts it once confirmed', async () => {
-      expect(await realPeopleService.invite(admin, 'new.editor@example.org', 'editor')).toEqual({
+      expect(await realPeopleService.invite(boss, 'new.editor@example.org', 'editor')).toEqual({
         ok: false,
         error: 'Confirm your password to continue.',
         reauth: true,
       });
-      expect(await realPeopleService.reauthenticate(admin, 'wrong password here')).toEqual({
+      expect(await realPeopleService.reauthenticate(boss, 'wrong password here')).toEqual({
         ok: false,
         error: 'Password is not right',
       });
-      expect(await realPeopleService.reauthenticate(admin, adminMember.password)).toEqual({
+      expect(await realPeopleService.reauthenticate(boss, bossMember.password)).toEqual({
         ok: true,
       });
-      expect(await realPeopleService.invite(admin, 'new.editor@example.org', 'editor')).toEqual({
+      expect(await realPeopleService.invite(boss, 'new.editor@example.org', 'editor')).toEqual({
         ok: true,
       });
       expect(h.mailsTo('new.editor@example.org')).toBe(1);
-      const { invites } = await realPeopleService.staff(admin);
+      const { invites } = await realPeopleService.staff(boss);
       expect(invites).toHaveLength(1);
       expect(invites[0]).toMatchObject({ email: 'new.editor@example.org', role: 'editor' });
       expect(invites[0]!.invitedBy.length).toBeGreaterThan(0);
     });
 
     it('rejects a bad address with the field message', async () => {
-      const r = await realPeopleService.invite(admin, 'not an email', 'editor');
+      const r = await realPeopleService.invite(boss, 'not an email', 'editor');
       expect(r.ok).toBe(false);
       expect(r).toHaveProperty('error', 'Enter a valid email address');
     });
 
     it('resends by replacing the invite and cancels one', async () => {
-      const before = (await realPeopleService.staff(admin)).invites[0]!;
-      expect(await realPeopleService.resendInvite(admin, before.id)).toEqual({ ok: true });
-      const after = (await realPeopleService.staff(admin)).invites;
+      const before = (await realPeopleService.staff(boss)).invites[0]!;
+      expect(await realPeopleService.resendInvite(boss, before.id)).toEqual({ ok: true });
+      const after = (await realPeopleService.staff(boss)).invites;
       expect(after).toHaveLength(1);
       expect(after[0]!.id).not.toBe(before.id);
       expect(h.mailsTo('new.editor@example.org')).toBe(2);
-      expect(await realPeopleService.revokeInvite(admin, after[0]!.id)).toEqual({ ok: true });
-      expect((await realPeopleService.staff(admin)).invites).toEqual([]);
-      expect(await realPeopleService.resendInvite(admin, after[0]!.id)).toEqual({
+      expect(await realPeopleService.revokeInvite(boss, after[0]!.id)).toEqual({ ok: true });
+      expect((await realPeopleService.staff(boss)).invites).toEqual([]);
+      expect(await realPeopleService.resendInvite(boss, after[0]!.id)).toEqual({
         ok: false,
         error: 'That invite is no longer pending.',
       });
@@ -233,30 +236,81 @@ describe.skipIf(!integrationEnabled())('real people service', () => {
 
     it('changes a role and refuses to change your own', async () => {
       const other = await promote('editor');
-      expect(await realPeopleService.changeRole(admin, other.actor.accountId, 'admin')).toEqual({
+      expect(
+        await realPeopleService.changeRole(boss, other.actor.accountId, 'super_admin'),
+      ).toEqual({
         ok: true,
       });
-      const roles = (await realPeopleService.staff(admin)).staff;
-      expect(roles.find((m) => m.id === other.actor.accountId)?.role).toBe('admin');
+      const roles = (await realPeopleService.staff(boss)).staff;
+      expect(roles.find((m) => m.id === other.actor.accountId)?.role).toBe('super_admin');
       // A role change ends the target's sessions (L-7), so the promoted person needs a fresh one.
-      const fresh = await h.deps.sessions.create({ accountId: other.actor.accountId, kind: 'staff' });
-      const promoted: AdminActor = { ...other.actor, role: 'admin', sessionId: fresh.session.id };
+      const fresh = await h.deps.sessions.create({
+        accountId: other.actor.accountId,
+        kind: 'staff',
+      });
+      const promoted: AdminActor = {
+        ...other.actor,
+        role: 'super_admin',
+        sessionId: fresh.session.id,
+      };
       const target = await promote('editor');
       const denied = await realPeopleService.changeRole(promoted, target.actor.accountId, 'admin');
       expect(denied).toMatchObject({ ok: false, reauth: true });
       await realPeopleService.reauthenticate(promoted, other.member.password);
-      expect(
-        await realPeopleService.changeRole(promoted, target.actor.accountId, 'admin'),
-      ).toEqual({ ok: true });
+      expect(await realPeopleService.changeRole(promoted, target.actor.accountId, 'admin')).toEqual(
+        { ok: true },
+      );
       expect(await realPeopleService.changeRole(promoted, promoted.accountId, 'editor')).toEqual({
         ok: false,
         error: 'You cannot change this role',
       });
     });
 
+    it('refuses an admin every Super admin action with a plain message and changes nothing', async () => {
+      await expect(realPeopleService.staff(admin)).rejects.toThrow();
+      const other = await promote('editor');
+      expect(await realPeopleService.invite(admin, 'x.admin@example.org', 'editor')).toEqual({
+        ok: false,
+        error: 'You do not have permission for this.',
+      });
+      expect(await realPeopleService.changeRole(admin, other.actor.accountId, 'admin')).toEqual({
+        ok: false,
+        error: 'You do not have permission for this.',
+      });
+      expect(
+        await realPeopleService.resetTwoFactor(admin, other.actor.accountId, '123456'),
+      ).toEqual({
+        ok: false,
+        error: 'You do not have permission for this.',
+      });
+      const [row] = await h.dbs.admin.db
+        .select({ role: schema.accounts.role })
+        .from(schema.accounts)
+        .where(eq(schema.accounts.id, other.actor.accountId));
+      expect(row?.role).toBe('editor');
+    });
+
+    it('deletes a viewer account only for a Super admin, after the typed word', async () => {
+      const owner = await viewer('Owner Request', 'owner.request@example.org');
+      expect(await realPeopleService.deleteAccount(admin, owner.id, 'DELETE')).toEqual({
+        ok: false,
+        error: 'You do not have permission for this.',
+      });
+      expect(await realPeopleService.deleteAccount(boss, owner.id, 'delete')).toMatchObject({
+        ok: false,
+      });
+      await realPeopleService.reauthenticate(boss, bossMember.password);
+      expect(await realPeopleService.deleteAccount(boss, owner.id, 'DELETE')).toEqual({ ok: true });
+      const [row] = await h.dbs.admin.db
+        .select({ status: schema.accounts.status })
+        .from(schema.accounts)
+        .where(eq(schema.accounts.id, owner.id));
+      expect(row?.status).toBe('pending_deletion');
+    });
+
     it('reports a missing person plainly', async () => {
       expect(
-        await realPeopleService.changeRole(admin, '0190a1b2-0000-7000-8000-000000000000', 'admin'),
+        await realPeopleService.changeRole(boss, '0190a1b2-0000-7000-8000-000000000000', 'admin'),
       ).toEqual({ ok: false, error: 'That person was not found.' });
     });
   });

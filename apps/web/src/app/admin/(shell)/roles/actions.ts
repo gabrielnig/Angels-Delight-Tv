@@ -14,7 +14,8 @@ async function run(
   return result;
 }
 
-const roleOf = (role: string) => (role === 'admin' ? 'admin' : 'editor');
+const roleOf = (role: string) =>
+  role === 'super_admin' ? 'super_admin' : role === 'admin' ? 'admin' : 'editor';
 
 export async function inviteStaffAction(email: string, role: string) {
   return run((a) => peopleService.invite(a, String(email), roleOf(role)));

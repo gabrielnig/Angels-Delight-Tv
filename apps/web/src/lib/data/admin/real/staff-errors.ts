@@ -34,10 +34,6 @@ export function staffFailure(
     );
   }
   if (error instanceof NotFound) return fail(notFound);
-  if (error instanceof Conflict) {
-    return fail(
-      error.message.includes('Super admin') ? 'There must be at least one admin.' : error.message,
-    );
-  }
+  if (error instanceof Conflict) return fail(error.message);
   throw error;
 }

@@ -34,7 +34,7 @@ pnpm --filter @ad/web dev              # http://localhost:3000, health at /api/h
 pnpm --filter @ad/worker dev           # second terminal
 ```
 
-Seed the first admin with `pnpm db:seed:admin`. It prompts for the email and password, needs `DATABASE_URL_MIGRATE`, `KEYS_DATABASE_URL`, `FIELD_KEK` and `EMAIL_HASH_PEPPER` in the environment, and refuses to run when an admin exists. `pnpm db:seed:demo` adds demo catalog data in development and refuses to run in production.
+Seed the first Super admin with `pnpm db:seed:admin`. It prompts for the email and password, needs `DATABASE_URL_MIGRATE`, `KEYS_DATABASE_URL`, `FIELD_KEK` and `EMAIL_HASH_PEPPER` in the environment, and refuses to run when a Super admin exists. On an install that had admins before the Super admin role (D-125) run `pnpm db:seed:admin -- --promote` to promote one named admin. `pnpm db:seed:demo` adds demo catalog data in development and refuses to run in production.
 
 Data modes in development: with real auth configured, viewer and admin screens use the real services. `VIEWER_FIXTURES=on`, `AUTH_FIXTURES=on` and `ADMIN_DATA=fixture` switch to in memory fixtures for UI work. Production always uses real services. The flags are listed in `docs/lanes/K1-viewer-integration.md` and `docs/lanes/F-admin-ui.md`.
 

@@ -18,7 +18,7 @@ import {
   unpublish,
   updateAdminVideo,
 } from '@ad/catalog';
-import { Conflict, Forbidden, NotFound, ValidationFailed } from '@ad/shared';
+import { Conflict, Forbidden, NotFound, ValidationFailed, isAdminRole } from '@ad/shared';
 import { can } from '@/lib/admin/can';
 import { checkPosterUpload } from '@/lib/admin/poster-upload';
 import { validatePosterChoice } from '@/lib/admin/poster-rules';
@@ -155,8 +155,7 @@ export const realVideoService: VideoService = {
       mime: check.mime,
       bytes: bytes.length,
       store: (key) => runtime.originals().put(key, bytes, { contentType: check.mime }),
-      enqueue: (queue, payload) =>
-        runtime.enqueue(queue, payload, { createdBy: actor.accountId }),
+      enqueue: (queue, payload) => runtime.enqueue(queue, payload, { createdBy: actor.accountId }),
     });
   },
   async posterStatus(actor, assetId) {
@@ -198,7 +197,7 @@ export const realVideoService: VideoService = {
       ...row,
       failedAt: failedAt.toISOString(),
       // Technical detail is for the developer and admins only (M14-S06, never shown to editors).
-      technical: actor.role === 'admin' ? technical : null,
+      technical: isAdminRole(actor.role) ? technical : null,
       leftoverFiles: leftover.files,
       leftoverBytes: leftover.bytes,
     }));

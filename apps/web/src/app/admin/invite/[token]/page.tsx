@@ -26,7 +26,7 @@ export default async function AcceptInvitePage({ params }: { params: Promise<{ t
   return (
     <AuthLayout
       title="Accept your invite"
-      lead={`Choose a password to join as ${invite.role === 'admin' ? 'an admin' : 'a content editor'}. You will set up two factor sign in next.`}
+      lead={`Choose a password to join as ${invite.role === 'super_admin' ? 'a Super admin' : invite.role === 'admin' ? 'an admin' : 'a content editor'}. You will set up two factor sign in next.`}
     >
       <AcceptInviteForm token={token} />
     </AuthLayout>

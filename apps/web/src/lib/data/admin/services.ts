@@ -5,7 +5,7 @@ import { checkPosterUpload } from '@/lib/admin/poster-upload';
 import { validatePosterChoice } from '@/lib/admin/poster-rules';
 import type { PosterChoice } from '@/lib/admin/poster-rules';
 import { adminStatusOf, videoStub } from './video-rules';
-import { Forbidden, NotFound, ValidationFailed } from '@ad/shared';
+import { Forbidden, NotFound, ValidationFailed, isAdminRole } from '@ad/shared';
 import type { BulkAction, BulkResult, VideoQuery } from './video-queries';
 import { applyBulk, queryVideos } from './video-queries';
 import {
@@ -27,6 +27,7 @@ import type {
 } from './types';
 import {
   changeRole,
+  deleteUserAccount,
   filterUsers,
   inviteStaff,
   maskEmail,
@@ -36,6 +37,7 @@ import {
   revokeSessions,
   suspendUser,
 } from './users-commands';
+import type { StaffRoleName } from './users-commands';
 import { randomBytes } from 'node:crypto';
 import { can } from '@/lib/admin/can';
 import { discardJob, fixtureQuality, retryJob } from './system-rules';
@@ -54,7 +56,7 @@ import type { MyAccount } from './types';
 import type { DayRange, TitleDailyRow } from '@ad/analytics';
 import { buildFixtureOverview, buildFixtureTitleDaily, buildFixtureVideo } from './analytics-rules';
 import type { AnalyticsOverview, VideoAnalytics } from './analytics-rules';
-import { filterAudit } from './audit-adapter';
+import { auditScopeFor, filterAudit } from './audit-adapter';
 import type { AuditQuery } from './audit-adapter';
 import type { AuditRow } from './types';
 import { buildDashboard } from './dashboard';
@@ -303,7 +305,8 @@ const fixtureVideoService: VideoService = {
     need(actor, 'video.edit');
     const video = getStore().videos.find((v) => v.id === id && v.deletedAt === null);
     if (!video) throw new NotFound('Video not found');
-    if (video.status !== 'failed') return { ok: false, error: 'Only a failed video can be cleaned up.' };
+    if (video.status !== 'failed')
+      return { ok: false, error: 'Only a failed video can be cleaned up.' };
     const first = !cleanedFixtures.has(id);
     cleanedFixtures.add(id);
     return {
@@ -438,7 +441,8 @@ const fixtureCaptionService: CaptionService = {
   },
   async alignScript(actor, videoId, script) {
     need(actor, 'caption.review');
-    if (cleanScript(script).trim() === '') return { ok: false, error: 'Paste the script text first.' };
+    if (cleanScript(script).trim() === '')
+      return { ok: false, error: 'Paste the script text first.' };
     return regenerateTrack(getStore(), liveVideo(videoId), actor.role, Date.now());
   },
   async upload(actor, videoId, cues) {
@@ -621,14 +625,16 @@ export interface PeopleService {
   reauthenticate(actor: AdminActor, password: string): Promise<CommandResult>;
   /** An admin clears another person's authenticator after confirming with their own code. */
   resetTwoFactor(actor: AdminActor, staffId: string, code: string): Promise<CommandResult>;
-  invite(actor: AdminActor, email: string, role: 'editor' | 'admin'): Promise<CommandResult>;
+  invite(actor: AdminActor, email: string, role: StaffRoleName): Promise<CommandResult>;
   resendInvite(actor: AdminActor, id: string): Promise<CommandResult>;
   revokeInvite(actor: AdminActor, id: string): Promise<CommandResult>;
-  changeRole(actor: AdminActor, staffId: string, role: 'editor' | 'admin'): Promise<CommandResult>;
+  changeRole(actor: AdminActor, staffId: string, role: StaffRoleName): Promise<CommandResult>;
+  /** Super admin only: starts the deletion of a viewer account at the owner's request (M27-S03). */
+  deleteAccount(actor: AdminActor, id: string, confirmation: string): Promise<CommandResult>;
 }
 
 const shown = (actor: AdminActor, user: UserRecord): UserRecord =>
-  can(actor.role, 'users.view') && actor.role === 'admin'
+  can(actor.role, 'users.view') && isAdminRole(actor.role)
     ? { ...user }
     : { ...user, email: maskEmail(user.email) };
 
@@ -656,7 +662,7 @@ const fixturePeopleService: PeopleService = {
     return revokeSessions(getStore(), id, reason, actor.accountId, actor.name, Date.now());
   },
   async staff(actor) {
-    need(actor, 'roles.change');
+    need(actor, 'roles.view');
     const s = getStore();
     return { staff: structuredClone(s.staff), invites: structuredClone(s.invites) };
   },
@@ -690,6 +696,10 @@ const fixturePeopleService: PeopleService = {
     need(actor, 'roles.change');
     return changeRole(getStore(), staffId, role, actor.accountId, actor.name, Date.now());
   },
+  async deleteAccount(actor, id, confirmation) {
+    need(actor, 'users.delete');
+    return deleteUserAccount(getStore(), id, confirmation, actor.accountId, actor.name, Date.now());
+  },
 };
 
 export const AUDIT_PAGE_SIZE = 25;
@@ -713,8 +723,12 @@ export const auditService: AuditService = {
   async list(actor, query) {
     need(actor, 'audit.read');
     if (adminDataMode() === 'real')
-      return (await import('./audit-real')).realAudit.list(query, AUDIT_PAGE_SIZE);
-    const all = filterAudit(getStore().audit, query);
+      return (await import('./audit-real')).realAudit.list(
+        query,
+        AUDIT_PAGE_SIZE,
+        auditScopeFor(actor.role),
+      );
+    const all = filterAudit(getStore().audit, query, auditScopeFor(actor.role));
     const start = query.cursor ? all.findIndex((r) => String(r.id) === query.cursor) : 0;
     const items = all.slice(Math.max(start, 0), Math.max(start, 0) + AUDIT_PAGE_SIZE);
     const next = all[Math.max(start, 0) + AUDIT_PAGE_SIZE];
@@ -724,20 +738,21 @@ export const auditService: AuditService = {
     need(actor, 'audit.read');
     const row =
       adminDataMode() === 'real'
-        ? await (await import('./audit-real')).realAudit.get(id)
-        : (getStore().audit.find((r) => r.id === id) ?? null);
+        ? await (await import('./audit-real')).realAudit.get(id, auditScopeFor(actor.role))
+        : (filterAudit(getStore().audit, {}, auditScopeFor(actor.role)).find((r) => r.id === id) ??
+          null);
     if (!row) throw new NotFound('Entry not found');
     return structuredClone(row);
   },
   async exportRows(actor, query) {
-    need(actor, 'audit.read');
+    need(actor, 'audit.export');
     if (adminDataMode() === 'real') {
       const { rows, total } = await (
         await import('./audit-real')
-      ).realAudit.exportRows(query, AUDIT_EXPORT_MAX);
+      ).realAudit.exportRows(query, AUDIT_EXPORT_MAX, auditScopeFor(actor.role));
       return { rows, total, truncated: total > rows.length };
     }
-    const rows = filterAudit(getStore().audit, query);
+    const rows = filterAudit(getStore().audit, query, auditScopeFor(actor.role));
     return { rows: structuredClone(rows), total: rows.length, truncated: false };
   },
 };
@@ -838,15 +853,15 @@ export interface SystemService {
 /** Jobs and storage stay on fixtures until the queue and storage packages expose list and retry calls. Player quality is real with ADMIN_DATA=real. */
 const fixtureSystemService: SystemService = {
   async jobs(actor) {
-    need(actor, 'system.view');
+    need(actor, 'system.jobs');
     return structuredClone(getStore().jobs);
   },
   async retryJob(actor, id) {
-    need(actor, 'system.view');
+    need(actor, 'system.jobs');
     return retryJob(getStore(), id, actor.accountId, actor.name, Date.now());
   },
   async discardJob(actor, id, reason) {
-    need(actor, 'system.view');
+    need(actor, 'system.jobs');
     return discardJob(getStore(), id, reason, actor.accountId, actor.name, Date.now());
   },
   async storage(actor) {

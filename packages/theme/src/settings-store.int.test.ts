@@ -23,13 +23,13 @@ const logger = {
 describe.skipIf(!integrationEnabled())('settings service on postgres', () => {
   let testDb: TestDatabase;
   let service: SettingsService;
-  let admin: { accountId: string; role: 'admin' };
+  let admin: { accountId: string; role: 'super_admin' };
 
   beforeAll(async () => {
     testDb = await createTestDatabase();
-    const account = makeAccount({ role: 'admin' });
+    const account = makeAccount({ role: 'super_admin' });
     await testDb.db.insert(schema.accounts).values(account);
-    admin = { accountId: account.id, role: 'admin' };
+    admin = { accountId: account.id, role: 'super_admin' };
     service = new SettingsService({ store: createDrizzleSettingsStore(testDb.db), logger });
   });
   afterAll(async () => {

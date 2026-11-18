@@ -1,5 +1,5 @@
 import type { SessionContext } from '@ad/auth';
-import { Forbidden, Unauthorized, type Actor } from '@ad/shared';
+import { Forbidden, Unauthorized, type Actor, isStaffRole } from '@ad/shared';
 import { activeProfileCookieName, cookieValue, readActiveProfile } from '../viewer/active-profile';
 import { sessionCookieName } from './cookies';
 
@@ -49,7 +49,7 @@ export function createRequestAuth(deps: RequestAuthDeps) {
     /** The signed in editor or admin. 401 when not signed in or the second factor is pending, 403 for a viewer. */
     async getActor(request: Request): Promise<Actor> {
       const found = await session(request);
-      if (found.role !== 'editor' && found.role !== 'admin') throw new Forbidden();
+      if (!isStaffRole(found.role)) throw new Forbidden();
       if (!found.mfaVerified) throw new Unauthorized();
       await deps.beforeStaff?.(found.accountId);
       return { accountId: found.accountId, role: found.role };

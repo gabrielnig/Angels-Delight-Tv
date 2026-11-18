@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  auditScopeFor,
   filterAudit,
   parseAuditQuery,
   serializeAuditQuery,
@@ -89,6 +90,31 @@ describe('filterAudit', () => {
       true,
     );
     expect(filterAudit(all, { from: '2999-01-01' })).toHaveLength(0);
+  });
+});
+
+describe('audit scope by role (M20-S02 AC3)', () => {
+  it('gives a Super admin every entry and everyone else content actions only', () => {
+    expect(auditScopeFor('super_admin')).toBe('all');
+    expect(auditScopeFor('admin')).toBe('content');
+    expect(auditScopeFor('editor')).toBe('content');
+    expect(auditScopeFor('viewer')).toBe('content');
+    expect(auditScopeFor(null)).toBe('content');
+    expect(auditScopeFor('owner' as never)).toBe('content');
+  });
+  it('hides security and staff entries from the content scope in fixtures too', () => {
+    const list = [
+      { action: 'video.publish' },
+      { action: 'auth.login_failed' },
+      { action: 'admin.role_changed' },
+      { action: 'staff.invite' },
+      { action: 'settings.site' },
+    ].map((r, i) => ({ ...rows()[0]!, ...r, id: i + 1 }));
+    expect(filterAudit(list, {}, 'content').map((r) => r.action)).toEqual([
+      'video.publish',
+      'settings.site',
+    ]);
+    expect(filterAudit(list, {}, 'all')).toHaveLength(5);
   });
 });
 

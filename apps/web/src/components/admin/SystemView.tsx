@@ -36,6 +36,7 @@ export function SystemView({
   quality,
   now,
   canAct,
+  showJobs = true,
   actions,
 }: {
   jobs: JobRecord[];
@@ -43,10 +44,12 @@ export function SystemView({
   quality: Quality;
   now: number;
   canAct: boolean;
+  /** Failed jobs are for a Super admin (M30-S03). An admin sees Storage and Player quality. */
+  showJobs?: boolean;
   actions: SystemActions;
 }) {
   const { run, busy } = useCommand();
-  const [tab, setTab] = useState('jobs');
+  const [tab, setTab] = useState(showJobs ? 'jobs' : 'storage');
   const [discarding, setDiscarding] = useState<JobRecord | null>(null);
   const [reason, setReason] = useState('');
   const [error, setError] = useState<string>();
@@ -65,7 +68,7 @@ export function SystemView({
       value={tab}
       onChange={setTab}
       tabs={[
-        { id: 'jobs', label: 'Jobs', count: jobs.length },
+        ...(showJobs ? [{ id: 'jobs', label: 'Jobs', count: jobs.length }] : []),
         { id: 'storage', label: 'Storage' },
         { id: 'quality', label: 'Player quality' },
       ]}

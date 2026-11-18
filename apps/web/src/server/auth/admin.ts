@@ -15,7 +15,7 @@ import {
   setSessionCookie,
 } from './session';
 
-const STAFF = new Set(['editor', 'admin']);
+const STAFF = new Set(['editor', 'admin', 'super_admin']);
 
 async function currentStaff() {
   const session = await getSession();
@@ -23,18 +23,20 @@ async function currentStaff() {
   return session;
 }
 
-const nameFor = cache(async (accountId: string, role: 'editor' | 'admin', sessionId: string) => {
-  const chosen = (await adminRuntime().names({ accountId, role }, [accountId])).get(accountId);
-  if (chosen) return chosen;
-  const info = await authRuntime().staff.getOverview({ accountId, role, sessionId });
-  return titleCaseFromEmail(info.email);
-});
+const nameFor = cache(
+  async (accountId: string, role: 'editor' | 'admin' | 'super_admin', sessionId: string) => {
+    const chosen = (await adminRuntime().names({ accountId, role }, [accountId])).get(accountId);
+    if (chosen) return chosen;
+    const info = await authRuntime().staff.getOverview({ accountId, role, sessionId });
+    return titleCaseFromEmail(info.email);
+  },
+);
 
 /** The signed in staff member whose session passed the second factor, or null. */
 export async function realAdminActor(): Promise<AdminActor | null> {
   const session = await currentStaff();
   if (!session?.mfaVerified) return null;
-  const role = session.role as 'editor' | 'admin';
+  const role = session.role as 'editor' | 'admin' | 'super_admin';
   return {
     accountId: session.accountId,
     role,
@@ -60,7 +62,7 @@ export async function realPendingActor() {
   if (!session || session.mfaVerified) return null;
   return {
     accountId: session.accountId,
-    role: session.role as 'editor' | 'admin',
+    role: session.role as 'editor' | 'admin' | 'super_admin',
     sessionId: session.sessionId,
   };
 }

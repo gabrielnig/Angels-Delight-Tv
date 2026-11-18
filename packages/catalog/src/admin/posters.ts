@@ -1,16 +1,17 @@
 import { and, eq, like, or, sql } from 'drizzle-orm';
 import { assets, videos, withAccount } from '@ad/db';
 import { writeAudit } from '../audit';
-import { Forbidden, NotFound, isUuid, uuidv7, type Actor } from '@ad/shared';
+import { Forbidden, NotFound, isUuid, uuidv7, type Actor, isStaffRole } from '@ad/shared';
 import { mediaUrl } from '../artwork';
 import { OK, fail, type AdminContext, type CommandResult } from './types';
 
 function assertStaff(actor: Actor): void {
-  if (actor.role !== 'editor' && actor.role !== 'admin') throw new Forbidden('Editors only');
+  if (!isStaffRole(actor.role)) throw new Forbidden('Editors only');
 }
 
 /** Where the source of an admin upload lives in the originals bucket. */
-export const posterUploadKey = (videoId: string, assetId: string) => `uploads/${videoId}/${assetId}`;
+export const posterUploadKey = (videoId: string, assetId: string) =>
+  `uploads/${videoId}/${assetId}`;
 
 export interface PosterAssetDto {
   id: string;
@@ -54,7 +55,11 @@ export async function listPosterAssets(
       const any = small ?? [...variants].sort((a, b) => a.width - b.width)[0];
       return any ? mediaUrl(mediaOrigin, any.key) : null;
     };
-    const dto = (row: (typeof rows)[number], source: 'frame' | 'upload', label: string): PosterAssetDto => ({
+    const dto = (
+      row: (typeof rows)[number],
+      source: 'frame' | 'upload',
+      label: string,
+    ): PosterAssetDto => ({
       id: row.id,
       source,
       label,
@@ -122,7 +127,10 @@ export async function getPosterAssetStatus(
   assertStaff(actor);
   if (!isUuid(assetId)) throw new NotFound('Picture not found');
   return withAccount(ctx.db, actor, async (tx) => {
-    const [row] = await tx.select({ status: assets.status }).from(assets).where(eq(assets.id, assetId));
+    const [row] = await tx
+      .select({ status: assets.status })
+      .from(assets)
+      .where(eq(assets.id, assetId));
     if (!row) throw new NotFound('Picture not found');
     return { status: row.status };
   });

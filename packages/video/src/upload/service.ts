@@ -10,6 +10,8 @@ import {
   uuidv7,
   type Actor,
   type Logger,
+  isStaffRole,
+  isAdminRole,
 } from '@ad/shared';
 import { createLogger } from '@ad/shared';
 import { planParts, verifyCompletedParts, type PartInfo, type StorageAdapter } from '@ad/storage';
@@ -69,8 +71,7 @@ const OPEN: SessionRow['status'][] = ['initiated', 'uploading'];
 const ACTIVE: SessionRow['status'][] = ['initiated', 'uploading', 'completing'];
 
 function assertUploader(actor: Actor): void {
-  if (actor.role !== 'editor' && actor.role !== 'admin')
-    throw new Forbidden('Only editors and admins can upload');
+  if (!isStaffRole(actor.role)) throw new Forbidden('Only editors and admins can upload');
 }
 
 function isUniqueViolation(error: unknown): boolean {
@@ -117,7 +118,7 @@ export class UploadService {
       .from(uploadSessions)
       .where(eq(uploadSessions.id, uploadId))
       .limit(1);
-    if (!session || (actor.role !== 'admin' && session.createdBy !== actor.accountId)) {
+    if (!session || (!isAdminRole(actor.role) && session.createdBy !== actor.accountId)) {
       throw new NotFound('Upload not found');
     }
     return session;

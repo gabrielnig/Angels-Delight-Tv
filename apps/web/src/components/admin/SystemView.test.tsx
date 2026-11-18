@@ -62,4 +62,21 @@ describe('SystemView', () => {
       (screen.getAllByRole('button', { name: /Retry/ })[0] as HTMLButtonElement).disabled,
     ).toBe(true);
   });
+  it('hides the Jobs tab from an admin and starts on Storage (M30-S03 is Super admin only)', () => {
+    render(
+      <ToastProvider>
+        <SystemView
+          jobs={[]}
+          storage={s.storage}
+          quality={fixtureQuality()}
+          now={Date.now()}
+          canAct={false}
+          showJobs={false}
+          actions={{ retry: vi.fn(), discard: vi.fn() }}
+        />
+      </ToastProvider>,
+    );
+    expect(screen.queryByRole('tab', { name: /Jobs/ })).toBeNull();
+    expect(screen.getByRole('tab', { name: 'Storage', selected: true })).toBeTruthy();
+  });
 });

@@ -220,17 +220,29 @@ describe.skipIf(!integrationEnabled())('real admin services over the catalog', (
           .png()
           .toBuffer(),
       );
-      const refused = await realVideoService.uploadPoster(editor, video.id, new Uint8Array([1, 2, 3]));
+      const refused = await realVideoService.uploadPoster(
+        editor,
+        video.id,
+        new Uint8Array([1, 2, 3]),
+      );
       expect(refused).toEqual({ ok: false, error: 'Use a JPG or PNG image.' });
       const done = await realVideoService.uploadPoster(editor, video.id, bytes);
       expect(done.ok).toBe(true);
       if (!done.ok) return;
       expect(stored.at(-1)).toBe(`uploads/${video.id}/${done.assetId}`);
       expect(queued).toEqual([{ queue: 'image.process', payload: { assetId: done.assetId } }]);
-      expect(await realVideoService.posterStatus(editor, done.assetId)).toEqual({ status: 'processing' });
+      expect(await realVideoService.posterStatus(editor, done.assetId)).toEqual({
+        status: 'processing',
+      });
       const list = await realVideoService.posterAssets(editor, video.id);
       expect(list).toEqual([
-        { id: done.assetId, source: 'upload', label: 'Your image', status: 'processing', url: null },
+        {
+          id: done.assetId,
+          source: 'upload',
+          label: 'Your image',
+          status: 'processing',
+          url: null,
+        },
       ]);
       await expect(realVideoService.uploadPoster(viewer, video.id, bytes)).rejects.toThrow();
     });
@@ -250,12 +262,23 @@ describe.skipIf(!integrationEnabled())('real admin services over the catalog', (
         errorDetail: 'ffmpeg exited with 1',
         attempts: 3,
       });
-      const asAdmin = (await realVideoService.failedEncodes(admin)).find((r) => r.videoId === failed.id)!;
-      expect(asAdmin).toMatchObject({ technical: 'ffmpeg exited with 1', attempts: 3, canRetry: true });
-      const asEditor = (await realVideoService.failedEncodes(editor)).find((r) => r.videoId === failed.id)!;
+      const asAdmin = (await realVideoService.failedEncodes(admin)).find(
+        (r) => r.videoId === failed.id,
+      )!;
+      expect(asAdmin).toMatchObject({
+        technical: 'ffmpeg exited with 1',
+        attempts: 3,
+        canRetry: true,
+      });
+      const asEditor = (await realVideoService.failedEncodes(editor)).find(
+        (r) => r.videoId === failed.id,
+      )!;
       expect(asEditor.technical).toBeNull();
       await expect(realVideoService.failedEncodes(viewer)).rejects.toThrow();
-      expect(await realVideoService.cleanupFailed(editor, failed.id)).toMatchObject({ ok: true, videos: 1 });
+      expect(await realVideoService.cleanupFailed(editor, failed.id)).toMatchObject({
+        ok: true,
+        videos: 1,
+      });
       const ready = await seedVideo(t.setup, { title: 'Fine' });
       expect(await realVideoService.cleanupFailed(editor, ready.id)).toEqual({
         ok: false,

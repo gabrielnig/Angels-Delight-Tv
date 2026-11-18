@@ -1,6 +1,6 @@
 import { eq, sql } from 'drizzle-orm';
 import { videos, withAccount } from '@ad/db';
-import { Forbidden, NotFound, isUuid, type Actor } from '@ad/shared';
+import { Forbidden, NotFound, isUuid, type Actor, isStaffRole } from '@ad/shared';
 import { rowsOf } from '../sql';
 import { isoOf, type AdminCaptionState, type AdminContext } from './types';
 
@@ -16,7 +16,7 @@ export interface AdminCaptionRow {
 }
 
 function assertStaff(actor: Actor): void {
-  if (actor.role !== 'editor' && actor.role !== 'admin') throw new Forbidden('Editors only');
+  if (!isStaffRole(actor.role)) throw new Forbidden('Editors only');
 }
 
 /** Ready videos with the state of their English captions, for the Captions list. */

@@ -37,8 +37,14 @@ describe('navForRole', () => {
     }
   });
 
-  it('shows admins everything and drops empty groups', () => {
-    expect(labels('admin')).toHaveLength(NAV_ITEMS.length);
+  it('shows a Super admin everything and drops empty groups', () => {
+    expect(labels('super_admin')).toHaveLength(NAV_ITEMS.length);
+    for (const group of navForRole('editor')) expect(group.items.length).toBeGreaterThan(0);
+  });
+
+  it('hides Roles and invites from an admin and keeps the rest (M12-S07 AC2)', () => {
+    expect(labels('admin')).not.toContain('Roles and invites');
+    expect(labels('admin')).toHaveLength(NAV_ITEMS.length - 1);
     for (const group of navForRole('editor')) expect(group.items.length).toBeGreaterThan(0);
   });
 });

@@ -107,7 +107,7 @@ export const NAV_ITEMS: NavItem[] = [
     href: '/admin/roles',
     icon: 'roles',
     group: 'Insight and control',
-    action: 'roles.change',
+    action: 'roles.view',
   },
   {
     label: 'Audit log',

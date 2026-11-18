@@ -1,6 +1,6 @@
 import { schema, withAccount } from '@ad/db';
 import { LimiterUnavailable, LOCKOUT_POLICIES, RATE_POLICIES } from '@ad/security';
-import { Conflict, hmacSha256, RateLimited, sha256, uuidv7 } from '@ad/shared';
+import { Conflict, hmacSha256, RateLimited, sha256, uuidv7, isStaffRole } from '@ad/shared';
 import { and, count, eq, isNotNull, isNull, lte } from 'drizzle-orm';
 import {
   checkCode,
@@ -31,7 +31,7 @@ import {
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
 /** "1 Dec 2026" in UTC, for mails. */
-function formatDate(date: Date): string {
+export function formatDate(date: Date): string {
   return `${date.getUTCDate()} ${MONTHS[date.getUTCMonth()]} ${date.getUTCFullYear()}`;
 }
 
@@ -585,7 +585,7 @@ export class AccountService {
     }
 
     // L-6: staff sign in at /admin/login only. Reached only with the right password, so a wrong guess learns nothing.
-    if (account.role === 'editor' || account.role === 'admin') {
+    if (isStaffRole(account.role)) {
       await this.audit('auth.login', 'denied', meta, {
         accountId: account.id,
         role: account.role,
@@ -1144,7 +1144,11 @@ export class AccountService {
         (error as { cause?: { code?: string }; code?: string }).code === '23514' ||
         (error as { cause?: { code?: string } }).cause?.code === '23514'
       ) {
-        throw new Conflict('There must be at least one active admin');
+        throw new Conflict(
+          actor.role === 'super_admin'
+            ? 'There must be at least one Super admin'
+            : 'There must be at least one active admin',
+        );
       }
       throw error;
     }
@@ -1302,7 +1306,7 @@ export class AccountService {
     return true;
   }
 
-  private deletionGraceDays(): number {
+  protected deletionGraceDays(): number {
     return this.cfg.deletionGraceDays;
   }
 

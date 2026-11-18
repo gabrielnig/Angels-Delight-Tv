@@ -1,5 +1,5 @@
 import { schema, type Database } from '@ad/db';
-import { Forbidden, NotFound, isUuid, type Actor } from '@ad/shared';
+import { Forbidden, NotFound, isUuid, type Actor, isStaffRole } from '@ad/shared';
 import { asc, desc, eq } from 'drizzle-orm';
 
 const { videos, jobs, renditions } = schema;
@@ -41,7 +41,7 @@ export async function encodingStatus(
   actor: Actor,
   videoId: string,
 ): Promise<EncodingStatus> {
-  if (actor.role !== 'editor' && actor.role !== 'admin')
+  if (!isStaffRole(actor.role))
     throw new Forbidden('Only editors and admins can see encoding status');
   if (!isUuid(videoId)) throw new NotFound('Video not found');
   const [video] = await db

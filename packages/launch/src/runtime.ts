@@ -1,3 +1,4 @@
+import { isAdminRole } from '@ad/shared';
 import { emailHash, findAccountByEmailHash, normalizeEmail } from '@ad/auth';
 import { loadWebEnv, type WebEnv } from '@ad/config';
 import { createDb, createPool, type Database } from '@ad/db';
@@ -40,6 +41,6 @@ export async function resolveAdminActor(
     runtime.db,
     emailHash(email, runtime.env.EMAIL_HASH_PEPPER),
   );
-  if (!found || found.role !== 'admin' || found.status !== 'active') return null;
-  return { accountId: found.id, role: 'admin' };
+  if (!found || !isAdminRole(found.role) || found.status !== 'active') return null;
+  return { accountId: found.id, role: found.role };
 }

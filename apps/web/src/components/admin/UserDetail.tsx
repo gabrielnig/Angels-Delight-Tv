@@ -7,7 +7,7 @@ import type { CommandResult } from '@/lib/data/admin/video-commands';
 import { Badge } from './Badge';
 import { Button } from './Button';
 import { Dialog } from './Dialog';
-import { TextArea } from './fields';
+import { TextArea, TextField } from './fields';
 import { Banner } from './states';
 import { useCommand } from './useCommand';
 
@@ -15,26 +15,33 @@ export interface UserActions {
   suspend(id: string, reason: string): Promise<CommandResult>;
   reinstate(id: string): Promise<CommandResult>;
   revokeSessions(id: string, reason: string): Promise<CommandResult>;
+  /** Super admin only. Starts the deletion the owner asked for. */
+  deleteAccount?(id: string, confirmation: string): Promise<CommandResult>;
 }
 
-type Mode = 'suspend' | 'sessions' | 'reinstate' | null;
+type Mode = 'suspend' | 'sessions' | 'reinstate' | 'delete' | null;
 
 export function UserDetail({
   user,
   canAct,
+  canDelete = false,
   actions,
 }: {
   user: UserRecord;
   canAct: boolean;
+  /** True only for a Super admin (M27-S03 AC3). */
+  canDelete?: boolean;
   actions: UserActions;
 }) {
   const { run, busy } = useCommand();
   const [mode, setMode] = useState<Mode>(null);
   const [reason, setReason] = useState('');
+  const [typed, setTyped] = useState('');
   const [error, setError] = useState<string>();
   const close = () => {
     setMode(null);
     setReason('');
+    setTyped('');
     setError(undefined);
   };
 
@@ -42,16 +49,20 @@ export function UserDetail({
     if (!mode) return;
     const result = await run(
       () =>
-        mode === 'suspend'
-          ? actions.suspend(user.id, reason)
+        mode === 'delete'
+          ? actions.deleteAccount!(user.id, typed)
+          : mode === 'suspend'
+            ? actions.suspend(user.id, reason)
+            : mode === 'sessions'
+              ? actions.revokeSessions(user.id, reason)
+              : actions.reinstate(user.id),
+      mode === 'delete'
+        ? 'Deletion started.'
+        : mode === 'suspend'
+          ? 'Account suspended.'
           : mode === 'sessions'
-            ? actions.revokeSessions(user.id, reason)
-            : actions.reinstate(user.id),
-      mode === 'suspend'
-        ? 'Account suspended.'
-        : mode === 'sessions'
-          ? 'Signed out everywhere.'
-          : 'Account reinstated.',
+            ? 'Signed out everywhere.'
+            : 'Account reinstated.',
     );
     if (result.ok) close();
     else setError(result.error);
@@ -61,12 +72,15 @@ export function UserDetail({
     suspend: 'Suspend this account?',
     sessions: 'Sign out of every device?',
     reinstate: 'Reinstate this account?',
+    delete: 'Delete this account?',
   } as const;
   const help = {
     suspend:
       'The person is signed out and cannot sign in until you reinstate the account. Their profiles and lists are kept.',
     sessions: 'Every device is signed out. The person can sign in again with their password.',
     reinstate: 'The person can sign in again.',
+    delete:
+      'Use this only when the owner asked for it. The account is closed and their data is removed after the waiting period. They can cancel by signing in during that time.',
   } as const;
 
   return (
@@ -145,6 +159,11 @@ export function UserDetail({
               Reinstate account
             </Button>
           )}
+          {canDelete && actions.deleteAccount ? (
+            <Button variant="danger" onClick={() => setMode('delete')}>
+              Delete account
+            </Button>
+          ) : null}
         </div>
       </section>
       <Dialog
@@ -158,21 +177,32 @@ export function UserDetail({
               Cancel
             </Button>
             <Button
-              variant={mode === 'suspend' ? 'danger' : 'primary'}
+              variant={mode === 'suspend' || mode === 'delete' ? 'danger' : 'primary'}
               loading={busy}
+              disabled={mode === 'delete' && typed !== 'DELETE'}
               onClick={confirm}
             >
-              {mode === 'suspend'
-                ? 'Suspend account'
-                : mode === 'sessions'
-                  ? 'Sign out everywhere'
-                  : 'Reinstate account'}
+              {mode === 'delete'
+                ? 'Delete account'
+                : mode === 'suspend'
+                  ? 'Suspend account'
+                  : mode === 'sessions'
+                    ? 'Sign out everywhere'
+                    : 'Reinstate account'}
             </Button>
           </>
         }
       >
         <p style={{ margin: 0 }}>{mode ? help[mode] : ''}</p>
-        {needsReason ? (
+        {mode === 'delete' ? (
+          <TextField
+            label="Type DELETE to confirm"
+            value={typed}
+            autoComplete="off"
+            error={error}
+            onChange={(e) => setTyped(e.target.value)}
+          />
+        ) : needsReason ? (
           <TextArea
             label="Reason"
             hint="Kept in the audit log."

@@ -25,7 +25,7 @@ import {
 import pg from 'pg';
 import type { Tx } from '../types';
 import { withAccount } from '@ad/db';
-import type { Actor } from '@ad/shared';
+import type { AccountRole, Actor } from '@ad/shared';
 
 export { integrationEnabled };
 
@@ -56,7 +56,7 @@ export const NOW = new Date('2026-06-15T12:00:00Z');
 export const PAST = new Date('2026-05-01T09:00:00Z');
 export const FUTURE = new Date('2026-07-01T09:00:00Z');
 
-export async function seedAccount(setup: Database, role: 'viewer' | 'editor' | 'admin' = 'viewer') {
+export async function seedAccount(setup: Database, role: AccountRole = 'viewer') {
   const account = makeAccount({ role });
   await setup.insert(accounts).values(account);
   return account;

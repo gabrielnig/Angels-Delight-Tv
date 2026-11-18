@@ -96,14 +96,34 @@ describe('roles', () => {
       after: { role: 'admin' },
     });
   });
-  it('keeps at least one admin', () => {
+  it('keeps at least one Super admin', () => {
     const s = fresh();
-    const admins = s.staff.filter((x) => x.role === 'admin');
-    for (const a of admins.slice(1)) changeRole(s, a.id, 'editor', 'x', 'C', NOW);
-    const r = changeRole(s, admins[0]!.id, 'editor', 'x', 'C', NOW);
-    expect(r).toEqual({
-      ok: false,
-      error: 'There must be at least one admin. Make someone else an admin first.',
-    });
+    const supers = s.staff.filter((x) => x.role === 'super_admin');
+    expect(supers.length).toBeGreaterThan(0);
+    const r = changeRole(s, supers[0]!.id, 'admin', 'someone-else', 'C', NOW);
+    expect(r).toEqual({ ok: false, error: 'There must be at least one Super admin' });
+    expect(supers[0]!.role).toBe('super_admin');
+  });
+
+  it('refuses a change to your own role', () => {
+    const s = fresh();
+    const supers = s.staff.filter((x) => x.role === 'super_admin');
+    const extra = changeRole(
+      s,
+      s.staff.find((x) => x.role === 'admin')!.id,
+      'super_admin',
+      'x',
+      'C',
+      NOW,
+    );
+    expect(extra.ok).toBe(true);
+    const r = changeRole(s, supers[0]!.id, 'admin', supers[0]!.id, 'C', NOW);
+    expect(r).toEqual({ ok: false, error: 'You cannot change your own role.' });
+  });
+
+  it('lets a Super admin be invited', () => {
+    const s = fresh();
+    expect(inviteStaff(s, 'boss@example.test', 'super_admin', 'a1', 'C', NOW).ok).toBe(true);
+    expect(inviteStaff(s, 'nope@example.test', 'owner' as never, 'a1', 'C', NOW).ok).toBe(false);
   });
 });

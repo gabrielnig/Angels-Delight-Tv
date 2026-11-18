@@ -40,7 +40,7 @@ Roles are created by `packages/db/sql/roles.sql` (compose init and the integrati
 
 | Enum | Values |
 |---|---|
-| `account_role` | `viewer`, `editor`, `admin` |
+| `account_role` | `viewer`, `editor`, `admin`, `super_admin` |
 | `account_status` | `active`, `suspended`, `deleted` |
 | `video_kind` | `standalone`, `episode` |
 | `video_status` | `uploading`, `uploaded`, `validating`, `encoding`, `ready`, `failed` |

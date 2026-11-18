@@ -4,7 +4,7 @@ import { Writable } from 'node:stream';
 import { z } from 'zod';
 import { KeyService } from './keys';
 import { PasswordHasher } from './password';
-import { seedFirstAdmin, SeedRefused } from './seed-admin';
+import { promoteToSuperAdmin, seedFirstAdmin, SeedRefused } from './seed-admin';
 
 const key32 = z
   .string()
@@ -50,7 +50,36 @@ async function main(): Promise<void> {
     const names = parsed.error.issues.map((issue) => String(issue.path[0])).join(', ');
     throw new SeedRefused(`Missing or invalid environment variables: ${names}`);
   }
-  const email = (await ask('Admin email: ', false)).trim();
+  const promote = process.argv.includes('--promote');
+  const email = (
+    await ask(promote ? 'Email of the admin to promote: ' : 'Super admin email: ', false)
+  ).trim();
+  if (promote) {
+    const pool = createPool(parsed.data.DATABASE_URL_MIGRATE, {
+      max: 2,
+      applicationName: 'seed-admin',
+    });
+    const keysPool = createPool(parsed.data.KEYS_DATABASE_URL, {
+      max: 2,
+      applicationName: 'seed-admin',
+    });
+    try {
+      await promoteToSuperAdmin(
+        {
+          db: createDb(pool),
+          keys: new KeyService({ keysDb: createDb(keysPool), kek: parsed.data.FIELD_KEK }),
+          hasher: new PasswordHasher(),
+          pepper: parsed.data.EMAIL_HASH_PEPPER,
+        },
+        { email },
+      );
+      console.log(`${email} is now the Super admin. Sign out and in again to use Roles.`);
+    } finally {
+      await pool.end();
+      await keysPool.end();
+    }
+    return;
+  }
   const password = await ask('Password (at least 10 characters): ', true);
   const again = await ask('Repeat the password: ', true);
   if (password !== again) throw new SeedRefused('The passwords do not match');
@@ -74,7 +103,7 @@ async function main(): Promise<void> {
       { email, password },
     );
     console.log(
-      `Created the first admin ${result.email}. Sign in at /admin/login and set up two factor sign in.`,
+      `Created the first Super admin ${result.email}. Sign in at /admin/login and set up two factor sign in.`,
     );
   } finally {
     await pool.end();

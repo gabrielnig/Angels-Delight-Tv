@@ -1,4 +1,12 @@
-import { Forbidden, NotFound, ValidationFailed, type Actor, type Logger } from '@ad/shared';
+import {
+  Forbidden,
+  NotFound,
+  ValidationFailed,
+  type Actor,
+  type Logger,
+  isAdminRole,
+  isSuperAdminRole,
+} from '@ad/shared';
 import { z } from 'zod';
 import { THEME_CACHE_TTL_MS, TtlCache } from './cache';
 import { PAGE_SLUGS, PAGE_TITLES, type PageSlug } from './page-meta';
@@ -98,12 +106,12 @@ export interface SettingsServiceOptions {
   store: SettingsStore;
   logger: Logger;
   now?: () => number;
-  /** Who may change `super` tier keys. Defaults to any admin until a super admin role exists (D-034). */
+  /** Who may change `super` tier keys. Defaults to the Super admin role (D-125). */
   isSuper?: (actor: Actor) => boolean;
 }
 
 function assertAdmin(actor: Actor): void {
-  if (actor.role !== 'admin') throw new Forbidden('Only an admin can change site settings');
+  if (!isAdminRole(actor.role)) throw new Forbidden('Only an admin can change site settings');
 }
 
 function assertSlug(slug: string): asserts slug is PageSlug {
@@ -125,7 +133,7 @@ export class SettingsService {
     this.store = options.store;
     this.logger = options.logger;
     this.now = options.now ?? Date.now;
-    this.isSuper = options.isSuper ?? ((actor) => actor.role === 'admin');
+    this.isSuper = options.isSuper ?? ((actor) => isSuperAdminRole(actor.role));
     this.cache = new TtlCache(THEME_CACHE_TTL_MS, this.now);
   }
 

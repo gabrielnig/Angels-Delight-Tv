@@ -4,6 +4,7 @@ vi.mock('server-only', () => ({}));
 
 const { siteSettingsAdmin } = await import('./site-settings');
 
+const superAdmin = { accountId: 'acc_super', role: 'super_admin' as const, name: 'Arkdev' };
 const admin = { accountId: 'acc_admin', role: 'admin' as const, name: 'Chiamaka Okafor' };
 const editor = { accountId: 'acc_editor', role: 'editor' as const, name: 'Ngozi Eze' };
 
@@ -45,8 +46,22 @@ describe('siteSettingsAdmin (fixture runtime)', () => {
     ).toBe(true);
   });
 
+  it('keeps Features and limits for a Super admin (M29-S02, D-125)', async () => {
+    const asAdmin = await siteSettingsAdmin.load(admin);
+    const asSuper = await siteSettingsAdmin.load(superAdmin);
+    expect(asAdmin.ok && asAdmin.data.canChangeFlags).toBe(false);
+    expect(asSuper.ok && asSuper.data.canChangeFlags).toBe(true);
+    expect(await siteSettingsAdmin.update(admin, { 'limits.max_profiles': 3 })).toMatchObject({
+      ok: false,
+    });
+    const saved = await siteSettingsAdmin.update(superAdmin, { 'limits.max_profiles': 3 });
+    expect(saved.ok && saved.data.values['limits.max_profiles']).toBe(3);
+    const after = await siteSettingsAdmin.load(admin);
+    expect(after.ok && after.data.values['limits.max_profiles']).toBe(3);
+  });
+
   it('returns a message per invalid key', async () => {
-    const result = await siteSettingsAdmin.update(admin, {
+    const result = await siteSettingsAdmin.update(superAdmin, {
       'limits.max_sessions': 11,
       'platform.support_email': 'nope',
     });

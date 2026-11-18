@@ -17,6 +17,12 @@ interface FixtureAccount extends AdminActor {
 
 const ACCOUNTS: FixtureAccount[] = [
   {
+    accountId: 'acc_arkdev',
+    email: 'arkdev@example.test',
+    name: 'Arkdev',
+    role: 'super_admin',
+  },
+  {
     accountId: 'acc_chiamaka',
     email: 'chiamaka@example.test',
     name: 'Chiamaka Okafor',
@@ -88,6 +94,7 @@ export const ROLE_LABELS: Record<AccountRole, string> = {
   viewer: 'Viewer',
   editor: 'Content editor',
   admin: 'Admin',
+  super_admin: 'Super admin',
 };
 
 export function fixtureAuthEnabled(env: Record<string, string | undefined> = process.env): boolean {

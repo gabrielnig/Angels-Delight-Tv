@@ -25,7 +25,7 @@ export interface AuditRecord {
   metadata: Record<string, unknown>;
 }
 
-/** Namespaces that belong to security, not content work. Admins do not see them (M20-S02 AC3). */
+/** Namespaces that belong to security and operations, not content work. Only a Super admin sees them (M20-S02 AC3). */
 export const SECURITY_PREFIXES = [
   'auth.',
   'account.',
@@ -36,6 +36,10 @@ export const SECURITY_PREFIXES = [
   'rate_limit.',
   'authz.',
   'audit.',
+  'admin.',
+  'staff.',
+  'role.',
+  'job.',
 ] as const;
 
 export function isSecurityAction(action: string): boolean {
