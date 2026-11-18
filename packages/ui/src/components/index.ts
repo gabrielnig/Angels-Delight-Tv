@@ -9,6 +9,7 @@ export * from './Skeleton';
 export * from './States';
 export { cx } from './cx';
 export * from './Avatar';
+export { AVATAR_ART, AVATAR_ART_IDS, type AvatarArtId } from './AvatarArt';
 export * from './Modal';
 export * from './OtpInput';
 export * from './PasswordField';

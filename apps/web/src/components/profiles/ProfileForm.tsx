@@ -12,22 +12,19 @@ import {
   PasswordField,
   Select,
   Switch,
-  type AvatarTone,
+  AVATAR_ART,
+  AVATAR_ART_IDS,
+  type AvatarArtId,
 } from '@ad/ui';
 import type { Profile, ProfileFailure, ProfileInput } from '../../lib/data';
 import { NETWORK_MESSAGE } from '../auth/shared';
 import { useFocusFirstInvalid } from '../auth/useFocusFirstInvalid';
 
-const TONES: Array<{ tone: AvatarTone; label: string }> = [
-  { tone: 'sky', label: 'Sky blue' },
-  { tone: 'mint', label: 'Mint green' },
-  { tone: 'lemon', label: 'Lemon' },
-  { tone: 'peach', label: 'Peach' },
-  { tone: 'lavender', label: 'Lavender' },
-];
-
 const LANGUAGES = [{ value: 'en', label: 'English' }];
 const MAX_NAME = 20;
+
+const isArtId = (id: string | undefined): id is AvatarArtId =>
+  id !== undefined && (AVATAR_ART_IDS as readonly string[]).includes(id);
 
 export type SaveInput = ProfileInput & { password?: string };
 type SaveResult = { ok: true } | { ok: false; reason: ProfileFailure };
@@ -57,7 +54,9 @@ export function ProfileForm({
   const formRef = useRef<HTMLFormElement>(null);
   const requestFocus = useFocusFirstInvalid(formRef);
   const [name, setName] = useState(profile?.name ?? suggestedName ?? '');
-  const [tone, setTone] = useState<AvatarTone>((profile?.tone as AvatarTone | undefined) ?? 'sky');
+  const [avatarId, setAvatarId] = useState<AvatarArtId>(
+    isArtId(profile?.avatarId) ? profile.avatarId : 'sun',
+  );
   const [kids, setKids] = useState(profile?.kids ?? false);
   const [language, setLanguage] = useState(profile?.language ?? 'en');
   const [autoplay, setAutoplay] = useState(profile?.autoplayNext ?? true);
@@ -76,7 +75,7 @@ export function ProfileForm({
   const [discardOpen, setDiscardOpen] = useState(false);
   const dirty =
     name !== (profile?.name ?? suggestedName ?? '') ||
-    tone !== ((profile?.tone as AvatarTone | undefined) ?? 'sky') ||
+    avatarId !== (isArtId(profile?.avatarId) ? profile.avatarId : 'sun') ||
     kids !== (profile?.kids ?? false) ||
     (editing &&
       (language !== (profile?.language ?? 'en') ||
@@ -118,7 +117,7 @@ export function ProfileForm({
       const input: SaveInput = {
         name: name.trim(),
         kids,
-        tone,
+        avatarId,
         ...(editing ? { language, autoplayNext: autoplay } : {}),
       };
       if (needsPassword) input.password = password;
@@ -206,20 +205,20 @@ export function ProfileForm({
           Picture
         </span>
         <div className="web-avatars__row">
-          {TONES.map((option) => (
-            <label key={option.tone} className="web-avatars__option">
+          {AVATAR_ART_IDS.map((id) => (
+            <label key={id} className="web-avatars__option">
               <input
                 type="radio"
-                name="tone"
+                name="avatar"
                 className="web-avatars__input"
-                value={option.tone}
-                checked={tone === option.tone}
-                onChange={() => setTone(option.tone)}
+                value={id}
+                checked={avatarId === id}
+                onChange={() => setAvatarId(id)}
               />
               <span className="web-avatars__face">
-                <Avatar name={name || 'A'} tone={option.tone} size={64} />
+                <Avatar name={name || 'A'} avatarId={id} size={64} />
               </span>
-              <span className="ad-sr-only">{option.label}</span>
+              <span className="ad-sr-only">{AVATAR_ART[id].label}</span>
             </label>
           ))}
         </div>

@@ -262,6 +262,8 @@ Z order: base 0, sticky 10, nav 20, overlay 30, modal 40, toast 50.
 | `--motion-fast` | 150ms | Hover, focus, pill select |
 | `--motion-base` | 200ms | Dropdowns, tabs, toasts in |
 | `--motion-slow` | 350ms | Modal and sheet, hero crossfade |
+| `--motion-spin` | 700ms | One turn of a spinner |
+| `--motion-shimmer` | 1.4s | One pass of a skeleton or progress shimmer |
 | `--ease-standard` | cubic-bezier(0.4, 0, 0.2, 1) | Default |
 | `--ease-enter` | cubic-bezier(0, 0, 0.2, 1) | Things arriving |
 | `--ease-exit` | cubic-bezier(0.4, 0, 1, 1) | Things leaving |

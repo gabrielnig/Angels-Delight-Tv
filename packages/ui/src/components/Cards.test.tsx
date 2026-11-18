@@ -27,13 +27,20 @@ describe('card links name from their visible text (WCAG 2.5.3)', () => {
     }
   });
 
-  it('names the continue card from its title, length and time left', () => {
+  it('names the continue card with the title first, then length, progress and time left', () => {
     render(<ContinueCard {...base} progressPercent={20} timeLeftLabel="3 min left" />);
     expect(
       screen.getByRole('link', {
-        name: /How to save money on data, 4 minutes, 3 min left/,
+        name: 'How to save money on data, 4 minutes, 20 percent watched, 3 min left',
       }),
     ).toBeInTheDocument();
+  });
+
+  it('does not read the progress bar before the title', () => {
+    render(<ContinueCard {...base} progressPercent={20} timeLeftLabel="3 min left" />);
+    const name = screen.getByRole('link').textContent ?? '';
+    expect(name.indexOf('How to save money')).toBeLessThan(name.indexOf('percent watched'));
+    expect(name.match(/percent watched/g)).toHaveLength(1);
   });
 });
 
@@ -108,9 +115,9 @@ describe('ContinueCard', () => {
         onRemove={() => {}}
       />,
     );
-    const bar = screen.getByRole('progressbar');
+    const bar = screen.getByRole('progressbar', { hidden: true });
     expect(bar).toHaveAttribute('aria-valuenow', '60');
-    expect(screen.getByText('60 percent watched')).toHaveClass('ad-sr-only');
+    expect(screen.getByRole('link').textContent).toContain('60 percent watched');
     expect(screen.getByText('2 min left')).toBeInTheDocument();
   });
 

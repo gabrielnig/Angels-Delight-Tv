@@ -55,9 +55,26 @@ describe('ProfileForm create', () => {
     const group = screen.getByRole('radiogroup', { name: 'Picture' });
     expect(group).toBeInTheDocument();
     const radios = screen.getAllByRole('radio');
-    expect(radios.length).toBe(5);
+    expect(radios.length).toBe(12);
     await user.click(radios[2]!);
     expect(radios[2]).toBeChecked();
+  });
+
+  it('names each picture and sends the chosen avatar id', async () => {
+    const onSave = vi.fn().mockResolvedValue({ ok: true });
+    const user = userEvent.setup();
+    render(<ProfileForm onSave={onSave} onDone={vi.fn()} />);
+    await user.type(screen.getByLabelText(/Name/), 'Zainab');
+    await user.click(screen.getByRole('radio', { name: 'Drum' }));
+    await user.click(screen.getByRole('button', { name: 'Create profile' }));
+    expect(onSave).toHaveBeenCalledWith(expect.objectContaining({ avatarId: 'drum' }));
+  });
+
+  it('starts on the saved avatar when editing', () => {
+    render(
+      <ProfileForm profile={{ ...emeka, avatarId: 'fish' }} onSave={vi.fn()} onDone={vi.fn()} />,
+    );
+    expect(screen.getByRole('radio', { name: 'Fish' })).toBeChecked();
   });
 
   it('saves the values and continues', async () => {

@@ -88,6 +88,7 @@ export function profileToView(dto: ProfileDto, activeProfileId?: string | null):
     name: dto.name,
     kids: dto.isKids,
     tone: toneFromAvatar(dto.avatarId),
+    avatarId: dto.avatarId,
     owner: dto.isPrimary,
     language: dto.language,
     autoplayNext: dto.autoplayNext,
