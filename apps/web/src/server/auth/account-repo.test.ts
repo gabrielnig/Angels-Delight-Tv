@@ -169,6 +169,8 @@ describe('RealAccountRepository', () => {
       memberSince: new Date('2026-03-03T00:00:00Z'),
       profileCount: 2,
       role: 'viewer',
+      displayName: null,
+      passwordChangedAt: new Date('2026-08-12T10:00:00Z'),
     });
     const overview = await setup({ getOverview }).repo.overview('a1');
     expect(overview).toMatchObject({
@@ -176,6 +178,79 @@ describe('RealAccountRepository', () => {
       verified: true,
       displayName: 'Ada',
       devices: 2,
+      passwordChanged: '12 Aug 2026',
+    });
+  });
+
+  it('prefers the name the member saved over one made from the email', async () => {
+    const getOverview = async () => ({
+      email: 'ada@example.org',
+      emailVerified: true,
+      memberSince: new Date('2026-03-03T00:00:00Z'),
+      profileCount: 1,
+      role: 'viewer',
+      displayName: 'Chinedu Okafor',
+      passwordChangedAt: new Date('2026-08-12T10:00:00Z'),
+    });
+    expect((await setup({ getOverview }).repo.overview('a1')).displayName).toBe('Chinedu Okafor');
+  });
+
+  it('saves the display name and says when it is refused', async () => {
+    const setDisplayName = vi.fn(async (_a: unknown, input: { name: string }) => input.name.trim());
+    const { repo } = setup({ setDisplayName });
+    expect(await repo.updateName('a1', ' Ada Obi ')).toEqual({ ok: true, name: 'Ada Obi' });
+    expect(setDisplayName).toHaveBeenCalledWith(actor, { name: ' Ada Obi ' }, expect.anything());
+    const refuse = setup({
+      setDisplayName: async () => {
+        throw new FieldErrors({ name: 'Enter your name' });
+      },
+    }).repo;
+    expect(await refuse.updateName('a1', '')).toEqual({ ok: false, reason: 'invalid' });
+    const broken = setup({
+      setDisplayName: async () => {
+        throw new Error('db down');
+      },
+    }).repo;
+    expect(await broken.updateName('a1', 'x')).toEqual({ ok: false, reason: 'network' });
+  });
+
+  it('starts an email change and maps each refusal to a reason', async () => {
+    const requestEmailChange = vi.fn(async () => ({ pendingEmail: 'new@example.org' }));
+    const { repo } = setup({ requestEmailChange });
+    expect(
+      await repo.requestEmailChange('a1', { newEmail: 'new@example.org', password: 'pw' }),
+    ).toEqual({
+      ok: true,
+      pendingEmail: 'new@example.org',
+    });
+    const reasons: [Record<string, string>, string][] = [
+      [{ password: 'Password is not right' }, 'wrong_password'],
+      [{ newEmail: 'That is already your email' }, 'same_email'],
+      [{ newEmail: 'Enter a valid email address' }, 'invalid_email'],
+    ];
+    for (const [fields, reason] of reasons) {
+      const r = setup({
+        requestEmailChange: async () => {
+          throw new FieldErrors(fields);
+        },
+      }).repo;
+      expect(await r.requestEmailChange('a1', { newEmail: 'x', password: 'y' })).toEqual({
+        ok: false,
+        reason,
+      });
+    }
+  });
+
+  it('confirms an email change with the 6 digit code', async () => {
+    const confirmEmailChange = vi
+      .fn()
+      .mockResolvedValueOnce({ status: 'changed' })
+      .mockResolvedValueOnce({ status: 'expired' });
+    const { repo } = setup({ confirmEmailChange });
+    expect(await repo.confirmEmailChange('a1', { code: '123456' })).toEqual({ ok: true });
+    expect(await repo.confirmEmailChange('a1', { code: '111111' })).toEqual({
+      ok: false,
+      reason: 'expired',
     });
   });
 });
@@ -187,6 +262,8 @@ describe('RealAccountRepository with viewer data', () => {
       email: 'ada@example.com',
       emailVerified: true,
       memberSince,
+      displayName: null,
+      passwordChangedAt: memberSince,
     })),
   };
   const viewer = () => ({

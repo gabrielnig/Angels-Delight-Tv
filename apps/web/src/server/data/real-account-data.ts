@@ -7,6 +7,7 @@ import { viewerActor } from './actor';
 
 export const DEFAULT_PLAYBACK: PlaybackSettings = {
   autoplayNext: true,
+  autoplayPreviews: false,
   dataSaver: false,
   quality: 'auto',
   speed: 1,
@@ -69,6 +70,10 @@ function readPrefs(row: {
   return {
     autoplayNext: row.autoplayNext,
     dataSaver: row.dataSaver,
+    autoplayPreviews:
+      typeof stored.autoplayPreviews === 'boolean'
+        ? stored.autoplayPreviews
+        : DEFAULT_PLAYBACK.autoplayPreviews,
     quality: pick(stored.quality, QUALITIES, DEFAULT_PLAYBACK.quality),
     speed: pick(stored.speed, SPEEDS, DEFAULT_PLAYBACK.speed),
     captionsDefault:
@@ -132,7 +137,7 @@ function validatePatch(patch: Partial<PlaybackSettings>): void {
     (typeof patch.captionLanguage !== 'string' || !LANGUAGE_CODE.test(patch.captionLanguage))
   )
     bad.captionLanguage = ['Pick a language code'];
-  for (const key of ['autoplayNext', 'dataSaver', 'captionsDefault'] as const) {
+  for (const key of ['autoplayNext', 'autoplayPreviews', 'dataSaver', 'captionsDefault'] as const) {
     if (patch[key] !== undefined && typeof patch[key] !== 'boolean') bad[key] = ['Use on or off'];
   }
   if (Object.keys(bad).length > 0) throw new ValidationFailed(bad);
@@ -209,6 +214,7 @@ export class AccountViewerData {
           dataSaver: next.dataSaver,
           playbackPrefs: {
             ...storedPrefs(updatedRow),
+            autoplayPreviews: next.autoplayPreviews,
             quality: next.quality,
             speed: next.speed,
             captionsDefault: next.captionsDefault,
