@@ -50,3 +50,4 @@ export {
   type UpNextItem,
 } from './types';
 export { createHttpProgressSink, createHttpSessionProvider } from './http';
+export { clampBandwidth, readBandwidthSeed, saveBandwidth } from './bandwidth';
