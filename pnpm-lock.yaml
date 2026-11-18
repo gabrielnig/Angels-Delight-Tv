@@ -176,6 +176,9 @@ importers:
       '@ad/db':
         specifier: workspace:*
         version: link:../../packages/db
+      '@ad/mailer':
+        specifier: workspace:*
+        version: link:../../packages/mailer
       '@ad/queue':
         specifier: workspace:*
         version: link:../../packages/queue

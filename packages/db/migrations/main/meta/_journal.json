@@ -225,6 +225,13 @@
       "when": 1794999528960,
       "tag": "0031_super_admin_role",
       "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1795001916466,
+      "tag": "0032_email_outbox",
+      "breakpoints": true
     }
   ]
 }

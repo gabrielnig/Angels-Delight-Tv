@@ -125,3 +125,55 @@ describe('SmtpTransport', () => {
     expect(transport.outbox[1]?.subject).toMatch(/could not build your export/i);
   });
 });
+
+describe('Mailer staff mail', () => {
+  it('returns the provider message id so the outbox can record it', async () => {
+    const transport = new MemoryTransport();
+    const mailer = new Mailer(transport, settings);
+    const sent = await mailer.sendStaffNotice({
+      to: 'staff@example.org',
+      title: 'Encoding failed',
+      body: 'Decimals',
+    });
+    expect(sent).toEqual({ messageId: 'memory-1' });
+    expect(transport.outbox[0]?.subject).toBe('Encoding failed');
+    expect(transport.outbox[0]?.text).toContain('Decimals');
+    expect(transport.outbox[0]?.text).toContain('https://tv.example.org/admin');
+  });
+
+  it('builds a summary with a count and one line per update', async () => {
+    const transport = new MemoryTransport();
+    await new Mailer(transport, settings).sendStaffSummary({
+      to: 'staff@example.org',
+      period: 'day',
+      lines: ['Ready: Shapes', 'Encoding failed: Decimals'],
+    });
+    expect(transport.outbox[0]?.subject).toContain('2 updates');
+    expect(transport.outbox[0]?.text).toContain('Ready: Shapes\nEncoding failed: Decimals');
+  });
+
+  it('links an export mail to the exports page', async () => {
+    const transport = new MemoryTransport();
+    const mailer = new Mailer(transport, settings);
+    await mailer.sendStaffExportReady({
+      to: 'a@example.org',
+      name: 'Audit log',
+      rows: 52000,
+      hours: 24,
+    });
+    await mailer.sendStaffExportFailed({ to: 'a@example.org', name: 'Audit log' });
+    expect(transport.outbox[0]?.text).toContain('https://tv.example.org/admin/exports');
+    expect(transport.outbox[0]?.text).toContain('52000');
+    expect(transport.outbox[1]?.text).toContain('https://tv.example.org/admin/exports');
+  });
+
+  it('wraps a provider failure and keeps its cause for the outbox to read', async () => {
+    const transport = new MemoryTransport();
+    transport.failNext(Object.assign(new Error('mailbox unavailable'), { responseCode: 550 }));
+    const error = await new Mailer(transport, settings)
+      .sendStaffNotice({ to: 'a@example.org', title: 'Hello there' })
+      .catch((e: unknown) => e);
+    expect(error).toBeInstanceOf(MailDeliveryError);
+    expect((error as MailDeliveryError).cause).toMatchObject({ responseCode: 550 });
+  });
+});

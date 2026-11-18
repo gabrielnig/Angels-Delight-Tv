@@ -37,7 +37,7 @@ Super admin: the role exists since lane f1 (D-128), the rows reserved for it are
 | M14-S07 Resource limits on the VPS | Should | done with test | encode/scratch.test.ts; definitions.test.ts (concurrency); ffmpeg threads and nice in runtime env | Free disk guard is tested; CPU niceness is config only |
 | M14-S08 Publish renditions to R2 | Must | done with test | pipeline.int.test.ts; playback/service.test.ts | R2 itself is not reachable in tests; storage adapter is local |
 | M14-S09 Encoding queue screen | Must | done with test | FailedEncodes.test.tsx; admin/pipeline.int.test.ts; apps/web real/catalog.int.test.ts |  |
-| M15-S01 Auto generate English captions | Must | partial | captions/generator.int.test.ts; handlers.test.ts and notifier.int.test.ts (bell notice, D-112) | AC2 email is not sent: the choices are stored and the bell works, but no email is produced from them (D-112) |
+| M15-S01 Auto generate English captions | Must | done with test | captions/generator.int.test.ts; handlers.test.ts and notifier.int.test.ts (bell notice, D-112); `f1`: packages/queue/src/digest.int.test.ts and outbox.int.test.ts (failure and captions ready email from the choices, sent by the worker), apps/web/src/lib/data/admin/real/notices.int.test.ts (sealed address, frequency) | Immediate means within a minute (D-129) |
 | M15-S02 Align an existing script | Should | done with test | captions/align.test.ts; align.fixtures.test.ts; generator.int.test.ts | Agent m3 owns script alignment tuning |
 | M15-S03 Caption review list | Must | done with test | admin/captions.int.test.ts; real/captions.int.test.ts |  |
 | M15-S04 Review screen layout | Must | done with test | CaptionReview.test.tsx; PreviewPlayer.test.tsx; usePreviewClock.test.tsx |  |
@@ -102,15 +102,19 @@ Super admin: the role exists since lane f1 (D-128), the rows reserved for it are
 
 ## Counts by status
 
-- done with test: 86
+- done with test: 87
 - done without test: 2
-- partial: 3
+- partial: 2
 - missing: 0
 - Total: 91
 
 ## Gaps fixed by lane f1 (slice 1)
 
 - Super admin role (D-128): M12-S03, M12-S05, M12-S06, M12-S07, M20-S02, M27-S03, M29-S02, M30-S03 and the last Super admin guard.
+
+## Gaps fixed by lane f1 (slice 3)
+
+- Notification email from the saved choices, hourly and daily summaries, and the email outbox with retry and provider message ids (D-129, M15-S01 AC2, M21-S03).
 
 ## Gaps fixed by lane a2
 
@@ -121,6 +125,5 @@ Super admin: the role exists since lane f1 (D-128), the rows reserved for it are
 
 ## Open gaps
 
-- Emails from notification choices, the hourly and daily summaries: not built (D-112).
 - CSV and audit exports are inline with a row cap, not background jobs (M19-S05, M20-S03).
 - No tamper evident audit chain (M20-S05, a Could).

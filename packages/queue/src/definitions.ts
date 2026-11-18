@@ -13,6 +13,8 @@ export const QUEUES = {
   analyticsRollup: 'analytics.rollup',
   analyticsPrune: 'analytics.prune',
   auditPrune: 'audit.prune',
+  emailOutbox: 'email.outbox',
+  emailDigest: 'email.digest',
 } as const;
 
 export type QueueName = (typeof QUEUES)[keyof typeof QUEUES];
@@ -117,6 +119,21 @@ export const QUEUE_DEFINITIONS: Record<QueueName, QueueDefinition> = {
     retryBackoff: true,
     expireInSeconds: 60 * 60,
   },
+  // The drain runs every minute and retries its own rows, so a failed run just waits for the next minute.
+  'email.outbox': {
+    concurrency: 1,
+    retryLimit: 0,
+    retryDelaySeconds: 60,
+    retryBackoff: false,
+    expireInSeconds: 5 * 60,
+  },
+  'email.digest': {
+    concurrency: 1,
+    retryLimit: 2,
+    retryDelaySeconds: 300,
+    retryBackoff: true,
+    expireInSeconds: 10 * 60,
+  },
 };
 
 export function queueOptions(name: QueueName) {
@@ -155,6 +172,8 @@ const PAYLOADS = {
   'analytics.rollup': z.strictObject({}),
   'analytics.prune': z.strictObject({}),
   'audit.prune': z.strictObject({}),
+  'email.outbox': z.strictObject({}),
+  'email.digest': z.strictObject({}),
 } satisfies Record<QueueName, z.ZodType>;
 
 export type PayloadOf<Q extends QueueName> = z.output<(typeof PAYLOADS)[Q]>;
@@ -184,4 +203,10 @@ export const MAINTENANCE_CRON_SCHEDULES: CronEntry[] = [
   { queue: 'analytics.rollup', cron: '0 2 * * *', timezone: 'Africa/Lagos' },
   { queue: 'analytics.prune', cron: '0 3 1 * *', timezone: 'Africa/Lagos' },
   { queue: 'audit.prune', cron: '30 3 1 * *', timezone: 'Africa/Lagos' },
+];
+
+/** Mail jobs (M15-S01, M21-S03). The outbox drain also queues "at once" notices, so those leave within a minute. */
+export const MAIL_CRON_SCHEDULES: CronEntry[] = [
+  { queue: 'email.outbox', cron: '* * * * *', timezone: 'Africa/Lagos' },
+  { queue: 'email.digest', cron: '5 * * * *', timezone: 'Africa/Lagos' },
 ];

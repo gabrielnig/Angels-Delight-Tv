@@ -18,6 +18,7 @@
     "@ad/audit": "workspace:*",
     "@ad/config": "workspace:*",
     "@ad/db": "workspace:*",
+    "@ad/mailer": "workspace:*",
     "@ad/queue": "workspace:*",
     "@ad/shared": "workspace:*",
     "@ad/storage": "workspace:*",

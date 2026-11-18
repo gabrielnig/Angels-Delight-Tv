@@ -32,6 +32,8 @@ export interface AdminRuntime {
   names(actor: Actor, ids: readonly string[]): Promise<Map<string, string>>;
   /** The auth services behind people, roles and my account (lane B). */
   auth(): { staff: StaffService; sessions: SessionService; keys: KeyService };
+  /** The field encryption key, for the sealed copy of a staff address that the worker mails (D-129). */
+  fieldKek(): Uint8Array;
   /** Puts a new session cookie on the response, after a password change rotates the session. */
   setSession(token: string): Promise<void>;
   /** The current time. Tests install a fixed clock. */
@@ -68,6 +70,9 @@ export function setAdminRuntime(
     },
     auth: () => {
       throw new Error('This test did not provide the auth services');
+    },
+    fieldKek: () => {
+      throw new Error('This test did not provide the field key');
     },
     now: () => new Date(),
     setSession: async () => {
@@ -210,6 +215,7 @@ function build(): AdminRuntime {
       const { staff, sessions, keys } = authRuntime();
       return { staff, sessions, keys };
     },
+    fieldKek: () => getServices().env.FIELD_KEK,
     now: () => new Date(),
     setSession: async (token) =>
       (await import('@/server/auth/session')).setSessionCookie(token, 'staff'),

@@ -52,6 +52,9 @@ const devWorker = {
   STORAGE_DRIVER: 'local',
   LOCAL_STORAGE_ROOT: './.local-storage',
   HLS_KEK: key(3),
+  FIELD_KEK: key(1),
+  SMTP_URL: 'smtp://localhost:1025',
+  EMAIL_FROM: 'no-reply@localhost',
 };
 
 function failureNames(run: () => unknown): string[] {
@@ -237,6 +240,22 @@ describe('loadWorkerEnv', () => {
 
   it('needs no web only secrets', () => {
     expect(() => loadWorkerEnv(devWorker)).not.toThrow();
+  });
+
+  it('needs the mail settings, because the worker sends notification email (M21-S03)', () => {
+    for (const name of ['FIELD_KEK', 'SMTP_URL', 'EMAIL_FROM']) {
+      expect(failureNames(() => loadWorkerEnv({ ...devWorker, [name]: undefined }))).toEqual([
+        name,
+      ]);
+    }
+    expect(loadWorkerEnv({ ...devWorker, SUPPORT_EMAIL: 'help@example.org' }).SUPPORT_EMAIL).toBe(
+      'help@example.org',
+    );
+    expect(loadWorkerEnv(devWorker).SUPPORT_EMAIL).toBeUndefined();
+    expect(loadWorkerEnv(devWorker).FIELD_KEK).toBeInstanceOf(Uint8Array);
+    expect(
+      failureNames(() => loadWorkerEnv({ ...devWorker, SMTP_URL: 'http://mail.example.org' })),
+    ).toEqual(['SMTP_URL']);
   });
 
   it('requires the worker database url', () => {

@@ -1,4 +1,4 @@
-import { adminNotices } from '@ad/db';
+import { adminNotices, staffNotificationPrefs } from '@ad/db';
 import type { Actor } from '@ad/shared';
 import { eq } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
@@ -6,6 +6,8 @@ import { createViewerTestDb, integrationEnabled, seedAccount, type ViewerTestDb 
 import {
   DEFAULT_NOTIFICATION_PREFS,
   getNotificationPrefs,
+  hasNotificationAddress,
+  saveNotificationAddress,
   listAdminNotices,
   markAdminNoticesRead,
   setNotificationPrefs,
@@ -79,19 +81,52 @@ describe.skipIf(!integrationEnabled())('admin notices and preferences', () => {
       failures: true,
       captionsReady: false,
       dailySummary: false,
+      emailFrequency: 'hourly',
     });
     expect(await setNotificationPrefs(ctx, one, { captionsReady: true })).toEqual({
       failures: true,
       captionsReady: true,
       dailySummary: false,
+      emailFrequency: 'hourly',
     });
     await setNotificationPrefs(ctx, one, { failures: false });
     expect(await getNotificationPrefs(ctx, one)).toEqual({
       failures: false,
       captionsReady: true,
       dailySummary: false,
+      emailFrequency: 'hourly',
     });
     expect(await getNotificationPrefs(ctx, two)).toEqual(DEFAULT_NOTIFICATION_PREFS);
     await expect(setNotificationPrefs(ctx, viewer, { failures: false })).rejects.toThrow();
+  });
+
+  it('saves how often email arrives, and refuses anything else', async () => {
+    expect((await setNotificationPrefs(ctx, one, { emailFrequency: 'daily' })).emailFrequency).toBe(
+      'daily',
+    );
+    expect((await getNotificationPrefs(ctx, one)).emailFrequency).toBe('daily');
+    expect((await getNotificationPrefs(ctx, two)).emailFrequency).toBe('hourly');
+    await expect(
+      setNotificationPrefs(ctx, one, { emailFrequency: 'weekly' as never }),
+    ).rejects.toThrow();
+    expect((await getNotificationPrefs(ctx, one)).emailFrequency).toBe('daily');
+  });
+
+  it('keeps a sealed copy of the address for the worker, without changing the choices', async () => {
+    expect(await hasNotificationAddress(ctx, two)).toBe(false);
+    const sealed = Buffer.from('sealed-address-bytes');
+    await saveNotificationAddress(ctx, two, sealed);
+    expect(await hasNotificationAddress(ctx, two)).toBe(true);
+    expect(await getNotificationPrefs(ctx, two)).toEqual(DEFAULT_NOTIFICATION_PREFS);
+    const row = (
+      await t.setup
+        .select()
+        .from(staffNotificationPrefs)
+        .where(eq(staffNotificationPrefs.accountId, two.accountId))
+    )[0]!;
+    expect(row.addressEnc?.toString()).toBe('sealed-address-bytes');
+    await setNotificationPrefs(ctx, two, { failures: false });
+    expect(await hasNotificationAddress(ctx, two)).toBe(true);
+    await expect(saveNotificationAddress(ctx, viewer, sealed)).rejects.toThrow();
   });
 });

@@ -1,6 +1,6 @@
 import { sql } from 'drizzle-orm';
 import { boolean, check, index, pgTable, text, uuid } from 'drizzle-orm/pg-core';
-import { createdAt, pk, timestamptz, updatedAt } from './columns';
+import { bytea, createdAt, pk, timestamptz, updatedAt } from './columns';
 import { accounts } from './identity';
 import { videos } from './content';
 
@@ -22,6 +22,8 @@ export const adminNotices = pgTable(
     videoId: uuid('video_id').references(() => videos.id, { onDelete: 'set null' }),
     createdAt: createdAt(),
     readAt: timestamptz('read_at'),
+    /** Set when the notice went into an email, so a summary never lists it twice. */
+    emailedAt: timestamptz('emailed_at'),
   },
   (t) => [
     index('admin_notices_recipient_created_idx').on(t.recipientId, t.createdAt),
@@ -33,15 +35,30 @@ export const adminNotices = pgTable(
 );
 
 /** Which emails an admin wants (M21-S05). Security email is not listed here because it cannot be turned off. */
-export const staffNotificationPrefs = pgTable('staff_notification_prefs', {
-  accountId: uuid('account_id')
-    .primaryKey()
-    .references(() => accounts.id, { onDelete: 'cascade' }),
-  failures: boolean('failures').notNull().default(true),
-  captionsReady: boolean('captions_ready').notNull().default(false),
-  dailySummary: boolean('daily_summary').notNull().default(false),
-  updatedAt: updatedAt(),
-});
+export const NOTICE_EMAIL_FREQUENCIES = ['immediate', 'hourly', 'daily'] as const;
+
+export const staffNotificationPrefs = pgTable(
+  'staff_notification_prefs',
+  {
+    accountId: uuid('account_id')
+      .primaryKey()
+      .references(() => accounts.id, { onDelete: 'cascade' }),
+    failures: boolean('failures').notNull().default(true),
+    captionsReady: boolean('captions_ready').notNull().default(false),
+    dailySummary: boolean('daily_summary').notNull().default(false),
+    /** When emails for failures and captions go out: at once, in an hourly summary or in the daily one (M21-S03). */
+    emailFrequency: text('email_frequency').notNull().default('hourly'),
+    /** The staff address sealed with the field key, so the worker can mail it without reading `accounts` (D-129). */
+    addressEnc: bytea('address_enc'),
+    updatedAt: updatedAt(),
+  },
+  (t) => [
+    check(
+      'staff_notification_prefs_frequency_known',
+      sql`${t.emailFrequency} IN ('immediate', 'hourly', 'daily')`,
+    ),
+  ],
+);
 
 /**
  * Addresses that bounced or complained (M21-S01 AC2). Stored as a keyed hash, never the address, so the list
