@@ -5,7 +5,7 @@ const CONTENT: SiteContent = {
   tagline: 'Learn something new, free.',
   supportEmail: 'support@angelsdelight.tv',
   valueLines: ['Free to watch, always', 'Short lessons you can finish in minutes', 'Captions on every video'],
-  signUpOpen: true,
+  signUpOpen: process.env.FIXTURE_SIGNUP_OPEN !== 'off',
   footerLinks: [
     { label: 'Terms', href: '/terms' },
     { label: 'Privacy', href: '/privacy' },

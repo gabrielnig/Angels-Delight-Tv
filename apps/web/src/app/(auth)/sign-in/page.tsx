@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { AuthSplit } from '../../../components/AuthLayouts';
 import { SignInScreen } from '../../../components/auth/AuthScreens';
 import { getSite } from '../../../lib/data';
+import { signInNotice, signInNoticeTone } from '../../../lib/auth-notices';
 import { turnstileSiteKey } from '../../../server/auth/turnstile-site';
 import { safeNext } from '../../../lib/data/fixtures/auth';
 
@@ -16,16 +17,13 @@ export default async function SignInPage({
   const next = params.next ? safeNext(params.next) : undefined;
   return (
     <AuthSplit site={site}>
-      <h1 className="web-auth__title">Sign in</h1>
+      <h1 className="auth-title">Sign in</h1>
       <SignInScreen
         next={next}
         turnstileSiteKey={turnstileSiteKey()}
         signUpOpen={site.signUpOpen}
-        notice={
-          params.notice === 'reset'
-            ? 'Your password was changed. Sign in with your new password.'
-            : undefined
-        }
+        notice={signInNotice(params.notice)}
+        noticeTone={signInNoticeTone(params.notice)}
       />
     </AuthSplit>
   );
