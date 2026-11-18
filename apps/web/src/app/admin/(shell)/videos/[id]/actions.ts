@@ -75,7 +75,11 @@ export async function uploadPosterAction(
   const actor = await requireActionActor(`/admin/videos/${id}/poster`);
   const file = formData.get('file');
   if (!(file instanceof File)) return { ok: false, error: UPLOAD_ERROR };
-  const result = await videoService.uploadPoster(actor, id, new Uint8Array(await file.arrayBuffer()));
+  const result = await videoService.uploadPoster(
+    actor,
+    id,
+    new Uint8Array(await file.arrayBuffer()),
+  );
   if (result.ok) revalidatePath(`/admin/videos/${id}/poster`);
   return result;
 }

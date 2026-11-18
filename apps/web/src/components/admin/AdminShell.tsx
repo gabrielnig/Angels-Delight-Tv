@@ -6,6 +6,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import type { AccountRole } from '@ad/shared';
 import { Icon } from './Icon';
+import { NoticeBell, type BellNotice } from './NoticeBell';
 import { isActive, navForRole } from './nav';
 import { summarizeUploads, useUploaderState } from './UploaderContext';
 
@@ -14,6 +15,8 @@ export interface ShellProps {
   actor: { name: string; role: AccountRole; roleLabel: string };
   counts: { encoding: number; captions: number };
   signOut: () => Promise<void>;
+  /** The bell. Left out when notices could not be loaded, so the shell still works. */
+  notices?: { items: BellNotice[]; unread: number; markAllRead: () => Promise<void> };
   children: ReactNode;
 }
 
@@ -26,7 +29,14 @@ const initials = (name: string) =>
     .toUpperCase();
 
 /** Dark sidebar, top bar and work area. DESIGN-SYSTEM 11.25. */
-export function AdminShell({ platformName, actor, counts, signOut, children }: ShellProps) {
+export function AdminShell({
+  platformName,
+  actor,
+  counts,
+  signOut,
+  notices,
+  children,
+}: ShellProps) {
   const pathname = usePathname() ?? '/admin';
   const [open, setOpen] = useState(false);
   const menuButton = useRef<HTMLButtonElement>(null);
@@ -131,6 +141,7 @@ export function AdminShell({ platformName, actor, counts, signOut, children }: S
               {uploads.count} uploading, {uploads.percent}%
             </Link>
           ) : null}
+          {notices ? <NoticeBell {...notices} /> : null}
           <details className="adm-menu">
             <summary>
               <span className="adm-sr">Account menu for </span>

@@ -602,3 +602,9 @@ Format: decision, options considered, why, reversible or not. Newest first. Deci
 - Why: per person rows make "mark all read" and the unread badge a plain query, and a shared row would clear the bell for everyone.
 - Reversible: yes.
 - Not built yet: emailing from these choices (including the hourly summary and the daily summary). The choices are stored and shown, and the in-app bell works.
+
+## D-113 The bell is loaded in the admin layout and fails quietly (lane A2)
+- Decision: the shell layout loads the caller's notices with `noticesAdmin.feed`. If that call fails the bell is left out and the admin still renders. Email choices live on `/admin/account` as three switches that save one at a time. Design system review: tokens only, bell button and rows at 44px, Escape closes and returns focus, unread is named for screen readers, empty state says "Nothing new".
+- Options: a client side poll for the bell, or load on each navigation.
+- Why: navigation already reloads the layout, and polling adds load for a small team. A broken bell must never block staff.
+- Reversible: yes.
