@@ -68,10 +68,19 @@ export const assets = pgTable(
     /** 0 to 100 for a candidate poster frame: how well lit and sharp it is. Null for uploads and older frames (M36-S01). */
     candidateScore: smallint('candidate_score'),
     altText: text('alt_text'),
+    /** For a poster recut around a focus point: the picture it was cut from (M36-S03). Null for every other asset. */
+    cutFrom: uuid('cut_from'),
+    /** The focus and zoom the recut used, so a repeat save with the same crop reuses it. */
+    cutFocus: jsonb('cut_focus').$type<{ x: number; y: number; zoom: number }>(),
     createdBy: uuid('created_by').references(() => accounts.id, { onDelete: 'set null' }),
     createdAt: createdAt(),
   },
   (t) => [
+    foreignKey({
+      columns: [t.cutFrom],
+      foreignColumns: [t.id],
+      name: 'assets_cut_from_fk',
+    }).onDelete('cascade'),
     check(
       'assets_score_range',
       sql`${t.candidateScore} IS NULL OR (${t.candidateScore} >= 0 AND ${t.candidateScore} <= 100)`,

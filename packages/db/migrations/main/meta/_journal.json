@@ -246,6 +246,13 @@
       "when": 1795005053596,
       "tag": "0034_asset_blur_and_frame_score",
       "breakpoints": true
+    },
+    {
+      "idx": 35,
+      "version": "7",
+      "when": 1795009889547,
+      "tag": "0035_asset_poster_recut",
+      "breakpoints": true
     }
   ]
 }

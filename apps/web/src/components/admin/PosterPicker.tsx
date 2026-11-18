@@ -11,6 +11,7 @@ import {
   POSTER_MAX_BYTES,
   clampFocus,
   focusFromPoint,
+  cropPreviewStyle,
   previewStyle,
   validatePosterChoice,
   validatePosterFile,
@@ -67,15 +68,13 @@ function Crop({
   label: string;
 }) {
   const style = previewStyle(focus, zoom);
+  const [w, h] = ratio.split('/').map((n) => Number(n.trim()));
+  const frameRatio = w && h ? w / h : 16 / 9;
   return (
     <figure className="adm-crop" style={{ aspectRatio: ratio }}>
       {source.url ? (
         // eslint-disable-next-line @next/next/no-img-element
-        <img
-          src={source.url}
-          alt=""
-          style={{ ...style, width: '100%', height: '100%', objectFit: 'cover' }}
-        />
+        <img src={source.url} alt="" style={cropPreviewStyle(focus, zoom, frameRatio)} />
       ) : (
         <span className="adm-crop__tile" style={style}>
           <PosterTile title={title} seed={seedOf(source.id)} size="lg" />
