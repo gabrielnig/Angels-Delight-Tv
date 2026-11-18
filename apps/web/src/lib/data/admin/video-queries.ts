@@ -93,7 +93,7 @@ export function parseVideoQuery(raw: Raw): VideoQuery {
   const dir = one(raw.dir);
   if (dir === 'asc' || dir === 'desc') query.dir = dir;
   const cursor = one(raw.cursor);
-  if (cursor && /^\d+$/.test(cursor)) query.cursor = cursor;
+  if (cursor && /^[A-Za-z0-9_-]{1,300}$/.test(cursor)) query.cursor = cursor;
   const limit = Number.parseInt(one(raw.limit) ?? '', 10);
   if (Number.isFinite(limit) && limit > 0) query.limit = Math.min(50, limit);
   return query;

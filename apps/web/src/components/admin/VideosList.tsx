@@ -431,16 +431,24 @@ export function VideosList({ page, query, categories, role, bulk }: Props) {
 
             <div className="adm-table__foot">
               <span>
-                Showing {Number(query.cursor ?? 0) + 1} to{' '}
-                {Number(query.cursor ?? 0) + page.items.length} of {page.total} videos
+                {page.prevCursor !== undefined ? (
+                  <>
+                    Showing {page.items.length} of {page.total} videos
+                  </>
+                ) : (
+                  <>
+                    Showing {Number(query.cursor ?? 0) + 1} to{' '}
+                    {Number(query.cursor ?? 0) + page.items.length} of {page.total} videos
+                  </>
+                )}
               </span>
               <span className="adm-row">
                 <Button
-                  disabled={!query.cursor}
+                  disabled={page.prevCursor !== undefined ? !page.prevCursor : !query.cursor}
                   onClick={() =>
                     start(() =>
                       router.replace(
-                        `${pathname}?${serializeVideoQuery({ ...query, cursor: String(Math.max(0, Number(query.cursor ?? 0) - (query.limit ?? 10))) || undefined })}`,
+                        `${pathname}?${serializeVideoQuery({ ...query, cursor: page.prevCursor !== undefined ? (page.prevCursor ?? undefined) : String(Math.max(0, Number(query.cursor ?? 0) - (query.limit ?? 10))) || undefined })}`,
                       ),
                     )
                   }
