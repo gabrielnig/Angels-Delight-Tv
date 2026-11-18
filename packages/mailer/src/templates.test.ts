@@ -43,6 +43,28 @@ const cases: Array<[TemplateName, Record<string, string | number>]> = [
   ['export_ready', { linkUrl: 'https://tv.example.org/api/account/export?token=abc', hours: 24 }],
   ['export_failed', { retryUrl: 'https://tv.example.org/account/data' }],
   [
+    'staff_notice',
+    {
+      title: 'Captions ready to review',
+      body: 'Fractions',
+      linkUrl: 'https://tv.example.org/admin/notices',
+    },
+  ],
+  [
+    'staff_summary',
+    {
+      period: 'hour',
+      count: 3,
+      lines: 'Captions ready to review: Fractions\nEncoding failed: Decimals\nReady: Shapes',
+      linkUrl: 'https://tv.example.org/admin/notices',
+    },
+  ],
+  [
+    'staff_export_ready',
+    { name: 'Audit log', rows: 52000, hours: 24, linkUrl: 'https://tv.example.org/admin/exports' },
+  ],
+  ['staff_export_failed', { name: 'Audit log', linkUrl: 'https://tv.example.org/admin/exports' }],
+  [
     'deletion_scheduled',
     { cancelUrl: 'https://tv.example.org/account/deletion', purgeDate: '1 Dec 2026', days: 14 },
   ],
@@ -103,6 +125,23 @@ describe('renderTemplate', () => {
     expect(mail.html).not.toContain('<script>');
     expect(mail.html).toContain('&lt;script&gt;');
     expect(mail.html).toContain('a=1&amp;b=2');
+  });
+
+  it('puts each summary line in its own paragraph and escapes it', () => {
+    const mail = renderTemplate(
+      'staff_summary',
+      {
+        period: 'day',
+        count: 2,
+        lines: 'A <b>one</b>\nSecond',
+        linkUrl: 'https://tv.example.org/admin/notices',
+      },
+      brand,
+    );
+    expect(mail.subject).toContain('2');
+    expect(mail.text).toContain('A <b>one</b>\nSecond');
+    expect(mail.html).toContain('A &lt;b&gt;one&lt;/b&gt;');
+    expect(mail.html).not.toContain('<b>one');
   });
 
   it('refuses to render when a variable is missing instead of sending undefined', () => {

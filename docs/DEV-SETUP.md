@@ -120,7 +120,7 @@ BUCKET_ORIGINALS=ad-originals
 BUCKET_MEDIA=ad-media
 
 SMTP_URL=smtp://localhost:1025
-EMAIL_FROM=no-reply@localhost
+EMAIL_FROM=no-reply@localhost            # the worker also reads SMTP_URL, EMAIL_FROM and FIELD_KEK: it sends notification email
 WHISPER_URL=http://localhost:8000
 FFMPEG_PRESET=veryfast
 WORKER_SCRATCH_DIR=/tmp/ad-work

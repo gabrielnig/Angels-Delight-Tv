@@ -41,7 +41,11 @@ export type TemplateName =
   | 'account_deleted'
   | 'deletion_scheduled'
   | 'export_ready'
-  | 'export_failed';
+  | 'export_failed'
+  | 'staff_notice'
+  | 'staff_summary'
+  | 'staff_export_ready'
+  | 'staff_export_failed';
 
 export interface RenderedMail {
   subject: string;
@@ -68,6 +72,8 @@ interface Content {
 
 interface Definition {
   required: string[];
+  /** Read when given, left out when empty. */
+  optional?: string[];
   links?: string[];
   build(v: Record<string, string>, brand: BrandContext): Content;
 }
@@ -251,6 +257,49 @@ const DEFINITIONS: Record<TemplateName, Definition> = {
       outro: ['If it keeps failing, write to us and we will help.'],
     }),
   },
+  staff_notice: {
+    required: ['title', 'linkUrl'],
+    optional: ['body'],
+    links: ['linkUrl'],
+    build: (v, b) => ({
+      subject: `${v.title}`,
+      intro: [v.title!, ...(v.body ? [v.body] : [])],
+      action: { label: 'Open notifications', url: v.linkUrl! },
+      outro: [`You get this because of your notification settings on ${b.appName}.`],
+    }),
+  },
+  staff_summary: {
+    required: ['period', 'count', 'lines', 'linkUrl'],
+    links: ['linkUrl'],
+    build: (v, b) => ({
+      subject: `${v.count} ${v.count === '1' ? 'update' : 'updates'} on ${b.appName} this ${v.period}`,
+      intro: v.lines!.split('\n').filter((line) => line.trim() !== ''),
+      action: { label: 'Open notifications', url: v.linkUrl! },
+      outro: [`You get this summary because of your notification settings on ${b.appName}.`],
+    }),
+  },
+  staff_export_ready: {
+    required: ['name', 'rows', 'hours', 'linkUrl'],
+    links: ['linkUrl'],
+    build: (v, b) => ({
+      subject: `Your ${v.name} export is ready on ${b.appName}`,
+      intro: [`Your ${v.name} file has ${v.rows} rows and is ready to download.`],
+      action: { label: 'Download the file', url: v.linkUrl! },
+      outro: [
+        `The file is kept for ${v.hours} hours and the link needs you to be signed in as the person who asked for it.`,
+      ],
+    }),
+  },
+  staff_export_failed: {
+    required: ['name', 'linkUrl'],
+    links: ['linkUrl'],
+    build: (v, b) => ({
+      subject: `We could not build your ${v.name} export on ${b.appName}`,
+      intro: ['Something went wrong while building your file. Nothing was lost.'],
+      action: { label: 'Try again', url: v.linkUrl! },
+      outro: ['If it keeps failing, tell the developer.'],
+    }),
+  },
   deletion_scheduled: {
     required: ['cancelUrl', 'purgeDate', 'days'],
     links: ['cancelUrl'],
@@ -288,6 +337,10 @@ export function renderTemplate(name: TemplateName, vars: Vars, brand: BrandConte
       throw new TemplateError(`Template ${name} is missing ${key}`);
     }
     values[key] = String(raw);
+  }
+  for (const key of definition.optional ?? []) {
+    const raw = vars[key];
+    if (raw !== undefined && raw !== null && String(raw).trim() !== '') values[key] = String(raw);
   }
   for (const key of definition.links ?? []) {
     const protocol = new URL(values[key]!).protocol;

@@ -376,7 +376,7 @@ Design rules:
 - Duplicate protection with pg-boss singleton keys plus the unique partial index on `jobs (kind, video_id)` for active jobs.
 - The `jobs` table mirrors state for the admin UI (stage, progress 0 to 100, error). The worker writes it. pg-boss owns its own `pgboss` schema.
 - Permanent errors (invalid media, unsupported codec) are recorded as `failed_permanent` with a readable code, reported, and the pg-boss job is failed with no retries left. Transient errors (network, 5xx, timeouts) throw and are retried. Verify the exact fail-without-retry call in the pinned pg-boss version during the first spike.
-- Email is not queued: the web process sends directly with a timeout and the user can resend (rate limited). This keeps addresses and raw tokens out of the queue.
+- Sign in and account email is not queued: the web process sends directly with a timeout and the user can resend (rate limited). This keeps addresses and raw tokens out of the queue. Staff notification and export email goes through `email_outbox` and the worker (`email.outbox` every minute, `email.digest` hourly), with sealed addresses, retry and provider message ids (D-129).
 
 ## 14. Failure handling
 

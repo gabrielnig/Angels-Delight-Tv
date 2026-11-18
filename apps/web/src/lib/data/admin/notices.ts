@@ -22,6 +22,7 @@ export interface NotificationPrefsDto {
   failures: boolean;
   captionsReady: boolean;
   dailySummary: boolean;
+  emailFrequency: 'immediate' | 'hourly' | 'daily';
 }
 
 export interface NoticesService {
@@ -38,6 +39,7 @@ const DEFAULT_PREFS: NotificationPrefsDto = {
   failures: true,
   captionsReady: false,
   dailySummary: false,
+  emailFrequency: 'hourly',
 };
 
 let readIds = new Set<string>();
@@ -86,6 +88,9 @@ const fixture: NoticesService = {
   },
   async setPrefs(actor, patch) {
     guard(actor);
+    if (patch.emailFrequency && !['immediate', 'hourly', 'daily'].includes(patch.emailFrequency)) {
+      return { ok: false, error: 'Choose at once, hourly or daily.' };
+    }
     const next = { ...(prefsByAccount.get(actor.accountId) ?? DEFAULT_PREFS), ...patch };
     prefsByAccount.set(actor.accountId, next);
     return { ok: true, prefs: { ...next } };
