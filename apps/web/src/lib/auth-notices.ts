@@ -1,6 +1,8 @@
+import { msg } from '@ad/shared/messages';
+
 const NOTICES: Record<string, string> = {
-  reset: 'Your password was changed. Sign in with your new password.',
-  ended: 'Your session ended. Sign in again to keep watching.',
+  reset: msg('auth.notice.reset'),
+  ended: msg('auth.notice.ended'),
 };
 
 const TONES: Record<string, 'success' | 'info'> = { reset: 'success', ended: 'info' };

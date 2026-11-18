@@ -15,6 +15,7 @@
     "test:file": "vitest run"
   },
   "dependencies": {
+    "@ad/shared": "workspace:*",
     "@videojs/hlsjs-video": "10.5.0"
   },
   "peerDependencies": {

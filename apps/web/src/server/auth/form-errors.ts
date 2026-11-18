@@ -10,6 +10,7 @@ import {
 import { MailDeliveryError } from '@ad/mailer';
 import { LimiterUnavailable } from '@ad/security';
 import { RateLimited } from '@ad/shared';
+import { msg } from '@ad/shared/messages';
 
 /** What a form shows after an action. Plain data, so it crosses the server and client boundary. */
 export interface FormState {
@@ -20,11 +21,8 @@ export interface FormState {
   email?: string;
 }
 
-const GENERIC = 'Something went wrong. Please try again.';
-
 function waitText(seconds: number): string {
-  const minutes = Math.max(1, Math.ceil(seconds / 60));
-  return `${minutes} ${minutes === 1 ? 'minute' : 'minutes'}`;
+  return msg('auth.wait.minutes', { count: Math.max(1, Math.ceil(seconds / 60)) });
 }
 
 /** Turns a thrown error into a message that is safe to show. Unknown errors never leak details. */
@@ -33,24 +31,23 @@ export function toFormState(error: unknown): FormState {
   if (error instanceof InvalidCredentials) return { error: error.message };
   if (error instanceof RateLimited) {
     return {
-      error: `Too many attempts. Try again in ${waitText(error.retryAfterSeconds)}.`,
+      error: msg('auth.error.rateLimited', { wait: waitText(error.retryAfterSeconds) }),
       retryAfter: error.retryAfterSeconds,
     };
   }
   if (error instanceof TokenRejected) {
-    if (error.problem === 'expired') return { error: 'This link has expired. Request a new one.' };
-    if (error.problem === 'used') return { error: 'This link has already been used.' };
-    return { error: 'This link is not valid. Request a new one.' };
+    if (error.problem === 'expired') return { error: msg('auth.error.linkExpired') };
+    if (error.problem === 'used') return { error: msg('auth.error.linkUsed') };
+    return { error: msg('auth.error.linkInvalid') };
   }
   if (error instanceof ReauthRequired) return { error: error.message };
-  if (error instanceof InviteRequired)
-    return { error: 'That invite code is not valid. Check it and try again.' };
+  if (error instanceof InviteRequired) return { error: msg('auth.error.inviteInvalid') };
   if (error instanceof AccountUnavailable) return { error: error.message };
   if (error instanceof MailDeliveryError) {
-    return { error: 'We could not send the email. Please try again in a moment.' };
+    return { error: msg('auth.error.mailFailed') };
   }
   if (error instanceof LimiterUnavailable || error instanceof KeyUnavailable) {
-    return { error: 'This is unavailable right now. Please try again shortly.' };
+    return { error: msg('auth.error.unavailable') };
   }
-  return { error: GENERIC };
+  return { error: msg('auth.error.generic') };
 }

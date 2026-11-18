@@ -1,4 +1,5 @@
-'use client';
+import { msg } from '@ad/shared/messages';
+('use client');
 
 import {
   useCallback,
@@ -143,10 +144,10 @@ export function PlayerView(props: PlayerViewProps) {
       } else if (v?.webkitEnterFullscreen) {
         v.webkitEnterFullscreen();
       } else {
-        controller?.notify('Full screen is not available on this device', 'error');
+        controller?.notify(msg('player.fullscreenUnavailable'), 'error');
       }
     } catch {
-      controller?.notify('Full screen is not available on this device', 'error');
+      controller?.notify(msg('player.fullscreenUnavailable'), 'error');
     }
   }, [compact, controller]);
 
@@ -155,7 +156,7 @@ export function PlayerView(props: PlayerViewProps) {
       if (document.pictureInPictureElement) await document.exitPictureInPicture();
       else await videoEl.current?.requestPictureInPicture();
     } catch {
-      controller?.notify('Picture in picture is not available right now', 'error');
+      controller?.notify(msg('player.pipUnavailable'), 'error');
     }
   }, [controller]);
 

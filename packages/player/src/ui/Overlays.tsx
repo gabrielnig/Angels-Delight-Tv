@@ -1,3 +1,4 @@
+import { msg } from '@ad/shared/messages';
 import { formatClock } from '../format';
 import type { PlayerErrorKind, PlayerToast } from '../types';
 import { CloseIcon, PlayIcon } from './icons';
@@ -19,28 +20,28 @@ interface ErrorOverlayProps {
 
 const COPY: Record<PlayerErrorKind, { title: string; body: (p: number, ref: string) => string }> = {
   'connection-lost': {
-    title: 'Connection lost',
-    body: (p) => `We will keep your place at ${formatClock(p)}.`,
+    title: msg('player.error.connectionLost.title'),
+    body: (p) => msg('player.error.connectionLost.body', { time: formatClock(p) }),
   },
   offline: {
-    title: 'You are offline',
-    body: () => 'Connect to the internet to keep watching. Your place is saved.',
+    title: msg('player.error.offline.title'),
+    body: () => msg('player.error.offline.body'),
   },
   'session-expired': {
-    title: 'Sign in again to keep watching',
-    body: () => 'For your safety we signed you out. Your place is saved.',
+    title: msg('player.error.sessionExpired.title'),
+    body: () => msg('player.error.sessionExpired.body'),
   },
   removed: {
-    title: 'This video is no longer available',
-    body: () => 'It may have been taken down. Try something else.',
+    title: msg('player.error.removed.title'),
+    body: () => msg('player.error.removed.body'),
   },
   'cannot-play': {
-    title: 'This video cannot play on this device',
-    body: (_p, ref) => `Try another browser or device. Reference ${ref}.`,
+    title: msg('player.error.cannotPlay.title'),
+    body: (_p, ref) => msg('player.error.cannotPlay.body', { reference: ref }),
   },
   'unsupported-browser': {
-    title: 'This browser cannot play this video',
-    body: () => 'Use a recent version of Chrome, Edge, Firefox or Safari.',
+    title: msg('player.error.unsupportedBrowser.title'),
+    body: () => msg('player.error.unsupportedBrowser.body'),
   },
 };
 
