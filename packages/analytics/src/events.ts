@@ -1,13 +1,11 @@
 import { z } from 'zod';
-import { DEVICE_CLASSES, EVENT_SCHEMA_VERSION, type DeviceClass } from './constants';
+import { DEVICE_CLASSES, EVENT_SCHEMA_VERSION, VITAL_NAMES, type DeviceClass } from './constants';
 
-export { DEVICE_CLASSES, EVENT_SCHEMA_VERSION, type DeviceClass } from './constants';
+export { DEVICE_CLASSES, EVENT_SCHEMA_VERSION, VITAL_NAMES, type DeviceClass } from './constants';
 export const MAX_EVENTS_PER_BATCH = 50;
 export const MAX_BODY_BYTES = 16 * 1024;
 /** Six hours. A single play cannot accumulate more than this. */
 const MAX_WATCH_MS = 6 * 60 * 60 * 1000;
-
-export const VITAL_NAMES = ['LCP', 'INP', 'CLS', 'FCP', 'TTFB'] as const;
 
 const id = z.uuid();
 const ms = z.number().int().min(0).max(MAX_WATCH_MS);
