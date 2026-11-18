@@ -120,6 +120,12 @@ const workerShape = {
   /** Connection as ad_maintenance (SELECT and DELETE on view_events and audit_log only). Without it the two prune jobs are not registered. */
   DATABASE_URL_MAINTENANCE: postgresUrl.optional(),
   KEYS_DATABASE_URL_SHRED: postgresUrl,
+  /** The worker sends notification and export email from the outbox, and opens the saved staff addresses (M21-S03). */
+  FIELD_KEK: key32,
+  FIELD_KEK_PREVIOUS: key32.optional(),
+  SMTP_URL: z.string().regex(/^smtps?:\/\//, 'must be an smtp url'),
+  EMAIL_FROM: z.string().min(3),
+  SUPPORT_EMAIL: z.string().min(3).optional(),
   WHISPER_URL: z.url().optional(),
   /** Development and tests only: captions come from a scripted fake instead of the whisper service. Rejected in production. */
   WHISPER_FAKE: bool.default(false),

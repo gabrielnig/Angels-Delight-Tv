@@ -1,13 +1,24 @@
 'use client';
 
 import { useState, useTransition } from 'react';
-import { Switch } from './fields';
+import { SelectField, Switch } from './fields';
+
+export type EmailFrequency = 'immediate' | 'hourly' | 'daily';
 
 export interface Prefs {
   failures: boolean;
   captionsReady: boolean;
   dailySummary: boolean;
+  emailFrequency: EmailFrequency;
 }
+
+type SwitchKey = 'failures' | 'captionsReady' | 'dailySummary';
+
+const FREQUENCIES: Array<{ value: EmailFrequency; label: string }> = [
+  { value: 'immediate', label: 'At once' },
+  { value: 'hourly', label: 'Hourly summary' },
+  { value: 'daily', label: 'Daily summary at 7 in the morning' },
+];
 
 interface Props {
   prefs: Prefs;
@@ -16,14 +27,18 @@ interface Props {
   ) => Promise<{ ok: true; prefs: Prefs } | { ok: false; error: string }>;
 }
 
-const ROWS: Array<{ key: keyof Prefs; label: string; hint: string }> = [
+const ROWS: Array<{ key: SwitchKey; label: string; hint: string }> = [
   { key: 'failures', label: 'Failures', hint: 'Encoding or caption jobs that could not finish.' },
   {
     key: 'captionsReady',
     label: 'Captions ready to review',
     hint: 'When new captions are waiting for you.',
   },
-  { key: 'dailySummary', label: 'Daily summary', hint: 'One email a day with what happened.' },
+  {
+    key: 'dailySummary',
+    label: 'Daily summary',
+    hint: 'An extra email at 7 in the morning with the last 24 hours.',
+  },
 ];
 
 /** Which emails I get (M21-S05). Saves as each switch changes. Security email is always sent. */
@@ -33,7 +48,7 @@ export function NotificationPrefsCard({ prefs, save }: Props) {
   const [error, setError] = useState('');
   const [pending, start] = useTransition();
 
-  const change = (key: keyof Prefs, value: boolean) => {
+  const change = <K extends keyof Prefs>(key: K, value: Prefs[K]) => {
     const previous = values;
     setValues({ ...values, [key]: value });
     setStatus('idle');
@@ -78,6 +93,14 @@ export function NotificationPrefsCard({ prefs, save }: Props) {
           </li>
         ))}
       </ul>
+      <SelectField
+        label="How often"
+        hint="When failure and caption emails arrive. Summaries list everything new since the last one."
+        value={values.emailFrequency}
+        disabled={pending}
+        options={FREQUENCIES}
+        onChange={(event) => change('emailFrequency', event.target.value as EmailFrequency)}
+      />
       <p className="adm-muted">Security emails, like password resets, are always sent.</p>
       <p role="status" aria-live="polite" className="adm-muted">
         {status === 'saved' ? 'Saved' : ''}

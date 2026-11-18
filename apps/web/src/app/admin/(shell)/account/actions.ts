@@ -48,12 +48,16 @@ export async function saveNotificationPrefsAction(patch: {
   failures?: boolean;
   captionsReady?: boolean;
   dailySummary?: boolean;
+  emailFrequency?: string;
 }) {
   const actor = await requireActionActor('/admin/account');
   const result = await noticesAdmin.setPrefs(actor, {
     ...(typeof patch?.failures === 'boolean' ? { failures: patch.failures } : {}),
     ...(typeof patch?.captionsReady === 'boolean' ? { captionsReady: patch.captionsReady } : {}),
     ...(typeof patch?.dailySummary === 'boolean' ? { dailySummary: patch.dailySummary } : {}),
+    ...(typeof patch?.emailFrequency === 'string'
+      ? { emailFrequency: patch.emailFrequency as 'immediate' | 'hourly' | 'daily' }
+      : {}),
   });
   revalidatePath('/admin/account');
   return result;

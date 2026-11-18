@@ -1,10 +1,20 @@
 import { makeNotifier } from './notifier';
 import { runNightlyRollup } from '@ad/analytics';
 import type { WorkerEnv } from '@ad/config';
+import { Mailer, SmtpTransport, type MailTransport } from '@ad/mailer';
 import { createDb, createPool, type Database } from '@ad/db';
-import { DrizzleJobMirror, JobProducer, bossAdapter } from '@ad/queue';
+import {
+  DrizzleJobMirror,
+  JobProducer,
+  bossAdapter,
+  buildDigests,
+  drainOutbox,
+  pruneOutbox,
+  queueImmediateNotices,
+} from '@ad/queue';
 import type { Logger } from '@ad/shared';
 import { createStorage, storageConfigFromEnv } from '@ad/storage';
+import { readSetting } from '@ad/theme/settings';
 import {
   CaptionGenerator,
   ImageService,
@@ -17,6 +27,7 @@ import type { PgBoss } from 'pg-boss';
 import type { VideoHandlerDeps } from './handlers';
 import { chooseTranscriber } from './transcriber';
 import type { MaintenanceDeps } from './maintenance';
+import type { MailDeps } from './mail';
 import { makePrunes } from './prunes';
 
 // Cleanup never validates new uploads, so the limits here are placeholders.
@@ -91,5 +102,33 @@ export function buildVideoHandlerDeps(
     mirror,
     logger,
     notifier: makeNotifier(db, logger),
+  };
+}
+
+/**
+ * The mail jobs (M15-S01, M21-S03). The site name comes from settings at send time, so a rename reaches the next
+ * email. The worker has no access to theme colours, so those stay at the defaults. One SMTP attempt per run: the
+ * outbox does the retrying, with its own waits.
+ */
+export function buildMailDeps(
+  env: Pick<WorkerEnv, 'FIELD_KEK' | 'SMTP_URL' | 'EMAIL_FROM' | 'SUPPORT_EMAIL' | 'APP_ORIGIN'>,
+  db: Database,
+  options: { transport?: MailTransport } = {},
+): Omit<MailDeps, 'mirror' | 'logger'> {
+  const from = env.EMAIL_FROM;
+  const supportEmail = env.SUPPORT_EMAIL ?? /<([^>]+)>/.exec(from)?.[1] ?? from;
+  const kek = env.FIELD_KEK;
+  const mailer = new Mailer(options.transport ?? SmtpTransport.fromUrl(env.SMTP_URL), {
+    from,
+    appName: 'Angels Delight TV',
+    appOrigin: env.APP_ORIGIN,
+    supportEmail,
+    brand: async () => ({ appName: String(await readSetting(db, 'platform.name')) }),
+  });
+  return {
+    queueImmediate: () => queueImmediateNotices({ db, kek }),
+    drain: () => drainOutbox({ db, kek, mailer }),
+    prune: () => pruneOutbox(db),
+    digests: () => buildDigests({ db, kek }),
   };
 }
