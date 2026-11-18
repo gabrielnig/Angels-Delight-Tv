@@ -1263,6 +1263,7 @@
   display: none;
 }
 .adm-table-card {
+  position: relative; /* clips the absolutely placed .adm-sr text inside wide tables */
   padding: 0;
   overflow: hidden;
   gap: 0;
