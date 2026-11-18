@@ -16,6 +16,11 @@ import {
   type Suggestion,
 } from '../lib/data';
 import { currentAccountId, getSession, sessionCookieNames } from '../lib/session';
+import {
+  ALWAYS_ASK_COOKIE,
+  ALWAYS_ASK_MAX_AGE,
+  alwaysAskFromCookie,
+} from '../lib/profiles/always-ask';
 import { realDataEnabled } from '../server/data/mode';
 import { cookieProfileIo } from '../server/data/profile-io';
 
@@ -47,8 +52,24 @@ export async function signInAction(input: {
   next?: string;
 }): Promise<AuthResult> {
   const result = await getAuth().signIn(input);
-  if (result.ok) (await cookies()).delete(sessionCookieNames.fixture);
+  if (!result.ok) return result;
+  const jar = await cookies();
+  jar.delete(sessionCookieNames.fixture);
+  // M03-S11: a device set to always ask forgets the remembered profile so the picker shows.
+  if (alwaysAskFromCookie(jar.get(ALWAYS_ASK_COOKIE)?.value)) {
+    jar.delete(sessionCookieNames.profile);
+    if (realDataEnabled()) await cookieProfileIo().clearActive();
+    else jar.set(sessionCookieNames.fixture, 'noprofile', cookieOptions);
+  }
   return result;
+}
+
+/** Turns "Always ask who is watching" on or off for this device (M03-S11). */
+export async function setAlwaysAskAction(on: boolean): Promise<void> {
+  await currentAccountId();
+  const jar = await cookies();
+  if (on) jar.set(ALWAYS_ASK_COOKIE, '1', { ...cookieOptions, maxAge: ALWAYS_ASK_MAX_AGE });
+  else jar.delete(ALWAYS_ASK_COOKIE);
 }
 
 export async function signUpAction(input: {
