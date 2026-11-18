@@ -820,11 +820,14 @@ a {
 }
 .web-expandable[data-collapsed='true'] {
   display: -webkit-box;
-  -webkit-line-clamp: 4;
+  -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
 .web-expandable__toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
   min-height: 44px;
   padding-inline: var(--space-2);
   background: none;
@@ -833,6 +836,9 @@ a {
   font: inherit;
   font-weight: 600;
   cursor: pointer;
+}
+.web-expandable__toggle[aria-expanded='true'] .web-expandable__chevron {
+  transform: rotate(180deg);
 }
 .web-title__progress {
   display: flex;

@@ -1,8 +1,8 @@
 import type { Metadata } from 'next';
 import { notFound, permanentRedirect } from 'next/navigation';
 import { formatDuration } from '@ad/ui';
-import { AppShell } from '../../../../components/Shell';
-import { PublicTitle, TitleBlocked, TitleView } from '../../../../components/title/TitleView';
+import { TitleBlocked } from '../../../../components/title/TitleStates';
+import { PublicTitle, TitleView } from '../../../../components/title/TitleView';
 import { getCatalog, getLibrary } from '../../../../lib/data';
 import { previewMetadata } from '../../../../lib/seo';
 import { getRootTheme } from '../../../../lib/theme/root';
@@ -38,16 +38,14 @@ export default async function TitlePage({ params }: Params) {
     if (preview.type !== 'video') notFound();
     const video = preview.item;
     return (
-      <AppShell>
-        <PublicTitle
-          slug={slug}
-          thumbnail={video.thumbnail}
-          title={video.title}
-          description={video.description}
-          minutes={formatDuration(video.durationSeconds)}
-          category={video.categoryName}
-        />
-      </AppShell>
+      <PublicTitle
+        slug={slug}
+        thumbnail={video.thumbnail}
+        title={video.title}
+        description={video.description}
+        minutes={formatDuration(video.durationSeconds)}
+        category={video.categoryName}
+      />
     );
   }
   const { ctx } = await requireProfile(`/title/${slug}`);
@@ -55,16 +53,8 @@ export default async function TitlePage({ params }: Params) {
   if (!detail) notFound();
   if ('redirect' in detail) permanentRedirect(detail.redirect);
   if ('blocked' in detail) {
-    return (
-      <AppShell>
-        <TitleBlocked />
-      </AppShell>
-    );
+    return <TitleBlocked />;
   }
   const ids = await getLibrary().myListIds(ctx);
-  return (
-    <AppShell>
-      <TitleView detail={detail} inList={ids.includes(itemKey(detail.video))} />
-    </AppShell>
-  );
+  return <TitleView detail={detail} inList={ids.includes(itemKey(detail.video))} />;
 }
