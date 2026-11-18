@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { formatRelative } from '@/lib/admin/format';
 import { STORAGE_LABELS, qualityVerdicts, storageShares } from '@/lib/data/admin/system-rules';
-import type { Quality } from '@/lib/data/admin/system-rules';
+import type { Quality, StorageBudget } from '@/lib/data/admin/system-rules';
 import type { JobRecord, StorageUsage } from '@/lib/data/admin/types';
 import type { CommandResult } from '@/lib/data/admin/video-commands';
 import { formatBytes } from '@/lib/uploader/format';
@@ -12,7 +12,7 @@ import { Button } from './Button';
 import { Dialog } from './Dialog';
 import { ProgressBar } from './ProgressBar';
 import { TextArea } from './fields';
-import { EmptyState } from './states';
+import { Banner, EmptyState } from './states';
 import { Tabs } from './Tabs';
 import { useCommand } from './useCommand';
 
@@ -33,6 +33,7 @@ const ms = (v: number | null) => (v === null ? 'No data yet' : `${(v / 1000).toF
 export function SystemView({
   jobs,
   storage,
+  budget = null,
   quality,
   now,
   canAct,
@@ -41,6 +42,8 @@ export function SystemView({
 }: {
   jobs: JobRecord[];
   storage: StorageUsage[];
+  /** Usage against the saved budget. Null when the usage query failed. */
+  budget?: StorageBudget | null;
   quality: Quality;
   now: number;
   canAct: boolean;
@@ -138,6 +141,30 @@ export function SystemView({
       ) : tab === 'storage' ? (
         <div className="adm-card adm-stack">
           <h2 className="adm-h3">Storage used: {formatBytes(total)}</h2>
+          {budget === null ? (
+            <p className="adm-muted" style={{ margin: 0 }}>
+              Monthly estimate: Not available
+            </p>
+          ) : (
+            <div className="adm-stack">
+              {budget.status === 'ok' ? null : (
+                <Banner tone={budget.status === 'over' ? 'danger' : 'warning'}>
+                  {budget.status === 'over'
+                    ? 'Storage is over your budget. Delete files you no longer need or raise the budget.'
+                    : 'Storage has reached 80 percent of your storage budget, or will within 30 days at the recent pace. Plan to free space or raise the budget.'}
+                </Banner>
+              )}
+              <p className="adm-muted" style={{ margin: 0 }}>
+                Estimated in 30 days: {formatBytes(budget.estimateBytes)} of{' '}
+                {formatBytes(budget.capBytes)}, based on the last 30 days of uploads.
+              </p>
+              <ProgressBar
+                value={budget.usedPercent}
+                label={`${Math.round(budget.usedPercent)} percent of your storage budget used`}
+                tone={budget.status === 'over' ? 'danger' : 'primary'}
+              />
+            </div>
+          )}
           <ul className="adm-list">
             {shares.map((s) => (
               <li key={s.type}>

@@ -76,6 +76,49 @@ export function storageShares(usage: StorageUsage[]) {
     }));
 }
 
+/** Warn when usage, or the next 30 days at the recent pace, reaches this share of the budget (M22-S03). */
+export const STORAGE_WARN_PERCENT = 80;
+
+export interface StorageBudget {
+  usedBytes: number;
+  capBytes: number;
+  estimateBytes: number;
+  usedPercent: number;
+  estimatePercent: number;
+  status: 'ok' | 'warning' | 'over';
+}
+
+/**
+ * The monthly estimate is what is stored now plus what was added in the last 30 days. A budget that is
+ * missing or not positive never warns, so a settings mistake cannot raise a false alarm.
+ */
+export function storageBudget(input: {
+  usedBytes: number;
+  growth30Bytes: number;
+  capBytes: number;
+}): StorageBudget {
+  const used = Math.max(0, input.usedBytes);
+  const estimate = used + Math.max(0, input.growth30Bytes);
+  const valid = Number.isFinite(input.capBytes) && input.capBytes > 0;
+  const percent = (bytes: number) => (valid ? (bytes / input.capBytes) * 100 : 0);
+  const usedPercent = percent(used);
+  const estimatePercent = percent(estimate);
+  const status: StorageBudget['status'] =
+    usedPercent >= 100
+      ? 'over'
+      : usedPercent >= STORAGE_WARN_PERCENT || estimatePercent >= STORAGE_WARN_PERCENT
+        ? 'warning'
+        : 'ok';
+  return {
+    usedBytes: used,
+    capBytes: valid ? input.capBytes : 0,
+    estimateBytes: estimate,
+    usedPercent,
+    estimatePercent,
+    status,
+  };
+}
+
 export interface Quality {
   startupP50Ms: number | null;
   startupP75Ms: number | null;

@@ -41,8 +41,8 @@ import type { StaffRoleName } from './users-commands';
 import { randomBytes } from 'node:crypto';
 import { can } from '@/lib/admin/can';
 import { INLINE_EXPORT_MAX } from './exports-rules';
-import { discardJob, fixtureQuality, retryJob } from './system-rules';
-import type { Quality } from './system-rules';
+import { discardJob, fixtureQuality, retryJob, storageBudget } from './system-rules';
+import type { Quality, StorageBudget } from './system-rules';
 import type { CleanupResult, FailedEncodeRecord, JobRecord, StorageUsage } from './types';
 import {
   changePassword,
@@ -869,6 +869,8 @@ export interface SystemService {
   retryJob(actor: AdminActor, id: string): Promise<CommandResult>;
   discardJob(actor: AdminActor, id: string, reason: string): Promise<CommandResult>;
   storage(actor: AdminActor): Promise<StorageUsage[]>;
+  /** Usage against the saved budget, with the next 30 days estimated from the last 30 (M22-S03). */
+  storageBudget(actor: AdminActor): Promise<StorageBudget>;
   quality(actor: AdminActor): Promise<Quality>;
 }
 
@@ -889,6 +891,11 @@ const fixtureSystemService: SystemService = {
   async storage(actor) {
     need(actor, 'system.view');
     return structuredClone(getStore().storage);
+  },
+  async storageBudget(actor) {
+    need(actor, 'system.view');
+    const used = getStore().storage.reduce((n, u) => n + u.bytes, 0);
+    return storageBudget({ usedBytes: used, growth30Bytes: 0, capBytes: 200 * 1024 ** 3 });
   },
   async quality(actor) {
     need(actor, 'system.view');

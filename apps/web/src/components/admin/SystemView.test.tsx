@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { fixtureQuality } from '@/lib/data/admin/system-rules';
+import { fixtureQuality, storageBudget } from '@/lib/data/admin/system-rules';
 import { getStore } from '@/lib/data/admin/store';
 import { SystemView } from './SystemView';
 import { ToastProvider } from './Toast';
@@ -78,5 +78,39 @@ describe('SystemView', () => {
     );
     expect(screen.queryByRole('tab', { name: /Jobs/ })).toBeNull();
     expect(screen.getByRole('tab', { name: 'Storage', selected: true })).toBeTruthy();
+  });
+});
+
+describe('storage budget (M22-S03)', () => {
+  const GB = 1024 ** 3;
+  function storageTab(budget: ReturnType<typeof storageBudget> | null) {
+    render(
+      <ToastProvider>
+        <SystemView
+          jobs={[]}
+          storage={s.storage}
+          budget={budget}
+          quality={fixtureQuality()}
+          now={Date.now()}
+          canAct={false}
+          showJobs={false}
+          actions={{ retry: vi.fn(), discard: vi.fn() }}
+        />
+      </ToastProvider>,
+    );
+  }
+  it('shows the estimate and stays quiet under 80 percent', () => {
+    storageTab(storageBudget({ usedBytes: 10 * GB, growth30Bytes: 5 * GB, capBytes: 100 * GB }));
+    expect(screen.getByText(/Estimated in 30 days/)).toBeTruthy();
+    expect(screen.queryByText(/80 percent of your storage budget/)).toBeNull();
+    expect(screen.getByRole('progressbar', { name: /of your storage budget/ })).toBeTruthy();
+  });
+  it('warns in words with an icon at 80 percent', () => {
+    storageTab(storageBudget({ usedBytes: 82 * GB, growth30Bytes: 1 * GB, capBytes: 100 * GB }));
+    expect(screen.getByText(/80 percent of your storage budget/)).toBeTruthy();
+  });
+  it('says Not available when the usage query failed', () => {
+    storageTab(null);
+    expect(screen.getByText(/Not available/)).toBeTruthy();
   });
 });
