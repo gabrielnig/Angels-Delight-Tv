@@ -836,3 +836,15 @@ Format: decision, options considered, why, reversible or not. Newest first. Deci
 - Options: Slow 3G (500 kbit/s, 2 second target not reachable by any page with JavaScript), cold cache on every run (the story says previous visit), Lighthouse only.
 - Why: the story says a 3G connection and the cached list from the previous visit. Fast 3G is the profile Chrome calls 3G, and a repeat visit has warm static files. The fixture server hides server time, so the real stack needs a check at staging.
 - Reversible: yes.
+
+## D-160 Hero art takes the poster focus, cut from its own source, and the preview uses the real source shape (lane r2)
+- Decision: saving a poster focus also recuts the video's hero image (`hero_asset_id`) when it has one, through the same recut asset mechanism as the poster (a `hero` purpose asset with `cut_from` and `cut_focus`, from the hero's own source). The worker switches `hero_asset_id` when the recut is ready, and a focus back at the centre points the video at the hero source again. Series hero art is not covered, because series have no saved focus. For pictures that are not 16 by 9, the image worker also stores a small webp of the whole picture, flagged `full` in `assets.variants`, and the poster picker previews that picture with the real source shape (`previewRatio`). The viewer never gets the flagged variant. Pictures processed before this change have no full preview, so their crop preview stays an approximation until they are uploaded again.
+- Options: a hero focus column of its own, recut series hero art too, preview from the original through a signed admin route, backfill every old asset.
+- Why: the story says the saved focus applies to all variants, and the hero is the only other variant that exists. A flagged variant needs no migration and no signed route.
+- Reversible: yes.
+
+## D-161 A failed poster recut keeps the old poster and tells staff through the existing failure notice (lane r2)
+- Decision: when `image.process` fails for good on a recut, the asset is marked failed and the video keeps the poster it had. If the video still waits for that crop, staff get a bell notice (kind `encode_failed`, title "Poster crop could not be applied", linked to the poster page). The poster picker shows a red banner while the recut is failed and a quiet one while it is still being made, from `posterRecut` on the admin video. Saving again makes a fresh recut; a failed one is never reused, and failed leftovers are removed when a later recut succeeds.
+- Options: a new notice kind (needs a migration for the check constraint and a change in the digest), retry the job forever, fail the whole poster save.
+- Why: reusing the failure kind keeps the bell, the digest and their checks unchanged. The old poster stays because a recut is an improvement, not a requirement.
+- Reversible: yes.
