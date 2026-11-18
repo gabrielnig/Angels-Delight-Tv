@@ -4,14 +4,8 @@ import type { ReactNode } from 'react';
 import { Button, ButtonLink } from '@ad/ui';
 import { AcctIcon } from './icons';
 
-function Skel({ w, h, circle }: { w: string; h: string; circle?: boolean }) {
-  return (
-    <div
-      className="acct-skel"
-      data-shape={circle ? 'circle' : undefined}
-      style={{ width: w, height: h }}
-    />
-  );
+function Skel({ s, circle }: { s: string; circle?: boolean }) {
+  return <div className="acct-skel" data-s={s} data-shape={circle ? 'circle' : undefined} />;
 }
 
 /** S27 state 2. Shown by the route after 300 ms, static under reduced motion. */
@@ -20,27 +14,46 @@ export function AccountOverviewSkeleton({ label = 'Loading your account' }: { la
     <div role="status" aria-label={label} aria-busy="true" className="acct-skeleton">
       <section className="acct-card" data-gap="5">
         <div className="acct-row">
-          <Skel w="4rem" h="4rem" circle />
-          <div className="acct-col" style={{ gap: '0.625rem' }}>
-            <Skel w="12.5rem" h="1.25rem" />
-            <Skel w="16.25rem" h="0.875rem" />
-            <Skel w="10rem" h="0.875rem" />
+          <Skel s="avatar" circle />
+          <div className="acct-skel-stack">
+            <Skel s="name" />
+            <Skel s="email" />
+            <Skel s="meta" />
           </div>
         </div>
       </section>
       <section className="acct-card">
-        <Skel w="7.5rem" h="1.25rem" />
+        <Skel s="title" />
         <div className="acct-row">
-          <Skel w="4rem" h="4rem" circle />
-          <Skel w="4rem" h="4rem" circle />
-          <Skel w="4rem" h="4rem" circle />
-          <Skel w="4rem" h="4rem" circle />
+          <Skel s="avatar" circle />
+          <Skel s="avatar" circle />
+          <Skel s="avatar" circle />
+          <Skel s="avatar" circle />
         </div>
       </section>
       <section className="acct-card" data-gap="3">
-        <Skel w="100%" h="2.75rem" />
-        <Skel w="100%" h="2.75rem" />
-        <Skel w="100%" h="2.75rem" />
+        <Skel s="bar" />
+        <Skel s="bar" />
+        <Skel s="bar" />
+      </section>
+    </div>
+  );
+}
+
+/** S29 state 4: the settings card with a title, a hint and a control on every row. */
+export function SettingsSkeleton({ label = 'Loading your playback settings' }: { label?: string }) {
+  return (
+    <div role="status" aria-label={label} aria-busy="true" className="acct-skeleton">
+      <section className="acct-card acct-settings">
+        {[0, 1, 2, 3, 4].map((n) => (
+          <div key={n} className="acct-setting">
+            <div className="acct-skel-line">
+              <Skel s="text" />
+              <Skel s="sub" />
+            </div>
+            <Skel s="switch" />
+          </div>
+        ))}
       </section>
     </div>
   );
