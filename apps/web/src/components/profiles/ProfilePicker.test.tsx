@@ -123,3 +123,23 @@ describe('ProfilePicker', () => {
     expect(screen.getByRole('link', { name: 'Done' })).toHaveAttribute('href', '/profiles');
   });
 });
+
+describe('ProfilePicker manage mode keyboard', () => {
+  it('ends manage mode with Escape', async () => {
+    const user = userEvent.setup();
+    const onExitManage = vi.fn();
+    render(
+      <ProfilePicker profiles={four} max={5} mode="manage" onSelect={vi.fn()} onExitManage={onExitManage} />,
+    );
+    await user.keyboard('{Escape}');
+    expect(onExitManage).toHaveBeenCalledOnce();
+  });
+
+  it('ignores Escape when not managing', async () => {
+    const user = userEvent.setup();
+    const onExitManage = vi.fn();
+    render(<ProfilePicker profiles={four} max={5} onSelect={vi.fn()} onExitManage={onExitManage} />);
+    await user.keyboard('{Escape}');
+    expect(onExitManage).not.toHaveBeenCalled();
+  });
+});

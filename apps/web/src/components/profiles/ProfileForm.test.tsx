@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import type { Profile } from '../../lib/data';
@@ -176,5 +176,52 @@ describe('ProfileForm edit', () => {
       await screen.findByText('We could not delete this profile. Try again.'),
     ).toBeInTheDocument();
     expect(screen.getByRole('dialog')).toBeInTheDocument();
+  });
+});
+
+describe('ProfileForm suggested name and unsaved changes', () => {
+  it('pre-fills the suggested name, editable', async () => {
+    const user = userEvent.setup();
+    render(<ProfileForm suggestedName="Adaeze" onSave={vi.fn()} onDone={vi.fn()} />);
+    const field = screen.getByLabelText(/Name/);
+    expect(field).toHaveValue('Adaeze');
+    await user.type(field, 'x');
+    expect(field).toHaveValue('Adaezex');
+  });
+
+  it('leaves at once when nothing changed', async () => {
+    const user = userEvent.setup();
+    const onDone = vi.fn();
+    render(<ProfileForm profile={emeka} onSave={vi.fn()} onDone={onDone} />);
+    expect(screen.getByRole('link', { name: 'Cancel' })).toHaveAttribute('href', '/profiles/manage');
+    await user.click(screen.getByRole('link', { name: 'Cancel' }));
+    expect(screen.queryByRole('dialog')).toBeNull();
+  });
+
+  it('asks to discard or keep editing when there are unsaved changes', async () => {
+    const user = userEvent.setup();
+    const onDone = vi.fn();
+    render(<ProfileForm profile={emeka} onSave={vi.fn()} onDone={onDone} />);
+    await user.type(screen.getByLabelText(/Name/), 'x');
+    await user.click(screen.getByRole('link', { name: 'Cancel' }));
+    const dialog = screen.getByRole('dialog', { name: 'Discard your changes?' });
+    await user.click(within(dialog).getByRole('button', { name: 'Keep editing' }));
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(onDone).not.toHaveBeenCalled();
+    await user.click(screen.getByRole('link', { name: 'Cancel' }));
+    await user.click(screen.getByRole('button', { name: 'Discard changes' }));
+    expect(onDone).toHaveBeenCalled();
+  });
+
+  it('warns the browser before the tab closes with unsaved changes', async () => {
+    const user = userEvent.setup();
+    render(<ProfileForm profile={emeka} onSave={vi.fn()} onDone={vi.fn()} />);
+    const clean = new Event('beforeunload', { cancelable: true });
+    window.dispatchEvent(clean);
+    expect(clean.defaultPrevented).toBe(false);
+    await user.type(screen.getByLabelText(/Name/), 'x');
+    const dirty = new Event('beforeunload', { cancelable: true });
+    window.dispatchEvent(dirty);
+    expect(dirty.defaultPrevented).toBe(true);
   });
 });
