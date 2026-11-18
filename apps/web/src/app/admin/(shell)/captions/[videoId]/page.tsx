@@ -9,6 +9,8 @@ import { adminDataMode, captionService } from '@/lib/data/admin/services';
 import { requireActor } from '@/lib/data/admin/session-next';
 import {
   approveCaptionsAction,
+  alignScriptAction,
+  previewScriptAction,
   regenerateCaptionsAction,
   saveCuesAction,
   uploadCaptionsAction,
@@ -50,6 +52,8 @@ export default async function CaptionReviewPage({
           approve: approveCaptionsAction.bind(null, videoId),
           regenerate: regenerateCaptionsAction.bind(null, videoId),
           upload: uploadCaptionsAction.bind(null, videoId),
+          previewScript: previewScriptAction.bind(null, videoId),
+          alignScript: alignScriptAction.bind(null, videoId),
         }}
       />
     </>
