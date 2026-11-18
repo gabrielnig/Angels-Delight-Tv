@@ -82,7 +82,7 @@ export async function evaluateChecklist(
   const result =
     target === 'video'
       ? await tx.execute(sql`
-          SELECT (v.status = 'ready') AS encoding, char_length(btrim(v.title)) > 0 AS title,
+          SELECT (v.status = 'ready' AND EXISTS (SELECT 1 FROM video_keys k WHERE k.video_id = v.id)) AS encoding, char_length(btrim(v.title)) > 0 AS title,
             char_length(btrim(coalesce(v.description, ''))) > 0 AS description,
             EXISTS (SELECT 1 FROM assets a WHERE a.id = v.poster_asset_id AND a.status = 'ready') AS poster,
             EXISTS (SELECT 1 FROM video_categories vc WHERE vc.video_id = v.id) AS category,

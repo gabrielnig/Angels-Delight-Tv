@@ -13,6 +13,16 @@ export interface PlaybackHttpDeps {
   /** Client address after trusted proxy handling. */
   clientIp(request: Request): string;
   onUnexpected?(error: unknown, request: Request): void;
+  /**
+   * Called for a refused playback request (401, 403 or 429), so a log line can be written. The info carries no
+   * token, cookie or account id: route, status, video id and the client address only.
+   */
+  onDenied?(info: {
+    route: 'key' | 'master' | 'variant';
+    status: number;
+    videoId: string;
+    ip: string;
+  }): void;
 }
 
 const SECURE_HEADERS = {
@@ -40,6 +50,24 @@ export function createPlaybackHandlers(deps: PlaybackHttpDeps) {
       response.headers.set('referrer-policy', 'no-referrer');
       return response;
     }
+  }
+
+  const DENIED = new Set([401, 403, 429]);
+  async function audited(
+    route: 'key' | 'master' | 'variant',
+    request: Request,
+    videoId: string,
+    fn: () => Promise<Response>,
+  ): Promise<Response> {
+    const response = await run(request, fn);
+    if (DENIED.has(response.status)) {
+      try {
+        deps.onDenied?.({ route, status: response.status, videoId, ip: deps.clientIp(request) });
+      } catch {
+        // A log failure never changes the answer.
+      }
+    }
+    return response;
   }
 
   const playlist = (body: string) =>
@@ -78,21 +106,21 @@ export function createPlaybackHandlers(deps: PlaybackHttpDeps) {
 
     /** GET /api/play/{id}/master.m3u8 */
     master: (request: Request, videoId: string) =>
-      run(request, async () => {
+      audited('master', request, videoId, async () => {
         const { token, viaQuery } = tokenOf(request);
         return playlist(await deps.service.master(token, videoId, viaQuery));
       }),
 
     /** GET /api/play/{id}/{height}.m3u8 */
     variant: (request: Request, videoId: string, height: string) =>
-      run(request, async () => {
+      audited('variant', request, videoId, async () => {
         const { token, viaQuery } = tokenOf(request);
         return playlist(await deps.service.variant(token, videoId, height, viaQuery));
       }),
 
     /** GET /api/hls/keys/{id}. Sixteen raw bytes. */
     key: (request: Request, videoId: string) =>
-      run(request, async () => {
+      audited('key', request, videoId, async () => {
         const { token } = tokenOf(request);
         const key = await deps.service.key(token, videoId, deps.clientIp(request));
         return new Response(Buffer.from(key), {

@@ -19,6 +19,7 @@ import {
   keyring,
   secretRing,
 } from '@ad/video';
+import { truncateIp } from '@ad/security';
 import { createLogger } from '@ad/shared';
 import { getActor, getViewer } from '../auth/request-actor';
 import { authRuntime } from '../auth/runtime';
@@ -103,6 +104,13 @@ function build(): VideoApi {
           devMedia: createDevMediaHandler({ nodeEnv: env.NODE_ENV, mediaSecret: secret, media }),
         }
       : {}),
+    onDenied: (info) =>
+      logger.warn('playback denied', {
+        route: info.route,
+        status: info.status,
+        videoId: info.videoId,
+        ip: truncateIp(info.ip),
+      }),
     onUnexpected: (error, request) =>
       logger.error('video route failed', { err: error, path: new URL(request.url).pathname }),
   });

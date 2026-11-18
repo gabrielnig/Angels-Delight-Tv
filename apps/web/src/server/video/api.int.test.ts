@@ -74,7 +74,12 @@ describe.skipIf(!integrationEnabled())('video api routes', () => {
     key16 = generateHlsKey();
     await h.db.setup
       .insert(schema.videoKeys)
-      .values({ videoId: video.id, ...wrapHlsKey(keyring(hlsKek), video.id, key16) });
+      .values({ videoId: video.id, ...wrapHlsKey(keyring(hlsKek), video.id, key16) })
+      // seedVideo already stored a placeholder key for the publish check.
+      .onConflictDoUpdate({
+        target: schema.videoKeys.videoId,
+        set: { ...wrapHlsKey(keyring(hlsKek), video.id, key16) },
+      });
     await originals.put(
       `templates/${video.id}/master.m3u8`,
       new TextEncoder().encode(

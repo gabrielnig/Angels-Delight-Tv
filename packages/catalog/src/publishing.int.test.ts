@@ -1,5 +1,5 @@
 import { eq } from 'drizzle-orm';
-import { captions, captionTracks, videos } from '@ad/db';
+import { captions, captionTracks, videoKeys, videos } from '@ad/db';
 import { uuidv7 } from '@ad/shared';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { cancelSchedule, promoteDueScheduled, publish, unpublish } from './publishing';
@@ -59,6 +59,15 @@ describe.skipIf(!integrationEnabled())('publishing', () => {
     const r = await publish(ctxFor(), editor, 'video', v.id);
     expect(r.publishState).toBe('published');
     expect(r.publishedAt).toBe(NOW.toISOString());
+  });
+
+  it('blocks publishing when the encrypted video has no HLS key (M31-S02)', async () => {
+    const v = await draft();
+    await t.setup.delete(videoKeys).where(eq(videoKeys.videoId, v.id));
+    await expect(publish(ctxFor(), editor, 'video', v.id)).rejects.toMatchObject({
+      fields: { checklist: ['Encoding is finished'] },
+    });
+    expect((await state(v.id)).publishState).toBe('draft');
   });
 
   it('lists every missing item when the checklist fails', async () => {
