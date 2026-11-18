@@ -11,6 +11,7 @@ describe('CI workflow (M33-S02 AC1)', () => {
   });
 
   it.each([
+    ['dependency audit that blocks on high', /pnpm audit --prod --audit-level=high/],
     ['lint', /run: pnpm lint/],
     ['typecheck', /run: pnpm typecheck/],
     ['scoped tests for changed paths', /vitest run --changed origin\/main/],
