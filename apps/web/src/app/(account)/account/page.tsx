@@ -1,8 +1,12 @@
+import { cookies } from 'next/headers';
+import { AlwaysAskSetting } from '../../../components/account/AlwaysAskSetting';
 import { AccountFrame } from '../../../components/account/AccountFrame';
 import { AccountOverview } from '../../../components/account/AccountOverview';
 import { AdultsOnly } from '../../../components/account/AccountStates';
 import { ACCOUNT_PAGES } from '../../../components/account/pages';
 import { getAccount, getProfiles } from '../../../lib/data';
+import { ALWAYS_ASK_COOKIE, alwaysAskFromCookie } from '../../../lib/profiles/always-ask';
+import { setAlwaysAskAction } from '../../actions';
 import { requireProfile } from '../../../lib/session';
 
 export const metadata = { title: 'Account' };
@@ -15,6 +19,7 @@ export default async function AccountPage() {
     getProfiles().list(session.accountId),
     getAccount().devices(session.accountId),
   ]);
+  const alwaysAsk = alwaysAskFromCookie((await cookies()).get(ALWAYS_ASK_COOKIE)?.value);
   const here = devices.find((d) => d.current);
   const copy = ACCOUNT_PAGES['/account']!;
   return (
@@ -25,6 +30,7 @@ export default async function AccountPage() {
         maxProfiles={getProfiles().maxProfiles}
         currentDevice={here ? `${here.label}, ${here.place}` : null}
       />
+      <AlwaysAskSetting initial={alwaysAsk} onSave={setAlwaysAskAction} />
     </AccountFrame>
   );
 }

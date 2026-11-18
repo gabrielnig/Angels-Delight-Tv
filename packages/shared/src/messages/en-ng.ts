@@ -33,6 +33,11 @@ export const EN_NG = {
   'account.data.lead': 'Download a copy of your data or close your account.',
   'account.data.error': 'We could not load your data settings',
 
+  'account.whoIsWatching.label': 'Always ask who is watching',
+  'account.whoIsWatching.hint':
+    'Show the profile picker every time someone signs in on this device. Good for a shared tablet.',
+  'account.saveFailed': 'We could not save that. Try again.',
+
   // Player
   'player.resumed': 'Resumed from {time}',
   'player.captionsFailed': 'Captions could not load',
