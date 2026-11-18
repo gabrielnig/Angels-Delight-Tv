@@ -59,6 +59,24 @@ jobs:
       - name: Typecheck
         run: pnpm typecheck
 
+      # M33-S02: the production build must compile, not only typecheck.
+      - name: Build
+        run: pnpm --filter @ad/web build
+
+      # Semgrep with the typescript and security-audit packs. Findings need a reviewed nosemgrep note.
+      - name: Static analysis
+        run: |
+          pip install --quiet semgrep==1.186.0
+          scripts/sast.sh
+
+      # CycloneDX bill of materials for the runtime dependencies, kept with the run.
+      - name: SBOM
+        run: node scripts/sbom.mjs sbom.cdx.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: sbom
+          path: sbom.cdx.json
+
       # Never the whole suite (docs/DECISIONS.md D-012). Only tests affected by this change.
       - name: Affected tests
         run: pnpm exec vitest run --changed origin/main --passWithNoTests

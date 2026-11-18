@@ -93,8 +93,15 @@ Method: read auth, sessions, staff, viewer, playback, upload, edge, theme, confi
 - Secrets: `.env*` ignored and in `.dockerignore`, no key material in history (grep), `DEV_SKIP_MFA` and fixture auth cannot run in production, install scripts limited to `esbuild`, `sharp`, `unrs-resolver`.
 - Production only routes: dev storage and dev media answer 404 unless the local driver runs outside production.
 
+## Supply chain checks (lane a3)
+
+- Static analysis: `pnpm sast` runs Semgrep 1.186 with the `p/typescript` and `p/security-audit` packs over `apps` and `packages`, skipping tests, e2e and fixtures. First run, 5 findings, all triaged. Fixed: AES-GCM without an explicit tag length in `packages/shared/src/crypto.ts` and `packages/launch/src/backup/crypto.ts` (tags were already sliced at 16 bytes, `authTagLength: 16` now also rejects a short tag). Accepted with a `nosemgrep` note: `dangerouslySetInnerHTML` in the 2FA QR (SVG from our own encoder) and in the theme style tag (CSS from the validated compiler). Skipped: a Python test helper. CI runs it on every pull request and fails on a new finding.
+- SBOM: `pnpm sbom` writes `sbom.cdx.json` (CycloneDX 1.5, 196 runtime components, purls). It reads `pnpm list --prod` because cyclonedx-npm and cdxgen see almost nothing in a pnpm workspace. CI keeps it as the `sbom` artifact. Attach it to each release.
+- L-3 and L-4 retest: the real edge Worker runs in workerd (`apps/edge/src/worker.miniflare.test.ts`) and a real browser plays AES-128 HLS through it (`pnpm --filter @ad/web test:e2e:hls`). L-3 is back to a 2 hour segment url (D-120). L-4 stands: `cap/` and `img/` answer without a signature, as proven by the Worker test, and the 80 bit prefix or hashed name is the only guard.
+- Base images, none is pinned by digest today: `node:24-bookworm-slim` (web and worker), `python:3.12-slim` (whisper), `postgres:17-alpine`, `caddy:2-alpine`, `axllent/mailpit:v1.34`, and MinIO and mc by release tag (MinIO is unverified, D-017). SECURITY.md section 14 and DEPLOYMENT.md already require digests. At release: resolve each tag with `docker buildx imagetools inspect <image:tag>`, write `image@sha256:...` in the Dockerfiles and compose file, let CI rebuild monthly, and add Trivy on the built images. Floating tags are acceptable for development only. Do not pin to a digest copied from a machine that has not pulled it, because the build then fails.
+
 ## Open work
 
 - Run `scripts/check-headers.sh https://<production host>` after the first deploy and keep it in the release checklist.
-- L-11 leftovers: Semgrep, Trivy, SBOM and base image digests.
+- L-11 leftovers: Trivy and base image digests (Semgrep and the SBOM are done, see the supply chain section).
 - Owner choice on L-12 (see the table).
