@@ -100,6 +100,7 @@ export function createHttpTransport(options: HttpTransportOptions = {}): UploadT
         size: input.size,
         type: input.type,
         fingerprint: input.fingerprint,
+        ...(input.replaceVideoId ? { replaceVideoId: input.replaceVideoId } : {}),
       });
       const data = (await response.json()) as {
         uploadId: string;

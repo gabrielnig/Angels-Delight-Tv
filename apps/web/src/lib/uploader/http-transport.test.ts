@@ -83,4 +83,21 @@ describe('http transport', () => {
     expect(error).toBeInstanceOf(TransportError);
     expect((error as TransportError).kind).toBe('network');
   });
+
+  it('sends replaceVideoId when a video file is being replaced', async () => {
+    const bodies: unknown[] = [];
+    const fetcher = async (_url: string, init?: RequestInit) => {
+      bodies.push(JSON.parse(String(init?.body)));
+      return json({ uploadId: 'u1', partSize: 8388608, totalParts: 1 });
+    };
+    const transport = createHttpTransport({ fetch: fetcher as never, putPart: async () => {} });
+    await transport.start({
+      fingerprint: 'f',
+      name: 'a.mp4',
+      size: 1000,
+      type: 'video/mp4',
+      replaceVideoId: 'vid-1',
+    });
+    expect(bodies[0]).toMatchObject({ replaceVideoId: 'vid-1' });
+  });
 });

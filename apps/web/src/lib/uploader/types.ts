@@ -47,6 +47,8 @@ export interface UploadTransport {
     size: number;
     type: string;
     resumeUploadId?: string;
+    /** The upload replaces the file of this existing video instead of making a new draft. */
+    replaceVideoId?: string;
   }): Promise<StartResult>;
   uploadPart(request: PartRequest): Promise<void>;
   complete(uploadId: string): Promise<void>;
@@ -73,6 +75,7 @@ export interface Lane {
   size: number;
   type: string;
   fingerprint: string;
+  replaceVideoId?: string;
   status: LaneStatus;
   uploadId?: string;
   videoId?: string;

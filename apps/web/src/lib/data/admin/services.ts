@@ -39,7 +39,7 @@ import { randomBytes } from 'node:crypto';
 import { can } from '@/lib/admin/can';
 import { discardJob, fixtureQuality, retryJob } from './system-rules';
 import type { Quality } from './system-rules';
-import type { JobRecord, StorageUsage } from './types';
+import type { CleanupResult, FailedEncodeRecord, JobRecord, StorageUsage } from './types';
 import {
   changePassword,
   ensureAccount,
@@ -111,6 +111,8 @@ export function uploadTransportMode(): 'fixture' | 'http' {
 
 // ---- Videos ----
 
+const cleanedFixtures = new Set<string>();
+
 export interface VideoService {
   list(actor: AdminActor, query: VideoQuery): Promise<Page<VideoRecord>>;
   get(actor: AdminActor, id: string): Promise<VideoRecord>;
@@ -138,6 +140,11 @@ export interface VideoService {
   restore(actor: AdminActor, id: string): Promise<CommandResult>;
   purge(actor: AdminActor, id: string): Promise<CommandResult>;
   encodingQueue(actor: AdminActor): Promise<VideoRecord[]>;
+  /** Failed encodes with what they left behind (M14-S06). Technical detail is only returned to admins. */
+  failedEncodes(actor: AdminActor): Promise<FailedEncodeRecord[]>;
+  /** Removes partial output of one failed video so Retry starts clean. The original file is kept. */
+  cleanupFailed(actor: AdminActor, id: string): Promise<CleanupResult>;
+  cleanupAllFailed(actor: AdminActor): Promise<CleanupResult>;
   /** Fixture only: the real upload API creates the draft video itself. */
   createFromUpload(
     actor: AdminActor,
@@ -270,6 +277,53 @@ const fixtureVideoService: VideoService = {
     });
     store.videos.unshift(video);
     return { id: video.id };
+  },
+  async failedEncodes(actor) {
+    need(actor, 'video.edit');
+    return getStore()
+      .videos.filter((v) => v.status === 'failed' && v.deletedAt === null)
+      .map((v) => ({
+        videoId: v.id,
+        title: v.title,
+        failedAt: v.updatedAt,
+        code: null,
+        plain: v.failure?.reason ?? 'Something went wrong while preparing this video.',
+        technical: actor.role === 'admin' ? 'Fixture data: no technical detail.' : null,
+        stage: v.failure?.stage ?? null,
+        attempts: 3,
+        hasOriginal: true,
+        originalBytes: 52_428_800,
+        canRetry: true,
+        leftoverFiles: cleanedFixtures.has(v.id) ? 0 : 3,
+        leftoverBytes: cleanedFixtures.has(v.id) ? 0 : 12_582_912,
+      }));
+  },
+  async cleanupFailed(actor, id) {
+    need(actor, 'video.edit');
+    const video = getStore().videos.find((v) => v.id === id && v.deletedAt === null);
+    if (!video) throw new NotFound('Video not found');
+    if (video.status !== 'failed') return { ok: false, error: 'Only a failed video can be cleaned up.' };
+    const first = !cleanedFixtures.has(id);
+    cleanedFixtures.add(id);
+    return {
+      ok: true,
+      videos: 1,
+      removedFiles: first ? 3 : 0,
+      freedBytes: first ? 12_582_912 : 0,
+    };
+  },
+  async cleanupAllFailed(actor) {
+    need(actor, 'video.edit');
+    let removedFiles = 0;
+    let freedBytes = 0;
+    const failed = getStore().videos.filter((v) => v.status === 'failed' && v.deletedAt === null);
+    for (const v of failed) {
+      if (cleanedFixtures.has(v.id)) continue;
+      cleanedFixtures.add(v.id);
+      removedFiles += 3;
+      freedBytes += 12_582_912;
+    }
+    return { ok: true, videos: failed.length, removedFiles, freedBytes };
   },
   async encodingQueue(actor) {
     need(actor, 'video.edit');

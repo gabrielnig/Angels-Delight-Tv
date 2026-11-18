@@ -187,6 +187,7 @@ export function createUploader(options: UploaderOptions) {
         size: lane.size,
         type: lane.type,
         resumeUploadId: lane.uploadId ?? store?.get(lane.fingerprint),
+        ...(lane.replaceVideoId ? { replaceVideoId: lane.replaceVideoId } : {}),
       });
     } catch {
       if (!signal.aborted) fail(record, 'Upload failed before it began. Try again.');
@@ -304,7 +305,7 @@ export function createUploader(options: UploaderOptions) {
   });
 
   return {
-    add(file: UploadSource): Lane {
+    add(file: UploadSource, options?: { replaceVideoId?: string }): Lane {
       const extension = file.name.split('.').pop()?.toLowerCase() ?? '';
       if (!extensions.includes(extension)) {
         return reject(file, `${file.name} is not supported. Use MP4, MOV or MKV.`);
@@ -321,6 +322,7 @@ export function createUploader(options: UploaderOptions) {
         return reject(file, `${file.name} is already in the queue.`);
       }
       const lane = newLane(file);
+      if (options?.replaceVideoId) lane.replaceVideoId = options.replaceVideoId;
       records.push(newRecord(lane, file));
       notify();
       pump();

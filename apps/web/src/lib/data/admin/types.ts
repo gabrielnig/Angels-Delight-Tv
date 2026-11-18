@@ -188,3 +188,24 @@ export interface StorageUsage {
   bytes: number;
   files: number;
 }
+
+/** A failed encode as the cleanup screen shows it. `technical` is only filled for admins. */
+export interface FailedEncodeRecord {
+  videoId: string;
+  title: string;
+  failedAt: string;
+  code: string | null;
+  plain: string;
+  technical: string | null;
+  stage: string | null;
+  attempts: number;
+  hasOriginal: boolean;
+  originalBytes: number | null;
+  canRetry: boolean;
+  leftoverFiles: number;
+  leftoverBytes: number;
+}
+
+export type CleanupResult =
+  | { ok: true; videos: number; removedFiles: number; freedBytes: number }
+  | { ok: false; error: string };
