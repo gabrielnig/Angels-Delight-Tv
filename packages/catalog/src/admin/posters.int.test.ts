@@ -45,7 +45,10 @@ describe.skipIf(!integrationEnabled())('admin poster assets', () => {
     });
     expect(out.ok).toBe(true);
     if (!out.ok) return;
-    expect(calls).toEqual([`store:${posterUploadKey(videoId, out.assetId)}`, 'enqueue:image.process']);
+    expect(calls).toEqual([
+      `store:${posterUploadKey(videoId, out.assetId)}`,
+      'enqueue:image.process',
+    ]);
     const [row] = await t.setup.select().from(assets).where(eq(assets.id, out.assetId));
     expect(row).toMatchObject({
       status: 'processing',
@@ -75,20 +78,36 @@ describe.skipIf(!integrationEnabled())('admin poster assets', () => {
           status: 'ready',
           rawKey: `candidates/${videoId}/2`,
           mime: 'image/webp',
+          candidateScore: 82,
           variants: [
             { width: 640, height: 360, key: 'img/f/640-aa.webp', bytes: 1, format: 'webp' },
             { width: 320, height: 180, key: 'img/f/320-bb.webp', bytes: 1, format: 'webp' },
           ],
         },
-        { purpose: 'thumbnail', status: 'processing', rawKey: `candidates/${videoId}/1`, mime: 'image/webp' },
-        { purpose: 'thumbnail', status: 'ready', rawKey: `candidates/${other}/1`, mime: 'image/webp' },
+        {
+          purpose: 'thumbnail',
+          status: 'processing',
+          rawKey: `candidates/${videoId}/1`,
+          mime: 'image/webp',
+        },
+        {
+          purpose: 'thumbnail',
+          status: 'ready',
+          rawKey: `candidates/${other}/1`,
+          mime: 'image/webp',
+        },
       ])
       .returning({ id: assets.id });
     expect(mine).toHaveLength(3);
     const list = await listPosterAssets(ctx, editor, videoId, 'https://m.test');
     const frames = list.filter((a) => a.source === 'frame');
     expect(frames.map((f) => f.label)).toEqual(['Frame 1', 'Frame 2']);
-    expect(frames[1]).toMatchObject({ status: 'ready', url: 'https://m.test/img/f/320-bb.webp' });
+    expect(frames[1]).toMatchObject({
+      status: 'ready',
+      url: 'https://m.test/img/f/320-bb.webp',
+      score: 82,
+    });
+    expect(frames[0]).toMatchObject({ score: null });
     expect(frames[0]).toMatchObject({ status: 'processing', url: null });
     expect(list.some((a) => a.source === 'upload')).toBe(true);
   });
@@ -96,7 +115,12 @@ describe.skipIf(!integrationEnabled())('admin poster assets', () => {
   it('reports the status of one asset', async () => {
     const [created] = await t.setup
       .insert(assets)
-      .values({ purpose: 'thumbnail', status: 'failed', rawKey: `uploads/${videoId}/x`, mime: 'image/png' })
+      .values({
+        purpose: 'thumbnail',
+        status: 'failed',
+        rawKey: `uploads/${videoId}/x`,
+        mime: 'image/png',
+      })
       .returning({ id: assets.id });
     const id = created!.id;
     expect(await getPosterAssetStatus(ctx, editor, id)).toEqual({ status: 'failed' });

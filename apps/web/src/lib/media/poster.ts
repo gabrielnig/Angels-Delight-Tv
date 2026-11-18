@@ -4,7 +4,7 @@ export interface PosterVariant {
   height: number;
   url: string;
   /** Absent means webp, the format of variants made before jpeg copies existed. */
-  format?: 'webp' | 'jpeg';
+  format?: 'avif' | 'webp' | 'jpeg';
 }
 
 export interface PosterSources {
@@ -15,6 +15,8 @@ export interface PosterSources {
   height: number;
   /** jpeg copy for browsers that cannot read webp. Absent when there is only one format. */
   fallback?: { src: string; srcSet: string };
+  /** avif copy, offered first to browsers that read it. Absent when there is none. */
+  avif?: { srcSet: string };
 }
 
 /**
@@ -29,7 +31,8 @@ export function buildPosterSources(
     .filter((v) => v.url && v.width > 0 && v.height > 0)
     .sort((a, b) => a.width - b.width);
   const jpeg = usable.filter((v) => v.format === 'jpeg');
-  const webp = usable.filter((v) => v.format !== 'jpeg');
+  const avif = usable.filter((v) => v.format === 'avif');
+  const webp = usable.filter((v) => v.format !== 'jpeg' && v.format !== 'avif');
   const main = webp.length > 0 ? webp : jpeg;
   if (main.length === 0) return null;
 
@@ -53,5 +56,6 @@ export function buildPosterSources(
     const offeredJpeg = offer(jpeg);
     out.fallback = { src: middle(offeredJpeg).url, srcSet: set(offeredJpeg) };
   }
+  if (avif.length > 0) out.avif = { srcSet: set(offer(avif)) };
   return out;
 }

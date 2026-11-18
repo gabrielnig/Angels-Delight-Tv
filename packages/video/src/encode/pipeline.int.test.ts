@@ -340,22 +340,82 @@ describe.skipIf(!integrationEnabled())('VideoPipeline against Postgres and local
   });
 
   describe('thumbnails', () => {
-    it('creates three candidates and defaults the poster to the middle frame', async () => {
-      const video = await newVideo({ durationMs: 14000 });
+    it('creates six candidates at evenly spaced points, each with a score', async () => {
+      runner.probe = fakeProbeJson({ seconds: 60 });
+      const video = await newVideo({ durationMs: 60000 });
       await pipeline.thumbnails(video.id, progress);
       const candidates = await t.db.select().from(schema.assets);
       const mine = candidates.filter((a) => a.rawKey?.startsWith(`candidates/${video.id}/`));
       expect(mine.map((a) => a.rawKey).sort()).toEqual(
-        [1, 2, 3].map((n) => `candidates/${video.id}/${n}`),
+        [1, 2, 3, 4, 5, 6].map((n) => `candidates/${video.id}/${n}`),
       );
       // Frames are stored as sources and sized by the image.process job.
       expect(mine.every((a) => a.status === 'processing' && a.mime === 'image/webp')).toBe(true);
       for (const asset of mine) expect(await originals.head(asset.rawKey!)).not.toBeNull();
-      const queued = await t.db.select().from(schema.jobs).where(eq(schema.jobs.queue, 'image.process'));
-      expect(queued.filter((j) => mine.some((a) => a.id === j.assetId))).toHaveLength(3);
-      expect((await row(video.id)).posterAssetId).toBe(
-        mine.find((a) => a.rawKey!.endsWith('/2'))!.id,
+      expect(mine.every((a) => a.candidateScore !== null && a.candidateScore > 70)).toBe(true);
+      const queued = await t.db
+        .select()
+        .from(schema.jobs)
+        .where(eq(schema.jobs.queue, 'image.process'));
+      expect(queued.filter((j) => mine.some((a) => a.id === j.assetId))).toHaveLength(6);
+      // Slots are the middle of each sixth of the video: about 5, 15, 25, 35, 45 and 55 seconds.
+      const firstTries = runner.frameTimes.slice(0, 6).map((n) => Math.round(n));
+      expect(firstTries).toEqual([5, 15, 25, 35, 45, 55]);
+    });
+
+    it('defaults the poster to the best scoring frame, the one nearest the middle on a tie', async () => {
+      runner.probe = fakeProbeJson({ seconds: 60 });
+      const video = await newVideo({ durationMs: 60000 });
+      await pipeline.thumbnails(video.id, progress);
+      const mine = (await t.db.select().from(schema.assets)).filter((a) =>
+        a.rawKey?.startsWith(`candidates/${video.id}/`),
       );
+      expect((await row(video.id)).posterAssetId).toBe(
+        mine.find((a) => a.rawKey!.endsWith('/3'))!.id,
+      );
+    });
+
+    it('avoids a black frame by trying nearby points, and keeps the better one', async () => {
+      runner.frame = (at) => (Math.round(at) === 15 ? 'black' : 'good');
+      runner.probe = fakeProbeJson({ seconds: 60 });
+      const video = await newVideo({ durationMs: 60000 });
+      await pipeline.thumbnails(video.id, progress);
+      const mine = (await t.db.select().from(schema.assets)).filter((a) =>
+        a.rawKey?.startsWith(`candidates/${video.id}/`),
+      );
+      expect(mine).toHaveLength(6);
+      // The black slot was tried again further along, and the frame kept is not black.
+      expect(runner.frameTimes.filter((n) => Math.abs(n - 15) < 0.6)).toHaveLength(1);
+      expect(runner.frameTimes.length).toBeGreaterThan(6);
+      const second = mine.find((a) => a.rawKey!.endsWith('/2'))!;
+      expect(second.candidateScore).toBeGreaterThan(70);
+    });
+
+    it('keeps the least bad frame and scores it low when every try is black', async () => {
+      runner.frame = () => 'black';
+      runner.probe = fakeProbeJson({ seconds: 60 });
+      const video = await newVideo({ durationMs: 60000 });
+      await pipeline.thumbnails(video.id, progress);
+      const mine = (await t.db.select().from(schema.assets)).filter((a) =>
+        a.rawKey?.startsWith(`candidates/${video.id}/`),
+      );
+      expect(mine).toHaveLength(6);
+      expect(mine.every((a) => a.candidateScore === 0)).toBe(true);
+      // Never more than three tries per slot.
+      expect(runner.frameTimes.length).toBeLessThanOrEqual(18);
+    });
+
+    it('still makes a candidate, with no score, when a frame cannot be read for scoring', async () => {
+      runner.frame = (at) => (Math.round(at) === 25 ? 'broken' : 'good');
+      runner.probe = fakeProbeJson({ seconds: 60 });
+      const video = await newVideo({ durationMs: 60000 });
+      await pipeline.thumbnails(video.id, progress);
+      const mine = (await t.db.select().from(schema.assets)).filter((a) =>
+        a.rawKey?.startsWith(`candidates/${video.id}/`),
+      );
+      expect(mine).toHaveLength(6);
+      expect(mine.find((a) => a.rawKey!.endsWith('/3'))!.candidateScore).toBeNull();
+      expect(mine.filter((a) => a.candidateScore !== null)).toHaveLength(5);
     });
 
     it('is idempotent and does not replace a poster an admin chose', async () => {
@@ -373,10 +433,14 @@ describe.skipIf(!integrationEnabled())('VideoPipeline against Postgres and local
       const video = await newVideo({ durationMs: 14000, width: 1280, height: 720 });
       await pipeline.thumbnails(video.id, progress);
       const stored = await row(video.id);
-      expect(stored.spriteKey).toMatch(new RegExp(`^cap/${stored.mediaPrefix}/sprites/map-[0-9a-f]{8}\\.vtt$`));
+      expect(stored.spriteKey).toMatch(
+        new RegExp(`^cap/${stored.mediaPrefix}/sprites/map-[0-9a-f]{8}\\.vtt$`),
+      );
       const body = Buffer.concat(await collect(await media.get(stored.spriteKey!))).toString();
       expect(body.startsWith('WEBVTT')).toBe(true);
-      expect(body).toMatch(/00:00:00\.000 --> 00:00:05\.000\nsheet-1-[0-9a-f]{8}\.jpg#xywh=0,0,160,90/);
+      expect(body).toMatch(
+        /00:00:00\.000 --> 00:00:05\.000\nsheet-1-[0-9a-f]{8}\.jpg#xywh=0,0,160,90/,
+      );
       const sheets = await media.list(`cap/${stored.mediaPrefix}/sprites/`);
       expect(sheets.map((o) => o.key).some((k) => /sheet-1-[0-9a-f]{8}\.jpg$/.test(k))).toBe(true);
     });

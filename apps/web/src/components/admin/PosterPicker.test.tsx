@@ -73,8 +73,22 @@ describe('PosterPicker with real pictures', () => {
   const U1 = '0192f0a0-0000-7000-8000-000000000001';
   const U2 = '0192f0a0-0000-7000-8000-000000000002';
   const assets = [
-    { id: U1, source: 'frame' as const, label: 'Frame 1', status: 'ready' as const, url: 'https://m.test/a.webp' },
-    { id: U2, source: 'frame' as const, label: 'Frame 2', status: 'processing' as const, url: null },
+    {
+      id: U1,
+      source: 'frame' as const,
+      label: 'Frame 1',
+      status: 'ready' as const,
+      url: 'https://m.test/a.webp',
+      score: 80,
+    },
+    {
+      id: U2,
+      source: 'frame' as const,
+      label: 'Frame 2',
+      status: 'processing' as const,
+      url: null,
+      score: null,
+    },
   ];
 
   function setupReal(extra: Record<string, unknown> = {}) {
@@ -118,7 +132,9 @@ describe('PosterPicker with real pictures', () => {
       .mockResolvedValueOnce({ status: 'processing' })
       .mockResolvedValue({ status: 'ready' });
     const { save } = setupReal({ upload, status, pollMs: 5 });
-    const png = new File([new Uint8Array([0x89, 0x50, 0x4e, 0x47])], 'p.png', { type: 'image/png' });
+    const png = new File([new Uint8Array([0x89, 0x50, 0x4e, 0x47])], 'p.png', {
+      type: 'image/png',
+    });
     // jsdom cannot decode images, so the browser size check is skipped when a server upload is wired.
     await userEvent.upload(screen.getByLabelText('Choose a poster image'), png);
     await waitFor(() => expect(upload).toHaveBeenCalled());
@@ -126,14 +142,55 @@ describe('PosterPicker with real pictures', () => {
     // Frame 2 stays processing, the new picture is done.
     await waitFor(() => expect(screen.getAllByText('Processing')).toHaveLength(1));
     await userEvent.click(screen.getByRole('button', { name: 'Save poster' }));
-    await waitFor(() => expect(save).toHaveBeenCalledWith(expect.objectContaining({ posterId: NEW })));
+    await waitFor(() =>
+      expect(save).toHaveBeenCalledWith(expect.objectContaining({ posterId: NEW })),
+    );
   });
 
   it('shows the server message when an upload is refused', async () => {
-    const upload = vi.fn(async () => ({ ok: false as const, error: 'That image is 800 by 450. Use at least 1280 by 720.' }));
+    const upload = vi.fn(async () => ({
+      ok: false as const,
+      error: 'That image is 800 by 450. Use at least 1280 by 720.',
+    }));
     setupReal({ upload, status: vi.fn() });
     const png = new File([new Uint8Array([1])], 'p.png', { type: 'image/png' });
     await userEvent.upload(screen.getByLabelText('Choose a poster image'), png);
     expect(await screen.findByText(/800 by 450/)).toBeInTheDocument();
+  });
+});
+
+describe('PosterPicker low score warning (M36-S01)', () => {
+  const frame = (n: number, score: number | null) => ({
+    id: `a${n}`,
+    source: 'frame' as const,
+    label: `Frame ${n}`,
+    status: 'ready' as const,
+    url: `https://m.test/${n}.webp`,
+    score,
+  });
+  const show = (scores: (number | null)[]) =>
+    render(
+      <PosterPicker
+        videoId="v1"
+        title="Staying Safe Online"
+        durationSeconds={363}
+        initial={{ posterId: null, alt: null, focus: null }}
+        save={vi.fn(async () => ({ ok: true as const }))}
+        assets={scores.map((s, i) => frame(i + 1, s))}
+      />,
+    );
+
+  it('suggests uploading a picture when every frame scores low', () => {
+    show([5, 12, 20, 0, 30, 8]);
+    expect(screen.getByText(/dark or blurry/i)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Upload your own' })).toBeInTheDocument();
+  });
+
+  it('stays quiet when one frame is good, and for videos with no scores', () => {
+    const { unmount } = show([5, 90, 20]);
+    expect(screen.queryByText(/dark or blurry/i)).toBeNull();
+    unmount();
+    show([null, null]);
+    expect(screen.queryByText(/dark or blurry/i)).toBeNull();
   });
 });
