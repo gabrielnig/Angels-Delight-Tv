@@ -1,31 +1,32 @@
-import {
-  Badge,
-  ButtonLink,
-  EmptyState,
-  ProgressBar,
-  Row,
-  Tabs,
-  formatDuration,
-  spokenLength,
-} from '@ad/ui';
+import { Badge, ButtonLink, ProgressBar, formatDuration, spokenLength } from '@ad/ui';
 import type { Thumb, TitleDetail } from '../../lib/data';
-import { itemKey, percent, timeLeftLabel } from '../../lib/format';
+import { itemKey, percent } from '../../lib/format';
 import { primaryAction } from '../../lib/title-cta';
-import { CatalogCard } from '../CatalogCard';
+import './title.css';
+import { exactDuration, seriesLine, titlePrimaryText, watchedLabel } from '../../lib/title-format';
 import { ExpandableText } from './ExpandableText';
+import { RelatedRow } from './RelatedRow';
 import { TitleActions } from './TitleActions';
+import { TitlePoster } from './TitlePoster';
 
-/** Screen 18. Viewer title page with Play or Continue, My List, details tabs and a related row. */
+/** Screen 18. Poster with play, details, two rows of actions, one description and a related row. */
 export function TitleView({ detail, inList }: { detail: TitleDetail; inList: boolean }) {
   const { video, progress, play } = detail;
   const started = play.label === 'resume' && progress;
-  const related = new Set<string>();
+  const watchHref = `/watch/${video.id}`;
+  const primary = primaryAction({ label: play.label, startSeconds: play.startSeconds, watchHref });
+  const primaryText = titlePrimaryText(
+    play.label,
+    progress?.positionSeconds ?? play.startSeconds,
+    progress?.durationSeconds ?? video.durationSeconds,
+  );
+  const series = video.series ? seriesLine(video.series) : null;
   return (
-    <div className="web-page web-title">
-      <nav aria-label="Breadcrumb" className="web-crumbs">
+    <div className="web-page tv">
+      <nav aria-label="Breadcrumb" className="tv-crumbs">
         <ol>
           <li>
-            <a href="/">Home</a>
+            <a href="/browse">Browse</a>
           </li>
           <li>
             <a href={`/browse/${video.categorySlug}`}>{video.categoryName}</a>
@@ -35,76 +36,62 @@ export function TitleView({ detail, inList }: { detail: TitleDetail; inList: boo
           </li>
         </ol>
       </nav>
-      <div className="web-title__layout">
-        <div className="web-title__media">
-          {video.thumbnail ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={video.thumbnail.src} srcSet={video.thumbnail.srcSet} alt={video.title} />
+      <div className="tv-layout">
+        <TitlePoster
+          title={video.title}
+          thumbnail={video.thumbnail}
+          watchHref={watchHref}
+          resuming={Boolean(started)}
+          percent={started ? percent(progress) : 0}
+        />
+        <div className="tv-info">
+          {series && video.series ? (
+            <a className="tv-series" href={`/series/${video.series.slug}`}>
+              <span className="tv-series__long">{series.long}</span>
+              <span className="tv-series__short">{series.short}</span>
+            </a>
           ) : null}
-        </div>
-        <div className="web-title__info">
-          <h1 className="web-title__name">{video.title}</h1>
-          <p className="web-title__meta">
-            <Badge variant="duration" srText={spokenLength(video.durationSeconds)}>
-              {formatDuration(video.durationSeconds)}
-            </Badge>{' '}
+          <h1 className="tv-title">{video.title}</h1>
+          <p className="tv-meta">
+            <span>{exactDuration(video.durationSeconds)}</span>
             <span>{video.categoryName}</span>
-            {video.ageLabel ? <Badge variant="neutral">{video.ageLabel}</Badge> : null}
-            {video.kidsSafe ? <Badge variant="kids">Kids</Badge> : null}
-            {video.hasCaptions ? <Badge variant="neutral">Captions</Badge> : null}
+            {video.ageLabel ? <span>{video.ageLabel}</span> : null}
+            {video.hasCaptions ? (
+              <span className="tv-cc" role="img" aria-label="Captions available" title="Captions available">
+                <span aria-hidden="true">CC</span>
+              </span>
+            ) : null}
           </p>
-          {started ? (
-            <div className="web-title__progress">
-              <ProgressBar value={percent(progress)} label={`${video.title} progress`} size="sm" />
-              <span>{timeLeftLabel(progress)}</span>
-            </div>
-          ) : null}
           <TitleActions
-            primary={primaryAction({
-              label: play.label,
-              startSeconds: play.startSeconds,
-              watchHref: `/watch/${video.id}`,
-            })}
+            layout="title"
+            primary={{ ...primary, text: primaryText }}
             itemKey={itemKey(video)}
             inList={inList}
             shareTitle={video.title}
           />
-          <ExpandableText className="web-title__desc" text={video.description} />
+          {started ? (
+            <div className="tv-progress">
+              <ProgressBar
+                value={percent(progress)}
+                label={`${video.title} progress`}
+                size="sm"
+                className="tv-progress__bar"
+              />
+              <p className="tv-progress__text">
+                {watchedLabel(progress.positionSeconds, progress.durationSeconds)}
+              </p>
+            </div>
+          ) : null}
+          <ExpandableText className="tv-desc" text={detail.longDescription || video.description} />
+          {detail.credits ? <p className="tv-credits">{detail.credits}</p> : null}
         </div>
       </div>
-      <Tabs
-        label="Title details"
-        tabs={[
-          { id: 'about', label: 'About', panel: <p>{detail.longDescription}</p> },
-          {
-            id: 'details',
-            label: 'Details',
-            panel: (
-              <p>{detail.credits ?? `Part of ${video.series?.title ?? video.categoryName}.`}</p>
-            ),
-          },
-        ]}
-      />
-      {detail.related.length > 0 ? (
-        <Row title="More like this">
-          {detail.related.map((r) => (
-            <CatalogCard key={r.id} item={r} inList={related.has(itemKey(r))} />
-          ))}
-        </Row>
-      ) : null}
-    </div>
-  );
-}
-
-export function TitleBlocked() {
-  return (
-    <div className="web-page">
-      <EmptyState
-        icon="shield"
-        title="This video is not available in Kids"
-        description="Switch to a grown-up profile to watch it."
-        action={{ label: 'Back to Home', href: '/' }}
-      />
+      <RelatedRow items={detail.related} />
+      <div className="tv-sticky">
+        <ButtonLink href={primary.href} icon="play" size="lg" fullWidth>
+          {primaryText}
+        </ButtonLink>
+      </div>
     </div>
   );
 }

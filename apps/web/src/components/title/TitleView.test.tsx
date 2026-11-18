@@ -37,22 +37,130 @@ const view = (d: TitleDetail) =>
     </ToastProvider>,
   );
 
+const full = (patch: Partial<TitleDetail> = {}): TitleDetail =>
+  detail({
+    video: {
+      ...video,
+      title: 'How Rain Is Made',
+      durationSeconds: 352,
+      categoryName: 'Science',
+      categorySlug: 'science',
+      ageLabel: 'Ages 8 and up',
+      description: 'Rain starts as water in the sea.',
+      series: { slug: 'everyday-science', title: 'Everyday Science', season: 1, episode: 3 },
+    },
+    longDescription: 'Rain starts as water in the sea.',
+    credits: 'Presented by Dr Ifeoma Okafor. Captions in English.',
+    play: { label: 'resume', startSeconds: 134 },
+    progress: { videoId: 'v1', positionSeconds: 134, durationSeconds: 352, updatedAt: '' },
+    related: ['a', 'b', 'c'].map((id, i) => ({
+      ...video,
+      id,
+      slug: `r-${id}`,
+      title: `Related ${id}`,
+      durationSeconds: 300 + i * 60,
+      thumbnail: undefined,
+    })),
+    ...patch,
+  });
+
 describe('TitleView layout (S18)', () => {
-  it('has a breadcrumb from Home through the category to the current title', () => {
-    view(detail({}));
+  it('has a breadcrumb from Browse through the category to the current title', () => {
+    view(full());
     const nav = screen.getByRole('navigation', { name: 'Breadcrumb' });
     const links = within(nav).getAllByRole('link');
     expect(links.map((a) => [a.textContent, a.getAttribute('href')])).toEqual([
-      ['Home', '/'],
-      ['Geography', '/browse/geo'],
+      ['Browse', '/browse'],
+      ['Science', '/browse/science'],
     ]);
-    expect(within(nav).getByText('Rivers of Nigeria')).toHaveAttribute('aria-current', 'page');
+    expect(within(nav).getByText('How Rain Is Made')).toHaveAttribute('aria-current', 'page');
   });
 
   it('puts the poster and the details in separate columns that stack on small screens', () => {
-    const { container } = view(detail({}));
-    expect(container.querySelector('.web-title__layout > .web-title__media')).not.toBeNull();
-    expect(container.querySelector('.web-title__layout > .web-title__info h1')).not.toBeNull();
+    const { container } = view(full());
+    expect(container.querySelector('.tv-layout > .tv-poster')).not.toBeNull();
+    expect(container.querySelector('.tv-layout > .tv-info h1')).not.toBeNull();
+  });
+
+  it('draws a play button and a progress strip on the poster', () => {
+    const { container } = view(full());
+    const poster = container.querySelector('.tv-poster')!;
+    expect(within(poster as HTMLElement).getByRole('link', { name: 'Resume How Rain Is Made' })).toHaveAttribute('href', '/watch/v1');
+    const strip = poster.querySelector('.tv-poster__strip > span') as HTMLElement;
+    expect(strip.style.width).toBe('38%');
+  });
+
+  it('keeps the play button on a poster with no picture, and no strip before the first play', () => {
+    const { container } = view(full({ video: { ...full().video, thumbnail: undefined }, progress: undefined, play: { label: 'play', startSeconds: 0 } }));
+    const poster = container.querySelector('.tv-poster')!;
+    expect(within(poster as HTMLElement).getByRole('link', { name: 'Play How Rain Is Made' })).toBeInTheDocument();
+    expect(poster.querySelector('.tv-poster__strip')).toBeNull();
+  });
+
+  it('shows the series line above the title, in full and in short form', () => {
+    const { container } = view(full());
+    const link = container.querySelector('.tv-series') as HTMLElement;
+    expect(link).toHaveAttribute('href', '/series/everyday-science');
+    expect(container.querySelector('.tv-series__long')).toHaveTextContent('Everyday Science, Season 1, Episode 3');
+    expect(container.querySelector('.tv-series__short')).toHaveTextContent('Everyday Science, S1 E3');
+    expect(link.compareDocumentPosition(screen.getByRole('heading', { level: 1 })) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  it('shows the exact length, subject, age and a CC badge as plain meta', () => {
+    const { container } = view(full());
+    const meta = container.querySelector('.tv-meta')!;
+    expect(meta).toHaveTextContent('5 min 52 sec');
+    expect(meta).toHaveTextContent('Science');
+    expect(meta).toHaveTextContent('Ages 8 and up');
+    expect(within(meta as HTMLElement).getByLabelText('Captions available')).toHaveTextContent('CC');
+  });
+
+  it('shows no CC badge when there are no captions', () => {
+    const { container } = view(full({ video: { ...full().video, hasCaptions: false } }));
+    expect(container.querySelector('.tv-meta')).not.toHaveTextContent('CC');
+  });
+
+  it('shows the description once, with the credits line under it', () => {
+    view(full());
+    expect(screen.getAllByText('Rain starts as water in the sea.')).toHaveLength(1);
+    expect(screen.getByText('Presented by Dr Ifeoma Okafor. Captions in English.')).toBeInTheDocument();
+    expect(screen.queryByRole('tab')).toBeNull();
+  });
+
+  it('shows a short bar with how much was watched', () => {
+    view(full());
+    expect(screen.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '38');
+    expect(screen.getByText('2:14 of 5:52 watched')).toBeInTheDocument();
+  });
+
+  it('has a sticky Play bar for phones with the same destination', () => {
+    const { container } = view(full());
+    const bar = container.querySelector('.tv-sticky') as HTMLElement;
+    expect(within(bar).getByRole('link', { name: 'Resume, 3 min 38 sec left' })).toHaveAttribute('href', '/watch/v1');
+  });
+});
+
+describe('TitleView related row (S18)', () => {
+  it('shows each related title once, with a duration badge and the subject', () => {
+    const { container } = view(full());
+    const cards = container.querySelectorAll('.tv-related__card');
+    expect(cards).toHaveLength(3);
+    const first = cards[0] as HTMLElement;
+    expect(within(first).getAllByText('Related a')).toHaveLength(1);
+    expect(first.querySelector('.tv-related__badge')).toHaveTextContent('5 min');
+    expect(first.querySelector('.tv-related__subject')).toHaveTextContent('Geography');
+    expect(first).toHaveAttribute('href', '/title/r-a');
+  });
+
+  it('names the duration for screen readers and keeps the badge text out of the name', () => {
+    view(full());
+    expect(screen.getByRole('link', { name: /^Related a, 5 minutes/ })).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: /5 min\b/ })).toBeNull();
+  });
+
+  it('shows no row when nothing is related', () => {
+    view(full({ related: [] }));
+    expect(screen.queryByRole('heading', { name: 'More like this' })).toBeNull();
   });
 });
 
@@ -64,32 +172,19 @@ describe('TitleView', () => {
 
   it('offers Play when nothing was watched', () => {
     view(detail({}));
-    expect(screen.getByRole('link', { name: 'Play' })).toHaveAttribute('href', '/watch/v1');
+    expect(screen.getAllByRole('link', { name: 'Play' })[0]).toHaveAttribute('href', '/watch/v1');
     expect(screen.queryByRole('progressbar')).toBeNull();
   });
 
-  it('offers Resume from the start point with a progress bar and the time left', () => {
-    view(
-      detail({
-        play: { label: 'resume', startSeconds: 134 },
-        progress: { videoId: 'v1', positionSeconds: 137, durationSeconds: 600, updatedAt: '' },
-      }),
-    );
-    expect(screen.getByRole('link', { name: 'Resume from 2:14' })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Start over' })).toHaveAttribute(
-      'href',
-      '/watch/v1?t=0',
-    );
-    expect(screen.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '23');
-    expect(screen.getByText(/left/)).toBeInTheDocument();
+  it('offers Resume with the time left, Start over and a progress bar', () => {
+    view(full());
+    expect(screen.getAllByRole('link', { name: 'Resume, 3 min 38 sec left' }).length).toBeGreaterThan(0);
+    expect(screen.getByRole('link', { name: 'Start over' })).toHaveAttribute('href', '/watch/v1?t=0');
   });
 
   it('offers Watch again for a finished title, starting at zero', () => {
     view(detail({ play: { label: 'watch_again', startSeconds: 0 } }));
-    expect(screen.getByRole('link', { name: 'Watch again' })).toHaveAttribute(
-      'href',
-      '/watch/v1?t=0',
-    );
+    expect(screen.getAllByRole('link', { name: 'Watch again' })[0]).toHaveAttribute('href', '/watch/v1?t=0');
   });
 
   it('has a Share button', () => {
