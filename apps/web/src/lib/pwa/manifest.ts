@@ -26,9 +26,9 @@ export const DEFAULT_PWA_SETTINGS: PwaSettings = {
   themeColor: '#1F6FB5',
   backgroundColor: '#F5F5F2',
   icons: {
-    any192: '/icons/icon-192.png',
-    any512: '/icons/icon-512.png',
-    maskable512: '/icons/icon-maskable-512.png',
+    any192: '/brand-icons/icon-192.png',
+    any512: '/brand-icons/icon-512.png',
+    maskable512: '/brand-icons/icon-maskable-512.png',
   },
 };
 
