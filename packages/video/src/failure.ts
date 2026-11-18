@@ -5,6 +5,7 @@ export type FailureCode =
   | 'too_long'
   | 'bad_dimensions'
   | 'unsupported_format'
+  | 'bad_image'
   | 'upload_incomplete'
   | 'out_of_disk'
   | 'storage_unavailable'
@@ -36,6 +37,10 @@ const FAILURES: Record<FailureCode, FailureInfo> = {
   bad_dimensions: { plain: 'The picture size of this video is not supported.', permanent: true },
   unsupported_format: {
     plain: 'This type of file is not supported. Use MP4, MOV, MKV or WebM.',
+    permanent: true,
+  },
+  bad_image: {
+    plain: 'That picture could not be used. Upload a different JPG or PNG.',
     permanent: true,
   },
   upload_incomplete: {

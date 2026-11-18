@@ -8,13 +8,21 @@ const PREFERRED_WIDTH = 480;
 const TONES = ['sky', 'mint', 'lemon', 'peach', 'lavender'] as const;
 
 export function toThumb(poster: ArtworkDto | null): Thumb | undefined {
-  const variants = poster?.variants ?? [];
-  if (variants.length === 0) return undefined;
-  const chosen = variants.find((v) => v.width >= PREFERRED_WIDTH) ?? variants[variants.length - 1]!;
-  return {
-    src: chosen.url,
-    srcSet: variants.map((v) => `${v.url} ${v.width}w`).join(', '),
-  };
+  const all = poster?.variants ?? [];
+  const jpeg = all.filter((v) => v.format === 'jpeg');
+  const webp = all.filter((v) => v.format !== 'jpeg');
+  // Rows without webp (not produced today) still work from jpeg alone.
+  const main = webp.length > 0 ? webp : jpeg;
+  if (main.length === 0) return undefined;
+  const pick = (list: ArtworkDto['variants']) =>
+    list.find((v) => v.width >= PREFERRED_WIDTH) ?? list[list.length - 1]!;
+  const set = (list: ArtworkDto['variants']) => list.map((v) => `${v.url} ${v.width}w`).join(', ');
+  const thumb: Thumb = { src: pick(main).url, srcSet: set(main) };
+  if (webp.length > 0 && jpeg.length > 0) {
+    thumb.fallbackSrc = pick(jpeg).url;
+    thumb.fallbackSrcSet = set(jpeg);
+  }
+  return thumb;
 }
 
 /**

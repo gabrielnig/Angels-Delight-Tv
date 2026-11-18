@@ -9,6 +9,9 @@ export type Audience = 'adult' | 'kids';
 export interface Thumb {
   src: string;
   srcSet?: string;
+  /** jpeg copy for browsers that cannot read webp. */
+  fallbackSrc?: string;
+  fallbackSrcSet?: string;
 }
 
 export interface Profile {

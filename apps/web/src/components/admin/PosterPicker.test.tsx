@@ -68,3 +68,72 @@ describe('PosterPicker', () => {
     expect(screen.getByRole('button', { name: /Focus point at 80, 50/ })).toBeInTheDocument();
   });
 });
+
+describe('PosterPicker with real pictures', () => {
+  const U1 = '0192f0a0-0000-7000-8000-000000000001';
+  const U2 = '0192f0a0-0000-7000-8000-000000000002';
+  const assets = [
+    { id: U1, source: 'frame' as const, label: 'Frame 1', status: 'ready' as const, url: 'https://m.test/a.webp' },
+    { id: U2, source: 'frame' as const, label: 'Frame 2', status: 'processing' as const, url: null },
+  ];
+
+  function setupReal(extra: Record<string, unknown> = {}) {
+    const save = vi.fn(async () => ({ ok: true as const }));
+    render(
+      <PosterPicker
+        videoId="v1"
+        title="Staying Safe Online"
+        durationSeconds={100}
+        initial={{ posterId: null, alt: 'Alt text here', focus: null }}
+        save={save}
+        assets={assets}
+        {...extra}
+      />,
+    );
+    return { save };
+  }
+
+  it('lists the real frames, shows the one still processing and saves the real id', async () => {
+    const { save } = setupReal();
+    const frames = screen.getByRole('list', { name: 'Candidate frames' });
+    expect(frames.querySelectorAll('button')).toHaveLength(2);
+    expect(screen.getByText('Processing')).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Save poster' }));
+    await waitFor(() => expect(save).toHaveBeenCalled());
+    expect(save).toHaveBeenCalledWith(expect.objectContaining({ posterId: U1 }));
+  });
+
+  it('will not save a picture that is still processing', async () => {
+    const { save } = setupReal({ initial: { posterId: U2, alt: 'Alt', focus: null } });
+    await userEvent.click(screen.getByRole('button', { name: 'Save poster' }));
+    expect(await screen.findByText(/still being prepared/i)).toBeInTheDocument();
+    expect(save).not.toHaveBeenCalled();
+  });
+
+  it('uploads a file, polls until it is ready and then allows saving it', async () => {
+    const NEW = '0192f0a0-0000-7000-8000-000000000009';
+    const upload = vi.fn(async () => ({ ok: true as const, assetId: NEW }));
+    const status = vi
+      .fn<(id: string) => Promise<{ status: 'processing' | 'ready' | 'failed' }>>()
+      .mockResolvedValueOnce({ status: 'processing' })
+      .mockResolvedValue({ status: 'ready' });
+    const { save } = setupReal({ upload, status, pollMs: 5 });
+    const png = new File([new Uint8Array([0x89, 0x50, 0x4e, 0x47])], 'p.png', { type: 'image/png' });
+    // jsdom cannot decode images, so the browser size check is skipped when a server upload is wired.
+    await userEvent.upload(screen.getByLabelText('Choose a poster image'), png);
+    await waitFor(() => expect(upload).toHaveBeenCalled());
+    await waitFor(() => expect(status).toHaveBeenCalledTimes(2));
+    // Frame 2 stays processing, the new picture is done.
+    await waitFor(() => expect(screen.getAllByText('Processing')).toHaveLength(1));
+    await userEvent.click(screen.getByRole('button', { name: 'Save poster' }));
+    await waitFor(() => expect(save).toHaveBeenCalledWith(expect.objectContaining({ posterId: NEW })));
+  });
+
+  it('shows the server message when an upload is refused', async () => {
+    const upload = vi.fn(async () => ({ ok: false as const, error: 'That image is 800 by 450. Use at least 1280 by 720.' }));
+    setupReal({ upload, status: vi.fn() });
+    const png = new File([new Uint8Array([1])], 'p.png', { type: 'image/png' });
+    await userEvent.upload(screen.getByLabelText('Choose a poster image'), png);
+    expect(await screen.findByText(/800 by 450/)).toBeInTheDocument();
+  });
+});

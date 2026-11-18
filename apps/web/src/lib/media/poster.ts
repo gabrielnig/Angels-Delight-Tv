@@ -3,6 +3,8 @@ export interface PosterVariant {
   width: number;
   height: number;
   url: string;
+  /** Absent means webp, the format of variants made before jpeg copies existed. */
+  format?: 'webp' | 'jpeg';
 }
 
 export interface PosterSources {
@@ -11,6 +13,8 @@ export interface PosterSources {
   /** Intrinsic size of `src`, for width and height attributes so the page does not shift. */
   width: number;
   height: number;
+  /** jpeg copy for browsers that cannot read webp. Absent when there is only one format. */
+  fallback?: { src: string; srcSet: string };
 }
 
 /**
@@ -24,17 +28,30 @@ export function buildPosterSources(
   const usable = variants
     .filter((v) => v.url && v.width > 0 && v.height > 0)
     .sort((a, b) => a.width - b.width);
-  if (usable.length === 0) return null;
+  const jpeg = usable.filter((v) => v.format === 'jpeg');
+  const webp = usable.filter((v) => v.format !== 'jpeg');
+  const main = webp.length > 0 ? webp : jpeg;
+  if (main.length === 0) return null;
 
   const cap = options.maxWidth ?? null;
-  const allowed = cap === null ? usable : usable.filter((v) => v.width <= cap);
-  const offered = allowed.length > 0 ? allowed : [usable[0]!];
-  const fallback = offered[Math.floor((offered.length - 1) / 2)]!;
-
-  return {
-    src: fallback.url,
-    srcSet: offered.map((v) => `${v.url} ${v.width}w`).join(', '),
-    width: fallback.width,
-    height: fallback.height,
+  const offer = (list: PosterVariant[]) => {
+    const allowed = cap === null ? list : list.filter((v) => v.width <= cap);
+    return allowed.length > 0 ? allowed : [list[0]!];
   };
+  const middle = (list: PosterVariant[]) => list[Math.floor((list.length - 1) / 2)]!;
+  const set = (list: PosterVariant[]) => list.map((v) => `${v.url} ${v.width}w`).join(', ');
+
+  const offered = offer(main);
+  const chosen = middle(offered);
+  const out: PosterSources = {
+    src: chosen.url,
+    srcSet: set(offered),
+    width: chosen.width,
+    height: chosen.height,
+  };
+  if (webp.length > 0 && jpeg.length > 0) {
+    const offeredJpeg = offer(jpeg);
+    out.fallback = { src: middle(offeredJpeg).url, srcSet: set(offeredJpeg) };
+  }
+  return out;
 }

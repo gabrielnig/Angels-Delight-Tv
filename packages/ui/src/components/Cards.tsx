@@ -13,6 +13,47 @@ export interface Thumbnail {
   src: string;
   srcSet?: string;
   sizes?: string;
+  /** jpeg copy for browsers that cannot read webp. When set, `src` and `srcSet` are the webp set. */
+  fallbackSrc?: string;
+  fallbackSrcSet?: string;
+}
+
+const THUMB_SIZES =
+  '(min-width: 1280px) 20vw, (min-width: 960px) 23vw, (min-width: 600px) 30vw, 42vw';
+
+function ThumbImage({
+  thumbnail,
+  priority,
+  onError,
+}: {
+  thumbnail: Thumbnail;
+  priority?: boolean;
+  onError: () => void;
+}) {
+  const sizes = thumbnail.sizes ?? THUMB_SIZES;
+  const hasFallback = Boolean(thumbnail.fallbackSrc);
+  const img = (
+    <img
+      src={hasFallback ? thumbnail.fallbackSrc : thumbnail.src}
+      srcSet={hasFallback ? thumbnail.fallbackSrcSet : thumbnail.srcSet}
+      sizes={sizes}
+      alt=""
+      width={640}
+      height={360}
+      loading={priority ? 'eager' : 'lazy'}
+      decoding="async"
+      fetchPriority={priority ? 'high' : undefined}
+      onError={onError}
+    />
+  );
+  return hasFallback ? (
+    <picture>
+      <source type="image/webp" srcSet={thumbnail.srcSet} sizes={sizes} />
+      {img}
+    </picture>
+  ) : (
+    img
+  );
 }
 
 function Thumb({
@@ -31,21 +72,7 @@ function Thumb({
   return (
     <span className="ad-card__thumb">
       {showImage ? (
-        <img
-          src={thumbnail.src}
-          srcSet={thumbnail.srcSet}
-          sizes={
-            thumbnail.sizes ??
-            '(min-width: 1280px) 20vw, (min-width: 960px) 23vw, (min-width: 600px) 30vw, 42vw'
-          }
-          alt=""
-          width={640}
-          height={360}
-          loading={priority ? 'eager' : 'lazy'}
-          decoding="async"
-          fetchPriority={priority ? 'high' : undefined}
-          onError={() => setFailed(true)}
-        />
+        <ThumbImage thumbnail={thumbnail} priority={priority} onError={() => setFailed(true)} />
       ) : (
         <span className="ad-card__fallback" aria-hidden="true">
           <Icon name="play" size={24} filled />

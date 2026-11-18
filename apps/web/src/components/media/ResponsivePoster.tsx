@@ -14,7 +14,16 @@ export interface ResponsivePosterProps {
   /** Above the fold image: loads at once and at high priority. Everything else is lazy. */
   priority?: boolean;
   className?: string;
+  /**
+   * Title for the generated poster shown when there is no picture yet, or none at all. It is a gradient from
+   * the theme tokens with the title on it, so a card is never blank.
+   */
+  fallbackTitle?: string;
+  /** Picks the gradient tone, so a video keeps the same colours on every screen. */
+  fallbackSeed?: number;
 }
+
+const TONES = 5;
 
 const DEFAULT_SIZES = '(min-width: 960px) 25vw, (min-width: 600px) 33vw, 50vw';
 
@@ -31,6 +40,8 @@ export function ResponsivePoster({
   dataSaver = false,
   priority = false,
   className,
+  fallbackTitle,
+  fallbackSeed = 0,
 }: ResponsivePosterProps) {
   const sources = buildPosterSources(variants, {
     maxWidth: dataSaver ? DATA_SAVER_POSTER_WIDTH : null,
@@ -39,24 +50,49 @@ export function ResponsivePoster({
   const classes = ['ad-poster', className].filter(Boolean).join(' ');
 
   if (!sources) {
+    if (fallbackTitle) {
+      return (
+        <div
+          className={`${classes} ad-poster--generated`}
+          style={style}
+          role="img"
+          aria-label={alt}
+          data-tone={Math.abs(Math.trunc(fallbackSeed)) % TONES}
+        >
+          <span className="ad-poster__title" aria-hidden="true">
+            {fallbackTitle}
+          </span>
+        </div>
+      );
+    }
     return (
       <div className={`${classes} ad-poster--empty`} style={style} role="img" aria-label={alt} />
     );
   }
+  const image = (
+    <img
+      className="ad-poster__img"
+      src={sources.fallback?.src ?? sources.src}
+      srcSet={sources.fallback?.srcSet ?? sources.srcSet}
+      sizes={sizes}
+      width={sources.width}
+      height={sources.height}
+      alt={alt}
+      loading={priority ? 'eager' : 'lazy'}
+      decoding={priority ? 'sync' : 'async'}
+      fetchPriority={priority ? 'high' : 'auto'}
+    />
+  );
   return (
     <div className={classes} style={style}>
-      <img
-        className="ad-poster__img"
-        src={sources.src}
-        srcSet={sources.srcSet}
-        sizes={sizes}
-        width={sources.width}
-        height={sources.height}
-        alt={alt}
-        loading={priority ? 'eager' : 'lazy'}
-        decoding={priority ? 'sync' : 'async'}
-        fetchPriority={priority ? 'high' : 'auto'}
-      />
+      {sources.fallback ? (
+        <picture>
+          <source type="image/webp" srcSet={sources.srcSet} sizes={sizes} />
+          {image}
+        </picture>
+      ) : (
+        image
+      )}
     </div>
   );
 }
