@@ -1,5 +1,6 @@
+'use client';
+
 import { msg } from '@ad/shared/messages';
-('use client');
 
 import {
   useCallback,
@@ -301,7 +302,8 @@ export function PlayerView(props: PlayerViewProps) {
     }
   };
 
-  const speedLabel = state.rate === 1 ? 'Speed' : `Speed, ${state.rate}x`;
+  const speedLabel =
+    state.rate === 1 ? msg('player.menu.speed') : msg('player.speedRate', { rate: state.rate });
   const multiLanguage = tracks.length > 1;
   const time = useMemo(() => {
     const total = formatClock(state.duration);
@@ -312,11 +314,11 @@ export function PlayerView(props: PlayerViewProps) {
 
   const dataSaverNote = state.quality.dataSaver ? (
     <p className="adp-menu__note">
-      {'Data saver is on. Quality is fixed at 360p. '}
+      {`${msg('player.dataSaver.note')} `}
       {links.playbackSettings ? (
-        <a href={links.playbackSettings}>Change this in Playback settings.</a>
+        <a href={links.playbackSettings}>{msg('player.dataSaver.change')}</a>
       ) : (
-        'Change this in Playback settings.'
+        msg('player.dataSaver.change')
       )}
     </p>
   ) : null;
@@ -329,7 +331,7 @@ export function PlayerView(props: PlayerViewProps) {
       ref={containerRef}
       className="adp"
       role="region"
-      aria-label={`Video player: ${title}`}
+      aria-label={msg('player.label', { title })}
       tabIndex={-1}
       style={captionStyleVars(props.captionStyle ?? DEFAULT_CAPTION_STYLE) as CSSProperties}
       data-compact={compact || undefined}
@@ -386,9 +388,7 @@ export function PlayerView(props: PlayerViewProps) {
       ) : null}
 
       {state.buffering && !state.error ? (
-        <Spinner
-          label={state.slowNotice ? 'Slow connection. Switching to lower quality' : undefined}
-        />
+        <Spinner label={state.slowNotice ? msg('player.slowConnection') : undefined} />
       ) : null}
 
       {!state.playing && state.phase === 'ready' && !state.buffering ? (
@@ -416,13 +416,13 @@ export function PlayerView(props: PlayerViewProps) {
 
       {state.backOnline && !state.error ? (
         <div className="adp-banner" role="status">
-          <span>Back online.</span>
+          <span>{msg('player.backOnline')}</span>
           <button
             type="button"
             className="adp-btn adp-btn--primary"
             onClick={() => controller?.play()}
           >
-            Resume
+            {msg('player.action.resume')}
           </button>
         </div>
       ) : null}
@@ -486,7 +486,7 @@ export function PlayerView(props: PlayerViewProps) {
         <button
           type="button"
           className="adp-ctl"
-          aria-label="Back 10 seconds"
+          aria-label={msg('player.seek.back10')}
           onClick={() => controller?.seekBy(-10)}
         >
           <Back10Icon />
@@ -494,7 +494,7 @@ export function PlayerView(props: PlayerViewProps) {
         <button
           type="button"
           className="adp-ctl"
-          aria-label="Forward 10 seconds"
+          aria-label={msg('player.seek.forward10')}
           onClick={() => controller?.seekBy(10)}
         >
           <Forward10Icon />
@@ -518,7 +518,7 @@ export function PlayerView(props: PlayerViewProps) {
                 max={1}
                 step={0.05}
                 value={state.muted ? 0 : state.volume}
-                aria-label="Volume"
+                aria-label={msg('player.volume')}
                 aria-valuetext={`${Math.round((state.muted ? 0 : state.volume) * 100)} percent`}
                 onChange={(e) => controller?.setVolume(Number(e.target.value))}
               />
@@ -529,7 +529,7 @@ export function PlayerView(props: PlayerViewProps) {
           type="button"
           className="adp-time"
           aria-label={
-            showRemaining ? 'Time remaining, show elapsed' : 'Time elapsed, show remaining'
+            showRemaining ? msg('player.time.showElapsed') : msg('player.time.showRemaining')
           }
           onClick={() => setShowRemaining((v) => !v)}
         >
@@ -545,7 +545,9 @@ export function PlayerView(props: PlayerViewProps) {
                 className="adp-ctl"
                 aria-haspopup="menu"
                 aria-expanded={menu === 'captions'}
-                aria-label={`Captions, ${active ? 'on' : 'off'}`}
+                aria-label={
+                  active ? msg('player.captionsButtonOn') : msg('player.captionsButtonOff')
+                }
                 data-on={active ? true : undefined}
                 onClick={toggleMenu('captions')}
               >
@@ -555,7 +557,7 @@ export function PlayerView(props: PlayerViewProps) {
               <button
                 type="button"
                 className="adp-ctl"
-                aria-label="Captions"
+                aria-label={msg('player.captions')}
                 aria-pressed={active !== null}
                 data-on={active ? true : undefined}
                 onClick={() => controller?.toggleCaptions()}
@@ -611,7 +613,7 @@ export function PlayerView(props: PlayerViewProps) {
               className="adp-ctl adp-ctl--text"
               aria-haspopup="menu"
               aria-expanded={menu === 'quality'}
-              aria-label={`Quality, ${qualityMenu.buttonLabel}`}
+              aria-label={msg('player.qualityButton', { label: qualityMenu.buttonLabel })}
               onClick={toggleMenu('quality')}
             >
               <SettingsIcon />
@@ -643,7 +645,7 @@ export function PlayerView(props: PlayerViewProps) {
               className="adp-ctl"
               aria-haspopup="menu"
               aria-expanded={menu === 'settings'}
-              aria-label="Settings"
+              aria-label={msg('player.settings')}
               onClick={toggleMenu('settings')}
             >
               <SettingsIcon />
@@ -655,11 +657,11 @@ export function PlayerView(props: PlayerViewProps) {
                 onClose={closeMenu}
                 footer={dataSaverNote}
               >
-                <p className="adp-menu__section">Speed</p>
+                <p className="adp-menu__section">{msg('player.menu.speed')}</p>
                 <SpeedRows rate={state.rate} onSelect={(r) => controller?.setRate(r)} />
                 {showQuality ? (
                   <>
-                    <p className="adp-menu__section">Quality</p>
+                    <p className="adp-menu__section">{msg('player.menu.quality')}</p>
                     <QualityRows
                       menu={qualityMenu}
                       onSelect={(sel) => controller?.selectQuality(sel)}
@@ -675,7 +677,7 @@ export function PlayerView(props: PlayerViewProps) {
           <button
             type="button"
             className="adp-ctl"
-            aria-label="Picture in picture"
+            aria-label={msg('player.pip')}
             onClick={() => void togglePip()}
           >
             <PipIcon />
@@ -685,7 +687,7 @@ export function PlayerView(props: PlayerViewProps) {
         <button
           type="button"
           className="adp-ctl"
-          aria-label={fullscreen ? 'Exit full screen' : 'Full screen'}
+          aria-label={fullscreen ? msg('player.fullscreen.exit') : msg('player.fullscreen.enter')}
           onClick={() => void toggleFullscreen()}
         >
           {fullscreen ? <FullscreenExitIcon /> : <FullscreenIcon />}

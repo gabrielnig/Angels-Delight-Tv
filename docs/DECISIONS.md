@@ -824,3 +824,9 @@ Format: decision, options considered, why, reversible or not. Newest first. Deci
 - Options: recut in place (the picker preview would double crop), recut on the fly at the CDN, store only the focus.
 - Why: a new asset leaves the picker candidates untouched and makes a failed recut harmless. Hash named files stay immutable.
 - Reversible: yes. The columns are additive.
+
+## D-158 The hardcoded copy rule is opt in per file and the allowlist is exact text (lane r1)
+- Decision: `ad/no-hardcoded-copy` (scripts/eslint-rules/no-hardcoded-copy.mjs) is an error in a named list of wired files in eslint.config.js. It flags JSX text with letters, JSX aria-label, title, placeholder, alt and aria-description literals, and strings or templates that read like a sentence (capital first, two or more words) unless they sit inside `msg(...)`. The `allow` option takes exact strings that are not copy and is empty today. A file joins the list in the same change that moves its copy to the catalog, so lint stays green on main.
+- Options: warn everywhere (hundreds of existing hits, noise gets ignored), error everywhere (blocks every lane), a regex script outside ESLint.
+- Why: an opt in list ratchets: it can only grow, and it never blocks files that are not moved yet. The player files now on the list had about 45 inline strings, all moved to the catalog with text unchanged.
+- Reversible: yes.
