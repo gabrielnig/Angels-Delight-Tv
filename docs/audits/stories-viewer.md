@@ -63,7 +63,7 @@ Status rules: **done with test** means every acceptance criterion is implemented
 | M06-S04 Tolerant matching | Should | done with test | titles.int.test.ts (trigram, accent, category, Pidgin, ranking) |  |
 | M06-S05 No results state | Must | done with test | NoResults.test.tsx; browse-search.int.test.ts (kids safe popular) |  |
 | M06-S08 Search from keyboard and mobile | Must | done with test | useSearchShortcut.test.tsx; SearchBox.test.tsx (Escape) | Mobile search is the Search tab opening a focused search page, not a separate overlay |
-| M06-S09 Search result layout and loading | Must | partial | CardGrid.test.tsx (count, Show more, retry) | No Series or Video type badge; old results are replaced by a server render, not kept with a progress line |
+| M06-S09 Search result layout and loading | Must | done with test | CardGrid.test.tsx (count, Type badge, Show more, retry); SearchProgress.test.tsx and SearchScreen.test.tsx (thin progress line while a live query loads, gone when it settles); the search page keeps the old grid on screen during the transition | Lane `r2`. The old results stay because the live query runs in a React transition; the line is the only sign of work |
 | M06-S10 Search rate limiting and abuse safety | Should | partial | browse-search.int.test.ts (limit); api-limit.test.ts | UI does not show "Slow down a little" with a countdown |
 | M07-S01 Title detail page | Must | done with test | TitleView.test.tsx; ExpandableText.test.tsx; title-detail.int.test.ts; real-catalog.int.test.ts |  |
 | M07-S02 Series page with seasons and episodes | Must | done with test | EpisodeList.test.tsx (URL season, current episode); series-rows.test.ts; real-catalog.int.test.ts |  |
@@ -98,7 +98,7 @@ Status rules: **done with test** means every acceptance criterion is implemented
 | M08-S24 Offline behaviour in the player | Must | done with test | controller.test.ts; WatchClient.test.tsx |  |
 | M08-S25 Player accessibility | Must | done with test | PlayerView.test.tsx |  |
 | M08-S26 Watch page layout | Must | done without test | features/player/watch.css; e2e/watch.e2e.ts (not run in this lane) | Layout rules unasserted in unit tests |
-| M08-S27 Poster and first frame | Should | partial | controller.test.ts (spinner after 500 ms) | No poster fade out within 200 ms |
+| M08-S27 Poster and first frame | Should | done with test | controller.test.ts (spinner after 500 ms); PlayerView.chrome.test.tsx (poster fade within 200 ms, dark box on failure); Cards.test.tsx and ResponsivePoster.test.tsx (card and poster images fade in over the blur or colour placeholder, hidden only while a placeholder shows) | Lane `r2`. The fade uses `--motion-base`, which reduced motion sets to near zero |
 | M08-S28 End screen | Must | done with test | PlayerView.test.tsx (end screens); controller.test.ts |  |
 | M08-S30 Player quality metrics | Should | done with test | packages/analytics play-tracker.test.ts; ingest.test.ts |  |
 | M08-S31 Resume across devices | Should | done with test | progress.int.test.ts; real-playback.int.test.ts |  |

@@ -512,7 +512,7 @@ a {
   height: 100%;
   border-radius: var(--radius-pill);
   background: var(--color-primary);
-  animation: web-search-slide 1.1s var(--ease-standard) infinite;
+  animation: web-search-slide var(--motion-shimmer) var(--ease-standard) infinite;
 }
 @keyframes web-search-slide {
   from {
