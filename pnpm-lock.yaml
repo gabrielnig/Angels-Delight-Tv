@@ -415,6 +415,9 @@ importers:
 
   packages/player:
     dependencies:
+      '@ad/shared':
+        specifier: workspace:*
+        version: link:../shared
       '@videojs/hlsjs-video':
         specifier: 10.5.0
         version: 10.5.0

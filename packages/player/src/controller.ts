@@ -1,3 +1,4 @@
+import { msg } from '@ad/shared/messages';
 import type {
   EngineError,
   EngineEvent,
@@ -253,7 +254,7 @@ export class PlayerController {
       this.toast(
         {
           kind: 'resume',
-          message: `Resumed from ${formatClock(resume.resumedFrom)}`,
+          message: msg('player.resumed', { time: formatClock(resume.resumedFrom) }),
           action: 'start-over',
         },
         8_000,
@@ -450,7 +451,7 @@ export class PlayerController {
     if (failed && failed.language !== 'en' && english) {
       this.set({ captions: { ...this.state.captions, active: english.id } });
     }
-    this.toast({ kind: 'error', message: 'Captions could not load' }, 6_000);
+    this.toast({ kind: 'error', message: msg('player.captionsFailed') }, 6_000);
   }
 
   startOver(): void {

@@ -1,3 +1,5 @@
+import { msg } from '@ad/shared/messages';
+
 /** Heading and lead line of each account screen (S27 to S30), shared by the page, its loading state and its error state. */
 export interface AccountPageCopy {
   title: string;
@@ -7,24 +9,24 @@ export interface AccountPageCopy {
 
 export const ACCOUNT_PAGES: Record<string, AccountPageCopy> = {
   '/account': {
-    title: 'Account',
-    lead: 'Your details, profiles and settings in one place.',
-    errorTitle: 'We could not load your account',
+    title: msg('account.overview.title'),
+    lead: msg('account.overview.lead'),
+    errorTitle: msg('account.overview.error'),
   },
   '/account/security': {
-    title: 'Account security',
-    lead: 'Keep your account safe.',
-    errorTitle: 'We could not load your security settings',
+    title: msg('account.security.title'),
+    lead: msg('account.security.lead'),
+    errorTitle: msg('account.security.error'),
   },
   '/settings/playback': {
-    title: 'Playback settings',
-    lead: 'Choose how video plays on every device. Changes save as you go.',
-    errorTitle: 'We could not load your playback settings',
+    title: msg('account.playback.title'),
+    lead: msg('account.playback.lead'),
+    errorTitle: msg('account.playback.error'),
   },
   '/account/data': {
-    title: 'Data and privacy',
-    lead: 'Download a copy of your data or close your account.',
-    errorTitle: 'We could not load your data settings',
+    title: msg('account.data.title'),
+    lead: msg('account.data.lead'),
+    errorTitle: msg('account.data.error'),
   },
 };
 

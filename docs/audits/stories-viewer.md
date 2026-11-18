@@ -131,7 +131,7 @@ Status rules: **done with test** means every acceptance criterion is implemented
 | M34-S01 Keyboard and focus | Must | partial | Modal.test.tsx; TopNav.test.tsx; Row.test.tsx; e2e/a11y.e2e.ts | Axe e2e is not run in CI |
 | M34-S02 Screen reader support | Must | done with test | Toast.test.tsx; Banner.test.tsx; Field.test.tsx; useFocusFirstInvalid; ResponsivePoster.test.tsx | Route change title and focus move not asserted |
 | M34-S03 Motion, contrast and text size | Must | done without test | packages/theme contrast tests; Skeleton and reduced motion CSS | No test for 200 percent zoom |
-| M34-S04 Text in catalogs | Should | missing | none | No message catalog, no locale formatting layer, no lint rule |
+| M34-S04 Text in catalogs | Should | done with test | packages/shared/src/messages (en-NG catalog, plural and number formatting, English fallback with log); apps/web/src/lib/messages-coverage.test.ts | Auth errors, account page copy and player messages are wired. Components with inline copy move over as they are touched. No lint rule yet |
 
 ## Counts
 

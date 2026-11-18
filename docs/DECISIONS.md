@@ -794,3 +794,9 @@ Format: decision, options considered, why, reversible or not. Newest first. Deci
 - Options: score with an external model, extract more frames and pick, store AVIF only, draw the blur on every card now.
 - Why: the story asks for a simple score, so a cheap local measure keeps the encode job light. The blur is stored and exposed; drawing it on cards is a viewer change that can follow without another migration.
 - Reversible: yes. Frames and variants can be regenerated.
+
+## D-153 Message catalog lives in @ad/shared under a browser safe subpath (lane r1)
+- Decision: user facing copy that is shared across screens lives in `packages/shared/src/messages` (`EN_NG`, `msg`, `createMessages`, `formatDuration`). Code imports it from `@ad/shared/messages`, never the package root, because the root pulls in node crypto. Keys are `area.kind.name`, text takes `{name}` params, a `{one, other}` pair is picked by `count`. A missing key falls back to English and logs once. A test scans the web app and the player for `msg('key')` calls and fails on a missing key or an unused catalog key.
+- Options: a catalog in apps/web only (the player package could not use it), a third party i18n library, ICU message syntax.
+- Why: the player and the web app both show messages, so the shared package is the one place both can reach. A tiny catalog keeps the bundle small and the text unchanged. The lint rule for hardcoded strings (AC2) is not built, so components with inline copy move over as they are touched.
+- Reversible: yes.
