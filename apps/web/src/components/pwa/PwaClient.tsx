@@ -1,8 +1,10 @@
 'use client';
 
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import { createWriteQueue } from '@/lib/pwa/write-queue';
+import { signOutAction } from '../../app/actions';
+import { completePendingSignOut } from '@/lib/pwa/sign-out';
 import { registerServiceWorker, type RegisterHandle } from '@/lib/pwa/register';
 import { ConnectionStatus } from './ConnectionStatus';
 import { InstallPrompt } from './InstallPrompt';
@@ -24,6 +26,7 @@ export function PwaClient({
   profileId?: string | null;
 }) {
   const pathname = usePathname();
+  const router = useRouter();
   const handle = useRef<RegisterHandle | null>(null);
   const [updated, setUpdated] = useState(false);
 
@@ -44,7 +47,20 @@ export function PwaClient({
 
   useEffect(() => handle.current?.applyUpdateIfSafe(), [pathname]);
 
+  const finishSignOut = () => {
+    void completePendingSignOut({
+      store: localStorage,
+      online: () => navigator.onLine,
+      signOut: signOutAction,
+    }).then((done) => {
+      if (done) router.refresh();
+    });
+  };
+  // A sign out queued while offline completes as soon as the app opens online (M01-S10).
+  useEffect(finishSignOut, []);
+
   const syncQueue = () => {
+    finishSignOut();
     if (!profileId) return;
     void createWriteQueue(localStorage).flush(profileId, async (item) => {
       const response = await fetch(item.url, {

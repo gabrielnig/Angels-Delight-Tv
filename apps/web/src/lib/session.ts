@@ -1,7 +1,8 @@
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { realAuthEnabled } from '../server/auth/mode';
-import { getSession as getRealSession } from '../server/auth/session';
+import { getSession as getRealSession, readSessionToken } from '../server/auth/session';
+import { signInRedirect } from './auth-notices';
 import { realDataEnabled } from '../server/data/mode';
 import { cookieProfileIo } from '../server/data/profile-io';
 import { can } from './admin/can';
@@ -74,7 +75,11 @@ export async function getSession(): Promise<ViewerSession | null> {
 
 export async function requireSession(next = '/'): Promise<ViewerSession> {
   const session = await getSession();
-  if (!session) redirect(`/sign-in?next=${encodeURIComponent(next)}`);
+  if (!session) {
+    // A cookie that no longer maps to a session means it was revoked elsewhere or expired (M01-S12 AC3).
+    const ended = realAuthEnabled() && (await readSessionToken()) !== undefined;
+    redirect(signInRedirect(next, ended ? 'ended' : undefined));
+  }
   if (!session.verified) redirect('/verify-email');
   return session;
 }
