@@ -3,6 +3,27 @@ export interface BrandContext {
   supportEmail: string;
   /** Button colour. Configurable, defaults to the banner blue from D-003. */
   primaryColor?: string;
+  /** Public web link to the logo. Without it the name is shown as text. */
+  logoUrl?: string;
+  /** Theme colours. Each must be a hex value, anything else falls back to the default. */
+  backgroundColor?: string;
+  surfaceColor?: string;
+  inkColor?: string;
+  mutedColor?: string;
+}
+
+const HEX = /^#[0-9a-fA-F]{6}$/;
+const hex = (value: string | undefined, fallback: string): string =>
+  value && HEX.test(value) ? value : fallback;
+
+function webUrl(value: string | undefined): string | null {
+  if (!value) return null;
+  try {
+    const url = new URL(value);
+    return url.protocol === 'https:' || url.protocol === 'http:' ? url.toString() : null;
+  } catch {
+    return null;
+  }
 }
 
 export type TemplateName =
@@ -274,32 +295,41 @@ function toText(content: Content, brand: BrandContext): string {
 }
 
 function toHtml(content: Content, brand: BrandContext, subject: string): string {
-  const colour = brand.primaryColor ?? '#1F6FB5';
+  const colour = hex(brand.primaryColor, '#1F6FB5');
+  const page = hex(brand.backgroundColor, '#F5F5F2');
+  const card = hex(brand.surfaceColor, '#FFFFFF');
+  const ink = hex(brand.inkColor, '#1A1C22');
+  const muted = hex(brand.mutedColor, '#5B606B');
+  const logo = webUrl(brand.logoUrl);
   const paragraph = (text: string) =>
-    `<p style="margin:0 0 16px;font-size:16px;line-height:1.5;color:#1A1C22">${escapeHtml(text)}</p>`;
+    `<p style="margin:0 0 16px;font-size:16px;line-height:1.5;color:${ink}">${escapeHtml(text)}</p>`;
   const parts: string[] = content.intro.map(paragraph);
   if (content.code) {
     parts.push(
-      `<p style="margin:8px 0 24px;font-size:32px;font-weight:700;letter-spacing:8px;color:#1A1C22">${escapeHtml(content.code)}</p>`,
+      `<p style="margin:8px 0 24px;font-size:32px;font-weight:700;letter-spacing:8px;color:${ink}">${escapeHtml(content.code)}</p>`,
     );
   }
   if (content.action) {
     const url = escapeHtml(content.action.url);
     parts.push(
       `<table role="presentation" cellspacing="0" cellpadding="0" style="margin:8px 0 16px"><tr><td style="background:${colour};border-radius:8px"><a href="${url}" style="display:inline-block;padding:14px 24px;font-size:16px;font-weight:600;color:#FFFFFF;text-decoration:none">${escapeHtml(content.action.label)}</a></td></tr></table>`,
-      `<p style="margin:0 0 16px;font-size:14px;line-height:1.5;color:#5B606B">Or open this link: <a href="${url}" style="color:${colour}">${url}</a></p>`,
+      `<p style="margin:0 0 16px;font-size:14px;line-height:1.5;color:${muted}">Or open this link: <a href="${url}" style="color:${colour}">${url}</a></p>`,
     );
   }
   parts.push(...content.outro.map(paragraph));
   const support = escapeHtml(brand.supportEmail);
   return `<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${escapeHtml(subject)}</title></head>
-<body style="margin:0;padding:24px;background:#F5F5F2;font-family:Arial,Helvetica,sans-serif">
+<body style="margin:0;padding:24px;background:${page};font-family:Arial,Helvetica,sans-serif">
 <table role="presentation" width="100%" cellspacing="0" cellpadding="0"><tr><td align="center">
-<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:560px;background:#FFFFFF;border-radius:12px"><tr><td style="padding:32px">
-<p style="margin:0 0 24px;font-size:18px;font-weight:700;color:${colour}">${escapeHtml(brand.appName)}</p>
+<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:560px;background:${card};border-radius:12px"><tr><td style="padding:32px">
+${
+    logo
+      ? `<p style="margin:0 0 24px"><img src="${escapeHtml(logo)}" alt="${escapeHtml(brand.appName)}" height="40" style="display:block;height:40px;max-width:240px;width:auto;border:0"></p>`
+      : `<p style="margin:0 0 24px;font-size:18px;font-weight:700;color:${colour}">${escapeHtml(brand.appName)}</p>`
+  }
 ${parts.join('\n')}
-<p style="margin:24px 0 0;font-size:14px;line-height:1.5;color:#5B606B">Need help? Write to <a href="mailto:${support}" style="color:${colour}">${support}</a>.</p>
+<p style="margin:24px 0 0;font-size:14px;line-height:1.5;color:${muted}">Need help? Write to <a href="mailto:${support}" style="color:${colour}">${support}</a>.</p>
 </td></tr></table>
 </td></tr></table>
 </body></html>`;

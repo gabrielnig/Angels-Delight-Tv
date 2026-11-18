@@ -583,3 +583,9 @@ Format: decision, options considered, why, reversible or not. Newest first. Deci
 - Options: raise the 5000 cap, or offset paging in the database, or keyset paging.
 - Why: a cap hides videos silently, and offset paging slows down and skips rows on deep pages. Keyset costs the same on every page.
 - Reversible: yes.
+## D-109 Emails read the name, logo and theme colours from settings on every send (lane M3)
+- Decision: `Mailer` takes an optional `brand()` lookup that runs for each email. The web app supplies `emailBrandFrom`, which reads `platform.name`, the published theme colours and the published logo, so a theme published in /admin/theme shows in the next email with no deploy. The logo is the 400 px variant on the media origin, shown with the site name as alt text, and the name is shown as text when there is no logo. Colours are checked as six digit hex before they go into inline styles, and a failed lookup falls back to the configured name and the default colours. Email clients ignore CSS variables, so values are written inline.
+- Options: cache the brand for a few minutes, render emails in the worker, bake the brand in at build time.
+- Why: emails are rare and one small read per send is cheap, a cache would delay the change admins just published, and build time branding contradicts "no deploy".
+- Reversible: yes.
+- Gap: the logo variants are WebP. Outlook desktop does not show WebP, so it shows the alt text name there.

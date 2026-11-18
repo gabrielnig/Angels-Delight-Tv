@@ -69,6 +69,11 @@ export interface MailerSettings extends BrandContext {
   /** Full From header, for example `Angels Delight TV <no-reply@example.org>`. */
   from: string;
   appOrigin: string;
+  /**
+   * Reads the site name, logo and theme colours from settings for each email, so a published change reaches the
+   * next email without a deploy. A failure falls back to the values above.
+   */
+  brand?: () => Promise<Partial<BrandContext>>;
 }
 
 /**
@@ -92,10 +97,17 @@ export class Mailer {
     name: TemplateName,
     vars: Record<string, string | number>,
   ): Promise<void> {
+    let live: Partial<BrandContext> = {};
+    try {
+      live = (await this.settings.brand?.()) ?? {};
+    } catch {
+      // keep the configured brand
+    }
     const brand: BrandContext = {
       appName: this.settings.appName,
       supportEmail: this.settings.supportEmail,
       primaryColor: this.settings.primaryColor,
+      ...Object.fromEntries(Object.entries(live).filter(([, v]) => v !== undefined && v !== '')),
     };
     const rendered: RenderedMail = renderTemplate(name, vars, brand);
     try {
