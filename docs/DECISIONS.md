@@ -556,3 +556,9 @@ Format: decision, options considered, why, reversible or not. Newest first. Deci
 - Options: stable-ts forced alignment in the whisper service, flags by cue index, a separate review state for flagged cues.
 - Why: the algorithm needs no new model or service and is testable on fixtures, start times survive splits and merges better than indexes, and the real model can still be added behind the same function.
 - Reversible: yes. Replace `alignScript` behind the same signature.
+
+## D-105 A Home series row follows its series instead of copying episodes (lane A2)
+- Decision: `rows.series_id` (migration 0025) marks a curated row that shows the episodes of one series. Publishing writes only the series id, and the viewer side reads the episodes in season and episode order each time, so adding, removing, reordering, unpublishing or deleting an episode shows on Home without publishing the layout again. Episode cards are built by the card query with episodes allowed, because episodes are not standalone titles (the old copied rows resolved to no cards at all). A deleted series leaves an empty row. Rows published before this change stay as copies until the layout is published once more.
+- Options: refresh the copied row items whenever an episode changes, or point the row at the series card.
+- Why: refreshing needs a hook in every place an episode can change and still goes stale if one is missed; reading at view time cannot drift. A single series card would not be a row of lessons.
+- Reversible: yes.

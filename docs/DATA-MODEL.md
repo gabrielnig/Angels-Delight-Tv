@@ -601,5 +601,6 @@ The schema in `packages/db/src/schema` is the source of truth. These changes wer
 | 0016 | `INSERT` on `audit_log` for `ad_worker`, so the monthly purge job can record itself. The append only trigger still blocks updates and deletes. |
 | 0017 | `staff_directory()` also returns the sealed display name. |
 | 0023 | New table `signup_invites` (`code_hash` unique, `hint`, `label`, `max_uses` 1 to 1000, `uses`, `expires_at`, `revoked_at`, `created_by`) for viewer sign up invite codes. The app role can read, insert and update, not delete. |
+| 0025 | `rows.series_id` (nullable, set null on delete): a curated Home row that follows the episodes of one series. |
 
 Row level security summary additions: `search_history` is on and forced like `watch_progress`. `admin_invites`, `auth_lockouts`, `verification_codes`, `site_daily_stats`, `analytics_counters` and `slug_redirects` have no policies and are reached only by their own modules.

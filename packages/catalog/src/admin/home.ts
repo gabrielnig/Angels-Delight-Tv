@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto';
 import { eq, notInArray, sql } from 'drizzle-orm';
-import { categories, rowItems, rows, settings, withAccount } from '@ad/db';
+import { categories, rowItems, rows, series, settings, withAccount } from '@ad/db';
 import { writeAudit } from '@ad/audit';
 import { Forbidden, isUuid, type Actor, type RowKind } from '@ad/shared';
 import { rowsOf } from '../sql';
@@ -136,7 +136,7 @@ async function configFromRows(tx: Tx): Promise<HomeConfig | null> {
       config.heroIds = ids.slice(0, MAX_HERO);
       continue;
     }
-    const type = TYPE_OF[row.kind];
+    const type = row.kind === 'curated' && row.seriesId ? 'series' : TYPE_OF[row.kind];
     if (!type) continue;
     config.rows.push({
       id: row.id,
@@ -144,7 +144,7 @@ async function configFromRows(tx: Tx): Promise<HomeConfig | null> {
       name: row.title,
       visible: row.isPublished,
       videoIds: type === 'manual' ? ids : [],
-      sourceId: type === 'category' ? row.categoryId : null,
+      sourceId: type === 'category' ? row.categoryId : type === 'series' ? row.seriesId : null,
     });
   }
   return config;
@@ -185,6 +185,7 @@ async function syncRows(tx: Tx, config: HomeConfig): Promise<void> {
     title: string;
     kind: RowKind;
     categoryId: string | null;
+    seriesId?: string | null;
     published: boolean;
     videoIds: string[];
   };
@@ -216,6 +217,7 @@ async function syncRows(tx: Tx, config: HomeConfig): Promise<void> {
 
   for (const row of config.rows) {
     let categoryId: string | null = null;
+    let seriesId: string | null = null;
     let videoIds: string[] = [];
     if (row.type === 'category') {
       if (!row.sourceId || !isUuid(row.sourceId)) continue;
@@ -227,15 +229,15 @@ async function syncRows(tx: Tx, config: HomeConfig): Promise<void> {
       categoryId = found.id;
     } else if (row.type === 'manual') {
       videoIds = await existingVideos(row.videoIds.slice(0, MAX_ROW_TITLES));
-    } else if (row.type === 'series' && row.sourceId && isUuid(row.sourceId)) {
-      videoIds = rowsOf<{ video_id: string }>(
-        await tx.execute(sql`
-          SELECT e.video_id FROM episodes e JOIN seasons sn ON sn.id = e.season_id JOIN videos v ON v.id = e.video_id
-          WHERE sn.series_id = ${row.sourceId}::uuid AND v.deleted_at IS NULL
-          ORDER BY sn.number, e.number LIMIT ${SERIES_ROW_MAX}`),
-      ).map((r) => r.video_id);
+    } else if (row.type === 'series') {
+      // Not a copy of the episodes: the viewer side reads them from the series each time, so the row follows it.
+      if (!row.sourceId || !isUuid(row.sourceId)) continue;
+      const [found] = await tx.select({ id: series.id }).from(series).where(eq(series.id, row.sourceId));
+      if (!found) continue;
+      seriesId = found.id;
     }
     targets.push({
+      seriesId,
       id: rowUuid(row.id),
       title: row.name.trim().slice(0, 80),
       kind: KIND_OF[row.type],
@@ -254,16 +256,13 @@ async function syncRows(tx: Tx, config: HomeConfig): Promise<void> {
       title: target.title,
       kind: target.kind,
       categoryId: target.categoryId,
+      seriesId: target.seriesId ?? null,
       position,
       isPublished: target.published,
       // Every row is filtered for the audience when it is read, so kids profiles can see them all.
       kidsVisible: true,
       maxItems:
-        target.kind === 'hero'
-          ? MAX_HERO
-          : target.kind === 'curated' && target.videoIds.length > MAX_ROW_TITLES
-            ? SERIES_ROW_MAX
-            : MAX_ROW_TITLES,
+        target.kind === 'hero' ? MAX_HERO : target.seriesId ? SERIES_ROW_MAX : MAX_ROW_TITLES,
     };
     await tx.insert(rows).values(values).onConflictDoUpdate({ target: rows.id, set: values });
     await tx.delete(rowItems).where(eq(rowItems.rowId, target.id));

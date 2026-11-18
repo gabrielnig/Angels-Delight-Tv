@@ -72,7 +72,12 @@ const POSTER_JOIN = sql.raw(
  * Every live title (standalone videos and series) in one relation. Episodes are never titles of their own.
  * The search columns repeat the expressions of the indexes in migration 0007 verbatim.
  */
-function titlesCte(audience: Audience, now: Date, withSearch: boolean): SQL {
+function titlesCte(
+  audience: Audience,
+  now: Date,
+  withSearch: boolean,
+  includeEpisodes = false,
+): SQL {
   const videoSearch = withSearch
     ? sql`, setweight(to_tsvector('simple', ad_unaccent(v.title)), 'A') || setweight(to_tsvector('simple', ad_unaccent(coalesce(v.description, ''))), 'B') AS doc,
       coalesce((SELECT string_agg(ad_unaccent(lower(c.name)), ' ') FROM video_categories vc JOIN categories c ON c.id = vc.category_id WHERE vc.video_id = v.id AND c.is_visible), '') AS category_text`
@@ -89,7 +94,7 @@ function titlesCte(audience: Audience, now: Date, withSearch: boolean): SQL {
       ad_unaccent(lower(v.title)) AS title_key,
       ARRAY(SELECT vc.category_id FROM video_categories vc WHERE vc.video_id = v.id) AS category_ids${videoSearch}
     FROM videos v
-    WHERE v.kind = 'standalone' AND ${liveVideoSql('v', audience, now)}
+    WHERE v.kind IN (${sql.raw(includeEpisodes ? "'standalone', 'episode'" : "'standalone'")}) AND ${liveVideoSql('v', audience, now)}
     UNION ALL
     SELECT 'series'::text, s.id, s.slug, s.title, s.description, NULL::int,
       (SELECT count(*) FROM seasons esn JOIN episodes eep ON eep.season_id = esn.id JOIN videos ev ON ev.id = eep.video_id
@@ -126,10 +131,11 @@ export async function fetchCards(
   ctx: CatalogContext,
   audience: Audience,
   refs: readonly TitleRef[],
+  options: { includeEpisodes?: boolean } = {},
 ): Promise<TitleCard[]> {
   if (refs.length === 0) return [];
   const result = await tx.execute(sql`
-    WITH ${titlesCte(audience, ctx.now(), false)}
+    WITH ${titlesCte(audience, ctx.now(), false, options.includeEpisodes)}
     SELECT ${CARD_COLUMNS} FROM titles t ${POSTER_JOIN}
     WHERE t.id IN (${uuidList(refs.map((ref) => ref.id))})`);
   const byKey = new Map(
