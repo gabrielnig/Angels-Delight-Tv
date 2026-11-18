@@ -103,5 +103,6 @@ Method: read auth, sessions, staff, viewer, playback, upload, edge, theme, confi
 ## Open work
 
 - Run `scripts/check-headers.sh https://<production host>` after the first deploy and keep it in the release checklist.
+- Run `pnpm edge:smoke https://<media host> https://<app host>` after every deploy and Cloudflare change. It fails when CORS is a wildcard or open to another origin, or when a segment is served without a valid signature (M22-S01, M31-S03).
 - L-11 leftovers: Trivy and base image digests (Semgrep and the SBOM are done, see the supply chain section).
 - Owner choice on L-12 (see the table).

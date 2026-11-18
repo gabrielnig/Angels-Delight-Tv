@@ -177,3 +177,43 @@ test('shows the volume controls for a video with sound and hides them for a sile
   await expectPlaying(page, 0.5);
   await expect(page.getByRole('button', { name: /^(Mute|Unmute)$/ })).toHaveCount(0);
 });
+
+test('on a phone every control is at least 44 px with 8 px between them (M08-S09)', async ({
+  browser,
+}) => {
+  stack = await startRealHlsStack({ clipSeconds: 10, heights: [360] });
+  const context = await browser.newContext({
+    viewport: { width: 360, height: 640 },
+    hasTouch: true,
+    isMobile: true,
+  });
+  const page = await context.newPage();
+  await open(page, stack);
+  await expectPlaying(page, 0.5);
+  await page.locator('.adp').tap();
+  await expect(page.locator('.adp-controls[data-visible]')).toBeVisible();
+
+  const boxes = await page.evaluate(() =>
+    [...document.querySelectorAll('.adp-controls button, .adp-controls [role="button"]')]
+      .map((el) => el.getBoundingClientRect())
+      .filter((r) => r.width > 0 && r.height > 0)
+      .map((r) => ({ x: r.x, y: r.y, w: r.width, h: r.height })),
+  );
+  expect(boxes.length).toBeGreaterThanOrEqual(3);
+  for (const b of boxes) {
+    expect(b.w).toBeGreaterThanOrEqual(43.5);
+    expect(b.h).toBeGreaterThanOrEqual(43.5);
+  }
+  const sorted = [...boxes].sort((a, b) => a.y - b.y || a.x - b.x);
+  for (let i = 1; i < sorted.length; i += 1) {
+    const prev = sorted[i - 1]!;
+    const cur = sorted[i]!;
+    if (Math.abs(prev.y - cur.y) < 4) expect(cur.x - (prev.x + prev.w)).toBeGreaterThanOrEqual(7.5);
+  }
+  const seek = await page.locator('.adp-seek').boundingBox();
+  expect(seek!.height).toBeGreaterThanOrEqual(31.5);
+  const player = await page.locator('.adp').boundingBox();
+  const primary = await page.getByRole('button', { name: /^(Pause|Play)$/ }).first().boundingBox();
+  expect(primary!.y).toBeGreaterThan(player!.y + (player!.height * 2) / 3 - 44);
+  await context.close();
+});

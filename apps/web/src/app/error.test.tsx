@@ -17,6 +17,7 @@ describe('error page', () => {
     expect(screen.queryByText(/secret internals/)).toBeNull();
     await userEvent.click(screen.getByRole('button', { name: 'Try again' }));
     expect(reset).toHaveBeenCalled();
+    expect(screen.getByRole('link', { name: 'Back to Home' })).toHaveAttribute('href', '/');
     expect(track).toHaveBeenCalledWith({ kind: 'error', code: 'app.render' });
   });
 });

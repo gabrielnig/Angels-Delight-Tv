@@ -28,6 +28,9 @@ export default function ErrorPage({
       <button type="button" className="pwa-btn pwa-btn--primary" onClick={reset}>
         Try again
       </button>
+      <a className="pwa-btn" href="/">
+        Back to Home
+      </a>
     </main>
   );
 }
