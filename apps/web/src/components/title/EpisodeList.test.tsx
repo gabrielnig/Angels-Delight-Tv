@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 import { EpisodeList } from './EpisodeList';
 
 const ep = (n: number, extra: object = {}) => ({
@@ -50,5 +50,28 @@ describe('EpisodeList', () => {
       'href',
       '/watch/e1',
     );
+  });
+
+  describe('season and current episode', () => {
+    afterEach(() => window.history.replaceState(null, '', '/'));
+
+    it('keeps the chosen season in the URL so the page can be shared and restored', async () => {
+      const user = userEvent.setup();
+      window.history.replaceState(null, '', '/series/demo');
+      render(<EpisodeList seasons={seasons} initialSeason={1} />);
+      await user.selectOptions(screen.getByRole('combobox', { name: 'Season' }), '2');
+      expect(window.location.search).toBe('?season=2');
+    });
+
+    it('marks the episode the main button opens, in text as well as colour', () => {
+      const withCurrent = [
+        { number: 1, episodes: [ep(1, { watched: true }), ep(2, { percent: 40, current: true })] },
+      ];
+      render(<EpisodeList seasons={withCurrent} initialSeason={1} />);
+      const items = screen.getAllByRole('listitem');
+      expect(within(items[1]!).getByText('Up next')).toBeInTheDocument();
+      expect(within(items[1]!).getByRole('link')).toHaveAttribute('aria-current', 'true');
+      expect(within(items[0]!).queryByText('Up next')).toBeNull();
+    });
   });
 });

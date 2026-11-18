@@ -1,34 +1,30 @@
 import { notFound, redirect } from 'next/navigation';
-import { Badge, ButtonLink } from '@ad/ui';
+import { Badge } from '@ad/ui';
 import { AppShell } from '../../../../components/Shell';
 import { EpisodeList } from '../../../../components/title/EpisodeList';
-import { getCatalog } from '../../../../lib/data';
-import { percent } from '../../../../lib/format';
+import { TitleActions } from '../../../../components/title/TitleActions';
+import { pickSeason, seasonRows } from '../../../../components/title/series-rows';
+import { getCatalog, getLibrary } from '../../../../lib/data';
+import { itemKey } from '../../../../lib/format';
+import { primaryAction } from '../../../../lib/title-cta';
 import { requireProfile } from '../../../../lib/session';
 
-export default async function SeriesPage({ params }: { params: Promise<{ slug: string }> }) {
-  const { slug } = await params;
+export default async function SeriesPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ slug: string }>;
+  searchParams: Promise<Record<string, string | undefined>>;
+}) {
+  const [{ slug }, query] = await Promise.all([params, searchParams]);
   const { ctx } = await requireProfile(`/series/${slug}`);
   const detail = await getCatalog().series(ctx, slug);
   if (!detail) notFound();
   if ('redirect' in detail) redirect(detail.redirect);
   const { series, seasons, next } = detail;
   const nextVideo = seasons.flatMap((s) => s.episodes).find((e) => e.video.id === next.videoId);
-  const rows = seasons.map((s) => ({
-    number: s.number,
-    episodes: s.episodes.map((e) => {
-      const p = e.progress ? percent(e.progress) : 0;
-      return {
-        number: e.number,
-        title: e.video.title,
-        blurb: e.blurb,
-        durationSeconds: e.video.durationSeconds,
-        href: `/watch/${e.video.id}`,
-        watched: e.watched,
-        percent: p > 0 && p < 100 ? p : undefined,
-      };
-    }),
-  }));
+  const rows = seasonRows(seasons);
+  const inList = (await getLibrary().myListIds(ctx)).includes(itemKey(series));
   return (
     <AppShell>
       <div className="web-page web-title">
@@ -38,16 +34,20 @@ export default async function SeriesPage({ params }: { params: Promise<{ slug: s
           <span>{series.categoryName}</span>
         </p>
         {nextVideo ? (
-          <div className="web-title-actions">
-            <ButtonLink href={`/watch/${nextVideo.video.id}`} icon="play">
-              {next.resume
-                ? `Resume S${next.season} E${next.episode}`
-                : `Start S${next.season} E${next.episode}`}
-            </ButtonLink>
-          </div>
+          <TitleActions
+            primary={primaryAction({
+              label: next.label,
+              startSeconds: 0,
+              watchHref: `/watch/${nextVideo.video.id}`,
+              episode: { season: next.season, number: next.episode },
+            })}
+            itemKey={itemKey(series)}
+            inList={inList}
+            shareTitle={series.title}
+          />
         ) : null}
         <p className="web-title__desc">{series.description}</p>
-        <EpisodeList seasons={rows} initialSeason={next.season} />
+        <EpisodeList seasons={rows} initialSeason={pickSeason(seasons, query.season, next.season)} />
       </div>
     </AppShell>
   );

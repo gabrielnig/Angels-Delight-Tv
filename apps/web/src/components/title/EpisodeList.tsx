@@ -12,6 +12,8 @@ export interface EpisodeRow {
   watched: boolean;
   /** 1 to 99 when partly watched. */
   percent?: number;
+  /** The episode the main button opens. */
+  current?: boolean;
 }
 
 export interface SeasonRows {
@@ -38,7 +40,14 @@ export function EpisodeList({
         <Select
           label="Season"
           value={String(season)}
-          onChange={(event) => setSeason(Number(event.target.value))}
+          onChange={(event) => {
+            const next = Number(event.target.value);
+            setSeason(next);
+            // Replace, not push: the choice is shareable but Back still leaves the page.
+            const url = new URL(window.location.href);
+            url.searchParams.set('season', String(next));
+            window.history.replaceState(window.history.state, '', url);
+          }}
         >
           {seasons.map((s) => (
             <option key={s.number} value={s.number}>
@@ -53,13 +62,19 @@ export function EpisodeList({
       <ol className="web-episodes__list">
         {current.episodes.map((episode) => (
           <li key={episode.number} className="web-episode">
-            <Link href={episode.href} className="web-episode__link">
+            <Link
+              href={episode.href}
+              className="web-episode__link"
+              aria-current={episode.current ? 'true' : undefined}
+              data-current={episode.current ? 'true' : undefined}
+            >
               <span className="web-episode__num" aria-hidden="true">
                 {episode.number}
               </span>
               <span className="web-episode__body">
                 <span className="web-episode__title">
                   Episode {episode.number}: {episode.title}
+                  {episode.current ? <span className="web-episode__now"> Up next</span> : null}
                 </span>
                 <span className="web-episode__blurb">{episode.blurb}</span>
               </span>

@@ -14,6 +14,8 @@ export default async function VerifyEmailPage() {
     getSession(),
     getAuth().pendingEmail(),
   ]);
+  // An account that is already verified has nothing to do here (M01-S05).
+  if (session?.verified) redirect('/profiles');
   // Before the code is confirmed there is no session, only the address sign up or sign in remembered.
   const email = pending ?? session?.email;
   if (!email) redirect('/sign-in');
