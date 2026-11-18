@@ -1,6 +1,14 @@
 'use client';
 
-import { useCallback, useId, useState, type CSSProperties, type ReactNode } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useId,
+  useRef,
+  useState,
+  type CSSProperties,
+  type ReactNode,
+} from 'react';
 import { captionStyleVars, normalizeCaptionStyle } from '@ad/player';
 import { Button } from '@ad/ui';
 import { savePlaybackAction } from '../../app/actions';
@@ -136,6 +144,17 @@ export function PlaybackSettingsForm({
     background: values.captionBackground,
     contrast: values.captionContrast,
   });
+  // The strict CSP blocks the inline style attribute in server HTML, so the caption variables are also set
+  // through the CSSOM after hydration, which the policy allows.
+  const previewRef = useRef<HTMLDivElement>(null);
+  const previewVars = captionStyleVars(preview) as Record<string, string>;
+  const previewKey = JSON.stringify(previewVars);
+  useEffect(() => {
+    const el = previewRef.current;
+    if (!el) return;
+    for (const [name, value] of Object.entries(JSON.parse(previewKey) as Record<string, string>))
+      el.style.setProperty(name, value);
+  }, [previewKey]);
   const id = (name: string) => `${base}-${name}`;
   const locked = (key: keyof PlaybackSettings) => kids && KIDS_LOCKED.includes(key);
 
@@ -311,6 +330,7 @@ export function PlaybackSettingsForm({
         <div className="acct-setting" data-block>
           <span className="acct-setting__label">Caption preview</span>
           <div
+            ref={previewRef}
             className="web-caption-preview acct-preview"
             data-testid="caption-preview"
             style={captionStyleVars(preview) as CSSProperties}
