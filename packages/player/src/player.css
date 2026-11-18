@@ -51,6 +51,21 @@
   transform: translateY(-4.5rem);
 }
 
+.adp-poster {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  pointer-events: none;
+  opacity: 1;
+  transition: opacity 150ms ease-out;
+}
+
+.adp-poster[data-state='hidden'] {
+  opacity: 0;
+}
+
 .adp-surface {
   position: absolute;
   inset: 0;

@@ -164,6 +164,7 @@ export class PlayerController {
       quality: this.qualityState(),
       toast: null,
       upNext: { tile: false, countdown: null, cancelled: false },
+      hasAudio: true,
       backOnline: false,
       announce: '',
     };
@@ -737,7 +738,10 @@ export class PlayerController {
   private onEngine(e: EngineEvent): void {
     if (e.type === 'levels') {
       this.heights = e.heights;
-      this.set({ quality: this.qualityState() });
+      this.set({
+        quality: this.qualityState(),
+        ...(e.audio === undefined ? {} : { hasAudio: e.audio }),
+      });
     } else if (e.type === 'level') {
       this.currentHeight = e.height;
       if (e.bitrate) this.bitrates.push(e.bitrate);

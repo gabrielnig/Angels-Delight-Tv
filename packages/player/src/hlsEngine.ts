@@ -7,6 +7,8 @@ import { withNativeToken } from './token';
 export interface HlsLevelLike {
   height: number;
   bitrate: number;
+  videoCodec?: string;
+  audioCodec?: string;
 }
 
 export interface HlsInstanceLike {
@@ -66,6 +68,13 @@ export interface HlsEngineOptions {
   getToken: () => string | null;
 }
 
+/** Undefined when the playlist does not say. False only when every rendition names a video codec and no audio codec. */
+function hasAudioIn(levels: HlsLevelLike[]): boolean | undefined {
+  if (levels.some((l) => l.audioCodec)) return true;
+  if (levels.length > 0 && levels.every((l) => l.videoCodec)) return false;
+  return undefined;
+}
+
 function heightsOf(levels: HlsLevelLike[]): number[] {
   return [...new Set(levels.map((l) => l.height).filter((h) => h > 0))].sort((a, b) => a - b);
 }
@@ -107,7 +116,8 @@ export function createHlsEngine(opts: HlsEngineOptions): PlayerEngine {
     hls = instance;
     instance.on(Hls.Events.MANIFEST_PARSED, () => {
       const heights = heightsOf(instance.levels);
-      emit({ type: 'levels', heights });
+      const audio = hasAudioIn(instance.levels);
+      emit({ type: 'levels', heights, ...(audio === undefined ? {} : { audio }) });
       const startHeight = pickStartHeight(heights, { lowData: o.lowData, cap: o.cap });
       if (startHeight !== null) instance.startLevel = indexForHeight(startHeight);
       instance.autoLevelCapping = capIndex(o.cap);
