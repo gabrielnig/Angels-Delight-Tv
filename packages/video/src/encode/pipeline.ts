@@ -519,7 +519,6 @@ export class VideoPipeline {
         const { path, container, probe } = await this.fetchSource(videoId, dir);
         const seconds = probe.durationMs / 1000;
         const width = 1280;
-        const height = Math.max(2, 2 * Math.round((width * probe.height) / probe.width / 2));
         const created: string[] = [];
         for (const [index, fraction] of [0.1, 0.5, 0.9].entries()) {
           await progress('Making thumbnails', 10 + index * 30);

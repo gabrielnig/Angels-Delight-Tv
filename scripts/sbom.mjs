@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+/* global process, console */
 // Software bill of materials (CycloneDX 1.5) for everything the shipped apps depend on at runtime.
 // cyclonedx-npm and cdxgen read npm layouts and see almost nothing in a pnpm workspace, so this reads
 // `pnpm list -r --prod` instead. Usage: node scripts/sbom.mjs [output.json]

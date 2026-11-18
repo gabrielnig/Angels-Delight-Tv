@@ -35,7 +35,7 @@ export class ImageService {
   }
 
   async process(assetId: string): Promise<void> {
-    const { db, originals, media } = this.deps;
+    const { db, media } = this.deps;
     const [asset] = await db.select().from(assets).where(eq(assets.id, assetId)).limit(1);
     if (!asset) throw new PipelineError('unknown', `asset ${assetId} not found`, true);
     if (asset.status === 'ready' && asset.variants.length > 0) return;

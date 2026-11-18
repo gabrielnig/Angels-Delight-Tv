@@ -70,6 +70,8 @@ export function ResponsivePoster({
     );
   }
   const image = (
+    // Posters come from our own pipeline with webp srcSet and exact sizes, next/image adds nothing here.
+    // eslint-disable-next-line @next/next/no-img-element
     <img
       className="ad-poster__img"
       src={sources.fallback?.src ?? sources.src}

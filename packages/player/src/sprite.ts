@@ -31,11 +31,14 @@ export function parseSpriteVtt(text: string, mapUrl: string): SpriteTile[] {
     const lines = block.split(/\r?\n/).filter(Boolean);
     const at = lines.findIndex((line) => line.includes('-->'));
     if (at < 0 || !lines[at + 1]) continue;
-    const [from, to] = lines[at]!.split('-->').map((part) => seconds(part.split(' ').filter(Boolean)[0] ?? ''));
+    const [from, to] = lines[at]!.split('-->').map((part) =>
+      seconds(part.split(' ').filter(Boolean)[0] ?? ''),
+    );
     const target = lines[at + 1]!.trim();
     const [path, fragment] = target.split('#');
     const rect = /^xywh=(\d+),(\d+),(\d+),(\d+)$/.exec(fragment ?? '');
-    if (from == null || to == null || !path || !rect) continue;
+    if (from === null || from === undefined || to === null || to === undefined || !path || !rect)
+      continue;
     let url: URL;
     try {
       url = new URL(path, base);
