@@ -5,7 +5,11 @@ const session = vi.hoisted(() => ({
   allowed: true,
   budgetError: null as unknown,
 }));
-const rows = vi.hoisted(() => ({ value: [] as unknown[], range: null as unknown }));
+const rows = vi.hoisted(() => ({
+  value: [] as unknown[],
+  range: null as unknown,
+  plan: null as number | null,
+}));
 
 vi.mock('@/lib/data/admin/session-next', () => ({
   getActor: async () => session.actor,
@@ -16,6 +20,7 @@ vi.mock('@/lib/data/admin/session-next', () => ({
 }));
 vi.mock('@/lib/data/admin/services', () => ({
   analyticsService: {
+    exportPlan: async () => ({ rows: rows.plan ?? rows.value.length }),
     exportRows: async (_actor: unknown, range: unknown) => {
       rows.range = range;
       return rows.value;
@@ -34,6 +39,7 @@ beforeEach(() => {
   session.allowed = true;
   session.budgetError = null;
   rows.value = [];
+  rows.plan = null;
 });
 
 describe('analytics export route', () => {
@@ -75,5 +81,21 @@ describe('analytics export route', () => {
     }));
     const text = await (await call()).text();
     expect(text.trim().split('\n')).toHaveLength(26);
+  });
+
+  it('sends a big range to the confirm page instead of building it in the request', async () => {
+    rows.plan = 10_001;
+    const response = await call();
+    expect(response.status).toBe(303);
+    const location = new URL(response.headers.get('location')!, 'https://tv.test');
+    expect(location.pathname).toBe('/admin/exports/new');
+    expect(location.searchParams.get('kind')).toBe('analytics');
+    expect(location.searchParams.get('from')).toBe('2026-11-01');
+    expect(location.searchParams.get('to')).toBe('2026-11-10');
+  });
+
+  it('still answers in the request at exactly 10,000 rows', async () => {
+    rows.plan = 10_000;
+    expect((await call()).status).toBe(200);
   });
 });

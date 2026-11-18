@@ -158,6 +158,43 @@ export async function listAudit(
   return { items, nextCursor: rows.length > limit && last ? encodeCursor(last.id) : null };
 }
 
+export interface IterateOptions {
+  /** Rows per read. Not held to the 200 of the screen list, because nobody scrolls this. */
+  pageSize?: number;
+  signal?: AbortSignal;
+}
+
+const ITERATE_DEFAULT = 1000;
+const ITERATE_MAX = 5000;
+
+/**
+ * Every row matching the filters, newest first, one page at a time, for background exports. Same filters and
+ * the same scope as `listAudit`. Stops when the signal aborts.
+ */
+export async function* iterateAudit(
+  db: SqlExecutor,
+  filters: AuditFilters = {},
+  options: IterateOptions = {},
+): AsyncGenerator<AuditRecord[]> {
+  const size = Math.min(Math.max(options.pageSize ?? ITERATE_DEFAULT, 1), ITERATE_MAX);
+  let beforeId: number | null = null;
+  for (;;) {
+    if (options.signal?.aborted) return;
+    const rows: Row[] = rowsOf<Row>(
+      await db.execute(sql`
+        SELECT id, occurred_at, actor_account_id, actor_role, action, outcome, target_type, target_id,
+               ip_trunc, request_id, metadata
+        FROM audit_log WHERE ${where(filters, beforeId)}
+        ORDER BY id DESC LIMIT ${size}`),
+    );
+    if (rows.length === 0) return;
+    const page: AuditRecord[] = rows.map(toRecord);
+    yield page;
+    if (rows.length < size) return;
+    beforeId = page[page.length - 1]!.id;
+  }
+}
+
 export async function getAuditEntry(
   db: SqlExecutor,
   id: number,

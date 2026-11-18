@@ -11,6 +11,7 @@ export default defineConfig({
     './src/schema/identity.ts',
     './src/schema/notices.ts',
     './src/schema/outbox.ts',
+    './src/schema/exports.ts',
     './src/schema/pipeline.ts',
     './src/schema/platform.ts',
     './src/schema/viewer.ts',
