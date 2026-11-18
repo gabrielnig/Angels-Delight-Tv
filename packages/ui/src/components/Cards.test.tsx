@@ -157,7 +157,15 @@ describe('SeriesCard', () => {
 describe('SeriesCard My List', () => {
   it('has a pressed My List button when a handler is given', async () => {
     const onToggleList = vi.fn();
-    render(<SeriesCard title="Science" href="/series/s" episodeCount={3} inList onToggleList={onToggleList} />);
+    render(
+      <SeriesCard
+        title="Science"
+        href="/series/s"
+        episodeCount={3}
+        inList
+        onToggleList={onToggleList}
+      />,
+    );
     const button = screen.getByRole('button', { name: 'Remove Science from My List' });
     expect(button).toHaveAttribute('aria-pressed', 'true');
     button.click();
@@ -200,5 +208,24 @@ describe('VideoCard hover overlay', () => {
   it('has no overlay without a description', () => {
     render(<VideoCard {...base} />);
     expect(screen.queryByTestId('card-peek')).toBeNull();
+  });
+
+  it('says how many seasons a multi season series has, and stays quiet for one', () => {
+    const { rerender } = render(
+      <SeriesCard
+        title="Farming basics"
+        href="/series/farming"
+        episodeCount={24}
+        seasonCount={3}
+      />,
+    );
+    expect(
+      screen.getByRole('link', { name: 'Farming basics, 3 seasons, 24 episodes' }),
+    ).toBeInTheDocument();
+    expect(document.querySelector('.ad-badge')?.textContent).toBe('3 seasons');
+    rerender(
+      <SeriesCard title="Farming basics" href="/series/farming" episodeCount={8} seasonCount={1} />,
+    );
+    expect(screen.getByRole('link', { name: 'Farming basics, 8 episodes' })).toBeInTheDocument();
   });
 });
