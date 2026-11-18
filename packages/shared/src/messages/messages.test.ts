@@ -76,7 +76,7 @@ describe('the English catalog', () => {
       for (const text of forms) {
         expect(text.trim(), key).not.toBe('');
         expect(text.split('{').length, key).toBe(text.split('}').length);
-        expect(text, key).not.toMatch(/[–—]/);
+        expect(text, key).not.toMatch(/[\u2013\u2014]/);
       }
     }
   });
