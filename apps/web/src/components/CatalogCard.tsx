@@ -2,18 +2,19 @@
 
 import { useState } from 'react';
 import { ContinueCard, Row, SeriesCard, VideoCard, useToast } from '@ad/ui';
-import { restoreContinueAction, removeContinueAction, toggleListAction } from '../app/actions';
+import { restoreContinueAction, removeContinueAction } from '../app/actions';
+import { useListToggle } from '../lib/pwa/useListToggle';
 import type { CatalogItem, Progress, VideoSummary } from '../lib/data';
 import { itemHref, itemKey, metaLine, percent, timeLeftLabel } from '../lib/format';
 
-type ToggleList = (itemKey: string, add: boolean) => Promise<void>;
+type ToggleList = (itemKey: string, add: boolean) => Promise<void | 'sent' | 'queued'>;
 
 /** A catalogue card with an optimistic My List toggle that rolls back and says so on failure. */
 export function CatalogCard({
   item,
   inList: initialInList,
   priority,
-  toggle = toggleListAction,
+  toggle: toggleProp,
   showMeta = false,
 }: {
   item: CatalogItem;
@@ -23,6 +24,8 @@ export function CatalogCard({
   showMeta?: boolean;
 }) {
   const [inList, setInList] = useState(initialInList);
+  const queued = useListToggle();
+  const toggle = toggleProp ?? queued;
   const toast = useToast();
   const key = itemKey(item);
 
@@ -30,9 +33,14 @@ export function CatalogCard({
     const next = !inList;
     setInList(next);
     try {
-      await toggle(key, next);
+      const outcome = await toggle(key, next);
       toast.show({
-        message: next ? 'Added to My List.' : 'Removed from My List.',
+        message:
+          outcome === 'queued'
+            ? 'Saved on this device. It will sync when you are back online.'
+            : next
+              ? 'Added to My List.'
+              : 'Removed from My List.',
         variant: 'success',
         action: {
           label: 'Undo',

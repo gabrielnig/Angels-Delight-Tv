@@ -15,6 +15,7 @@ export async function AppShell({ children }: { children: ReactNode }) {
         platformName={site.platformName}
         logoUrl={site.logoUrl}
         profileName={session.profile.name}
+        profileId={session.profile.id}
         kids={session.profile.kids}
         footerLinks={site.footerLinks}
         year={year}
