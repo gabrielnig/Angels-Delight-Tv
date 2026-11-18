@@ -632,3 +632,15 @@ Format: decision, options considered, why, reversible or not. Newest first. Deci
 - Why: the client has not supplied art, image files add requests on low data connections, and the id is the stable contract, so the drawings can be replaced later with no data change.
 - Reversible: yes. Replace the shapes in `AvatarArt.tsx`.
 - Gap: the top nav still shows the letter avatar, and the account overview has no profiles card yet.
+
+## D-120 Segment url lifetime back to 2 hours, proven by a real browser journey (lane a3)
+- Decision: signed segment urls last 2 hours (`SEGMENT_URL_SECONDS`), as M31-S01 AC1, M08-S21 AC1 and the original SECURITY.md said. This replaces the 6 hour acceptance in D-089 (L-3). `cap/` and `img/` stay unsigned (L-4 unchanged).
+- Options: keep 6 hours, 2 hours, 30 minutes with a refresh timer.
+- Why: D-047 and D-089 kept 6 hours because a VOD variant playlist is fetched once, so a paused or long watch would break. `apps/web/e2e/hls-real.stack.ts` ("a segment url that expired while the viewer waited") now shows real hls.js recovering: an expired url answers 403 from the real edge worker, the player mints a fresh session, reloads the playlist at the same position and plays on with no error shown, and an unpublished video ends on "This video is no longer available". With that proven, the shorter life costs nothing and shrinks the window a leaked unencrypted segment url works from 6 hours to 2. The edge still accepts 30 seconds past expiry for clock skew. A 30 minute lifetime was not taken because it adds a refresh round trip to every long watch for little extra safety, the AES key route stays the real gate.
+- Reversible: yes, one constant or `segmentTtlSeconds`.
+
+## D-121 Key route answers 401 for a missing or expired token and 403 for a foreign one (lane a3)
+- Decision: M31-S02 AC2 says a refused key request answers 403. The key, master and variant routes keep 401 for a missing, malformed or expired playback token and 403 for a token that belongs to another video, an inactive kids profile or a failed same origin check. Every 401, 403 and 429 now writes a warn log line `playback denied` with route, status, video id and a truncated address, never the token. Publishing also requires the video's HLS key row.
+- Options: answer 403 for every refusal, keep 401 and 403 as they are.
+- Why: the player treats 401 as "mint a new token and retry once", which is the M08-S21 recovery path, and treats 403 as a final refusal. Collapsing them to 403 would turn every token expiry into a hard stop. The log line and the publish gate meet the rest of the story.
+- Reversible: yes.
