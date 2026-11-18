@@ -12,11 +12,15 @@ export const DEFAULT_PLAYBACK: PlaybackSettings = {
   speed: 1,
   captionsDefault: true,
   captionSize: 'medium',
+  captionBackground: 'dark',
+  captionContrast: 'standard',
 };
 
 const QUALITIES = ['auto', '1080', '720', '480', '360'] as const;
 const SPEEDS = [0.5, 0.75, 1, 1.25, 1.5, 2] as const;
 const CAPTION_SIZES = ['small', 'medium', 'large', 'xlarge'] as const;
+const CAPTION_BACKGROUNDS = ['none', 'dark', 'solid'] as const;
+const CAPTION_CONTRASTS = ['standard', 'high'] as const;
 const EXPORT_TOKEN_SECONDS = 10 * 60;
 const LAGOS_OFFSET_MS = 60 * 60 * 1000;
 const encoder = new TextEncoder();
@@ -70,6 +74,16 @@ function readPrefs(row: {
         ? stored.captionsDefault
         : DEFAULT_PLAYBACK.captionsDefault,
     captionSize: pick(stored.captionSize, CAPTION_SIZES, DEFAULT_PLAYBACK.captionSize),
+    captionBackground: pick(
+      stored.captionBackground,
+      CAPTION_BACKGROUNDS,
+      DEFAULT_PLAYBACK.captionBackground,
+    ),
+    captionContrast: pick(
+      stored.captionContrast,
+      CAPTION_CONTRASTS,
+      DEFAULT_PLAYBACK.captionContrast,
+    ),
   };
 }
 
@@ -81,6 +95,13 @@ function validatePatch(patch: Partial<PlaybackSettings>): void {
     bad.speed = ['Pick a listed speed'];
   if (patch.captionSize !== undefined && !CAPTION_SIZES.includes(patch.captionSize))
     bad.captionSize = ['Pick a listed size'];
+  if (
+    patch.captionBackground !== undefined &&
+    !CAPTION_BACKGROUNDS.includes(patch.captionBackground)
+  )
+    bad.captionBackground = ['Pick a listed background'];
+  if (patch.captionContrast !== undefined && !CAPTION_CONTRASTS.includes(patch.captionContrast))
+    bad.captionContrast = ['Pick a listed contrast'];
   for (const key of ['autoplayNext', 'dataSaver', 'captionsDefault'] as const) {
     if (patch[key] !== undefined && typeof patch[key] !== 'boolean') bad[key] = ['Use on or off'];
   }
@@ -160,6 +181,8 @@ export class AccountViewerData {
             speed: next.speed,
             captionsDefault: next.captionsDefault,
             captionSize: next.captionSize,
+            captionBackground: next.captionBackground,
+            captionContrast: next.captionContrast,
           },
         })
         .where(and(eq(profiles.id, profileId), eq(profiles.accountId, accountId)))

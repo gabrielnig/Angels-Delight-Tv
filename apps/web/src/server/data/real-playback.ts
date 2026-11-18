@@ -1,4 +1,9 @@
-import { DEFAULT_PREFERENCES, type CaptionTrack, type RelatedItem } from '@ad/player';
+import {
+  DEFAULT_PREFERENCES,
+  normalizeCaptionStyle,
+  type CaptionTrack,
+  type RelatedItem,
+} from '@ad/player';
 import { findTitle } from '@ad/catalog';
 import { withAccount } from '@ad/db';
 import { isUuid, NotFound } from '@ad/shared';
@@ -139,13 +144,18 @@ export class RealPlaybackData implements PlaybackData {
           dataSaver: prefs.dataSaver,
           autoplayNext: prefs.autoplayNext,
         },
+        captionStyle: normalizeCaptionStyle({
+          size: prefs.captionSize,
+          background: prefs.captionBackground,
+          contrast: prefs.captionContrast,
+        }),
       },
     };
   }
 
   private async forStandalone(
     detail: Extract<TitleDetailDto, { type: 'video' }>,
-  ): Promise<Omit<WatchData, 'preferences'>> {
+  ): Promise<Omit<WatchData, 'preferences' | 'captionStyle'>> {
     const category = detail.categories[0]?.name ?? '';
     const card = detail.card;
     const video: WatchVideo = {
@@ -181,7 +191,7 @@ export class RealPlaybackData implements PlaybackData {
     profileId: string,
     seriesSlug: string,
     episodeId: string,
-  ): Promise<Omit<WatchData, 'preferences'> | null> {
+  ): Promise<Omit<WatchData, 'preferences' | 'captionStyle'> | null> {
     const found = await this.detail(accountId, profileId, { slug: seriesSlug, kind: 'series' });
     if (!found || found.type !== 'series') return null;
     const flat = flatEpisodes(found);

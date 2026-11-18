@@ -1,4 +1,11 @@
-import type { CatalogItem, LibraryRepository, Page, Progress, VideoSummary, ViewerContext } from '../types';
+import type {
+  CatalogItem,
+  LibraryRepository,
+  Page,
+  Progress,
+  VideoSummary,
+  ViewerContext,
+} from '../types';
 import { PROGRESS, SEEDED_MY_LIST, VIDEOS } from './catalog-data';
 import { listable, lookupItem } from './queries';
 
@@ -33,9 +40,14 @@ export function progressFor(profileId: string, videoId: string): Progress | unde
 }
 
 export class FixtureLibrary implements LibraryRepository {
-  async myList(ctx: ViewerContext, cursor?: string): Promise<Page<CatalogItem> & { hiddenCount: number }> {
+  async myList(
+    ctx: ViewerContext,
+    cursor?: string,
+  ): Promise<Page<CatalogItem> & { hiddenCount: number }> {
     const state = stateFor(ctx.profileId);
-    const allowed = new Set(listable(ctx).map((i) => (i.kind === 'video' ? `video:${i.id}` : `series:${i.slug}`)));
+    const allowed = new Set(
+      listable(ctx).map((i) => (i.kind === 'video' ? `video:${i.id}` : `series:${i.slug}`)),
+    );
     const visible = [...state.list]
       .reverse()
       .filter((key) => allowed.has(key))
@@ -66,11 +78,18 @@ export class FixtureLibrary implements LibraryRepository {
     state.list = state.list.filter((key) => key !== itemKey);
   }
 
-  async continueWatching(ctx: ViewerContext): Promise<Array<{ video: VideoSummary; progress: Progress }>> {
+  async continueWatching(
+    ctx: ViewerContext,
+  ): Promise<Array<{ video: VideoSummary; progress: Progress }>> {
     const state = stateFor(ctx.profileId);
     const kids = ctx.audience === 'kids';
     return [...state.progress.values()]
-      .filter((p) => !state.dismissed.has(p.videoId) && p.positionSeconds < p.durationSeconds * 0.95 && p.positionSeconds > 0)
+      .filter(
+        (p) =>
+          !state.dismissed.has(p.videoId) &&
+          p.positionSeconds < p.durationSeconds * 0.95 &&
+          p.positionSeconds > 0,
+      )
       .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
       .map((progress) => ({ video: VIDEOS.find((v) => v.id === progress.videoId)!, progress }))
       .filter(({ video }) => Boolean(video) && (!kids || video.kidsSafe));

@@ -239,15 +239,18 @@ describe.skipIf(!integrationEnabled())('real people service', () => {
       const roles = (await realPeopleService.staff(admin)).staff;
       expect(roles.find((m) => m.id === other.actor.accountId)?.role).toBe('admin');
       // A role change ends the target's sessions (L-7), so the promoted person needs a fresh one.
-      const fresh = await h.deps.sessions.create({ accountId: other.actor.accountId, kind: 'staff' });
+      const fresh = await h.deps.sessions.create({
+        accountId: other.actor.accountId,
+        kind: 'staff',
+      });
       const promoted: AdminActor = { ...other.actor, role: 'admin', sessionId: fresh.session.id };
       const target = await promote('editor');
       const denied = await realPeopleService.changeRole(promoted, target.actor.accountId, 'admin');
       expect(denied).toMatchObject({ ok: false, reauth: true });
       await realPeopleService.reauthenticate(promoted, other.member.password);
-      expect(
-        await realPeopleService.changeRole(promoted, target.actor.accountId, 'admin'),
-      ).toEqual({ ok: true });
+      expect(await realPeopleService.changeRole(promoted, target.actor.accountId, 'admin')).toEqual(
+        { ok: true },
+      );
       expect(await realPeopleService.changeRole(promoted, promoted.accountId, 'editor')).toEqual({
         ok: false,
         error: 'You cannot change this role',
