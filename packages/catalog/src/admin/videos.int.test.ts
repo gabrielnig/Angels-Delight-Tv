@@ -155,6 +155,40 @@ describe.skipIf(!integrationEnabled())('admin videos', () => {
     });
   });
 
+  it('bulk suitability updates every selected video together and audits each', async () => {
+    const a = await seedVideo(t.setup, { title: 'Bulk a' });
+    const b = await seedVideo(t.setup, { title: 'Bulk b' });
+    const done = await bulkAdminVideos(ctx, editor, [a.id, b.id], {
+      type: 'suitability',
+      value: 'kids',
+    });
+    expect(done).toEqual({ succeeded: [a.id, b.id], failed: [] });
+    for (const video of [a, b]) {
+      const row = await getAdminVideo(ctx, editor, video.id);
+      expect(row.suitability).toBe('kids');
+    }
+  });
+
+  it('bulk suitability changes nothing when one id fails, and names the failed id', async () => {
+    const a = await seedVideo(t.setup, { title: 'All or nothing' });
+    const before = (await getAdminVideo(ctx, editor, a.id)).suitability;
+    const ghost = uuidv7();
+    const result = await bulkAdminVideos(ctx, editor, [a.id, ghost], {
+      type: 'suitability',
+      value: 'older',
+    });
+    expect(result.succeeded).toEqual([]);
+    expect(result.failed.map((f) => f.id)).toContain(ghost);
+    expect((await getAdminVideo(ctx, editor, a.id)).suitability).toBe(before);
+  });
+
+  it('bulk suitability refuses viewers', async () => {
+    const a = await seedVideo(t.setup, { title: 'Viewer cannot' });
+    await expect(
+      bulkAdminVideos(ctx, viewer, [a.id], { type: 'suitability', value: 'kids' }),
+    ).rejects.toThrow();
+  });
+
   it('trash is admin only, hides the video from viewers, and restore brings it back', async () => {
     const video = await seedVideo(t.setup, { title: 'Trash me' });
     const denied = await bulkAdminVideos(ctx, editor, [video.id], { type: 'trash' });

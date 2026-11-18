@@ -245,6 +245,21 @@ export function VideosList({ page, query, categories, role, bulk }: Props) {
                 void run(selectedIds, { type: 'category', categoryId: id }, 'Add to category');
             }}
           />
+          <SelectField
+            label="Set suitability"
+            value=""
+            options={[
+              { value: '', label: 'Set suitability' },
+              ...SUITABILITY_OPTIONS.filter(([value]) => value).map(([value, label]) => ({
+                value,
+                label,
+              })),
+            ]}
+            onChange={(e) => {
+              const value = e.target.value as 'everyone' | 'kids' | 'older' | '';
+              if (value) void run(selectedIds, { type: 'suitability', value }, 'Set suitability');
+            }}
+          />
           <Button
             variant="danger"
             disabledReason={canTrash ? undefined : 'Only an admin can move videos to Trash.'}
