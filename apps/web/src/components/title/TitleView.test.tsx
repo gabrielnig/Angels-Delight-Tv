@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { ToastProvider } from '@ad/ui';
 import type { TitleDetail, VideoSummary } from '../../lib/data';
@@ -37,6 +37,25 @@ const view = (d: TitleDetail) =>
     </ToastProvider>,
   );
 
+describe('TitleView layout (S18)', () => {
+  it('has a breadcrumb from Home through the category to the current title', () => {
+    view(detail({}));
+    const nav = screen.getByRole('navigation', { name: 'Breadcrumb' });
+    const links = within(nav).getAllByRole('link');
+    expect(links.map((a) => [a.textContent, a.getAttribute('href')])).toEqual([
+      ['Home', '/'],
+      ['Geography', '/browse/geo'],
+    ]);
+    expect(within(nav).getByText('Rivers of Nigeria')).toHaveAttribute('aria-current', 'page');
+  });
+
+  it('puts the poster and the details in separate columns that stack on small screens', () => {
+    const { container } = view(detail({}));
+    expect(container.querySelector('.web-title__layout > .web-title__media')).not.toBeNull();
+    expect(container.querySelector('.web-title__layout > .web-title__info h1')).not.toBeNull();
+  });
+});
+
 describe('TitleView', () => {
   it('shows the poster with its text alternative', () => {
     view(detail({}));
@@ -57,7 +76,10 @@ describe('TitleView', () => {
       }),
     );
     expect(screen.getByRole('link', { name: 'Resume from 2:14' })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Start over' })).toHaveAttribute('href', '/watch/v1?t=0');
+    expect(screen.getByRole('link', { name: 'Start over' })).toHaveAttribute(
+      'href',
+      '/watch/v1?t=0',
+    );
     expect(screen.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '23');
     expect(screen.getByText(/left/)).toBeInTheDocument();
   });
