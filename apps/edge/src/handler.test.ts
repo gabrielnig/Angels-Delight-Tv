@@ -7,12 +7,18 @@ const KEY = SIGNING_TEST_VECTOR.key;
 const NOW = SIGNING_TEST_VECTOR.exp - 600;
 const DATA = new Uint8Array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
 
-function bucket(files: Record<string, Uint8Array> = { [KEY]: DATA, 'cap/a/en.vtt': new TextEncoder().encode('WEBVTT') }) {
+function bucket(
+  files: Record<string, Uint8Array> = {
+    [KEY]: DATA,
+    'cap/a/en.vtt': new TextEncoder().encode('WEBVTT'),
+  },
+) {
   let gets = 0;
   return {
     gets: () => gets,
     api: {
-      head: async (key: string) => (files[key] ? { size: files[key]!.length, httpEtag: '"e"' } : null),
+      head: async (key: string) =>
+        files[key] ? { size: files[key]!.length, httpEtag: '"e"' } : null,
       get: async (key: string, o?: { range?: { offset: number; length: number } }) => {
         gets++;
         const all = files[key];
@@ -45,7 +51,9 @@ class MemoryCache implements EdgeCache {
 
 describe('edge media worker', () => {
   it('computes the same signature as the app (shared test vector)', async () => {
-    expect(await sign(SIGNING_TEST_VECTOR.secret, KEY, SIGNING_TEST_VECTOR.exp)).toBe(SIGNING_TEST_VECTOR.sig);
+    expect(await sign(SIGNING_TEST_VECTOR.secret, KEY, SIGNING_TEST_VECTOR.exp)).toBe(
+      SIGNING_TEST_VECTOR.sig,
+    );
   });
 
   it('serves a signed segment with immutable caching and nosniff', async () => {
@@ -59,16 +67,28 @@ describe('edge media worker', () => {
 
   it('refuses missing, tampered, wrong key and expired signatures', async () => {
     expect((await handle(new Request(`https://m/${KEY}`), env(), opts)).status).toBe(403);
-    expect((await handle(new Request(url().replace(/sig=./, 'sig=Z')), env(), opts)).status).toBe(403);
+    expect((await handle(new Request(url().replace(/sig=./, 'sig=Z')), env(), opts)).status).toBe(
+      403,
+    );
     const other = KEY.replace('00001', '00002');
     const swapped = url().replace(KEY, other);
-    expect((await handle(new Request(swapped), env(bucket({ [other]: DATA })), opts)).status).toBe(403);
-    expect((await handle(new Request(url()), env(), { now: () => SIGNING_TEST_VECTOR.exp + 31 })).status).toBe(403);
-    expect((await handle(new Request(url()), env(), { now: () => SIGNING_TEST_VECTOR.exp + 20 })).status).toBe(200);
+    expect((await handle(new Request(swapped), env(bucket({ [other]: DATA })), opts)).status).toBe(
+      403,
+    );
+    expect(
+      (await handle(new Request(url()), env(), { now: () => SIGNING_TEST_VECTOR.exp + 31 })).status,
+    ).toBe(403);
+    expect(
+      (await handle(new Request(url()), env(), { now: () => SIGNING_TEST_VECTOR.exp + 20 })).status,
+    ).toBe(200);
   });
 
   it('accepts the previous secret during rotation', async () => {
-    const e = { ...env(), MEDIA_URL_SECRET: Buffer.from(new Uint8Array(32).fill(1)).toString('base64'), MEDIA_URL_SECRET_PREVIOUS: SECRET_B64 };
+    const e = {
+      ...env(),
+      MEDIA_URL_SECRET: Buffer.from(new Uint8Array(32).fill(1)).toString('base64'),
+      MEDIA_URL_SECRET_PREVIOUS: SECRET_B64,
+    };
     expect((await handle(new Request(url()), e, opts)).status).toBe(200);
   });
 
@@ -89,7 +109,11 @@ describe('edge media worker', () => {
     expect(ok.status).toBe(206);
     expect(ok.headers.get('content-range')).toBe('bytes 2-4/10');
     expect([...new Uint8Array(await ok.arrayBuffer())]).toEqual([2, 3, 4]);
-    const bad = await handle(new Request(url(), { headers: { range: 'bytes=40-50' } }), env(), opts);
+    const bad = await handle(
+      new Request(url(), { headers: { range: 'bytes=40-50' } }),
+      env(),
+      opts,
+    );
     expect(bad.status).toBe(416);
   });
 
@@ -97,23 +121,43 @@ describe('edge media worker', () => {
     const cache = new MemoryCache();
     const b = bucket();
     await handle(new Request(url()), env(b), { ...opts, cache });
-    const again = await handle(new Request(url(KEY, SIGNING_TEST_VECTOR.exp)), env(b), { ...opts, cache });
+    const again = await handle(new Request(url(KEY, SIGNING_TEST_VECTOR.exp)), env(b), {
+      ...opts,
+      cache,
+    });
     expect(again.status).toBe(200);
     expect(b.gets()).toBe(1);
-    const forged = await handle(new Request(url().replace(/sig=./, 'sig=Z')), env(b), { ...opts, cache });
+    const forged = await handle(new Request(url().replace(/sig=./, 'sig=Z')), env(b), {
+      ...opts,
+      cache,
+    });
     expect(forged.status).toBe(403);
   });
 
   it('allows CORS only for the app origin', async () => {
-    const app = await handle(new Request(url(), { headers: { origin: 'https://app.example' } }), env(), opts);
+    const app = await handle(
+      new Request(url(), { headers: { origin: 'https://app.example' } }),
+      env(),
+      opts,
+    );
     expect(app.headers.get('access-control-allow-origin')).toBe('https://app.example');
-    const evil = await handle(new Request(url(), { headers: { origin: 'https://evil.example' } }), env(), opts);
+    const evil = await handle(
+      new Request(url(), { headers: { origin: 'https://evil.example' } }),
+      env(),
+      opts,
+    );
     expect(evil.headers.get('access-control-allow-origin')).toBeNull();
-    const pre = await handle(new Request(url(), { method: 'OPTIONS', headers: { origin: 'https://app.example' } }), env(), opts);
+    const pre = await handle(
+      new Request(url(), { method: 'OPTIONS', headers: { origin: 'https://app.example' } }),
+      env(),
+      opts,
+    );
     expect(pre.status).toBe(204);
   });
 
   it('rejects writes', async () => {
-    expect((await handle(new Request(url(), { method: 'PUT', body: 'x' }), env(), opts)).status).toBe(405);
+    expect(
+      (await handle(new Request(url(), { method: 'PUT', body: 'x' }), env(), opts)).status,
+    ).toBe(405);
   });
 });
