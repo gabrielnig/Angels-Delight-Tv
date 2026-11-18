@@ -24,4 +24,13 @@ describe('ConnectionStatus', () => {
     expect(screen.queryByText('You are back online')).toBeNull();
     expect(sync).not.toHaveBeenCalled();
   });
+
+  it('says it is showing the saved view on Home (M05-S08)', () => {
+    render(<ConnectionStatus savedView />);
+    act(() => void window.dispatchEvent(new Event('offline')));
+    expect(
+      screen.getByText('You are offline. Showing the view saved on this device.'),
+    ).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Retry' })).toBeInTheDocument();
+  });
 });

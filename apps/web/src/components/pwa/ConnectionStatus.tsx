@@ -8,10 +8,13 @@ export function ConnectionStatus({
   onBackOnline,
   initialOnline = true,
   toastMs = 4000,
+  savedView = false,
 }: {
   onBackOnline?: () => void;
   initialOnline?: boolean;
   toastMs?: number;
+  /** Home keeps its last rows on the device, so the banner says that instead of a generic warning (M05-S08). */
+  savedView?: boolean;
 }) {
   const [online, setOnline] = useState(initialOnline);
   const [toast, setToast] = useState(false);
@@ -48,7 +51,11 @@ export function ConnectionStatus({
     <>
       {!online ? (
         <div className="pwa-status" role="status">
-          <span>You are offline. Check your data or Wi-Fi.</span>
+          <span>
+            {savedView
+              ? 'You are offline. Showing the view saved on this device.'
+              : 'You are offline. Check your data or Wi-Fi.'}
+          </span>
           <button type="button" className="pwa-btn" onClick={() => window.location.reload()}>
             Retry
           </button>
