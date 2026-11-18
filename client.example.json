@@ -1,0 +1,34 @@
+{
+  "platformName": "REPLACE_ME platform name",
+  "tagline": "Free learning videos for everyone",
+  "domain": "replace-me.example",
+  "mediaDomain": "media.replace-me.example",
+  "supportEmail": "replace-me@example.org",
+  "adminOwnerEmail": "replace-me-owner@example.org",
+  "footerText": "",
+  "socialLinks": [],
+  "theme": {
+    "colors": {
+      "bg": "#F5F5F2",
+      "surface": "#FFFFFF",
+      "ink": "#1A1C22",
+      "muted": "#5B606B",
+      "border": "#DEDDD6",
+      "primary": "#1F6FB5",
+      "accent": "#FFC93C"
+    },
+    "fontKey": "inter",
+    "typeScale": 1,
+    "radiusScale": 1,
+    "density": "comfortable"
+  },
+  "logo": { "path": "brand/logo.png", "altText": "REPLACE_ME logo description" },
+  "favicon": { "path": "brand/favicon.png" },
+  "legal": {
+    "terms": { "file": "legal/terms.html" },
+    "privacy": { "file": "legal/privacy.html" },
+    "about": { "file": "legal/about.html" },
+    "help": { "file": "legal/help.html" }
+  },
+  "languages": { "default": "en", "offered": ["en"] }
+}
