@@ -8,6 +8,7 @@ import { formatClock, spokenLength } from './format';
 import { Icon } from './Icon';
 import { Link } from './Link';
 import { ProgressBar } from './ProgressBar';
+import { safePlaceholderBlur, safePlaceholderColor, useImageLoaded } from './placeholder';
 
 export interface Thumbnail {
   src: string;
@@ -16,6 +17,10 @@ export interface Thumbnail {
   /** jpeg copy for browsers that cannot read webp. When set, `src` and `srcSet` are the webp set. */
   fallbackSrc?: string;
   fallbackSrcSet?: string;
+  /** Tiny webp data url drawn blurred while the image loads. Wins over the colour when both are set. */
+  placeholderBlur?: string;
+  /** Hex colour drawn while the image loads when there is no blur. */
+  placeholderColor?: string;
 }
 
 const THUMB_SIZES =
@@ -25,10 +30,13 @@ function ThumbImage({
   thumbnail,
   priority,
   onError,
+  fade,
 }: {
   thumbnail: Thumbnail;
   priority?: boolean;
   onError: () => void;
+  /** Present when a placeholder is drawn: the image then starts hidden and fades in on load. */
+  fade?: ReturnType<typeof useImageLoaded>;
 }) {
   const sizes = thumbnail.sizes ?? THUMB_SIZES;
   const hasFallback = Boolean(thumbnail.fallbackSrc);
@@ -44,6 +52,9 @@ function ThumbImage({
       decoding="async"
       fetchPriority={priority ? 'high' : undefined}
       onError={onError}
+      ref={fade?.ref}
+      onLoad={fade?.onLoad}
+      data-loaded={fade ? String(fade.loaded) : undefined}
     />
   );
   return hasFallback ? (
@@ -69,10 +80,29 @@ function Thumb({
 }) {
   const [failed, setFailed] = useState(false);
   const showImage = thumbnail && !failed;
+  const blur = safePlaceholderBlur(thumbnail?.placeholderBlur);
+  const color = safePlaceholderColor(thumbnail?.placeholderColor);
+  const fade = useImageLoaded();
+  const hasPlaceholder = Boolean(blur || color);
   return (
-    <span className="ad-card__thumb">
+    <span
+      className="ad-card__thumb"
+      style={showImage && color ? { backgroundColor: color } : undefined}
+    >
+      {showImage && blur ? (
+        <span
+          className="ad-card__blur"
+          aria-hidden="true"
+          style={{ backgroundImage: `url("${blur}")` }}
+        />
+      ) : null}
       {showImage ? (
-        <ThumbImage thumbnail={thumbnail} priority={priority} onError={() => setFailed(true)} />
+        <ThumbImage
+          thumbnail={thumbnail}
+          priority={priority}
+          onError={() => setFailed(true)}
+          fade={hasPlaceholder ? fade : undefined}
+        />
       ) : (
         <span className="ad-card__fallback" aria-hidden="true">
           <Icon name="play" size={24} filled />
