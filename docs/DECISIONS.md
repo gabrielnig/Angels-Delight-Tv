@@ -675,3 +675,21 @@ Format: decision, options considered, why, reversible or not. Newest first. Deci
 - Options: add a worker check to `/readyz`, derive liveness from pg-boss job completion, a heartbeat file in the container.
 - Why: a stopped worker should alert, not make the site unready. pg-boss completion needs a scheduled job and tells nothing on an idle queue. A file cannot be read by the web app or an external monitor. Alert dedupe, disk, error rate and certificate expiry alerts are monitor settings (DEPLOYMENT section 9), not code, so they stay a launch checklist item.
 - Reversible: yes.
+
+## D-125 Title page matches the mockup inside the design system limits (lane f3)
+- Decision: the S18 title page uses the themeable display face and weight 700, not the mockup's Space Grotesk, which is outside the curated font list. The mockup deep blue heading colour maps to `--color-ink` (DESIGN-SYSTEM section 3). Sizes the scale has no token for (44px title, 15px and 17px text) are written as `calc(rem * var(--type-scale))` in `components/title/title.css` so the size factor setting still applies.
+- Options: add Space Grotesk and a navy token, accept the face difference, add scale tokens for 15 and 17.
+- Why: the doc is the source of truth and a font change needs the theme editor and font budget work. The visible difference is the letter shapes only. Layout, sizes, weights, colours, radii and spacing match.
+- Reversible: yes.
+
+## D-126 Title pages swap the bottom tab bar for a Back button and a sticky Play bar (lane f3)
+- Decision: on `/title/*` the phone tab bar is hidden. The header gets a Back button (`TopNav onBack`, history back) and the page has a sticky Play bar above the screen bottom. New fixed token `--shadow-up` for the bar.
+- Options: keep the tab bar and stack the Play bar above it, hide the tab bar as in the S18 mobile mockup.
+- Why: the mockup shows no tab bar, and two stacked bars would take about 120px of a 740px screen. Back is one tap and Home and Browse stay in the header and footer.
+- Reversible: yes (one condition in `ViewerChrome`).
+
+## D-127 Title page states live in a route layout (lane f3)
+- Decision: `app/(viewer)/title/[slug]/layout.tsx` renders `AppShell`, so `loading.tsx` (skeleton after 300ms), `not-found.tsx` and `error.tsx` keep the header and footer. The error card shows the Next digest as the reference.
+- Options: wrap each state by hand, keep the global error page.
+- Why: the mockups show every state inside the header and footer.
+- Reversible: yes.
