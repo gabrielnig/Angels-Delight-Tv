@@ -19,7 +19,8 @@
     "db:seed:admin": "pnpm --filter @ad/auth run seed:admin",
     "db:seed:demo": "pnpm --filter @ad/catalog run seed:demo",
     "launch:apply": "tsx packages/launch/src/cli/apply.ts",
-    "secrets:generate": "tsx packages/launch/src/cli/secrets.ts"
+    "secrets:generate": "tsx packages/launch/src/cli/secrets.ts",
+    "content:import": "tsx packages/launch/src/cli/import.ts"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.5",

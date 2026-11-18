@@ -106,6 +106,25 @@ describe.skipIf(!integrationEnabled())('VideoPipeline against Postgres and local
       expect(jobs.map((job) => job.queue).sort()).toEqual(['caption.generate', 'video.encode']);
     });
 
+    it('asks for script alignment when a script was uploaded with the video', async () => {
+      const video = await newVideo();
+      await originals.put(`scripts/${video.id}.txt`, new TextEncoder().encode('Hello there'));
+      await pipeline.probe(video.id, progress);
+      const sent = boss.jobs.find(
+        (job) => job.name === 'caption.generate' && job.data.videoId === video.id,
+      );
+      expect(sent?.data.mode).toBe('align');
+    });
+
+    it('transcribes when there is no script', async () => {
+      const video = await newVideo();
+      await pipeline.probe(video.id, progress);
+      const sent = boss.jobs.find(
+        (job) => job.name === 'caption.generate' && job.data.videoId === video.id,
+      );
+      expect(sent?.data.mode).toBe('transcribe');
+    });
+
     it('does not queue captions for a silent source', async () => {
       runner.probe = fakeProbeJson({ audio: false });
       const video = await newVideo();

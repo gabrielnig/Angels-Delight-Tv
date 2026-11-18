@@ -1,8 +1,7 @@
 import { readFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
-import { emailHash, findAccountByEmailHash, normalizeEmail } from '@ad/auth';
 import { ConfigError } from '@ad/config';
-import { createLogger, type Actor } from '@ad/shared';
+import { createLogger } from '@ad/shared';
 import {
   LogoUploader,
   SettingsService,
@@ -14,7 +13,7 @@ import {
 import { applyClientConfig } from '../apply';
 import { parseClientConfig } from '../client-config';
 import { formatApplyReport } from '../report';
-import { createToolsRuntime } from '../runtime';
+import { createToolsRuntime, resolveAdminActor } from '../runtime';
 import { parseArgs } from './args';
 
 const USAGE = `Usage: pnpm launch:apply --config client.json [--dry-run] [--env-file .env.production]
@@ -54,17 +53,13 @@ async function main(): Promise<number> {
     return 2;
   }
   try {
-    const email = normalizeEmail(config.config.adminOwnerEmail);
-    const found = email
-      ? await findAccountByEmailHash(runtime.db, emailHash(email, runtime.env.EMAIL_HASH_PEPPER))
-      : null;
-    if (!found || found.role !== 'admin' || found.status !== 'active') {
+    const actor = await resolveAdminActor(runtime, config.config.adminOwnerEmail);
+    if (!actor) {
       console.error(
         'No active admin account has the adminOwnerEmail. Create it first with `pnpm db:seed:admin`, then run this again.',
       );
       return 1;
     }
-    const actor: Actor = { accountId: found.id, role: 'admin' };
     const logger = createLogger({ level: 'warn', bindings: { tool: 'launch-apply' } });
     const report = await applyClientConfig(
       config.config,
