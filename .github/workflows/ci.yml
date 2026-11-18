@@ -85,3 +85,62 @@ jobs:
       - name: Footprint
         if: github.event_name == 'pull_request'
         run: scripts/footprint-check.sh --range origin/${{ github.base_ref }}..${{ github.event.pull_request.head.sha }}
+
+  # M34-S01: axe-core on every key page, signed out, signed in and admin, plus a 320 px overflow check.
+  # Runs against the fixture build, so no database is needed. Only the a11y spec is run (D-012).
+  a11y:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Build
+        run: pnpm --filter @ad/web build
+      - name: Start the fixture server
+        run: |
+          scripts/ci-fixture-env.sh 3113 > .env.ci-fixture
+          set -a; . ./.env.ci-fixture; set +a
+          (cd apps/web && NODE_ENV=development nohup pnpm exec next start -p 3113 > ../../server.log 2>&1 &)
+          for i in $(seq 1 30); do curl -sf http://localhost:3113/api/health && break; sleep 2; done
+      - run: pnpm exec playwright install --with-deps chromium
+      - name: Axe on the key pages
+        env:
+          E2E_BASE_URL: http://localhost:3113
+        run: pnpm exec playwright test apps/web/e2e/a11y.e2e.ts --config apps/web/playwright.config.ts --project=desktop
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: a11y-report
+          path: |
+            apps/web/test-results
+            server.log
+
+  # M25-S02 AC3: Lighthouse on Home, mobile profile, against ops/lighthouse/budget.json.
+  lighthouse:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Build
+        run: pnpm --filter @ad/web build
+      - name: Start the fixture server
+        run: |
+          scripts/ci-fixture-env.sh 3113 > .env.ci-fixture
+          set -a; . ./.env.ci-fixture; set +a
+          (cd apps/web && NODE_ENV=development nohup pnpm exec next start -p 3113 > ../../server.log 2>&1 &)
+          for i in $(seq 1 30); do curl -sf http://localhost:3113/api/health && break; sleep 2; done
+      - name: Lighthouse on Home
+        env:
+          CHROME_PATH: /usr/bin/google-chrome
+        run: ops/lighthouse/run.sh http://localhost:3113/
