@@ -62,6 +62,23 @@ describe.skipIf(!integrationEnabled())('real catalog repository', () => {
       expect(new Set(home.rows.map((r) => r.id)).size).toBe(home.rows.length);
     });
 
+    it('pages the rows below the first screen by cursor without repeating any', async () => {
+      const first = await catalog.home(adultCtx(user));
+      const ids = first.rows.map((r) => r.id);
+      let cursor = first.nextCursor ?? null;
+      let guard = 0;
+      while (cursor && guard++ < 10) {
+        const page = await catalog.homeRows(adultCtx(user), cursor);
+        for (const row of page.rows) {
+          expect(ids).not.toContain(row.id);
+          ids.push(row.id);
+        }
+        cursor = page.nextCursor;
+      }
+      expect(cursor).toBeNull();
+      expect(new Set(ids).size).toBe(ids.length);
+    });
+
     it('only shows kids safe titles on a kids profile', async () => {
       const home = await catalog.home(kidsCtx(user));
       const items = [...home.hero.map((s) => s.item), ...home.rows.flatMap((r) => r.items)];
