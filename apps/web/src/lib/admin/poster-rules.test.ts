@@ -4,6 +4,7 @@ import {
   candidateFrames,
   clampFocus,
   focusFromPoint,
+  cropPreviewStyle,
   previewStyle,
   validatePosterFile,
 } from './poster-rules';
@@ -72,5 +73,40 @@ describe('validatePosterChoice', () => {
       alt: 'Describe the poster for people who cannot see it.',
       zoom: 'Zoom must be between 100 and 200 percent.',
     });
+  });
+});
+
+describe('cropPreviewStyle matches the recut the worker makes (M36-S03)', () => {
+  const pct = (v: string) => Number.parseFloat(v);
+  it('shows the whole picture at zoom 100 in a 16:9 frame', () => {
+    const style = cropPreviewStyle({ x: 30, y: 70 }, 100, 16 / 9);
+    expect(pct(style.width)).toBeCloseTo(100);
+    expect(pct(style.height)).toBeCloseTo(100);
+    expect(pct(style.left) + 0).toBeCloseTo(0);
+    expect(pct(style.top) + 0).toBeCloseTo(0);
+  });
+  it('centres the crop on the focus, as cropRect does', () => {
+    // zoom 200 keeps half the picture, centred on x 50 percent: from 25 to 75 percent.
+    const style = cropPreviewStyle({ x: 50, y: 50 }, 200, 16 / 9);
+    expect(pct(style.width)).toBeCloseTo(200);
+    expect(pct(style.left)).toBeCloseTo(-50);
+    expect(pct(style.top)).toBeCloseTo(-50);
+  });
+  it('stops the crop at the picture edge when the focus is near it', () => {
+    const style = cropPreviewStyle({ x: 95, y: 5 }, 200, 16 / 9);
+    expect(pct(style.left)).toBeCloseTo(-100);
+    expect(pct(style.top) + 0).toBeCloseTo(0);
+  });
+  it('shows a wider frame as a band of the recut, kept around the focus', () => {
+    const style = cropPreviewStyle({ x: 50, y: 50 }, 100, 21 / 9);
+    expect(pct(style.width)).toBeCloseTo(100);
+    expect(pct(style.height)).toBeCloseTo(131.25, 1);
+    expect(pct(style.top)).toBeCloseTo(-15.6, 0);
+  });
+  it('keeps the picture shape: the box is always 16:9 whatever the frame', () => {
+    for (const ratio of [21 / 9, 16 / 9, 4 / 5]) {
+      const style = cropPreviewStyle({ x: 20, y: 60 }, 150, ratio);
+      expect((pct(style.width) * ratio) / pct(style.height)).toBeCloseTo(16 / 9, 3);
+    }
   });
 });

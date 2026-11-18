@@ -2,11 +2,11 @@ import { createHash } from 'node:crypto';
 import { schema, type Database } from '@ad/db';
 import { NotFound, createLogger, type Logger } from '@ad/shared';
 import type { StorageAdapter } from '@ad/storage';
-import { eq } from 'drizzle-orm';
+import { and, eq, ne, sql } from 'drizzle-orm';
 import { PipelineError } from '../failure';
 import { ImageRejected, processImage, type ImagePreset } from './process';
 
-const { assets } = schema;
+const { assets, videos } = schema;
 
 const IMMUTABLE = 'public, max-age=31536000, immutable';
 const MIME = { avif: 'image/avif', webp: 'image/webp', jpeg: 'image/jpeg' } as const;
@@ -52,7 +52,9 @@ export class ImageService {
 
     let result;
     try {
-      result = await processImage(source, presetFor(asset.purpose));
+      result = await processImage(source, presetFor(asset.purpose), {
+        ...(asset.cutFocus ? { focus: asset.cutFocus } : {}),
+      });
     } catch (error) {
       if (error instanceof ImageRejected) {
         await db.update(assets).set({ status: 'failed' }).where(eq(assets.id, assetId));
@@ -99,7 +101,46 @@ export class ImageService {
         placeholderBlur: result.placeholderBlur,
       })
       .where(eq(assets.id, assetId));
+    if (asset.cutFrom && asset.cutFocus)
+      await this.adoptRecut(assetId, asset.cutFrom, asset.cutFocus);
     this.logger.info('image processed', { assetId, variants: stored.length });
+  }
+
+  /**
+   * A poster recut around a focus point is ready (M36-S03). Videos that still use the picture it was cut from, with
+   * this same saved focus, switch to it. Earlier recuts of that picture that no video uses any more are removed.
+   */
+  private async adoptRecut(
+    assetId: string,
+    cutFrom: string,
+    focus: { x: number; y: number; zoom: number },
+  ): Promise<void> {
+    const { db } = this.deps;
+    await db
+      .update(videos)
+      .set({ posterAssetId: assetId })
+      .where(
+        and(
+          sql`${videos.posterAssetId} IN (SELECT id FROM assets WHERE id = ${cutFrom} OR cut_from = ${cutFrom})`,
+          sql`${videos.posterFocus} = ${JSON.stringify(focus)}::jsonb`,
+          sql`${videos.posterAssetId} <> ${assetId}`,
+        ),
+      );
+    const stale = await db
+      .select({ id: assets.id })
+      .from(assets)
+      .where(
+        and(
+          eq(assets.cutFrom, cutFrom),
+          eq(assets.status, 'ready'),
+          ne(assets.id, assetId),
+          sql`NOT EXISTS (SELECT 1 FROM videos v WHERE v.poster_asset_id = assets.id OR v.hero_asset_id = assets.id)`,
+        ),
+      );
+    for (const row of stale) {
+      await this.remove(row.id);
+      await db.delete(assets).where(eq(assets.id, row.id));
+    }
   }
 
   /** Deletes the source and every generated file. Used when an asset is replaced or its video is purged. */

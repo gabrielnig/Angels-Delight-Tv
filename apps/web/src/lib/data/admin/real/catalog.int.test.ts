@@ -12,6 +12,7 @@ import {
 } from '@ad/catalog/testing';
 import { FailedEncodeService } from '@ad/video';
 import { LocalStorage } from '@ad/storage';
+import { Readable } from 'node:stream';
 import { mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -57,7 +58,11 @@ describe.skipIf(!integrationEnabled())('real admin services over the catalog', (
         return { jobId: 'job', deduped: false };
       }) as never,
       names: async (_actor, ids) => new Map(ids.map((id) => [id, 'Amina Bello'])),
-      originals: () => ({ put: async (key: string) => void stored.push(key) }) as never,
+      originals: () =>
+        ({
+          put: async (key: string) => void stored.push(key),
+          get: async () => Readable.from([Buffer.from('source picture')]),
+        }) as never,
       failedEncodes: () => failedService,
     });
   });
@@ -211,6 +216,26 @@ describe.skipIf(!integrationEnabled())('real admin services over the catalog', (
         zoom: 100,
       });
       expect(invalid.ok).toBe(false);
+    });
+
+    it('recuts the generated poster files when the saved focus is not the centre (M36-S03)', async () => {
+      const video = await seedVideo(t.setup);
+      const poster = await seedAsset(t.setup);
+      await t.setup
+        .update(schema.assets)
+        .set({ rawKey: `uploads/${video.id}/${poster}` })
+        .where(eq(schema.assets.id, poster));
+      stored.length = 0;
+      expect(
+        await realVideoService.setPoster(editor, video.id, {
+          posterId: poster,
+          alt: 'Riverbank at dawn',
+          focus: { x: 20, y: 40 },
+          zoom: 130,
+        }),
+      ).toEqual({ ok: true });
+      expect(stored.filter((key) => key.startsWith(`recuts/${video.id}/`))).toHaveLength(1);
+      expect(queued.filter((job) => job.queue === 'image.process')).toHaveLength(1);
     });
 
     it('stores a custom poster, queues its processing and lists it in the picker', async () => {

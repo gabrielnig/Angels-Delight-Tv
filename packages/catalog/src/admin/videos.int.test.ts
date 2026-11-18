@@ -288,4 +288,124 @@ describe.skipIf(!integrationEnabled())('admin videos', () => {
       await fresh.drop();
     }
   });
+
+  describe('poster focus recut (M36-S03)', () => {
+    const makeRecut = () => {
+      const copies: Array<[string, string]> = [];
+      const queued: Array<{ queue: string; assetId: string }> = [];
+      return {
+        copies,
+        queued,
+        recut: {
+          copySource: async (from: string, to: string) => void copies.push([from, to]),
+          enqueue: async (queue: 'image.process', payload: { assetId: string }) =>
+            void queued.push({ queue, assetId: payload.assetId }),
+        },
+      };
+    };
+    const source = async () => {
+      const id = await seedAsset(t.setup);
+      await t.setup
+        .update(assets)
+        .set({ rawKey: `uploads/x/${id}` })
+        .where(eq(assets.id, id));
+      return id;
+    };
+
+    it('creates a recut asset, copies the source, queues the job and keeps the old poster until it is ready', async () => {
+      const video = await seedVideo(t.setup);
+      const picture = await source();
+      const { recut, copies, queued } = makeRecut();
+      const result = await setAdminPoster(ctx, editor, video.id, {
+        posterId: picture,
+        alt: 'A seedling',
+        focus: { x: 80, y: 40 },
+        zoom: 150,
+        recut,
+      });
+      expect(result).toEqual({ ok: true });
+      const cuts = await t.setup.select().from(assets).where(eq(assets.cutFrom, picture));
+      expect(cuts).toHaveLength(1);
+      expect(cuts[0]).toMatchObject({
+        status: 'processing',
+        purpose: 'thumbnail',
+        altText: 'A seedling',
+        cutFocus: { x: 80, y: 40, zoom: 150 },
+      });
+      expect(copies).toEqual([[`uploads/x/${picture}`, cuts[0]!.rawKey]]);
+      expect(cuts[0]!.rawKey).toBe(`recuts/${video.id}/${cuts[0]!.id}`);
+      expect(queued).toEqual([{ queue: 'image.process', assetId: cuts[0]!.id }]);
+      const [row] = await t.setup.select().from(videos).where(eq(videos.id, video.id));
+      expect(row?.posterAssetId).toBe(picture);
+      expect(row?.posterFocus).toEqual({ x: 80, y: 40, zoom: 150 });
+    });
+
+    it('does not recut for the default focus', async () => {
+      const video = await seedVideo(t.setup);
+      const picture = await source();
+      const { recut, queued } = makeRecut();
+      await setAdminPoster(ctx, editor, video.id, {
+        posterId: picture,
+        alt: 'A seedling',
+        focus: { x: 50, y: 50 },
+        zoom: 100,
+        recut,
+      });
+      expect(queued).toHaveLength(0);
+      expect(await t.setup.select().from(assets).where(eq(assets.cutFrom, picture))).toHaveLength(
+        0,
+      );
+    });
+
+    it('reuses a ready recut with the same crop and points the video straight at it', async () => {
+      const video = await seedVideo(t.setup);
+      const picture = await source();
+      const cut = uuidv7();
+      await t.setup.insert(assets).values({
+        id: cut,
+        purpose: 'thumbnail',
+        status: 'ready',
+        mime: 'image/webp',
+        cutFrom: picture,
+        cutFocus: { x: 80, y: 40, zoom: 150 },
+      });
+      const { recut, queued } = makeRecut();
+      await setAdminPoster(ctx, editor, video.id, {
+        posterId: picture,
+        alt: 'Updated words',
+        focus: { x: 80, y: 40 },
+        zoom: 150,
+        recut,
+      });
+      expect(queued).toHaveLength(0);
+      const [row] = await t.setup.select().from(videos).where(eq(videos.id, video.id));
+      expect(row?.posterAssetId).toBe(cut);
+      const [cutRow] = await t.setup.select().from(assets).where(eq(assets.id, cut));
+      expect(cutRow?.altText).toBe('Updated words');
+      expect((await getAdminVideo(ctx, editor, video.id)).posterId).toBe(picture);
+    });
+
+    it('accepts a recut as the chosen picture by resolving it back to its source', async () => {
+      const video = await seedVideo(t.setup);
+      const picture = await source();
+      const cut = uuidv7();
+      await t.setup.insert(assets).values({
+        id: cut,
+        purpose: 'thumbnail',
+        status: 'ready',
+        mime: 'image/webp',
+        cutFrom: picture,
+        cutFocus: { x: 80, y: 40, zoom: 150 },
+      });
+      const { recut, copies } = makeRecut();
+      await setAdminPoster(ctx, editor, video.id, {
+        posterId: cut,
+        alt: 'x words',
+        focus: { x: 10, y: 10 },
+        zoom: 120,
+        recut,
+      });
+      expect(copies[0]![0]).toBe(`uploads/x/${picture}`);
+    });
+  });
 });

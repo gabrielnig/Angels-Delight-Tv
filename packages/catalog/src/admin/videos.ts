@@ -6,6 +6,7 @@ import {
   NotFound,
   ValidationFailed,
   isUuid,
+  uuidv7,
   type Actor,
   isStaffRole,
   isAdminRole,
@@ -122,7 +123,7 @@ function toVideo(row: Row): AdminVideo {
 
 const SELECT = sql`
   SELECT v.id, v.slug, v.title, v.description, v.tags, v.status, v.publish_state, v.publish_at, v.published_at,
-    v.duration_ms, v.original_bytes, v.poster_asset_id, pa.alt_text AS poster_alt, v.poster_focus,
+    v.duration_ms, v.original_bytes, coalesce(pa.cut_from, v.poster_asset_id) AS poster_asset_id, pa.alt_text AS poster_alt, v.poster_focus,
     v.suitability, v.kids_safe, v.created_by, v.created_at, v.updated_at, v.deleted_at,
     v.failure_code, v.failure_message, v.caption_override_reason,
     coalesce((SELECT array_agg(vc.category_id::text ORDER BY c.position)
@@ -453,7 +454,23 @@ export interface PosterInput {
   alt: string;
   focus: { x: number; y: number };
   zoom: number;
+  /**
+   * Lets a saved focus point recut the generated files (M36-S03). Without it only the focus is stored, which is
+   * what imports and tests want.
+   */
+  recut?: PosterRecut;
 }
+
+export interface PosterRecut {
+  /** Copies the source picture inside the originals bucket, so a recut owns its own source. */
+  copySource: (fromKey: string, toKey: string) => Promise<void>;
+  enqueue: (queue: 'image.process', payload: { assetId: string }) => Promise<unknown>;
+}
+
+const sameCrop = (
+  a: { x: number; y: number; zoom: number } | null,
+  b: { x: number; y: number; zoom: number },
+) => a !== null && a.x === b.x && a.y === b.y && a.zoom === b.zoom;
 
 export async function setAdminPoster(
   ctx: AdminContext,
@@ -471,20 +488,64 @@ export async function setAdminPoster(
       .for('update');
     if (!video) throw new NotFound('Video not found');
     if (!isUuid(input.posterId)) return fail('Choose one of the poster images.');
-    const [asset] = await tx
-      .select({ id: assets.id, status: assets.status, purpose: assets.purpose })
+    const [chosen] = await tx
+      .select({
+        id: assets.id,
+        status: assets.status,
+        purpose: assets.purpose,
+        rawKey: assets.rawKey,
+        cutFrom: assets.cutFrom,
+      })
       .from(assets)
       .where(eq(assets.id, input.posterId));
-    if (!asset || asset.status !== 'ready' || !['thumbnail', 'hero'].includes(asset.purpose))
+    if (!chosen || chosen.status !== 'ready' || !['thumbnail', 'hero'].includes(chosen.purpose))
       return fail('Choose one of the poster images.');
-    await tx
-      .update(assets)
-      .set({ altText: input.alt.trim().slice(0, 200) })
-      .where(eq(assets.id, asset.id));
-    await tx
-      .update(videos)
-      .set({ posterAssetId: asset.id, posterFocus: { ...input.focus, zoom: input.zoom } })
-      .where(eq(videos.id, id));
+    // A recut is never chosen on its own: the choice is always the picture it was cut from.
+    const [asset] = chosen.cutFrom
+      ? await tx
+          .select({ id: assets.id, rawKey: assets.rawKey })
+          .from(assets)
+          .where(eq(assets.id, chosen.cutFrom))
+      : [{ id: chosen.id, rawKey: chosen.rawKey }];
+    if (!asset) return fail('Choose one of the poster images.');
+    const alt = input.alt.trim().slice(0, 200);
+    const focus = { ...input.focus, zoom: input.zoom };
+    const isDefault = focus.x === 50 && focus.y === 50 && focus.zoom === 100;
+    let posterAssetId = asset.id;
+    let enqueueId: string | null = null;
+    await tx.update(assets).set({ altText: alt }).where(eq(assets.id, asset.id));
+    if (input.recut && !isDefault && asset.rawKey) {
+      const existing = await tx
+        .select({ id: assets.id, status: assets.status, cutFocus: assets.cutFocus })
+        .from(assets)
+        .where(eq(assets.cutFrom, asset.id));
+      const match = existing.find(
+        (row) => row.status !== 'failed' && sameCrop(row.cutFocus, focus),
+      );
+      if (match) {
+        await tx.update(assets).set({ altText: alt }).where(eq(assets.id, match.id));
+        // A recut still being made is adopted by the worker when it finishes.
+        if (match.status === 'ready') posterAssetId = match.id;
+      } else {
+        const cutId = uuidv7();
+        const rawKey = `recuts/${id}/${cutId}`;
+        await input.recut.copySource(asset.rawKey, rawKey);
+        await tx.insert(assets).values({
+          id: cutId,
+          purpose: 'thumbnail',
+          status: 'processing',
+          rawKey,
+          mime: 'image/png',
+          altText: alt,
+          cutFrom: asset.id,
+          cutFocus: focus,
+          createdBy: actor.accountId,
+        });
+        enqueueId = cutId;
+      }
+    }
+    await tx.update(videos).set({ posterAssetId, posterFocus: focus }).where(eq(videos.id, id));
+    if (enqueueId) await input.recut!.enqueue('image.process', { assetId: enqueueId });
     await writeAudit(tx, {
       action: 'video.poster',
       outcome: 'success',
