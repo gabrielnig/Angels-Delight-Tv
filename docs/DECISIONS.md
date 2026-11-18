@@ -517,3 +517,9 @@ Format: decision, options considered, why, reversible or not. Newest first. Deci
 - Options: store codes in clear so admins can re-read them, a separate invite only flag, or close sign up completely.
 - Why: M29-S02 defines the flag as open or invite only, a stolen database should not hand out working codes, and a lost code is cheaply replaced by creating another.
 - Reversible: yes.
+
+## D-100 Profile PIN entry: the server counts the tries, the account password overrides (lane M2)
+- Decision: selecting a PIN profile needs the four digit PIN or the account password, checked in `selectProfile`, so the active profile cookie and session row are only ever set after proof. The PIN is limited per profile (5 tries per 15 minutes, `profile_pin` bucket) and the password override spends the shared `kids_exit` budget. The PIN dialog uses the numeric one time code slots and shows the lock time the server returns. After leaving Kids mode with the password, the first grown-up profile without a PIN opens, and if every grown-up profile has a PIN the picker shows and asks. Setting, changing or removing a PIN is on Edit profile and needs the account password.
+- Options: a device scoped 5 minute lock as in M03-S12 AC2, or opening the PIN profile directly after the kids password.
+- Why: a device lock lives on the client and a forged request skips it, so the server limit is the real one (the story's 5 tries stay, the window is 15 minutes). Skipping the PIN after a password would let anyone who learns the account password bypass the profile separation the PIN exists for, and the picker already offers the password path.
+- Reversible: yes. The window is a constant in `@ad/viewer` context.

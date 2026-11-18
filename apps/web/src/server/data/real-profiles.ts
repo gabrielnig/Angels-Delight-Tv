@@ -10,12 +10,13 @@ import {
   type UpdateProfileInput,
   type ViewerContext as ServiceContext,
 } from '@ad/viewer';
-import { Conflict, Forbidden, ValidationFailed } from '@ad/shared';
+import { Conflict, Forbidden, RateLimited, ValidationFailed } from '@ad/shared';
 import type {
   Profile,
   ProfileFailure,
   ProfileInput,
   ProfilesRepository,
+  SelectProfileResult,
 } from '../../lib/data/types';
 import { viewerActor } from './actor';
 import { avatarFromTone, profileToView } from './mappers';
@@ -104,6 +105,7 @@ export class RealProfiles implements ProfilesRepository {
     if (input.kids !== undefined) patch.isKids = input.kids;
     if (input.language !== undefined) patch.language = input.language;
     if (input.autoplayNext !== undefined) patch.autoplayNext = input.autoplayNext;
+    if (input.pin !== undefined) patch.pin = input.pin;
     try {
       const active = await this.io.activeProfileId();
       const dto = await updateProfile(this.service, viewerActor(accountId), id, patch, {
@@ -130,11 +132,36 @@ export class RealProfiles implements ProfilesRepository {
     }
   }
 
-  /** Throws for a profile that is not this account's, or that needs a PIN the UI cannot ask for yet. */
-  async select(accountId: string, id: string): Promise<void> {
-    const profile = await selectProfile(this.service, viewerActor(accountId), id, {
-      kidsLocked: await this.io.kidsLocked(),
-    });
-    await this.io.setActive(accountId, id, profile.isKids);
+  /**
+   * Opens a profile. A PIN profile needs the PIN or the account password and the server counts the tries, so a
+   * forged request gains nothing. Anything else that is refused (a foreign profile, the kids lock) still throws.
+   */
+  async select(
+    accountId: string,
+    id: string,
+    proof: { pin?: string; password?: string } = {},
+  ): Promise<SelectProfileResult> {
+    try {
+      const profile = await selectProfile(this.service, viewerActor(accountId), id, {
+        kidsLocked: await this.io.kidsLocked(),
+        ...proof,
+      });
+      await this.io.setActive(accountId, id, profile.isKids);
+      return { ok: true };
+    } catch (error) {
+      if (error instanceof RateLimited)
+        return {
+          ok: false,
+          reason: 'locked',
+          minutes: Math.max(1, Math.ceil(error.retryAfterSeconds / 60)),
+        };
+      if (error instanceof Forbidden) {
+        if (error.message === 'pin_required') return { ok: false, reason: 'pin_required' };
+        if (error.message === 'pin_invalid') return { ok: false, reason: 'pin_invalid' };
+        if (error.message === 'password_incorrect')
+          return { ok: false, reason: 'password_incorrect' };
+      }
+      throw error;
+    }
   }
 }

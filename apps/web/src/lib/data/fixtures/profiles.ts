@@ -1,8 +1,28 @@
-import type { Profile, ProfileInput, ProfilesRepository } from '../types';
+import type { Profile, ProfileInput, ProfilesRepository, SelectProfileResult } from '../types';
+
+/** The fixture PIN for the one protected demo profile. Real data never reads this. */
+const FIXTURE_PIN = '1234';
+const FIXTURE_PASSWORD = 'correct horse battery staple';
 
 const seed = (): Profile[] => [
-  { id: 'prof-1', name: 'Adaeze', kids: false, owner: true, language: 'en', autoplayNext: true, lastUsedHere: true },
-  { id: 'prof-2', name: 'Emeka', kids: false, owner: false, language: 'en', autoplayNext: true },
+  {
+    id: 'prof-1',
+    name: 'Adaeze',
+    kids: false,
+    owner: true,
+    language: 'en',
+    autoplayNext: true,
+    lastUsedHere: true,
+  },
+  {
+    id: 'prof-2',
+    name: 'Emeka',
+    kids: false,
+    owner: false,
+    language: 'en',
+    autoplayNext: true,
+    hasPin: true,
+  },
   { id: 'prof-3', name: 'Amina', kids: true, owner: false, language: 'en', autoplayNext: false },
   { id: 'prof-4', name: 'Tobi', kids: true, owner: false, language: 'en', autoplayNext: false },
 ];
@@ -54,12 +74,19 @@ export class FixtureProfiles implements ProfilesRepository {
     return { ok: true as const, profile };
   }
 
-  async update(accountId: string, id: string, input: Partial<ProfileInput> & { password?: string }) {
+  async update(
+    accountId: string,
+    id: string,
+    input: Partial<ProfileInput> & { password?: string },
+  ) {
     const list = profilesOf(accountId);
     const index = list.findIndex((p) => p.id === id);
     const current = list[index];
     if (!current) return { ok: false as const, reason: 'network' as const };
-    if (input.name && list.some((p) => p.id !== id && p.name.toLowerCase() === input.name!.trim().toLowerCase()))
+    if (
+      input.name &&
+      list.some((p) => p.id !== id && p.name.toLowerCase() === input.name!.trim().toLowerCase())
+    )
       return { ok: false as const, reason: 'duplicate' as const };
     if (current.kids && input.kids === false && !input.password)
       return { ok: false as const, reason: 'password_required' as const };
@@ -92,7 +119,19 @@ export class FixtureProfiles implements ProfilesRepository {
     return { ok: true as const };
   }
 
-  async select(accountId: string, id: string) {
+  async select(
+    accountId: string,
+    id: string,
+    proof: { pin?: string; password?: string } = {},
+  ): Promise<SelectProfileResult> {
+    const target = profilesOf(accountId).find((p) => p.id === id);
+    if (target?.hasPin) {
+      if (proof.password !== undefined) {
+        if (proof.password !== FIXTURE_PASSWORD) return { ok: false, reason: 'password_incorrect' };
+      } else if (proof.pin === undefined) return { ok: false, reason: 'pin_required' };
+      else if (proof.pin !== FIXTURE_PIN) return { ok: false, reason: 'pin_invalid' };
+    }
     for (const p of profilesOf(accountId)) p.lastUsedHere = p.id === id;
+    return { ok: true };
   }
 }
