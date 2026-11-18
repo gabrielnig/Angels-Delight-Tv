@@ -56,8 +56,16 @@ describe('themeVariables', () => {
     expect(vars['--font-sans']).toContain('system-ui');
   });
 
-  it('knows exactly the five fonts from the design system', () => {
-    expect([...FONT_KEYS].sort()).toEqual(['dm-sans', 'inter', 'lora', 'nunito', 'poppins']);
+  it('knows exactly the six fonts from the design system', () => {
+    expect([...FONT_KEYS].sort()).toEqual([
+      'dm-sans',
+      'inter',
+      'lora',
+      'nunito',
+      'poppins',
+      'space-grotesk',
+    ]);
+    expect(themeVariables({ fontKey: 'space-grotesk' })['--font-sans']).toMatch(/^"Space Grotesk", /);
   });
 
   it('rejects a font key that is not allowlisted', () => {

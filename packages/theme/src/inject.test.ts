@@ -24,7 +24,7 @@ describe('getThemeInjection', () => {
     expect(result.css).toContain('--color-primary: #1F6FB5;');
     expect(result.themeColor).toBe('#1F6FB5');
     expect(result.version).toBe(3);
-    expect(result.fontKey).toBe('inter');
+    expect(result.fontKey).toBe('space-grotesk');
   });
 
   it('never throws, falls back to the default css instead', async () => {
@@ -84,7 +84,7 @@ describe('themeStyleProps', () => {
 });
 
 describe('fontFaceCss', () => {
-  it.each(['inter', 'dm-sans', 'poppins', 'nunito', 'lora'] as const)(
+  it.each(['inter', 'dm-sans', 'poppins', 'nunito', 'lora', 'space-grotesk'] as const)(
     'builds a face for %s',
     (key) => {
       const css = fontFaceCss(key, '/fonts');

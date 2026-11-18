@@ -62,7 +62,18 @@ const poppinsExt = localFont({
   preload: false,
 });
 
+const spaceGrotesk = localFont({
+  src: [{ path: '../fonts/space-grotesk-latin-wght-normal.woff2', weight: '300 700', style: 'normal' }],
+  display: 'swap',
+});
+const spaceGroteskExt = localFont({
+  src: [{ path: '../fonts/space-grotesk-latin-ext-wght-normal.woff2', weight: '300 700', style: 'normal' }],
+  display: 'swap',
+  preload: false,
+});
+
 const FAMILIES = {
+  'space-grotesk': [spaceGrotesk, spaceGroteskExt],
   inter: [inter, interExt],
   'dm-sans': [dmSans, dmSansExt],
   nunito: [nunito, nunitoExt],
@@ -80,19 +91,22 @@ export interface FontSelection {
   variables: Record<string, string>;
 }
 
-/** Lora is display only, body text keeps Inter (docs/DESIGN-SYSTEM.md 5.1, same rule as @ad/theme). */
+/** Lora and Space Grotesk are display only, body text keeps Inter (docs/DESIGN-SYSTEM.md 5.1, same rule as @ad/theme). */
 export function selectFonts(fontKey: FontKey): FontSelection {
-  const sansKey: Exclude<FontKey, 'lora'> = fontKey === 'lora' ? 'inter' : fontKey;
+  const displayOnly = fontKey === 'lora' || fontKey === 'space-grotesk';
+  const sansKey: Exclude<FontKey, 'lora' | 'space-grotesk'> = displayOnly ? 'inter' : fontKey;
   const [sans, sansExt] = FAMILIES[sansKey];
   const classes = new Set<string>([sans.className, sansExt.className]);
   const variables: Record<string, string> = {
     '--font-sans': `${sans.style.fontFamily}, ${sansExt.style.fontFamily}, ${SANS_FALLBACK}`,
   };
-  if (fontKey === 'lora') {
-    const [serif, serifExt] = FAMILIES.lora;
-    classes.add(serif.className);
-    classes.add(serifExt.className);
-    variables['--font-display'] = `${serif.style.fontFamily}, ${serifExt.style.fontFamily}, ${SERIF_FALLBACK}`;
+  if (displayOnly) {
+    const [face, faceExt] = FAMILIES[fontKey as 'lora' | 'space-grotesk'];
+    classes.add(face.className);
+    classes.add(faceExt.className);
+    variables['--font-display'] = `${face.style.fontFamily}, ${faceExt.style.fontFamily}, ${
+      fontKey === 'lora' ? SERIF_FALLBACK : SANS_FALLBACK
+    }`;
   }
   return { classNames: [...classes].join(' '), variables };
 }

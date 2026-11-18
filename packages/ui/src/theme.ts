@@ -7,6 +7,8 @@ export const COLOR_KEYS = ['bg', 'surface', 'ink', 'muted', 'border', 'primary',
 export type ThemeColorKey = (typeof COLOR_KEYS)[number];
 
 const FONT_STACKS = {
+  'space-grotesk':
+    '"Space Grotesk", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
   inter:
     '"Inter", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
   'dm-sans':

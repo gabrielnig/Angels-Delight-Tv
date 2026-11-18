@@ -20,12 +20,13 @@ describe('defaults', () => {
       primary: '#1F6FB5',
       accent: '#FFC93C',
     });
-    expect(DEFAULT_THEME.fontKey).toBe('inter');
+    expect(DEFAULT_THEME.fontKey).toBe('space-grotesk');
     expect(DEFAULT_THEME.typeScale).toBe(1);
   });
 
   it('exposes the curated fonts of D-007 and nothing else', () => {
     expect(FONT_OPTIONS.map((font) => font.label)).toEqual([
+      'Space Grotesk',
       'Inter',
       'DM Sans',
       'Poppins',

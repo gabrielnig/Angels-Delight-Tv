@@ -23,6 +23,14 @@ describe('theme presets', () => {
     expect(() => parseTheme(preset.theme)).not.toThrow();
   });
 
+  it('keeps the Space Grotesk heading font in every preset and the font never changes the gate', () => {
+    for (const p of THEME_PRESETS) {
+      expect(p.theme.fontKey).toBe('space-grotesk');
+      const other = evaluateTheme({ ...p.theme, fontKey: 'inter' });
+      expect(evaluateTheme(p.theme).blockers).toEqual(other.blockers);
+    }
+  });
+
   it('has distinct primaries and plain labels', () => {
     expect(new Set(THEME_PRESETS.map((p) => p.theme.colors.primary)).size).toBe(6);
     for (const p of THEME_PRESETS) expect(p.label).toMatch(/^[A-Z][A-Za-z ]+$/);
