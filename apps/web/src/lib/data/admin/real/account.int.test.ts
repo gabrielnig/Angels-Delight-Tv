@@ -24,7 +24,7 @@ describe.skipIf(!integrationEnabled())('real my account and two factor reset', (
   const codeNow = (secret: string) => totpAt(base32Decode(secret), h.deps.clock!().getTime());
 
   /** An enrolled staff member: password, authenticator secret and a verified session. */
-  async function enrolled(role: 'editor' | 'admin') {
+  async function enrolled(role: 'editor' | 'admin' | 'super_admin') {
     const member = await registerMember(h, staff, {
       email: `${role}.${Math.random().toString(36).slice(2, 7)}@example.org`,
     });
@@ -199,8 +199,8 @@ describe.skipIf(!integrationEnabled())('real my account and two factor reset', (
   });
 
   describe("resetting someone else's two factor", () => {
-    it('needs the admin code, then clears the other person factor', async () => {
-      const boss = await enrolled('admin');
+    it('needs the super admin code, then clears the other person factor', async () => {
+      const boss = await enrolled('super_admin');
       const target = await enrolled('editor');
       expect(
         await realPeopleService.resetTwoFactor(boss.actor, target.actor.accountId, '000000'),
@@ -216,9 +216,13 @@ describe.skipIf(!integrationEnabled())('real my account and two factor reset', (
       expect(members.find((m) => m.id === target.actor.accountId)?.twoFactor).toBe(false);
     });
 
-    it('refuses to reset your own and refuses editors', async () => {
-      const boss = await enrolled('admin');
+    it('refuses to reset your own and refuses editors and plain admins', async () => {
+      const boss = await enrolled('super_admin');
       const editor = await enrolled('editor');
+      const plain = await enrolled('admin');
+      expect(
+        await realPeopleService.resetTwoFactor(plain.actor, editor.actor.accountId, '123456'),
+      ).toMatchObject({ ok: false, error: 'You do not have permission for this.' });
       expect(
         await realPeopleService.resetTwoFactor(
           boss.actor,
