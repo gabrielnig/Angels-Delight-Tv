@@ -17,6 +17,7 @@ export const realAnalytics = {
     ]);
     return { ...overview, top, splits };
   },
+  exportRows: (range: DayRange) => q().titleDaily(range),
   async video(id: string, range: DayRange): Promise<VideoAnalytics | null> {
     const [detail, titles] = await Promise.all([
       q().videoDetail(id, range),

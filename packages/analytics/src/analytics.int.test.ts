@@ -162,6 +162,46 @@ describe.skipIf(!integrationEnabled())('analytics on Postgres', () => {
     expect(detail.retention.at(-1)!.percent).toBeLessThan(100);
   });
 
+  it('lists views and watch time per title per day, rolled up days plus live today, every title', async () => {
+    const queries = createAnalyticsQueries(t.db, {
+      now: () => new Date('2026-03-11T15:00:00Z'),
+      cacheTtlMs: 0,
+    });
+    const rows = await queries.titleDaily({ from: '2026-03-10', to: '2026-03-11' });
+    expect(rows).toEqual([
+      {
+        day: '2026-03-10',
+        videoId: video.id,
+        title: video.title,
+        archived: false,
+        views: 4,
+        watchMs: 30_000 + 40_000 + 8000 + 60_000,
+        completions: 1,
+      },
+      {
+        day: '2026-03-11',
+        videoId: video.id,
+        title: video.title,
+        archived: false,
+        views: 1,
+        watchMs: 50_000,
+        completions: 0,
+      },
+    ]);
+    expect(await queries.titleDaily({ from: '2026-01-01', to: '2026-01-02' })).toEqual([]);
+  });
+
+  it('keeps archived titles in the per title export and marks them', async () => {
+    await t.pool.query('update videos set deleted_at = now() where id = $1', [video.id]);
+    const queries = createAnalyticsQueries(t.db, {
+      now: () => new Date('2026-03-11T15:00:00Z'),
+      cacheTtlMs: 0,
+    });
+    const rows = await queries.titleDaily({ from: '2026-03-10', to: '2026-03-10' });
+    expect(rows.map((r) => r.archived)).toEqual([true]);
+    await t.pool.query('update videos set deleted_at = null where id = $1', [video.id]);
+  });
+
   it('reports player quality and empty searches from counters', async () => {
     await send('2026-03-11T12:30:00Z', [
       { kind: 'startup', videoId: video.id, startupMs: 900, rebufferMs: 1000 },
