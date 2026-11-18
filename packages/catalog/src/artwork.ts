@@ -32,6 +32,8 @@ export interface ArtworkRow {
         key: string;
         bytes: number;
         format?: 'avif' | 'webp' | 'jpeg';
+        /** Admin only preview of the whole picture. Left out of what viewers get. */
+        full?: boolean;
       }[]
     | null;
 }
@@ -47,6 +49,7 @@ export function mediaUrl(mediaOrigin: string, key: string): string {
 export function artworkFromRow(row: ArtworkRow, mediaOrigin: string): ArtworkDto | null {
   if (row.poster_id === null) return null;
   const variants = [...(row.poster_variants ?? [])]
+    .filter((variant) => !variant.full)
     .sort((a, b) => a.width - b.width || (a.format ?? 'webp').localeCompare(b.format ?? 'webp'))
     .map((variant) => ({
       width: variant.width,

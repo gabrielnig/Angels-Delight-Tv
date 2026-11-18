@@ -110,3 +110,34 @@ describe('cropPreviewStyle matches the recut the worker makes (M36-S03)', () => 
     }
   });
 });
+
+describe('cropPreviewStyle with the real source shape (M36-S03)', () => {
+  const pct = (v: string) => Number.parseFloat(v);
+  it('shows a square picture cut to 16:9 around the focus, as cropRect does', () => {
+    // 1:1 source: the 16:9 cut is full width and 56.25 percent of the height, at zoom 100.
+    const style = cropPreviewStyle({ x: 50, y: 20 }, 100, 16 / 9, 1);
+    expect(pct(style.width)).toBeCloseTo(100);
+    expect(pct(style.height)).toBeCloseTo(177.78, 1);
+    // the cut is centred on y 20 percent but held at the top edge: top 0
+    expect(pct(style.top) + 0).toBeCloseTo(0);
+    const lower = cropPreviewStyle({ x: 50, y: 100 }, 100, 16 / 9, 1);
+    expect(pct(lower.top)).toBeCloseTo(-77.78, 1);
+  });
+  it('shows a tall picture in a wide frame as a band of the cut', () => {
+    const style = cropPreviewStyle({ x: 50, y: 50 }, 100, 21 / 9, 9 / 16);
+    expect((pct(style.width) * (21 / 9)) / pct(style.height)).toBeCloseTo(9 / 16, 3);
+  });
+  it('keeps the picture shape in the box whatever the source and frame', () => {
+    for (const source of [1, 9 / 16, 21 / 9, 16 / 9]) {
+      for (const frame of [21 / 9, 16 / 9, 4 / 5]) {
+        const style = cropPreviewStyle({ x: 20, y: 60 }, 150, frame, source);
+        expect((pct(style.width) * frame) / pct(style.height)).toBeCloseTo(source, 3);
+      }
+    }
+  });
+  it('is unchanged for a 16:9 source', () => {
+    expect(cropPreviewStyle({ x: 50, y: 50 }, 200, 16 / 9, 16 / 9)).toEqual(
+      cropPreviewStyle({ x: 50, y: 50 }, 200, 16 / 9),
+    );
+  });
+});

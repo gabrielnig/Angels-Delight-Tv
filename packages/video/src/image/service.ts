@@ -70,6 +70,7 @@ export class ImageService {
       key: string;
       bytes: number;
       format: 'avif' | 'webp' | 'jpeg';
+      full?: boolean;
     }[] = [];
     for (const variant of result.variants) {
       const hash = createHash('sha256').update(variant.bytes).digest('hex').slice(0, 8);
@@ -84,6 +85,19 @@ export class ImageService {
         key,
         bytes: variant.bytes.length,
         format: variant.format,
+      });
+    }
+    if (result.full) {
+      const hash = createHash('sha256').update(result.full.bytes).digest('hex').slice(0, 8);
+      const key = `${base}full-${hash}.webp`;
+      await media.put(key, result.full.bytes, { contentType: MIME.webp, cacheControl: IMMUTABLE });
+      stored.push({
+        width: result.full.width,
+        height: result.full.height,
+        key,
+        bytes: result.full.bytes.length,
+        format: 'webp',
+        full: true,
       });
     }
     await db

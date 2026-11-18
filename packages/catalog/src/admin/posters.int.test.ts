@@ -112,6 +112,34 @@ describe.skipIf(!integrationEnabled())('admin poster assets', () => {
     expect(list.some((a) => a.source === 'upload')).toBe(true);
   });
 
+  it('previews the whole picture when the source is not 16 by 9, and says what shape it is', async () => {
+    await t.setup.insert(assets).values({
+      purpose: 'thumbnail',
+      status: 'ready',
+      rawKey: `candidates/${videoId}/9`,
+      mime: 'image/webp',
+      width: 1200,
+      height: 1200,
+      variants: [
+        { width: 320, height: 180, key: 'img/q/320-aa.webp', bytes: 1, format: 'webp' },
+        {
+          width: 480,
+          height: 480,
+          key: 'img/q/full-bb.webp',
+          bytes: 1,
+          format: 'webp',
+          full: true,
+        },
+      ],
+    });
+    const list = await listPosterAssets(ctx, editor, videoId, 'https://m.test');
+    const square = list.find((a) => a.label === 'Frame 9')!;
+    expect(square.url).toBe('https://m.test/img/q/full-bb.webp');
+    expect(square.previewRatio).toBeCloseTo(1, 3);
+    const plain = list.find((a) => a.label === 'Frame 2')!;
+    expect(plain.previewRatio).toBeCloseTo(16 / 9, 3);
+  });
+
   it('reports the status of one asset', async () => {
     const [created] = await t.setup
       .insert(assets)

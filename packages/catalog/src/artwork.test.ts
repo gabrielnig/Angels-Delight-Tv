@@ -50,3 +50,26 @@ describe('artworkFromRow formats', () => {
     expect(art.variants[1]!.url).toBe('https://m.test/img/a1/320-bb.webp');
   });
 });
+
+describe('artworkFromRow full picture preview', () => {
+  it('never offers the admin only full picture preview to the viewer', () => {
+    const art = artworkFromRow(
+      {
+        ...row,
+        poster_variants: [
+          { width: 320, height: 180, key: 'img/a1/320-bb.webp', bytes: 1, format: 'webp' as const },
+          {
+            width: 320,
+            height: 320,
+            key: 'img/a1/full-zz.webp',
+            bytes: 1,
+            format: 'webp' as const,
+            full: true,
+          },
+        ],
+      },
+      'https://m.test/',
+    )!;
+    expect(art.variants.map((v) => v.url)).toEqual(['https://m.test/img/a1/320-bb.webp']);
+  });
+});

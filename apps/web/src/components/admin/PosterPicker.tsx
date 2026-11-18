@@ -49,6 +49,8 @@ interface Source {
   label: string;
   /** Preview picture. Placeholder frames have none. */
   url?: string;
+  /** Width over height of the picture at `url`. 16 by 9 when not known. */
+  ratio?: number;
   state?: 'processing' | 'ready' | 'failed';
 }
 
@@ -74,7 +76,11 @@ function Crop({
     <figure className="adm-crop" style={{ aspectRatio: ratio }}>
       {source.url ? (
         // eslint-disable-next-line @next/next/no-img-element
-        <img src={source.url} alt="" style={cropPreviewStyle(focus, zoom, frameRatio)} />
+        <img
+          src={source.url}
+          alt=""
+          style={cropPreviewStyle(focus, zoom, frameRatio, source.ratio)}
+        />
       ) : (
         <span className="adm-crop__tile" style={style}>
           <PosterTile title={title} seed={seedOf(source.id)} size="lg" />
@@ -104,6 +110,7 @@ export function PosterPicker({
         id: a.id,
         label: a.label,
         url: a.url ?? undefined,
+        ratio: a.previewRatio,
         state: a.status,
       }))
     : candidateFrames(durationSeconds).map((s) => ({
@@ -181,6 +188,17 @@ export function PosterPicker({
       };
       setUploaded(source);
       setSelectedId(source.id);
+      // The local copy is the whole picture, so its real shape drives the crop preview.
+      const probe = new Image();
+      probe.onload = () => {
+        if (probe.naturalHeight > 0)
+          setUploaded((current) =>
+            current?.id === source.id
+              ? { ...current, ratio: probe.naturalWidth / probe.naturalHeight }
+              : current,
+          );
+      };
+      probe.src = source.url!;
     } catch {
       setFileError('Could not upload the picture. Try again.');
     } finally {
@@ -208,7 +226,12 @@ export function PosterPicker({
         URL.revokeObjectURL(url);
         return;
       }
-      const source = { id: `upload_${videoId}_${Date.now()}`, label: 'Your image', url };
+      const source = {
+        id: `upload_${videoId}_${Date.now()}`,
+        label: 'Your image',
+        url,
+        ratio: img.naturalWidth / img.naturalHeight,
+      };
       setUploaded(source);
       setSelectedId(source.id);
     };
