@@ -141,3 +141,20 @@ describe('applyBulk', () => {
     expect(result.failed).toEqual([{ id: 'nope', reason: 'That video no longer exists.' }]);
   });
 });
+
+describe('applyBulk suitability', () => {
+  const rules = { requireCaptions: false } as never;
+  it('changes every selected video, or none when one is missing', () => {
+    const store = seedStore(Date.parse('2026-11-17T09:00:00Z'));
+    const [a, b] = store.videos;
+    const ok = applyBulk([a!, b!], [a!.id, b!.id], { type: 'suitability', value: 'kids' }, 'editor', rules, 0);
+    expect(ok.succeeded).toEqual([a!.id, b!.id]);
+    expect(a!.suitability).toBe('kids');
+
+    const before = b!.suitability;
+    const none = applyBulk([a!, b!], [b!.id, 'ghost'], { type: 'suitability', value: 'older' }, 'editor', rules, 0);
+    expect(none.succeeded).toEqual([]);
+    expect(none.failed.map((f) => f.id)).toEqual(['ghost']);
+    expect(b!.suitability).toBe(before);
+  });
+});

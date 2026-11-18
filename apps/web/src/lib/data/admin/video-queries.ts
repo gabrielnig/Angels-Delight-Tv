@@ -116,7 +116,8 @@ export type BulkAction =
   | { type: 'publish' }
   | { type: 'unpublish' }
   | { type: 'trash' }
-  | { type: 'category'; categoryId: string };
+  | { type: 'category'; categoryId: string }
+  | { type: 'suitability'; value: NonNullable<VideoRecord['suitability']> };
 
 export interface BulkResult {
   succeeded: string[];
@@ -133,6 +134,27 @@ export function applyBulk(
   now: number,
 ): BulkResult {
   const result: BulkResult = { succeeded: [], failed: [] };
+  if (action.type === 'suitability') {
+    // All or nothing (M35-S04 AC3): check every id first, then change them together.
+    const missing = ids.filter((id) => !videos.some((v) => v.id === id && v.deletedAt === null));
+    if (missing.length || !can(role, 'video.edit')) {
+      result.failed = (missing.length ? missing : ids).map((id) => ({
+        id,
+        reason: missing.length
+          ? 'That video no longer exists.'
+          : 'You do not have permission for this.',
+      }));
+      return result;
+    }
+    const stamp = new Date(now).toISOString();
+    for (const id of ids) {
+      const video = videos.find((v) => v.id === id)!;
+      video.suitability = action.value;
+      video.updatedAt = stamp;
+      result.succeeded.push(id);
+    }
+    return result;
+  }
   const needed =
     action.type === 'trash'
       ? 'video.delete'

@@ -35,6 +35,23 @@ function setup(over: Partial<Parameters<typeof VideosList>[0]> = {}) {
   return { bulk };
 }
 
+describe('VideosList bulk suitability', () => {
+  it('sets suitability for the selection', async () => {
+    const { bulk } = setup();
+    for (const item of page.items.slice(0, 2)) {
+      await userEvent.click(screen.getAllByRole('checkbox', { name: `Select ${item.title}` })[0]!);
+    }
+    await userEvent.selectOptions(
+      within(screen.getByRole('region', { name: 'Bulk actions' })).getByLabelText('Set suitability'),
+      'kids',
+    );
+    expect(bulk).toHaveBeenCalledWith(
+      page.items.slice(0, 2).map((v) => v.id),
+      { type: 'suitability', value: 'kids' },
+    );
+  });
+});
+
 describe('VideosList', () => {
   it('shows rows and keeps the bulk bar hidden until something is selected', async () => {
     setup();
