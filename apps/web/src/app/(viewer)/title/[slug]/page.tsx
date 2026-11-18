@@ -34,6 +34,8 @@ export default async function TitlePage({ params }: Params) {
     return (
       <AppShell>
         <PublicTitle
+          slug={slug}
+          thumbnail={video.thumbnail}
           title={video.title}
           description={video.description}
           minutes={formatDuration(video.durationSeconds)}

@@ -7,6 +7,7 @@ import type {
   HomeData,
   HomeRow,
   Page,
+  Progress,
   SeriesDetail,
   Suggestion,
   TitleDetail,
@@ -35,6 +36,14 @@ const seconds = (item: CatalogItem) => (item.kind === 'video' ? item.durationSec
 
 function row(id: string, title: string, items: CatalogItem[], seeAllHref?: string): HomeRow | null {
   return items.length > 0 ? { id, title, items: items.slice(0, 10), seeAllHref } : null;
+}
+
+function fixturePlay(progress: Progress | undefined): TitleDetail['play'] {
+  if (!progress || progress.positionSeconds < 5) return { label: 'play', startSeconds: 0 };
+  if (progress.positionSeconds >= progress.durationSeconds * 0.95) {
+    return { label: 'watch_again', startSeconds: 0 };
+  }
+  return { label: 'resume', startSeconds: Math.max(0, progress.positionSeconds - 3) };
 }
 
 export class FixtureCatalog implements CatalogRepository {
@@ -133,6 +142,7 @@ export class FixtureCatalog implements CatalogRepository {
       credits: video.series ? undefined : 'Presented by the Angels Delight team. Captions in English.',
       related,
       progress: progressFor(ctx.profileId, video.id),
+      play: fixturePlay(progressFor(ctx.profileId, video.id)),
     };
   }
 
@@ -157,6 +167,7 @@ export class FixtureCatalog implements CatalogRepository {
             blurb: video.description,
             progress,
             watched: Boolean(progress && progress.positionSeconds >= progress.durationSeconds * 0.95),
+            current: false,
           };
         }),
     }));
@@ -164,6 +175,7 @@ export class FixtureCatalog implements CatalogRepository {
     const inProgress = flat.find(({ e }) => e.progress && !e.watched);
     const firstUnwatched = flat.find(({ e }) => !e.watched) ?? flat[0];
     const target = inProgress ?? firstUnwatched;
+    target!.e.current = true;
     return {
       series,
       seasons,
@@ -175,6 +187,7 @@ export class FixtureCatalog implements CatalogRepository {
         secondsLeft: inProgress?.e.progress
           ? inProgress.e.progress.durationSeconds - inProgress.e.progress.positionSeconds
           : undefined,
+        label: inProgress ? 'resume' : 'play',
       },
     };
   }

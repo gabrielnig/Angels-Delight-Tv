@@ -134,6 +134,8 @@ export interface TitleDetail {
   credits?: string;
   related: VideoSummary[];
   progress?: Progress;
+  /** What the main button does for this profile (M07-S03). */
+  play: { label: 'play' | 'resume' | 'watch_again'; startSeconds: number };
 }
 
 export interface Episode {
@@ -142,13 +144,22 @@ export interface Episode {
   blurb: string;
   progress?: Progress;
   watched: boolean;
+  /** The episode the main button opens. The list highlights it. */
+  current: boolean;
 }
 
 export interface SeriesDetail {
   series: SeriesSummary;
   seasons: Array<{ number: number; episodes: Episode[] }>;
   /** Episode to resume or start. */
-  next: { videoId: string; season: number; episode: number; resume: boolean; secondsLeft?: number };
+  next: {
+    videoId: string;
+    season: number;
+    episode: number;
+    resume: boolean;
+    secondsLeft?: number;
+    label: 'play' | 'resume' | 'watch_again';
+  };
 }
 
 export interface ViewerContext {
