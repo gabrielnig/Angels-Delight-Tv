@@ -42,6 +42,31 @@ export const watchProgress = pgTable(
   ],
 );
 
+/**
+ * The position a viewer had before "Remove from row", kept for a few minutes so Undo works on any server and after
+ * a restart (M09-S07). One row per profile and per id the screen used. Rows older than the window are cleared by
+ * the next removal.
+ */
+export const watchProgressRemovals = pgTable(
+  'watch_progress_removals',
+  {
+    profileId: uuid('profile_id')
+      .notNull()
+      .references(() => profiles.id, { onDelete: 'cascade' }),
+    /** The id the Continue Watching card carried. For an episode this can be the series. */
+    requestedId: uuid('requested_id').notNull(),
+    videoId: uuid('video_id')
+      .notNull()
+      .references(() => videos.id, { onDelete: 'cascade' }),
+    positionMs: integer('position_ms').notNull(),
+    removedAt: timestamptz('removed_at').notNull().defaultNow(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.profileId, t.requestedId] }),
+    check('watch_progress_removals_position_nonnegative', sql`${t.positionMs} >= 0`),
+  ],
+);
+
 export const myList = pgTable(
   'my_list',
   {

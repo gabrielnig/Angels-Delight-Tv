@@ -1,7 +1,16 @@
-import { EmptyState } from '@ad/ui';
+import { ButtonLink, EmptyState } from '@ad/ui';
 
 /** Home with nothing to show (M05-S07, M35-S01). */
-export function HomeEmpty({ platformName, kids }: { platformName: string; kids: boolean }) {
+export function HomeEmpty({
+  platformName,
+  kids,
+  canUpload = false,
+}: {
+  platformName: string;
+  kids: boolean;
+  /** Editors and admins get a way to fill the empty catalog (M05-S07 AC2). */
+  canUpload?: boolean;
+}) {
   return (
     <div className="web-page">
       <h1 className="ad-sr-only">Home</h1>
@@ -12,7 +21,13 @@ export function HomeEmpty({ platformName, kids }: { platformName: string; kids: 
           title="New videos are on the way"
           description={`${platformName} is getting ready. Check back soon.`}
           action={{ label: 'About', href: '/about' }}
-        />
+        >
+          {canUpload ? (
+            <ButtonLink href="/admin/videos/upload" variant="secondary">
+              Add your first video
+            </ButtonLink>
+          ) : null}
+        </EmptyState>
       )}
     </div>
   );

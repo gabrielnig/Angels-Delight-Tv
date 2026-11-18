@@ -12,7 +12,9 @@ import { Providers } from './providers';
 
 export async function generateMetadata(): Promise<Metadata> {
   const { platformName } = await getRootTheme();
+  const origin = process.env.APP_ORIGIN;
   return {
+    ...(origin ? { metadataBase: new URL(origin) } : {}),
     title: { default: platformName, template: `%s | ${platformName}` },
     description: 'Free learning videos for everyone.',
     icons: {

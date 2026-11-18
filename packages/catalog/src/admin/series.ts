@@ -1,6 +1,6 @@
 import { and, eq, sql } from 'drizzle-orm';
 import { episodes, seasons, series, videos, withAccount } from '@ad/db';
-import { writeAudit } from '@ad/audit';
+import { writeAudit } from '../audit';
 import { Forbidden, NotFound, ValidationFailed, isUuid, uuidv7, type Actor } from '@ad/shared';
 import { rowsOf } from '../sql';
 import type { Tx } from '../types';
@@ -15,6 +15,7 @@ import {
   type CommandResult,
 } from './types';
 import { getAdminVideos } from './videos';
+import { changeSlug } from './slugs';
 
 export interface AdminSeries {
   id: string;
@@ -154,6 +155,7 @@ export async function createAdminSeries(
 
 export interface SeriesEdit {
   title?: string;
+  slug?: string;
   description?: string;
   published?: boolean;
 }
@@ -175,12 +177,21 @@ export async function updateAdminSeries(
   if (edit.description !== undefined)
     set.description = edit.description.trim().slice(0, 500) || null;
 
+  let slugText: string | null = null;
   const found = await withAccount(ctx.db, actor, async (tx) => {
     const [current] = await tx
       .select()
       .from(series)
       .where(and(eq(series.id, id), sql`${series.deletedAt} IS NULL`));
     if (!current) return null;
+    if (edit.slug !== undefined) {
+      const problem = await changeSlug(tx, 'series', id, current.slug, edit.slug);
+      if (problem) {
+        slugText = problem;
+        return null;
+      }
+      await audit(tx, actor, 'series.update', id, `Changed the address of ${current.title} to ${edit.slug}`);
+    }
     if (Object.keys(set).length) {
       await tx.update(series).set(set).where(eq(series.id, id));
       await audit(tx, actor, 'series.update', id, `Edited series ${set.title ?? current.title}`);
@@ -194,6 +205,7 @@ export async function updateAdminSeries(
     );
     return { current, publishedEpisodes };
   });
+  if (slugText) return fail(slugText);
   if (!found) return fail(NOT_FOUND);
   if (edit.published === undefined) return OK;
   if (edit.published === (found.current.publishState === 'published')) return OK;

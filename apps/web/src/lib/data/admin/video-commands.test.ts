@@ -42,6 +42,17 @@ describe('validateVideoPatch', () => {
       },
     });
   });
+  it('checks the address is a plain slug and says how to fix it', () => {
+    expect(validateVideoPatch({ slug: '  rivers-of-africa ' }, categories)).toEqual({
+      ok: true,
+      value: { slug: 'rivers-of-africa' },
+    });
+    for (const bad of ['', 'ab', 'Rivers Of Africa', 'a--b', '-lead', 'x'.repeat(121)]) {
+      const result = validateVideoPatch({ slug: bad }, categories);
+      expect(result.ok).toBe(false);
+      if (!result.ok) expect(result.errors.slug).toMatch(/address/i);
+    }
+  });
   it('ignores fields it does not know (no mass assignment)', () => {
     const result = validateVideoPatch(
       { title: 'A', views: 99, status: 'ready' } as never,

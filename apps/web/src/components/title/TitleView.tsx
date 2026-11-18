@@ -148,3 +148,48 @@ export function PublicTitle({
     </div>
   );
 }
+
+export function PublicSeries({
+  slug,
+  title,
+  description,
+  episodes,
+  category,
+  thumbnail,
+}: {
+  slug: string;
+  thumbnail?: Thumb;
+  title: string;
+  description: string;
+  episodes: number;
+  category: string;
+}) {
+  return (
+    <div className="web-page web-title">
+      <div className="web-title__layout">
+        <div className="web-title__media">
+          {thumbnail ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={thumbnail.src} srcSet={thumbnail.srcSet} alt={title} />
+          ) : null}
+        </div>
+        <div className="web-title__info">
+          <h1 className="web-title__name">{title}</h1>
+          <p className="web-title__meta">
+            <Badge variant="neutral">{`${episodes} ${episodes === 1 ? 'episode' : 'episodes'}`}</Badge>{' '}
+            <span>{category}</span>
+          </p>
+          <p className="web-title__desc">{description}</p>
+          <div className="web-title-actions">
+            <ButtonLink href={`/sign-in?next=${encodeURIComponent(`/series/${slug}`)}`}>
+              Sign in to watch
+            </ButtonLink>
+            <ButtonLink href="/sign-up" variant="secondary">
+              Create account
+            </ButtonLink>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}

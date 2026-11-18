@@ -69,6 +69,7 @@ const MAIN_TABLES = [
   'videos',
   'view_events',
   'watch_progress',
+  'watch_progress_removals',
 ];
 
 describe('schema definition', () => {

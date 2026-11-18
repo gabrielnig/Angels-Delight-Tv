@@ -15,6 +15,7 @@ export type Suitability = 'everyone' | 'kids' | 'older';
 /** A video as the admin screens show it. Times are ISO strings. `createdBy` is an account id for the caller to name. */
 export interface AdminVideo {
   id: string;
+  slug: string;
   title: string;
   description: string;
   tags: string[];

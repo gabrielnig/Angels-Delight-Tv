@@ -40,6 +40,8 @@ export interface ViewerSession {
   verified: boolean;
   memberSince: string;
   profile: Profile | null;
+  /** The account can add videos, so Home can offer it when the catalog is empty. */
+  canUpload?: boolean;
 }
 
 export interface Category {
@@ -200,8 +202,18 @@ export interface CatalogRepository {
   ): Promise<TitleDetail | { blocked: 'kids' } | { redirect: string } | null>;
   /** Public preview for signed out visitors. */
   publicTitle(slug: string): Promise<VideoSummary | null>;
+  /**
+   * Public preview of a video or a series, or where an old address now lives. Draft, hidden and missing titles are
+   * all null, so a visitor cannot tell them apart.
+   */
+  publicPreview(slug: string, kind: 'video' | 'series'): Promise<PublicPreview | null>;
   series(ctx: ViewerContext, slug: string): Promise<SeriesDetail | { redirect: string } | null>;
 }
+
+export type PublicPreview =
+  | { type: 'video'; item: VideoSummary }
+  | { type: 'series'; item: SeriesSummary }
+  | { type: 'redirect'; to: string };
 
 export interface LibraryRepository {
   myList(ctx: ViewerContext, cursor?: string): Promise<Page<CatalogItem> & { hiddenCount: number }>;

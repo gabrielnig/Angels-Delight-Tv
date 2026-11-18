@@ -47,6 +47,7 @@ export function seedStore(now = Date.now()): AdminStore {
   const iso = (offsetMs: number) => new Date(now + offsetMs).toISOString();
   const v = (partial: Partial<VideoRecord> & { id: string; title: string }): VideoRecord =>
     videoStub({
+      slug: partial.id.replace(/^vid_/, '').replace(/_/g, '-'),
       status: 'ready',
       captionState: 'approved',
       captionCueCount: 80,

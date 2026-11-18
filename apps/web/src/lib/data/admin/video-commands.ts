@@ -6,6 +6,7 @@ import type { PublishRules } from './video-rules';
 
 export interface VideoPatch {
   title?: string;
+  slug?: string;
   description?: string;
   tags?: string[];
   categoryIds?: string[];
@@ -26,6 +27,14 @@ export function validateVideoPatch(input: VideoPatch, validCategoryIds: Set<stri
     if (!title) errors.title = 'Add a title.';
     else if (title.length > 120) errors.title = 'Keep the title under 120 characters.';
     else value.title = title;
+  }
+  if (input.slug !== undefined) {
+    const slug = input.slug.trim();
+    if (slug.length < 3 || slug.length > 120)
+      errors.slug = 'Use 3 to 120 characters for the address.';
+    else if (!/^[a-z0-9]+(-[a-z0-9]+)*$/.test(slug))
+      errors.slug = 'Use lower case letters, numbers and single hyphens only for the address.';
+    else value.slug = slug;
   }
   if (input.description !== undefined) {
     if (input.description.length > 500)

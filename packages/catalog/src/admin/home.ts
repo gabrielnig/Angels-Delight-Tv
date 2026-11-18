@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto';
 import { eq, notInArray, sql } from 'drizzle-orm';
 import { categories, rowItems, rows, series, settings, withAccount } from '@ad/db';
-import { writeAudit } from '@ad/audit';
+import { writeAudit } from '../audit';
 import { Forbidden, isUuid, type Actor, type RowKind } from '@ad/shared';
 import { rowsOf } from '../sql';
 import type { Tx } from '../types';

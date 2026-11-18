@@ -650,3 +650,16 @@ Format: decision, options considered, why, reversible or not. Newest first. Deci
 - Options: build an `email_outbox` table and a pg-boss sender, keep one attempt.
 - Why: an outbox is the right shape for a provider outage longer than the request, but it adds a table, a job and a state machine for a launch with one SMTP provider and low volume. In request retries cover the common blip, and the sign up flow already shows a clear "could not send" with resend. The cost is that a 15 second blip delays the request and a longer outage drops the email after the visitor sees the error. The alert is a log line the log shipper can page on.
 - Reversible: yes. Swapping `RetryingTransport` for an outbox writer changes only the transport given to `Mailer`.
+
+## D-123 Catalog reads are cached for 60 seconds in memory and revalidated with ETag (lane M2, M04-S05)
+- Decision: browse pages, browse categories and the shared Home rows go through a per process `CatalogCache` (60 second limit, 500 entries, keyed by audience and query). Every audited admin change empties it, because `@ad/catalog` writes its audit rows through a wrapper that invalidates. Progress, My List and Continue Watching are added after the cache and are never stored in it. A failed read goes to the caller and is not answered from old data. The home, browse, categories and title API routes also send an `ETag` (hash of the body) with `private, no-cache`, and answer 304 when the client already has the version.
+- Options: no cache, a shared cache such as Redis, cache the whole response per profile, `max-age` caching in the browser.
+- Why: one self hosted web process serves the whole site, so memory is enough and has no new service. Caching only audience level data keeps personal rows correct. `no-cache` with a tag saves the body without ever showing a stale page in the browser.
+- Reversible: yes. Leave `catalogCache` out of the viewer context to turn the server cache off.
+- Gap: a second web instance would have its own cache and be up to 60 seconds behind an edit made on the first. A read that began just before a commit can store old data for up to 60 seconds. Caption approval does not audit through the wrapper, so the captions badge can lag by 60 seconds.
+
+## D-124 Old addresses redirect permanently, and Remove from row can be undone from the database (lane M2)
+- Decision: changing a video or series address leaves the old one in `slug_redirects`, refuses addresses in use or reserved (`admin`, `api`, `watch` and the site routes), and the viewer pages answer an old address with a permanent redirect, also for signed out visitors. The undo of "Remove from row" is stored in `watch_progress_removals` (migration 0029) for 5 minutes instead of server memory, once only, and never over newer progress.
+- Options: keep the in memory undo, add a soft delete flag to `watch_progress`, a separate table.
+- Why: the memory stash was lost on restart and on a second instance. A flag on `watch_progress` would touch every progress query. A small table with the same owner RLS keeps the change local.
+- Reversible: yes. The table is small and only the undo reads it.

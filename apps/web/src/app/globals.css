@@ -800,9 +800,10 @@ a {
 .web-episode__done {
   font-weight: 600;
 }
+/* The current episode row sits on the sunken surface, where the plain primary is 4.3:1. The darker shade passes 4.5:1. */
 .web-episode__now {
   font-weight: 600;
-  color: var(--color-primary);
+  color: var(--color-primary-hover);
 }
 .web-episode__link[data-current='true'] {
   background: var(--color-surface-sunken);

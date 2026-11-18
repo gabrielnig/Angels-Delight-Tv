@@ -19,6 +19,11 @@ export interface TitleCard {
   kidsSafe: boolean;
   hasCaptions: boolean;
   poster: ArtworkDto | null;
+  /** The first visible category by position, or null when the title has none (M06). */
+  categorySlug: string | null;
+  categoryName: string | null;
+  /** When the title went live (ISO), or is due to. Null only for data that was never published. */
+  publishedAt: string | null;
 }
 
 export interface CategoryDto {
@@ -54,6 +59,8 @@ interface CardRow extends ArtworkRow {
   kids_safe: boolean;
   has_captions: boolean;
   sort_at: string | null;
+  category_slug: string | null;
+  category_name: string | null;
   title_key: string;
   total?: string;
 }
@@ -61,6 +68,8 @@ interface CardRow extends ArtworkRow {
 const CARD_COLUMNS =
   sql.raw(`t.kind, t.id, t.slug, t.title, t.description, t.duration_ms, t.episode_count,
   t.kids_safe, t.has_captions, t.sort_at::text AS sort_at, t.title_key,
+  (SELECT c.slug FROM categories c WHERE c.id = ANY(t.category_ids) AND c.is_visible ORDER BY c.position, c.name LIMIT 1) AS category_slug,
+  (SELECT c.name::text FROM categories c WHERE c.id = ANY(t.category_ids) AND c.is_visible ORDER BY c.position, c.name LIMIT 1) AS category_name,
   pa.id AS poster_id, pa.alt_text AS poster_alt, pa.placeholder_color AS poster_color,
   pa.width AS poster_width, pa.height AS poster_height, pa.variants AS poster_variants`);
 
@@ -122,6 +131,9 @@ function toCard(row: CardRow, mediaOrigin: string): TitleCard {
     kidsSafe: row.kids_safe,
     hasCaptions: row.has_captions,
     poster: artworkFromRow(row, mediaOrigin),
+    categorySlug: row.category_slug,
+    categoryName: row.category_name,
+    publishedAt: row.sort_at === null ? null : new Date(row.sort_at).toISOString(),
   };
 }
 

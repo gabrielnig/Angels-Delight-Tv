@@ -4,6 +4,7 @@ import type { AdminVideoStatus, ChecklistItem, VideoRecord } from './types';
 export function videoStub(overrides: Partial<VideoRecord> = {}): VideoRecord {
   return {
     id: 'video_stub',
+    slug: 'video-stub',
     title: '',
     description: '',
     tags: [],

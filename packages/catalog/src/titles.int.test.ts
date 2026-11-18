@@ -63,6 +63,27 @@ describe.skipIf(!integrationEnabled())('title queries', () => {
       expect(cards[1]).toMatchObject({ kind: 'series', episodeCount: 3, durationMs: null });
     });
 
+    it('carries the first visible category by position and the publish date', async () => {
+      const later = await seedCategory(t.setup, 'Card later', { position: 20 });
+      const first = await seedCategory(t.setup, 'Card first', { position: 5 });
+      const hidden = await seedCategory(t.setup, 'Card hidden', { position: 1, isVisible: false });
+      const video = await seedVideo(t.setup, { title: 'With category' });
+      for (const c of [later, first, hidden]) await categorize(t.setup, { videoId: video.id }, c.id);
+      const [card] = await run((tx) => fetchCards(tx, ctx, general, [{ kind: 'video', id: video.id }]));
+      expect(card).toMatchObject({
+        categorySlug: first.slug,
+        categoryName: 'Card first',
+        publishedAt: expect.stringMatching(/^2026-05-01T09:00:00/),
+      });
+    });
+
+    it('gives null category fields when the title has no visible category', async () => {
+      const video = await seedVideo(t.setup, { title: 'No category' });
+      const [card] = await run((tx) => fetchCards(tx, ctx, general, [{ kind: 'video', id: video.id }]));
+      expect(card).toMatchObject({ categorySlug: null, categoryName: null });
+      expect(card?.publishedAt).not.toBeNull();
+    });
+
     it('keeps the order of the requested references', async () => {
       const first = await seedVideo(t.setup, { title: 'Order first' });
       const second = await seedVideo(t.setup, { title: 'Order second' });

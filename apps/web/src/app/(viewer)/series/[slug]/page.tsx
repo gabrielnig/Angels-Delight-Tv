@@ -1,13 +1,35 @@
-import { notFound, redirect } from 'next/navigation';
+import type { Metadata } from 'next';
+import { notFound, permanentRedirect } from 'next/navigation';
 import { Badge } from '@ad/ui';
 import { AppShell } from '../../../../components/Shell';
+import { PublicSeries } from '../../../../components/title/TitleView';
 import { EpisodeList } from '../../../../components/title/EpisodeList';
 import { TitleActions } from '../../../../components/title/TitleActions';
 import { pickSeason, seasonRows } from '../../../../components/title/series-rows';
 import { getCatalog, getLibrary } from '../../../../lib/data';
+import { previewMetadata } from '../../../../lib/seo';
+import { getRootTheme } from '../../../../lib/theme/root';
 import { itemKey } from '../../../../lib/format';
 import { primaryAction } from '../../../../lib/title-cta';
-import { requireProfile } from '../../../../lib/session';
+import { getSession, requireProfile } from '../../../../lib/session';
+
+type Params = { params: Promise<{ slug: string }> };
+
+export async function generateMetadata({ params }: Params): Promise<Metadata> {
+  const { slug } = await params;
+  const preview = await getCatalog().publicPreview(slug, 'series');
+  if (!preview || preview.type !== 'series') return { title: 'Series not found' };
+  const { item } = preview;
+  const { platformName } = await getRootTheme();
+  return previewMetadata({
+    kind: 'series',
+    title: item.title,
+    description: item.description,
+    path: `/series/${item.slug}`,
+    siteName: platformName,
+    thumbnail: item.thumbnail,
+  });
+}
 
 export default async function SeriesPage({
   params,
@@ -17,10 +39,29 @@ export default async function SeriesPage({
   searchParams: Promise<Record<string, string | undefined>>;
 }) {
   const [{ slug }, query] = await Promise.all([params, searchParams]);
+  if (!(await getSession())) {
+    const preview = await getCatalog().publicPreview(slug, 'series');
+    if (!preview) notFound();
+    if (preview.type === 'redirect') permanentRedirect(preview.to);
+    if (preview.type !== 'series') notFound();
+    const { item } = preview;
+    return (
+      <AppShell>
+        <PublicSeries
+          slug={item.slug}
+          title={item.title}
+          description={item.description}
+          episodes={item.episodeCount}
+          category={item.categoryName}
+          thumbnail={item.thumbnail}
+        />
+      </AppShell>
+    );
+  }
   const { ctx } = await requireProfile(`/series/${slug}`);
   const detail = await getCatalog().series(ctx, slug);
   if (!detail) notFound();
-  if ('redirect' in detail) redirect(detail.redirect);
+  if ('redirect' in detail) permanentRedirect(detail.redirect);
   const { series, seasons, next } = detail;
   const nextVideo = seasons.flatMap((s) => s.episodes).find((e) => e.video.id === next.videoId);
   const rows = seasonRows(seasons);
@@ -47,7 +88,10 @@ export default async function SeriesPage({
           />
         ) : null}
         <p className="web-title__desc">{series.description}</p>
-        <EpisodeList seasons={rows} initialSeason={pickSeason(seasons, query.season, next.season)} />
+        <EpisodeList
+          seasons={rows}
+          initialSeason={pickSeason(seasons, query.season, next.season)}
+        />
       </div>
     </AppShell>
   );

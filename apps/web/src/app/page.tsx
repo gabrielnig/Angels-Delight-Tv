@@ -22,11 +22,11 @@ export default async function RootPage() {
   }
   if (!session.verified) redirect('/verify-email');
   if (!session.profile) redirect('/profiles');
-  const { ctx, profile } = await requireProfile('/');
+  const { ctx, profile, session: viewer } = await requireProfile('/');
   return (
     <AppShell>
       <Suspense fallback={<HomeSkeleton />}>
-        <HomeView ctx={ctx} dataSaver={profile.dataSaver} />
+        <HomeView ctx={ctx} dataSaver={profile.dataSaver} canUpload={viewer.canUpload} />
       </Suspense>
     </AppShell>
   );

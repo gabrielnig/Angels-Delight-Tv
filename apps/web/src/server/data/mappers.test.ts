@@ -33,6 +33,9 @@ const videoCard = (over: Partial<TitleCardDto> = {}): TitleCardDto => ({
   kidsSafe: true,
   hasCaptions: true,
   poster,
+  categorySlug: 'geography',
+  categoryName: 'Geography',
+  publishedAt: '2026-05-01T09:00:00.000Z',
   progress: null,
   inMyList: false,
   ...over,
@@ -84,9 +87,16 @@ describe('cardToItem', () => {
       durationSeconds: 125,
       kidsSafe: true,
       hasCaptions: true,
-      categorySlug: '',
-      categoryName: '',
+      categorySlug: 'geography',
+      categoryName: 'Geography',
+      publishedAt: '2026-05-01T09:00:00.000Z',
     });
+  });
+  it('leaves the category and date empty when the card has none', () => {
+    const item = cardToItem(
+      videoCard({ categorySlug: null, categoryName: null, publishedAt: null }),
+    );
+    expect(item).toMatchObject({ categorySlug: '', categoryName: '', publishedAt: '' });
   });
   it('maps a series card and keeps its id for My List keys', () => {
     const item = cardToItem(
