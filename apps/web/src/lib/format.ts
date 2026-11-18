@@ -11,7 +11,7 @@ export function metaLine(item: CatalogItem): string {
   const detail =
     item.kind === 'video'
       ? formatDuration(item.durationSeconds)
-      : `${item.episodeCount} ${item.episodeCount === 1 ? 'episode' : 'episodes'}`;
+      : `${item.seasonCount > 1 ? `${item.seasonCount} seasons, ` : ''}${item.episodeCount} ${item.episodeCount === 1 ? 'episode' : 'episodes'}`;
   return item.categoryName ? `${item.categoryName}, ${detail}` : detail;
 }
 
