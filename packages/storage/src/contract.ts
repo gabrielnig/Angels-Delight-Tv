@@ -16,7 +16,11 @@ export interface ContractHarness {
 }
 
 /** Behaviour every driver must have. Each driver test file calls this once. */
-export function storageContract(name: string, makeHarness: () => Promise<ContractHarness>): void {
+export function storageContract(
+  name: string,
+  makeHarness: () => Promise<ContractHarness>,
+  options: { multipart?: boolean } = {},
+): void {
   describe(`${name} storage contract`, () => {
     it('stores and reads back an object with its metadata', async () => {
       const { storage } = await makeHarness();
@@ -82,7 +86,7 @@ export function storageContract(name: string, makeHarness: () => Promise<Contrac
       expect(url).toMatch(/^https?:\/\/|^\//);
     });
 
-    describe('multipart', () => {
+    describe.skipIf(options.multipart === false)('multipart', () => {
       async function upload(h: ContractHarness, key: string, sizes: number[]) {
         const { uploadId } = await h.storage.createMultipart(key, { contentType: 'video/mp4' });
         const parts = [];
