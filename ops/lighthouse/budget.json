@@ -1,16 +1,16 @@
 {
-  "note": "budget is enforced now (set just above the measured baseline). target is where Home should get to. Tighten budget as the gap closes.",
+  "note": "Measured on Home (signed in, fixture build) with Lighthouse 13 mobile after the F2 trim: performance 0.86 to 0.97, LCP 1.1 to 3.8 s (varies with machine load, a clean CI runner sits at the low end), TBT 165 to 205 ms, script transfer 174 to 181 KB, byte weight 424 to 441 KB, CLS 0. Budget is just above the worst run, target is the goal. Tighten again when a clean runner gives steadier numbers.",
   "scores": {
-    "performance": { "budget": 0.75, "target": 0.9 },
+    "performance": { "budget": 0.8, "target": 0.9 },
     "accessibility": { "budget": 0.95, "target": 1 },
     "best-practices": { "budget": 0.9, "target": 0.95 }
   },
   "metrics": {
     "largest-contentful-paint": { "budget": 2500, "target": 2000 },
-    "total-blocking-time": { "budget": 1000, "target": 300 },
-    "cumulative-layout-shift": { "budget": 0.1, "target": 0.05 },
-    "total-byte-weight": { "budget": 800000, "target": 500000 }
+    "total-blocking-time": { "budget": 400, "target": 300 },
+    "cumulative-layout-shift": { "budget": 0.05, "target": 0.02 },
+    "total-byte-weight": { "budget": 520000, "target": 480000 }
   },
-  "scriptBytes": { "budget": 400000, "target": 300000 },
+  "scriptBytes": { "budget": 210000, "target": 180000 },
   "thirdPartyRequests": { "budget": 0, "target": 0 }
 }
