@@ -891,8 +891,97 @@ a {
   color: var(--color-ink);
   text-decoration: none;
 }
+.web-account__nav a[aria-current='page'] {
+  background: var(--color-surface-sunken);
+  font-weight: var(--weight-semibold);
+  box-shadow: inset 3px 0 0 var(--color-primary);
+}
+.web-account__nav a {
+  gap: var(--space-2);
+}
 .web-account__main {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
   max-width: 40rem;
+}
+.web-card {
+  margin: 0;
+  padding: var(--space-4) var(--space-6);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-1);
+}
+.web-card__title {
+  margin: 0 0 var(--space-2);
+  font-size: var(--text-h3);
+}
+.web-card__sub {
+  display: block;
+  margin: 0;
+  color: var(--color-muted);
+  font-size: var(--text-caption);
+}
+.web-acct-profile {
+  display: flex;
+  gap: var(--space-4);
+  align-items: center;
+}
+.web-acct-profile__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 3.5rem;
+  height: 3.5rem;
+  border-radius: var(--radius-circle);
+  background: var(--color-accent);
+  color: var(--color-on-accent);
+}
+.web-acct-profile__name {
+  margin: 0;
+  font-weight: var(--weight-semibold);
+}
+.web-stats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-4);
+  margin: 0;
+}
+@media (min-width: 640px) {
+  .web-stats {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+.web-stats__item dt {
+  color: var(--color-muted);
+  font-size: var(--text-caption);
+}
+.web-stats__item dd {
+  margin: 0;
+  font-size: var(--text-h2);
+  font-weight: var(--weight-bold);
+}
+.web-linkrows {
+  list-style: none;
+  padding: 0;
+}
+.web-linkrows li + li {
+  border-top: 1px solid var(--color-border);
+}
+.web-linkrow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-height: var(--touch-target);
+  padding: var(--space-3) var(--space-6);
+  color: var(--color-ink);
+  text-decoration: none;
+}
+.web-linkrow__label {
+  display: block;
+  font-weight: var(--weight-semibold);
 }
 .web-facts {
   display: grid;
