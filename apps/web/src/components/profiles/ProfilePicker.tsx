@@ -28,6 +28,7 @@ export function ProfilePicker({
   onSignOut,
   autoSkip,
   onSelect,
+  onExitManage,
 }: {
   profiles: Profile[];
   max: number;
@@ -39,6 +40,8 @@ export function ProfilePicker({
   /** Skip the picker when the account has exactly one profile. */
   autoSkip?: boolean;
   onSelect: (profileId: string) => void;
+  /** Escape leaves manage mode (M03-S06). */
+  onExitManage?: () => void;
 }) {
   useEffect(() => {
     const only = profiles[0];
@@ -47,6 +50,14 @@ export function ProfilePicker({
   }, []);
 
   const managing = mode === 'manage';
+  useEffect(() => {
+    if (!managing || !onExitManage) return;
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') onExitManage();
+    };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [managing, onExitManage]);
   const full = profiles.length >= max;
 
   let body: ReactNode;

@@ -3,6 +3,7 @@ import { KidsGate } from '../../../../components/KidsGate';
 import { EditScreen } from '../../../../components/profiles/ProfileScreens';
 import { getProfiles } from '../../../../lib/data';
 import { requireSession } from '../../../../lib/session';
+import { suggestProfileName } from '../../../../lib/suggest-name';
 
 export const metadata: Metadata = { title: 'Add a profile' };
 
@@ -13,7 +14,11 @@ export default async function NewProfilePage() {
   const profiles = await repo.list(session.accountId);
   return (
     <div className="web-profileform-wrap">
-      <EditScreen limitReached={profiles.length >= repo.maxProfiles} lastAdult={false} />
+      <EditScreen
+        limitReached={profiles.length >= repo.maxProfiles}
+        lastAdult={false}
+        suggestedName={profiles.length === 0 ? suggestProfileName(session.email) : undefined}
+      />
     </div>
   );
 }
