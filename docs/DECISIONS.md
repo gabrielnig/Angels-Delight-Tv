@@ -215,7 +215,6 @@ Format: decision, options considered, why, reversible or not. Newest first. Deci
 ## D-044 Key loader keeps the hls.js context intact (lane G)
 - Decision: the ad-key:// loader passes a copy of the context to hls.js and returns the original to callbacks, because hls.js looks keys up by context.url. Found by the Playwright smoke.
 
-
 ## D-051 Fonts through next/font, not fontBaseUrl (lane E)
 - Decision: the root layout loads Inter, Poppins, Nunito, Lora and Atkinson through `next/font/local` (latin and latin-ext woff2 in `apps/web/src/fonts`) and sets `--font-sans` inline on html. Lora is display only; body stays Inter, matching `buildThemeCss`. `getThemeInjection` is called without `fontBaseUrl`.
 - Options: serve `/fonts/{key}.woff2` as lane H expects.
@@ -263,7 +262,6 @@ Format: decision, options considered, why, reversible or not. Newest first. Deci
 - Decision: soft deleted videos are purged after 30 days (`graceDays`) by the nightly `videos.purge_deleted` cron, which queues one `video.purge` job per video. Purge deletes media, originals, templates, draft captions and the script, then hard deletes the row, and refuses to touch a video that is not soft deleted. Poster and hero assets are left to the image lane.
 - Why: gives staff a recovery window and keeps the destructive step small, repeatable and guarded.
 - Reversible: the grace period is configurable, deleted files are not recoverable.
-
 
 ## D-049 Viewer API wiring (lane C)
 - Decision: viewer services take a `ViewerContext` (db, media origin, name cipher, password check, optional rate limit seam, clock, rules) and an `Actor`. Every read and write runs in `withAccount` and filters by `account_id` explicitly, because the admin role has a read policy on profiles. The active profile is a signed cookie (HMAC keyed from `PLAYBACK_TOKEN_SECRET` with its own label, bound to the account id). It only feeds the kids gate on management routes. Routes check Origin on writes, answer `Cache-Control: private, no-store`, and map service errors to `{ error: { code, message, fields? } }` with `Retry-After` on 429. Rate limits use named buckets (progress 30/min, search 60/min, PIN 5 per 15 min, kids exit 5 per 15 min).
@@ -489,3 +487,9 @@ Format: decision, options considered, why, reversible or not. Newest first. Deci
 - Options: webp only, avif as well, process in the web process.
 - Why: jpeg costs little and covers old Android browsers common in the audience, avif encodes too slowly on the worker, and a queue job keeps uploads fast.
 - Reversible: yes. Dropping jpeg is one line in the processor.
+
+## D-094 Client configuration is applied by a tool through the existing services, icons are served from a mounted folder (lane M1)
+- Decision: `pnpm launch:apply --config client.json` (package `@ad/launch`) validates a Zod file and applies it through `SettingsService`, `ThemeService` and `LogoUploader`, so validation, the readability gate (D-007), audit rows and cache busting are the same as in the admin screens. It acts as the admin named by `adminOwnerEmail`, which must already exist (`pnpm db:seed:admin`); it never creates passwords. Every step compares with what is stored, so a rerun reports `unchanged`. `--dry-run` writes nothing. Home screen icons are generated from the logo with sharp into `PWA_ICONS_DIR` and served by `/brand-icons/[file]` with the bundled icons as fallback, so rebranding needs no image rebuild. Domain and contact values are written to the env file (`--env-file`). Contrast warnings need `--accept-warnings`, blockers always stop the run before anything changes.
+- Options: write icons into `apps/web/public` and rebuild the image; upload icons to R2 and point the manifest at the media origin; make the applier a web route.
+- Why: images are built in CI and the VPS never builds, so a rebuild per client change would add a CI round trip to a two hour launch. A mounted folder is the smallest runtime path. A command line tool needs no new attack surface.
+- Reversible: yes. The manifest can point back at `/icons/*`.
