@@ -1,3 +1,4 @@
+export * from './audit-writer';
 export * from './csv';
 export * from './entry';
 export * from './query';

@@ -69,3 +69,25 @@ describe('diffChanges', () => {
     expect(diffChanges({ title: 'Old' }, null)).toEqual({ before: { title: 'Old' }, after: {} });
   });
 });
+
+describe('redact policy shared by every writer', () => {
+  it('redacts hash, email and code fields as well as secrets', () => {
+    expect(
+      redact({ passwordHash: 'h', tokenHash: 't', email: 'a@b.co', code: '123456', reason: 'x' }),
+    ).toEqual({
+      passwordHash: '[redacted]',
+      tokenHash: '[redacted]',
+      email: '[redacted]',
+      code: '[redacted]',
+      reason: 'x',
+    });
+  });
+
+  it('keeps fields whose names only contain these words inside another word', () => {
+    expect(redact({ keyframes: 3, encoded: true, status: 'ok' })).toEqual({
+      keyframes: 3,
+      encoded: true,
+      status: 'ok',
+    });
+  });
+});

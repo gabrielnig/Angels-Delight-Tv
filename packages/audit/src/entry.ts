@@ -24,6 +24,8 @@ export interface AuditEntry {
   targetId?: string | null;
   /** The raw caller address. Only the truncated form is stored. */
   ip?: string | null;
+  /** An address already truncated by the caller (security events). Used when `ip` is not given. */
+  ipTrunc?: string | null;
   userAgent?: string | null;
   requestId?: string | null;
   /** One readable line for the log screen, for example "Published How Plants Make Food". */
@@ -75,7 +77,7 @@ export function buildAuditRow(entry: AuditEntry): AuditRow {
     actorRole: entry.actorRole ?? null,
     targetType: entry.targetType ?? null,
     targetId: entry.targetId ?? null,
-    ipTrunc: entry.ip ? truncateIp(entry.ip) : null,
+    ipTrunc: entry.ip ? truncateIp(entry.ip) : (entry.ipTrunc ?? null),
     requestId: entry.requestId ?? null,
     metadata,
   };
