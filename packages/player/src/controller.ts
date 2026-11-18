@@ -77,12 +77,12 @@ const SEEK_TIMEOUT_MS = 6_000;
 const SEGMENT_SECONDS = 6;
 
 const ERROR_ANNOUNCE: Record<PlayerErrorKind, string> = {
-  'connection-lost': 'Connection lost',
-  offline: 'You are offline',
-  'session-expired': 'Sign in again to keep watching',
-  removed: 'This video is no longer available',
-  'cannot-play': 'This video cannot play on this device',
-  'unsupported-browser': 'This browser cannot play this video',
+  'connection-lost': msg('player.error.connectionLost.title'),
+  offline: msg('player.error.offline.title'),
+  'session-expired': msg('player.error.sessionExpired.title'),
+  removed: msg('player.error.removed.title'),
+  'cannot-play': msg('player.error.cannotPlay.title'),
+  'unsupported-browser': msg('player.error.unsupportedBrowser.title'),
 };
 
 type Listener = () => void;
@@ -357,7 +357,7 @@ export class PlayerController {
       media.currentTime = start;
       this.reporter.update(start, media.duration);
       this.set({ currentTime: start });
-      this.notify('Could not jump there, so we jumped to the nearest point');
+      this.notify(msg('player.seekFallback'));
     }, SEEK_TIMEOUT_MS);
   }
 
@@ -440,7 +440,9 @@ export class PlayerController {
     if (track) this.prefs.captionLanguage = track.language;
     this.set({
       captions: { ...this.state.captions, active: track?.id ?? null },
-      announce: track ? `Captions on, ${track.label}` : 'Captions off',
+      announce: track
+        ? msg('player.captionsOn', { label: track.label })
+        : msg('player.captionsOff'),
     });
     this.persist();
   }
@@ -496,7 +498,7 @@ export class PlayerController {
     this.clearCountdown();
     this.set({
       upNext: { ...this.state.upNext, countdown: null, cancelled: true },
-      announce: 'Autoplay cancelled',
+      announce: msg('player.autoplayCancelled'),
     });
   }
 
@@ -715,7 +717,7 @@ export class PlayerController {
     this.slowTimer = setTimeout(() => {
       if (this.selected !== 'auto') return;
       this.o.engine.dropQuality();
-      this.set({ slowNotice: true, announce: 'Slow connection. Switching to lower quality' });
+      this.set({ slowNotice: true, announce: msg('player.slowConnection') });
     }, SLOW_AFTER_MS);
     this.armStallRecovery();
   }
@@ -754,7 +756,7 @@ export class PlayerController {
     this.clearCountdown();
     this.set({
       upNext: { tile: false, countdown: seconds, cancelled: false },
-      announce: `Next video starts in ${seconds} seconds`,
+      announce: msg('player.nextStarts', { seconds }),
     });
     this.countdownTimer = setInterval(() => {
       const left = (this.state.upNext.countdown ?? 0) - 1;
@@ -888,7 +890,12 @@ export class PlayerController {
       if (this.wasPlaying) {
         this.retry();
       } else {
-        this.set({ error: null, phase: 'ready', backOnline: true, announce: 'Back online' });
+        this.set({
+          error: null,
+          phase: 'ready',
+          backOnline: true,
+          announce: msg('player.backOnlineAnnounce'),
+        });
         this.o.engine.recover();
       }
     }
