@@ -1,25 +1,19 @@
 import type { ReactNode } from 'react';
 import { AppShell } from '../../components/Shell';
-import { AccountNav } from '../../components/account/AccountNav';
-import { KidsGate } from '../../components/KidsGate';
+import { AccountSupportProvider } from '../../components/account/AccountSupport';
+import { getSite } from '../../lib/data';
 import { requireProfile } from '../../lib/session';
 
-/** Account pages are for adults. A Kids profile sees the password gate. */
+/**
+ * Account screens share the soft header and the account frame. Each page draws the frame itself, because a Kids
+ * profile sees the adults only card without the side nav (S27 state 4) and can still open playback settings (S29 state 3).
+ */
 export default async function AccountLayout({ children }: { children: ReactNode }) {
-  const { profile } = await requireProfile('/account');
-  if (profile.kids) {
-    return (
-      <AppShell>
-        <KidsGate what="Account settings" />
-      </AppShell>
-    );
-  }
+  await requireProfile('/account');
+  const site = await getSite().content();
   return (
-    <AppShell>
-      <div className="web-page web-account">
-        <AccountNav />
-        <div className="web-account__main">{children}</div>
-      </div>
+    <AppShell skin="soft">
+      <AccountSupportProvider email={site.supportEmail}>{children}</AccountSupportProvider>
     </AppShell>
   );
 }

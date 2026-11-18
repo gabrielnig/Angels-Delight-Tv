@@ -1,30 +1,36 @@
 'use client';
 
 import { usePathname } from 'next/navigation';
-import { Icon, type IconName } from '@ad/ui';
+import { SignOutButton } from '../SignOutButton';
+import { AcctIcon, type AcctIconName } from './icons';
 
-export const ACCOUNT_LINKS: { href: string; label: string; icon: IconName }[] = [
+export const ACCOUNT_LINKS: { href: string; label: string; icon: AcctIconName }[] = [
   { href: '/account', label: 'Overview', icon: 'user' },
-  { href: '/account/security', label: 'Security', icon: 'lock' },
-  { href: '/settings/playback', label: 'Playback', icon: 'settings' },
-  { href: '/account/data', label: 'Your data', icon: 'shield' },
+  { href: '/account/security', label: 'Security', icon: 'shield' },
+  { href: '/settings/playback', label: 'Playback settings', icon: 'play' },
+  { href: '/account/data', label: 'Data and privacy', icon: 'download' },
 ];
 
-/** Side nav on wide screens, a wrapped row on narrow ones. The current page is marked. */
+/** Side nav with a soft blue current item on wide screens, a single row of pill tabs on narrow ones. */
 export function AccountNav() {
   const pathname = usePathname();
   return (
-    <nav aria-label="Account" className="web-account__nav">
+    <nav aria-label="Account" className="acct-nav">
       <ul>
         {ACCOUNT_LINKS.map((l) => (
           <li key={l.href}>
             <a href={l.href} aria-current={pathname === l.href ? 'page' : undefined}>
-              <Icon name={l.icon} size={20} />
+              <AcctIcon name={l.icon} />
               {l.label}
             </a>
           </li>
         ))}
       </ul>
+      <div className="acct-nav__rule" aria-hidden="true" />
+      <SignOutButton variant="plain" className="acct-nav__out">
+        <AcctIcon name="close" />
+        Sign out
+      </SignOutButton>
     </nav>
   );
 }
