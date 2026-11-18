@@ -11,14 +11,15 @@ describe('ExpandableText', () => {
     expect(screen.queryByRole('button')).toBeNull();
   });
 
-  it('collapses long text after 4 lines and expands with More and Less', async () => {
+  it('collapses long text after 3 lines and expands with Show more and Show less', async () => {
     const user = userEvent.setup();
     render(<ExpandableText text={'word '.repeat(120)} />);
-    const toggle = screen.getByRole('button', { name: 'More' });
+    const toggle = screen.getByRole('button', { name: 'Show more' });
     expect(toggle).toHaveAttribute('aria-expanded', 'false');
     expect(screen.getByTestId('expandable-text')).toHaveAttribute('data-collapsed', 'true');
+    expect(toggle.querySelector('svg')).not.toBeNull();
     await user.click(toggle);
-    expect(screen.getByRole('button', { name: 'Less' })).toHaveAttribute('aria-expanded', 'true');
+    expect(screen.getByRole('button', { name: 'Show less' })).toHaveAttribute('aria-expanded', 'true');
     expect(screen.getByTestId('expandable-text')).toHaveAttribute('data-collapsed', 'false');
   });
 });
