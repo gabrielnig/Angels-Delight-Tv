@@ -323,11 +323,14 @@ describe.skipIf(!integrationEnabled())('VideoPipeline against Postgres and local
       expect(mine.map((a) => a.rawKey).sort()).toEqual(
         [1, 2, 3].map((n) => `candidates/${video.id}/${n}`),
       );
-      expect(mine.every((a) => a.status === 'ready' && a.mime === 'image/webp')).toBe(true);
+      // Frames are stored as sources and sized by the image.process job.
+      expect(mine.every((a) => a.status === 'processing' && a.mime === 'image/webp')).toBe(true);
+      for (const asset of mine) expect(await originals.head(asset.rawKey!)).not.toBeNull();
+      const queued = await t.db.select().from(schema.jobs).where(eq(schema.jobs.queue, 'image.process'));
+      expect(queued.filter((j) => mine.some((a) => a.id === j.assetId))).toHaveLength(3);
       expect((await row(video.id)).posterAssetId).toBe(
         mine.find((a) => a.rawKey!.endsWith('/2'))!.id,
       );
-      expect(await media.head(mine[0]!.variants[0]!.key)).not.toBeNull();
     });
 
     it('is idempotent and does not replace a poster an admin chose', async () => {

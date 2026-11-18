@@ -46,7 +46,9 @@ export const assets = pgTable(
     rawKey: text('raw_key'),
     mediaKeyBase: text('media_key_base'),
     variants: jsonb('variants')
-      .$type<{ width: number; height: number; key: string; bytes: number }[]>()
+      .$type<
+        { width: number; height: number; key: string; bytes: number; format?: 'webp' | 'jpeg' }[]
+      >()
       .notNull()
       .default(sql`'[]'::jsonb`),
     mime: text('mime').notNull(),

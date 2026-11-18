@@ -1,11 +1,13 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { KeyboardEvent } from 'react';
+import type { PosterAssetDto } from '@ad/catalog';
 import { formatDuration } from '@/lib/admin/format';
 import {
   candidateFrames,
+  POSTER_MAX_BYTES,
   clampFocus,
   focusFromPoint,
   previewStyle,
@@ -31,13 +33,21 @@ interface Props {
     focus: { x: number; y: number; zoom: number } | null;
   };
   save: (choice: PosterChoice) => Promise<CommandResult>;
+  /** Real frames and uploads. Without them the picker shows placeholder frames (fixture mode). */
+  assets?: PosterAssetDto[];
+  /** Sends a custom picture to the server. The server checks it again and queues processing. */
+  upload?: (file: File) => Promise<{ ok: true; assetId: string } | { ok: false; error: string }>;
+  status?: (assetId: string) => Promise<{ status: 'processing' | 'ready' | 'failed' }>;
+  /** Poll interval for a picture that is being processed. */
+  pollMs?: number;
 }
 
 interface Source {
   id: string;
   label: string;
-  /** Object URL for an uploaded image. Frames are placeholders until the worker makes real ones. */
+  /** Preview picture. Placeholder frames have none. */
   url?: string;
+  state?: 'processing' | 'ready' | 'failed';
 }
 
 function Crop({
@@ -75,15 +85,36 @@ function Crop({
   );
 }
 
-export function PosterPicker({ videoId, title, durationSeconds, initial, save }: Props) {
+export function PosterPicker({
+  videoId,
+  title,
+  durationSeconds,
+  initial,
+  save,
+  assets,
+  upload,
+  status,
+  pollMs = 1500,
+}: Props) {
   const router = useRouter();
   const toast = useToast();
-  const frames: Source[] = candidateFrames(durationSeconds).map((s) => ({
-    id: `frame_${videoId}_${s}`,
-    label: formatDuration(s),
-  }));
+  const real = Boolean(assets && assets.length > 0);
+  const frames: Source[] = real
+    ? assets!.map((a) => ({
+        id: a.id,
+        label: a.label,
+        url: a.url ?? undefined,
+        state: a.status,
+      }))
+    : candidateFrames(durationSeconds).map((s) => ({
+        id: `frame_${videoId}_${s}`,
+        label: formatDuration(s),
+      }));
   const [uploaded, setUploaded] = useState<Source | null>(null);
-  const [selectedId, setSelectedId] = useState<string>(initial.posterId ?? frames[2]!.id);
+  const [selectedId, setSelectedId] = useState<string>(
+    initial.posterId ??
+      (real ? (frames.find((f) => f.state === 'ready') ?? frames[0]!).id : frames[2]!.id),
+  );
   const [focus, setFocus] = useState<Focus>({
     x: initial.focus?.x ?? 50,
     y: initial.focus?.y ?? 50,
@@ -93,6 +124,7 @@ export function PosterPicker({ videoId, title, durationSeconds, initial, save }:
   const [fileError, setFileError] = useState<string | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
   const picker = useRef<HTMLInputElement>(null);
   const stage = useRef<HTMLDivElement>(null);
@@ -100,8 +132,69 @@ export function PosterPicker({ videoId, title, durationSeconds, initial, save }:
   const all = uploaded ? [uploaded, ...frames] : frames;
   const selected = all.find((s) => s.id === selectedId) ?? frames[0]!;
 
+  useEffect(() => {
+    if (!uploaded || uploaded.state !== 'processing' || !status) return;
+    let stopped = false;
+    const timer = setTimeout(async () => {
+      try {
+        const result = await status(uploaded.id);
+        if (stopped) return;
+        if (result.status === 'failed') {
+          setFileError('That picture could not be used. Upload a different JPG or PNG.');
+          setUploaded(null);
+          setSelectedId(frames[0]?.id ?? '');
+        } else {
+          setUploaded({ ...uploaded, state: result.status });
+        }
+      } catch {
+        if (!stopped) setUploaded({ ...uploaded });
+      }
+    }, pollMs);
+    return () => {
+      stopped = true;
+      clearTimeout(timer);
+    };
+    // frames is rebuilt every render and only read for the failure fallback.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [uploaded, status, pollMs]);
+
+  async function onServerFile(file: File) {
+    if (!['image/jpeg', 'image/png'].includes(file.type)) {
+      setFileError('Use a JPG or PNG image.');
+      return;
+    }
+    if (file.size > POSTER_MAX_BYTES) {
+      setFileError('That image is over 5 MB. Choose a smaller one.');
+      return;
+    }
+    setUploading(true);
+    try {
+      const result = await upload!(file);
+      if (!result.ok) {
+        setFileError(result.error);
+        return;
+      }
+      const source: Source = {
+        id: result.assetId,
+        label: 'Your image',
+        url: URL.createObjectURL(file),
+        state: 'processing',
+      };
+      setUploaded(source);
+      setSelectedId(source.id);
+    } catch {
+      setFileError('Could not upload the picture. Try again.');
+    } finally {
+      setUploading(false);
+    }
+  }
+
   function onFile(file: File) {
     setFileError(null);
+    if (upload) {
+      void onServerFile(file);
+      return;
+    }
     const url = URL.createObjectURL(file);
     const img = new Image();
     img.onload = () => {
@@ -143,6 +236,10 @@ export function PosterPicker({ videoId, title, durationSeconds, initial, save }:
 
   async function onSave() {
     const choice: PosterChoice = { posterId: selected.id, focus, zoom, alt };
+    if (selected.state === 'processing') {
+      setErrors({ posterId: 'That picture is still being prepared. Try again in a moment.' });
+      return;
+    }
     const problems = validatePosterChoice(choice);
     setErrors(problems);
     if (Object.keys(problems).length) return;
@@ -184,6 +281,10 @@ export function PosterPicker({ videoId, title, durationSeconds, initial, save }:
                 )}
                 <span className="adm-frame__label">
                   {source.label}
+                  {source.state === 'processing' ? (
+                    <span className="adm-muted"> Processing</span>
+                  ) : null}
+                  {source.state === 'failed' ? <span className="adm-muted"> Failed</span> : null}
                   <span className="adm-sr">{source.id === selectedId ? ', selected' : ''}</span>
                 </span>
                 <span className="adm-frame__cta">
@@ -206,7 +307,7 @@ export function PosterPicker({ videoId, title, durationSeconds, initial, save }:
               e.target.value = '';
             }}
           />
-          <Button icon="image" onClick={() => picker.current?.click()}>
+          <Button icon="image" loading={uploading} onClick={() => picker.current?.click()}>
             Upload your own
           </Button>
           <span className="adm-muted">JPG or PNG, at least 1280 by 720, up to 5 MB.</span>

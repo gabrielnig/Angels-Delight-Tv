@@ -1,6 +1,9 @@
 import 'server-only';
 import {
   bulkAdminVideos,
+  createPosterUpload,
+  getPosterAssetStatus,
+  listPosterAssets,
   getAdminVideo,
   listAdminCategories,
   listAdminSeries,
@@ -16,6 +19,7 @@ import {
 } from '@ad/catalog';
 import { Conflict, Forbidden, NotFound, ValidationFailed } from '@ad/shared';
 import { can } from '@/lib/admin/can';
+import { checkPosterUpload } from '@/lib/admin/poster-upload';
 import { validatePosterChoice } from '@/lib/admin/poster-rules';
 import type { VideoService } from '../services';
 import { queryVideos } from '../video-queries';
@@ -136,6 +140,28 @@ export const realVideoService: VideoService = {
       focus: { x: choice.focus.x, y: choice.focus.y },
       zoom: choice.zoom,
     });
+  },
+  async posterAssets(actor, id) {
+    need(actor, 'video.edit');
+    const runtime = adminRuntime();
+    return listPosterAssets(await context(), catalogActor(actor), id, runtime.mediaOrigin());
+  },
+  async uploadPoster(actor, id, bytes) {
+    need(actor, 'video.edit');
+    const check = await checkPosterUpload(bytes);
+    if (!check.ok) return check;
+    const runtime = adminRuntime();
+    return createPosterUpload(await context(), catalogActor(actor), id, {
+      mime: check.mime,
+      bytes: bytes.length,
+      store: (key) => runtime.originals().put(key, bytes, { contentType: check.mime }),
+      enqueue: (queue, payload) =>
+        runtime.enqueue(queue, payload, { createdBy: actor.accountId }),
+    });
+  },
+  async posterStatus(actor, assetId) {
+    need(actor, 'video.edit');
+    return getPosterAssetStatus(await context(), catalogActor(actor), assetId);
   },
   async retryEncode(actor, id) {
     need(actor, 'video.edit');

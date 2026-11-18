@@ -52,6 +52,27 @@ describe('toThumb', () => {
   });
 });
 
+describe('toThumb formats', () => {
+  it('offers webp as the srcSet and jpeg as the fallback for old browsers', () => {
+    const thumb = toThumb({
+      ...poster,
+      variants: [
+        { width: 320, height: 180, url: 'https://m.test/320.webp', format: 'webp' },
+        { width: 320, height: 180, url: 'https://m.test/320.jpg', format: 'jpeg' },
+        { width: 640, height: 360, url: 'https://m.test/640.webp', format: 'webp' },
+        { width: 640, height: 360, url: 'https://m.test/640.jpg', format: 'jpeg' },
+      ],
+    })!;
+    expect(thumb.src).toBe('https://m.test/640.webp');
+    expect(thumb.srcSet).toBe('https://m.test/320.webp 320w, https://m.test/640.webp 640w');
+    expect(thumb.fallbackSrc).toBe('https://m.test/640.jpg');
+    expect(thumb.fallbackSrcSet).toBe('https://m.test/320.jpg 320w, https://m.test/640.jpg 640w');
+  });
+  it('has no fallback for old webp only rows', () => {
+    expect(toThumb(poster)!.fallbackSrcSet).toBeUndefined();
+  });
+});
+
 describe('cardToItem', () => {
   it('maps a video card', () => {
     const item = cardToItem(videoCard());

@@ -510,7 +510,7 @@ export class VideoPipeline {
       async (dir) => {
         const { path, container, probe } = await this.fetchSource(videoId, dir);
         const seconds = probe.durationMs / 1000;
-        const width = 640;
+        const width = 1280;
         const height = Math.max(2, 2 * Math.round((width * probe.height) / probe.width / 2));
         const created: string[] = [];
         for (const [index, fraction] of [0.1, 0.5, 0.9].entries()) {
@@ -528,26 +528,19 @@ export class VideoPipeline {
               `thumbnail ${index + 1}: ${result.stderr.slice(0, 300)}`,
             );
           const bytes = await readFile(output);
-          const sha = createHash('sha256').update(bytes).digest();
           const assetId = uuidv7();
-          const key = `img/${assetId}/${width}-${sha.toString('hex').slice(0, 8)}.webp`;
-          await this.deps.media.put(key, bytes, {
-            contentType: 'image/webp',
-            cacheControl: SEGMENT_CACHE,
-          });
+          const rawKey = `candidates/${videoId}/${index + 1}`;
+          await this.deps.originals.put(rawKey, bytes, { contentType: 'image/webp' });
           await this.deps.db.insert(assets).values({
             id: assetId,
             purpose: 'thumbnail',
-            status: 'ready',
-            rawKey: `candidates/${videoId}/${index + 1}`,
-            mediaKeyBase: `img/${assetId}/`,
-            variants: [{ width, height, key, bytes: bytes.length }],
+            status: 'processing',
+            rawKey,
             mime: 'image/webp',
             bytes: bytes.length,
-            width,
-            height,
-            sha256: sha,
+            sha256: createHash('sha256').update(bytes).digest(),
           });
+          await this.deps.producer.enqueue('image.process', { assetId });
           created.push(assetId);
         }
         // The middle frame is the default poster until an admin picks another.

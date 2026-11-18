@@ -56,3 +56,27 @@ describe('buildPosterSources', () => {
     expect(out).toBeNull();
   });
 });
+
+describe('buildPosterSources with formats', () => {
+  const mixed: PosterVariant[] = [
+    { width: 320, height: 180, url: 'a320.webp', format: 'webp' },
+    { width: 320, height: 180, url: 'a320.jpg', format: 'jpeg' },
+    { width: 640, height: 360, url: 'a640.webp', format: 'webp' },
+    { width: 640, height: 360, url: 'a640.jpg', format: 'jpeg' },
+  ];
+  it('keeps webp in the main set and puts jpeg in the fallback set', () => {
+    const out = buildPosterSources(mixed, {})!;
+    expect(out.srcSet).toBe('a320.webp 320w, a640.webp 640w');
+    expect(out.fallback).toEqual({ src: 'a320.jpg', srcSet: 'a320.jpg 320w, a640.jpg 640w' });
+  });
+  it('applies the Data saver cap to both sets', () => {
+    const out = buildPosterSources(mixed, { maxWidth: 320 })!;
+    expect(out.srcSet).toBe('a320.webp 320w');
+    expect(out.fallback?.srcSet).toBe('a320.jpg 320w');
+  });
+  it('uses jpeg alone when there is no webp', () => {
+    const out = buildPosterSources(mixed.filter((v) => v.format === 'jpeg'), {})!;
+    expect(out.srcSet).toBe('a320.jpg 320w, a640.jpg 640w');
+    expect(out.fallback).toBeUndefined();
+  });
+});

@@ -14,3 +14,4 @@ export * from './encode';
 export * from './captions';
 export * from './playback';
 export * from './lifecycle';
+export * from './image';

@@ -10,6 +10,7 @@ import {
   seedVideo,
   type ViewerTestDb,
 } from '@ad/catalog/testing';
+import sharp from 'sharp';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { setAdminRuntime } from '@/server/admin/runtime';
 import type { AdminActor } from '../types';
@@ -23,6 +24,7 @@ describe.skipIf(!integrationEnabled())('real admin services over the catalog', (
   let admin: AdminActor;
   let viewer: AdminActor;
   const queued: Array<{ queue: string; payload: unknown }> = [];
+  const stored: string[] = [];
 
   beforeAll(async () => {
     t = await createViewerTestDb();
@@ -40,6 +42,7 @@ describe.skipIf(!integrationEnabled())('real admin services over the catalog', (
         return { jobId: 'job', deduped: false };
       }) as never,
       names: async (_actor, ids) => new Map(ids.map((id) => [id, 'Amina Bello'])),
+      originals: () => ({ put: async (key: string) => void stored.push(key) }) as never,
     });
   });
   afterAll(async () => {
@@ -192,6 +195,28 @@ describe.skipIf(!integrationEnabled())('real admin services over the catalog', (
         zoom: 100,
       });
       expect(invalid.ok).toBe(false);
+    });
+
+    it('stores a custom poster, queues its processing and lists it in the picker', async () => {
+      const video = await seedVideo(t.setup, { title: 'With upload' });
+      const bytes = new Uint8Array(
+        await sharp({ create: { width: 1280, height: 720, channels: 3, background: '#224466' } })
+          .png()
+          .toBuffer(),
+      );
+      const refused = await realVideoService.uploadPoster(editor, video.id, new Uint8Array([1, 2, 3]));
+      expect(refused).toEqual({ ok: false, error: 'Use a JPG or PNG image.' });
+      const done = await realVideoService.uploadPoster(editor, video.id, bytes);
+      expect(done.ok).toBe(true);
+      if (!done.ok) return;
+      expect(stored.at(-1)).toBe(`uploads/${video.id}/${done.assetId}`);
+      expect(queued).toEqual([{ queue: 'image.process', payload: { assetId: done.assetId } }]);
+      expect(await realVideoService.posterStatus(editor, done.assetId)).toEqual({ status: 'processing' });
+      const list = await realVideoService.posterAssets(editor, video.id);
+      expect(list).toEqual([
+        { id: done.assetId, source: 'upload', label: 'Your image', status: 'processing', url: null },
+      ]);
+      await expect(realVideoService.uploadPoster(viewer, video.id, bytes)).rejects.toThrow();
     });
 
     it('moves to Trash, restores, and queues a purge only for an admin', async () => {

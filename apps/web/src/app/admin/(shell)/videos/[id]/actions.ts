@@ -65,3 +65,25 @@ export async function setPosterAction(id: string, choice: PosterChoice): Promise
   revalidatePath('/admin', 'layout');
   return result;
 }
+
+const UPLOAD_ERROR = 'Could not upload the poster. Try again.';
+
+export async function uploadPosterAction(
+  id: string,
+  formData: FormData,
+): Promise<{ ok: true; assetId: string } | { ok: false; error: string }> {
+  const actor = await requireActionActor(`/admin/videos/${id}/poster`);
+  const file = formData.get('file');
+  if (!(file instanceof File)) return { ok: false, error: UPLOAD_ERROR };
+  const result = await videoService.uploadPoster(actor, id, new Uint8Array(await file.arrayBuffer()));
+  if (result.ok) revalidatePath(`/admin/videos/${id}/poster`);
+  return result;
+}
+
+export async function posterStatusAction(
+  id: string,
+  assetId: string,
+): Promise<{ status: 'processing' | 'ready' | 'failed' }> {
+  const actor = await requireActionActor(`/admin/videos/${id}/poster`);
+  return videoService.posterStatus(actor, assetId);
+}
