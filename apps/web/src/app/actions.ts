@@ -1,5 +1,6 @@
 'use server';
 
+import { withoutKidsLocked } from '../lib/playback-lock';
 import { cookies } from 'next/headers';
 import {
   getAccount,
@@ -225,7 +226,10 @@ export async function migrateDevicePrefsAction(profileId: string, legacy: Record
 
 export async function savePlaybackAction(patch: Partial<PlaybackSettings>) {
   const { ctx } = await context();
-  return getAccount().savePlayback(ctx.profileId, patch);
+  return getAccount().savePlayback(
+    ctx.profileId,
+    withoutKidsLocked(patch, ctx.audience === 'kids'),
+  );
 }
 
 export async function changePasswordAction(input: { current: string; next: string }) {
