@@ -1,5 +1,7 @@
+import { emailHash, findAccountByEmailHash, normalizeEmail } from '@ad/auth';
 import { loadWebEnv, type WebEnv } from '@ad/config';
 import { createDb, createPool, type Database } from '@ad/db';
+import type { Actor } from '@ad/shared';
 import { createStorage, storageConfigFromEnv, type StorageAdapter } from '@ad/storage';
 
 export interface ToolsRuntime {
@@ -25,4 +27,19 @@ export function createToolsRuntime(applicationName: string): ToolsRuntime {
     media: createStorage(storageConfigFromEnv(env, env.BUCKET_MEDIA, env.MEDIA_URL_SECRET)),
     close: () => pool.end(),
   };
+}
+
+/** Finds the active admin with this email through the SECURITY DEFINER lookup the sign in path uses. */
+export async function resolveAdminActor(
+  runtime: Pick<ToolsRuntime, 'db' | 'env'>,
+  rawEmail: string,
+): Promise<Actor | null> {
+  const email = normalizeEmail(rawEmail);
+  if (!email) return null;
+  const found = await findAccountByEmailHash(
+    runtime.db,
+    emailHash(email, runtime.env.EMAIL_HASH_PEPPER),
+  );
+  if (!found || found.role !== 'admin' || found.status !== 'active') return null;
+  return { accountId: found.id, role: 'admin' };
 }

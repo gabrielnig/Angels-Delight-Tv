@@ -182,8 +182,13 @@ export class VideoPipeline {
 
     await this.deps.producer.enqueue('video.encode', { videoId });
     if (found.probe.hasAudio) {
+      // A script stored next to the video (bulk import, M15) keeps the author's wording and borrows the timing.
+      const hasScript = await this.deps.originals.head(`scripts/${videoId}.txt`).then(
+        (info) => info !== null,
+        () => false,
+      );
       await this.deps.producer
-        .enqueue('caption.generate', { videoId, mode: 'transcribe' })
+        .enqueue('caption.generate', { videoId, mode: hasScript ? 'align' : 'transcribe' })
         .catch((error: unknown) => {
           // Captions never block encoding. The admin can regenerate them from the caption screen.
           this.logger.warn('caption job not queued', { videoId, err: error });
