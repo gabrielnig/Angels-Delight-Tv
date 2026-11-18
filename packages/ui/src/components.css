@@ -1915,6 +1915,47 @@
   }
 }
 
+/* Back button of detail pages. Phones only: the logo mark gives way to the arrow (S18). */
+.ad-nav__back {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: var(--touch-target);
+  height: var(--touch-target);
+  margin-inline-start: calc(var(--space-2) * -1);
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--color-ink);
+  cursor: pointer;
+}
+
+.ad-nav[data-back='true'] .ad-nav__logo,
+.ad-nav[data-back='true'] .ad-nav__brand img {
+  display: none;
+}
+
+.ad-nav[data-back='true'] {
+  background: var(--color-bg);
+  box-shadow: none;
+}
+
+@media (min-width: 960px) {
+  .ad-nav__back {
+    display: none;
+  }
+  .ad-nav[data-back='true'] .ad-nav__logo,
+  .ad-nav[data-back='true'] .ad-nav__brand img {
+    display: inline-flex;
+  }
+  .ad-nav[data-back='true'] {
+    background: var(--color-surface);
+    box-shadow: var(--shadow-1);
+  }
+}
+
 .ad-tabbar {
   position: fixed;
   right: 0;
