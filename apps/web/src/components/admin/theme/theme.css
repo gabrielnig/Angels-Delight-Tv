@@ -287,3 +287,13 @@
     padding: var(--space-1) 0;
   }
 }
+.adt-swatches {
+  display: flex;
+}
+.adt-swatch {
+  width: 1.25rem;
+  height: 1.25rem;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--color-border-strong);
+  margin-inline-start: calc(var(--space-1) * -1);
+}
