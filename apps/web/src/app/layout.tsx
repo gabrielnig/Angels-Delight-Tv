@@ -15,7 +15,11 @@ export async function generateMetadata(): Promise<Metadata> {
   return {
     title: { default: platformName, template: `%s | ${platformName}` },
     description: 'Free learning videos for everyone.',
-    icons: { apple: '/brand-icons/apple-touch-icon.png' },
+    icons: {
+      icon: [{ url: '/brand-icons/favicon-32.png', sizes: '32x32', type: 'image/png' }],
+      apple: '/brand-icons/apple-touch-icon.png',
+    },
+    openGraph: { siteName: platformName, images: ['/brand-icons/placeholder-og.png'] },
     appleWebApp: { capable: true, title: platformName, statusBarStyle: 'default' },
   };
 }
