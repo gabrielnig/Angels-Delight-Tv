@@ -2,6 +2,7 @@ import js from '@eslint/js';
 import nextPlugin from '@next/eslint-plugin-next';
 import prettier from 'eslint-config-prettier';
 import tseslint from 'typescript-eslint';
+import noHardcodedCopy from './scripts/eslint-rules/no-hardcoded-copy.mjs';
 
 const forbidApps = (names) => ({
   patterns: names.map((name) => ({
@@ -29,7 +30,10 @@ export default tseslint.config(
   {
     rules: {
       '@typescript-eslint/consistent-type-imports': 'error',
-      '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_', varsIgnorePattern: '^_', ignoreRestSiblings: true }],
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        { argsIgnorePattern: '^_', varsIgnorePattern: '^_', ignoreRestSiblings: true },
+      ],
       eqeqeq: ['error', 'always'],
     },
   },
@@ -82,6 +86,22 @@ export default tseslint.config(
     rules: {
       'no-restricted-imports': ['error', forbidApps(['@ad/web'])],
     },
+  },
+  {
+    // M34-S04 AC2: files already moved to the message catalog may not gain literal user facing text.
+    // Add a file here when it is wired. Allowlist exact strings that are not copy (docs/lanes/R1-stories.md).
+    files: [
+      'apps/web/src/components/account/pages.ts',
+      'apps/web/src/components/account/AlwaysAskSetting.tsx',
+      'apps/web/src/components/profiles/CachedPicker.tsx',
+      'apps/web/src/lib/auth-notices.ts',
+      'apps/web/src/server/auth/form-errors.ts',
+      'packages/player/src/controller.ts',
+      'packages/player/src/ui/Overlays.tsx',
+      'packages/player/src/ui/PlayerView.tsx',
+    ],
+    plugins: { ad: { rules: { 'no-hardcoded-copy': noHardcodedCopy } } },
+    rules: { 'ad/no-hardcoded-copy': ['error', { allow: [] }] },
   },
   prettier,
 );

@@ -62,33 +62,33 @@ export function ErrorOverlay({
         <div className="adp-overlay__actions">
           {kind === 'connection-lost' ? (
             <button type="button" className="adp-btn adp-btn--primary" onClick={onRetry}>
-              Retry
+              {msg('player.action.retry')}
             </button>
           ) : null}
           {kind === 'offline' || kind === 'cannot-play' ? (
             <button type="button" className="adp-btn adp-btn--primary" onClick={onRetry}>
-              Try again
+              {msg('player.action.tryAgain')}
             </button>
           ) : null}
           {kind === 'session-expired' ? (
             links.signIn ? (
               <a className="adp-btn adp-btn--primary" href={links.signIn}>
-                Sign in
+                {msg('player.action.signIn')}
               </a>
             ) : (
               <button type="button" className="adp-btn adp-btn--primary" onClick={onSignIn}>
-                Sign in
+                {msg('player.action.signIn')}
               </button>
             )
           ) : null}
           {kind === 'removed' && links.browse ? (
             <a className="adp-btn adp-btn--primary" href={links.browse}>
-              Browse videos
+              {msg('player.action.browse')}
             </a>
           ) : null}
           {kind === 'cannot-play' && links.help ? (
             <a className="adp-btn adp-btn--ghost" href={links.help}>
-              Report a problem
+              {msg('player.action.report')}
             </a>
           ) : null}
         </div>
@@ -124,10 +124,15 @@ export function Toast({
       <span>{toast.message}</span>
       {toast.action === 'start-over' ? (
         <button type="button" className="adp-toast__action" onClick={onAction}>
-          Start over
+          {msg('player.action.startOver')}
         </button>
       ) : null}
-      <button type="button" className="adp-toast__close" aria-label="Dismiss" onClick={onDismiss}>
+      <button
+        type="button"
+        className="adp-toast__close"
+        aria-label={msg('player.action.dismiss')}
+        onClick={onDismiss}
+      >
         <CloseIcon size={16} />
       </button>
     </div>
@@ -154,14 +159,14 @@ export function UpNextTile({
       <button type="button" className="adp-tile__main" onClick={onPlay}>
         <PlayIcon size={16} />
         <span>
-          <span className="adp-tile__kicker">Next</span>
+          <span className="adp-tile__kicker">{msg('player.upNext.kicker')}</span>
           <span className="adp-tile__title">{item.title}</span>
         </span>
       </button>
       <button
         type="button"
         className="adp-tile__close"
-        aria-label="Dismiss next video"
+        aria-label={msg('player.upNext.dismiss')}
         onClick={onDismiss}
       >
         <CloseIcon size={16} />
