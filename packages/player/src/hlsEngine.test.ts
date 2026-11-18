@@ -134,6 +134,24 @@ describe('createHlsEngine with a fake hls.js', () => {
     expect(last().startLevel).toBe(1);
   });
 
+  it('reports a silent video when every rendition declares video only codecs', () => {
+    const { events, hls } = engine();
+    hls.levels = hls.levels.map((l) => ({ ...l, videoCodec: 'avc1.42c01e' }));
+    hls.fire('parsed');
+    expect(events).toContainEqual({ type: 'levels', heights: [240, 360, 480, 720], audio: false });
+  });
+
+  it('reports sound when a rendition declares an audio codec', () => {
+    const { events, hls } = engine();
+    hls.levels = hls.levels.map((l) => ({
+      ...l,
+      videoCodec: 'avc1.42c01e',
+      audioCodec: 'mp4a.40.2',
+    }));
+    hls.fire('parsed');
+    expect(events).toContainEqual({ type: 'levels', heights: [240, 360, 480, 720], audio: true });
+  });
+
   it('reports the ladder and level switches', () => {
     const { events, hls } = engine();
     hls.fire('parsed');

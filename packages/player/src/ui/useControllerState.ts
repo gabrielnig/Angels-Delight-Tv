@@ -32,6 +32,7 @@ export const IDLE_STATE: PlayerState = {
   },
   toast: null,
   upNext: { tile: false, countdown: null, cancelled: false },
+  hasAudio: true,
   backOnline: false,
   announce: '',
 };

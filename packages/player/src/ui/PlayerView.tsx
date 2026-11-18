@@ -82,6 +82,7 @@ export function PlayerView(props: PlayerViewProps) {
     total: number;
     key: number;
   } | null>(null);
+  const [posterFailed, setPosterFailed] = useState(false);
   const [pipSupported, setPipSupported] = useState(false);
   const compact = useMediaQuery('(max-width: 640px)');
 
@@ -338,14 +339,7 @@ export function PlayerView(props: PlayerViewProps) {
           setFocusInside(false);
       }}
     >
-      <video
-        ref={setVideo}
-        className="adp-video"
-        poster={posterUrl}
-        preload="metadata"
-        playsInline
-        aria-hidden="true"
-      >
+      <video ref={setVideo} className="adp-video" preload="metadata" playsInline aria-hidden="true">
         {tracks.map((t) => (
           <track
             key={t.id}
@@ -358,6 +352,17 @@ export function PlayerView(props: PlayerViewProps) {
           />
         ))}
       </video>
+
+      {posterUrl && !posterFailed ? (
+        <img
+          className="adp-poster"
+          src={posterUrl}
+          alt=""
+          aria-hidden="true"
+          data-state={state.phase === 'loading' ? 'visible' : 'hidden'}
+          onError={() => setPosterFailed(true)}
+        />
+      ) : null}
 
       <div
         className="adp-surface"
@@ -488,30 +493,32 @@ export function PlayerView(props: PlayerViewProps) {
         >
           <Forward10Icon />
         </button>
-        <div className="adp-volume">
-          <button
-            type="button"
-            className="adp-ctl"
-            aria-label={state.muted ? 'Unmute' : 'Mute'}
-            aria-pressed={state.muted}
-            onClick={() => controller?.toggleMute()}
-          >
-            {state.muted || state.volume === 0 ? <MutedIcon /> : <VolumeIcon />}
-          </button>
-          {!compact ? (
-            <input
-              className="adp-volume__slider"
-              type="range"
-              min={0}
-              max={1}
-              step={0.05}
-              value={state.muted ? 0 : state.volume}
-              aria-label="Volume"
-              aria-valuetext={`${Math.round((state.muted ? 0 : state.volume) * 100)} percent`}
-              onChange={(e) => controller?.setVolume(Number(e.target.value))}
-            />
-          ) : null}
-        </div>
+        {state.hasAudio ? (
+          <div className="adp-volume">
+            <button
+              type="button"
+              className="adp-ctl"
+              aria-label={state.muted ? 'Unmute' : 'Mute'}
+              aria-pressed={state.muted}
+              onClick={() => controller?.toggleMute()}
+            >
+              {state.muted || state.volume === 0 ? <MutedIcon /> : <VolumeIcon />}
+            </button>
+            {!compact ? (
+              <input
+                className="adp-volume__slider"
+                type="range"
+                min={0}
+                max={1}
+                step={0.05}
+                value={state.muted ? 0 : state.volume}
+                aria-label="Volume"
+                aria-valuetext={`${Math.round((state.muted ? 0 : state.volume) * 100)} percent`}
+                onChange={(e) => controller?.setVolume(Number(e.target.value))}
+              />
+            ) : null}
+          </div>
+        ) : null}
         <button
           type="button"
           className="adp-time"
