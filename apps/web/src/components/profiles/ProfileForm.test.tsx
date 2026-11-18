@@ -223,5 +223,40 @@ describe('ProfileForm suggested name and unsaved changes', () => {
     const dirty = new Event('beforeunload', { cancelable: true });
     window.dispatchEvent(dirty);
     expect(dirty.defaultPrevented).toBe(true);
+
+describe('ProfileForm PIN (M03-S12)', () => {
+  it('sets a four digit PIN and needs the account password for it', async () => {
+    const onSave = vi.fn(async () => ({ ok: true as const }));
+    const user = userEvent.setup();
+    render(<ProfileForm profile={emeka} onSave={onSave} onDone={vi.fn()} />);
+    const pin = screen.getByLabelText(/^PIN/);
+    expect(pin).toHaveAttribute('inputmode', 'numeric');
+    await user.type(pin, '48a21');
+    expect(pin).toHaveValue('4821');
+    await user.click(screen.getByRole('button', { name: 'Save changes' }));
+    expect(
+      await screen.findByText('Enter your account password to change the PIN.'),
+    ).toBeInTheDocument();
+    expect(onSave).not.toHaveBeenCalled();
+    await user.type(screen.getByLabelText(/Account password/), 'secret-pass');
+    await user.click(screen.getByRole('button', { name: 'Save changes' }));
+    expect(onSave).toHaveBeenCalledWith(
+      expect.objectContaining({ pin: '4821', password: 'secret-pass' }),
+    );
+  });
+
+  it('removes an existing PIN', async () => {
+    const onSave = vi.fn(async () => ({ ok: true as const }));
+    const user = userEvent.setup();
+    render(<ProfileForm profile={{ ...emeka, hasPin: true }} onSave={onSave} onDone={vi.fn()} />);
+    await user.click(screen.getByRole('switch', { name: 'Remove the PIN' }));
+    await user.type(screen.getByLabelText(/Account password/), 'secret-pass');
+    await user.click(screen.getByRole('button', { name: 'Save changes' }));
+    expect(onSave).toHaveBeenCalledWith(expect.objectContaining({ pin: null }));
+  });
+
+  it('shows no PIN field on a Kids profile', () => {
+    render(<ProfileForm profile={amina} onSave={vi.fn()} onDone={vi.fn()} />);
+    expect(screen.queryByLabelText(/^PIN/)).not.toBeInTheDocument();
   });
 });

@@ -333,14 +333,14 @@ export async function deleteProfile(
 }
 
 /**
- * Confirms the actor may open the profile and returns it. A profile with a PIN needs the PIN, attempts are
- * limited per profile when a rate limiter is configured.
+ * Confirms the actor may open the profile and returns it. A profile with a PIN needs the PIN (attempts are
+ * limited per profile when a rate limiter is configured) or the account password.
  */
 export async function selectProfile(
   ctx: ViewerContext,
   actor: Actor,
   profileId: string,
-  options: { pin?: string; kidsLocked?: boolean } = {},
+  options: { pin?: string; password?: string; kidsLocked?: boolean } = {},
 ): Promise<ProfileDto> {
   const row = await withAccount(ctx.db, actor, async (tx) => {
     const target = await loadOwnedProfile(tx, actor, profileId);
@@ -349,9 +349,17 @@ export async function selectProfile(
     return target;
   });
   if (row.pinHash !== null) {
-    if (options.pin === undefined) throw new Forbidden('pin_required');
-    await spendAttempt(ctx, 'profile_pin', row.id);
-    if (!(await verifyPin(options.pin, row.pinHash))) throw new Forbidden('pin_invalid');
+    if (options.password !== undefined) {
+      // The account password overrides a forgotten or locked PIN. It spends the password budget, not the PIN one.
+      await spendAttempt(ctx, 'kids_exit', actor.accountId);
+      if (!(await ctx.verifyPassword(actor.accountId, options.password))) {
+        throw new Forbidden('password_incorrect');
+      }
+    } else {
+      if (options.pin === undefined) throw new Forbidden('pin_required');
+      await spendAttempt(ctx, 'profile_pin', row.id);
+      if (!(await verifyPin(options.pin, row.pinHash))) throw new Forbidden('pin_invalid');
+    }
   }
   return toDto(ctx, actor.accountId, row);
 }

@@ -87,14 +87,18 @@ export async function signOutAction() {
 // ---- Profiles ----
 
 /** Makes a profile the active one. Real data sets the signed cookie itself, fixtures use the plain one. */
-async function activate(accountId: string, profileId: string) {
-  await getProfiles().select(accountId, profileId);
-  if (!realDataEnabled())
+async function activate(accountId: string, profileId: string, proof?: SelectProof) {
+  const result = await getProfiles().select(accountId, profileId, proof);
+  if (result.ok && !realDataEnabled())
     (await cookies()).set(sessionCookieNames.profile, profileId, cookieOptions);
+  return result;
 }
 
-export async function selectProfileAction(profileId: string) {
-  await activate(await currentAccountId(), profileId);
+type SelectProof = { pin?: string; password?: string };
+
+/** A PIN profile answers `pin_required` until the PIN or the account password is given. The server counts tries. */
+export async function selectProfileAction(profileId: string, proof?: SelectProof) {
+  return activate(await currentAccountId(), profileId, proof);
 }
 
 export async function createProfileAction(input: ProfileInput) {
@@ -126,14 +130,13 @@ export async function checkKidsPasswordAction(password: string) {
   if (result.ok) {
     if (realDataEnabled()) await cookieProfileIo().clearLock();
     const accountId = await currentAccountId();
-    const adult = (await getProfiles().list(accountId)).find((p) => !p.kids);
+    // Prefer a grown-up profile without a PIN. When every one has a PIN, leave the kids profile and show the
+    // picker, which asks for it (M03-S12). The server refuses a PIN profile without proof either way.
+    const adult = (await getProfiles().list(accountId)).find((p) => !p.kids && !p.hasPin);
     if (adult) {
-      try {
-        await activate(accountId, adult.id);
-      } catch {
-        // A grown-up profile with a PIN cannot be opened from here: leave the kids profile and show the picker.
-        if (realDataEnabled()) await cookieProfileIo().clearActive();
-      }
+      await activate(accountId, adult.id);
+    } else if (realDataEnabled()) {
+      await cookieProfileIo().clearActive();
     }
   }
   return result;

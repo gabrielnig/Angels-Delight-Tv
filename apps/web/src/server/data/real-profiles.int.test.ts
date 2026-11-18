@@ -134,6 +134,46 @@ describe.skipIf(!integrationEnabled())('real profiles repository', () => {
     expect(calls).toHaveLength(1);
   });
 
+  it('asks for the PIN of a protected profile, counts a wrong one and accepts the right PIN or the password', async () => {
+    const user = await h.makeUser();
+    active = user.profileId;
+    await repo().update(user.accountId, user.profileId, { pin: '4821', password: TEST_PASSWORD });
+    expect((await repo().list(user.accountId)).find((p) => p.id === user.profileId)?.hasPin).toBe(
+      true,
+    );
+    active = null;
+    calls.length = 0;
+    expect(await repo().select(user.accountId, user.profileId)).toEqual({
+      ok: false,
+      reason: 'pin_required',
+    });
+    expect(await repo().select(user.accountId, user.profileId, { pin: '0000' })).toEqual({
+      ok: false,
+      reason: 'pin_invalid',
+    });
+    expect(calls).toEqual([]);
+    expect(await repo().select(user.accountId, user.profileId, { pin: '4821' })).toEqual({
+      ok: true,
+    });
+    expect(calls).toEqual([`set:${user.profileId}`]);
+    expect(
+      await repo().select(user.accountId, user.profileId, { password: 'wrong-password' }),
+    ).toEqual({ ok: false, reason: 'password_incorrect' });
+    expect(
+      await repo().select(user.accountId, user.profileId, { password: TEST_PASSWORD }),
+    ).toEqual({ ok: true });
+  });
+
+  it('removes a PIN with the account password', async () => {
+    const user = await h.makeUser();
+    active = user.profileId;
+    await repo().update(user.accountId, user.profileId, { pin: '4821', password: TEST_PASSWORD });
+    await repo().update(user.accountId, user.profileId, { pin: null, password: TEST_PASSWORD });
+    expect((await repo().list(user.accountId)).find((p) => p.id === user.profileId)?.hasPin).toBe(
+      false,
+    );
+  });
+
   it('clears the active cookie when the active profile is deleted', async () => {
     const user = await h.makeUser();
     active = user.kidsProfileId;
