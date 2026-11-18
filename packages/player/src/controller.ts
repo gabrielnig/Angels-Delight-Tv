@@ -70,6 +70,8 @@ const STALL_RECOVERY_MS = 20_000;
 const AUTH_RETRY_WINDOW_MS = 15_000;
 const UP_NEXT_TILE_SECONDS = 15;
 const END_GUARD_SECONDS = 0.5;
+const SEEK_TIMEOUT_MS = 6_000;
+const SEGMENT_SECONDS = 6;
 
 const ERROR_ANNOUNCE: Record<PlayerErrorKind, string> = {
   'connection-lost': 'Connection lost',
@@ -129,6 +131,7 @@ export class PlayerController {
   private lastRefreshAt = -Infinity;
   private mediaErrors = 0;
   private pendingStop: PlayerErrorKind | null = null;
+  private seekTimer: ReturnType<typeof setTimeout> | null = null;
 
   constructor(private readonly o: PlayerControllerOptions) {
     this.prefs = { ...DEFAULT_PREFERENCES, ...o.preferences };
@@ -288,6 +291,7 @@ export class PlayerController {
     this.reporter.dispose();
     this.reportMetrics(true);
     this.clearStall();
+    this.clearSeekWatch();
     this.clearCountdown();
     for (const t of [this.firstFrameTimer, this.toastTimer]) if (t) clearTimeout(t);
     if (this.metricsTimer) clearInterval(this.metricsTimer);
@@ -322,8 +326,39 @@ export class PlayerController {
     const max = Number.isFinite(d) ? d : Infinity;
     const t = Math.min(Math.max(0, seconds), max);
     media.currentTime = t;
+    this.watchSeek(t, 0);
     this.reporter.update(t, d);
     this.set({ currentTime: t });
+  }
+
+  /**
+   * M08-S03 Error: a seek that never completes is retried once, then falls back to the nearest segment start.
+   * The position stays where the viewer asked for it while the engine works.
+   */
+  private watchSeek(target: number, attempt: 0 | 1): void {
+    if (this.seekTimer) clearTimeout(this.seekTimer);
+    this.seekTimer = setTimeout(() => {
+      this.seekTimer = null;
+      if (this.disposed) return;
+      const { media, engine } = this.o;
+      if (attempt === 0) {
+        media.currentTime = target;
+        engine.recover();
+        this.watchSeek(target, 1);
+        return;
+      }
+      const start =
+        engine.segmentStart?.(target) ?? Math.floor(target / SEGMENT_SECONDS) * SEGMENT_SECONDS;
+      media.currentTime = start;
+      this.reporter.update(start, media.duration);
+      this.set({ currentTime: start });
+      this.notify('Could not jump there, so we jumped to the nearest point');
+    }, SEEK_TIMEOUT_MS);
+  }
+
+  private clearSeekWatch(): void {
+    if (this.seekTimer) clearTimeout(this.seekTimer);
+    this.seekTimer = null;
   }
 
   seekBy(delta: number): void {
@@ -560,6 +595,7 @@ export class PlayerController {
         }
         break;
       case 'seeked':
+        this.clearSeekWatch();
         this.syncProgress();
         void this.reporter.flush('seek');
         this.sync();

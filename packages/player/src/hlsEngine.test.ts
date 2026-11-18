@@ -6,6 +6,7 @@ import {
   mapHlsError,
   type HlsEventData,
   type HlsInstanceLike,
+  type HlsLevelLike,
   type HlsStatic,
 } from './hlsEngine';
 import type { EngineEvent } from './engine';
@@ -26,13 +27,14 @@ class FakeHls implements HlsInstanceLike {
   static isSupported() {
     return FakeHls.supported;
   }
-  levels = [
+  levels: HlsLevelLike[] = [
     { height: 240, bitrate: 300_000 },
     { height: 360, bitrate: 600_000 },
     { height: 480, bitrate: 900_000 },
     { height: 720, bitrate: 1_800_000 },
   ];
   currentLevel = 2;
+  // keeps `levels` assignable with details in tests
   loadLevel = 2;
   nextLevel = -1;
   nextAutoLevel = -1;
@@ -150,6 +152,21 @@ describe('createHlsEngine with a fake hls.js', () => {
     }));
     hls.fire('parsed');
     expect(events).toContainEqual({ type: 'levels', heights: [240, 360, 480, 720], audio: true });
+  });
+
+  it('finds the start of the segment that holds a time from the loaded playlist', () => {
+    const { e, hls } = engine();
+    hls.levels[2] = {
+      ...hls.levels[2]!,
+      details: {
+        fragments: [
+          { start: 0, duration: 6 },
+          { start: 6, duration: 6 },
+        ],
+      },
+    };
+    expect(e.segmentStart?.(7.5)).toBe(6);
+    expect(e.segmentStart?.(99)).toBeNull();
   });
 
   it('reports the ladder and level switches', () => {
