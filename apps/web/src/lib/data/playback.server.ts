@@ -28,6 +28,7 @@ export function getPlaybackData(): PlaybackData {
           viewerRuntime().ctx,
           (accountId, profileId) => accountViewerData().playback(accountId, profileId),
           (videoId) => new DrizzlePlaybackStore(viewerRuntime().ctx.db).captions(videoId),
+          (videoId) => new DrizzlePlaybackStore(viewerRuntime().ctx.db).spriteKey(videoId),
         )
       : createFixturePlaybackData();
     instanceIsReal = real;

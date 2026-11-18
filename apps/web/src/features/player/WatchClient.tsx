@@ -157,6 +157,7 @@ export function WatchClient({
             sessionProvider={sessionProvider}
             progressSink={progressSink}
             captions={data.captions}
+            spriteUrl={data.spriteUrl ?? null}
             resume={resume}
             preferences={preferences}
             onPreferencesChange={onPreferencesChange}

@@ -94,6 +94,8 @@ export const videos = pgTable(
     heroAssetId: uuid('hero_asset_id').references(() => assets.id, { onDelete: 'set null' }),
     failureCode: text('failure_code'),
     failureMessage: text('failure_message'),
+    /** Key in the media bucket of the seek preview map (WebVTT pointing at sprite sheets). Null when none. */
+    spriteKey: text('sprite_key'),
     /** Free tags set by editors. Shown on the admin edit screen only. */
     tags: text('tags')
       .array()

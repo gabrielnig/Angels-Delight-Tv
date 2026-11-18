@@ -59,6 +59,8 @@ export class RealPlaybackData implements PlaybackData {
     private readonly captionsFor: (
       videoId: string,
     ) => Promise<ApprovedCaptionRow[]> = async () => [],
+    /** Key of the seek preview map under the media origin, or null. */
+    private readonly spriteFor: (videoId: string) => Promise<string | null> = async () => null,
   ) {}
 
   private async detail(
@@ -123,11 +125,13 @@ export class RealPlaybackData implements PlaybackData {
       src: `${origin}/${track.key}`,
       status: 'approved',
     }));
+    const spriteKey = await this.spriteFor(videoId);
     return {
       status: 'ok',
       data: {
         ...data,
         captions,
+        ...(spriteKey ? { spriteUrl: `${origin}/${spriteKey}` } : {}),
         preferences: {
           ...DEFAULT_PREFERENCES,
           captionsOn: isKids || prefs.captionsDefault,

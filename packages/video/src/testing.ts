@@ -43,6 +43,9 @@ export class FakeRunner implements ProcessRunner {
   failHeights = new Set<number>();
   segmentsPerRung = 3;
   probeExitCode = 0;
+  /** How many sprite sheets the fake sprite step writes. */
+  spriteSheets = 1;
+  failSprites = false;
 
   encodeCalls(): number[] {
     return this.calls
@@ -81,6 +84,15 @@ export class FakeRunner implements ProcessRunner {
         options.onStdout?.(`out_time_us=${(index + 1) * 4_000_000}\nprogress=continue\n`);
       }
       await writeFile(join(outDir, 'index.m3u8'), `${playlist}#EXT-X-ENDLIST\n`);
+      return done(0);
+    }
+
+    if (args.some((arg) => arg.includes('tile='))) {
+      if (this.failSprites) return done(1, '', 'sprite failed');
+      const pattern = args[args.length - 1]!;
+      await mkdir(dirname(pattern), { recursive: true });
+      for (let n = 1; n <= this.spriteSheets; n++)
+        await writeFile(pattern.replace('%03d', String(n).padStart(3, '0')), Buffer.from(`sheet-${n}`));
       return done(0);
     }
 

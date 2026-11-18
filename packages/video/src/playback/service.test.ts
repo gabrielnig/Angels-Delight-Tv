@@ -26,7 +26,12 @@ const baseVideo: PlayableVideo = {
 };
 
 function setup(
-  over: { video?: Partial<PlayableVideo> | null; kids?: boolean; limiter?: unknown } = {},
+  over: {
+    video?: Partial<PlayableVideo> | null;
+    kids?: boolean;
+    limiter?: unknown;
+    sprite?: string | null;
+  } = {},
 ) {
   let clock = 1_800_000_000;
   const video = over.video === null ? null : { ...baseVideo, ...over.video };
@@ -44,6 +49,7 @@ function setup(
     captions: async () => [
       { language: 'en', label: 'English', isDefault: true, key: `cap/abc/en.vtt` },
     ],
+    spriteKey: async () => over.sprite === undefined ? 'cap/abc/sprites/map-1234abcd.vtt' : over.sprite,
   };
   const files: Record<string, string> = {
     [`templates/${VID}/master.m3u8`]: buildMasterTemplate([
@@ -118,6 +124,13 @@ describe('PlaybackService sessions', () => {
     expect(s.masterUrl).toBe(`https://app.example/api/play/${VID}/master.m3u8`);
     expect(s.captions[0]?.url).toBe('https://media.example/cap/abc/en.vtt');
     expect(s.preview).toBe(false);
+  });
+
+  it('lists the seek preview map on the media origin, or null when there is none', async () => {
+    const withSprite = await setup().service.startSession(viewer, VID);
+    expect(withSprite.sprite).toBe('https://media.example/cap/abc/sprites/map-1234abcd.vtt');
+    const without = await setup({ sprite: null }).service.startSession(viewer, VID);
+    expect(without.sprite).toBeNull();
   });
 
   it.each([

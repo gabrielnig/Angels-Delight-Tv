@@ -31,6 +31,7 @@ describe.skipIf(!integrationEnabled())('real playback data', () => {
         videoId === captioned
           ? [{ language: 'en', label: 'English', isDefault: true, key: 'cap/p/en/abcd1234.vtt' }]
           : [],
+      async (videoId) => (videoId === captioned ? 'cap/p/sprites/map-1234abcd.vtt' : null),
     );
   });
   afterAll(async () => {
@@ -56,6 +57,8 @@ describe.skipIf(!integrationEnabled())('real playback data', () => {
     const b = await playback.getWatchData(without.id, adult(u));
     if (b.status !== 'ok') throw new Error(b.status);
     expect(b.data.captions).toEqual([]);
+    expect(a.data.spriteUrl).toBe('https://media.test/cap/p/sprites/map-1234abcd.vtt');
+    expect(b.data.spriteUrl).toBeUndefined();
   });
 
   it('describes a standalone video with saved progress, related tiles and list state', async () => {

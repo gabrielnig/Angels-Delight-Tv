@@ -8,7 +8,7 @@ export function demuxerFor(container: Container): string {
 }
 
 /** Flags that must come before -i: no network or playlist protocols, one demuxer family. */
-function inputSafety(container: Container): string[] {
+export function inputSafety(container: Container): string[] {
   return ['-protocol_whitelist', 'file', '-f', demuxerFor(container)];
 }
 

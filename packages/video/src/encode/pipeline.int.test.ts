@@ -20,6 +20,12 @@ import { keyring, unwrapHlsKey } from '../hls-key';
 import { FakeRunner, fakeMp4Bytes, fakeProbeJson } from '../testing';
 import { VideoPipeline, classifyPipelineError } from './pipeline';
 
+async function collect(stream: AsyncIterable<unknown>): Promise<Buffer[]> {
+  const out: Buffer[] = [];
+  for await (const chunk of stream) out.push(Buffer.from(chunk as Buffer));
+  return out;
+}
+
 const secret = new Uint8Array(32).fill(9);
 const kek = new Uint8Array(32).fill(4);
 
@@ -339,6 +345,38 @@ describe.skipIf(!integrationEnabled())('VideoPipeline against Postgres and local
       const count = (await t.db.select().from(schema.assets)).length;
       await pipeline.thumbnails(video.id, progress);
       expect((await t.db.select().from(schema.assets)).length).toBe(count);
+    });
+  });
+
+  describe('sprites', () => {
+    it('packs frames into sheets, uploads a map next to the captions and stores its key', async () => {
+      runner.spriteSheets = 1;
+      const video = await newVideo({ durationMs: 14000, width: 1280, height: 720 });
+      await pipeline.thumbnails(video.id, progress);
+      const stored = await row(video.id);
+      expect(stored.spriteKey).toMatch(new RegExp(`^cap/${stored.mediaPrefix}/sprites/map-[0-9a-f]{8}\\.vtt$`));
+      const body = Buffer.concat(await collect(await media.get(stored.spriteKey!))).toString();
+      expect(body.startsWith('WEBVTT')).toBe(true);
+      expect(body).toMatch(/00:00:00\.000 --> 00:00:05\.000\nsheet-1-[0-9a-f]{8}\.jpg#xywh=0,0,160,90/);
+      const sheets = await media.list(`cap/${stored.mediaPrefix}/sprites/`);
+      expect(sheets.map((o) => o.key).some((k) => /sheet-1-[0-9a-f]{8}\.jpg$/.test(k))).toBe(true);
+    });
+
+    it('never fails the thumbnails job when the sprite step breaks', async () => {
+      runner.failSprites = true;
+      const video = await newVideo({ durationMs: 14000, width: 1280, height: 720 });
+      await expect(pipeline.thumbnails(video.id, progress)).resolves.toBeUndefined();
+      expect((await row(video.id)).spriteKey).toBeNull();
+    });
+
+    it('can be switched off', async () => {
+      const off = new VideoPipeline({
+        ...(pipeline as unknown as { deps: ConstructorParameters<typeof VideoPipeline>[0] }).deps,
+        sprites: { enabled: async () => false },
+      });
+      const video = await newVideo({ durationMs: 14000, width: 1280, height: 720 });
+      await off.thumbnails(video.id, progress);
+      expect((await row(video.id)).spriteKey).toBeNull();
     });
   });
 

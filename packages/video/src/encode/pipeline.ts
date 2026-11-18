@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto';
 import { createReadStream } from 'node:fs';
-import { mkdir, readFile, stat, writeFile } from 'node:fs/promises';
+import { mkdir, readdir, readFile, stat, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { schema, type Database } from '@ad/db';
 import type { ClassifiedFailure, JobProducer } from '@ad/queue';
@@ -17,6 +17,7 @@ import {
   parseMediaPlaylist,
   type MasterRung,
 } from '../playlist';
+import { buildSpriteVtt, planSprite, spriteArgs } from '../sprite';
 import { parseFfprobe, validateProbe, type ProbeLimits, type ProbeResult } from '../probe';
 import {
   ProgressParser,
@@ -52,6 +53,8 @@ export interface PipelineDeps {
   limits: ProbeLimits;
   /** Reads the `video.ladder` setting. Falls back to the default ladder. */
   ladder?: () => Promise<RungSpec[]>;
+  /** Seek preview sprites are on unless `enabled` says otherwise. */
+  sprites?: { enabled?: () => Promise<boolean> };
   logger?: Logger;
 }
 
@@ -548,7 +551,63 @@ export class VideoPipeline {
           .update(videos)
           .set({ posterAssetId: created[1], updatedAt: new Date() })
           .where(and(eq(videos.id, videoId), sql`${videos.posterAssetId} IS NULL`));
+        // Sprites are optional and never fail the job (M08-S29 error case: sprite failure is silent).
+        try {
+          if (await this.spritesEnabled())
+            await this.makeSprites(dir, path, container, probe, initial);
+        } catch (error) {
+          this.logger.warn('sprite sheets failed', { videoId, err: error });
+        }
       },
     );
+  }
+
+  private spritesEnabled = async () => (await this.deps.sprites?.enabled?.()) ?? true;
+
+  /** Cuts one frame per interval, packs them into sheets and uploads the sheets and a WebVTT map to `cap/`. */
+  private async makeSprites(
+    dir: string,
+    source: string,
+    container: Container,
+    probe: ProbeResult,
+    video: { id: string; mediaPrefix: string; spriteKey: string | null },
+  ): Promise<void> {
+    if (video.spriteKey) return;
+    const plan = planSprite({
+      durationSeconds: probe.durationMs / 1000,
+      width: probe.width,
+      height: probe.height,
+    });
+    if (!plan) return;
+    const outDir = join(dir, 'sprites');
+    await mkdir(outDir, { recursive: true });
+    const result = await this.runner.run(
+      this.ffmpegPath(),
+      spriteArgs({ input: source, container, plan, outputPattern: join(outDir, 'sheet-%03d.jpg') }),
+      { timeoutMs: 15 * 60_000, niceness: this.deps.ffmpeg?.niceness ?? 10 },
+    );
+    if (result.code !== 0) throw new PipelineError('encode_failed', `sprites: ${result.stderr.slice(0, 300)}`);
+    const files = (await readdir(outDir)).filter((name) => name.endsWith('.jpg')).sort();
+    if (files.length === 0) throw new PipelineError('encode_failed', 'sprites: no sheets written');
+
+    const base = `cap/${video.mediaPrefix}/sprites/`;
+    const names: string[] = [];
+    for (const [index, file] of files.entries()) {
+      const bytes = await readFile(join(outDir, file));
+      const name = `sheet-${index + 1}-${createHash('sha256').update(bytes).digest('hex').slice(0, 8)}.jpg`;
+      await this.deps.media.put(`${base}${name}`, bytes, {
+        contentType: 'image/jpeg',
+        cacheControl: SEGMENT_CACHE,
+      });
+      names.push(name);
+    }
+    const covered = { ...plan, frames: Math.min(plan.frames, names.length * plan.perSheet), sheets: names.length };
+    const vtt = Buffer.from(buildSpriteVtt(covered, probe.durationMs / 1000, names));
+    const key = `${base}map-${createHash('sha256').update(vtt).digest('hex').slice(0, 8)}.vtt`;
+    await this.deps.media.put(key, vtt, { contentType: 'text/vtt; charset=utf-8', cacheControl: SEGMENT_CACHE });
+    await this.deps.db
+      .update(videos)
+      .set({ spriteKey: key, updatedAt: new Date() })
+      .where(eq(videos.id, video.id));
   }
 }
