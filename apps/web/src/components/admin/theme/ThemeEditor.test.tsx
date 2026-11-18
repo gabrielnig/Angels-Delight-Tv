@@ -95,6 +95,14 @@ describe('colours and contrast', () => {
     expect(screen.getByText('Unsaved changes')).toBeInTheDocument();
   });
 
+  it('fills the colours from a ready made theme and keeps the font', async () => {
+    const { actions, user } = setup();
+    await user.click(screen.getByRole('radio', { name: /lavender/i }));
+    expect(preview().style.getPropertyValue('--color-primary')).toBe('#6D4FC2');
+    expect(screen.getByText('Unsaved changes')).toBeInTheDocument();
+    expect(actions.saveDraft).not.toHaveBeenCalled();
+  });
+
   it('accepts three digit hex and a missing hash on blur', async () => {
     const { user } = setup();
     await type(user, hex('Accent'), 'fc3');

@@ -8,6 +8,7 @@ export * from './css';
 export * from './derive';
 export * from './gate';
 export * from './model';
+export * from './presets';
 export * from './html-sanitize';
 export {
   SETTING_DEFS,
