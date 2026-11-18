@@ -38,7 +38,7 @@ Status rules: **done with test** means every acceptance criterion is implemented
 | M03-S09 Profile language and caption defaults | Should | done with test | features/player/preferences.test.ts; real-profiles.int.test.ts | Server side sync is owned by m2 |
 | M03-S10 Kids profile creation rules | Must | done with test | profiles.int.test.ts (last adult, kids flag); ProfileForm.test.tsx |  |
 | M03-S11 Remember last profile per device | Should | done with test | lib/profiles/always-ask.test.ts (remembered profile, deleted profile falls back to the picker, single profile auto skip); AlwaysAskSetting.test.tsx | The setting is a device cookie set from Account, honoured at sign in. Local storage blocked does not matter because the profile is remembered in a cookie |
-| M03-S13 Profile picker on slow networks | Should | missing | none | No cached profile list, no 7 day stale rule, no "May be out of date" note |
+| M03-S13 Profile picker on slow networks | Should | done with test | lib/profiles/picker-cache.test.ts (picker fields only, 7 day rule, account match, cleared at sign out); components/profiles/CachedPicker.test.tsx (cached tiles while loading, May be out of date note, Retry) | Cache is local storage under ad.pickercache.v1. A 2 second figure on real 3G is not measured |
 | M03-S14 Profile switch resets the player context | Must | done with test | preferences.test.ts; sw-source.test.ts; lib/pwa/purge.test.ts (purge, reload fallback) |  |
 | M35-S01 Kids profile sees only kid titles | Must | done with test | visibility.int.test.ts; titles.int.test.ts; home.int.test.ts; my-list.int.test.ts; api-kids-lock.int.test.ts; security.int.test.ts | Empty kids Home copy differs from the story |
 | M35-S02 Kids navigation limits | Must | done with test | TopNav.test.tsx (Switch profile and Exit kids mode only); api-kids-lock.int.test.ts; real-profiles.int.test.ts |  |
@@ -137,10 +137,10 @@ Status rules: **done with test** means every acceptance criterion is implemented
 
 | Status | Must | Should | Total |
 |---|---|---|---|
-| done with test | 73 | 18 | 91 |
+| done with test | 73 | 21 | 94 |
 | done without test | 8 | 2 | 10 |
-| partial | 11 | 11 | 22 |
-| missing | 0 | 3 | 3 |
+| partial | 11 | 10 | 21 |
+| missing | 0 | 1 | 1 |
 | total | 92 | 34 | 126 |
 
 Owned by m2 (inside the counts above): 7.

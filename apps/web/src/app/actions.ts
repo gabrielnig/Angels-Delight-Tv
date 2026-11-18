@@ -16,6 +16,7 @@ import {
   type Suggestion,
 } from '../lib/data';
 import { currentAccountId, getSession, sessionCookieNames } from '../lib/session';
+import { ACCOUNT_HINT_COOKIE } from '../lib/profiles/picker-cache';
 import {
   ALWAYS_ASK_COOKIE,
   ALWAYS_ASK_MAX_AGE,
@@ -55,6 +56,7 @@ export async function signInAction(input: {
   if (!result.ok) return result;
   const jar = await cookies();
   jar.delete(sessionCookieNames.fixture);
+  await setAccountHint(jar);
   // M03-S11: a device set to always ask forgets the remembered profile so the picker shows.
   if (alwaysAskFromCookie(jar.get(ALWAYS_ASK_COOKIE)?.value)) {
     jar.delete(sessionCookieNames.profile);
@@ -62,6 +64,22 @@ export async function signInAction(input: {
     else jar.set(sessionCookieNames.fixture, 'noprofile', cookieOptions);
   }
   return result;
+}
+
+/**
+ * Tells the browser which account just signed in (M03-S13), so the profile picker's cached tiles are only drawn for
+ * that account. The id is not a secret. When it cannot be read the hint is dropped and no cache is drawn early.
+ */
+async function setAccountHint(jar: Awaited<ReturnType<typeof cookies>>) {
+  try {
+    jar.set(ACCOUNT_HINT_COOKIE, await currentAccountId(), {
+      path: '/',
+      sameSite: 'lax',
+      maxAge: ALWAYS_ASK_MAX_AGE,
+    });
+  } catch {
+    jar.delete(ACCOUNT_HINT_COOKIE);
+  }
 }
 
 /** Turns "Always ask who is watching" on or off for this device (M03-S11). */
@@ -103,6 +121,7 @@ export async function signOutAction() {
   const jar = await cookies();
   jar.set(sessionCookieNames.fixture, 'out', cookieOptions);
   jar.delete(sessionCookieNames.profile);
+  jar.delete(ACCOUNT_HINT_COOKIE);
   if (realDataEnabled()) await cookieProfileIo().clearActive();
 }
 

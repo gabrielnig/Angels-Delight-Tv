@@ -806,3 +806,9 @@ Format: decision, options considered, why, reversible or not. Newest first. Deci
 - Options: an account column synced to every device (needs a migration and would force the picker on a personal phone too), local storage (the server cannot read it at sign in).
 - Why: the story names a shared family tablet, so the setting belongs to the device. A cookie needs no schema change and the server reads it where the choice is made. Clearing cookies resets it, which is acceptable.
 - Reversible: yes. A column can replace the cookie later.
+
+## D-155 The picker cache is local storage keyed to an account hint cookie (lane r1)
+- Decision: the picker saves id, name, kids flag, tone, avatar and PIN flag (nothing else) to `ad.pickercache.v1` with the account id and a timestamp. It is ignored after 7 days or for another account, and the private state wipe at sign out removes it. The loading screen of `/profiles` draws the cache at once, using the non secret `ad_acct` cookie set at sign in to know whose cache it is. A failed refresh draws the cache with "May be out of date".
+- Options: a service worker cache of the page (partitioning is hard, M03-S14), cache without an account check (a second person could see the first person's names), server only.
+- Why: local storage is readable before the server answers and is already wiped at sign out. The hint cookie stops a list from a previous account showing when a session expired without a sign out.
+- Reversible: yes.

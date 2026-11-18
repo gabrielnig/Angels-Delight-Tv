@@ -38,6 +38,9 @@ export const EN_NG = {
     'Show the profile picker every time someone signs in on this device. Good for a shared tablet.',
   'account.saveFailed': 'We could not save that. Try again.',
 
+  'profiles.cache.stale': 'May be out of date',
+  'profiles.cache.refreshing': 'Updating your profiles',
+
   // Player
   'player.resumed': 'Resumed from {time}',
   'player.captionsFailed': 'Captions could not load',

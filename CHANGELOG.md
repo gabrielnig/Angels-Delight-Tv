@@ -78,3 +78,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 ### Lane P1: sign in and sign up to the mockups
 
 - Rebuilt S01 sign in (landing split and mobile) and S02 sign up (desktop bar, card, mobile sticky submit) to match `S01_landing_sign_in*.dc.html` and `S02_sign_up*.dc.html`, including every stacked state, with Space Grotesk headings, the four segment strength meter and checklist, Caps Lock hint, invite code field and the session ended notice from `?notice=ended`. Real auth behaviour, Turnstile and enumeration safe messages are unchanged. See `docs/lanes/P1-auth-pages.md`.
+
+### Lane R1: three viewer stories
+
+- Added the en-NG message catalog (`@ad/shared/messages`) with auth, account and player copy wired through it, the Always ask who is watching device setting, and a cached profile picker with a stale note.
