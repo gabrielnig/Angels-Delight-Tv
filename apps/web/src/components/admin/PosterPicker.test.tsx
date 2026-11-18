@@ -80,6 +80,7 @@ describe('PosterPicker with real pictures', () => {
       status: 'ready' as const,
       url: 'https://m.test/a.webp',
       score: 80,
+      previewRatio: 16 / 9,
     },
     {
       id: U2,
@@ -88,6 +89,7 @@ describe('PosterPicker with real pictures', () => {
       status: 'processing' as const,
       url: null,
       score: null,
+      previewRatio: 16 / 9,
     },
   ];
 
@@ -159,6 +161,38 @@ describe('PosterPicker with real pictures', () => {
   });
 });
 
+describe('PosterPicker preview of a picture that is not 16 by 9 (M36-S03)', () => {
+  const SQUARE = '0192f0a0-0000-7000-8000-0000000000aa';
+  it('places the preview from the real shape of the picture, not as a 16:9 frame', () => {
+    render(
+      <PosterPicker
+        videoId="v1"
+        title="Staying Safe Online"
+        durationSeconds={100}
+        initial={{ posterId: SQUARE, alt: 'Alt', focus: { x: 50, y: 100, zoom: 100 } }}
+        save={vi.fn()}
+        assets={[
+          {
+            id: SQUARE,
+            source: 'upload',
+            label: 'Your image',
+            status: 'ready',
+            url: 'https://m.test/full.webp',
+            score: null,
+            previewRatio: 1,
+          },
+        ]}
+      />,
+    );
+    const card = screen.getByText('Video card crop').closest('figure')!;
+    const img = card.querySelector('img')!;
+    // A square picture cut to 16:9 is 56.25 percent of its height, so the 16:9 frame shows it 177.78 percent tall,
+    // and a focus at the bottom holds the cut at the bottom edge.
+    expect(img.style.height).toBe('177.78%');
+    expect(img.style.top).toBe('-77.78%');
+  });
+});
+
 describe('PosterPicker low score warning (M36-S01)', () => {
   const frame = (n: number, score: number | null) => ({
     id: `a${n}`,
@@ -167,6 +201,7 @@ describe('PosterPicker low score warning (M36-S01)', () => {
     status: 'ready' as const,
     url: `https://m.test/${n}.webp`,
     score,
+    previewRatio: 16 / 9,
   });
   const show = (scores: (number | null)[]) =>
     render(

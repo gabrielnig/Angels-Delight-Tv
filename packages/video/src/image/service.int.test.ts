@@ -88,6 +88,19 @@ describe.skipIf(!integrationEnabled())('ImageService against Postgres and local 
     }
   });
 
+  it('stores a flagged full picture preview for a square source, and none for 16 by 9', async () => {
+    const square = await newAsset('thumbnail', await picture(1200, 1200));
+    await service.process(square);
+    const full = (await load(square)).variants.filter((v) => v.full);
+    expect(full).toHaveLength(1);
+    expect(full[0]).toMatchObject({ format: 'webp', width: 480, height: 480 });
+    expect(full[0]!.key).toMatch(new RegExp(`^img/${square}/full-[0-9a-f]{8}\\.webp$`));
+    expect((await media.head(full[0]!.key))?.bytes).toBe(full[0]!.bytes);
+    const wide = await newAsset('thumbnail', await picture());
+    await service.process(wide);
+    expect((await load(wide)).variants.some((v) => v.full)).toBe(false);
+  });
+
   it('uses the hero widths for hero art', async () => {
     const id = await newAsset('hero', await picture(2400, 1350));
     await service.process(id);

@@ -53,6 +53,8 @@ export const assets = pgTable(
           key: string;
           bytes: number;
           format?: 'avif' | 'webp' | 'jpeg';
+          /** Admin only preview of the whole, uncut picture. Never offered to viewers. */
+          full?: boolean;
         }[]
       >()
       .notNull()
