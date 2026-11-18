@@ -15,7 +15,7 @@ export interface StaffNotice {
 export const NOTICE_KEEP_DAYS = 90;
 
 /**
- * Puts a notice in the bell of every active editor and admin (M21-S03). It never throws: a notice must not
+ * Puts a notice in the bell of every active editor, admin and Super admin (M21-S03). It never throws: a notice must not
  * fail the job that produced it, so a failure is handed to `onError` and the job carries on.
  */
 export async function notifyStaff(
@@ -26,9 +26,8 @@ export async function notifyStaff(
   try {
     const rows = await db.execute(sql`
       INSERT INTO admin_notices (recipient_id, kind, title, body, href, video_id)
-      SELECT a.id, ${notice.kind}, ${notice.title}, ${notice.body ?? ''}, ${notice.href ?? null}, ${notice.videoId ?? null}
-      FROM accounts a
-      WHERE a.role IN ('editor', 'admin') AND a.status = 'active'
+      SELECT s.id, ${notice.kind}, ${notice.title}, ${notice.body ?? ''}, ${notice.href ?? null}, ${notice.videoId ?? null}
+      FROM active_staff_ids() AS s(id)
       RETURNING id`);
     await db.execute(
       sql`DELETE FROM admin_notices WHERE created_at < now() - make_interval(days => ${NOTICE_KEEP_DAYS})`,

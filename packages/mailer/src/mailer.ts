@@ -105,9 +105,18 @@ export class Mailer {
     name: TemplateName,
     vars: Record<string, string | number>,
   ): Promise<void> {
+    await this.deliverWithId(to, name, vars);
+  }
+
+  /** Same as `deliver`, but hands back the provider message id (null when a suppressed address was skipped). */
+  private async deliverWithId(
+    to: string,
+    name: TemplateName,
+    vars: Record<string, string | number>,
+  ): Promise<{ messageId: string } | null> {
     if (NON_ESSENTIAL.has(name) && this.settings.isSuppressed) {
       try {
-        if (await this.settings.isSuppressed(to)) return;
+        if (await this.settings.isSuppressed(to)) return null;
       } catch {
         // an unavailable list must not stop mail
       }
@@ -126,7 +135,7 @@ export class Mailer {
     };
     const rendered: RenderedMail = renderTemplate(name, vars, brand);
     try {
-      await this.transport.send({ from: this.settings.from, to, ...rendered });
+      return await this.transport.send({ from: this.settings.from, to, ...rendered });
     } catch (error) {
       throw new MailDeliveryError({ cause: error });
     }
@@ -224,5 +233,40 @@ export class Mailer {
 
   sendExportFailed(input: { to: string }) {
     return this.deliver(input.to, 'export_failed', { retryUrl: this.url('/account/data') });
+  }
+
+  /** One notification for one staff member (M21-S03). Returns the provider message id for the outbox. */
+  sendStaffNotice(input: { to: string; title: string; body?: string }) {
+    return this.deliverWithId(input.to, 'staff_notice', {
+      title: input.title,
+      body: input.body ?? '',
+      linkUrl: this.url('/admin'),
+    });
+  }
+
+  /** An hourly or daily summary of notifications, one line each. */
+  sendStaffSummary(input: { to: string; period: 'hour' | 'day'; lines: string[] }) {
+    return this.deliverWithId(input.to, 'staff_summary', {
+      period: input.period,
+      count: input.lines.length,
+      lines: input.lines.join('\n'),
+      linkUrl: this.url('/admin'),
+    });
+  }
+
+  sendStaffExportReady(input: { to: string; name: string; rows: number; hours: number }) {
+    return this.deliverWithId(input.to, 'staff_export_ready', {
+      name: input.name,
+      rows: input.rows,
+      hours: input.hours,
+      linkUrl: this.url('/admin/exports'),
+    });
+  }
+
+  sendStaffExportFailed(input: { to: string; name: string }) {
+    return this.deliverWithId(input.to, 'staff_export_failed', {
+      name: input.name,
+      linkUrl: this.url('/admin/exports'),
+    });
   }
 }

@@ -4,3 +4,5 @@ export * from './mirror';
 export * from './producer';
 export * from './worker';
 export * from './heartbeat';
+export * from './outbox';
+export * from './digest';

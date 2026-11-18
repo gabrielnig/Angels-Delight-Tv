@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   CRON_SCHEDULES,
+  MAIL_CRON_SCHEDULES,
   MAINTENANCE_CRON_SCHEDULES,
   QUEUES,
   QUEUE_DEFINITIONS,
@@ -70,6 +71,30 @@ describe('maintenance queues', () => {
       'audit.prune',
     ]);
     for (const entry of MAINTENANCE_CRON_SCHEDULES) expect(entry.timezone).toBe('Africa/Lagos');
+  });
+});
+
+describe('mail queues (M15-S01, M21-S03)', () => {
+  it('defines the outbox drain and the summary builder with no payload fields', () => {
+    for (const name of ['email.outbox', 'email.digest'] as const) {
+      expect(QUEUE_DEFINITIONS[name]).toMatchObject({ concurrency: 1 });
+      expect(parsePayload(name, {})).toEqual({});
+      expect(() => parsePayload(name, { to: 'a@example.org' })).toThrow();
+    }
+  });
+
+  it('drains every minute and builds summaries at five past each hour, in Lagos time', () => {
+    expect(MAIL_CRON_SCHEDULES).toEqual([
+      { queue: 'email.outbox', cron: '* * * * *', timezone: 'Africa/Lagos' },
+      { queue: 'email.digest', cron: '5 * * * *', timezone: 'Africa/Lagos' },
+    ]);
+  });
+
+  it('keeps them apart from the other schedules', () => {
+    const mail = MAIL_CRON_SCHEDULES.map((e) => e.queue);
+    for (const entry of [...CRON_SCHEDULES, ...MAINTENANCE_CRON_SCHEDULES]) {
+      expect(mail).not.toContain(entry.queue);
+    }
   });
 });
 
