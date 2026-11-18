@@ -95,7 +95,7 @@ export function AccountLoadError({
 /** S27 state 4. A Kids profile cannot open account settings, so it is sent to switch profile. */
 export function AdultsOnly({ profileName }: { profileName: string }): ReactNode {
   return (
-    <div className="acct-adults">
+    <div className="acct acct-adults">
       <section className="acct-card" data-gap="3">
         <div className="acct-row" data-tight>
           <span className="acct-card__icon">
