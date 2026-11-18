@@ -44,13 +44,11 @@ describe.skipIf(!integrationEnabled())(
       const video = makeVideo({ createdBy: owner.id, status: 'ready', durationMs: 5000 });
       const key = `originals/${video.id}/up`;
       if (source) await originals.put(key, source);
-      await t.db
-        .insert(schema.videos)
-        .values({
-          ...video,
-          originalKey: source ? key : null,
-          originalBytes: source?.length ?? null,
-        });
+      await t.db.insert(schema.videos).values({
+        ...video,
+        originalKey: source ? key : null,
+        originalBytes: source?.length ?? null,
+      });
       return video;
     }
 
@@ -205,7 +203,10 @@ describe.skipIf(!integrationEnabled())(
 
     it('flags nothing when the script matches what was heard', async () => {
       const video = await newVideo();
-      await originals.put(`scripts/${video.id}.txt`, new TextEncoder().encode('Welcome to the lesson.'));
+      await originals.put(
+        `scripts/${video.id}.txt`,
+        new TextEncoder().encode('Welcome to the lesson.'),
+      );
       await generator.generate(video.id, 'align', progress);
       expect((await revisions(video.id)).rows[0]!.lowConfidenceCues).toEqual([]);
     });

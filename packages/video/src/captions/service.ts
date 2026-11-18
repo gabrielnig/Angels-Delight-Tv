@@ -14,7 +14,13 @@ import {
   type CueWarning,
 } from '../vtt';
 import { cleanScript } from './align';
-import { ensureTrack, sha8Of, storeRevision, type CaptionRow } from './revisions';
+import {
+  AUTOSAVE_WINDOW_MS,
+  ensureTrack,
+  sha8Of,
+  storeRevision,
+  type CaptionRow,
+} from './revisions';
 
 const { captions, captionTracks, videos, jobs } = schema;
 
@@ -192,6 +198,8 @@ export class CaptionService {
       source: 'manual',
       createdBy: actor.accountId,
       lowConfidenceCues: await this.flagsToKeep(trackId, next),
+      // Autosaves share one working revision. Save and keep approved is a deliberate act and always adds one.
+      coalesce: options.keepApproved ? undefined : { withinMs: AUTOSAVE_WINDOW_MS },
     });
     if (!options.keepApproved) return revision;
     await this.record(actor, 'captions.save_keep_approved', revision.id, {
@@ -218,9 +226,7 @@ export class CaptionService {
     return before
       .filter((cue) => flagged.has(cue.startMs))
       .filter((cue) =>
-        next.some(
-          (n) => n.startMs === cue.startMs && n.endMs === cue.endMs && n.text === cue.text,
-        ),
+        next.some((n) => n.startMs === cue.startMs && n.endMs === cue.endMs && n.text === cue.text),
       )
       .map((cue) => cue.startMs);
   }
@@ -230,7 +236,10 @@ export class CaptionService {
     return cleanScript(script);
   }
 
-  async getScript(actor: Actor, videoId: string): Promise<{ text: string; cleaned: string } | null> {
+  async getScript(
+    actor: Actor,
+    videoId: string,
+  ): Promise<{ text: string; cleaned: string } | null> {
     assertStaff(actor);
     try {
       const text = await readText(this.originals, `scripts/${videoId}.txt`);

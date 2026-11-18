@@ -44,7 +44,15 @@ export interface NewRevision {
   reviewNote?: string | null;
   /** Start times (ms) of cues to highlight in review. */
   lowConfidenceCues?: number[];
+  /**
+   * Autosave policy (D-111). When the newest revision is this person's own manual save, still waiting for review
+   * and younger than the window, it is overwritten instead of adding another revision. Everything else adds one.
+   */
+  coalesce?: { withinMs: number; now?: Date };
 }
+
+/** An editor's autosaves within this long of their first one share a single revision. */
+export const AUTOSAVE_WINDOW_MS = 10 * 60 * 1000;
 
 /**
  * Appends a revision under a row lock on the track so revision numbers never collide. Earlier drafts and
@@ -70,11 +78,36 @@ export async function storeRevision(
       .where(eq(captionTracks.id, track.id))
       .for('update');
     const [latest] = await tx
-      .select({ revision: captions.revision })
+      .select()
       .from(captions)
       .where(eq(captions.trackId, track.id))
       .orderBy(desc(captions.revision))
       .limit(1);
+    const window = input.coalesce;
+    if (
+      window &&
+      latest &&
+      latest.status === 'in_review' &&
+      latest.source === 'manual' &&
+      input.createdBy &&
+      latest.createdBy === input.createdBy &&
+      (window.now ?? new Date()).getTime() - latest.createdAt.getTime() < window.withinMs
+    ) {
+      await originals.put(latest.storageKey, new TextEncoder().encode(text), {
+        contentType: 'text/vtt',
+      });
+      const [kept] = await tx
+        .update(captions)
+        .set({
+          sha256,
+          bytes,
+          cueCount: input.cues.length,
+          lowConfidenceCues: input.lowConfidenceCues ?? [],
+        })
+        .where(eq(captions.id, latest.id))
+        .returning();
+      return kept!;
+    }
     const revision = (latest?.revision ?? 0) + 1;
     const storageKey = draftKey(track.videoId, track.language, revision);
     await originals.put(storageKey, new TextEncoder().encode(text), { contentType: 'text/vtt' });

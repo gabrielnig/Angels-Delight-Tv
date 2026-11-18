@@ -17,7 +17,7 @@ import { join } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { parseVtt } from '../vtt';
 import { CaptionNeedsConfirmation, CaptionService } from './service';
-import { ensureTrack, storeRevision } from './revisions';
+import { AUTOSAVE_WINDOW_MS, ensureTrack, storeRevision } from './revisions';
 
 const secret = new Uint8Array(32).fill(6);
 const good = [
@@ -114,6 +114,48 @@ describe.skipIf(!integrationEnabled())('CaptionService against Postgres and loca
     });
     expect(await text(originals, saved.storageKey)).toContain('x<b>Hi</b>');
     expect((await captionRow(revision.id)).status).toBe('superseded');
+  });
+
+  describe('autosave coalescing', () => {
+    const edit = (n: number) => [{ startMs: 0, endMs: 2000, text: `Draft number ${n}.` }];
+    const rowsOf = async (trackId: string) =>
+      t.db.select().from(schema.captions).where(eq(schema.captions.trackId, trackId));
+
+    it('keeps one working revision across one editor quick saves and stores the latest text', async () => {
+      const { track } = await videoWithDraft();
+      const first = await service.saveRevision(editor, track.id, edit(1));
+      const second = await service.saveRevision(editor, track.id, edit(2));
+      const third = await service.saveRevision(editor, track.id, edit(3));
+      expect([second.id, third.id]).toEqual([first.id, first.id]);
+      expect(third.revision).toBe(2);
+      expect(await rowsOf(track.id)).toHaveLength(2);
+      expect(await text(originals, third.storageKey)).toContain('Draft number 3.');
+      expect((await captionRow(first.id)).cueCount).toBe(1);
+    });
+
+    it('starts a new revision for another editor, after the window, after approval, and for keep approved', async () => {
+      const { track } = await videoWithDraft();
+      const mine = await service.saveRevision(editor, track.id, edit(1));
+      const other = await account('editor');
+      const theirs = await service.saveRevision(other, track.id, edit(2));
+      expect(theirs.id).not.toBe(mine.id);
+      expect((await captionRow(mine.id)).status).toBe('superseded');
+
+      await t.db
+        .update(schema.captions)
+        .set({ createdAt: new Date(Date.now() - AUTOSAVE_WINDOW_MS - 1000) })
+        .where(eq(schema.captions.id, theirs.id));
+      const later = await service.saveRevision(other, track.id, edit(3));
+      expect(later.id).not.toBe(theirs.id);
+
+      await service.approve(admin, later.id, { confirmWarnings: true });
+      const afterApproval = await service.saveRevision(admin, track.id, edit(4));
+      expect(afterApproval.id).not.toBe(later.id);
+      expect((await captionRow(later.id)).status).toBe('approved');
+
+      const kept = await service.saveRevision(admin, track.id, edit(5), { keepApproved: true });
+      expect(kept.id).not.toBe(afterApproval.id);
+    });
   });
 
   it('rejects overlapping saves only as warnings, but refuses a file that is too large', async () => {
@@ -365,20 +407,22 @@ describe.skipIf(!integrationEnabled())('CaptionService against Postgres and loca
 
     it('keeps a flag on a cue the editor did not touch and drops it from a cue they edited', async () => {
       const { track } = await flagged();
-      const next = [
-        cues[0]!,
-        { ...cues[1]!, text: 'Today we learn about fractions.' },
-        cues[2]!,
-      ];
+      const next = [cues[0]!, { ...cues[1]!, text: 'Today we learn about fractions.' }, cues[2]!];
       const saved = await service.saveRevision(editor, track.id, next);
       expect(saved.lowConfidenceCues).toEqual([5000]);
     });
 
     it('stores a script for a video, cleaned for a preview, and queues alignment', async () => {
       const { video } = await flagged();
-      const out = await service.saveScript(editor, video.id, 'NARRATOR: Hello there.\n[music]\nBye.');
+      const out = await service.saveScript(
+        editor,
+        video.id,
+        'NARRATOR: Hello there.\n[music]\nBye.',
+      );
       expect(out.cleaned).toBe('Hello there.\nBye.');
-      expect(await text(originals, `scripts/${video.id}.txt`)).toBe('NARRATOR: Hello there.\n[music]\nBye.');
+      expect(await text(originals, `scripts/${video.id}.txt`)).toBe(
+        'NARRATOR: Hello there.\n[music]\nBye.',
+      );
       const job = await t.db.select().from(schema.jobs).where(eq(schema.jobs.videoId, video.id));
       expect(job.some((j) => j.queue === 'caption.generate')).toBe(true);
       expect((await service.getScript(editor, video.id))?.cleaned).toBe('Hello there.\nBye.');
@@ -387,7 +431,9 @@ describe.skipIf(!integrationEnabled())('CaptionService against Postgres and loca
     it('previews a script without storing it, and refuses empty or huge ones and viewers', async () => {
       expect(service.previewScript('A: Hi\n\n(softly) there')).toBe('Hi\nthere');
       const { video } = await flagged();
-      await expect(service.saveScript(editor, video.id, '   ')).rejects.toBeInstanceOf(ValidationFailed);
+      await expect(service.saveScript(editor, video.id, '   ')).rejects.toBeInstanceOf(
+        ValidationFailed,
+      );
       await expect(
         service.saveScript(editor, video.id, 'word '.repeat(60_000)),
       ).rejects.toBeInstanceOf(ValidationFailed);
