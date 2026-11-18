@@ -17,10 +17,13 @@ export function EmptyState({
   icon = 'list',
   live,
   className,
+  children,
 }: {
   title: string;
   description?: string;
   action?: ActionLink;
+  /** Extra actions below the main one. */
+  children?: ReactNode;
   icon?: IconName;
   /** Set when the state appears after a user action such as a filter or a search. */
   live?: boolean;
@@ -32,6 +35,7 @@ export function EmptyState({
       <h2 className="ad-state__title">{title}</h2>
       {description ? <p className="ad-state__text">{description}</p> : null}
       {action ? <ButtonLink href={action.href}>{action.label}</ButtonLink> : null}
+      {children}
     </div>
   );
 }

@@ -40,6 +40,8 @@ export interface ViewerSession {
   verified: boolean;
   memberSince: string;
   profile: Profile | null;
+  /** The account can add videos, so Home can offer it when the catalog is empty. */
+  canUpload?: boolean;
 }
 
 export interface Category {
