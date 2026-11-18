@@ -19,3 +19,4 @@ export function lookupItem(key: string): CatalogItem | undefined {
   if (kind === 'series') return SERIES.find((s) => s.slug === id);
   return VIDEOS.find((v) => v.id === id);
 }
+
