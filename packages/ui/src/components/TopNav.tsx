@@ -167,14 +167,17 @@ export function TopNav({
                 ref={triggerRef}
                 type="button"
                 className="ad-nav__avatar"
-                aria-label={`Profile menu, ${profileName}`}
+                aria-label={skin === 'soft' ? undefined : `Profile menu, ${profileName}`}
                 aria-haspopup="menu"
                 aria-expanded={open}
                 onClick={() => setOpen((value) => !value)}
               >
                 <Avatar name={profileName} avatarId={profileAvatarId} size={32} />
                 {skin === 'soft' ? (
-                  <span className="ad-nav__avatar-name">{profileName}</span>
+                  <>
+                    <span className="ad-nav__avatar-name">{profileName}</span>
+                    <span className="ad-sr-only">, profile menu</span>
+                  </>
                 ) : null}
               </button>
               {open ? (

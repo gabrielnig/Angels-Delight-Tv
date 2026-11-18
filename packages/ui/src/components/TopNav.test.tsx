@@ -262,6 +262,8 @@ describe('soft skin and support footer (S27 to S31)', () => {
     );
     expect(container.querySelector('header')?.getAttribute('data-skin')).toBe('soft');
     expect(container.querySelector('.ad-nav__avatar-name')?.textContent).toBe('Chinedu');
+    // The visible name leads the accessible name, so voice control can say it (WCAG 2.5.3).
+    expect(screen.getByRole('button', { name: /^Chinedu/ })).toBeTruthy();
   });
 
   it('leaves the default header without a name label', () => {
