@@ -12,23 +12,30 @@ export function LegalView({ page }: { page: LegalPage }) {
           This text is being reviewed and may change.
         </Banner>
       ) : null}
-      <nav aria-label="On this page" className="web-legal__toc">
-        <ul>
-          {page.sections.map((s) => (
-            <li key={s.id}>
-              <a href={`#${s.id}`}>{s.heading}</a>
-            </li>
-          ))}
-        </ul>
-      </nav>
-      {page.sections.map((s) => (
-        <section key={s.id} id={s.id} className="web-legal__section">
-          <h2>{s.heading}</h2>
-          {s.body.map((p, i) => (
-            <p key={i}>{p}</p>
-          ))}
-        </section>
-      ))}
+      {page.sections.length > 0 ? (
+        <nav aria-label="On this page" className="web-legal__toc">
+          <ul>
+            {page.sections.map((s) => (
+              <li key={s.id}>
+                <a href={`#${s.id}`}>{s.heading}</a>
+              </li>
+            ))}
+          </ul>
+        </nav>
+      ) : null}
+      {page.html !== undefined ? (
+        // The HTML was cleaned to a small safe tag set when it was saved and again when it was read.
+        <div className="web-legal__section" dangerouslySetInnerHTML={{ __html: page.html }} />
+      ) : (
+        page.sections.map((s) => (
+          <section key={s.id} id={s.id} className="web-legal__section">
+            <h2>{s.heading}</h2>
+            {s.body.map((p, i) => (
+              <p key={i}>{p}</p>
+            ))}
+          </section>
+        ))
+      )}
     </article>
   );
 }

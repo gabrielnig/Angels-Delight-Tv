@@ -5,6 +5,7 @@ import { RealSite } from './real-site';
 
 const settings = (overrides: Record<string, unknown> = {}) => ({
   getAll: async () => ({ ...defaultSettings(), ...overrides }) as never,
+  getPublishedPage: async () => null,
 });
 
 describe('RealSite content', () => {
@@ -44,8 +45,11 @@ describe('RealSite content', () => {
       new RealSite(settings(overrides), new FixtureSite(), () => now).content();
     expect((await content({ 'maintenance.mode': true })).maintenance.active).toBe(true);
     expect(
-      (await content({ 'maintenance.banner': banner('2026-11-18T10:00:00Z', '2026-11-18T14:00:00Z') }))
-        .maintenance.banner,
+      (
+        await content({
+          'maintenance.banner': banner('2026-11-18T10:00:00Z', '2026-11-18T14:00:00Z'),
+        })
+      ).maintenance.banner,
     ).toBe('Short break tonight');
     expect(
       (await content({ 'maintenance.banner': banner('2026-11-19T10:00:00Z', null) })).maintenance
@@ -57,8 +61,49 @@ describe('RealSite content', () => {
     ).toBeUndefined();
   });
 
-  it('serves pages and help from the fallback until the pages setting is wired', async () => {
-    const site = new RealSite(settings(), new FixtureSite());
-    expect((await site.legal('terms'))?.slug).toBe('terms');
+  it('serves the draft fallback until the admin publishes a page', async () => {
+    const site = new RealSite(
+      { ...settings(), getPublishedPage: async () => null },
+      new FixtureSite(),
+    );
+    const page = await site.legal('terms');
+    expect(page?.slug).toBe('terms');
+    expect(page?.draft).toBe(true);
+  });
+
+  it('serves the published page the admin edited, with a contents list', async () => {
+    const site = new RealSite(
+      {
+        ...settings(),
+        getPublishedPage: async (slug: string) => ({
+          slug,
+          title: 'Terms of use',
+          html: '<h2>Rules</h2><p>Be kind.</p>',
+          version: 2,
+          updatedAt: '2026-11-17T10:00:00.000Z',
+        }),
+      } as never,
+      new FixtureSite(),
+    );
+    const page = await site.legal('terms');
+    expect(page?.draft).toBe(false);
+    expect(page?.html).toContain('Be kind.');
+    expect(page?.sections.map((s) => s.heading)).toEqual(['Rules']);
+  });
+
+  it('keeps the help page on the questions list and unknown slugs on the fallback', async () => {
+    const asked: string[] = [];
+    const site = new RealSite(
+      {
+        ...settings(),
+        getPublishedPage: async (slug: string) => {
+          asked.push(slug);
+          return null;
+        },
+      } as never,
+      new FixtureSite(),
+    );
+    expect(await site.legal('nope')).toBeNull();
+    expect(asked).toEqual([]);
   });
 });
