@@ -213,7 +213,10 @@ test('on a phone every control is at least 44 px with 8 px between them (M08-S09
   const seek = await page.locator('.adp-seek').boundingBox();
   expect(seek!.height).toBeGreaterThanOrEqual(31.5);
   const player = await page.locator('.adp').boundingBox();
-  const primary = await page.getByRole('button', { name: /^(Pause|Play)$/ }).first().boundingBox();
+  const primary = await page
+    .getByRole('button', { name: /^(Pause|Play)$/ })
+    .first()
+    .boundingBox();
   expect(primary!.y).toBeGreaterThan(player!.y + (player!.height * 2) / 3 - 44);
   await context.close();
 });

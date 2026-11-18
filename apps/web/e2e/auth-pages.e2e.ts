@@ -19,7 +19,11 @@ async function bigTargets(page: Page, selector: string) {
       .filter((el) => (el as HTMLElement).offsetParent !== null)
       .map((el) => {
         const r = el.getBoundingClientRect();
-        return { text: (el.textContent ?? el.getAttribute('aria-label') ?? '').trim().slice(0, 30), w: r.width, h: r.height };
+        return {
+          text: (el.textContent ?? el.getAttribute('aria-label') ?? '').trim().slice(0, 30),
+          w: r.width,
+          h: r.height,
+        };
       }),
   );
   expect(boxes.length).toBeGreaterThan(0);
@@ -51,7 +55,9 @@ test.describe('S01 sign in', () => {
     await page.getByLabel('Email').focus();
     const shadow = await page.getByLabel('Email').evaluate((el) => getComputedStyle(el).boxShadow);
     expect(shadow).not.toBe('none');
-    expect(await page.getByLabel('Email').evaluate((el) => getComputedStyle(el).borderTopWidth)).toBe('2px');
+    expect(
+      await page.getByLabel('Email').evaluate((el) => getComputedStyle(el).borderTopWidth),
+    ).toBe('2px');
   });
 
   test('wrong credentials: generic banner, no axe violations, values kept', async ({ page }) => {
@@ -78,7 +84,9 @@ test.describe('S01 sign in', () => {
 
   test('password reset notice shows as success', async ({ page }) => {
     await page.goto('/sign-in?notice=reset');
-    await expect(page.locator('.auth-banner[data-tone="success"]')).toContainText('Your password was changed.');
+    await expect(page.locator('.auth-banner[data-tone="success"]')).toContainText(
+      'Your password was changed.',
+    );
   });
 
   test('keyboard reaches every control in reading order', async ({ page }) => {
@@ -108,14 +116,18 @@ test.describe('S02 sign up', () => {
 
   test('default state has no axe violations, no overflow and 44px targets', async ({ page }) => {
     await page.goto('/sign-up');
-    await expect(page.getByRole('heading', { level: 1, name: 'Create your account' })).toBeVisible();
+    await expect(
+      page.getByRole('heading', { level: 1, name: 'Create your account' }),
+    ).toBeVisible();
     const results = await new AxeBuilder({ page }).withTags(TAGS).analyze();
     expect(results.violations).toEqual([]);
     await noOverflow(page);
     await bigTargets(page, '.auth-link, .auth-field__action, .auth-submit, .auth-header__button');
   });
 
-  test('desktop has the Have an account bar, mobile has the sticky submit bar', async ({ page }, info) => {
+  test('desktop has the Have an account bar, mobile has the sticky submit bar', async ({
+    page,
+  }, info) => {
     await page.goto('/sign-up');
     const bar = page.locator('.auth-header__account');
     const sticky = page.locator('.auth-sticky');
@@ -137,10 +149,14 @@ test.describe('S02 sign up', () => {
     }
   });
 
-  test('terms line keeps its words together and the links have a 44px hit area', async ({ page }) => {
+  test('terms line keeps its words together and the links have a 44px hit area', async ({
+    page,
+  }) => {
     await page.goto('/sign-up');
     const fine = page.locator('.auth-fine');
-    await expect(fine).toHaveText('By creating an account you agree to the Terms and Privacy Policy.');
+    await expect(fine).toHaveText(
+      'By creating an account you agree to the Terms and Privacy Policy.',
+    );
     const link = fine.getByRole('link', { name: 'Terms' });
     const box = (await link.boundingBox())!;
     const hit = await page.evaluate(
@@ -173,7 +189,9 @@ test.describe('S02 sign up', () => {
     await page.getByLabel(/^Email/).fill('chioma.okafor@gmail.com');
     await page.getByLabel(/^Password \(required\)/).fill('offline-please');
     await page.getByRole('button', { name: 'Create account' }).click();
-    await expect(page.locator('.auth-banner[data-tone="danger"]')).toContainText('Your details are saved here.');
+    await expect(page.locator('.auth-banner[data-tone="danger"]')).toContainText(
+      'Your details are saved here.',
+    );
     await expect(page.getByLabel(/^Email/)).toHaveValue('chioma.okafor@gmail.com');
   });
 
@@ -182,7 +200,9 @@ test.describe('S02 sign up', () => {
     await page.getByLabel(/^Email/).fill('chioma.okafor@gmail.com');
     await page.getByLabel(/^Password \(required\)/).fill('rate-limit-please');
     await page.getByRole('button', { name: 'Create account' }).click();
-    await expect(page.locator('.auth-banner[data-tone="warning"]')).toContainText('Try again in 15 minutes.');
+    await expect(page.locator('.auth-banner[data-tone="warning"]')).toContainText(
+      'Try again in 15 minutes.',
+    );
   });
 
   test('works at 320px without sideways scrolling', async ({ page }) => {

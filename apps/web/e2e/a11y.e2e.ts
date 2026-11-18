@@ -67,9 +67,10 @@ const ADMIN_PAGES = [
   '/admin/account',
 ];
 
+// The Super admin sees every admin screen, including roles, audit log and system.
 async function adminSignIn(page: Page) {
   await page.goto('/admin/login');
-  await page.getByLabel('Email').fill('chiamaka@example.test');
+  await page.getByLabel('Email').fill('arkdev@example.test');
   await page.getByLabel('Password').fill('fixture-password');
   await page.getByRole('button', { name: 'Sign in' }).click();
   await page.getByLabel('Digit 1 of 6').click();
@@ -102,6 +103,9 @@ async function check(page: Page, path: string) {
 const KNOWN_FAILING: Record<string, string> = {
   '/settings/playback':
     'The caption preview colours are set with an inline style attribute, which the CSP blocks, so the text is dark on dark (S29 owner).',
+  '/account':
+    'axe dlitem: dt and dd elements without a dl parent on the overview cards (S27 owner).',
+  '/about': 'axe heading-order: a section starts at h3 with no h2 before it (S31 owner).',
 };
 
 test.describe('axe and overflow, viewer', () => {

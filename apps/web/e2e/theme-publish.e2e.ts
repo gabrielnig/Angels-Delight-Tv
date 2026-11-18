@@ -10,7 +10,10 @@ import { startSmtpSink } from './support/smtp-sink';
  * `E2E_THEME=1 E2E_SMTP_PORT=1025`. Run with E2E_CHROMIUM_PATH=/opt/google/chrome/chrome if no bundled browser.
  */
 const smtpPort = Number(process.env.E2E_SMTP_PORT ?? 0);
-test.skip(!process.env.E2E_THEME || !smtpPort, 'set E2E_THEME=1 and E2E_SMTP_PORT with the e2e stack');
+test.skip(
+  !process.env.E2E_THEME || !smtpPort,
+  'set E2E_THEME=1 and E2E_SMTP_PORT with the e2e stack',
+);
 test.use({
   launchOptions: process.env.E2E_CHROMIUM_PATH
     ? { executablePath: process.env.E2E_CHROMIUM_PATH, args: ['--no-sandbox'] }
@@ -33,7 +36,11 @@ const readTheme = (page: Page) =>
       primary: css.getPropertyValue('--color-primary').trim().toUpperCase(),
       bg: css.getPropertyValue('--color-bg').trim().toUpperCase(),
       font: css.getPropertyValue('--font-sans').trim(),
-      meta: document.querySelector('meta[name="theme-color"]')?.getAttribute('content')?.toUpperCase() ?? '',
+      meta:
+        document
+          .querySelector('meta[name="theme-color"]')
+          ?.getAttribute('content')
+          ?.toUpperCase() ?? '',
     };
   });
 
@@ -64,10 +71,14 @@ test('publishing in /admin/theme reaches the viewer, the manifest and emails wit
 
   await admin.goto('/admin/theme');
   // Re-runs on the same database start from the last published theme, so pick the one that is not current.
-  const picked = (await admin.getByRole('radio', { name: /lavender/i }).isChecked()) ? 'sky blue' : 'lavender';
+  const picked = (await admin.getByRole('radio', { name: /lavender/i }).isChecked())
+    ? 'sky blue'
+    : 'lavender';
   const LAVENDER = PRESETS[picked];
   await admin.getByRole('radio', { name: new RegExp(picked, 'i') }).check();
-  const font = (await admin.getByRole('radio', { name: /nunito/i }).isChecked()) ? 'DM Sans' : 'Nunito';
+  const font = (await admin.getByRole('radio', { name: /nunito/i }).isChecked())
+    ? 'DM Sans'
+    : 'Nunito';
   await admin.getByRole('radio', { name: new RegExp(font, 'i') }).check();
   await admin.getByLabel('Platform name').fill(SITE_NAME);
   await admin.getByRole('button', { name: 'Publish theme' }).click();
@@ -94,9 +105,12 @@ test('publishing in /admin/theme reaches the viewer, the manifest and emails wit
   await viewer.getByLabel(/Email/).fill(ACCOUNTS.viewer.email);
   await viewer.getByRole('button', { name: 'Send link' }).click();
   await expect
-    .poll(() => sink.mails.find((m) => m.to.toLowerCase().includes(ACCOUNTS.viewer.email))?.data ?? '', {
-      timeout: 20_000,
-    })
+    .poll(
+      () => sink.mails.find((m) => m.to.toLowerCase().includes(ACCOUNTS.viewer.email))?.data ?? '',
+      {
+        timeout: 20_000,
+      },
+    )
     .not.toBe('');
   const mail = sink.mails.find((m) => m.to.toLowerCase().includes(ACCOUNTS.viewer.email))!;
   const decoded = mail.data.replace(/=\r?\n/g, '').replace(/=3D/g, '=');
