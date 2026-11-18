@@ -1,5 +1,6 @@
 import { ConfigError, loadWorkerEnv } from '@ad/config';
 import { createLogger } from '@ad/shared';
+import { DrizzleHeartbeatStore, startHeartbeat } from '@ad/queue';
 import type { PgBoss } from 'pg-boss';
 import { bootWorker } from './boot';
 import { registerVideoHandlers } from './handlers';
@@ -36,7 +37,15 @@ async function main(): Promise<void> {
     },
   });
 
+  // The uptime monitor alerts when this stops for 5 minutes (M24-S02 AC2).
+  const heartbeatStore = new DrizzleHeartbeatStore(createWorkerDb(env));
+  const heartbeat = startHeartbeat({
+    beat: () => heartbeatStore.beat('worker'),
+    onError: (error) => logger.warn('heartbeat write failed', { err: error }),
+  });
+
   const shutdown = (signal: string) => {
+    heartbeat.stop();
     logger.info('shutdown requested', { signal });
     worker.stop().then(
       () => process.exit(0),

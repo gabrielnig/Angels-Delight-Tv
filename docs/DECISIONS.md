@@ -669,3 +669,9 @@ Format: decision, options considered, why, reversible or not. Newest first. Deci
 - Options: a strict 1 per 5 seconds bucket that drops extras, a coalescing layer that holds the newest write, keep the current buckets.
 - Why: pause, seek and tab hide each write at once (M08-S16 AC2), so a strict 1 per 5 seconds bucket would drop the final position, which is the one write that matters for resume. 30 per minute allows that burst, is five times the 6 per minute the 15 second tick (D-043) produces, and still caps abuse. The player keeps only the newest write per video while a write fails (progress.test.ts), so a 429 costs one retry, not data. For keys, hls.js asks once per video and the real browser seek storm in `hls-real.stack.ts` made at most 10 key requests across 10 seeks, so 20 per 10 minutes per profile blocks scraping, which 30 per minute would not.
 - Reversible: yes, constants.
+
+## D-124 Worker heartbeat in a table, read by a monitor endpoint (lane a3)
+- Decision: the worker writes `worker_heartbeats('worker')` every 60 seconds (migration 0030, additive). `/api/health/worker` answers 503 when the last beat is older than 5 minutes or missing, and the external uptime monitor polls it with `/healthz` and `/readyz`. `/readyz` does not include it, so a stopped worker never takes the web app out of rotation.
+- Options: add a worker check to `/readyz`, derive liveness from pg-boss job completion, a heartbeat file in the container.
+- Why: a stopped worker should alert, not make the site unready. pg-boss completion needs a scheduled job and tells nothing on an idle queue. A file cannot be read by the web app or an external monitor. Alert dedupe, disk, error rate and certificate expiry alerts are monitor settings (DEPLOYMENT section 9), not code, so they stay a launch checklist item.
+- Reversible: yes.
