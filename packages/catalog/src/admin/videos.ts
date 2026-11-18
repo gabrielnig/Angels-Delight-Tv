@@ -390,7 +390,68 @@ export type BulkAction =
   | { type: 'publish' }
   | { type: 'unpublish' }
   | { type: 'trash' }
-  | { type: 'category'; categoryId: string };
+  | { type: 'category'; categoryId: string }
+  | { type: 'suitability'; value: Suitability };
+
+/**
+ * Sets suitability on every selected video in one transaction (M35-S04 AC3). If any id cannot be updated
+ * nothing changes and the failed ids are reported.
+ */
+async function setSuitabilityAll(
+  ctx: AdminContext,
+  actor: Actor,
+  ids: readonly string[],
+  value: Suitability,
+): Promise<{ succeeded: string[]; failed: Array<{ id: string; reason: string }> }> {
+  const unique = [...new Set(ids)];
+  const gone = unique.filter((id) => !isUuid(id));
+  if (gone.length)
+    return {
+      succeeded: [],
+      failed: gone.map((id) => ({ id, reason: 'That video no longer exists.' })),
+    };
+  return withAccount(ctx.db, actor, async (tx) => {
+    const rows = unique.length
+      ? await tx
+          .select({ id: videos.id, title: videos.title })
+          .from(videos)
+          .where(
+            and(
+              sql`${videos.id} IN (${sql.join(
+                unique.map((id) => sql`${id}::uuid`),
+                sql`, `,
+              )})`,
+              sql`${videos.deletedAt} IS NULL`,
+            ),
+          )
+          .for('update')
+      : [];
+    const found = new Set(rows.map((row) => row.id));
+    const missing = unique.filter((id) => !found.has(id));
+    if (missing.length)
+      return {
+        succeeded: [],
+        failed: missing.map((id) => ({ id, reason: 'That video no longer exists.' })),
+      };
+    for (const row of rows) {
+      await tx
+        .update(videos)
+        .set({ suitability: value, kidsSafe: value === 'kids' || value === 'everyone' })
+        .where(eq(videos.id, row.id));
+      await writeAudit(tx, {
+        action: 'video.update',
+        outcome: 'success',
+        actorAccountId: actor.accountId,
+        actorRole: actor.role,
+        targetType: 'video',
+        targetId: row.id,
+        summary: `Set suitability of ${row.title} to ${value}`,
+        extra: { fields: ['suitability'], bulk: true },
+      });
+    }
+    return { succeeded: unique, failed: [] };
+  });
+}
 
 /** Each id succeeds or fails alone so one bad video never blocks the rest. */
 export async function bulkAdminVideos(
@@ -408,6 +469,7 @@ export async function bulkAdminVideos(
       };
     return trashVideos(ctx, actor, ids);
   }
+  if (action.type === 'suitability') return setSuitabilityAll(ctx, actor, ids, action.value);
   const result = { succeeded: [] as string[], failed: [] as Array<{ id: string; reason: string }> };
   for (const id of ids) {
     try {
