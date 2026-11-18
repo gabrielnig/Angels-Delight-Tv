@@ -251,6 +251,7 @@ Elevation is mostly flat, using borders and surface contrast. Shadows only for t
 | 1 | `--shadow-1` | Sticky nav on scroll, hovered card |
 | 2 | `--shadow-2` | Dropdown, popover, toast |
 | 3 | `--shadow-3` | Modal, bottom sheet |
+| up | `--shadow-up` | Sticky bar fixed to the bottom edge (title page Play bar), shadow falls upward |
 
 Z order: base 0, sticky 10, nav 20, overlay 30, modal 40, toast 50.
 

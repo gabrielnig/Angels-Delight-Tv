@@ -194,3 +194,30 @@ describe('SiteFooter', () => {
     expect(screen.getByText(/Angels Delight TV 2026/)).toBeInTheDocument();
   });
 });
+
+describe('TopNav back button (S18 phone)', () => {
+  const base = {
+    brand: { name: 'Angels Delight TV', href: '/' },
+    links,
+    currentPath: '/title/a',
+    profileName: 'Ada',
+    menu,
+  };
+
+  it('has no back button by default', () => {
+    render(<TopNav {...base} />);
+    expect(screen.queryByRole('button', { name: 'Back' })).toBeNull();
+  });
+
+  it('shows a Back button before the brand and calls onBack', async () => {
+    const onBack = vi.fn();
+    const { container } = render(<TopNav {...base} onBack={onBack} />);
+    const back = screen.getByRole('button', { name: 'Back' });
+    await userEvent.click(back);
+    expect(onBack).toHaveBeenCalledTimes(1);
+    expect(container.querySelector('header')).toHaveAttribute('data-back', 'true');
+    const inner = container.querySelector('.ad-nav__inner')!;
+    expect(inner.firstElementChild).toBe(back);
+  });
+});
+
