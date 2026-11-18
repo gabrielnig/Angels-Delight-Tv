@@ -2,7 +2,7 @@ import localFont from 'next/font/local';
 
 /**
  * Space Grotesk, the display face of the sign in and sign up mockups (S01, S02). Self hosted, variable weight,
- * applied only to the auth screens through the two custom properties below (decision D-AUTH-FONT in docs/DECISIONS.md).
+ * applied only to the auth screens through the two custom properties below (decision D-144 in docs/DECISIONS.md).
  * The variable classes define properties only, so body text keeps the theme font.
  */
 const grotesk = localFont({
