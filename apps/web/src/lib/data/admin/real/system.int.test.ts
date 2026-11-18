@@ -230,6 +230,48 @@ describe.skipIf(!integrationEnabled())('real system and dashboard services', () 
     }
   });
 
+  it('gives a monthly estimate and an 80 percent warning against the saved budget (M22-S03)', async () => {
+    const fresh = await createViewerTestDb();
+    try {
+      setAdminRuntime({
+        db: () => fresh.app,
+        ctx: async () => ({ db: fresh.app }),
+        enqueue: (async () => ({ jobId: 'j' })) as never,
+        names: async () => new Map(),
+      });
+      const staff = {
+        accountId: (await seedAccount(fresh.setup, 'admin')).id,
+        role: 'admin' as const,
+        name: 'A',
+      };
+      const editor = { ...staff, role: 'editor' as const };
+      await seedVideo(fresh.setup, { originalBytes: 7000, originalKey: 'originals/b' });
+      const empty = await realSystemService.storageBudget(staff);
+      expect(empty.capBytes).toBe(200 * 1024 ** 3);
+      expect(empty.status).toBe('ok');
+
+      await fresh.setup
+        .insert(schema.settings)
+        .values({ key: 'limits.storage_cap_bytes', value: 100000 })
+        .onConflictDoUpdate({ target: schema.settings.key, set: { value: 100000 } });
+      const near = await realSystemService.storageBudget(staff);
+      expect(near).toMatchObject({ usedBytes: 7000, capBytes: 100000, status: 'ok' });
+      // The video was added just now, so the last 30 days of growth are all of it.
+      expect(near.estimateBytes).toBe(14000);
+      expect(near.estimatePercent).toBeCloseTo(14, 5);
+
+      await fresh.setup
+        .update(schema.settings)
+        .set({ value: 8000 })
+        .where(eq(schema.settings.key, 'limits.storage_cap_bytes'));
+      expect((await realSystemService.storageBudget(staff)).status).toBe('warning');
+
+      await expect(realSystemService.storageBudget(editor)).rejects.toThrow();
+    } finally {
+      await fresh.drop();
+    }
+  });
+
   describe('dashboard', () => {
     it('counts, attention, recent and nav badges come from real videos', async () => {
       const fresh = await createViewerTestDb();

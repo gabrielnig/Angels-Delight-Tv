@@ -47,7 +47,7 @@ Status rules: **done with test** means every acceptance criterion is implemented
 | M21-S04 Email deliverability setup | Must | partial | docs/DEPLOYMENT.md lists SPF, DKIM, DMARC | `m1`: no check script in the repo yet |
 | M22-S01 Bucket layout and CDN domain | Must | done with test | packages/storage contract suite; apps/edge/src/worker.miniflare.test.ts (CORS for the app origin only); apps/edge/src/smoke.test.ts (deploy smoke for CORS and signatures, `pnpm edge:smoke`) | Smoke is not yet in deploy.sh (`m1`) |
 | M22-S02 Presigned upload URLs | Must | done with test | packages/storage/src/s3.server.test.ts (S3 driver over HTTP against s3rver and moto, multipart resume); packages/video upload tests | Real R2 stays a launch check |
-| M22-S03 Storage usage and lifecycle | Should | partial | apps/web/src/lib/data/admin/real/system.int.test.ts (usage by type); system-rules.test.ts | No monthly estimate, no 80 percent warning test, 7 day multipart rule is a manual R2 step in DEPLOYMENT |
+| M22-S03 Storage usage and lifecycle | Should | done with test | apps/web/src/lib/data/admin/real/system.int.test.ts (usage by type, estimate, 80 percent warning); system-rules.test.ts (storageBudget); SystemView.test.tsx (warning, Not available) | `f1`: the budget is the `limits.storage_cap_bytes` setting (D-131). The 7 day multipart rule is an R2 setting in DEPLOYMENT, not code |
 | M23-S01 Password and session security | Must | done with test | packages/auth hasher, sessions and signin.int.test.ts |  |
 | M23-S02 Security headers and CSRF | Must | done with test | apps/web/src/proxy.test.ts; scripts/check-headers.test.ts; csp-report.test.ts; same origin tests in server routes |  |
 | M23-S03 Rate limiting | Must | done with test | packages/security/src/rate-limit.int.test.ts (fail closed and open); api-limit.test.ts (429 and Retry-After) |  |
@@ -78,7 +78,7 @@ Status rules: **done with test** means every acceptance criterion is implemented
 
 ## Counts
 
-Rows: 69. done with test: 55. done without test: 3. partial: 11. missing: 0.
+Rows: 69. done with test: 56. done without test: 3. partial: 10. missing: 0.
 
 m1 and m3 had not merged when this table was written. Their rows (M21-S04, M24-S02 alerts, M32, M33-S01, M33-S03, M36) must be re-checked against their merged work.
 
