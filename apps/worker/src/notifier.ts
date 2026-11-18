@@ -62,5 +62,16 @@ export function makeNotifier(db: Database, logger: Logger): StaffNotifier {
         `/admin/captions/${videoId}`,
       );
     },
+    async posterRecutFailed(videoId) {
+      const v = await lookup(videoId);
+      // Shares the failure kind so the bell, the digest and the checks need no new notice type (D-158).
+      await send(
+        'encode_failed',
+        'Poster crop could not be applied',
+        videoId,
+        `${v.title}: the old poster is still showing. Open the poster page and save again.`,
+        `/admin/videos/${videoId}/poster`,
+      );
+    },
   };
 }

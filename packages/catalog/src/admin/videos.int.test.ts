@@ -457,6 +457,55 @@ describe.skipIf(!integrationEnabled())('admin videos', () => {
       expect(row?.heroAssetId).toBe(hero);
     });
 
+    it('reports a recut that is still being made or has failed, and clears it once a good one exists', async () => {
+      const video = await seedVideo(t.setup);
+      const picture = await asset('thumbnail', `uploads/r/${uuidv7()}`);
+      const focus = { x: 20, y: 30, zoom: 130 };
+      await t.setup
+        .update(videos)
+        .set({ posterAssetId: picture, posterFocus: focus })
+        .where(eq(videos.id, video.id));
+      expect((await getAdminVideo(ctx, editor, video.id)).posterRecut).toBeNull();
+      const cut = uuidv7();
+      await t.setup.insert(assets).values({
+        id: cut,
+        purpose: 'thumbnail',
+        status: 'processing',
+        mime: 'image/png',
+        cutFrom: picture,
+        cutFocus: focus,
+      });
+      expect((await getAdminVideo(ctx, editor, video.id)).posterRecut).toBe('processing');
+      await t.setup.update(assets).set({ status: 'failed' }).where(eq(assets.id, cut));
+      const failed = await getAdminVideo(ctx, editor, video.id);
+      expect(failed.posterRecut).toBe('failed');
+      expect(failed.posterId).toBe(picture);
+      await t.setup.update(assets).set({ status: 'ready' }).where(eq(assets.id, cut));
+      expect((await getAdminVideo(ctx, editor, video.id)).posterRecut).toBeNull();
+    });
+
+    it('saving again after a failure makes a fresh recut instead of reusing the failed one', async () => {
+      const video = await seedVideo(t.setup);
+      const picture = await asset('thumbnail', `uploads/r/${uuidv7()}`);
+      const focus = { x: 20, y: 30, zoom: 130 };
+      await t.setup.insert(assets).values({
+        purpose: 'thumbnail',
+        status: 'failed',
+        mime: 'image/png',
+        cutFrom: picture,
+        cutFocus: focus,
+      });
+      const { recut, queued } = recutDeps();
+      await setAdminPoster(ctx, editor, video.id, {
+        posterId: picture,
+        alt: 'A seedling',
+        focus: { x: 20, y: 30 },
+        zoom: 130,
+        recut,
+      });
+      expect(queued).toHaveLength(1);
+    });
+
     it('does nothing for hero when the video has none, and resets it for the default focus', async () => {
       const bare = await seedVideo(t.setup);
       const poster = await asset('thumbnail', `uploads/h/${uuidv7()}`);
