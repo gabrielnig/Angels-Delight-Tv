@@ -12,6 +12,8 @@ import { realSessionTimes } from '@/server/auth/admin';
 import { SessionExpiryWarning } from '@/components/admin/SessionExpiryWarning';
 import { extendSessionAction } from '../session-actions';
 import { signOutAction } from '../login/actions';
+import { noticesAdmin } from '@/lib/data/admin/notices';
+import { markNoticesReadAction } from './notice-actions';
 
 export const dynamic = 'force-dynamic';
 
@@ -20,6 +22,8 @@ export default async function ShellLayout({ children }: { children: ReactNode })
   // Every page calls requireActor with its own path, so the sign in redirect keeps ?next=.
   if (!actor) return <>{children}</>;
   const counts = await dashboardService.navCounts(actor);
+  // A bell that cannot load must not take the admin down with it (M21-S03 error case).
+  const feed = await noticesAdmin.feed(actor).catch(() => null);
   const times = realAuthEnabled() ? await realSessionTimes() : null;
   return (
     <UploaderProvider mode={uploadTransportMode()}>
@@ -29,6 +33,7 @@ export default async function ShellLayout({ children }: { children: ReactNode })
           actor={{ name: actor.name, role: actor.role, roleLabel: ROLE_LABELS[actor.role] }}
           counts={counts}
           signOut={signOutAction}
+          notices={feed ? { ...feed, markAllRead: markNoticesReadAction } : undefined}
         >
           {children}
         </AdminShell>

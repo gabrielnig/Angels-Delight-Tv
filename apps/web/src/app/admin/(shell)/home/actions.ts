@@ -21,7 +21,9 @@ function clean(input: HomeConfig): HomeConfig {
   };
 }
 
-async function run(fn: (a: Awaited<ReturnType<typeof requireActionActor>>) => Promise<CommandResult>) {
+async function run(
+  fn: (a: Awaited<ReturnType<typeof requireActionActor>>) => Promise<CommandResult>,
+) {
   const actor = await requireActionActor('/admin/home');
   const result = await fn(actor);
   revalidatePath('/admin/home');

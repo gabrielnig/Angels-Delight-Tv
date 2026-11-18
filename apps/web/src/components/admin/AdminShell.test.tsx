@@ -56,4 +56,24 @@ describe('AdminShell', () => {
     await userEvent.keyboard('{Escape}');
     expect(button).toHaveAttribute('aria-expanded', 'false');
   });
+
+  it('shows the bell when notices load and leaves it out when they do not', () => {
+    const actor = { name: 'Ngozi Eze', role: 'editor' as const, roleLabel: 'Content editor' };
+    const { rerender } = render(
+      <AdminShell
+        {...base}
+        actor={actor}
+        notices={{ items: [], unread: 3, markAllRead: async () => {} }}
+      >
+        x
+      </AdminShell>,
+    );
+    expect(screen.getByRole('button', { name: 'Notifications, 3 unread' })).toBeInTheDocument();
+    rerender(
+      <AdminShell {...base} actor={actor}>
+        x
+      </AdminShell>,
+    );
+    expect(screen.queryByRole('button', { name: /Notifications/ })).toBeNull();
+  });
 });

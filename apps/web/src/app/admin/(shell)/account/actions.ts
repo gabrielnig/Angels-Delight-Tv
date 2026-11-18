@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 import { accountService } from '@/lib/data/admin/services';
+import { noticesAdmin } from '@/lib/data/admin/notices';
 import { requireActionActor } from '@/lib/data/admin/session-next';
 
 export async function updateNameAction(name: string) {
@@ -39,6 +40,21 @@ export async function revokeSessionAction(sessionId: string) {
 export async function regenerateCodesAction(code: string) {
   const actor = await requireActionActor('/admin/account');
   const result = await accountService.regenerateCodes(actor, String(code).replace(/\s/g, ''));
+  revalidatePath('/admin/account');
+  return result;
+}
+
+export async function saveNotificationPrefsAction(patch: {
+  failures?: boolean;
+  captionsReady?: boolean;
+  dailySummary?: boolean;
+}) {
+  const actor = await requireActionActor('/admin/account');
+  const result = await noticesAdmin.setPrefs(actor, {
+    ...(typeof patch?.failures === 'boolean' ? { failures: patch.failures } : {}),
+    ...(typeof patch?.captionsReady === 'boolean' ? { captionsReady: patch.captionsReady } : {}),
+    ...(typeof patch?.dailySummary === 'boolean' ? { dailySummary: patch.dailySummary } : {}),
+  });
   revalidatePath('/admin/account');
   return result;
 }

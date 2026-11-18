@@ -5,7 +5,9 @@ import { peopleService } from '@/lib/data/admin/services';
 import { requireActionActor } from '@/lib/data/admin/session-next';
 import type { CommandResult } from '@/lib/data/admin/video-commands';
 
-async function run(fn: (a: Awaited<ReturnType<typeof requireActionActor>>) => Promise<CommandResult>) {
+async function run(
+  fn: (a: Awaited<ReturnType<typeof requireActionActor>>) => Promise<CommandResult>,
+) {
   const actor = await requireActionActor('/admin/roles');
   const result = await fn(actor);
   revalidatePath('/admin', 'layout');
