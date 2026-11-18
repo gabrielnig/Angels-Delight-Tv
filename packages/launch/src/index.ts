@@ -5,5 +5,6 @@ export * from './apply';
 export * from './report';
 export * from './import';
 export * from './backup';
+export * from './dns';
 export * from './production-env';
 export * from './secrets';

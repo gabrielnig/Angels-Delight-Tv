@@ -32,7 +32,16 @@ Conventions: `OWNER` is the machine of the owner or developer with the repositor
 1. Add the domain to Cloudflare and switch the nameservers at the registrar.
 2. DNS: A records for the app domain and `www` to the VPS IP, proxied. SSL/TLS Full (strict), Always Use HTTPS on.
 3. Create an Origin CA certificate for the app domain. Save the certificate and private key as `origin.pem` and `origin.key` for step 4 (the names Caddy reads, see `ops/Caddyfile`).
-4. Email DNS records (SPF, DKIM, DMARC) from the sending provider.
+4. Email DNS records (SPF, DKIM, DMARC) from the sending provider. Check them with the DNS check below once the records have had a few minutes to spread.
+
+DNS check (run from any machine with the repo, after steps 1 to 3):
+
+```bash
+APP_DOMAIN=<app domain> MEDIA_DOMAIN=<media domain> EMAIL_FROM='<sender address>' \
+  pnpm dns:check --vps-ip <VPS IP> --dkim-selector <selector from the provider>
+```
+
+It checks that the app domain points at the VPS (or is proxied by Cloudflare), that the media domain is the R2 custom domain and not the VPS, and that SPF, DKIM and DMARC are published and sound. A failure prints what to fix. A warning, such as DMARC `p=none`, does not block launch but should be tightened after a week of clean reports. Run it again before step 12. Add `--spf-include <name>` to require your provider's include, and `--json` for a machine readable report.
 
 ### 2. R2 buckets, tokens and media domain (15 min)
 
@@ -125,6 +134,7 @@ In the admin, open each video's captions, fix names and Nigerian English terms, 
 
 ### 11. Smoke checklist (15 min)
 
+- [ ] `pnpm dns:check` shows no FAIL lines
 - [ ] `https://<domain>` loads over https with the client's name, logo and colours
 - [ ] `https://<domain>/readyz` is ok, `https://<media domain>` serves an image with a valid signature and refuses an unsigned one
 - [ ] Sign up, verify email arrives with the right sender name, log in, log out
