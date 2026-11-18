@@ -74,7 +74,7 @@ export function PwaClient({
 
   return (
     <>
-      <ConnectionStatus onBackOnline={syncQueue} />
+      <ConnectionStatus onBackOnline={syncQueue} savedView={pathname === '/'} />
       <InstallPrompt platformName={platformName} />
       {updated ? (
         <div className="pwa-toast" role="status">

@@ -65,7 +65,13 @@ export function LinkButton({
   ...rest
 }: Common & { href: string; 'aria-label'?: string }) {
   return (
-    <Link href={href} className={cls(variant, className)} {...rest}>
+    // A download link must not be prefetched: the prefetch would run the export on every page view.
+    <Link
+      href={href}
+      prefetch={icon === 'download' ? false : undefined}
+      className={cls(variant, className)}
+      {...rest}
+    >
       {icon ? <Icon name={icon} size={18} /> : null}
       {children ? <span>{children}</span> : null}
     </Link>

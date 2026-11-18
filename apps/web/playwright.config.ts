@@ -11,7 +11,13 @@ export default defineConfig({
   forbidOnly: Boolean(process.env.CI),
   retries: process.env.CI ? 1 : 0,
   reporter: process.env.CI ? 'github' : 'list',
-  use: { baseURL, trace: 'on-first-retry' },
+  use: {
+    baseURL,
+    trace: 'on-first-retry',
+    ...(process.env.E2E_CHROMIUM_PATH
+      ? { launchOptions: { executablePath: process.env.E2E_CHROMIUM_PATH } }
+      : {}),
+  },
   projects: [
     // docs/TESTING.md section 6: every journey runs on mobile (360 by 740) and desktop.
     {

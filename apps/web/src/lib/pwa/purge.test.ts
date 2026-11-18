@@ -17,6 +17,8 @@ describe('clearServiceWorkerCaches', () => {
     const postMessage = vi.fn(() => {
       throw new Error('gone');
     });
-    expect(clearServiceWorkerCaches({ serviceWorker: { controller: { postMessage } } })).toBe(false);
+    expect(clearServiceWorkerCaches({ serviceWorker: { controller: { postMessage } } })).toBe(
+      false,
+    );
   });
 });

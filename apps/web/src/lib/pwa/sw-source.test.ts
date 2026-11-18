@@ -242,6 +242,30 @@ describe('service worker policy', () => {
     expect(new URL(offline.response!.url!).pathname).toBe('/offline');
   });
 
+  it('keeps the public site pages for offline use and nothing else (M25-S04)', async () => {
+    const sw = boot({ savedPages: ['/about', '/help'] });
+    await sw.lifecycle('install');
+    await sw.fetchEvent('/about', { mode: 'navigate' });
+    await sw.fetchEvent('/browse', { mode: 'navigate' });
+    const pages = sw.stores.get('ad-pages-v1')!;
+    expect(await pages.match({ url: 'https://tv.example/about' })).toBeDefined();
+    expect(await pages.match({ url: 'https://tv.example/browse' })).toBeUndefined();
+    sw.setDown(true);
+    const saved = await sw.fetchEvent('/about', { mode: 'navigate' });
+    expect(new URL(saved.response!.url!).pathname).toBe('/about');
+    const unsaved = await sw.fetchEvent('/help', { mode: 'navigate' });
+    expect(new URL(unsaved.response!.url!).pathname).toBe('/offline');
+  });
+
+  it('does not store a saved page that says no-store', async () => {
+    const sw = boot({ savedPages: ['/about'] });
+    sw.setResponder(() => ({ cache: 'no-store' }));
+    await sw.fetchEvent('/about', { mode: 'navigate' });
+    expect(
+      await sw.stores.get('ad-pages-v1')!.match({ url: 'https://tv.example/about' }),
+    ).toBeUndefined();
+  });
+
   it('caches posters from the media origin images path and trims nothing else', async () => {
     const sw = boot();
     await sw.lifecycle('install');

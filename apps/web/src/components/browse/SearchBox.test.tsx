@@ -147,4 +147,44 @@ describe('SearchBox', () => {
     await user.type(screen.getByRole('combobox'), 'farm');
     await waitFor(() => expect(screen.queryByRole('listbox')).toBeNull());
   });
+
+  it('reports the query for live results after the debounce, once per distinct value (M06-S03)', async () => {
+    const onLiveQuery = vi.fn();
+    const user = userEvent.setup();
+    render(
+      <SearchBox
+        onSearch={vi.fn()}
+        onNavigate={vi.fn()}
+        loadSuggestions={vi.fn().mockResolvedValue([])}
+        onLiveQuery={onLiveQuery}
+        initialValue="water"
+        debounceMs={20}
+      />,
+    );
+    const box = screen.getByRole('combobox');
+    await new Promise((resolve) => setTimeout(resolve, 40));
+    expect(onLiveQuery).not.toHaveBeenCalled();
+    await user.type(box, 's');
+    await waitFor(() => expect(onLiveQuery).toHaveBeenCalledWith('waters'));
+    expect(onLiveQuery).toHaveBeenCalledTimes(1);
+    await user.clear(box);
+    await waitFor(() => expect(onLiveQuery).toHaveBeenLastCalledWith(''));
+  });
+
+  it('does not run a live query for a single character', async () => {
+    const onLiveQuery = vi.fn();
+    const user = userEvent.setup();
+    render(
+      <SearchBox
+        onSearch={vi.fn()}
+        onNavigate={vi.fn()}
+        loadSuggestions={vi.fn().mockResolvedValue([])}
+        onLiveQuery={onLiveQuery}
+        debounceMs={10}
+      />,
+    );
+    await user.type(screen.getByRole('combobox'), 'a');
+    await new Promise((resolve) => setTimeout(resolve, 40));
+    expect(onLiveQuery).not.toHaveBeenCalled();
+  });
 });

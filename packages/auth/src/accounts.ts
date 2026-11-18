@@ -943,10 +943,16 @@ export class AccountService {
     memberSince: Date;
     profileCount: number;
     role: string;
+    /** The name the member chose on the account screen. Null until they set one. */
+    displayName: string | null;
+    passwordChangedAt: Date;
   }> {
     const account = await this.loadOwn(actor.accountId);
     if (!account || !account.emailEnc) throw new AccountUnavailable();
     const email = await this.deps.keys.open(account.id, 'email', account.emailEnc);
+    const displayName = account.displayNameEnc
+      ? await this.deps.keys.open(account.id, 'display_name', account.displayNameEnc)
+      : null;
     const [profiles] = await withAccount(
       this.deps.db,
       { accountId: actor.accountId, role: actor.role },
@@ -962,7 +968,32 @@ export class AccountService {
       memberSince: account.createdAt,
       profileCount: profiles?.total ?? 0,
       role: account.role,
+      displayName,
+      passwordChangedAt: account.passwordChangedAt,
     };
+  }
+
+  /** Saves the name shown on the account screen (S27 Edit name). Spaces are tidied, 1 to 80 characters. */
+  async setDisplayName(actor: Actor, input: { name: string }, meta: RequestMeta): Promise<string> {
+    const name = input.name.replace(/\s+/g, ' ').trim();
+    if (name.length === 0) throw new FieldErrors({ name: 'Enter your name' });
+    if (name.length > 80) throw new FieldErrors({ name: 'Use 80 characters or fewer' });
+    const enc = await this.deps.keys.seal(actor.accountId, 'display_name', name);
+    await withAccount(
+      this.deps.db,
+      { accountId: actor.accountId, role: actor.role },
+      async (tx) => {
+        await tx
+          .update(schema.accounts)
+          .set({ displayNameEnc: enc })
+          .where(eq(schema.accounts.id, actor.accountId));
+      },
+    );
+    await this.audit('auth.display_name_changed', 'success', meta, {
+      accountId: actor.accountId,
+      role: actor.role,
+    });
+    return name;
   }
 
   /**

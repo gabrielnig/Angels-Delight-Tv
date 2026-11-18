@@ -15,7 +15,7 @@ export default async function RootPage() {
     const site = await getSite().content();
     return (
       <AuthSplit site={site}>
-        <h1 className="web-auth__title">Sign in</h1>
+        <h1 className="auth-title">Sign in</h1>
         <SignInScreen signUpOpen={site.signUpOpen} turnstileSiteKey={turnstileSiteKey()} />
       </AuthSplit>
     );

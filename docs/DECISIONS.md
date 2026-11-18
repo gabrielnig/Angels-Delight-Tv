@@ -706,3 +706,26 @@ Format: decision, options considered, why, reversible or not. Newest first. Deci
 - Why: notification mail can wait a minute and is the mail that suffers when a provider is down. Auth mail is the opposite. The sealed copy uses the global field key, not a per account key, so shredding an account does not by itself destroy it: the trigger and the cascade remove it with the account, and outbox rows are pruned after 30 days.
 - Reversible: yes. The outbox and the new columns are additive and can be left unused.
 
+
+## D-143 The service worker keeps four public pages for the offline screen (lane f2)
+- Decision: after a visit, `/about`, `/help`, `/terms` and `/privacy` are stored in the `ad-pages-v1` cache (network first, stored only when the response is cacheable). The offline screen links to the ones present. Every other page stays network only. The cache is wiped by the existing CLEAR_CACHES message on sign out and on profile switch.
+- Options: keep D-039 (no page HTML at all, offline screen has only Try again); cache all visited pages; cache the four public pages.
+- Why: M25-S04 asks for a link to cached pages. The four pages carry no catalog or progress data. They are rendered inside the app shell, which shows the active profile name, so the copy is cleared with the other private state.
+- Reversible: yes, set `SW_SAVED_PAGES` to an empty list.
+## D-144 Space Grotesk as the display face of the sign in and sign up screens (lane p1)
+- Decision: S01 and S02 set headings, the brand name and the panel headline in Space Grotesk, self hosted from `apps/web/src/fonts` through `lib/auth-font.ts` (two variable subsets, latin and latin-ext, OFL licence kept beside them). It is exposed as `--font-auth-display` and used only inside the `.auth-root` scope, so body text keeps the theme font and no other page loads the files.
+- Options: keep `--font-display` (Inter, so the headline looks lighter and wraps differently from the mockup), add Space Grotesk to the curated theme list, scope it to the auth screens.
+- Why: the owner requires the screens to match the mockups exactly and the mockups use Space Grotesk. Scoping avoids changing the curated font list that the theme editor offers (docs/DESIGN-SYSTEM.md section 5) and keeps every other screen untouched.
+- Reversible: yes. Delete `auth-font.ts` and point `--auth-display` at `--font-display`.
+
+## D-145 Mockup measurements on S01 and S02 are literal pixels scaled by the type scale (lane p1)
+- Decision: `components/auth/auth-ui.css` uses the mockup's sizes (15px labels, 26px and 28px titles, 56px panel headline, 48px inputs, 52px button, 600px panel) written as `calc(Npx * var(--type-scale))` for type so the admin size factor still applies. Colours, radii and borders stay tokens. Two scoped custom properties cover values with no token: `--auth-logo-glyph` (the play glyph colour in the logo, #12263A) and `--auth-card-shadow` (the mockup's 5 percent shadow, softer than `--shadow-1`). A CSS test fails if any other literal colour appears.
+- Options: round to the nearest token step (visible drift from the mockup), add tokens for every one off size, scoped literals with a guard test.
+- Why: exact parity was required and a token for a size used on two screens would not be reused. The guard keeps the exception small.
+- Reversible: yes.
+
+## D-146 Small, owner approved deviations from the 44px rule on S01 and S02 (lane p1)
+- Decision: (a) the brand panel footer links keep the mockup's tight word spacing, so they are 44px tall and as wide as their text (at least 24px, WCAG 2.5.8) instead of 44px wide; (b) the Terms and Privacy links in the sign up fine print stay inline so the line wraps exactly like the mockup, with an invisible 44px hit area added by a pseudo element; (c) the session ended notice reads "Your session ended. Sign in again to keep watching." (info tone) as drawn in the mockup, replacing lane F2's longer wording, and the reset notice shows as a success banner; (d) on mobile the sign up submit sits in a sticky bar and "Already have an account?" is moved above it with CSS order, so DOM order is submit then link and visual order is link then submit.
+- Options: pad the footer links to 44px wide (spacing no longer matches), turn the inline links into blocks (breaks the wrap), keep F2's copy.
+- Why: the mockups are the spec and each deviation is invisible or tiny. All other targets are at least 44 by 44, checked in `e2e/touch-targets.e2e.ts` and `e2e/auth-pages.e2e.ts`.
+- Reversible: yes.

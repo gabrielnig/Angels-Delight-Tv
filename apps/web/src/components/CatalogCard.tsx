@@ -63,6 +63,7 @@ export function CatalogCard({
         href={itemHref(item)}
         thumbnail={item.thumbnail}
         episodeCount={item.episodeCount}
+        seasonCount={item.seasonCount}
         priority={priority}
         inList={inList}
         onToggleList={onToggle}

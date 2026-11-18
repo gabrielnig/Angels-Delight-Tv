@@ -1,5 +1,6 @@
 'use server';
 
+import { withoutKidsLocked } from '../lib/playback-lock';
 import { cookies } from 'next/headers';
 import {
   getAccount,
@@ -163,6 +164,17 @@ export async function loadMoreHomeRowsAction(cursor: string) {
   return getCatalog().homeRows(ctx, cursor);
 }
 
+/** Per row retry for the Home rows that load on the server (M05-S02). */
+export async function reloadMyListRowAction() {
+  const { ctx } = await context();
+  return (await getLibrary().myList(ctx)).items.slice(0, 20);
+}
+
+export async function reloadContinueRowAction() {
+  const { ctx } = await context();
+  return getLibrary().continueWatching(ctx);
+}
+
 export async function loadMoreMyListAction(cursor: string) {
   const { ctx } = await context();
   return getLibrary().myList(ctx, cursor);
@@ -214,11 +226,26 @@ export async function migrateDevicePrefsAction(profileId: string, legacy: Record
 
 export async function savePlaybackAction(patch: Partial<PlaybackSettings>) {
   const { ctx } = await context();
-  return getAccount().savePlayback(ctx.profileId, patch);
+  return getAccount().savePlayback(
+    ctx.profileId,
+    withoutKidsLocked(patch, ctx.audience === 'kids'),
+  );
 }
 
 export async function changePasswordAction(input: { current: string; next: string }) {
   return getAccount().changePassword(await currentAccountId(), input);
+}
+
+export async function updateNameAction(input: { name: string }) {
+  return getAccount().updateName(await currentAccountId(), input.name);
+}
+
+export async function requestEmailChangeAction(input: { newEmail: string; password: string }) {
+  return getAccount().requestEmailChange(await currentAccountId(), input);
+}
+
+export async function confirmEmailChangeAction(input: { code: string }) {
+  return getAccount().confirmEmailChange(await currentAccountId(), input);
 }
 
 export async function revokeDeviceAction(id: string) {

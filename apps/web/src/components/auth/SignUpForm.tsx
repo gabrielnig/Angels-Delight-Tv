@@ -1,17 +1,10 @@
 'use client';
 
 import { useRef, useState, type FormEvent } from 'react';
-import {
-  Banner,
-  Button,
-  Input,
-  Link,
-  PasswordField,
-  evaluatePassword,
-  type PasswordScorer,
-} from '@ad/ui';
+import { Link, evaluatePassword, type PasswordScorer } from '@ad/ui';
 import type { SignUpResult } from '../../lib/data';
-import { NETWORK_MESSAGE, RATE_LIMIT_MESSAGE, emailError } from './shared';
+import { AuthBanner, AuthField, AuthPasswordField, AuthSubmit } from './AuthParts';
+import { SIGN_UP_NETWORK_MESSAGE, SIGN_UP_RATE_LIMIT_MESSAGE, emailError } from './shared';
 import { useFocusFirstInvalid } from './useFocusFirstInvalid';
 import { CHECK_RUNNING_MESSAGE, useTurnstile } from './useTurnstile';
 
@@ -46,7 +39,7 @@ export function SignUpForm({
   const [touched, setTouched] = useState({ email: false, password: false, invite: false });
   const [submitted, setSubmitted] = useState(false);
   const [busy, setBusy] = useState(false);
-  const [banner, setBanner] = useState<string | null>(null);
+  const [banner, setBanner] = useState<{ text: string; tone: 'danger' | 'warning'; icon?: 'clock' } | null>(null);
   const [serverField, setServerField] = useState<{ email?: string; password?: string }>({});
 
   const checks = evaluatePassword(password, 2);
@@ -75,7 +68,7 @@ export function SignUpForm({
       return;
     }
     if (turnstile.enabled && !turnstile.token) {
-      setBanner(CHECK_RUNNING_MESSAGE);
+      setBanner({ text: CHECK_RUNNING_MESSAGE, tone: 'danger' });
       return;
     }
     setBusy(true);
@@ -91,17 +84,19 @@ export function SignUpForm({
         return;
       }
       if (result.reason === 'check_required')
-        setBanner('We could not confirm the security check. Try again.');
-      else if (result.reason === 'rate_limited') setBanner(RATE_LIMIT_MESSAGE);
-      else if (result.reason === 'network') setBanner(NETWORK_MESSAGE);
+        setBanner({ text: 'We could not confirm the security check. Try again.', tone: 'danger' });
+      else if (result.reason === 'rate_limited')
+        setBanner({ text: SIGN_UP_RATE_LIMIT_MESSAGE, tone: 'warning', icon: 'clock' });
+      else if (result.reason === 'network')
+        setBanner({ text: SIGN_UP_NETWORK_MESSAGE, tone: 'danger' });
       else if (result.reason === 'invite_required')
-        setBanner('That invite code is not valid. Check it and try again.');
+        setBanner({ text: 'That invite code is not valid. Check it and try again.', tone: 'danger' });
       else if (result.reason === 'invalid_email')
         setServerField({ email: 'Enter your full email, for example name@example.com.' });
       else setServerField({ password: 'Use at least 10 characters.' });
       if (result.reason === 'invalid_email' || result.reason === 'weak_password') requestFocus();
     } catch {
-      setBanner(NETWORK_MESSAGE);
+      setBanner({ text: SIGN_UP_NETWORK_MESSAGE, tone: 'danger' });
     } finally {
       setBusy(false);
       turnstile.spent();
@@ -109,11 +104,14 @@ export function SignUpForm({
   }
 
   return (
-    <form ref={formRef} className="web-form" onSubmit={submit} noValidate>
-      {inviteOnly ? <Banner tone="info">Sign up is by invitation</Banner> : null}
-      {banner ? <Banner tone="danger">{banner}</Banner> : null}
-      <Input
-        label="Email"
+    <form ref={formRef} className="auth-form auth-form--sticky" onSubmit={submit} noValidate>
+      {banner ? (
+        <AuthBanner tone={banner.tone} icon={banner.icon}>
+          {banner.text}
+        </AuthBanner>
+      ) : null}
+      <AuthField
+        label="Email (required)"
         required
         type="email"
         name="email"
@@ -125,8 +123,22 @@ export function SignUpForm({
         onBlur={() => setTouched((current) => ({ ...current, email: true }))}
         error={(show('email') ? emailError(email) : undefined) ?? serverField.email}
       />
-      <PasswordField
+      {inviteOnly ? (
+        <AuthField
+          label="Invite code (required)"
+          required
+          name="invite"
+          autoComplete="off"
+          value={invite}
+          onChange={(event) => setInvite(event.target.value)}
+          onBlur={() => setTouched((current) => ({ ...current, invite: true }))}
+          error={show('invite') ? inviteProblem : undefined}
+          hint="Sign up is by invitation for now."
+        />
+      ) : null}
+      <AuthPasswordField
         label="Password (required)"
+        required
         name="password"
         mode="new"
         showStrength
@@ -137,19 +149,7 @@ export function SignUpForm({
         onBlur={() => setTouched((current) => ({ ...current, password: true }))}
         error={(show('password') ? passwordProblem : undefined) ?? serverField.password}
       />
-      {inviteOnly ? (
-        <Input
-          label="Invite code"
-          required
-          name="invite"
-          autoComplete="off"
-          value={invite}
-          onChange={(event) => setInvite(event.target.value)}
-          onBlur={() => setTouched((current) => ({ ...current, invite: true }))}
-          error={show('invite') ? inviteProblem : undefined}
-        />
-      ) : null}
-      <div className="web-hp" aria-hidden="true">
+      <div className="auth-hp" aria-hidden="true">
         <input
           name="website"
           tabIndex={-1}
@@ -159,15 +159,18 @@ export function SignUpForm({
         />
       </div>
       {turnstile.widget}
-      <p className="web-form__fine">
+      <p className="auth-fine">
         By creating an account you agree to the <Link href="/terms">Terms</Link> and{' '}
         <Link href="/privacy">Privacy Policy</Link>.
       </p>
-      <Button type="submit" size="lg" fullWidth loading={busy}>
-        {busy ? 'Creating account' : 'Create account'}
-      </Button>
-      <p className="web-form__alt">
-        Already have an account? <Link href="/sign-in">Sign in</Link>
+      <div className="auth-sticky">
+        <AuthSubmit loading={busy}>{busy ? 'Creating account' : 'Create account'}</AuthSubmit>
+      </div>
+      <p className="auth-alt">
+        Already have an account?{' '}
+        <Link href="/sign-in" className="auth-link">
+          Sign in
+        </Link>
       </p>
     </form>
   );

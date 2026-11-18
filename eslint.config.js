@@ -19,6 +19,8 @@ export default tseslint.config(
       '**/coverage/**',
       'packages/db/migrations/**',
       '.claude/**',
+      '.e2e-storage/**',
+      '.m1-storage/**',
       'next-env.d.ts',
     ],
   },

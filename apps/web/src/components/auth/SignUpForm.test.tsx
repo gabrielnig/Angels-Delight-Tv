@@ -26,8 +26,8 @@ describe('SignUpForm with Turnstile', () => {
     render(
       <SignUpForm onSubmit={onSubmit} onDone={vi.fn()} scorer={scorer} turnstileSiteKey="site" />,
     );
-    await user.type(screen.getByLabelText(/Email/), 'chioma@example.com');
-    await user.type(screen.getByLabelText(/Password/), 'blue mango river sunrise');
+    await user.type(screen.getByLabelText(/^Email/), 'chioma@example.com');
+    await user.type(screen.getByLabelText(/^Password \(required\)/), 'blue mango river sunrise');
     await user.click(screen.getByRole('button', { name: 'Create account' }));
     expect(await screen.findByText(/security check is still running/)).toBeInTheDocument();
     expect(onSubmit).not.toHaveBeenCalled();
@@ -63,19 +63,19 @@ describe('SignUpForm', () => {
     const onSubmit = vi.fn();
     const user = userEvent.setup();
     render(<SignUpForm onSubmit={onSubmit} onDone={vi.fn()} scorer={scorer} />);
-    await user.type(screen.getByLabelText(/Email/), 'chioma@example.com');
-    await user.type(screen.getByLabelText(/Password/), 'lagos2026');
+    await user.type(screen.getByLabelText(/^Email/), 'chioma@example.com');
+    await user.type(screen.getByLabelText(/^Password \(required\)/), 'lagos2026');
     await user.click(screen.getByRole('button', { name: 'Create account' }));
     expect(onSubmit).not.toHaveBeenCalled();
     expect(screen.getAllByText('Use at least 10 characters.').length).toBeGreaterThan(0);
-    expect(screen.getByLabelText(/Password/)).toHaveFocus();
+    expect(screen.getByLabelText(/^Password \(required\)/)).toHaveFocus();
   });
 
   it('rejects a common password with a plain reason', async () => {
     const user = userEvent.setup();
     render(<SignUpForm onSubmit={vi.fn()} onDone={vi.fn()} scorer={scorer} />);
-    await user.type(screen.getByLabelText(/Email/), 'chioma@example.com');
-    await user.type(screen.getByLabelText(/Password/), 'password123');
+    await user.type(screen.getByLabelText(/^Email/), 'chioma@example.com');
+    await user.type(screen.getByLabelText(/^Password \(required\)/), 'password123');
     await user.click(screen.getByRole('button', { name: 'Create account' }));
     expect(
       screen.getAllByText('That password is too common. Choose another.').length,
@@ -87,8 +87,8 @@ describe('SignUpForm', () => {
     const onDone = vi.fn();
     const user = userEvent.setup();
     render(<SignUpForm onSubmit={onSubmit} onDone={onDone} scorer={scorer} />);
-    await user.type(screen.getByLabelText(/Email/), 'chioma@example.com');
-    await user.type(screen.getByLabelText(/Password/), 'blue mango river sunrise');
+    await user.type(screen.getByLabelText(/^Email/), 'chioma@example.com');
+    await user.type(screen.getByLabelText(/^Password \(required\)/), 'blue mango river sunrise');
     await waitFor(() => expect(screen.getByText('Strong')).toBeInTheDocument());
     await user.click(screen.getByRole('button', { name: 'Create account' }));
     expect(onSubmit).toHaveBeenCalledWith({
@@ -109,8 +109,8 @@ describe('SignUpForm', () => {
     const trap = container.querySelector('input[name="website"]') as HTMLInputElement;
     expect(trap).toHaveAttribute('tabindex', '-1');
     expect(trap.closest('[aria-hidden="true"]')).not.toBeNull();
-    await user.type(screen.getByLabelText(/Email/), 'bot@example.com');
-    await user.type(screen.getByLabelText(/Password/), 'blue mango river sunrise');
+    await user.type(screen.getByLabelText(/^Email/), 'bot@example.com');
+    await user.type(screen.getByLabelText(/^Password \(required\)/), 'blue mango river sunrise');
     await user.type(trap, 'spam');
     await user.click(screen.getByRole('button', { name: 'Create account' }));
     expect(onSubmit).not.toHaveBeenCalled();
@@ -121,16 +121,16 @@ describe('SignUpForm', () => {
     const user = userEvent.setup();
     render(<SignUpForm onSubmit={onSubmit} onDone={vi.fn()} scorer={scorer} inviteOnly />);
     expect(screen.getByLabelText(/Invite code \(required\)/)).toBeInTheDocument();
-    expect(screen.getByText('Sign up is by invitation')).toBeInTheDocument();
-    await user.type(screen.getByLabelText(/Email/), 'chioma@example.com');
-    await user.type(screen.getByLabelText(/Password/), 'blue mango river sunrise');
+    expect(screen.getByText('Sign up is by invitation for now.')).toBeInTheDocument();
+    await user.type(screen.getByLabelText(/^Email/), 'chioma@example.com');
+    await user.type(screen.getByLabelText(/^Password \(required\)/), 'blue mango river sunrise');
     await user.click(screen.getByRole('button', { name: 'Create account' }));
     expect(screen.getByText('Enter your invite code.')).toBeInTheDocument();
   });
 
   it('does not mention invitations when sign up is open', () => {
     render(<SignUpForm onSubmit={vi.fn()} onDone={vi.fn()} scorer={scorer} />);
-    expect(screen.queryByText('Sign up is by invitation')).not.toBeInTheDocument();
+    expect(screen.queryByText('Sign up is by invitation for now.')).not.toBeInTheDocument();
   });
 
   it('shows a generic message when the invite code is refused', async () => {
@@ -143,8 +143,8 @@ describe('SignUpForm', () => {
         inviteOnly
       />,
     );
-    await user.type(screen.getByLabelText(/Email/), 'chioma@example.com');
-    await user.type(screen.getByLabelText(/Password/), 'blue mango river sunrise');
+    await user.type(screen.getByLabelText(/^Email/), 'chioma@example.com');
+    await user.type(screen.getByLabelText(/^Password \(required\)/), 'blue mango river sunrise');
     await user.type(screen.getByLabelText(/Invite code/), 'ZZZZ-ZZZZ-ZZ');
     await user.click(screen.getByRole('button', { name: 'Create account' }));
     expect(
@@ -161,12 +161,12 @@ describe('SignUpForm', () => {
         scorer={scorer}
       />,
     );
-    await user.type(screen.getByLabelText(/Email/), 'chioma@example.com');
-    await user.type(screen.getByLabelText(/Password/), 'blue mango river sunrise');
+    await user.type(screen.getByLabelText(/^Email/), 'chioma@example.com');
+    await user.type(screen.getByLabelText(/^Password \(required\)/), 'blue mango river sunrise');
     await user.click(screen.getByRole('button', { name: 'Create account' }));
     expect(
-      await screen.findByText('Too many requests. Try again in 15 minutes.'),
+      await screen.findByText('Too many accounts were created from this connection. Try again in 15 minutes.'),
     ).toBeInTheDocument();
-    expect(screen.getByLabelText(/Email/)).toHaveValue('chioma@example.com');
+    expect(screen.getByLabelText(/^Email/)).toHaveValue('chioma@example.com');
   });
 });

@@ -8,6 +8,8 @@ export interface ServiceWorkerConfig {
   precache: string[];
   /** Media bases (origin plus any path prefix, no trailing slash). Posters under `<base>/img/` are cached, nothing else cross origin. */
   imageBases: string[];
+  /** Public pages kept after a visit so the offline screen can link to them (M25-S04). Exact paths. */
+  savedPages?: string[];
 }
 
 /**
@@ -19,8 +21,9 @@ export interface ServiceWorkerConfig {
  *   media origin (cache first, bounded).
  * - never cached: non GET, Range or Authorization requests, /api, /admin, video playlists, segments, keys and
  *   captions, anything from another origin except posters, responses that failed or say no-store.
- * - page navigations go to the network. Page HTML is never stored (it is personal), so a failed navigation
- *   falls back to the precached offline page.
+ * - page navigations go to the network. Page HTML is never stored (it is personal), except the few public
+ *   pages named in `savedPages` (D-143), which the offline screen links to. A failed navigation falls back to
+ *   the saved copy or the precached offline page. CLEAR_CACHES removes every copy on sign out or profile switch.
  */
 export function buildServiceWorkerSource(config: ServiceWorkerConfig): string {
   if (!config.enabled) return KILL_SWITCH_SOURCE;
@@ -29,11 +32,13 @@ export function buildServiceWorkerSource(config: ServiceWorkerConfig): string {
     offlineUrl: config.offlineUrl,
     precache: config.precache,
     imageBases: config.imageBases,
+    savedPages: config.savedPages ?? [],
   });
   return `'use strict';
 var CONFIG = ${settings};
 var STATIC_CACHE = 'ad-static-' + CONFIG.version;
 var IMAGE_CACHE = 'ad-img-v1';
+var PAGE_CACHE = 'ad-pages-v1';
 var IMAGE_MAX_ENTRIES = 120;
 var MEDIA_FILE = /\\.(m3u8|ts|m4s|mp4|m4a|webm|key|vtt|srt)$/i;
 
@@ -77,6 +82,20 @@ async function trim(cache, limit) {
   for (var i = 0; i < keys.length - limit; i++) await cache.delete(keys[i]);
 }
 
+async function savedPage(request) {
+  var cache = await caches.open(PAGE_CACHE);
+  try {
+    var response = await fetch(request);
+    if (storable(response)) await cache.put(request, response.clone());
+    return response;
+  } catch (error) {
+    var hit = await cache.match(request);
+    if (hit) return hit;
+    var page = await caches.match(CONFIG.offlineUrl);
+    return page || new Response('You are offline', { status: 503, headers: { 'content-type': 'text/plain' } });
+  }
+}
+
 self.addEventListener('install', function (event) {
   event.waitUntil(
     caches.open(STATIC_CACHE).then(function (cache) {
@@ -110,6 +129,8 @@ self.addEventListener('fetch', function (event) {
     event.respondWith(cacheFirst(event.request, STATIC_CACHE, 0));
   } else if (kind === 'image') {
     event.respondWith(cacheFirst(event.request, IMAGE_CACHE, IMAGE_MAX_ENTRIES));
+  } else if (CONFIG.savedPages.indexOf(new URL(event.request.url).pathname) !== -1) {
+    event.respondWith(savedPage(event.request));
   } else {
     event.respondWith(
       fetch(event.request).catch(function () {
