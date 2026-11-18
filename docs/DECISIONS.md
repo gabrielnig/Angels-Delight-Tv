@@ -770,3 +770,9 @@ Format: decision, options considered, why, reversible or not. Newest first. Deci
 - Options: keep inline with a cap, stream straight to the browser, background job with email.
 - Why: the old cap truncated silently. A job removes the cap without holding a request open, and row level security plus a permission re-check on every open keeps files private to the requester.
 - Reversible: yes.
+
+## D-131 Monthly storage estimate is stored bytes plus the last 30 days of growth (lane f1)
+- Decision: the System storage tab shows an estimate for the next 30 days as stored bytes plus bytes added in the last 30 days, against the existing `limits.storage_cap_bytes` setting (default 200 GB). It warns at 80 percent of the budget (usage or estimate) and turns danger at 100 percent of usage. A missing or non positive budget never warns. A failed usage query shows "Not available".
+- Options: a separate budget setting, a linear fit over a longer window, reuse the dashboard cap with a 30 day pace.
+- Why: one budget keeps the dashboard and System consistent, and the 30 day pace needs no new data. The estimate is rough by design and slightly behind because sizes come from catalog records.
+- Reversible: yes.

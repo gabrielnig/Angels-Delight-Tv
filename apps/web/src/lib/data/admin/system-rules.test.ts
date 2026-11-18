@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { discardJob, qualityVerdicts, retryJob, storageShares } from './system-rules';
+import {
+  STORAGE_WARN_PERCENT,
+  discardJob,
+  qualityVerdicts,
+  retryJob,
+  storageBudget,
+  storageShares,
+} from './system-rules';
 import { getStore } from './store';
 
 const fresh = () => structuredClone(getStore());
@@ -64,5 +71,39 @@ describe('quality verdicts', () => {
         vitalsP75: {},
       }).startup.label,
     ).toBe('No data yet');
+  });
+});
+
+describe('storage budget and monthly estimate (M22-S03)', () => {
+  const GB = 1024 ** 3;
+  it('warns at 80 percent of the budget, not before', () => {
+    expect(STORAGE_WARN_PERCENT).toBe(80);
+    const at = (used: number) =>
+      storageBudget({ usedBytes: used, growth30Bytes: 0, capBytes: 100 * GB }).status;
+    expect(at(79 * GB)).toBe('ok');
+    expect(at(80 * GB)).toBe('warning');
+    expect(at(99 * GB)).toBe('warning');
+    expect(at(100 * GB)).toBe('over');
+    expect(at(150 * GB)).toBe('over');
+  });
+  it('estimates the next 30 days from the last 30 days of growth', () => {
+    const b = storageBudget({ usedBytes: 50 * GB, growth30Bytes: 20 * GB, capBytes: 100 * GB });
+    expect(b.estimateBytes).toBe(70 * GB);
+    expect(b.usedPercent).toBe(50);
+    expect(b.estimatePercent).toBe(70);
+    expect(b.status).toBe('ok');
+  });
+  it('warns when the estimate crosses 80 percent even if usage has not', () => {
+    const b = storageBudget({ usedBytes: 70 * GB, growth30Bytes: 15 * GB, capBytes: 100 * GB });
+    expect(b.usedPercent).toBe(70);
+    expect(b.estimatePercent).toBe(85);
+    expect(b.status).toBe('warning');
+  });
+  it('has a zero state and survives a bad budget', () => {
+    const zero = storageBudget({ usedBytes: 0, growth30Bytes: 0, capBytes: 100 * GB });
+    expect(zero).toMatchObject({ estimateBytes: 0, usedPercent: 0, status: 'ok' });
+    const bad = storageBudget({ usedBytes: 5, growth30Bytes: 5, capBytes: 0 });
+    expect(bad.status).toBe('ok');
+    expect(Number.isFinite(bad.usedPercent)).toBe(true);
   });
 });

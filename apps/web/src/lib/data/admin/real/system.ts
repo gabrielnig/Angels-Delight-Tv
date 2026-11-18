@@ -5,6 +5,7 @@ import { schema, withAccount } from '@ad/db';
 import { and, eq, inArray, sql } from 'drizzle-orm';
 import { adminRuntime } from '@/server/admin/runtime';
 import type { SystemService } from '../services';
+import { storageBudget } from '../system-rules';
 import type { JobRecord, StorageUsage } from '../types';
 import { catalogActor, need } from './shared';
 
@@ -182,6 +183,16 @@ export const realSystemService: SystemService = {
       { type: 'caption', bytes: t.captionBytes, files: t.captionFiles },
       { type: 'other', bytes: t.otherBytes, files: t.otherFiles },
     ] satisfies StorageUsage[];
+  },
+
+  async storageBudget(actor) {
+    need(actor, 'system.view');
+    const [t, cap] = await Promise.all([readStorageTotals(), readStorageCap()]);
+    return storageBudget({
+      usedBytes: t.originalBytes + t.streamingBytes + t.posterBytes + t.captionBytes + t.otherBytes,
+      growth30Bytes: t.growth30Bytes,
+      capBytes: cap,
+    });
   },
 
   async quality(actor) {
