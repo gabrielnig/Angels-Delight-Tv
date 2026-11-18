@@ -11,7 +11,7 @@ import {
   uuidv7,
   type AccountRole,
 } from '@ad/shared';
-import { and, eq, inArray, isNull, ne, sql } from 'drizzle-orm';
+import { and, desc, eq, inArray, isNull, ne, sql } from 'drizzle-orm';
 import { AccountService } from './accounts';
 import { emailHash, maskEmail, normalizeEmail } from './identifiers';
 import { findAccountByEmailHash, isUniqueViolation } from './lookup';
@@ -26,6 +26,7 @@ import {
   qrSvg,
   verifyTotp,
 } from './totp';
+import { generateInviteCode, inviteCodeHash, inviteStatus, type SignupInviteStatus } from './signup-invites';
 import { generateToken, hashToken } from './tokens';
 import {
   FieldErrors,
@@ -54,6 +55,17 @@ export interface InviteSummary {
   role: StaffRole;
   expiresAt: Date;
   createdAt: Date;
+}
+
+export interface SignupInviteSummary {
+  id: string;
+  label: string;
+  hint: string;
+  uses: number;
+  maxUses: number;
+  expiresAt: Date | null;
+  createdAt: Date;
+  status: SignupInviteStatus;
 }
 
 export interface StaffMember {
@@ -594,6 +606,82 @@ export class StaffService extends AccountService {
     await this.audit('admin.invite_revoked', 'success', meta, {
       accountId: admin.id,
       role: admin.role,
+    });
+  }
+
+  // ---------------------------------------------------------------------------------------------
+  // Sign up invite codes for viewers (M29-S03)
+  // ---------------------------------------------------------------------------------------------
+
+  async createSignupInvite(
+    actor: Actor,
+    input: { label: string; maxUses: number; expiresAt: Date | null },
+    meta: RequestMeta,
+  ): Promise<{ id: string; code: string }> {
+    const admin = await this.staffAccount(actor, 'admin');
+    const now = this.now();
+    const label = input.label.trim();
+    const fields: Record<string, string> = {};
+    if (label.length > 60) fields.label = 'Use 60 characters or fewer';
+    if (!Number.isInteger(input.maxUses) || input.maxUses < 1 || input.maxUses > 1000)
+      fields.maxUses = 'Use a number from 1 to 1000';
+    if (input.expiresAt && input.expiresAt <= now) fields.expiresAt = 'Choose a date in the future';
+    if (Object.keys(fields).length > 0) throw new FieldErrors(fields);
+
+    const code = generateInviteCode();
+    const id = uuidv7();
+    await this.deps.db.insert(schema.signupInvites).values({
+      id,
+      codeHash: inviteCodeHash(code)!,
+      hint: code.slice(-2),
+      label,
+      maxUses: input.maxUses,
+      expiresAt: input.expiresAt,
+      createdBy: admin.id,
+      createdAt: now,
+    });
+    await this.audit('admin.signup_invite_created', 'success', meta, {
+      accountId: admin.id,
+      role: admin.role,
+      metadata: { inviteId: id, label, maxUses: input.maxUses },
+      target: { type: 'signup_invite', id },
+    });
+    return { id, code };
+  }
+
+  async listSignupInvites(actor: Actor): Promise<SignupInviteSummary[]> {
+    await this.staffAccount(actor, 'admin');
+    const now = this.now();
+    const rows = await this.deps.db
+      .select()
+      .from(schema.signupInvites)
+      .orderBy(desc(schema.signupInvites.createdAt))
+      .limit(200);
+    return rows.map((row) => ({
+      id: row.id,
+      label: row.label,
+      hint: row.hint,
+      uses: row.uses,
+      maxUses: row.maxUses,
+      expiresAt: row.expiresAt,
+      createdAt: row.createdAt,
+      status: inviteStatus(row, now),
+    }));
+  }
+
+  async revokeSignupInvite(actor: Actor, inviteId: string, meta: RequestMeta): Promise<void> {
+    const admin = await this.staffAccount(actor, 'admin');
+    const revoked = await this.deps.db
+      .update(schema.signupInvites)
+      .set({ revokedAt: this.now() })
+      .where(and(eq(schema.signupInvites.id, inviteId), isNull(schema.signupInvites.revokedAt)))
+      .returning({ id: schema.signupInvites.id });
+    if (revoked.length === 0) throw new NotFound();
+    await this.audit('admin.signup_invite_revoked', 'success', meta, {
+      accountId: admin.id,
+      role: admin.role,
+      metadata: { inviteId },
+      target: { type: 'signup_invite', id: inviteId },
     });
   }
 

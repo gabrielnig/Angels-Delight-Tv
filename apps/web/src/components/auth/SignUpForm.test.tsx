@@ -121,10 +121,35 @@ describe('SignUpForm', () => {
     const user = userEvent.setup();
     render(<SignUpForm onSubmit={onSubmit} onDone={vi.fn()} scorer={scorer} inviteOnly />);
     expect(screen.getByLabelText(/Invite code \(required\)/)).toBeInTheDocument();
+    expect(screen.getByText('Sign up is by invitation')).toBeInTheDocument();
     await user.type(screen.getByLabelText(/Email/), 'chioma@example.com');
     await user.type(screen.getByLabelText(/Password/), 'blue mango river sunrise');
     await user.click(screen.getByRole('button', { name: 'Create account' }));
     expect(screen.getByText('Enter your invite code.')).toBeInTheDocument();
+  });
+
+  it('does not mention invitations when sign up is open', () => {
+    render(<SignUpForm onSubmit={vi.fn()} onDone={vi.fn()} scorer={scorer} />);
+    expect(screen.queryByText('Sign up is by invitation')).not.toBeInTheDocument();
+  });
+
+  it('shows a generic message when the invite code is refused', async () => {
+    const user = userEvent.setup();
+    render(
+      <SignUpForm
+        onSubmit={vi.fn().mockResolvedValue({ ok: false, reason: 'invite_required' })}
+        onDone={vi.fn()}
+        scorer={scorer}
+        inviteOnly
+      />,
+    );
+    await user.type(screen.getByLabelText(/Email/), 'chioma@example.com');
+    await user.type(screen.getByLabelText(/Password/), 'blue mango river sunrise');
+    await user.type(screen.getByLabelText(/Invite code/), 'ZZZZ-ZZZZ-ZZ');
+    await user.click(screen.getByRole('button', { name: 'Create account' }));
+    expect(
+      await screen.findByText('That invite code is not valid. Check it and try again.'),
+    ).toBeInTheDocument();
   });
 
   it('keeps values and explains a rate limit', async () => {

@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { SETTING_DEFS, type SettingKey } from '@ad/theme/client';
 import type { PageSlug } from '@ad/theme/client';
-import type { PageDto, SiteSettingsDto } from '@/lib/data/admin/site-types';
+import type { InviteCodeDto, PageDto, SiteSettingsDto } from '@/lib/data/admin/site-types';
 import type { ActionResult } from '@/lib/data/admin/theme-types';
 import { Badge } from '../Badge';
 import { Button } from '../Button';
@@ -14,18 +14,19 @@ import { Card, PageHeader } from '../PageHeader';
 import { Banner } from '../states';
 import { Tabs } from '../Tabs';
 import { useToast } from '../Toast';
+import { InviteCodesTab, type InviteCodeActions } from './InviteCodesTab';
 import { PagesEditor } from './PagesEditor';
 import { useSettingsForm, type NumberRule } from './useSettingsForm';
 import './site.css';
 
-export interface SiteActions {
+export interface SiteActions extends Partial<InviteCodeActions> {
   update(changes: Record<string, unknown>): Promise<ActionResult<SiteSettingsDto>>;
   savePage(slug: PageSlug, body: string): Promise<ActionResult<PageDto>>;
   publishPage(slug: PageSlug): Promise<ActionResult<SiteSettingsDto>>;
   restorePage(slug: PageSlug, version: number): Promise<ActionResult<PageDto>>;
 }
 
-type TabId = 'platform' | 'features' | 'pages' | 'maintenance';
+type TabId = 'platform' | 'features' | 'invites' | 'pages' | 'maintenance';
 
 const GIB = 1024 ** 3;
 
@@ -69,9 +70,12 @@ const hint = (key: SettingKey) => SETTING_DEFS[key].description;
 export function SiteSettingsView({
   initial,
   actions,
+  invites,
 }: {
   initial: SiteSettingsDto;
   actions: SiteActions;
+  /** Present when the person may manage invite codes. The tab is hidden without it. */
+  invites?: InviteCodeDto[];
 }) {
   const [data, setData] = useState(initial);
   const [tab, setTab] = useState<TabId>('platform');
@@ -93,6 +97,9 @@ export function SiteSettingsView({
             tabs={[
               { id: 'platform', label: 'Platform details' },
               { id: 'features', label: 'Features and limits' },
+              ...(invites && actions.create && actions.revoke
+                ? [{ id: 'invites', label: 'Invite codes' }]
+                : []),
               { id: 'pages', label: 'Pages' },
               { id: 'maintenance', label: 'Maintenance' },
             ]}
@@ -102,6 +109,13 @@ export function SiteSettingsView({
             ) : null}
             {tab === 'features' ? (
               <FeaturesTab data={data} actions={actions} onSaved={setData} />
+            ) : null}
+            {tab === 'invites' && invites && actions.create && actions.revoke ? (
+              <InviteCodesTab
+                initial={invites}
+                signUpOpen={data.values['features.signups_open'] === true}
+                actions={{ create: actions.create, revoke: actions.revoke }}
+              />
             ) : null}
             {tab === 'pages' ? (
               <PagesEditor pages={data.pages} actions={actions} onPublished={setData} />

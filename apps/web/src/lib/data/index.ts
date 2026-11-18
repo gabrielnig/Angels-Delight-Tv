@@ -6,6 +6,7 @@ import {
   createRealCatalog,
   createRealLibrary,
   createRealProfiles,
+  createRealSite,
 } from '../../server/data/real-data';
 import { FixtureAccount } from './fixtures/account';
 import { FixtureAuth } from './fixtures/auth';
@@ -27,7 +28,7 @@ export * from './types';
 /**
  * The one place pages get their data. Real services (lanes B and C) when `realDataEnabled()`, the lane E
  * fixtures otherwise. Fixtures are for local UI work and tests only: production is always real and
- * `VIEWER_FIXTURES=on` is ignored there (server/data/mode.ts). Site content is still a fixture (lane H settings).
+ * `VIEWER_FIXTURES=on` is ignored there (server/data/mode.ts). Site content follows settings with real data (M29-S01); legal pages and help are still fixtures.
  */
 const registry = globalThis as unknown as { __adData?: Registry };
 
@@ -51,7 +52,7 @@ function data(): Registry {
     account: realAuthEnabled()
       ? createRealAccount(real ? accountViewerSource() : undefined)
       : new FixtureAccount(),
-    site: new FixtureSite(),
+    site: real ? createRealSite() : new FixtureSite(),
   });
 }
 

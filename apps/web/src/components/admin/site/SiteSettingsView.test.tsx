@@ -3,7 +3,7 @@ import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 import { SETTING_DEFS, SETTING_KEYS } from '@ad/theme/client';
-import type { PageDto, SiteSettingsDto } from '@/lib/data/admin/site-types';
+import type { InviteCodeDto, PageDto, SiteSettingsDto } from '@/lib/data/admin/site-types';
 import { ToastProvider } from '../Toast';
 import { SiteSettingsView, type SiteActions } from './SiteSettingsView';
 
@@ -65,7 +65,7 @@ const dto = (
   ...overrides,
 });
 
-function setup(initial = dto(), overrides: Partial<SiteActions> = {}) {
+function setup(initial = dto(), overrides: Partial<SiteActions> = {}, invites?: InviteCodeDto[]) {
   const actions: SiteActions = {
     update: vi.fn(async (changes) => ({ ok: true as const, data: dto({}, changes) })),
     savePage: vi.fn(async (slug, body) => ({
@@ -103,11 +103,28 @@ function setup(initial = dto(), overrides: Partial<SiteActions> = {}) {
   const user = userEvent.setup();
   render(
     <ToastProvider>
-      <SiteSettingsView initial={initial} actions={actions} />
+      <SiteSettingsView initial={initial} actions={actions} invites={invites} />
     </ToastProvider>,
   );
   return { actions, user };
 }
+
+describe('invite codes tab', () => {
+  const create = vi.fn();
+  const revoke = vi.fn();
+
+  it('is hidden when the person cannot manage invite codes', () => {
+    setup();
+    expect(screen.queryByRole('tab', { name: 'Invite codes' })).not.toBeInTheDocument();
+  });
+
+  it('opens the tab and reflects the sign up setting', async () => {
+    const { user } = setup(dto(), { create, revoke }, []);
+    await user.click(screen.getByRole('tab', { name: 'Invite codes' }));
+    expect(screen.getByText('No invite codes yet')).toBeInTheDocument();
+    expect(screen.getByText(/Sign up is open, so visitors do not need a code/)).toBeInTheDocument();
+  });
+});
 
 describe('launch checklist', () => {
   it('shows how many items are not set and why', () => {

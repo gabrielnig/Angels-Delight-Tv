@@ -53,6 +53,7 @@ const MAIN_TABLES = [
   'series_categories',
   'sessions',
   'settings',
+  'signup_invites',
   'site_daily_stats',
   'slug_redirects',
   'theme_settings',

@@ -72,6 +72,11 @@ export interface AuthDeps {
    * account. Defaults to fire and forget with errors logged. Tests collect and await it.
    */
   background?: (task: Promise<unknown>) => void;
+  /**
+   * Whether sign up is open right now, read at each sign up so a change in settings applies at once. When it is
+   * not open, sign up needs an invite code. Defaults to `config.signUpOpen`.
+   */
+  signUpPolicy?: () => Promise<{ open: boolean }>;
 }
 
 export interface RequestMeta {
@@ -101,10 +106,11 @@ export class AccountUnavailable extends Error {
   }
 }
 
-export class SignUpClosed extends Error {
+/** Sign up is by invitation and the code is missing or not usable. One message for every reason (M29-S03). */
+export class InviteRequired extends Error {
   constructor() {
-    super('Sign up is closed');
-    this.name = 'SignUpClosed';
+    super('That invite code is not valid');
+    this.name = 'InviteRequired';
   }
 }
 
