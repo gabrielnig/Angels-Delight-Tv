@@ -27,4 +27,15 @@ describe('CI workflow (M33-S02 AC1)', () => {
   it('never runs the whole suite', () => {
     expect(ci).not.toMatch(/run: pnpm (test|vitest run)\s*$/m);
   });
+
+  it('runs axe on the key pages in its own job (M34-S01)', () => {
+    expect(ci).toMatch(/^  a11y:/m);
+    expect(ci).toMatch(/playwright test apps\/web\/e2e\/a11y\.e2e\.ts/);
+    expect(ci).toMatch(/scripts\/ci-fixture-env\.sh/);
+  });
+
+  it('checks Home against the Lighthouse budget in its own job (M25-S02 AC3)', () => {
+    expect(ci).toMatch(/^  lighthouse:/m);
+    expect(ci).toMatch(/ops\/lighthouse\/run\.sh/);
+  });
 });
