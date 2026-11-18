@@ -996,3 +996,8 @@ a {
 .web-chip:hover {
   border-color: var(--color-accent);
 }
+
+.web-slowdown {
+  margin: var(--space-4) 0;
+  color: var(--color-muted);
+}
