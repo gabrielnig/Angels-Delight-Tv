@@ -5,10 +5,10 @@ import { dirname, join, resolve } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 const script = resolve(import.meta.dirname, 'footprint-check.sh');
-const EM = '—';
-const EN = '–';
+const EM = '\u2014';
+const EN = '\u2013';
 const ROCKET = '\u{1F680}';
-const CHECK_MARK = '✅';
+const CHECK_MARK = '\u2705';
 
 let repo: string;
 
