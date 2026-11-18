@@ -21,7 +21,7 @@ describe('isSecurityAction', () => {
     expect(isSecurityAction('video.publish')).toBe(false);
     expect(isSecurityAction('theme.publish')).toBe(false);
   });
-  it('treats staff, role, invite and job entries as security (D-125)', () => {
+  it('treats staff, role, invite and job entries as security (D-128)', () => {
     for (const action of [
       'admin.role_changed',
       'admin.mfa_reset',

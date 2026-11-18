@@ -1,7 +1,7 @@
 ALTER TYPE "public"."account_role" ADD VALUE 'super_admin';--> statement-breakpoint
 ALTER TABLE "admin_invites" DROP CONSTRAINT "admin_invites_staff_role";--> statement-breakpoint
 ALTER TABLE "admin_invites" ADD CONSTRAINT "admin_invites_staff_role" CHECK ("admin_invites"."role"::text IN ('editor', 'admin', 'super_admin'));--> statement-breakpoint
--- D-125: Super admin sits above admin. The new enum value cannot be used until this migration commits, so every
+-- D-128: Super admin sits above admin. The new enum value cannot be used until this migration commits, so every
 -- statement below compares the role as text or inside a function body that is only compiled when it first runs.
 DROP POLICY accounts_admin_read ON accounts;--> statement-breakpoint
 CREATE POLICY accounts_admin_read ON accounts FOR SELECT

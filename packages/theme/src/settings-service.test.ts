@@ -168,7 +168,7 @@ describe('update', () => {
     expect(store.rows.has('platform.tagline')).toBe(true);
   });
 
-  it('by default only a Super admin may change features and limits (M29-S02, D-125)', async () => {
+  it('by default only a Super admin may change features and limits (M29-S02, D-128)', async () => {
     const { service, store } = setup();
     await expect(service.update(admin, { 'limits.max_profiles': 3 })).rejects.toBeInstanceOf(
       Forbidden,
