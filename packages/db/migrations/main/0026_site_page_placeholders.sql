@@ -1,4 +1,4 @@
--- Seeds the four site pages with marked placeholder text (M26-S01 AC3, D-106). Each page is one published version,
+-- Seeds the four site pages with marked placeholder text (M26-S01 AC3, D-109). Each page is one published version,
 -- so a fresh site shows the Draft banner and the launch checklist stays open until the admin publishes real text.
 -- Pages that already exist are left alone.
 INSERT INTO settings (key, value, is_public)
