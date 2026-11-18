@@ -36,6 +36,7 @@ const MAIN_TABLES = [
   'captions',
   'categories',
   'consents',
+  'data_exports',
   'email_tokens',
   'episodes',
   'jobs',
