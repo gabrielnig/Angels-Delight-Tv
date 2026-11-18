@@ -18,7 +18,13 @@ export const createRealProfiles = () => new RealProfiles(viewerRuntime().ctx, co
 
 /** Site content from settings, the one place pages read the name, sign up mode and maintenance state. */
 export const createRealSite = () =>
-  new RealSite({ getAll: async () => (await themeRuntime()).settings.getAll() }, new FixtureSite());
+  new RealSite(
+    {
+      getAll: async () => (await themeRuntime()).settings.getAll(),
+      getPublishedPage: async (slug) => (await themeRuntime()).settings.getPublishedPage(slug),
+    },
+    new FixtureSite(),
+  );
 
 const LABEL = new TextEncoder().encode('ad:account-export-key:v1');
 let viewerData: AccountViewerData | undefined;
