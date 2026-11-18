@@ -97,6 +97,7 @@ export function themeStyleProps(
   return {
     id: 'theme',
     ...(nonce ? { nonce } : {}),
+    // nosemgrep: react-dangerouslysetinnerhtml (css built by our own validated theme compiler, no raw input)
     dangerouslySetInnerHTML: { __html: injection.css },
   };
 }

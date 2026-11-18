@@ -47,7 +47,7 @@ export function encryptAesGcm(
 ): Uint8Array {
   assertKey(key);
   const nonce = random(NONCE_BYTES);
-  const cipher = createCipheriv('aes-256-gcm', key, nonce);
+  const cipher = createCipheriv('aes-256-gcm', key, nonce, { authTagLength: TAG_BYTES });
   cipher.setAAD(associatedData);
   const body = Buffer.concat([cipher.update(plaintext), cipher.final()]);
   return new Uint8Array(Buffer.concat([nonce, body, cipher.getAuthTag()]));
@@ -65,7 +65,7 @@ export function decryptAesGcm(
   const nonce = sealed.subarray(0, NONCE_BYTES);
   const tag = sealed.subarray(sealed.length - TAG_BYTES);
   const body = sealed.subarray(NONCE_BYTES, sealed.length - TAG_BYTES);
-  const decipher = createDecipheriv('aes-256-gcm', key, nonce);
+  const decipher = createDecipheriv('aes-256-gcm', key, nonce, { authTagLength: TAG_BYTES });
   decipher.setAAD(associatedData);
   decipher.setAuthTag(tag);
   return new Uint8Array(Buffer.concat([decipher.update(body), decipher.final()]));

@@ -46,7 +46,7 @@ export async function encryptBackupFile(
     iv,
   ]);
   await writeFile(output, header, { mode: 0o600 });
-  const cipher = createCipheriv('aes-256-gcm', dataKey, iv);
+  const cipher = createCipheriv('aes-256-gcm', dataKey, iv, { authTagLength: TAG_BYTES });
   try {
     await pipeline(
       createReadStream(input),
@@ -108,7 +108,7 @@ export async function decryptBackupFile(
   } catch {
     throw new Error('This private key does not open this backup');
   }
-  const decipher = createDecipheriv('aes-256-gcm', dataKey, iv);
+  const decipher = createDecipheriv('aes-256-gcm', dataKey, iv, { authTagLength: TAG_BYTES });
   decipher.setAuthTag(tag);
   try {
     await pipeline(
