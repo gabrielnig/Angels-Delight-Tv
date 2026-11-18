@@ -40,7 +40,9 @@ export class CatalogCache {
     const pending = this.loading.get(key);
     if (pending) return pending as Promise<T>;
     const generation = this.generation;
+    // Assigned after the closure is created, so the finally block may run before the assignment on a sync throw.
     let run!: Promise<T>;
+    // eslint-disable-next-line prefer-const
     run = (async () => {
       try {
         const value = await load();

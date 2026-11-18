@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
 import { Avatar } from './Avatar';
-import { Button } from './Button';
 import { cx } from './cx';
 import { Icon, type IconName } from './Icon';
 import { Link } from './Link';
