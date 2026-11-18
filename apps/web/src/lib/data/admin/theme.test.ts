@@ -55,7 +55,7 @@ describe('themeAdmin (fixture runtime)', () => {
       status: 'published',
       isCurrent: true,
       by: 'Chiamaka Okafor',
-      fontLabel: 'Inter',
+      fontLabel: 'Space Grotesk',
     });
   });
 
