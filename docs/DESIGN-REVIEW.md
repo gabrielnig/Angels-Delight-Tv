@@ -41,17 +41,17 @@ Changes required before the findings below are cleared; after the fixes merged i
 
 ### Major
 
-1. Account overview (`/account`, mockup S27) is a bare definition list. The mockup has a profile card, stats, a profiles card, link rows with icons and a Sign out card, and a side nav with icons and an active state. Fix: build the cards from `@ad/ui` surfaces. Doc 12.
-2. Title page (`/title/[slug]`, S18) is a single column with a small poster. The mockup is two columns from 960px (poster left, title, meta, actions and progress right), has a breadcrumb, a Show more description and a More like this row. Fix: two column layout, breadcrumb.
+1. Fixed (lane M2): account overview (`/account`, mockup S27) is a bare definition list. The mockup has a profile card, stats, a profiles card, link rows with icons and a Sign out card, and a side nav with icons and an active state. Fix: build the cards from `@ad/ui` surfaces. Doc 12.
+2. Fixed (lane M2): title page (`/title/[slug]`, S18) is a single column with a small poster. The mockup is two columns from 960px (poster left, title, meta, actions and progress right), has a breadcrumb, a Show more description and a More like this row. Fix: two column layout, breadcrumb.
 3. Fixed: viewer and account routes now have a `loading.tsx` (`PageLoading`, skeleton after 300ms). Page specific skeleton geometry (browse grid, title two column) should follow the layout work in items 1 and 2.
-4. Sign in and sign up (S01, S02) render the form with no card surface. The mockup puts the form in a white card with border and shadow, and a states strip. Fix: wrap in the auth card surface.
+4. Fixed (lane M2): sign in and sign up (S01, S02) render the form with no card surface. The mockup puts the form in a white card with border and shadow, and a states strip. Fix: wrap in the auth card surface.
 
 ### Minor
 
-5. Admin text links (list titles, crumbs, table links) are 16 to 17px tall. They sit in rows with spacing, so WCAG 2.5.8 passes, but doc section 6 asks for 44. Fix: padding on `.adm-list__title`, `.adm-vtitle`, `.adm-crumbs a`.
-6. Spinner and shimmer durations are literals (`700ms`, `1.4s`, `0.8s`, `1.4s`) instead of motion tokens. Add `--motion-spin` and `--motion-shimmer` to tokens.css and doc section 3.
-7. Continue card name reads the progress bar before the title ("20 percent 20 percent watched How to ..."). Move the progress below the title in DOM order, or hide the duplicate hidden text.
-8. Profile picker shows letter avatars, mockup S09 shows illustrated avatars. Needs the avatar art set from the client.
+5. Fixed (lane M2): admin text links (list titles, crumbs, table links) are 16 to 17px tall. They sit in rows with spacing, so WCAG 2.5.8 passes, but doc section 6 asks for 44. Fix: padding on `.adm-list__title`, `.adm-vtitle`, `.adm-crumbs a`.
+6. Fixed (lane M2): spinner and shimmer durations are literals (`700ms`, `1.4s`, `0.8s`, `1.4s`) instead of motion tokens. Add `--motion-spin` and `--motion-shimmer` to tokens.css and doc section 3.
+7. Fixed (lane M2): continue card name reads the progress bar before the title ("20 percent 20 percent watched How to ..."). Move the progress below the title in DOM order, or hide the duplicate hidden text.
+8. Fixed (lane M2, original art, see D-119): profile picker shows letter avatars, mockup S09 shows illustrated avatars. Needs the avatar art set from the client.
 9. Footer: the mockup S16 puts the footer links on one row with the note; ours stack and are underlined. Cosmetic.
 10. Display font: mockups use Space Grotesk for headings, the doc default is Inter. The doc wins; no change.
 11. `manifest.ts` default theme and background colours are literals. They are fallbacks for admin settings, so allowed, but keep them in step with `tokens.css`.
