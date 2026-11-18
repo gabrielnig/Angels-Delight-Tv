@@ -15,7 +15,7 @@ export async function generateMetadata(): Promise<Metadata> {
   return {
     title: { default: platformName, template: `%s | ${platformName}` },
     description: 'Free learning videos for everyone.',
-    icons: { apple: '/icons/apple-touch-icon.png' },
+    icons: { apple: '/brand-icons/apple-touch-icon.png' },
     appleWebApp: { capable: true, title: platformName, statusBarStyle: 'default' },
   };
 }

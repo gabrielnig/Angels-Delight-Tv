@@ -49,7 +49,7 @@ function decide(request) {
   if (path.indexOf('/api/') === 0 || path === '/api' || path.indexOf('/admin') === 0 || path.indexOf('/v/') === 0) return 'bypass';
   if (MEDIA_FILE.test(path)) return 'bypass';
   if (request.mode === 'navigate') return 'navigate';
-  if (path.indexOf('/_next/static/') === 0 || path.indexOf('/icons/') === 0 || path.indexOf('/fonts/') === 0) return 'static';
+  if (path.indexOf('/_next/static/') === 0 || path.indexOf('/icons/') === 0 || path.indexOf('/brand-icons/') === 0 || path.indexOf('/fonts/') === 0) return 'static';
   return 'bypass';
 }
 
