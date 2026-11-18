@@ -61,7 +61,7 @@ describe('LegalView', () => {
     );
     expect(screen.getByText('Angels Delight TV shares short, clear video lessons.')).toBeTruthy();
     expect(container.querySelectorAll('.acct-card')).toHaveLength(2);
-    expect(screen.getByRole('heading', { level: 3, name: 'Free to watch' })).toBeTruthy();
+    expect(screen.getByRole('heading', { level: 2, name: 'Free to watch' })).toBeTruthy();
     expect(screen.queryByRole('navigation', { name: 'On this page' })).toBeNull();
     expect(screen.queryByText(/Last updated/)).toBeNull();
   });

@@ -98,20 +98,9 @@ async function check(page: Page, path: string) {
   expect(overflow, `horizontal overflow at 320px on ${path}`).toBeLessThanOrEqual(0);
 }
 
-// Known failures with an owner. Each one is a real finding, not a spec problem, and is listed in
-// docs/lanes/F2-final-verification.md. Remove the entry when the fix lands.
-const KNOWN_FAILING: Record<string, string> = {
-  '/settings/playback':
-    'The caption preview colours are set with an inline style attribute, which the CSP blocks, so the text is dark on dark (S29 owner).',
-  '/account':
-    'axe dlitem: dt and dd elements without a dl parent on the overview cards (S27 owner).',
-  '/about': 'axe heading-order: a section starts at h3 with no h2 before it (S31 owner).',
-};
-
 test.describe('axe and overflow, viewer', () => {
   for (const path of VIEWER_PAGES) {
     test(path, async ({ page }) => {
-      test.fixme(path in KNOWN_FAILING, KNOWN_FAILING[path]);
       await check(page, path);
     });
   }
