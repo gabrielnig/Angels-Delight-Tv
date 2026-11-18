@@ -607,4 +607,21 @@ Format: decision, options considered, why, reversible or not. Newest first. Deci
 - Decision: the shell layout loads the caller's notices with `noticesAdmin.feed`. If that call fails the bell is left out and the admin still renders. Email choices live on `/admin/account` as three switches that save one at a time. Design system review: tokens only, bell button and rows at 44px, Escape closes and returns focus, unread is named for screen readers, empty state says "Nothing new".
 - Options: a client side poll for the bell, or load on each navigation.
 - Why: navigation already reloads the layout, and polling adds load for a small team. A broken bell must never block staff.
+
+## D-116 Backups use hybrid RSA and AES-GCM encryption instead of age, with private keys kept offline (lane M1)
+- Decision: `ad-tool backup` pipes `pg_dump` through AES-256-GCM with a fresh key per file, wraps that key with RSA-OAEP (SHA-256) using the public key in `BACKUP_PUBLIC_KEY_DB_B64` or `BACKUP_PUBLIC_KEY_KEYS_B64`, and uploads `db/ad-<UTC stamp>.dump.enc` and `keys/ad_keys-<UTC stamp>.dump.enc` through the storage adapter. The two private keys are made once by `pnpm secrets:generate` into an offline folder and never reach the server. File layout: `ADBK1`, a 16 bit wrapped key length, the wrapped key, a 12 byte iv, the ciphertext, a 16 byte tag. Retention reads the timestamp in the name: 35 days for the database, 14 for the keys database, 7 for local copies, and the newest 3 are always kept.
+- Options: `age` as DEPLOYMENT.md first said; GPG; a symmetric key stored on the server.
+- Why: `age` needs a binary in the tools image and a second keypair format, while Node already ships RSA and AES-GCM, so the code is testable with no extra tool. A symmetric key on the server would let a server breach open every backup. Separate keys for the two databases mean a leak of the database key never opens the key material dump.
+- Reversible: yes for new backups. Old files stay readable with the old key and the `ADBK1` header names the format.
+
+## D-117 Each database role gets its own password in the production env file (lane M1)
+- Decision: the production env file carries `POSTGRES_PASSWORD` plus `DB_PASSWORD_MIGRATOR`, `_APP`, `_WORKER`, `_KEYS_APP`, `_KEYS_SHRED` and `_MAINTENANCE`, all made by `pnpm secrets:generate`. `ops/postgres/01-logins.sh` sets the passwords on first start. compose builds each container's connection strings from its own role only, so the web container never sees the migrator password.
+- Options: one shared application password; passwords set by hand after the first start.
+- Why: the roles exist to limit damage. One shared password would let a web compromise run migrations or read the keys database. A test in `compose-prod.test.ts` fails if a container gets another role.
+- Reversible: yes, by rotating the passwords and restarting.
+
+## D-118 Backups connect as the postgres superuser, and restores only ever target a scratch database (lane M1)
+- Decision: row level security is forced on the tables, so only a superuser can `pg_dump` all rows. The `backup` service therefore connects as `postgres` over the internal network and is in the `ops` profile, started only by cron. `ad-tool restore` refuses a target database named `ad`, `ad_keys` or the live names and restores into a scratch database, and the runbook then swaps traffic by hand. A restore test dumps a real database with a forced RLS table, encrypts it, restores it and compares rows.
+- Options: grant a role BYPASSRLS for backups; dump with the owner role; restore in place.
+- Why: BYPASSRLS on an application role would widen the blast radius of the role the worker runs as. A restore in place is the failure that turns a bad day into a lost database.
 - Reversible: yes.

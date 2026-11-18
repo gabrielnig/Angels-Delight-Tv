@@ -20,9 +20,13 @@ for (const [key, { budget: limit }] of Object.entries(budget.metrics)) {
   check(key, report.audits[key].numericValue, limit);
 }
 const requests = report.audits['network-requests'].details.items;
-const scriptBytes = requests.filter((r) => r.resourceType === 'Script').reduce((n, r) => n + r.transferSize, 0);
+const scriptBytes = requests
+  .filter((r) => r.resourceType === 'Script')
+  .reduce((n, r) => n + r.transferSize, 0);
 check('script bytes', scriptBytes, budget.scriptBytes.budget);
-const thirdParty = requests.filter((r) => !r.url.startsWith(origin) && !r.url.startsWith('data:')).length;
+const thirdParty = requests.filter(
+  (r) => !r.url.startsWith(origin) && !r.url.startsWith('data:'),
+).length;
 check('third party requests', thirdParty, budget.thirdPartyRequests.budget);
 
 process.exit(failures ? 1 : 0);
