@@ -577,3 +577,9 @@ Format: decision, options considered, why, reversible or not. Newest first. Deci
 - Options: store a preset key in settings, let presets also set the font, seed presets into the database.
 - Why: the theme model has no preset field and a stored key would drift from the colours once edited. Keeping fonts separate matches how admins choose them.
 - Reversible: yes.
+
+## D-110 The admin video list pages in the database with a keyset cursor (lane A2)
+- Decision: `listAdminVideosPage` filters, sorts and pages in SQL. The cursor names the last row seen (sort key and id), so it works past 5000 videos and does not shift when videos change. The status badge is computed in SQL and must stay in step with `adminStatusOf`. Fixtures keep the number cursor.
+- Options: raise the 5000 cap, or offset paging in the database, or keyset paging.
+- Why: a cap hides videos silently, and offset paging slows down and skips rows on deep pages. Keyset costs the same on every page.
+- Reversible: yes.

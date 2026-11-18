@@ -62,6 +62,10 @@ describe('query string round trip', () => {
       status: 'failed',
       limit: 50,
     });
+    expect(parseVideoQuery({ cursor: 'eyJrIjoiMSIsImkiOiJ4In0' }).cursor).toBe(
+      'eyJrIjoiMSIsImkiOiJ4In0',
+    );
+    expect(parseVideoQuery({ cursor: '<script>' }).cursor).toBeUndefined();
     expect(serializeVideoQuery({ q: 'sky', status: 'failed' })).toBe('q=sky&status=failed');
     expect(serializeVideoQuery({})).toBe('');
   });
@@ -147,12 +151,26 @@ describe('applyBulk suitability', () => {
   it('changes every selected video, or none when one is missing', () => {
     const store = seedStore(Date.parse('2026-11-17T09:00:00Z'));
     const [a, b] = store.videos;
-    const ok = applyBulk([a!, b!], [a!.id, b!.id], { type: 'suitability', value: 'kids' }, 'editor', rules, 0);
+    const ok = applyBulk(
+      [a!, b!],
+      [a!.id, b!.id],
+      { type: 'suitability', value: 'kids' },
+      'editor',
+      rules,
+      0,
+    );
     expect(ok.succeeded).toEqual([a!.id, b!.id]);
     expect(a!.suitability).toBe('kids');
 
     const before = b!.suitability;
-    const none = applyBulk([a!, b!], [b!.id, 'ghost'], { type: 'suitability', value: 'older' }, 'editor', rules, 0);
+    const none = applyBulk(
+      [a!, b!],
+      [b!.id, 'ghost'],
+      { type: 'suitability', value: 'older' },
+      'editor',
+      rules,
+      0,
+    );
     expect(none.succeeded).toEqual([]);
     expect(none.failed.map((f) => f.id)).toEqual(['ghost']);
     expect(b!.suitability).toBe(before);

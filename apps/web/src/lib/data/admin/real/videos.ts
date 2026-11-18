@@ -8,6 +8,7 @@ import {
   listAdminCategories,
   listAdminSeries,
   listAdminVideos,
+  listAdminVideosPage,
   publish,
   restoreAdminVideo,
   requestPurgeAdminVideo,
@@ -22,7 +23,6 @@ import { can } from '@/lib/admin/can';
 import { checkPosterUpload } from '@/lib/admin/poster-upload';
 import { validatePosterChoice } from '@/lib/admin/poster-rules';
 import type { VideoService } from '../services';
-import { queryVideos } from '../video-queries';
 import { validateVideoPatch } from '../video-commands';
 import { adminRuntime } from '@/server/admin/runtime';
 import { asResult, catalogActor, context, need, toRecord, toRecords } from './shared';
@@ -30,8 +30,8 @@ import { asResult, catalogActor, context, need, toRecord, toRecords } from './sh
 export const realVideoService: VideoService = {
   async list(actor, query) {
     need(actor, 'admin.access');
-    const all = await listAdminVideos(await context(), catalogActor(actor));
-    return queryVideos(await toRecords(actor, all), query);
+    const page = await listAdminVideosPage(await context(), catalogActor(actor), query);
+    return { ...page, items: await toRecords(actor, page.items) };
   },
   async get(actor, id) {
     need(actor, 'admin.access');
