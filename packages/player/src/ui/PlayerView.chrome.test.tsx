@@ -252,4 +252,29 @@ describe('PlayerView chrome', () => {
       expect(screen.getByRole('button', { name: 'Mute' })).toBeTruthy();
     });
   });
+
+  describe('caption styling (M11-S03)', () => {
+    it('applies the chosen size, background and colours to the player', () => {
+      const { region } = setup(
+        {},
+        { captionStyle: { size: 'xlarge', background: 'solid', contrast: 'high' } },
+      );
+      expect(region.style.getPropertyValue('--adp-cap-size')).toBe('34px');
+      expect(region.style.getPropertyValue('--adp-cap-bg')).toBe('#000000');
+      expect(region.style.getPropertyValue('--adp-cap-fg')).toBe('#ffffff');
+    });
+
+    it('uses the readable default when no style is given', () => {
+      const { region } = setup();
+      expect(region.style.getPropertyValue('--adp-cap-size')).toBe('20px');
+      expect(region.style.getPropertyValue('--adp-cap-bg')).toBe('rgba(0, 0, 0, 0.72)');
+    });
+
+    it('reads the variables in the cue rule', () => {
+      const rule = /\.adp-video::cue\s*\{[^}]*\}/.exec(css)?.[0] ?? '';
+      expect(rule).toContain('var(--adp-cap-size');
+      expect(rule).toContain('var(--adp-cap-bg');
+      expect(rule).toContain('var(--adp-cap-fg');
+    });
+  });
 });
