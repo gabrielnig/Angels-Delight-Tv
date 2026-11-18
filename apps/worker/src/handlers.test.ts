@@ -8,7 +8,10 @@ const VID = '0192f0a0-0000-7000-8000-0000000000aa';
 
 function setup(overrides: Record<string, unknown> = {}) {
   const calls: unknown[][] = [];
-  const rec = (name: string) => async (...args: unknown[]) => void calls.push([name, ...args]);
+  const rec =
+    (name: string) =>
+    async (...args: unknown[]) =>
+      void calls.push([name, ...args]);
   const failed: unknown[][] = [];
   const deps = {
     pipeline: {
@@ -50,7 +53,10 @@ describe('registerVideoHandlers', () => {
         'videos.purge_deleted',
       ].sort(),
     );
-    expect(boss.schedules.map((s) => s.name).sort()).toEqual(['uploads.cleanup', 'videos.purge_deleted']);
+    expect(boss.schedules.map((s) => s.name).sort()).toEqual([
+      'uploads.cleanup',
+      'videos.purge_deleted',
+    ]);
   });
 
   it('runs a probe job through the pipeline', async () => {
@@ -88,6 +94,66 @@ describe('registerVideoHandlers', () => {
     await boss.drain('video.encode');
     expect(failed).toHaveLength(1);
     expect(failed[0]?.[0]).toBe(VID);
+  });
+
+  describe('staff notices', () => {
+    const notifier = () => {
+      const sent: string[] = [];
+      return {
+        sent,
+        notifier: {
+          encodeDone: async (id: string) => void sent.push(`encodeDone:${id}`),
+          encodeFailed: async (id: string, why: string) =>
+            void sent.push(`encodeFailed:${id}:${why}`),
+          captionsReady: async (id: string) => void sent.push(`captionsReady:${id}`),
+          captionsFailed: async (id: string) => void sent.push(`captionsFailed:${id}`),
+        },
+      };
+    };
+
+    it('tells staff when an encode finishes and when captions are ready', async () => {
+      const { boss, deps } = setup();
+      const { sent, notifier: n } = notifier();
+      await registerVideoHandlers(boss, { ...deps, notifier: n } as never);
+      await boss.send('video.encode', { videoId: VID });
+      await boss.drain('video.encode');
+      await boss.send('caption.generate', { videoId: VID, mode: 'transcribe' });
+      await boss.drain('caption.generate');
+      expect(sent).toEqual([`encodeDone:${VID}`, `captionsReady:${VID}`]);
+    });
+
+    it('tells staff once when a job fails for good, and not when it succeeds', async () => {
+      const { boss, deps } = setup();
+      (deps.pipeline as { encode: unknown }).encode = async () => {
+        throw new PermanentJobError('bad file');
+      };
+      (deps.captions as { generate: unknown }).generate = async () => {
+        throw new PermanentJobError('no audio');
+      };
+      const { sent, notifier: n } = notifier();
+      await registerVideoHandlers(boss, { ...deps, notifier: n } as never);
+      await boss.send('video.encode', { videoId: VID });
+      await boss.drain('video.encode');
+      await boss.send('caption.generate', { videoId: VID, mode: 'transcribe' });
+      await boss.drain('caption.generate');
+      expect(sent).toHaveLength(2);
+      expect(sent[0]).toMatch(`encodeFailed:${VID}:`);
+      expect(sent[1]).toBe(`captionsFailed:${VID}`);
+    });
+
+    it('does not fail the job when the notice cannot be sent', async () => {
+      const { boss, deps, failed } = setup();
+      const broken = {
+        encodeDone: async () => Promise.reject(new Error('mail down')),
+        encodeFailed: async () => Promise.reject(new Error('mail down')),
+        captionsReady: async () => Promise.reject(new Error('mail down')),
+        captionsFailed: async () => Promise.reject(new Error('mail down')),
+      };
+      await registerVideoHandlers(boss, { ...deps, notifier: broken } as never);
+      await boss.send('video.encode', { videoId: VID });
+      await expect(boss.drain('video.encode')).resolves.toBeDefined();
+      expect(failed).toHaveLength(0);
+    });
   });
 
   it('makes the cleanup job fail loudly when an abort keeps failing', async () => {

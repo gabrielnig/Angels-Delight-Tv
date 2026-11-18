@@ -595,3 +595,10 @@ Format: decision, options considered, why, reversible or not. Newest first. Deci
 - Options: a revision per pause (D-083), coalescing for everyone, or coalescing for the same editor within a window.
 - Why: a long edit session produced dozens of near identical revisions and buried the real history. The window bounds how much work a single revision can absorb, and other people's work is never overwritten.
 - Reversible: yes. Set the window to 0 (`AUTOSAVE_WINDOW_MS`) to return to a revision per save.
+
+## D-112 Staff notices are one row per recipient, written by the worker (lane A2)
+- Decision: `admin_notices` (migration 0027) holds one row per active editor or admin, written by `notifyStaff` in `@ad/video` when an encode finishes or fails for good and when captions are ready or fail. Read state is per person. `staff_notification_prefs` stores each admin's email choices (failures on, captions ready and daily summary off). A notice that cannot be stored is logged and never fails the job. Notices older than 90 days are dropped on write.
+- Options: one shared notice row with a read list, or one row per recipient.
+- Why: per person rows make "mark all read" and the unread badge a plain query, and a shared row would clear the bell for everyone.
+- Reversible: yes.
+- Not built yet: emailing from these choices (including the hourly summary and the daily summary). The choices are stored and shown, and the in-app bell works.

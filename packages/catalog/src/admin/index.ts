@@ -5,3 +5,4 @@ export * from './series';
 export * from './home';
 export * from './captions';
 export * from './posters';
+export * from './notices';

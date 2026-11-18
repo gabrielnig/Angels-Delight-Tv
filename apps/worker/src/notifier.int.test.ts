@@ -1,0 +1,60 @@
+import { schema } from '@ad/db';
+import {
+  createTestDatabase,
+  integrationEnabled,
+  makeAccount,
+  makeVideo,
+  type TestDatabase,
+} from '@ad/db/testing';
+import { createLogger } from '@ad/shared';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { makeNotifier } from './notifier';
+
+describe.skipIf(!integrationEnabled())('worker staff notifier', () => {
+  let t: TestDatabase;
+  let videoId: string;
+  let staffId: string;
+
+  beforeAll(async () => {
+    t = await createTestDatabase();
+    const staff = makeAccount({ role: 'admin' });
+    staffId = staff.id;
+    await t.db.insert(schema.accounts).values(staff);
+    const video = makeVideo({
+      title: 'Fractions',
+      status: 'failed',
+      failureMessage: 'The file could not be read.',
+    });
+    videoId = video.id;
+    await t.db.insert(schema.videos).values(video);
+  });
+  afterAll(async () => {
+    await t?.drop();
+  });
+
+  it('writes plain, linked notices for the staff bell', async () => {
+    const notifier = makeNotifier(t.db, createLogger({ write: () => undefined }));
+    await notifier.encodeFailed(videoId, 'fallback');
+    await notifier.captionsReady(videoId);
+    const rows = await t.db.select().from(schema.adminNotices);
+    const failed = rows.find((r) => r.kind === 'encode_failed')!;
+    expect(failed).toMatchObject({
+      recipientId: staffId,
+      title: 'Encoding failed',
+      body: 'Fractions: The file could not be read.',
+      href: `/admin/videos/${videoId}`,
+      videoId,
+    });
+    expect(rows.find((r) => r.kind === 'captions_ready')).toMatchObject({
+      title: 'Captions ready to review',
+      href: `/admin/captions/${videoId}`,
+    });
+  });
+
+  it('copes with a video that is gone', async () => {
+    const notifier = makeNotifier(t.db, createLogger({ write: () => undefined }));
+    await expect(
+      notifier.encodeDone('0192f0a0-0000-7000-8000-00000000dead'),
+    ).resolves.toBeUndefined();
+  });
+});
