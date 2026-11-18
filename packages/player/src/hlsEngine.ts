@@ -4,7 +4,13 @@ import { pickStartHeight, type QualitySelection } from './quality';
 import { withNativeToken } from './token';
 
 /** The slice of hls.js this engine touches. Declared here so tests can supply a fake. */
+export interface HlsFragmentLike {
+  start: number;
+  duration: number;
+}
+
 export interface HlsLevelLike {
+  details?: { fragments: HlsFragmentLike[] };
   height: number;
   bitrate: number;
   videoCodec?: string;
@@ -142,6 +148,11 @@ export function createHlsEngine(opts: HlsEngineOptions): PlayerEngine {
     },
     recover() {
       hls?.startLoad(video.currentTime);
+    },
+    segmentStart(time) {
+      const fragments = hls?.levels[hls.currentLevel]?.details?.fragments;
+      const hit = fragments?.find((f) => time >= f.start && time < f.start + f.duration);
+      return hit ? hit.start : null;
     },
     recoverMedia() {
       hls?.recoverMediaError();
