@@ -1,7 +1,8 @@
-import { Hero, Row, SkeletonRegion, SkeletonRow, EmptyState, type HeroItem } from '@ad/ui';
+import { Row, SkeletonRegion, SkeletonRow, type HeroItem } from '@ad/ui';
 import {
   getCatalog,
   getLibrary,
+  getSite,
   type CatalogItem,
   type HomeData,
   type Progress,
@@ -10,6 +11,8 @@ import {
 import { itemHref, itemKey, metaLine, timeLeftLabel } from '../../lib/format';
 import { CatalogCard, ContinueRow } from '../CatalogCard';
 import { RowError } from '../RowError';
+import { HomeEmpty } from './HomeEmpty';
+import { HomeHero } from './HomeHero';
 
 function heroItems(home: HomeData, progress: Map<string, Progress>): HeroItem[] {
   return home.hero.map(({ item, blurb }) => {
@@ -56,16 +59,8 @@ export async function HomeView({ ctx }: { ctx: ViewerContext }) {
   ]);
 
   if (home.empty) {
-    return (
-      <div className="web-page">
-        <h1 className="ad-sr-only">Home</h1>
-        <EmptyState
-          title="New videos are on the way"
-          description="Nothing is published yet. Check back soon."
-          action={{ label: 'Browse subjects', href: '/browse' }}
-        />
-      </div>
-    );
+    const site = await getSite().content();
+    return <HomeEmpty platformName={site.platformName} kids={ctx.audience === 'kids'} />;
   }
 
   const inList = new Set(idsResult);
@@ -76,7 +71,7 @@ export async function HomeView({ ctx }: { ctx: ViewerContext }) {
   return (
     <>
       <h1 className="ad-sr-only">Home</h1>
-      <Hero items={heroItems(home, progress)} label="Featured" />
+      <HomeHero items={heroItems(home, progress)} label="Featured" profileId={ctx.profileId} />
       <div className="web-wide web-stack web-rows">
         {continueResult.ok ? (
           continueResult.value.length > 0 ? (
@@ -88,7 +83,7 @@ export async function HomeView({ ctx }: { ctx: ViewerContext }) {
         {listResult.ok ? (
           listResult.value.items.length > 0 ? (
             <Row title="My List" seeAllHref="/my-list">
-              {cards(listResult.value.items.slice(0, 10), inList)}
+              {cards(listResult.value.items.slice(0, 20), inList)}
             </Row>
           ) : null
         ) : (

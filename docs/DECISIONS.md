@@ -499,3 +499,9 @@ Format: decision, options considered, why, reversible or not. Newest first. Deci
 - Options: store the JSON in R2 with an expiry, or run the job in the worker.
 - Why: storing the file puts personal data at rest outside the account key. The worker role has no identity grants, and the web process already holds the viewer data and keys.
 - Reversible: yes.
+
+## D-097 Home and card details from the viewer stories audit (lane a1)
+- Decision: (1) The card hover overlay uses `--hover-intent-delay` (500 ms, DESIGN-SYSTEM section 11.5) instead of the 400 ms in M05-S03. (2) The "Add your first video" link on an empty Home (M05-S07 AC2) is not built: staff never hold a viewer session (L-6, `role.test.ts`), so the viewer Home cannot know it is an admin. The admin area already shows the empty catalog state. (3) The Home hero rotates every 8 seconds except under Data saver or reduced motion.
+- Options: change the token to 400 ms; let staff sessions open the viewer site.
+- Why: the design system doc wins over a story number, and mixing staff and viewer sessions was rejected in L-6.
+- Reversible: yes, a token value and one prop.
