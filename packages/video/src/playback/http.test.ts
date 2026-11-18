@@ -124,4 +124,59 @@ describe('playback handlers', () => {
     });
     expect((await handlers.master(new Request('https://app/m?pt=t'), VID)).status).toBe(404);
   });
+
+  describe('denied requests leave an audit light log line (M31-S02 AC2)', () => {
+    function denying(error: Error) {
+      const denied: Array<Record<string, unknown>> = [];
+      const handlers = createPlaybackHandlers({
+        service: {
+          key: async () => {
+            throw error;
+          },
+        } as never,
+        getViewer: async () => ({ accountId: 'a', profileId: 'p' }),
+        getActor: async () => ({ accountId: 'a', role: 'admin' }),
+        clientIp: () => '9.9.9.9',
+        onDenied: (info) => denied.push({ ...info }),
+      });
+      return { handlers, denied };
+    }
+
+    it('logs a refused key request with route, status and video but never the token', async () => {
+      const { handlers, denied } = denying(new Forbidden('Token is for another video'));
+      const res = await handlers.key(new Request('https://app/k?pt=secret-token-value'), VID);
+      expect(res.status).toBe(403);
+      expect(denied).toEqual([{ route: 'key', status: 403, videoId: VID, ip: '9.9.9.9' }]);
+      expect(JSON.stringify(denied)).not.toContain('secret-token-value');
+    });
+
+    it('logs a missing token as a 401', async () => {
+      const { handlers, denied } = denying(new Unauthorized('Playback token required'));
+      await handlers.key(new Request('https://app/k'), VID);
+      expect(denied[0]).toMatchObject({ route: 'key', status: 401 });
+    });
+
+    it('does not log a missing video, which is not a denial', async () => {
+      const { handlers, denied } = denying(new NotFound());
+      await handlers.key(new Request('https://app/k?pt=t'), VID);
+      expect(denied).toEqual([]);
+    });
+
+    it('never lets a failing log hook change the answer', async () => {
+      const handlers = createPlaybackHandlers({
+        service: {
+          key: async () => {
+            throw new Forbidden();
+          },
+        } as never,
+        getViewer: async () => ({ accountId: 'a', profileId: 'p' }),
+        getActor: async () => ({ accountId: 'a', role: 'admin' }),
+        clientIp: () => 'x',
+        onDenied: () => {
+          throw new Error('log down');
+        },
+      });
+      expect((await handlers.key(new Request('https://app/k?pt=t'), VID)).status).toBe(403);
+    });
+  });
 });

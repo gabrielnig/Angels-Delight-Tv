@@ -9,6 +9,7 @@ import {
   seasons,
   series,
   videoCategories,
+  videoKeys,
   seriesCategories,
   videos,
   type Database,
@@ -83,6 +84,12 @@ export async function seedVideo(setup: Database, overrides: VideoOverrides = {})
     ...overrides,
   });
   await setup.insert(videos).values(video);
+  // A finished encode always has its HLS key, and publishing checks for it (M31-S02).
+  if (video.status === 'ready') {
+    await setup
+      .insert(videoKeys)
+      .values({ videoId: video.id, keyWrapped: Buffer.alloc(44), kekVersion: 1 });
+  }
   return video;
 }
 
