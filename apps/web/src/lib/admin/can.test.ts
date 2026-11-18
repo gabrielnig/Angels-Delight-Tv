@@ -47,7 +47,7 @@ describe('can(role, action)', () => {
     }
   });
 
-  it('reserves the Super admin stories for super_admin (D-125)', () => {
+  it('reserves the Super admin stories for super_admin (D-128)', () => {
     for (const action of [
       'roles.view',
       'roles.change',

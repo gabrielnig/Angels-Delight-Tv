@@ -105,7 +105,7 @@ describe.skipIf(!integrationEnabled())('seedFirstAdmin', () => {
     }
   });
 
-  describe('promoteToSuperAdmin (installs that had admins before D-125)', () => {
+  describe('promoteToSuperAdmin (installs that had admins before D-128)', () => {
     it('promotes a named active admin when no Super admin exists, and nobody else', async () => {
       const other = await createAuthTestDatabases();
       const db = connectAs(other.admin.url, 'ad_migrator');

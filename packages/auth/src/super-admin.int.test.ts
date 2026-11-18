@@ -10,7 +10,7 @@ import { createAuthHarness, registerMember, type AuthHarness } from './testing';
 
 type StaffRoleName = 'editor' | 'admin' | 'super_admin';
 
-describe.skipIf(!integrationEnabled())('Super admin only actions (D-125)', () => {
+describe.skipIf(!integrationEnabled())('Super admin only actions (D-128)', () => {
   let h: AuthHarness;
   let staff: StaffService;
 

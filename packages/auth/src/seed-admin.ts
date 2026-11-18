@@ -22,7 +22,7 @@ export interface SeedDeps {
 }
 
 /**
- * Creates the first Super admin (SECURITY.md section 4, D-125). There is no default or environment supplied
+ * Creates the first Super admin (SECURITY.md section 4, D-128). There is no default or environment supplied
  * password, the caller passes what an operator typed at a prompt, and the seed refuses to run once any Super admin
  * exists. When plain admins exist from before the Super admin role, it points at `promoteToSuperAdmin`.
  */
@@ -83,7 +83,7 @@ export async function seedFirstAdmin(
 }
 
 /**
- * For installs that already had admins before the Super admin role (D-125): makes one named, active admin the
+ * For installs that already had admins before the Super admin role (D-128): makes one named, active admin the
  * Super admin. It refuses once any Super admin exists and only ever promotes an account that is already an admin.
  */
 export async function promoteToSuperAdmin(
