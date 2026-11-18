@@ -24,7 +24,7 @@
   border: 2px solid currentColor;
   border-right-color: transparent;
   border-radius: var(--radius-circle);
-  animation: ad-spin 700ms linear infinite;
+  animation: ad-spin var(--motion-spin) linear infinite;
 }
 
 @keyframes ad-spin {
@@ -548,7 +548,7 @@
     transparent
   );
   transform: translateX(-100%);
-  animation: ad-shimmer 1.4s linear infinite;
+  animation: ad-shimmer var(--motion-shimmer) linear infinite;
 }
 
 @keyframes ad-shimmer {
