@@ -30,12 +30,12 @@ const LEGAL: Record<string, LegalPage> = {
   },
   privacy: {
     slug: 'privacy',
-    title: 'Privacy',
+    title: 'Privacy notice',
     updated: '1 Nov 2026',
     readingMinutes: 4,
     draft: true,
     sections: [
-      { id: 'who', heading: 'Who we are', body: ['Angels Delight TV is a free learning video service. We run our own servers.'] },
+      { id: 'who', heading: 'Who we are', body: ['Angels Delight TV is a free learning video service. We run our own servers in Nigeria and Europe.'] },
       { id: 'collect', heading: 'What we collect', body: ['Your name, email address, profile names, My List and where you stopped watching. We do not sell your data.'] },
       { id: 'use', heading: 'How we use it', body: ['We use it to keep you signed in, resume your videos and make the service safer. We count views to see which lessons help most.'] },
       { id: 'choices', heading: 'Your choices', body: ['You can export or delete your data at any time from Account, then Data and privacy.'] },
@@ -45,7 +45,8 @@ const LEGAL: Record<string, LegalPage> = {
   },
   about: {
     slug: 'about',
-    title: 'About',
+    title: 'Learning that is free and easy to follow',
+    lead: 'Angels Delight TV shares short, clear video lessons for anyone, anywhere. Watch on your phone, save data, and learn at your own pace.',
     updated: '1 Nov 2026',
     readingMinutes: 1,
     draft: false,

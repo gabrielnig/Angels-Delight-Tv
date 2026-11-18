@@ -40,8 +40,24 @@ describe('HelpFaq', () => {
     const user = userEvent.setup();
     render(<HelpFaq articles={articles} supportEmail="help@example.org" />);
     await user.type(screen.getByRole('searchbox', { name: 'Search help' }), 'zzzz');
-    expect(screen.getByText('No answers found')).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'help@example.org' })).toHaveAttribute(
+    expect(
+      screen.getByRole('heading', { name: 'No help articles match "zzzz"' }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText('Check the spelling or try a shorter word. You can also email us.'),
+    ).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Email support' })).toHaveAttribute(
+      'href',
+      'mailto:help@example.org',
+    );
+  });
+
+  it('uses the mockup search hint and the Still stuck card', () => {
+    render(<HelpFaq articles={articles} supportEmail="help@example.org" />);
+    expect(screen.getByPlaceholderText('Search help, for example password')).toBeInTheDocument();
+    expect(screen.getByText('Still stuck?')).toBeInTheDocument();
+    expect(screen.getByText('We reply within 2 working days.')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Email help@example.org' })).toHaveAttribute(
       'href',
       'mailto:help@example.org',
     );
