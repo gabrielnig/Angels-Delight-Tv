@@ -191,6 +191,25 @@ describe.skipIf(!integrationEnabled())(
       expect(rows[0]).toMatchObject({ source: 'aligned', status: 'in_review' });
     });
 
+    it('saves the cues that need a second look with the aligned revision', async () => {
+      const video = await newVideo();
+      await originals.put(
+        `scripts/${video.id}.txt`,
+        new TextEncoder().encode('Welcome to the brand new lesson.'),
+      );
+      await generator.generate(video.id, 'align', progress);
+      const { rows } = await revisions(video.id);
+      // "brand new" was never heard, so the one cue holding it is flagged by its start time.
+      expect(rows[0]!.lowConfidenceCues).toEqual([200]);
+    });
+
+    it('flags nothing when the script matches what was heard', async () => {
+      const video = await newVideo();
+      await originals.put(`scripts/${video.id}.txt`, new TextEncoder().encode('Welcome to the lesson.'));
+      await generator.generate(video.id, 'align', progress);
+      expect((await revisions(video.id)).rows[0]!.lowConfidenceCues).toEqual([]);
+    });
+
     it('fails permanently with a plain reason when there is no script or it does not match', async () => {
       const video = await newVideo();
       await expect(generator.generate(video.id, 'align', progress)).rejects.toMatchObject({

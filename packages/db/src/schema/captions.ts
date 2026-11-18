@@ -63,6 +63,8 @@ export const captions = pgTable(
     reviewedBy: uuid('reviewed_by').references(() => accounts.id, { onDelete: 'set null' }),
     reviewedAt: timestamptz('reviewed_at'),
     reviewNote: text('review_note'),
+    /** Start times (ms) of cues an aligned revision is unsure about. Review highlights them. */
+    lowConfidenceCues: integer('low_confidence_cues').array().notNull().default(sql`'{}'::integer[]`),
     createdAt: createdAt(),
   },
   (t) => [

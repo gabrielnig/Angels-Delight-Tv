@@ -34,3 +34,15 @@ export async function uploadCaptionsAction(videoId: string, cues: Cue[]): Promis
   revalidatePath('/admin', 'layout');
   return result;
 }
+
+export async function previewScriptAction(videoId: string, script: string): Promise<string> {
+  const actor = await requireActionActor(path(videoId));
+  return captionService.previewScript(actor, script);
+}
+
+export async function alignScriptAction(videoId: string, script: string): Promise<CaptionResult> {
+  const actor = await requireActionActor(path(videoId));
+  const result = await captionService.alignScript(actor, videoId, script);
+  revalidatePath('/admin', 'layout');
+  return result;
+}

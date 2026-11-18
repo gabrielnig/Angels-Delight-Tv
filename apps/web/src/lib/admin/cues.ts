@@ -5,6 +5,8 @@ export interface Cue {
   start: number;
   end: number;
   text: string;
+  /** An aligned script left this cue uncertain. Editing the cue clears it. */
+  lowConfidence?: boolean;
 }
 
 export type CueWarning = 'overlap' | 'too_long' | 'empty' | 'bad_timing';
@@ -86,7 +88,7 @@ export function splitCue(cue: Cue, at: number, newId: (n: number) => string): Cu
   const cut = Math.round(cue.start + (cue.end - cue.start) * share);
   const firstEnd = Math.max(cue.start + 1, cut - SPLIT_GAP_MS / 2);
   return [
-    { ...cue, text: first, end: firstEnd },
+    { ...cue, text: first, end: firstEnd, lowConfidence: false },
     {
       id: newId(1),
       start: Math.min(cue.end - 1, firstEnd + SPLIT_GAP_MS),

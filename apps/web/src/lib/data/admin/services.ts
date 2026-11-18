@@ -1,4 +1,5 @@
 import 'server-only';
+import { cleanScript } from '@ad/video';
 import type { PosterAssetDto } from '@ad/catalog';
 import { checkPosterUpload } from '@/lib/admin/poster-upload';
 import { validatePosterChoice } from '@/lib/admin/poster-rules';
@@ -379,6 +380,10 @@ export interface CaptionService {
   save(actor: AdminActor, videoId: string, cues: Cue[]): Promise<SaveResult>;
   approve(actor: AdminActor, videoId: string): Promise<CaptionResult>;
   regenerate(actor: AdminActor, videoId: string): Promise<CaptionResult>;
+  /** The script as it will be used: speaker names and stage directions removed. */
+  previewScript(actor: AdminActor, script: string): Promise<string>;
+  /** Stores the script and queues alignment to the audio (M15-S02). */
+  alignScript(actor: AdminActor, videoId: string, script: string): Promise<CaptionResult>;
   upload(actor: AdminActor, videoId: string, cues: Cue[]): Promise<CaptionResult>;
 }
 
@@ -425,6 +430,15 @@ const fixtureCaptionService: CaptionService = {
     return approveTrack(getStore(), liveVideo(videoId), actor.role, actor.name, Date.now());
   },
   async regenerate(actor, videoId) {
+    return regenerateTrack(getStore(), liveVideo(videoId), actor.role, Date.now());
+  },
+  async previewScript(actor, script) {
+    need(actor, 'caption.review');
+    return cleanScript(script);
+  },
+  async alignScript(actor, videoId, script) {
+    need(actor, 'caption.review');
+    if (cleanScript(script).trim() === '') return { ok: false, error: 'Paste the script text first.' };
     return regenerateTrack(getStore(), liveVideo(videoId), actor.role, Date.now());
   },
   async upload(actor, videoId, cues) {

@@ -13,8 +13,14 @@ import type { CaptionTrack } from '../types';
 import { catalogActor, context, need, toRecord } from './shared';
 
 type VttCue = { startMs: number; endMs: number; text: string };
-const toUi = (cues: VttCue[]): Cue[] =>
-  cues.map((c, i) => ({ id: `cue_${i + 1}`, start: c.startMs, end: c.endMs, text: c.text }));
+const toUi = (cues: VttCue[], flagged: readonly number[] = []): Cue[] =>
+  cues.map((c, i) => ({
+    id: `cue_${i + 1}`,
+    start: c.startMs,
+    end: c.endMs,
+    text: c.text,
+    ...(flagged.includes(c.startMs) ? { lowConfidence: true } : {}),
+  }));
 const toVtt = (cues: Cue[]): VttCue[] =>
   cues.map((c) => ({ startMs: c.start, endMs: c.end, text: c.text }));
 
@@ -108,7 +114,7 @@ export const realCaptionService: CaptionService = {
     if (summary?.latestRevisionId && state !== 'generating') {
       const loaded = await service.getRevision(who, summary.latestRevisionId);
       latest = loaded.caption;
-      cues = toUi(loaded.cues);
+      cues = toUi(loaded.cues, loaded.lowConfidence);
       if (summary.approvedRevisionId) {
         if (summary.approvedRevisionId === summary.latestRevisionId) approved = latest;
         else {
@@ -216,6 +222,24 @@ export const realCaptionService: CaptionService = {
     await getAdminVideo(await context(), catalogActor(actor), videoId);
     try {
       await (await adminRuntime().captions()).regenerate(catalogActor(actor), videoId);
+      return { ok: true };
+    } catch (error) {
+      const reason = reasonOf(error);
+      if (reason) return { ok: false, error: reason };
+      throw error;
+    }
+  },
+
+  async previewScript(actor, script) {
+    need(actor, 'caption.review');
+    return (await adminRuntime().captions()).previewScript(script);
+  },
+
+  async alignScript(actor, videoId, script) {
+    need(actor, 'caption.review');
+    await getAdminVideo(await context(), catalogActor(actor), videoId);
+    try {
+      await (await adminRuntime().captions()).saveScript(catalogActor(actor), videoId, script);
       return { ok: true };
     } catch (error) {
       const reason = reasonOf(error);
