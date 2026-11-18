@@ -129,7 +129,13 @@ describe('ProfilePicker manage mode keyboard', () => {
     const user = userEvent.setup();
     const onExitManage = vi.fn();
     render(
-      <ProfilePicker profiles={four} max={5} mode="manage" onSelect={vi.fn()} onExitManage={onExitManage} />,
+      <ProfilePicker
+        profiles={four}
+        max={5}
+        mode="manage"
+        onSelect={vi.fn()}
+        onExitManage={onExitManage}
+      />,
     );
     await user.keyboard('{Escape}');
     expect(onExitManage).toHaveBeenCalledOnce();
@@ -138,7 +144,9 @@ describe('ProfilePicker manage mode keyboard', () => {
   it('ignores Escape when not managing', async () => {
     const user = userEvent.setup();
     const onExitManage = vi.fn();
-    render(<ProfilePicker profiles={four} max={5} onSelect={vi.fn()} onExitManage={onExitManage} />);
+    render(
+      <ProfilePicker profiles={four} max={5} onSelect={vi.fn()} onExitManage={onExitManage} />,
+    );
     await user.keyboard('{Escape}');
     expect(onExitManage).not.toHaveBeenCalled();
   });

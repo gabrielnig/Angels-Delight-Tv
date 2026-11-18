@@ -25,6 +25,8 @@ export interface Profile {
   language: string;
   autoplayNext: boolean;
   lastUsedHere?: boolean;
+  /** A four digit PIN guards this profile (M03-S12). The PIN itself never leaves the server. */
+  hasPin?: boolean;
 }
 
 export interface ViewerSession {
@@ -272,6 +274,8 @@ export interface ProfileInput {
   tone?: string;
   language?: string;
   autoplayNext?: boolean;
+  /** Four digits to set, or null to remove. Needs the account password. */
+  pin?: string | null;
 }
 
 export type ProfileFailure = 'duplicate' | 'limit' | 'last_adult' | 'password_required' | 'network';
@@ -292,9 +296,18 @@ export interface ProfilesRepository {
     accountId: string,
     id: string,
   ): Promise<{ ok: true } | { ok: false; reason: ProfileFailure }>;
-  select(accountId: string, id: string): Promise<void>;
+  select(
+    accountId: string,
+    id: string,
+    proof?: { pin?: string; password?: string },
+  ): Promise<SelectProfileResult>;
   maxProfiles: number;
 }
+
+export type SelectProfileResult =
+  | { ok: true }
+  | { ok: false; reason: 'pin_required' | 'pin_invalid' | 'password_incorrect' }
+  | { ok: false; reason: 'locked'; minutes: number };
 
 export interface PlaybackSettings {
   autoplayNext: boolean;

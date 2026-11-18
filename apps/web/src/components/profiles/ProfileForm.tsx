@@ -62,6 +62,8 @@ export function ProfileForm({
   const [language, setLanguage] = useState(profile?.language ?? 'en');
   const [autoplay, setAutoplay] = useState(profile?.autoplayNext ?? true);
   const [password, setPassword] = useState('');
+  const [pin, setPin] = useState('');
+  const [removePin, setRemovePin] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [busy, setBusy] = useState(false);
   const [banner, setBanner] = useState<string | null>(null);
@@ -76,7 +78,11 @@ export function ProfileForm({
     name !== (profile?.name ?? suggestedName ?? '') ||
     tone !== ((profile?.tone as AvatarTone | undefined) ?? 'sky') ||
     kids !== (profile?.kids ?? false) ||
-    (editing && (language !== (profile?.language ?? 'en') || autoplay !== (profile?.autoplayNext ?? true)));
+    (editing &&
+      (language !== (profile?.language ?? 'en') ||
+        autoplay !== (profile?.autoplayNext ?? true) ||
+        pin !== '' ||
+        removePin));
 
   useEffect(() => {
     if (!dirty) return;
@@ -85,11 +91,16 @@ export function ProfileForm({
     return () => window.removeEventListener('beforeunload', warn);
   }, [dirty]);
 
-  const needsPassword = Boolean(profile?.kids) && !kids;
+  const pinChange = !kids && editing && (pin !== '' || removePin);
+  const needsPassword = (Boolean(profile?.kids) && !kids) || pinChange;
+  const pinProblem =
+    !kids && pin !== '' && !/^\d{4}$/.test(pin) ? 'Use exactly four digits.' : undefined;
   const nameProblem = !name.trim() ? 'Type a name for this profile.' : undefined;
   const passwordProblem =
     needsPassword && !password
-      ? 'Enter your account password to make this an adult profile.'
+      ? pinChange
+        ? 'Enter your account password to change the PIN.'
+        : 'Enter your account password to make this an adult profile.'
       : undefined;
 
   async function submit(event: FormEvent) {
@@ -98,7 +109,7 @@ export function ProfileForm({
     setBanner(null);
     setNameServerError(undefined);
     setPasswordServerError(undefined);
-    if (nameProblem || passwordProblem) {
+    if (nameProblem || passwordProblem || pinProblem) {
       requestFocus();
       return;
     }
@@ -111,6 +122,8 @@ export function ProfileForm({
         ...(editing ? { language, autoplayNext: autoplay } : {}),
       };
       if (needsPassword) input.password = password;
+      if (!kids && editing && pin !== '') input.pin = pin;
+      else if (!kids && editing && removePin) input.pin = null;
       const result = await onSave(input);
       if (result.ok) {
         onDone();
@@ -218,6 +231,35 @@ export function ProfileForm({
         onCheckedChange={setKids}
         hint="Shows only videos picked as suitable for children. Search and categories are limited, and leaving Kids mode needs your account password."
       />
+
+      {editing && !kids ? (
+        <>
+          <Input
+            label="PIN"
+            optional
+            name="pin"
+            inputMode="numeric"
+            autoComplete="off"
+            maxLength={4}
+            value={pin}
+            onChange={(event) => setPin(event.target.value.replace(/\D/g, '').slice(0, 4))}
+            hint={
+              profile?.hasPin
+                ? 'This profile has a PIN. Type four digits to change it.'
+                : 'Four digits. Anyone opening this profile will need it.'
+            }
+            error={submitted ? pinProblem : undefined}
+          />
+          {profile?.hasPin ? (
+            <Switch
+              label="Remove the PIN"
+              checked={removePin}
+              onCheckedChange={setRemovePin}
+              hint="Anyone can open this profile without a PIN."
+            />
+          ) : null}
+        </>
+      ) : null}
 
       {needsPassword ? (
         <PasswordField

@@ -445,6 +445,36 @@ describe.skipIf(!integrationEnabled())('profiles', () => {
       }
     });
 
+    it('opens a PIN profile with the account password when the PIN is forgotten or locked (M03-S12 AC2)', async () => {
+      const limited = await createHarness({
+        rateLimit: async (bucket) =>
+          bucket === 'profile_pin'
+            ? { allowed: false, retryAfterSeconds: 300 }
+            : { allowed: true, retryAfterSeconds: 0 },
+      });
+      try {
+        const user = await limited.makeUser();
+        await updateProfile(
+          limited.ctx,
+          user.actor,
+          user.profileId,
+          { pin: '4821' },
+          { password: TEST_PASSWORD },
+        );
+        await expect(
+          selectProfile(limited.ctx, user.actor, user.profileId, { pin: '4821' }),
+        ).rejects.toMatchObject({ code: 'rate_limited' });
+        await expect(
+          selectProfile(limited.ctx, user.actor, user.profileId, { password: 'wrong' }),
+        ).rejects.toMatchObject({ code: 'forbidden', message: 'password_incorrect' });
+        await expect(
+          selectProfile(limited.ctx, user.actor, user.profileId, { password: TEST_PASSWORD }),
+        ).resolves.toMatchObject({ id: user.profileId, hasPin: true });
+      } finally {
+        await limited.drop();
+      }
+    });
+
     it('lets a kids profile be left only with the account password', async () => {
       const user = await h.makeUser();
 

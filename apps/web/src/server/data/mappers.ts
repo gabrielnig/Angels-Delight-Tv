@@ -92,6 +92,7 @@ export function profileToView(dto: ProfileDto, activeProfileId?: string | null):
     language: dto.language,
     autoplayNext: dto.autoplayNext,
     lastUsedHere: dto.id === activeProfileId,
+    hasPin: dto.hasPin,
   };
 }
 
