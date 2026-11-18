@@ -1,7 +1,7 @@
 import { createTestDatabase, integrationEnabled, type TestDatabase } from '@ad/db/testing';
 import { schema } from '@ad/db';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { AuditWriter } from './audit';
+import { AuditWriter } from './audit-writer';
 
 describe.skipIf(!integrationEnabled())('AuditWriter', () => {
   let database: TestDatabase;
@@ -35,7 +35,7 @@ describe.skipIf(!integrationEnabled())('AuditWriter', () => {
     });
   });
 
-  it('strips fields that could carry personal data or secrets from the metadata', async () => {
+  it('redacts fields that could carry personal data or secrets in the metadata', async () => {
     const audit = new AuditWriter(database.db);
     await audit.record({
       action: 'auth.password_changed',
@@ -50,7 +50,13 @@ describe.skipIf(!integrationEnabled())('AuditWriter', () => {
     });
     const rows = await database.db.select().from(schema.auditLog);
     const row = rows.find((r) => r.action === 'auth.password_changed');
-    expect(row?.metadata).toEqual({ reason: 'user' });
+    expect(row?.metadata).toEqual({
+      email: '[redacted]',
+      password: '[redacted]',
+      token: '[redacted]',
+      reason: 'user',
+      nested: { secret: '[redacted]' },
+    });
   });
 
   it('never throws when the database write fails, so a login does not fail on logging', async () => {

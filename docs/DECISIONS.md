@@ -465,3 +465,9 @@ Format: decision, options considered, why, reversible or not. Newest first. Deci
 - Options: shorten segment urls to 2 hours, sign `cap/` and `img/`, cap uploads at 5, collapse verify statuses, drop the viewer lock for a slow refill.
 - Why: each accepted item has a stronger existing control or a real cost to the client (long videos, batch uploads, helpful code errors), and the reasons and residual risks are in `docs/SECURITY-REVIEW.md`. The fixed items closed real gaps with small changes.
 - Reversible: yes. All are constants or small guards, and migration 0019 can be replaced by one that drops the context check.
+
+## D-090 One audit writer in @ad/audit with one redaction policy (lane A2)
+- Decision: `AuditWriter` moves from `@ad/security` to `@ad/audit` and is a thin best effort wrapper over `writeAudit`, so security events and admin entries share entry validation and `redact`. `redact` now also replaces fields named like a hash, an email or a one time code, on top of the earlier secret names, and masks addresses inside any string. `@ad/auth` and the web auth runtime import the writer from `@ad/audit`; `packages/security/src/audit.ts` is deleted.
+- Options: keep both writers, or make the security writer call `redact` but stay in `@ad/security`.
+- Why: two writers on one table drifted (one dropped keys, the other masked values) and a new field could leak through one and not the other. `@ad/audit` already depends on `@ad/security` for `truncateIp`, so the writer cannot live in security.
+- Reversible: yes.

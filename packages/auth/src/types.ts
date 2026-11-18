@@ -1,6 +1,7 @@
 import type { Database } from '@ad/db';
 import type { Mailer } from '@ad/mailer';
-import type { AuditWriter, LockoutStore, RateLimiter } from '@ad/security';
+import type { AuditWriter } from '@ad/audit';
+import type { LockoutStore, RateLimiter } from '@ad/security';
 import type { KeyService } from './keys';
 import type { PasswordHasher } from './password';
 import type { SessionContext, SessionService } from './sessions';
