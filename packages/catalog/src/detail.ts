@@ -40,7 +40,7 @@ export async function fetchHeroArtwork(
     const table = kind === 'video' ? sql`videos` : sql`series`;
     const rows = rowsOf<HeroRow>(
       await tx.execute(sql`
-        SELECT x.id, pa.id AS poster_id, pa.alt_text AS poster_alt, pa.placeholder_color AS poster_color,
+        SELECT x.id, pa.id AS poster_id, pa.alt_text AS poster_alt, pa.placeholder_color AS poster_color, pa.placeholder_blur AS poster_blur,
           pa.width AS poster_width, pa.height AS poster_height, pa.variants AS poster_variants
         FROM ${table} x JOIN assets pa ON pa.id = x.hero_asset_id AND pa.status = 'ready'
         WHERE x.id IN (${uuidList(ids)})`),

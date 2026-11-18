@@ -80,3 +80,29 @@ describe('buildPosterSources with formats', () => {
     expect(out.fallback).toBeUndefined();
   });
 });
+
+describe('buildPosterSources with avif', () => {
+  const all: PosterVariant[] = [
+    { width: 320, height: 180, url: 'a320.avif', format: 'avif' },
+    { width: 320, height: 180, url: 'a320.webp', format: 'webp' },
+    { width: 320, height: 180, url: 'a320.jpg', format: 'jpeg' },
+    { width: 640, height: 360, url: 'a640.avif', format: 'avif' },
+    { width: 640, height: 360, url: 'a640.webp', format: 'webp' },
+    { width: 640, height: 360, url: 'a640.jpg', format: 'jpeg' },
+  ];
+  it('offers avif first and keeps webp and jpeg as the main and fallback sets', () => {
+    const out = buildPosterSources(all, {})!;
+    expect(out.avif).toEqual({ srcSet: 'a320.avif 320w, a640.avif 640w' });
+    expect(out.srcSet).toBe('a320.webp 320w, a640.webp 640w');
+    expect(out.fallback?.srcSet).toBe('a320.jpg 320w, a640.jpg 640w');
+  });
+  it('applies the Data saver cap to the avif set too', () => {
+    expect(buildPosterSources(all, { maxWidth: 320 })!.avif).toEqual({ srcSet: 'a320.avif 320w' });
+  });
+  it('never uses avif as the plain src, so a browser without avif always has an image', () => {
+    const out = buildPosterSources(all, {})!;
+    expect(out.src.endsWith('.avif')).toBe(false);
+    expect(buildPosterSources(all.filter((v) => v.format === 'avif'), {})).toBeNull();
+    expect(buildPosterSources(all.filter((v) => v.format !== 'avif'), {})!.avif).toBeUndefined();
+  });
+});

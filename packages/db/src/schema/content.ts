@@ -47,7 +47,13 @@ export const assets = pgTable(
     mediaKeyBase: text('media_key_base'),
     variants: jsonb('variants')
       .$type<
-        { width: number; height: number; key: string; bytes: number; format?: 'webp' | 'jpeg' }[]
+        {
+          width: number;
+          height: number;
+          key: string;
+          bytes: number;
+          format?: 'avif' | 'webp' | 'jpeg';
+        }[]
       >()
       .notNull()
       .default(sql`'[]'::jsonb`),
@@ -57,11 +63,23 @@ export const assets = pgTable(
     height: integer('height'),
     sha256: bytea('sha256'),
     placeholderColor: text('placeholder_color'),
+    /** A webp data url under 1 KB, drawn blurred while the image loads (M36-S02). */
+    placeholderBlur: text('placeholder_blur'),
+    /** 0 to 100 for a candidate poster frame: how well lit and sharp it is. Null for uploads and older frames (M36-S01). */
+    candidateScore: smallint('candidate_score'),
     altText: text('alt_text'),
     createdBy: uuid('created_by').references(() => accounts.id, { onDelete: 'set null' }),
     createdAt: createdAt(),
   },
   (t) => [
+    check(
+      'assets_score_range',
+      sql`${t.candidateScore} IS NULL OR (${t.candidateScore} >= 0 AND ${t.candidateScore} <= 100)`,
+    ),
+    check(
+      'assets_blur_small',
+      sql`${t.placeholderBlur} IS NULL OR length(${t.placeholderBlur}) < 1024`,
+    ),
     check('assets_mime_allowed', sql`${t.mime} IN ('image/webp', 'image/jpeg', 'image/png')`),
     check('assets_alt_text_length', sql`${t.altText} IS NULL OR char_length(${t.altText}) <= 200`),
     index('assets_purpose_created_idx').on(t.purpose, t.createdAt.desc()),

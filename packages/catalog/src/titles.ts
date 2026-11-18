@@ -70,7 +70,7 @@ const CARD_COLUMNS =
   t.kids_safe, t.has_captions, t.sort_at::text AS sort_at, t.title_key,
   (SELECT c.slug FROM categories c WHERE c.id = ANY(t.category_ids) AND c.is_visible ORDER BY c.position, c.name LIMIT 1) AS category_slug,
   (SELECT c.name::text FROM categories c WHERE c.id = ANY(t.category_ids) AND c.is_visible ORDER BY c.position, c.name LIMIT 1) AS category_name,
-  pa.id AS poster_id, pa.alt_text AS poster_alt, pa.placeholder_color AS poster_color,
+  pa.id AS poster_id, pa.alt_text AS poster_alt, pa.placeholder_color AS poster_color, pa.placeholder_blur AS poster_blur,
   pa.width AS poster_width, pa.height AS poster_height, pa.variants AS poster_variants`);
 
 const POSTER_JOIN = sql.raw(

@@ -55,6 +55,21 @@ describe('toThumb', () => {
   });
 });
 
+describe('toThumb with avif variants', () => {
+  it('ignores avif, so thumbs stay webp with a jpeg fallback', () => {
+    const thumb = toThumb({
+      ...poster,
+      variants: [
+        { width: 320, height: 180, url: 'https://m.test/320.avif', format: 'avif' },
+        { width: 320, height: 180, url: 'https://m.test/320.webp', format: 'webp' },
+        { width: 320, height: 180, url: 'https://m.test/320.jpg', format: 'jpeg' },
+      ],
+    })!;
+    expect(thumb.srcSet).toBe('https://m.test/320.webp 320w');
+    expect(thumb.fallbackSrcSet).toBe('https://m.test/320.jpg 320w');
+  });
+});
+
 describe('toThumb formats', () => {
   it('offers webp as the srcSet and jpeg as the fallback for old browsers', () => {
     const thumb = toThumb({

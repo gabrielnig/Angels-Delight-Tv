@@ -72,15 +72,15 @@ Status rules: **done with test** means every acceptance criterion is implemented
 | M33-S01 Reproducible deploy | Must | partial | `m1`: ops/deploy.sh, compose-prod.test.ts, ops-deploy.test.ts | No image build, push and rollback pipeline in CI; version in admin footer not asserted |
 | M33-S02 CI checks | Must | done with test | scripts/ci-workflow.test.ts (lint, typecheck, scoped tests, footprint dash and emoji grep, secret scan, build, Semgrep, SBOM); footprint-check.test.ts | Failures block merging only once branch protection is on |
 | M33-S03 Domain and HTTPS | Should | partial | `m1`: Caddyfile tests, DEPLOYMENT section 4 | Certificate expiry alert is a monitor setting |
-| M36-S01 Generate poster candidates | Must | partial | `m3`: packages/video/src/encode/pipeline.ts (3 candidates, best effort); PosterPicker.test.tsx | Story asks for 6 frames with a blur and black frame score and a low score warning |
-| M36-S02 Responsive image variants | Must | partial | `m3`: packages/video/src/image/process.test.ts, service.int.test.ts (WebP and JPEG, hashed paths, immutable) | No AVIF, no 1 KB blur placeholder (a colour is stored), widths differ from 320, 640, 960 |
-| M36-S03 Hero image and focus point | Should | partial | `m3`: process.test.ts (crop follows focus) | No focus point tool or safe area guide in admin |
+| M36-S01 Generate poster candidates | Must | done with test | `f1`: packages/video/src/image/score.test.ts (black, blown out, flat, blurred and sharp frames); encode/pipeline.int.test.ts (6 evenly spaced frames, retry near a black frame, best frame is the default, unscorable frame kept); db assets-artwork.int.test.ts; PosterPicker.test.tsx (low score warning) | The score is a simple light, contrast and sharpness measure (D-134), not an aesthetic judgement. Frames made before this change have no score and show no warning |
+| M36-S02 Responsive image variants | Must | done with test | `m3`: process.test.ts, service.int.test.ts (hashed paths, immutable). `f1`: AVIF, WebP and JPEG at 320, 640 and 960 (plus 480 and 1280 for posters, 320 added to hero); blur placeholder under 1 KB stored in `assets.placeholder_blur` (process.test.ts, assets-artwork.int.test.ts); poster.test.ts and ResponsivePoster.test.tsx (avif source first, webp and jpeg fallbacks, Data saver cap) | The blur is stored and returned on `ArtworkDto.placeholderBlur`; the viewer still draws the colour placeholder until a card uses the blur (D-134). Old assets have only webp and jpeg until reprocessed |
+| M36-S03 Hero image and focus point | Should | partial | `m3`: process.test.ts (crop follows focus); PosterPicker.test.tsx (focus point, keyboard, 21 by 9 and 16 by 9 previews, safe area guide) | Re-checked in `f1`: the tool and safe area exist in the poster picker and the focus is saved on the video. The generated variants are still centre crops, so the saved focus shapes the preview and the viewer crop but does not recut the files |
 
 ## Counts
 
-Rows: 69. done with test: 58. done without test: 3. partial: 8. missing: 0.
+Rows: 69. done with test: 60. done without test: 3. partial: 6. missing: 0.
 
-m1 and m3 had not merged when this table was written. Their rows (M21-S04, M24-S02 alerts, M32, M33-S01, M33-S03, M36) must be re-checked against their merged work.
+m1 and m3 had not merged when this table was written. Lane `f1` re-checked their rows (M21-S04, M24-S02, M32, M33-S01, M33-S03, M36) against the merged work on 2026-11-18. Closed: M21-S04 (dns:check), M32-S01 (manifest and retention), M36-S01 and M36-S02. Still partial and why: M24-S02 (disk, error rate and certificate alerts are monitor settings in DEPLOYMENT section 9, not code), M32-S02 (the quarterly drill record is a process step), M33-S01 (no image build and push workflow in CI, and no release version in the admin footer; both need registry access and a staging environment that the owner has to provide), M33-S03 (the certificate expiry alert is a monitor setting), M36-S03 (saved focus does not recut the generated files).
 
 ## Signed url lifetime review (L-3, L-4)
 

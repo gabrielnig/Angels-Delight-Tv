@@ -16,6 +16,27 @@ const row = {
   ],
 };
 
+describe('artworkFromRow avif and blur', () => {
+  it('keeps avif variants with their format and passes the blur placeholder through', () => {
+    const art = artworkFromRow(
+      {
+        ...row,
+        poster_blur: 'data:image/webp;base64,AAAA',
+        poster_variants: [
+          { width: 320, height: 180, key: 'img/a1/320-aa.avif', bytes: 1, format: 'avif' as const },
+          { width: 320, height: 180, key: 'img/a1/320-bb.webp', bytes: 1, format: 'webp' as const },
+        ],
+      },
+      'https://m.test/',
+    )!;
+    expect(art.variants.map((v) => v.format)).toEqual(['avif', 'webp']);
+    expect(art.placeholderBlur).toBe('data:image/webp;base64,AAAA');
+  });
+  it('has no blur on rows made before it existed', () => {
+    expect(artworkFromRow(row, 'https://m.test/')!.placeholderBlur).toBeNull();
+  });
+});
+
 describe('artworkFromRow formats', () => {
   it('keeps the format on every variant and sorts by width then format', () => {
     const art = artworkFromRow(row, 'https://m.test/')!;

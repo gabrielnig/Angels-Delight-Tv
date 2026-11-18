@@ -9,6 +9,29 @@ const variants = [
   { width: 960, height: 540, url: 'https://m.example/img/a/960-cc.webp' },
 ];
 
+describe('ResponsivePoster with avif', () => {
+  const all = [
+    { width: 320, height: 180, url: 'https://m.example/a/320.avif', format: 'avif' as const },
+    { width: 320, height: 180, url: 'https://m.example/a/320.webp', format: 'webp' as const },
+    { width: 320, height: 180, url: 'https://m.example/a/320.jpg', format: 'jpeg' as const },
+  ];
+  it('puts an avif source first, then webp, with the jpeg as the image', () => {
+    const { container } = render(<ResponsivePoster variants={all} alt="Plants" />);
+    const types = [...container.querySelectorAll('source')].map((s) => s.getAttribute('type'));
+    expect(types).toEqual(['image/avif', 'image/webp']);
+    expect(screen.getByRole('img', { name: 'Plants' }).getAttribute('srcset')).toContain('320.jpg');
+  });
+  it('works with avif and webp only, falling back to the webp image', () => {
+    const { container } = render(
+      <ResponsivePoster variants={all.filter((v) => v.format !== 'jpeg')} alt="Plants" />,
+    );
+    expect([...container.querySelectorAll('source')].map((s) => s.getAttribute('type'))).toEqual([
+      'image/avif',
+    ]);
+    expect(screen.getByRole('img', { name: 'Plants' }).getAttribute('src')).toContain('320.webp');
+  });
+});
+
 describe('ResponsivePoster', () => {
   it('renders a lazy image with a srcset, size attributes and alt text', () => {
     render(<ResponsivePoster variants={variants} alt="Plants growing in sunlight" />);

@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import type { KeyboardEvent } from 'react';
 import type { PosterAssetDto } from '@ad/catalog';
+import { allFramesLow } from '@ad/shared';
 import { formatDuration } from '@/lib/admin/format';
 import {
   candidateFrames,
@@ -263,6 +264,11 @@ export function PosterPicker({
         <p className="adm-muted" style={{ margin: 0 }}>
           Six frames from your video. Pick one or upload your own.
         </p>
+        {real && allFramesLow(assets!.filter((a) => a.source === 'frame').map((a) => a.score)) ? (
+          <Banner tone="warning">
+            These frames look dark or blurry. Upload your own picture for a better poster.
+          </Banner>
+        ) : null}
         <ul className="adm-frames" aria-label="Candidate frames">
           {all.map((source) => (
             <li key={source.id}>

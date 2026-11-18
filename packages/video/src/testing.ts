@@ -1,3 +1,4 @@
+import sharp from 'sharp';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import type { ProcessRunner, RunOptions, RunResult } from './encode/ffmpeg';
@@ -46,6 +47,10 @@ export class FakeRunner implements ProcessRunner {
   /** How many sprite sheets the fake sprite step writes. */
   spriteSheets = 1;
   failSprites = false;
+  /** Seconds into the source that the fake poster frame step was asked for, in order. */
+  frameTimes: number[] = [];
+  /** Decides what a poster frame looks like. Default: a sharp, well lit picture. */
+  frame: (atSeconds: number) => 'good' | 'black' | 'blur' | 'broken' = () => 'good';
 
   encodeCalls(): number[] {
     return this.calls
@@ -92,15 +97,40 @@ export class FakeRunner implements ProcessRunner {
       const pattern = args[args.length - 1]!;
       await mkdir(dirname(pattern), { recursive: true });
       for (let n = 1; n <= this.spriteSheets; n++)
-        await writeFile(pattern.replace('%03d', String(n).padStart(3, '0')), Buffer.from(`sheet-${n}`));
+        await writeFile(
+          pattern.replace('%03d', String(n).padStart(3, '0')),
+          Buffer.from(`sheet-${n}`),
+        );
       return done(0);
     }
 
     const output = args[args.length - 1]!;
     await mkdir(dirname(output), { recursive: true });
+    if (output.endsWith('.webp') && args.includes('-ss')) {
+      const at = Number(args[args.indexOf('-ss') + 1]);
+      this.frameTimes.push(at);
+      await writeFile(output, await fakeFrame(this.frame(at)));
+      return done(0);
+    }
     await writeFile(output, Buffer.from(`fake-output:${output}`));
     return done(0);
   }
+}
+
+/** A small real picture, so the poster scoring has something to read. */
+export async function fakeFrame(kind: 'good' | 'black' | 'blur' | 'broken'): Promise<Buffer> {
+  if (kind === 'broken') return Buffer.from('not a picture');
+  const width = 320;
+  const height = 180;
+  const raw = Buffer.alloc(width * height * 3);
+  for (let y = 0; y < height; y++)
+    for (let x = 0; x < width; x++) {
+      const value = kind === 'black' ? 0 : Math.floor(x / 4) % 2 === 0 ? 40 : 210;
+      raw.fill(value, (y * width + x) * 3, (y * width + x) * 3 + 3);
+    }
+  let image = sharp(raw, { raw: { width, height, channels: 3 } });
+  if (kind === 'blur') image = image.blur(10);
+  return image.webp({ quality: 80 }).toBuffer();
 }
 
 /** The first bytes of an mp4 file, enough for the magic byte check. */
