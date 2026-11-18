@@ -28,6 +28,11 @@ export interface AccountViewerSource {
     profileId: string,
     patch: Partial<PlaybackSettings>,
   ): Promise<PlaybackSettings>;
+  migrateDevicePlayback(
+    accountId: string,
+    profileId: string,
+    legacy: Record<string, unknown>,
+  ): Promise<PlaybackSettings>;
   /** The background export job (M02-S05). */
   exports: {
     request(
@@ -85,6 +90,11 @@ export class RealAccountRepository implements AccountRepository {
   async savePlayback(profileId: string, patch: Partial<PlaybackSettings>) {
     if (!this.viewer) return this.fallback.savePlayback(profileId, patch);
     return this.viewer.savePlayback(await this.signedInAccount(), profileId, patch);
+  }
+
+  async migrateDevicePlayback(profileId: string, legacy: Record<string, unknown>) {
+    if (!this.viewer) return this.fallback.migrateDevicePlayback(profileId, legacy);
+    return this.viewer.migrateDevicePlayback(await this.signedInAccount(), profileId, legacy);
   }
 
   /** The latest export request: none, being built, ready with a 24 hour link, or failed (S30 states 1 to 4). */

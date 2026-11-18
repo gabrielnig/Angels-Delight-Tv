@@ -38,4 +38,10 @@ describe('useDataSaver', () => {
     const other = renderHook(() => useDataSaver('p4'));
     expect(other.result.current.on).toBe(false);
   });
+
+  it('is on when the profile turned Data saver on, on any device (M03-S09)', () => {
+    const { result } = renderHook(() => useDataSaver('p5', { profileSetting: true }));
+    expect(result.current.on).toBe(true);
+    expect(result.current.announce).toBe(false);
+  });
 });

@@ -141,6 +141,7 @@ export class RealPlaybackData implements PlaybackData {
           ...DEFAULT_PREFERENCES,
           captionsOn: isKids || prefs.captionsDefault,
           rate: prefs.speed,
+          captionLanguage: prefs.captionLanguage,
           dataSaver: prefs.dataSaver,
           autoplayNext: prefs.autoplayNext,
         },

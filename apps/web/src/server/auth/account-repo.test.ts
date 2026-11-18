@@ -196,6 +196,10 @@ describe('RealAccountRepository with viewer data', () => {
       quality: '720',
       ...patch,
     })),
+    migrateDevicePlayback: vi.fn(async (_a: string, _p: string, legacy: object) => ({
+      quality: '720',
+      ...legacy,
+    })),
     exports: {
       request: vi.fn(async (_a: string, password: string) => ({
         status: password === 'pw' ? ('started' as const) : ('wrong_password' as const),
@@ -222,6 +226,16 @@ describe('RealAccountRepository with viewer data', () => {
     expect(v.playback).toHaveBeenCalledWith('a1', 'p1');
     await repo.savePlayback('p1', { dataSaver: true });
     expect(v.savePlayback).toHaveBeenCalledWith('a1', 'p1', { dataSaver: true });
+  });
+
+  it('moves choices saved on the device to the profile', async () => {
+    const v = viewer();
+    const { repo } = setup(service, {}, v);
+    expect(await repo.migrateDevicePlayback('p1', { speed: 1.5 })).toEqual({
+      quality: '720',
+      speed: 1.5,
+    });
+    expect(v.migrateDevicePlayback).toHaveBeenCalledWith('a1', 'p1', { speed: 1.5 });
   });
 
   it('starts the export job with the password and kicks the background run', async () => {
