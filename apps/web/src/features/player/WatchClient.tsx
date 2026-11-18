@@ -17,6 +17,8 @@ import {
   createLocalProgressSink,
   readLocalProgress,
 } from './fixture-adapters';
+import { getAnalyticsClient } from '@/lib/analytics/browser';
+import { createWatchTelemetry } from './telemetry';
 import { toViewerProgressBody } from './progress-body';
 import { loadPreferences, savePreferences } from './preferences';
 import {
@@ -121,6 +123,19 @@ export function WatchClient({
     // Evaluated once per video: the saved position must not move while watching.
   }, [video.id]);
 
+  const telemetry = useMemo(() => {
+    if (!origin) return undefined;
+    try {
+      return createWatchTelemetry({
+        videoId: video.id,
+        durationSeconds: video.durationSeconds,
+        client: getAnalyticsClient(),
+      });
+    } catch {
+      return undefined;
+    }
+  }, [origin, video.id, video.durationSeconds]);
+
   const onNext = useCallback((item: UpNextItem) => router.push(watchPath(item.id)), [router]);
 
   const end: EndScreenData = {
@@ -171,6 +186,7 @@ export function WatchClient({
               playbackSettings: PLAYBACK_SETTINGS_PATH,
             }}
             onForbidden={() => router.push('/profiles')}
+            {...(telemetry ? { telemetry } : {})}
             deviceClass={viewer.kids ? 'kids' : 'standard'}
             {...testing}
           />
