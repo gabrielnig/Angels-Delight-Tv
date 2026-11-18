@@ -63,3 +63,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 ### Lane J2: quality review
 
 - Remove unused code and four unused dependencies, show an invite as expired only for rejected tokens, and bring DEV-SETUP, ARCHITECTURE, DATA-MODEL and TESTING in line with the built repo. Findings are in `docs/QUALITY-REVIEW.md`.
+
+### Lane M3: media and brand
+
+- Add image variants and generated posters, sprite seek previews, failed encode cleanup, caption script alignment, a placeholder brand kit, six theme presets with a publish e2e, and branded emails. See `docs/lanes/M3-media-brand.md`.
