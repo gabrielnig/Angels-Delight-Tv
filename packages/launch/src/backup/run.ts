@@ -4,7 +4,14 @@ import { join } from 'node:path';
 import type { StorageAdapter } from '@ad/storage';
 import type { PartWriter } from '../import/service-ports';
 import { encryptBackupFile } from './crypto';
-import { backupKey, parseBackupKey, selectExpired, type BackupTarget } from './retention';
+import { buildManifest, manifestKey, MANIFEST_SUFFIX, fileSha256 } from './manifest';
+import {
+  backupKey,
+  parseBackupKey,
+  selectExpired,
+  selectExpiredGfs,
+  type BackupTarget,
+} from './retention';
 import { uploadFile } from './upload';
 
 export type CommandRunner = (
@@ -33,7 +40,11 @@ export interface BackupTargetConfig {
   url: string;
   /** PEM or base64 PEM of the public key this dump is encrypted to. */
   publicKey: string;
-  retainDays: number;
+  /** Remote retention: newest backup of each of this many days, then of this many older weeks. */
+  keepDaily: number;
+  keepWeekly: number;
+  /** Hard age limit for remote copies. The keys database sets 14 so a backup never outlives shredded keys. */
+  maxAgeDays?: number;
 }
 
 export interface BackupDeps {
@@ -47,8 +58,6 @@ export interface BackupDeps {
   writePart: PartWriter;
   targets: BackupTargetConfig[];
   retainLocalDays: number;
-  /** Always keep this many newest remote copies per target. Default 3. */
-  minKeep?: number;
   pingUrl?: string;
   ping?: (url: string) => Promise<void>;
 }
@@ -58,6 +67,7 @@ export interface TargetReport {
   ok: boolean;
   key?: string;
   bytes?: number;
+  sha256?: string;
   deletedRemote: string[];
   deletedLocal: string[];
   error?: string;
@@ -109,6 +119,24 @@ async function backupOne(
     await encryptBackupFile(plain, encrypted, config.publicKey);
     report.bytes = await uploadFile(deps.storage, key, encrypted, { writePart: deps.writePart });
     report.key = key;
+    report.sha256 = await fileSha256(encrypted);
+    await deps.storage.put(
+      manifestKey(key),
+      Buffer.from(
+        `${JSON.stringify(
+          buildManifest({
+            key,
+            target: config.target,
+            takenAt,
+            bytes: report.bytes,
+            sha256: report.sha256,
+          }),
+          null,
+          2,
+        )}\n`,
+      ),
+      { contentType: 'application/json' },
+    );
 
     // Local retention: encrypted copies only, by the time in the name.
     const local = (await readdir(deps.localDir)).filter((file) => LOCAL_NAME.test(file));
@@ -122,21 +150,37 @@ async function backupOne(
       report.deletedLocal.push(item.file);
     }
 
-    // Remote retention.
+    // Remote retention: 14 daily plus 8 weekly, each backup deleted together with its manifest.
     const remote = await deps.storage.list(`${config.target}/`);
-    const expiredRemote = selectExpired(
+    const expiredRemote = selectExpiredGfs(
       remote,
-      { target: config.target, maxAgeDays: config.retainDays, minKeep: deps.minKeep ?? 3 },
+      {
+        target: config.target,
+        daily: config.keepDaily,
+        weekly: config.keepWeekly,
+        maxAgeDays: config.maxAgeDays,
+      },
       takenAt,
     );
     for (const item of expiredRemote) {
+      await deps.storage.delete(manifestKey(item.key));
       await deps.storage.delete(item.key);
       report.deletedRemote.push(item.key);
+    }
+    // A manifest is only useful next to its backup.
+    const present = new Set(remote.map((item) => item.key));
+    for (const item of remote) {
+      if (!item.key.endsWith(MANIFEST_SUFFIX)) continue;
+      const backup = item.key.slice(0, -MANIFEST_SUFFIX.length);
+      if (!present.has(backup)) await deps.storage.delete(item.key);
     }
     report.ok = true;
   } catch (error) {
     report.error = error instanceof Error ? error.message : 'Unknown error';
-    if (report.key) await deps.storage.delete(report.key).catch(() => undefined);
+    if (report.key) {
+      await deps.storage.delete(manifestKey(report.key)).catch(() => undefined);
+      await deps.storage.delete(report.key).catch(() => undefined);
+    }
     await rm(encrypted, { force: true });
   } finally {
     await rm(plain, { force: true });

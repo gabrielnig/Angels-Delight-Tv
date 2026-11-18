@@ -18,8 +18,12 @@ const schema = z.object({
   BACKUP_S3_ACCESS_KEY_ID: z.string().min(1),
   BACKUP_S3_SECRET_ACCESS_KEY: z.string().min(1),
   BACKUP_BUCKET: z.string().min(3).default('ad-backups'),
-  BACKUP_RETAIN_DB_DAYS: days.default(35),
-  BACKUP_RETAIN_KEYS_DAYS: days.default(14),
+  BACKUP_KEEP_DAILY: days.default(14),
+  BACKUP_KEEP_WEEKLY: z
+    .string()
+    .regex(/^\d+$/, 'must be a whole number')
+    .transform(Number)
+    .default(8),
   BACKUP_RETAIN_LOCAL_DAYS: days.default(7),
   BACKUP_PING_URL: z.url().optional(),
   BACKUP_LOCAL_DIR: z.string().min(1).default('/backups'),
@@ -34,8 +38,10 @@ export interface BackupEnv {
   s3AccessKeyId: string;
   s3SecretAccessKey: string;
   bucket: string;
-  retainDbDays: number;
-  retainKeysDays: number;
+  /** Newest backup of each of this many days is kept, for both databases. */
+  keepDaily: number;
+  /** Then one a week for this many older weeks, for the main database only (SECURITY section 10). */
+  keepWeekly: number;
   retainLocalDays: number;
   pingUrl?: string;
   localDir: string;
@@ -67,8 +73,8 @@ export function loadBackupEnv(source: Record<string, string | undefined>): Backu
     s3AccessKeyId: v.BACKUP_S3_ACCESS_KEY_ID,
     s3SecretAccessKey: v.BACKUP_S3_SECRET_ACCESS_KEY,
     bucket: v.BACKUP_BUCKET,
-    retainDbDays: v.BACKUP_RETAIN_DB_DAYS,
-    retainKeysDays: v.BACKUP_RETAIN_KEYS_DAYS,
+    keepDaily: v.BACKUP_KEEP_DAILY,
+    keepWeekly: v.BACKUP_KEEP_WEEKLY,
     retainLocalDays: v.BACKUP_RETAIN_LOCAL_DAYS,
     pingUrl: v.BACKUP_PING_URL,
     localDir: v.BACKUP_LOCAL_DIR,

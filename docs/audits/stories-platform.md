@@ -66,7 +66,7 @@ Status rules: **done with test** means every acceptance criterion is implemented
 | M31-S02 HLS key endpoint | Must | done with test | http.test.ts (no-store, denial log, 401 and 403); hls-real.stack.ts (key route over real hls.js); publishing.int.test.ts (key required) | 403 is 401 for missing tokens (D-121). Limit is 20 per 10 min per profile (D-123) |
 | M31-S03 Segment access control | Must | done with test | apps/edge worker.miniflare.test.ts (workerd); hls-real.stack.ts (expired url); smoke.test.ts (misconfiguration) | Token is per url signature over the key, not a path prefix cookie (D-047) |
 | M31-S04 Preview tokens for admin | Should | done with test | service.test.ts (previews need staff); http.test.ts (staff actor); preview 1 hour | Preview analytics drop is covered in a2 audit |
-| M32-S01 Nightly backups | Must | partial | `m1`: packages/launch/src/backup run.test.ts, retention.test.ts; ops/backup.sh at 03:00 Lagos | No manifest with size and checksum, retention is by age not 14 daily and 8 weekly |
+| M32-S01 Nightly backups | Must | done with test | `m1`: packages/launch/src/backup run.test.ts, retention.test.ts; ops/backup.sh at 03:00 Lagos. `f1`: manifest.test.ts (size and checksum), run.test.ts (manifest written, 14 daily plus 8 weekly over 100 nights), restore.int.test.ts (tampered backup refused) | The keys database keeps 14 daily only (D-132) |
 | M32-S02 Restore drill | Must | partial | `m1`: restore.int.test.ts | Quarterly drill date record and failed drill issue are process steps |
 | M32-S03 Account deletion purge | Should | done with test | packages/auth/src/account.int.test.ts (grace, cancel, purge, hashed audit) | Backup ageing text on Privacy page is client content |
 | M33-S01 Reproducible deploy | Must | partial | `m1`: ops/deploy.sh, compose-prod.test.ts, ops-deploy.test.ts | No image build, push and rollback pipeline in CI; version in admin footer not asserted |
@@ -78,7 +78,7 @@ Status rules: **done with test** means every acceptance criterion is implemented
 
 ## Counts
 
-Rows: 69. done with test: 56. done without test: 3. partial: 10. missing: 0.
+Rows: 69. done with test: 57. done without test: 3. partial: 9. missing: 0.
 
 m1 and m3 had not merged when this table was written. Their rows (M21-S04, M24-S02 alerts, M32, M33-S01, M33-S03, M36) must be re-checked against their merged work.
 

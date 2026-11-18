@@ -16,8 +16,8 @@ describe('loadBackupEnv', () => {
     const env = loadBackupEnv(good);
     expect(env).toMatchObject({
       bucket: 'ad-backups',
-      retainDbDays: 35,
-      retainKeysDays: 14,
+      keepDaily: 14,
+      keepWeekly: 8,
       retainLocalDays: 7,
       localDir: '/backups',
       pingUrl: undefined,
@@ -27,11 +27,17 @@ describe('loadBackupEnv', () => {
   it('takes overrides and an empty ping url as off', () => {
     const env = loadBackupEnv({
       ...good,
-      BACKUP_RETAIN_DB_DAYS: '60',
+      BACKUP_KEEP_DAILY: '20',
+      BACKUP_KEEP_WEEKLY: '0',
       BACKUP_PING_URL: '',
       BACKUP_BUCKET: 'other',
     });
-    expect(env).toMatchObject({ retainDbDays: 60, pingUrl: undefined, bucket: 'other' });
+    expect(env).toMatchObject({
+      keepDaily: 20,
+      keepWeekly: 0,
+      pingUrl: undefined,
+      bucket: 'other',
+    });
   });
 
   it('names the variables that are missing or wrong and never prints values', () => {
@@ -39,9 +45,8 @@ describe('loadBackupEnv', () => {
       /BACKUP_S3_ACCESS_KEY_ID/,
     );
     expect(() => loadBackupEnv({ ...good, BACKUP_DB_URL: 'mysql://x' })).toThrow(/BACKUP_DB_URL/);
-    expect(() => loadBackupEnv({ ...good, BACKUP_RETAIN_DB_DAYS: '0' })).toThrow(
-      /BACKUP_RETAIN_DB_DAYS/,
-    );
+    expect(() => loadBackupEnv({ ...good, BACKUP_KEEP_DAILY: '0' })).toThrow(/BACKUP_KEEP_DAILY/);
+    expect(() => loadBackupEnv({ ...good, BACKUP_KEEP_WEEKLY: 'x' })).toThrow(/BACKUP_KEEP_WEEKLY/);
     try {
       loadBackupEnv({ ...good, BACKUP_DB_URL: 'mysql://user:topsecret@x' });
     } catch (error) {
