@@ -17,7 +17,9 @@
     "footprint": "scripts/footprint-check.sh",
     "hooks:install": "scripts/install-hooks.sh",
     "db:seed:admin": "pnpm --filter @ad/auth run seed:admin",
-    "db:seed:demo": "pnpm --filter @ad/catalog run seed:demo"
+    "db:seed:demo": "pnpm --filter @ad/catalog run seed:demo",
+    "launch:apply": "tsx packages/launch/src/cli/apply.ts",
+    "secrets:generate": "tsx packages/launch/src/cli/secrets.ts"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.5",
