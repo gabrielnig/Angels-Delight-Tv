@@ -42,7 +42,9 @@ describe('VideosList bulk suitability', () => {
       await userEvent.click(screen.getAllByRole('checkbox', { name: `Select ${item.title}` })[0]!);
     }
     await userEvent.selectOptions(
-      within(screen.getByRole('region', { name: 'Bulk actions' })).getByLabelText('Set suitability'),
+      within(screen.getByRole('region', { name: 'Bulk actions' })).getByLabelText(
+        'Set suitability',
+      ),
       'kids',
     );
     expect(bulk).toHaveBeenCalledWith(
@@ -114,6 +116,24 @@ describe('VideosList', () => {
       />,
     );
     expect(screen.getByRole('status')).toHaveTextContent('No videos match.');
+  });
+
+  it('pages with opaque cursors when the server pages by key', async () => {
+    replace.mockClear();
+    setup({
+      page: { items: page.items, total: 5050, nextCursor: 'next-key', prevCursor: 'prev-key' },
+      query: { cursor: 'this-key' },
+    });
+    expect(screen.getByText(`Showing ${page.items.length} of 5050 videos`)).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: /next/i }));
+    expect(replace).toHaveBeenLastCalledWith('/admin/videos?cursor=next-key');
+    await userEvent.click(screen.getByRole('button', { name: /previous/i }));
+    expect(replace).toHaveBeenLastCalledWith('/admin/videos?cursor=prev-key');
+  });
+
+  it('disables Previous on the first keyset page', () => {
+    setup({ page: { items: page.items, total: 9, nextCursor: 'n', prevCursor: null } });
+    expect(screen.getByRole('button', { name: /previous/i })).toBeDisabled();
   });
 
   it('writes a filter into the URL', async () => {

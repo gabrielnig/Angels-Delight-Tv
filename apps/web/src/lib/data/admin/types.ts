@@ -75,6 +75,8 @@ export interface Page<T> {
   items: T[];
   total: number;
   nextCursor: string | null;
+  /** Set only by keyset paging, where the previous page cannot be worked out from a number. */
+  prevCursor?: string | null;
 }
 
 export interface ChecklistItem {

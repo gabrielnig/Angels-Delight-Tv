@@ -160,6 +160,172 @@ export async function listAdminVideos(
   });
 }
 
+export type VideoPageSort = 'updated' | 'title' | 'views' | 'published';
+
+export interface VideoPageQuery {
+  q?: string;
+  status?: string;
+  categoryId?: string;
+  captions?: AdminVideo['captionState'];
+  suitability?: Suitability;
+  sort?: VideoPageSort;
+  dir?: 'asc' | 'desc';
+  cursor?: string;
+  limit?: number;
+}
+
+export interface VideoPage {
+  items: AdminVideo[];
+  total: number;
+  nextCursor: string | null;
+  prevCursor: string | null;
+}
+
+interface PageRow extends Row {
+  sort_text: string;
+  total: string | number;
+}
+
+interface PageCursor {
+  k: string;
+  i: string;
+  b?: true;
+}
+
+function decodeCursor(raw: string | undefined): PageCursor | null {
+  if (!raw) return null;
+  try {
+    const value = JSON.parse(Buffer.from(raw, 'base64url').toString('utf8')) as PageCursor;
+    if (typeof value.k === 'string' && isUuid(value.i)) return value;
+  } catch {
+    // A mangled cursor starts the list again instead of failing the screen.
+  }
+  return null;
+}
+const encodeCursor = (value: PageCursor) =>
+  Buffer.from(JSON.stringify(value), 'utf8').toString('base64url');
+
+type Frag = ReturnType<typeof sql>;
+const SORT_SQL: Record<VideoPageSort, { expr: Frag; type: Frag }> = {
+  updated: { expr: sql`b.updated_at`, type: sql`timestamptz` },
+  title: { expr: sql`b.title`, type: sql`text` },
+  views: { expr: sql`b.views`, type: sql`numeric` },
+  published: {
+    expr: sql`coalesce(b.published_at, b.publish_at, 'epoch'::timestamptz)`,
+    type: sql`timestamptz`,
+  },
+};
+
+const CAPTION_STATE_SQL = sql`CASE WHEN b.cap_generating THEN 'generating' WHEN b.cap_status = 'approved' THEN 'approved'
+  WHEN b.cap_status IS NOT NULL THEN 'needs_review' WHEN b.cap_failed THEN 'failed' ELSE 'none' END`;
+/** The badge the screens derive (adminStatusOf), computed in SQL so a filter can use it. Keep the two in step. */
+const ADMIN_STATUS_SQL = sql`CASE
+  WHEN s.status = 'failed' THEN 'failed'
+  WHEN s.status = 'uploading' THEN 'uploading'
+  WHEN s.status IN ('uploaded', 'validating', 'encoding') THEN 'processing'
+  WHEN s.publish_state = 'published' THEN 'published'
+  WHEN s.publish_state = 'scheduled' THEN 'scheduled'
+  WHEN btrim(s.title) = '' THEN 'draft'
+  WHEN s.caption_state <> 'approved' AND s.caption_override_reason IS NULL THEN
+    CASE WHEN s.publish_state = 'draft' AND s.caption_state = 'none' AND coalesce(s.description, '') = ''
+      THEN 'draft' ELSE 'needs_captions' END
+  ELSE 'ready' END`;
+
+export const ADMIN_VIDEO_PAGE_MAX = 50;
+
+/**
+ * One page of live videos. Filtering, ordering and the cursor all run in the database, so the list never
+ * stops at a fixed row count (M16-S01 AC2). The cursor is keyset based: it names the last row seen, so a
+ * page does not shift when videos change underneath it.
+ */
+export async function listAdminVideosPage(
+  ctx: AdminContext,
+  actor: Actor,
+  query: VideoPageQuery = {},
+): Promise<VideoPage> {
+  assertStaff(actor);
+  const empty: VideoPage = { items: [], total: 0, nextCursor: null, prevCursor: null };
+  const sort = query.sort ?? 'updated';
+  const dir = query.dir ?? (sort === 'title' ? 'asc' : 'desc');
+  const limit = Math.min(ADMIN_VIDEO_PAGE_MAX, Math.max(1, Math.trunc(query.limit ?? 10)));
+  const cursor = decodeCursor(query.cursor);
+  const backward = cursor?.b === true;
+  // Going back reads the other way and flips the rows again afterwards.
+  const ascending = (dir === 'asc') !== backward;
+  const { expr, type } = SORT_SQL[sort];
+
+  const where: Frag[] = [];
+  const q = query.q?.trim();
+  if (q) {
+    const like = `%${q.replace(/[\\%_]/g, (c) => `\\${c}`)}%`;
+    where.push(
+      sql`(f.title ILIKE ${like} OR EXISTS (SELECT 1 FROM unnest(f.tags) tag WHERE tag ILIKE ${like}))`,
+    );
+  }
+  if (query.status) where.push(sql`f.admin_status = ${query.status}`);
+  if (query.captions) where.push(sql`f.caption_state = ${query.captions}`);
+  if (query.suitability) where.push(sql`f.suit = ${query.suitability}`);
+  if (query.categoryId) {
+    if (!isUuid(query.categoryId)) return empty;
+    where.push(
+      sql`EXISTS (SELECT 1 FROM video_categories vc WHERE vc.video_id = f.id AND vc.category_id = ${query.categoryId}::uuid)`,
+    );
+  }
+  const filter = where.length ? sql`WHERE ${sql.join(where, sql` AND `)}` : sql``;
+  const after = cursor
+    ? sql`WHERE (f.sort_key, f.id) ${ascending ? sql`>` : sql`<`} (${cursor.k}::${type}, ${cursor.i}::uuid)`
+    : sql``;
+  const order = ascending ? sql`ASC` : sql`DESC`;
+
+  return withAccount(ctx.db, actor, async (tx) => {
+    const result = await tx.execute(sql`
+      WITH b AS (${SELECT} WHERE v.deleted_at IS NULL),
+      s AS (
+        SELECT b.*, ${expr} AS sort_key, ${CAPTION_STATE_SQL} AS caption_state,
+          coalesce(b.suitability, CASE WHEN b.kids_safe THEN 'kids' END) AS suit
+        FROM b
+      ),
+      f AS (
+        SELECT s.*, ${ADMIN_STATUS_SQL} AS admin_status FROM s
+      ),
+      m AS (SELECT * FROM f ${filter})
+      SELECT f.*, f.sort_key::text AS sort_text, (SELECT count(*) FROM m) AS total
+      FROM m f ${after}
+      ORDER BY f.sort_key ${order}, f.id ${order}
+      LIMIT ${limit + 1}`);
+    let rows = rowsOf<PageRow>(result);
+    const more = rows.length > limit;
+    rows = rows.slice(0, limit);
+    if (backward) rows.reverse();
+    const total = rows.length ? Number(rows[0]!.total) : await countOnly();
+    const first = rows[0];
+    const last = rows[rows.length - 1];
+    const keyOf = (row: PageRow | undefined, b?: true) =>
+      row ? encodeCursor({ k: row.sort_text, i: row.id, ...(b ? { b } : {}) }) : null;
+    // Forward: more rows ahead means a next page, and any cursor means there is a page before.
+    // Backward: we came from a later page, so next always exists, and more rows behind means previous does.
+    const nextCursor = backward ? keyOf(last) : more ? keyOf(last) : null;
+    const prevCursor = backward
+      ? more
+        ? keyOf(first, true)
+        : null
+      : cursor
+        ? keyOf(first, true)
+        : null;
+    return { items: rows.map(toVideo), total, nextCursor, prevCursor };
+
+    async function countOnly(): Promise<number> {
+      const counted = await tx.execute(sql`
+        WITH b AS (${SELECT} WHERE v.deleted_at IS NULL),
+        s AS (SELECT b.*, ${CAPTION_STATE_SQL} AS caption_state,
+          coalesce(b.suitability, CASE WHEN b.kids_safe THEN 'kids' END) AS suit FROM b),
+        f AS (SELECT s.*, ${ADMIN_STATUS_SQL} AS admin_status FROM s)
+        SELECT count(*) AS n FROM f ${filter}`);
+      return Number(rowsOf<{ n: string }>(counted)[0]?.n ?? 0);
+    }
+  });
+}
+
 export async function getAdminVideo(
   ctx: AdminContext,
   actor: Actor,
