@@ -242,7 +242,7 @@ describe.skipIf(!integrationEnabled() || !hasFfmpeg)('real ffmpeg on a generated
       a.rawKey?.startsWith(`candidates/${videoId}/`),
     );
     expect(candidates).toHaveLength(6);
-    const image = await readAll(media, candidates[0]!.variants[0]!.key);
+    const image = await readAll(originals, candidates[0]!.rawKey!);
     expect(image.subarray(0, 4).toString('latin1')).toBe('RIFF');
     expect(image.subarray(8, 12).toString('latin1')).toBe('WEBP');
   });
