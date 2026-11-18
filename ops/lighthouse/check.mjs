@@ -1,4 +1,5 @@
 // Compares a Lighthouse JSON report with budget.json. Usage: node check.mjs report.json budget.json <url>
+/* global process, console, URL */
 import { readFileSync } from 'node:fs';
 
 const [reportPath, budgetPath, url] = process.argv.slice(2);

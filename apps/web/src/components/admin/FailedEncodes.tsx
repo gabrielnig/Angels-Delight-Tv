@@ -22,7 +22,7 @@ type Pending = { kind: 'one'; row: FailedEncodeRecord } | { kind: 'all' } | null
  */
 export function FailedEncodes({
   rows,
-  role,
+  role: _role,
   now,
   retry,
   cleanup,

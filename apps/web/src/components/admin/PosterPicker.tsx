@@ -155,7 +155,6 @@ export function PosterPicker({
       clearTimeout(timer);
     };
     // frames is rebuilt every render and only read for the failure fallback.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [uploaded, status, pollMs]);
 
   async function onServerFile(file: File) {

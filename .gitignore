@@ -25,3 +25,6 @@ apps/web/public/fixtures/hls/
 # local stack for scripts/e2e-video-up.sh
 .e2e-storage/
 sbom.cdx.json
+
+# local stack from the launch lane runs
+.m1-storage/

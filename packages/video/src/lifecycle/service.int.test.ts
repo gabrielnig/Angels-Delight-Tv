@@ -20,7 +20,7 @@ describe.skipIf(!integrationEnabled())('LifecycleService against Postgres', () =
   let media: LocalStorage;
   let boss: FakeBoss;
   let service: LifecycleService;
-  let now = new Date('2026-06-01T00:00:00Z');
+  const now = new Date('2026-06-01T00:00:00Z');
 
   async function seed(deletedAt: Date | null) {
     const video = makeVideo({ status: 'ready', durationMs: 5000, deletedAt });
