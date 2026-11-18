@@ -90,6 +90,8 @@ export interface VideoCardProps {
   durationSeconds: number;
   thumbnail?: Thumbnail;
   meta?: string;
+  /** Shown in a light overlay after the hover delay on desktop. No video preview (M05-S03). */
+  description?: string;
   priority?: boolean;
   /** When defined the My List button shows. */
   inList?: boolean;
@@ -103,6 +105,7 @@ export function VideoCard({
   durationSeconds,
   thumbnail,
   meta,
+  description,
   priority,
   inList,
   onToggleList,
@@ -115,6 +118,14 @@ export function VideoCard({
           <span className="ad-card__badge" aria-hidden="true">
             <Badge variant="duration">{formatClock(durationSeconds)}</Badge>
           </span>
+          {description ? (
+            <span className="ad-card__peek" data-testid="card-peek" aria-hidden="true">
+              <span className="ad-card__peek-text">{description}</span>
+              <span className="ad-card__peek-play">
+                <Icon name="play" size={16} filled /> Play
+              </span>
+            </span>
+          ) : null}
         </Thumb>
         <span className="ad-card__title">{title}</span>
         <span className="ad-sr-only">, {spokenLength(durationSeconds)}</span>

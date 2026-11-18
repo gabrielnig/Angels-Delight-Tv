@@ -180,3 +180,18 @@ describe('Thumb formats', () => {
     expect(container.querySelector('picture img')).toHaveAttribute('src', 'a.jpg');
   });
 });
+
+describe('VideoCard hover overlay', () => {
+  it('carries the description and a Play hint, hidden from assistive technology', () => {
+    render(<VideoCard {...base} description="Learn to budget your data." />);
+    const peek = screen.getByTestId('card-peek');
+    expect(peek).toHaveAttribute('aria-hidden', 'true');
+    expect(peek).toHaveTextContent('Learn to budget your data.');
+    expect(peek).toHaveTextContent('Play');
+  });
+
+  it('has no overlay without a description', () => {
+    render(<VideoCard {...base} />);
+    expect(screen.queryByTestId('card-peek')).toBeNull();
+  });
+});
