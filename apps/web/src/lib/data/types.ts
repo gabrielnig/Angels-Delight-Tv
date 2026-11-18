@@ -453,6 +453,8 @@ export interface LegalPage {
   updated: string;
   readingMinutes: number;
   draft: boolean;
+  /** Intro line under the About headline. */
+  lead?: string;
   sections: Array<{ id: string; heading: string; body: string[] }>;
   /** Sanitised HTML from the admin pages editor. When present it replaces the section bodies. */
   html?: string;
