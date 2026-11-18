@@ -93,6 +93,8 @@ export interface VideoCardProps {
   /** Shown in a light overlay after the hover delay on desktop. No video preview (M05-S03). */
   description?: string;
   priority?: boolean;
+  /** Shows the CC mark and says so in the link name (M11-S05). */
+  hasCaptions?: boolean;
   /** When defined the My List button shows. */
   inList?: boolean;
   onToggleList?: () => void;
@@ -107,6 +109,7 @@ export function VideoCard({
   meta,
   description,
   priority,
+  hasCaptions,
   inList,
   onToggleList,
   className,
@@ -118,6 +121,7 @@ export function VideoCard({
           <span className="ad-card__badge" aria-hidden="true">
             <Badge variant="duration">{formatClock(durationSeconds)}</Badge>
           </span>
+          {hasCaptions ? <CaptionMark /> : null}
           {description ? (
             <span className="ad-card__peek" data-testid="card-peek" aria-hidden="true">
               <span className="ad-card__peek-text">{description}</span>
@@ -128,7 +132,10 @@ export function VideoCard({
           ) : null}
         </Thumb>
         <span className="ad-card__title">{title}</span>
-        <span className="ad-sr-only">, {spokenLength(durationSeconds)}</span>
+        <span className="ad-sr-only">
+          , {spokenLength(durationSeconds)}
+          {hasCaptions ? ', captions available' : ''}
+        </span>
         {meta ? (
           <span className="ad-card__meta" aria-hidden="true">
             {meta}
@@ -217,6 +224,7 @@ export function SeriesCard({
   thumbnail,
   episodeCount,
   seasonCount = 1,
+  hasCaptions,
   priority,
   inList,
   onToggleList,
@@ -228,6 +236,7 @@ export function SeriesCard({
   episodeCount: number;
   /** Shown instead of the episode count on the badge when there is more than one season. */
   seasonCount?: number;
+  hasCaptions?: boolean;
   priority?: boolean;
   inList?: boolean;
   onToggleList?: () => void;
@@ -245,10 +254,14 @@ export function SeriesCard({
             <span className="ad-card__badge" aria-hidden="true">
               <Badge variant="duration">{manySeasons ? seasonsText : episodesText}</Badge>
             </span>
+            {hasCaptions ? <CaptionMark /> : null}
           </Thumb>
         </span>
         <span className="ad-card__title">{title}</span>
-        <span className="ad-sr-only">, {countText}</span>
+        <span className="ad-sr-only">
+          , {countText}
+          {hasCaptions ? ', captions available' : ''}
+        </span>
       </Link>
       {onToggleList ? (
         <IconButton
@@ -261,5 +274,13 @@ export function SeriesCard({
         />
       ) : null}
     </article>
+  );
+}
+
+function CaptionMark() {
+  return (
+    <span className="ad-card__cc" aria-hidden="true">
+      CC
+    </span>
   );
 }
