@@ -6,7 +6,7 @@ const SERIF_STACK = '"Lora", Georgia, "Times New Roman", serif';
 const GROTESK_STACK =
   '"Space Grotesk", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
 
-/** Display only fonts: they set headings and the body keeps Inter (D-158, D-005). */
+/** Display only fonts: they set headings and the body keeps Inter (D-162, D-005). */
 const DISPLAY_ONLY: Partial<Record<FontKey, string>> = { lora: SERIF_STACK, 'space-grotesk': GROTESK_STACK };
 
 /**
