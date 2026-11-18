@@ -5,6 +5,8 @@ import { describe, expect, it } from 'vitest';
 import { registerVideoHandlers } from './handlers';
 
 const VID = '0192f0a0-0000-7000-8000-0000000000aa';
+const ASSET = '0192f0a0-0000-7000-8000-0000000000bb';
+const OTHER = '0192f0a0-0000-7000-8000-0000000000cc';
 
 function setup(overrides: Record<string, unknown> = {}) {
   const calls: unknown[][] = [];
@@ -22,7 +24,7 @@ function setup(overrides: Record<string, unknown> = {}) {
       failVideo: async (...a: unknown[]) => void failed.push(a),
     },
     captions: { generate: rec('caption') },
-    images: { process: rec('image') },
+    images: { process: rec('image'), failRecut: async () => null },
     lifecycle: {
       purge: rec('purge'),
       enqueueExpired: async () => (calls.push(['expired']), { queued: 0 }),
@@ -107,6 +109,7 @@ describe('registerVideoHandlers', () => {
             void sent.push(`encodeFailed:${id}:${why}`),
           captionsReady: async (id: string) => void sent.push(`captionsReady:${id}`),
           captionsFailed: async (id: string) => void sent.push(`captionsFailed:${id}`),
+          posterRecutFailed: async (id: string) => void sent.push(`posterRecutFailed:${id}`),
         },
       };
     };
@@ -141,6 +144,26 @@ describe('registerVideoHandlers', () => {
       expect(sent[1]).toBe(`captionsFailed:${VID}`);
     });
 
+    it('tells staff when a poster recut fails for good, and stays quiet for any other picture', async () => {
+      const { boss, deps } = setup();
+      (deps.images as { process: unknown }).process = async () => {
+        throw new PermanentJobError('bad picture');
+      };
+      const marked: string[] = [];
+      (deps.images as { failRecut: unknown }).failRecut = async (assetId: string) => {
+        marked.push(assetId);
+        return assetId === ASSET ? { videoId: VID } : null;
+      };
+      const { sent, notifier: n } = notifier();
+      await registerVideoHandlers(boss, { ...deps, notifier: n } as never);
+      await boss.send('image.process', { assetId: ASSET });
+      await boss.drain('image.process');
+      await boss.send('image.process', { assetId: OTHER });
+      await boss.drain('image.process');
+      expect(marked).toEqual([ASSET, OTHER]);
+      expect(sent).toEqual([`posterRecutFailed:${VID}`]);
+    });
+
     it('does not fail the job when the notice cannot be sent', async () => {
       const { boss, deps, failed } = setup();
       const broken = {
@@ -148,6 +171,7 @@ describe('registerVideoHandlers', () => {
         encodeFailed: async () => Promise.reject(new Error('mail down')),
         captionsReady: async () => Promise.reject(new Error('mail down')),
         captionsFailed: async () => Promise.reject(new Error('mail down')),
+        posterRecutFailed: async () => Promise.reject(new Error('mail down')),
       };
       await registerVideoHandlers(boss, { ...deps, notifier: broken } as never);
       await boss.send('video.encode', { videoId: VID });

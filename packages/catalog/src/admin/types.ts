@@ -31,6 +31,8 @@ export interface AdminVideo {
   posterId: string | null;
   posterAlt: string | null;
   posterFocus: { x: number; y: number; zoom: number } | null;
+  /** State of the recut that applies the saved focus to the generated files. Null when there is none to report. */
+  posterRecut?: 'processing' | 'failed' | null;
   suitability: Suitability | null;
   seriesId: string | null;
   seasonNumber: number | null;

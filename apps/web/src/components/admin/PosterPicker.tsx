@@ -42,6 +42,8 @@ interface Props {
   status?: (assetId: string) => Promise<{ status: 'processing' | 'ready' | 'failed' }>;
   /** Poll interval for a picture that is being processed. */
   pollMs?: number;
+  /** State of the recut that applies the saved crop to the generated files (M36-S03). */
+  recut?: 'processing' | 'failed' | null;
 }
 
 interface Source {
@@ -101,6 +103,7 @@ export function PosterPicker({
   upload,
   status,
   pollMs = 1500,
+  recut = null,
 }: Props) {
   const router = useRouter();
   const toast = useToast();
@@ -282,6 +285,17 @@ export function PosterPicker({
 
   return (
     <div className="adm-stack">
+      {recut === 'failed' ? (
+        <Banner tone="danger">
+          The crop could not be applied to the poster files, so the old poster is still showing.
+          Save again to try once more.
+        </Banner>
+      ) : null}
+      {recut === 'processing' ? (
+        <Banner tone="info">
+          Applying the crop to the poster files. The old poster shows until it is done.
+        </Banner>
+      ) : null}
       <Card title="Pick a frame">
         <p className="adm-muted" style={{ margin: 0 }}>
           Six frames from your video. Pick one or upload your own.

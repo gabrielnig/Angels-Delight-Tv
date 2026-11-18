@@ -43,6 +43,7 @@ export interface VideoRecord {
   posterId: string | null;
   posterAlt: string | null;
   posterFocus: { x: number; y: number; zoom: number } | null;
+  posterRecut?: 'processing' | 'failed' | null;
   suitability: Suitability | null;
   seriesId: string | null;
   seasonNumber: number | null;

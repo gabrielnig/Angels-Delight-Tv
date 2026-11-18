@@ -47,6 +47,7 @@ interface Row {
   poster_asset_id: string | null;
   poster_alt: string | null;
   poster_focus: { x: number; y: number; zoom: number } | null;
+  poster_recut: 'processing' | 'failed' | null;
   suitability: Suitability | null;
   kids_safe: boolean;
   created_by: string | null;
@@ -99,6 +100,7 @@ function toVideo(row: Row): AdminVideo {
     posterId: row.poster_asset_id,
     posterAlt: row.poster_alt,
     posterFocus: row.poster_focus,
+    posterRecut: row.poster_recut ?? null,
     // Older rows have no suitability: derive it from the kids flag.
     suitability: row.suitability ?? (row.kids_safe ? 'kids' : null),
     seriesId: row.series_id,
@@ -124,6 +126,11 @@ function toVideo(row: Row): AdminVideo {
 const SELECT = sql`
   SELECT v.id, v.slug, v.title, v.description, v.tags, v.status, v.publish_state, v.publish_at, v.published_at,
     v.duration_ms, v.original_bytes, coalesce(pa.cut_from, v.poster_asset_id) AS poster_asset_id, pa.alt_text AS poster_alt, v.poster_focus,
+    CASE WHEN EXISTS (SELECT 1 FROM assets r WHERE r.cut_from = coalesce(pa.cut_from, v.poster_asset_id)
+        AND r.purpose = 'thumbnail' AND r.cut_focus = v.poster_focus AND r.status = 'ready') THEN NULL
+      ELSE (SELECT CASE r.status WHEN 'failed' THEN 'failed' ELSE 'processing' END FROM assets r
+        WHERE r.cut_from = coalesce(pa.cut_from, v.poster_asset_id) AND r.purpose = 'thumbnail'
+          AND r.cut_focus = v.poster_focus ORDER BY r.created_at DESC LIMIT 1) END AS poster_recut,
     v.suitability, v.kids_safe, v.created_by, v.created_at, v.updated_at, v.deleted_at,
     v.failure_code, v.failure_message, v.caption_override_reason,
     coalesce((SELECT array_agg(vc.category_id::text ORDER BY c.position)
