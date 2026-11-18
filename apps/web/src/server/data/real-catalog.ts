@@ -27,6 +27,7 @@ import type {
   Episode,
   HomeData,
   HomeRow,
+  HomeRowsPage,
   Page,
   Progress,
   SeriesDetail,
@@ -39,7 +40,6 @@ import type {
 import { viewerActor } from './actor';
 import { cardToItem, durationBucketOf, toThumb } from './mappers';
 
-const HOME_PAGE_CAP = 8;
 const PAGE_SIZE = 12;
 const POPULAR_COUNT = 4;
 
@@ -110,36 +110,39 @@ export class RealCatalog implements CatalogRepository {
     return viewerActor(ctx.accountId);
   }
 
+  /** The hero and the first page of rows. Later pages come from `homeRows` as the viewer scrolls (M05-S04). */
   async home(ctx: ViewerContext): Promise<HomeData> {
-    const actor = this.actor(ctx);
+    const result = await getHome(this.service, this.actor(ctx), { profileId: ctx.profileId });
+    if (result.catalogEmpty) return { hero: [], rows: [], empty: true };
+    const hero = result.hero.map((slot) => {
+      const item = cardToItem(slot.card);
+      const wide = toThumb(slot.heroImage);
+      return { item: wide ? { ...item, thumbnail: wide } : item };
+    });
+    return { hero, rows: this.catalogRows(result.rows), empty: false, nextCursor: result.nextCursor };
+  }
+
+  async homeRows(ctx: ViewerContext, cursor: string): Promise<HomeRowsPage> {
+    const result = await getHome(this.service, this.actor(ctx), {
+      profileId: ctx.profileId,
+      cursor,
+    });
+    return { rows: this.catalogRows(result.rows), nextCursor: result.nextCursor };
+  }
+
+  private catalogRows(source: HomeRowDto[]): HomeRow[] {
     const rows: HomeRow[] = [];
-    let hero: HomeData['hero'] = [];
-    let empty = false;
-    let cursor: string | undefined;
-    for (let page = 0; page < HOME_PAGE_CAP; page++) {
-      const result = await getHome(this.service, actor, { profileId: ctx.profileId, cursor });
-      if (page === 0) {
-        empty = result.catalogEmpty;
-        hero = result.hero.map((slot) => {
-          const item = cardToItem(slot.card);
-          const wide = toThumb(slot.heroImage);
-          return { item: wide ? { ...item, thumbnail: wide } : item };
-        });
-      }
-      for (const row of result.rows) {
-        if (isPersonal(row) || row.kind === 'continue_watching') continue;
-        const titleRow = row as Exclude<HomeRowDto, { kind: 'continue_watching' }>;
-        rows.push({
-          id: titleRow.id,
-          title: titleRow.title,
-          items: titleRow.items.map(cardToItem),
-          seeAllHref: seeAllHref(titleRow),
-        });
-      }
-      if (!result.nextCursor) break;
-      cursor = result.nextCursor;
+    for (const row of source) {
+      if (isPersonal(row) || row.kind === 'continue_watching') continue;
+      const titleRow = row as Exclude<HomeRowDto, { kind: 'continue_watching' }>;
+      rows.push({
+        id: titleRow.id,
+        title: titleRow.title,
+        items: titleRow.items.map(cardToItem),
+        seeAllHref: seeAllHref(titleRow),
+      });
     }
-    return empty ? { hero: [], rows: [], empty: true } : { hero, rows, empty: false };
+    return rows;
   }
 
   async categories(ctx: ViewerContext) {

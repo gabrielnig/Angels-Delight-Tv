@@ -13,6 +13,7 @@ import { CatalogCard, ContinueRow } from '../CatalogCard';
 import { RowError } from '../RowError';
 import { HomeEmpty } from './HomeEmpty';
 import { HomeHero } from './HomeHero';
+import { HomeRowsLoader } from './HomeRowsLoader';
 
 function heroItems(home: HomeData, progress: Map<string, Progress>): HeroItem[] {
   return home.hero.map(({ item, blurb }) => {
@@ -99,6 +100,9 @@ export async function HomeView({ ctx, dataSaver }: { ctx: ViewerContext; dataSav
             {cards(row.items, inList)}
           </Row>
         ))}
+        {home.nextCursor ? (
+          <HomeRowsLoader initialCursor={home.nextCursor} inList={idsResult} profileId={ctx.profileId} />
+        ) : null}
       </div>
     </>
   );

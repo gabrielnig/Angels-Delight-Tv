@@ -109,6 +109,13 @@ export interface HomeData {
   rows: HomeRow[];
   /** True when nothing is published for this audience. */
   empty: boolean;
+  /** Set when more rows wait below the first screen (M05-S04). */
+  nextCursor?: string | null;
+}
+
+export interface HomeRowsPage {
+  rows: HomeRow[];
+  nextCursor: string | null;
 }
 
 export type BrowseSort = 'newest' | 'shortest' | 'longest';
@@ -174,6 +181,8 @@ export interface ViewerContext {
 
 export interface CatalogRepository {
   home(ctx: ViewerContext): Promise<HomeData>;
+  /** The next page of rows below the first screen. */
+  homeRows(ctx: ViewerContext, cursor: string): Promise<HomeRowsPage>;
   categories(ctx: ViewerContext): Promise<Category[]>;
   browse(ctx: ViewerContext, query: BrowseQuery): Promise<Page<CatalogItem>>;
   search(ctx: ViewerContext, q: string, cursor?: string): Promise<Page<CatalogItem>>;

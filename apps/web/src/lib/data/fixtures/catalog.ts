@@ -6,6 +6,7 @@ import type {
   Episode,
   HomeData,
   HomeRow,
+  HomeRowsPage,
   Page,
   Progress,
   SeriesDetail,
@@ -47,6 +48,10 @@ function fixturePlay(progress: Progress | undefined): TitleDetail['play'] {
 }
 
 export class FixtureCatalog implements CatalogRepository {
+  async homeRows(): Promise<HomeRowsPage> {
+    return { rows: [], nextCursor: null };
+  }
+
   async home(ctx: ViewerContext): Promise<HomeData> {
     const all = listable(ctx);
     if (all.length === 0) return { hero: [], rows: [], empty: true };
