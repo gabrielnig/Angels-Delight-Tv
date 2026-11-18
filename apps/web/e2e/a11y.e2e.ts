@@ -82,7 +82,11 @@ async function check(page: Page, path: string) {
   await page.goto(path, { waitUntil: 'networkidle' });
   const result = await new AxeBuilder({ page }).withTags(TAGS).analyze();
   const summary = result.violations.map(
-    (v) => `${v.id} (${v.impact}): ${v.nodes.map((n) => n.target.join(' ')).slice(0, 3).join(' | ')}`,
+    (v) =>
+      `${v.id} (${v.impact}): ${v.nodes
+        .map((n) => n.target.join(' '))
+        .slice(0, 3)
+        .join(' | ')}`,
   );
   expect(summary, `axe violations on ${path}`).toEqual([]);
 
