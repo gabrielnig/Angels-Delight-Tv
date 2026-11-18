@@ -7,7 +7,7 @@ import {
   listMyListRefs,
   removeFromMyList,
   removeProgress,
-  saveProgress,
+  restoreProgress,
   type ViewerContext as ServiceContext,
 } from '@ad/viewer';
 import { isUuid, ValidationFailed } from '@ad/shared';
@@ -25,7 +25,6 @@ import { cardToItem } from './mappers';
 import { videoCardToSummary } from './real-catalog';
 
 const PAGE_SIZE = 12;
-const UNDO_WINDOW_MS = 5 * 60_000;
 
 /** `video:<uuid>` or `series:<uuid>`. Anything else is a bad request, not a missing title. */
 export function parseItemKey(key: string): TitleRef {
@@ -36,30 +35,9 @@ export function parseItemKey(key: string): TitleRef {
   return { kind, id };
 }
 
-interface Removed {
-  positionMs: number;
-  progressVideoId: string;
-  expiresAt: number;
-}
-
-/**
- * "Remove from row" deletes the progress record (lane C). The undo toast needs the old position back, so the
- * position is kept here for a few minutes. It lives in this process only: after a restart or on another instance
- * the undo is a no-op and the row stays removed. See docs/lanes/K1-viewer-integration.md.
- */
-const removed = new Map<string, Removed>();
-
-function stash(profileId: string, videoId: string, value: Omit<Removed, 'expiresAt'>, now: number) {
-  for (const [key, entry] of removed) if (entry.expiresAt <= now) removed.delete(key);
-  removed.set(`${profileId}:${videoId}`, { ...value, expiresAt: now + UNDO_WINDOW_MS });
-}
-
 /** My List, Continue Watching and the undo of a removal on the real viewer services. */
 export class RealLibrary implements LibraryRepository {
-  constructor(
-    private readonly service: ServiceContext,
-    private readonly clock: () => number = () => Date.now(),
-  ) {}
+  constructor(private readonly service: ServiceContext) {}
 
   async myList(
     ctx: ViewerContext,
@@ -125,37 +103,18 @@ export class RealLibrary implements LibraryRepository {
       await getProgress(this.service, actor, { profileId: ctx.profileId, videoId });
       return;
     }
-    const saved = await getProgress(this.service, actor, {
-      profileId: ctx.profileId,
-      videoId: row.progressVideoId,
-    });
-    if (saved) {
-      stash(
-        ctx.profileId,
-        videoId,
-        { positionMs: saved.positionMs, progressVideoId: row.progressVideoId },
-        this.clock(),
-      );
-    }
     await removeProgress(this.service, actor, {
       profileId: ctx.profileId,
       videoId: row.progressVideoId,
+      requestedId: videoId,
     });
   }
 
+  /** Undo of a removal. The old position is read from the database, so it works on any server and after a restart. */
   async restoreContinue(ctx: ViewerContext, videoId: string): Promise<void> {
-    const key = `${ctx.profileId}:${videoId}`;
-    const entry = removed.get(key);
-    if (!entry || entry.expiresAt <= this.clock()) {
-      removed.delete(key);
-      return;
-    }
-    await saveProgress(this.service, viewerActor(ctx.accountId), {
+    await restoreProgress(this.service, viewerActor(ctx.accountId), {
       profileId: ctx.profileId,
-      videoId: entry.progressVideoId,
-      positionMs: entry.positionMs,
-      seek: true,
+      requestedId: videoId,
     });
-    removed.delete(key);
   }
 }

@@ -185,6 +185,17 @@ describe.skipIf(!integrationEnabled())('real library repository', () => {
       expect(rows[0]!.progress.positionSeconds).toBe(240);
     });
 
+    it('restores through a different instance, as after a restart or on another server', async () => {
+      const u = await h.makeUser();
+      const v = await seedVideo(h.db.setup, { durationMs: 200_000 });
+      await watch(u, v.id, 60_000);
+      await lib.removeFromContinue(adult(u), v.id);
+      const other = new RealLibrary(h.ctx);
+      await other.restoreContinue(adult(u), v.id);
+      const rows = await other.continueWatching(adult(u));
+      expect(rows.map((r) => r.progress.positionSeconds)).toEqual([60]);
+    });
+
     it('restore without a removal is a no-op and removing twice is fine', async () => {
       const u = await h.makeUser();
       const v = await seedVideo(h.db.setup, { durationMs: 600_000 });
