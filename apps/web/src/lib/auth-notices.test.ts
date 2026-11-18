@@ -1,11 +1,15 @@
 import { describe, expect, it } from 'vitest';
-import { signInNotice, signInRedirect } from './auth-notices';
+import { signInNotice, signInNoticeTone, signInRedirect } from './auth-notices';
 
 describe('sign in notices (M01-S12 AC3)', () => {
   it('explains a session that ended elsewhere', () => {
-    const text = signInNotice('ended');
-    expect(text).toMatch(/signed out/i);
-    expect(text).toMatch(/another device/i);
+    expect(signInNotice('ended')).toBe('Your session ended. Sign in again to keep watching.');
+  });
+
+  it('shows the reset notice as success and the ended notice as information (S01 mockup)', () => {
+    expect(signInNoticeTone('reset')).toBe('success');
+    expect(signInNoticeTone('ended')).toBe('info');
+    expect(signInNoticeTone('nope')).toBeUndefined();
   });
 
   it('keeps the reset notice', () => {
