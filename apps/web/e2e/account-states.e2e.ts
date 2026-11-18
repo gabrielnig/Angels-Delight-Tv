@@ -7,10 +7,13 @@ import type { Page } from '@playwright/test';
 const GROTESK = /Space Grotesk/;
 
 async function heading(page: Page, selector: string) {
-  return page.locator(selector).first().evaluate((el) => {
-    const css = getComputedStyle(el);
-    return { family: css.fontFamily, size: css.fontSize, weight: css.fontWeight };
-  });
+  return page
+    .locator(selector)
+    .first()
+    .evaluate((el) => {
+      const css = getComputedStyle(el);
+      return { family: css.fontFamily, size: css.fontSize, weight: css.fontWeight };
+    });
 }
 
 test.describe.configure({ mode: 'serial' });
@@ -30,17 +33,24 @@ for (const [path, selector] of [
         outside.push(request.url());
     });
     await page.goto(path);
-    await expect(page.locator(selector).first()).toBeVisible();
+    // The loading fallback renders the same heading and is swapped out, so poll until the settled one reads right.
     await page.evaluate(() => document.fonts.ready);
-    const style = await heading(page, selector);
-    expect(style.family).toMatch(GROTESK);
-    expect(style.weight).toBe('700');
+    await expect
+      .poll(async () => {
+        const style = await heading(page, `${selector}:visible`).catch(() => null);
+        return style && GROTESK.test(style.family) ? style.weight : '';
+      })
+      .toBe('700');
     expect(await page.evaluate(() => document.fonts.check('700 20px "Space Grotesk"'))).toBe(true);
     expect(outside).toEqual([]);
   });
 }
 
-test('S27 kids profile sees the adults only card with the 22px heading', async ({ page, context, baseURL }) => {
+test('S27 kids profile sees the adults only card with the 22px heading', async ({
+  page,
+  context,
+  baseURL,
+}) => {
   await context.addCookies([{ name: 'ad_profile', value: 'prof-3', url: baseURL! }]);
   await page.goto('/account');
   const title = page.getByRole('heading', { name: 'Account is for adults' });
@@ -60,7 +70,11 @@ test('S28 empty submit shows the field errors', async ({ page }) => {
   await expect(page.getByText('Enter your current password.')).toBeVisible();
 });
 
-test('S29 kids profile shows the parent notice and locks rows', async ({ page, context, baseURL }) => {
+test('S29 kids profile shows the parent notice and locks rows', async ({
+  page,
+  context,
+  baseURL,
+}) => {
   await context.addCookies([{ name: 'ad_profile', value: 'prof-3', url: baseURL! }]);
   await page.goto('/settings/playback');
   await expect(page.getByText('Some settings are managed by a parent account.')).toBeVisible();
@@ -76,7 +90,9 @@ test('S29 a failed save puts the setting back and offers Retry', async ({ page }
   const first = page.getByRole('switch').first();
   const before = await first.getAttribute('aria-checked');
   await first.click();
-  await expect(page.getByText('We could not save that change. Your setting was put back.')).toBeVisible();
+  await expect(
+    page.getByText('We could not save that change. Your setting was put back.'),
+  ).toBeVisible();
   await expect(page.getByRole('button', { name: 'Retry' })).toBeVisible();
   await expect(first).toHaveAttribute('aria-checked', before ?? 'false');
 });
@@ -87,7 +103,9 @@ test('S29 a change shows the Saved toast', async ({ page }) => {
   await expect(page.getByText('Saved', { exact: true })).toBeVisible();
 });
 
-test('S30 pending deletion screen is the only screen, with the soft footer, and can be cancelled', async ({ page }) => {
+test('S30 pending deletion screen is the only screen, with the soft footer, and can be cancelled', async ({
+  page,
+}) => {
   await page.goto('/account/data');
   await page.getByRole('button', { name: 'Delete account' }).click();
   const dialog = page.getByRole('dialog', { name: 'Delete your account?' });
