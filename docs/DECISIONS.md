@@ -812,3 +812,15 @@ Format: decision, options considered, why, reversible or not. Newest first. Deci
 - Options: a service worker cache of the page (partitioning is hard, M03-S14), cache without an account check (a second person could see the first person's names), server only.
 - Why: local storage is readable before the server answers and is already wiped at sign out. The hint cookie stops a list from a previous account showing when a session expired without a sign out.
 - Reversible: yes.
+
+## D-156 Cards draw the stored blur, then the colour, and the image fades in over it (lane r2)
+- Decision: `Thumbnail` in `@ad/ui` and `ResponsivePoster` take `placeholderBlur` and `placeholderColor`. The blur is drawn as a scaled, blurred background layer under the image; with no blur the colour fills the frame; with neither the image behaves as before. When a placeholder is drawn the image starts hidden (`data-loaded="false"`) and fades in over `--motion-base` once it loads, with a ref check so cached images show at once. Values are checked before they reach a style: only a hex colour and a webp base64 data url pass. Reduced motion sets the token to near zero, so the fade is instant.
+- Options: always hide until loaded (blank card if scripts fail), a CSS only animation on mount (runs before the image arrives), keep the plain colour.
+- Why: the blur was already stored and returned (D-134). Hiding the image only when a placeholder exists means a card is never blank.
+- Reversible: yes.
+
+## D-157 A saved poster focus recuts the files on a new asset, and the old poster stays until it is ready (lane r2)
+- Decision: saving a poster with a focus other than centre at 100 percent creates a new `thumbnail` asset (migration 0035: `cut_from`, `cut_focus`), copies the source into `recuts/<video>/<asset>` and queues `image.process`. The worker crops around the focus with `cropRect`, writes the variants, then points videos that still use the source with the same saved focus at the recut, and deletes older ready recuts of that picture that no video uses. Until then the video keeps the uncut poster. A repeat save with the same crop reuses the recut. The admin video keeps reporting the source as `posterId`, so the picker selection does not change. The picker preview now follows the same crop maths (`cropPreviewStyle`).
+- Options: recut in place (the picker preview would double crop), recut on the fly at the CDN, store only the focus.
+- Why: a new asset leaves the picker candidates untouched and makes a failed recut harmless. Hash named files stay immutable.
+- Reversible: yes. The columns are additive.
