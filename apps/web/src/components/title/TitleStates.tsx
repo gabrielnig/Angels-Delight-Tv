@@ -80,7 +80,7 @@ export function TitleError({ reference, onRetry }: { reference?: string; onRetry
 /** Matches the final geometry of the title page so nothing shifts when the data arrives. Shows after 300ms. */
 export function TitleSkeleton({ delayMs }: { delayMs?: number }) {
   return (
-    <div className="web-page tv">
+    <div className="web-page tv tv--loading">
       <SkeletonRegion delayMs={delayMs}>
         <div className="tv-layout">
           <Skeleton className="tv-sk tv-sk--poster" />

@@ -470,6 +470,10 @@
     display: block;
   }
 
+  .tv--loading {
+    padding-top: var(--space-6);
+  }
+
   .tv-layout {
     display: grid;
     grid-template-columns: min(40rem, 52%) minmax(0, 1fr);
