@@ -408,4 +408,89 @@ describe.skipIf(!integrationEnabled())('admin videos', () => {
       expect(copies[0]![0]).toBe(`uploads/x/${picture}`);
     });
   });
+
+  describe('hero art follows the poster focus (M36-S03)', () => {
+    const recutDeps = () => {
+      const copies: Array<[string, string]> = [];
+      const queued: string[] = [];
+      return {
+        copies,
+        queued,
+        recut: {
+          copySource: async (from: string, to: string) => void copies.push([from, to]),
+          enqueue: async (_queue: 'image.process', payload: { assetId: string }) =>
+            void queued.push(payload.assetId),
+        },
+      };
+    };
+    const asset = async (purpose: 'thumbnail' | 'hero', key: string) => {
+      const id = await seedAsset(t.setup);
+      await t.setup.update(assets).set({ purpose, rawKey: key }).where(eq(assets.id, id));
+      return id;
+    };
+
+    it('recuts the hero image from its own source and keeps the old hero until it is ready', async () => {
+      const video = await seedVideo(t.setup);
+      const poster = await asset('thumbnail', `uploads/h/${uuidv7()}`);
+      const hero = await asset('hero', `uploads/h/${uuidv7()}`);
+      await t.setup.update(videos).set({ heroAssetId: hero }).where(eq(videos.id, video.id));
+      const { recut, copies, queued } = recutDeps();
+      await setAdminPoster(ctx, editor, video.id, {
+        posterId: poster,
+        alt: 'A seedling',
+        focus: { x: 70, y: 30 },
+        zoom: 140,
+        recut,
+      });
+      const cuts = await t.setup.select().from(assets).where(eq(assets.cutFrom, hero));
+      expect(cuts).toHaveLength(1);
+      expect(cuts[0]).toMatchObject({
+        purpose: 'hero',
+        status: 'processing',
+        cutFocus: { x: 70, y: 30, zoom: 140 },
+      });
+      expect(copies.map(([from]) => from)).toContain(
+        (await t.setup.select().from(assets).where(eq(assets.id, hero)))[0]!.rawKey,
+      );
+      expect(queued).toContain(cuts[0]!.id);
+      const [row] = await t.setup.select().from(videos).where(eq(videos.id, video.id));
+      expect(row?.heroAssetId).toBe(hero);
+    });
+
+    it('does nothing for hero when the video has none, and resets it for the default focus', async () => {
+      const bare = await seedVideo(t.setup);
+      const poster = await asset('thumbnail', `uploads/h/${uuidv7()}`);
+      const { recut, queued } = recutDeps();
+      await setAdminPoster(ctx, editor, bare.id, {
+        posterId: poster,
+        alt: 'A seedling',
+        focus: { x: 70, y: 30 },
+        zoom: 140,
+        recut,
+      });
+      expect(queued).toHaveLength(1); // the poster only
+
+      const video = await seedVideo(t.setup);
+      const hero = await asset('hero', `uploads/h/${uuidv7()}`);
+      const cut = uuidv7();
+      await t.setup.insert(assets).values({
+        id: cut,
+        purpose: 'hero',
+        status: 'ready',
+        mime: 'image/webp',
+        cutFrom: hero,
+        cutFocus: { x: 70, y: 30, zoom: 140 },
+      });
+      await t.setup.update(videos).set({ heroAssetId: cut }).where(eq(videos.id, video.id));
+      await setAdminPoster(ctx, editor, video.id, {
+        posterId: poster,
+        alt: 'A seedling',
+        focus: { x: 50, y: 50 },
+        zoom: 100,
+        recut,
+      });
+      const [row] = await t.setup.select().from(videos).where(eq(videos.id, video.id));
+      expect(row?.heroAssetId).toBe(hero);
+    });
+  });
 });

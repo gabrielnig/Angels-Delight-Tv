@@ -2,7 +2,7 @@ import { createHash } from 'node:crypto';
 import { schema, type Database } from '@ad/db';
 import { NotFound, createLogger, type Logger } from '@ad/shared';
 import type { StorageAdapter } from '@ad/storage';
-import { and, eq, ne, sql } from 'drizzle-orm';
+import { and, eq, inArray, ne, sql } from 'drizzle-orm';
 import { PipelineError } from '../failure';
 import { ImageRejected, processImage, type ImagePreset } from './process';
 
@@ -116,7 +116,7 @@ export class ImageService {
       })
       .where(eq(assets.id, assetId));
     if (asset.cutFrom && asset.cutFocus)
-      await this.adoptRecut(assetId, asset.cutFrom, asset.cutFocus);
+      await this.adoptRecut(assetId, asset.cutFrom, asset.cutFocus, asset.purpose === 'hero');
     this.logger.info('image processed', { assetId, variants: stored.length });
   }
 
@@ -128,25 +128,22 @@ export class ImageService {
     assetId: string,
     cutFrom: string,
     focus: { x: number; y: number; zoom: number },
+    hero: boolean,
   ): Promise<void> {
     const { db } = this.deps;
-    await db
-      .update(videos)
-      .set({ posterAssetId: assetId })
-      .where(
-        and(
-          sql`${videos.posterAssetId} IN (SELECT id FROM assets WHERE id = ${cutFrom} OR cut_from = ${cutFrom})`,
-          sql`${videos.posterFocus} = ${JSON.stringify(focus)}::jsonb`,
-          sql`${videos.posterAssetId} <> ${assetId}`,
-        ),
-      );
+    const column = hero ? sql.raw('hero_asset_id') : sql.raw('poster_asset_id');
+    await db.execute(sql`
+      UPDATE videos SET ${column} = ${assetId}
+      WHERE ${column} IN (SELECT id FROM assets WHERE id = ${cutFrom} OR cut_from = ${cutFrom})
+        AND poster_focus = ${JSON.stringify(focus)}::jsonb
+        AND ${column} <> ${assetId}`);
     const stale = await db
       .select({ id: assets.id })
       .from(assets)
       .where(
         and(
           eq(assets.cutFrom, cutFrom),
-          eq(assets.status, 'ready'),
+          inArray(assets.status, ['ready', 'failed']),
           ne(assets.id, assetId),
           sql`NOT EXISTS (SELECT 1 FROM videos v WHERE v.poster_asset_id = assets.id OR v.hero_asset_id = assets.id)`,
         ),
@@ -155,6 +152,32 @@ export class ImageService {
       await this.remove(row.id);
       await db.delete(assets).where(eq(assets.id, row.id));
     }
+  }
+
+  /**
+   * A recut that cannot be finished (M36-S03). The asset is marked failed so the poster picker can say so, and the
+   * video keeps the poster it had. Returns the video to tell staff about, or null when nobody is waiting for this
+   * recut: not a recut, already ready, or the video has since saved a different crop.
+   */
+  async failRecut(assetId: string): Promise<{ videoId: string } | null> {
+    const { db } = this.deps;
+    const [asset] = await db.select().from(assets).where(eq(assets.id, assetId)).limit(1);
+    if (!asset || !asset.cutFrom || !asset.cutFocus || asset.status === 'ready') return null;
+    if (asset.status !== 'failed')
+      await db.update(assets).set({ status: 'failed' }).where(eq(assets.id, assetId));
+    const videoId = /^recuts\/([0-9a-f-]{36})\//.exec(asset.rawKey ?? '')?.[1];
+    if (!videoId) return null;
+    const [waiting] = await db
+      .select({ id: videos.id })
+      .from(videos)
+      .where(
+        and(
+          eq(videos.id, videoId),
+          sql`${videos.posterFocus} = ${JSON.stringify(asset.cutFocus)}::jsonb`,
+        ),
+      )
+      .limit(1);
+    return waiting ? { videoId: waiting.id } : null;
   }
 
   /** Deletes the source and every generated file. Used when an asset is replaced or its video is purged. */
