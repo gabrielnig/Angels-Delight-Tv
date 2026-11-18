@@ -700,3 +700,8 @@ Format: decision, options considered, why, reversible or not. Newest first. Deci
 - Why: the stories and the launch plan name a Super admin (ARKDEV) separate from the client's admin, and an enum value keeps one ordered role everywhere (RLS, SQL functions, `can()`). A boolean would leave `role` meaning two things. The SQL re-checks mean a bug in the app layer cannot promote anyone.
 - Reversible: yes while no real account holds the role. Removing an enum value needs a table rewrite.
 
+## D-143 The service worker keeps four public pages for the offline screen (lane f2)
+- Decision: after a visit, `/about`, `/help`, `/terms` and `/privacy` are stored in the `ad-pages-v1` cache (network first, stored only when the response is cacheable). The offline screen links to the ones present. Every other page stays network only. The cache is wiped by the existing CLEAR_CACHES message on sign out and on profile switch.
+- Options: keep D-039 (no page HTML at all, offline screen has only Try again); cache all visited pages; cache the four public pages.
+- Why: M25-S04 asks for a link to cached pages. The four pages carry no catalog or progress data. They are rendered inside the app shell, which shows the active profile name, so the copy is cleared with the other private state.
+- Reversible: yes, set `SW_SAVED_PAGES` to an empty list.
