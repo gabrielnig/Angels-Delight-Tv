@@ -7,7 +7,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { AccountService } from './accounts';
 import { emailHash } from './identifiers';
 import { createAuthHarness, TEST_PASSWORD, type AuthHarness } from './testing';
-import { FieldErrors, SignUpClosed } from './types';
+import { FieldErrors, InviteRequired } from './types';
 
 const input = (email: string, extra: Record<string, unknown> = {}) => ({
   email,
@@ -150,9 +150,9 @@ describe.skipIf(!integrationEnabled())('sign up and email verification', () => {
       expect(await accountRow(email)).toBeDefined();
     });
 
-    it('refuses when sign up is closed', async () => {
+    it('asks for an invite code when sign up is by invitation', async () => {
       const closed = new AccountService({ ...h.deps, config: { signUpOpen: false } });
-      await expect(closed.signUp(input(fresh()), h.meta)).rejects.toBeInstanceOf(SignUpClosed);
+      await expect(closed.signUp(input(fresh()), h.meta)).rejects.toBeInstanceOf(InviteRequired);
     });
 
     it('records an audit entry without the email address', async () => {

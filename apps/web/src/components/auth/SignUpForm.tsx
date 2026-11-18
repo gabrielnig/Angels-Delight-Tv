@@ -110,6 +110,7 @@ export function SignUpForm({
 
   return (
     <form ref={formRef} className="web-form" onSubmit={submit} noValidate>
+      {inviteOnly ? <Banner tone="info">Sign up is by invitation</Banner> : null}
       {banner ? <Banner tone="danger">{banner}</Banner> : null}
       <Input
         label="Email"

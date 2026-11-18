@@ -4,6 +4,7 @@ import {
   type RequestMeta,
   type StaffService,
   FieldErrors,
+  InviteRequired,
   InvalidCredentials,
   TokenRejected,
 } from '@ad/auth';
@@ -94,7 +95,12 @@ export class RealAuthGateway implements AuthGateway {
     }
   }
 
-  async signUp(input: { email: string; password: string; challengeToken?: string }) {
+  async signUp(input: {
+    email: string;
+    password: string;
+    inviteCode?: string;
+    challengeToken?: string;
+  }) {
     if (!(await this.checkPassed(input.challengeToken)))
       return { ok: false as const, reason: 'check_required' as const };
     try {
@@ -105,12 +111,15 @@ export class RealAuthGateway implements AuthGateway {
           password: input.password,
           acceptTerms: true,
           guardianDeclaration: true,
+          inviteCode: input.inviteCode,
         },
         await this.io.meta(),
       );
       await this.io.setPending(result.email);
       return { ok: true as const, next: '/verify-email' };
     } catch (error) {
+      if (error instanceof InviteRequired)
+        return { ok: false as const, reason: 'invite_required' as const };
       if (error instanceof FieldErrors) {
         if (error.fields.password) return { ok: false as const, reason: 'weak_password' as const };
         return { ok: false as const, reason: 'invalid_email' as const };

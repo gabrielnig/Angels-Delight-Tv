@@ -1,4 +1,10 @@
-import { AccountUnavailable, FieldErrors, InvalidCredentials, TokenRejected } from '@ad/auth';
+import {
+  AccountUnavailable,
+  FieldErrors,
+  InvalidCredentials,
+  InviteRequired,
+  TokenRejected,
+} from '@ad/auth';
 import { RateLimited } from '@ad/shared';
 import { describe, expect, it, vi } from 'vitest';
 import { RealAuthGateway, type GatewayIo } from './gateway';
@@ -154,6 +160,26 @@ describe('RealAuthGateway.signUp', () => {
       ok: false,
       reason: 'invalid_email',
     });
+  });
+});
+
+describe('RealAuthGateway.signUp invite codes', () => {
+  it('passes the invite code to the service', async () => {
+    const signUp = vi.fn(async (_input: unknown) => ({ email: 'a@b.co', emailSent: true }));
+    const { gateway } = setup({ signUp });
+    await gateway.signUp({ email: 'a@b.co', password: 'river-lantern-42-mango', inviteCode: 'K7QM-3WTD-RB' });
+    expect(signUp.mock.calls[0]?.[0]).toMatchObject({ inviteCode: 'K7QM-3WTD-RB' });
+  });
+
+  it('reports a missing or unusable code as invite_required', async () => {
+    const { gateway } = setup({
+      signUp: async () => {
+        throw new InviteRequired();
+      },
+    });
+    expect(
+      await gateway.signUp({ email: 'a@b.co', password: 'river-lantern-42-mango', inviteCode: 'x' }),
+    ).toEqual({ ok: false, reason: 'invite_required' });
   });
 });
 

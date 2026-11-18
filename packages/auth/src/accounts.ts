@@ -9,6 +9,7 @@ import {
   voidEmailTokens,
   type EmailTokenRow,
 } from './email-tokens';
+import { findUsableInvite, consumeInvite } from './signup-invites';
 import { emailHash, maskEmail, normalizeEmail } from './identifiers';
 import { findAccountByEmailHash, isUniqueViolation } from './lookup';
 import { checkPassword } from './policy';
@@ -18,7 +19,7 @@ import {
   AccountUnavailable,
   FieldErrors,
   InvalidCredentials,
-  SignUpClosed,
+  InviteRequired,
   TokenRejected,
   type Actor,
   type AuthConfig,
@@ -41,6 +42,8 @@ export interface SignUpInput {
   guardianDeclaration: boolean;
   /** Hidden form field real people never fill (M01-S14). Any value silently drops the submission. */
   website?: string;
+  /** Needed only while sign up is by invitation (M29-S03). */
+  inviteCode?: string;
 }
 
 export type VerifyCodeResult =
@@ -93,6 +96,8 @@ export class AccountService {
       accountId?: string | null;
       role?: string | null;
       metadata?: Record<string, unknown>;
+      /** What the action was done to, when that is not the account in `accountId`. */
+      target?: { type: string; id: string };
     } = {},
   ): Promise<void> {
     await this.deps.audit.record({
@@ -100,8 +105,8 @@ export class AccountService {
       outcome,
       actorAccountId: extra.accountId ?? null,
       actorRole: extra.role ?? null,
-      targetType: extra.accountId ? 'account' : null,
-      targetId: extra.accountId ?? null,
+      targetType: extra.target?.type ?? (extra.accountId ? 'account' : null),
+      targetId: extra.target?.id ?? extra.accountId ?? null,
       ipTrunc: meta.ipTrunc,
       requestId: meta.requestId,
       metadata: extra.metadata,
@@ -132,7 +137,7 @@ export class AccountService {
     input: SignUpInput,
     meta: RequestMeta,
   ): Promise<{ email: string; emailSent: boolean }> {
-    if (!this.cfg.signUpOpen) throw new SignUpClosed();
+    const { open } = await (this.deps.signUpPolicy?.() ?? { open: this.cfg.signUpOpen });
     const email = normalizeEmail(input.email);
     const fields: Record<string, string> = {};
     if (!email) fields.email = 'Enter a valid email address';
@@ -148,6 +153,9 @@ export class AccountService {
     if (input.website) return { email, emailSent: true };
 
     await this.deps.limiter.enforce(RATE_POLICIES.signupIp, this.ipSubject(meta));
+    // Checked before the existing account lookup, so a wrong code cannot be used to probe which addresses exist.
+    if (!open && !(await findUsableInvite(this.deps.db, input.inviteCode, this.now())))
+      throw new InviteRequired();
 
     // Hash first on every path so a new address and an existing one cost the same time.
     const passwordHash = await this.deps.hasher.hash(input.password);
@@ -159,9 +167,12 @@ export class AccountService {
     const now = this.now();
     await this.deps.keys.createForAccount(accountId);
     let issued: { token: string; code: string | null };
+    const used: { inviteId: string | null } = { inviteId: null };
     try {
       const emailEnc = await this.deps.keys.seal(accountId, 'email', email);
       issued = await withAccount(this.deps.db, { accountId, role: 'viewer' }, async (tx) => {
+        // Counted in the same transaction as the account, so a failed sign up does not burn a code.
+        if (!open) used.inviteId = await consumeInvite(tx, input.inviteCode, now);
         await tx.insert(schema.accounts).values({
           id: accountId,
           emailHash: Buffer.from(hash),
@@ -192,7 +203,11 @@ export class AccountService {
       if (isUniqueViolation(error)) return this.signUpExisting(email, meta);
       throw error;
     }
-    await this.audit('auth.signup', 'success', meta, { accountId, role: 'viewer' });
+    await this.audit('auth.signup', 'success', meta, {
+      accountId,
+      role: 'viewer',
+      metadata: used.inviteId ? { inviteId: used.inviteId } : undefined,
+    });
     const emailSent = await this.sendVerification(email, issued);
     return { email, emailSent };
   }

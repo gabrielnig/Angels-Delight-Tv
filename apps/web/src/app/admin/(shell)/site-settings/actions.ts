@@ -4,7 +4,13 @@ import { revalidatePath } from 'next/cache';
 import type { PageSlug } from '@ad/theme/client';
 import { requireActionActor } from '@/lib/data/admin/session-next';
 import { siteSettingsAdmin } from '@/lib/data/admin/site-settings';
-import type { PageDto, SiteSettingsDto } from '@/lib/data/admin/site-types';
+import { inviteCodesAdmin } from '@/lib/data/admin/invite-codes';
+import type {
+  InviteCodeInput,
+  InviteCodeResult,
+  PageDto,
+  SiteSettingsDto,
+} from '@/lib/data/admin/site-types';
 import type { ActionResult } from '@/lib/data/admin/theme-types';
 
 const NEXT = '/admin/site-settings';
@@ -36,4 +42,14 @@ export async function restorePageAction(
 ): Promise<ActionResult<PageDto>> {
   const actor = await requireActionActor(NEXT);
   return siteSettingsAdmin.restorePage(actor, slug, version);
+}
+
+export async function createInviteCodeAction(input: InviteCodeInput): Promise<InviteCodeResult> {
+  const actor = await requireActionActor(NEXT);
+  return inviteCodesAdmin.create(actor, input);
+}
+
+export async function revokeInviteCodeAction(id: string): Promise<InviteCodeResult> {
+  const actor = await requireActionActor(NEXT);
+  return inviteCodesAdmin.revoke(actor, id);
 }

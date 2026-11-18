@@ -8,10 +8,17 @@ import { AccountViewerData } from './real-account-data';
 import { RealCatalog } from './real-catalog';
 import { RealLibrary } from './real-library';
 import { RealProfiles } from './real-profiles';
+import { RealSite } from './real-site';
+import { themeRuntime } from '../../lib/data/admin/theme-runtime';
+import { FixtureSite } from '../../lib/data/fixtures/site';
 
 export const createRealCatalog = () => new RealCatalog(viewerRuntime().ctx);
 export const createRealLibrary = () => new RealLibrary(viewerRuntime().ctx);
 export const createRealProfiles = () => new RealProfiles(viewerRuntime().ctx, cookieProfileIo());
+
+/** Site content from settings, the one place pages read the name, sign up mode and maintenance state. */
+export const createRealSite = () =>
+  new RealSite({ getAll: async () => (await themeRuntime()).settings.getAll() }, new FixtureSite());
 
 const LABEL = new TextEncoder().encode('ad:account-export-key:v1');
 let viewerData: AccountViewerData | undefined;
