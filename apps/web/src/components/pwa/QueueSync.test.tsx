@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { render, waitFor } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createWriteQueue } from '../../lib/pwa/write-queue';
 import { listWrite } from '../../lib/pwa/list-write';
@@ -55,5 +55,25 @@ describe('QueueSync', () => {
     render(<QueueSync profileId="p1" />);
     await new Promise((r) => setTimeout(r, 20));
     expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('tells the person once when a saved change could not be kept (M25-S05)', async () => {
+    createWriteQueue(localStorage).add(listWrite('p1', 'video:a', true));
+    createWriteQueue(localStorage).add(listWrite('p1', 'video:b', true));
+    const fetchMock = vi.fn().mockResolvedValue({ status: 403 });
+    vi.stubGlobal('fetch', fetchMock);
+    render(<QueueSync profileId="p1" />);
+    expect(
+      await screen.findByText('Some changes you made offline could not be saved.'),
+    ).toBeInTheDocument();
+    expect(screen.getAllByRole('status')).toHaveLength(1);
+  });
+
+  it('stays quiet when everything was sent', async () => {
+    createWriteQueue(localStorage).add(listWrite('p1', 'video:a', true));
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ status: 201 }));
+    render(<QueueSync profileId="p1" />);
+    await waitFor(() => expect(createWriteQueue(localStorage).pending('p1')).toHaveLength(0));
+    expect(screen.queryByRole('status')).toBeNull();
   });
 });
