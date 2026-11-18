@@ -55,7 +55,8 @@ describe('AccountOverview state 1: default', () => {
 
   it('shows the three stats with units', () => {
     render(<AccountOverview {...props} />);
-    const stats = screen.getByRole('group', { name: 'Your learning' });
+    const stats = screen.getByText('Time learning').closest('dl') as HTMLElement;
+    expect(stats.getAttribute('role')).toBeNull();
     expect(within(stats).getByText('Watched this month').nextSibling).toHaveTextContent(
       '14 videos',
     );

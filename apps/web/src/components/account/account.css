@@ -468,6 +468,7 @@
 
 .acct-who {
   min-width: 0;
+  overflow-wrap: anywhere;
 }
 .acct-who__name {
   margin: 0;
@@ -511,6 +512,7 @@
 }
 .acct-profiles {
   display: flex;
+  flex-wrap: wrap;
   align-items: flex-start;
   gap: var(--space-2);
   margin: 0;

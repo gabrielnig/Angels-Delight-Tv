@@ -14,7 +14,7 @@ export function LegalView({ page }: { page: LegalPage }) {
         <div className="acct-about__cards">
           {page.sections.map((s) => (
             <section key={s.id} className="acct-card" data-gap="1">
-              <h3 className="acct-h3">{s.heading}</h3>
+              <h2 className="acct-h3">{s.heading}</h2>
               {s.body.map((p, i) => (
                 <p key={i} className="acct-muted acct-small">
                   {p}

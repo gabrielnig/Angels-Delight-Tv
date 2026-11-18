@@ -81,7 +81,7 @@ export function AccountOverview({
           </div>
           <EditName name={o.displayName} />
         </div>
-        <dl className="acct-stats" role="group" aria-label="Your learning">
+        <dl className="acct-stats">
           <div>
             <dt>Watched this month</dt>
             <dd>{plural(o.watchedThisMonth, 'video', 'videos')}</dd>
