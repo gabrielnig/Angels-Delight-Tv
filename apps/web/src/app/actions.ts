@@ -158,6 +158,11 @@ export async function removeFromListAction(itemKey: string) {
   return toggleListAction(itemKey, false);
 }
 
+export async function loadMoreHomeRowsAction(cursor: string) {
+  const { ctx } = await context();
+  return getCatalog().homeRows(ctx, cursor);
+}
+
 export async function loadMoreMyListAction(cursor: string) {
   const { ctx } = await context();
   return getLibrary().myList(ctx, cursor);
