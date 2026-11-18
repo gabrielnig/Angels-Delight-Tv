@@ -237,11 +237,11 @@ describe.skipIf(!integrationEnabled() || !hasFfmpeg)('real ffmpeg on a generated
     expect(lufs).toBeLessThan(-12);
   });
 
-  it('creates three webp poster candidates', async () => {
+  it('creates six webp poster candidates', async () => {
     const candidates = (await t.db.select().from(schema.assets)).filter((a) =>
       a.rawKey?.startsWith(`candidates/${videoId}/`),
     );
-    expect(candidates).toHaveLength(3);
+    expect(candidates).toHaveLength(6);
     const image = await readAll(media, candidates[0]!.variants[0]!.key);
     expect(image.subarray(0, 4).toString('latin1')).toBe('RIFF');
     expect(image.subarray(8, 12).toString('latin1')).toBe('WEBP');
