@@ -241,13 +241,14 @@ a {
 .web-authcard {
   width: 100%;
   max-width: 25rem;
-}
-
-.web-authpage .web-authcard {
   padding: var(--space-6);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   background: var(--color-surface);
+  box-shadow: var(--shadow-2);
+}
+
+.web-authpage .web-authcard {
   align-self: flex-start;
 }
 
