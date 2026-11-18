@@ -488,6 +488,27 @@ export class AccountService {
     return `acct:${Buffer.from(hash).toString('hex')}`;
   }
 
+  /** The lockout that password checks on an open session count toward. Staff override this (M12-S09). */
+  protected passwordLockKey(hash: Uint8Array, _role: string): string {
+    return this.lockKey(hash);
+  }
+
+  protected registerPasswordFailure(
+    hash: Uint8Array,
+    accountId: string,
+    _role: string,
+    email: string,
+    meta: RequestMeta,
+    policy: typeof LOCKOUT_POLICIES.viewerLogin,
+  ): Promise<void> {
+    return this.registerAccountFailure(hash, accountId, email, meta, policy);
+  }
+
+  /** Clears every lockout a password reset should lift. Staff also lift the admin lockout. */
+  protected async clearPasswordLocks(hash: Uint8Array, _role: string): Promise<void> {
+    await this.closed(() => this.deps.lockouts.clear(this.lockKey(hash)));
+  }
+
   /** Limiter and lockout stores must fail closed on auth routes (M23-S03 AC2). */
   protected async closed<T>(task: () => Promise<T>): Promise<T> {
     try {
@@ -770,7 +791,7 @@ export class AccountService {
         .where(eq(schema.accounts.id, account.id)),
     );
     await this.deps.sessions.revokeAll(account.id);
-    await this.closed(() => this.deps.lockouts.clear(this.lockKey(account.emailHash!)));
+    await this.clearPasswordLocks(account.emailHash!, account.role);
     await this.audit('auth.password_reset', 'success', meta, {
       accountId: account.id,
       role: account.role,
@@ -800,12 +821,12 @@ export class AccountService {
     ) {
       throw new AccountUnavailable();
     }
-    const key = this.lockKey(account.emailHash);
+    const key = this.passwordLockKey(account.emailHash, account.role);
     const lock = await this.closed(() => this.deps.lockouts.status(key));
     if (lock.locked) throw new RateLimited(lock.retryAfterSeconds);
     if (!(await this.deps.hasher.verify(account.passwordHash, password))) {
       const email = await this.deps.keys.open(account.id, 'email', account.emailEnc);
-      await this.registerAccountFailure(account.emailHash, account.id, email, meta, policy);
+      await this.registerPasswordFailure(account.emailHash, account.id, account.role, email, meta, policy);
       await this.audit('auth.reauth', 'failure', meta, {
         accountId: account.id,
         role: account.role,

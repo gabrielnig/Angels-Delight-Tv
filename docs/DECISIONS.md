@@ -539,4 +539,9 @@ Format: decision, options considered, why, reversible or not. Newest first. Deci
 - Decision: `Export CSV` returns `day, video_id, title, archived, views, watch_seconds, completions` for every title with views in the range, from rolled up days plus live rows for today (`titleDaily` in `@ad/analytics`). It replaces the earlier file that held the site totals and only the top 10 titles. Watch time is exact seconds (it was rounded to minutes, which showed 0 for short plays). Titles deleted after being watched stay in with `archived` set to yes. The route spends the per staff admin budget like the audit export. Formula characters in titles are neutralised by the shared `csvCell`.
 - Options: keep totals and top titles, or add the per title rows as a second block in the same file.
 - Why: M19-S05 asks for daily views and watch time per title. A single table loads straight into a spreadsheet pivot; a second block does not.
+
+## D-104 Staff password checks count toward the admin lockout, and a reset lifts it (lane A2)
+- Decision: a wrong password at the confirmation prompt or when changing the password on My account counts toward the admin lockout key (3 failures, 30 minutes, Super admins mailed), the same key admin sign in uses, not the viewer key. A completed password reset clears the admin lockout as well as the viewer one, and sign in still asks for the second factor afterwards.
+- Options: keep counting staff reauth failures against the viewer key, or add a third key for My account.
+- Why: M12-S09 says a wrong code or password counts toward the admin lockout. With the viewer key a stolen staff session could try 5 passwords per 15 minutes without ever tripping the stricter admin lock, and a locked admin who reset their password stayed locked for 30 minutes.
 - Reversible: yes.

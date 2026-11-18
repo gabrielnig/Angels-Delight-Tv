@@ -195,6 +195,28 @@ export class StaffService extends AccountService {
     };
   }
 
+  protected override passwordLockKey(hash: Uint8Array, role: string): string {
+    return isStaffRole(role) ? this.adminKey(hash) : super.passwordLockKey(hash, role);
+  }
+
+  protected override registerPasswordFailure(
+    hash: Uint8Array,
+    accountId: string,
+    role: string,
+    email: string,
+    meta: RequestMeta,
+    policy: Parameters<AccountService['registerPasswordFailure']>[5],
+  ): Promise<void> {
+    return isStaffRole(role)
+      ? this.registerStaffFailure(hash, accountId, email, meta)
+      : super.registerPasswordFailure(hash, accountId, role, email, meta, policy);
+  }
+
+  protected override async clearPasswordLocks(hash: Uint8Array, role: string): Promise<void> {
+    await super.clearPasswordLocks(hash, role);
+    if (isStaffRole(role)) await this.closed(() => this.deps.lockouts.clear(this.adminKey(hash)));
+  }
+
   private async registerStaffFailure(
     hash: Uint8Array,
     accountId: string | null,
