@@ -1,37 +1,60 @@
 'use client';
 
-import { useState, type FormEvent } from 'react';
-import { Banner, Button, PasswordField } from '@ad/ui';
+import { useRef, useState, type FormEvent } from 'react';
+import { Button, type PasswordScorer } from '@ad/ui';
 import { changePasswordAction } from '../../app/actions';
 import { NETWORK_MESSAGE } from '../auth/shared';
+import { AcctField } from './Field';
+import { AcctIcon } from './icons';
+import { PasswordStrength, passwordRules, rulesMet } from './PasswordStrength';
 
 type Result =
   | { ok: true; signedOutDevices: number }
   | { ok: false; reason: 'wrong_current' | 'weak' | 'network' };
 
+type Errors = { current?: string; next?: string; again?: string; nextRules?: boolean };
+
+/** The Password card of the security screen (S28 states 1 to 3). */
 export function ChangePasswordForm({
+  lastChanged,
   change = changePasswordAction,
+  onChanged,
+  scorer,
 }: {
+  lastChanged: string;
   change?: (input: { current: string; next: string }) => Promise<Result>;
+  onChanged?: (signedOutDevices: number) => void;
+  scorer?: PasswordScorer;
 }) {
   const [current, setCurrent] = useState('');
   const [next, setNext] = useState('');
-  const [errors, setErrors] = useState<{ current?: string; next?: string }>({});
-  const [notice, setNotice] = useState<{ tone: 'success' | 'danger'; text: string } | null>(null);
+  const [again, setAgain] = useState('');
+  const [errors, setErrors] = useState<Errors>({});
+  const [problem, setProblem] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const currentRef = useRef<HTMLInputElement | null>(null);
+  const nextRef = useRef<HTMLInputElement | null>(null);
+  const againRef = useRef<HTMLInputElement | null>(null);
 
-  async function onSubmit(event: FormEvent<HTMLFormElement>) {
+  function reset() {
+    setCurrent('');
+    setNext('');
+    setAgain('');
+    setErrors({});
+    setProblem(null);
+  }
+
+  async function onSubmit(event: FormEvent) {
     event.preventDefault();
-    const form = event.currentTarget;
-    setNotice(null);
-    if (!current) {
-      setErrors({ current: 'Enter your current password.' });
-      form.querySelector<HTMLInputElement>('input')?.focus();
-      return;
-    }
-    if (!next) {
-      setErrors({ next: 'Choose a new password.' });
-      form.querySelectorAll<HTMLInputElement>('input')[1]?.focus();
+    setProblem(null);
+    const found: Errors = {};
+    if (!current) found.current = 'Enter your current password.';
+    if (!next || !rulesMet(passwordRules(next))) found.nextRules = true;
+    if (next !== again) found.again = 'The passwords do not match.';
+    if (found.current || found.nextRules || found.again) {
+      setErrors(found);
+      const first = found.current ? currentRef : found.nextRules ? nextRef : againRef;
+      first.current?.focus();
       return;
     }
     setErrors({});
@@ -39,47 +62,80 @@ export function ChangePasswordForm({
     try {
       const result = await change({ current, next });
       if (result.ok) {
-        setCurrent('');
-        setNext('');
-        const n = result.signedOutDevices;
-        setNotice({
-          tone: 'success',
-          text: `Password changed. ${n} other ${n === 1 ? 'device was' : 'devices were'} signed out.`,
-        });
+        reset();
+        onChanged?.(result.signedOutDevices);
       } else if (result.reason === 'wrong_current') {
-        setErrors({ current: 'That is not your current password.' });
+        setErrors({ current: 'Current password is not right.' });
+        currentRef.current?.focus();
       } else if (result.reason === 'weak') {
         setErrors({ next: 'Choose a longer, less common password.' });
       } else {
-        setNotice({ tone: 'danger', text: NETWORK_MESSAGE });
+        setProblem(NETWORK_MESSAGE);
       }
     } catch {
-      setNotice({ tone: 'danger', text: NETWORK_MESSAGE });
+      setProblem(NETWORK_MESSAGE);
     } finally {
       setBusy(false);
     }
   }
 
   return (
-    <form className="web-form" onSubmit={(event) => void onSubmit(event)} noValidate>
-      {notice ? <Banner tone={notice.tone}>{notice.text}</Banner> : null}
-      <PasswordField
-        label="Current password"
-        value={current}
-        onChange={(e) => setCurrent(e.target.value)}
-        error={errors.current}
-      />
-      <PasswordField
-        label="New password"
-        mode="new"
-        showStrength
-        value={next}
-        onChange={(e) => setNext(e.target.value)}
-        error={errors.next}
-      />
-      <Button type="submit" loading={busy}>
-        Change password
-      </Button>
-    </form>
+    <section className="acct-card" aria-labelledby="acct-password">
+      <div className="acct-row" data-between data-wrap>
+        <h2 id="acct-password" className="acct-h2">
+          Password
+        </h2>
+        <span className="acct-muted acct-small">{`Last changed ${lastChanged}`}</span>
+      </div>
+      <form className="acct-form" onSubmit={(e) => void onSubmit(e)} noValidate>
+        {problem ? (
+          <p className="acct-field__error" role="alert">
+            <AcctIcon name="warning" size={16} />
+            <span>{problem}</span>
+          </p>
+        ) : null}
+        <AcctField
+          label="Current password"
+          type="password"
+          autoComplete="current-password"
+          value={current}
+          onChange={(e) => setCurrent(e.target.value)}
+          error={errors.current}
+          inputRef={(el) => (currentRef.current = el)}
+        />
+        <AcctField
+          label="New password"
+          type="password"
+          autoComplete="new-password"
+          value={next}
+          onChange={(e) => setNext(e.target.value)}
+          error={errors.next}
+          invalid={errors.nextRules}
+          inputRef={(el) => (nextRef.current = el)}
+        />
+        <PasswordStrength value={next} scorer={scorer} />
+        <AcctField
+          label="Confirm new password"
+          type="password"
+          autoComplete="new-password"
+          value={again}
+          onChange={(e) => setAgain(e.target.value)}
+          error={errors.again}
+          ok={again.length > 0 && again === next && !errors.again}
+          inputRef={(el) => (againRef.current = el)}
+        />
+        <div className="acct-row" data-tight data-wrap>
+          <Button type="submit" loading={busy}>
+            Update password
+          </Button>
+          <Button variant="secondary" onClick={reset}>
+            Cancel
+          </Button>
+        </div>
+      </form>
+      <p className="acct-muted acct-small">
+        Changing your password signs you out on your other devices.
+      </p>
+    </section>
   );
 }
