@@ -163,6 +163,17 @@ export async function loadMoreHomeRowsAction(cursor: string) {
   return getCatalog().homeRows(ctx, cursor);
 }
 
+/** Per row retry for the Home rows that load on the server (M05-S02). */
+export async function reloadMyListRowAction() {
+  const { ctx } = await context();
+  return (await getLibrary().myList(ctx)).items.slice(0, 20);
+}
+
+export async function reloadContinueRowAction() {
+  const { ctx } = await context();
+  return getLibrary().continueWatching(ctx);
+}
+
 export async function loadMoreMyListAction(cursor: string) {
   const { ctx } = await context();
   return getLibrary().myList(ctx, cursor);
