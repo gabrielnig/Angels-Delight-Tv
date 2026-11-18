@@ -5,6 +5,7 @@ import { getSession as getRealSession, readSessionToken } from '../server/auth/s
 import { signInRedirect } from './auth-notices';
 import { realDataEnabled } from '../server/data/mode';
 import { cookieProfileIo } from '../server/data/profile-io';
+import { rememberedProfile } from './profiles/always-ask';
 import { can } from './admin/can';
 import { getAccount, getProfiles } from './data';
 import type { Profile, ViewerContext, ViewerSession } from './data';
@@ -48,7 +49,7 @@ async function getRealViewerSession(): Promise<ViewerSession | null> {
     displayName: overview.displayName,
     verified: real.emailVerified,
     memberSince: overview.memberSince,
-    profile: profiles.find((p) => p.id === selected) ?? null,
+    profile: rememberedProfile(profiles, selected),
     canUpload: can(real.role, 'video.upload'),
   };
 }

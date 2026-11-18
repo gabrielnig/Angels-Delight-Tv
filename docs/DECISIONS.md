@@ -800,3 +800,9 @@ Format: decision, options considered, why, reversible or not. Newest first. Deci
 - Options: a catalog in apps/web only (the player package could not use it), a third party i18n library, ICU message syntax.
 - Why: the player and the web app both show messages, so the shared package is the one place both can reach. A tiny catalog keeps the bundle small and the text unchanged. The lint rule for hardcoded strings (AC2) is not built, so components with inline copy move over as they are touched.
 - Reversible: yes.
+
+## D-154 "Always ask who is watching" is a device cookie, not an account column (lane r1)
+- Decision: the setting is the `ad_always_ask` cookie (one year, http only), flipped from Account by `setAlwaysAskAction`. Sign in forgets the remembered profile when it is on, and the picker no longer skips itself for a single profile account. Signing out leaves the cookie, because the story is about a shared tablet.
+- Options: an account column synced to every device (needs a migration and would force the picker on a personal phone too), local storage (the server cannot read it at sign in).
+- Why: the story names a shared family tablet, so the setting belongs to the device. A cookie needs no schema change and the server reads it where the choice is made. Clearing cookies resets it, which is acceptable.
+- Reversible: yes. A column can replace the cookie later.
