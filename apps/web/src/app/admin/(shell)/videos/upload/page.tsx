@@ -17,9 +17,7 @@ export default async function UploadPage({
   const actor = await requireActor('/admin/videos/upload');
   if (!can(actor.role, 'video.upload')) forbidden();
   const { replace } = await searchParams;
-  const target = replace
-    ? await videoService.get(actor, replace).catch(() => null)
-    : null;
+  const target = replace ? await videoService.get(actor, replace).catch(() => null) : null;
   return (
     <>
       <PageHeader

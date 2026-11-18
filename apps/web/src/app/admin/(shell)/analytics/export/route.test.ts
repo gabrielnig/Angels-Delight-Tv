@@ -58,7 +58,9 @@ describe('analytics export route', () => {
     expect(response.headers.get('content-disposition')).toContain(
       'analytics-2026-11-01-to-2026-11-10.csv',
     );
-    expect(await response.text()).toBe('day,video_id,title,archived,views,watch_seconds,completions\n');
+    expect(await response.text()).toBe(
+      'day,video_id,title,archived,views,watch_seconds,completions\n',
+    );
   });
 
   it('exports every title row, not only the top ten', async () => {
