@@ -54,6 +54,13 @@ function stubMatchMedia(matches: (q: string) => boolean) {
   }));
 }
 
+async function startPlaying(media: FakeMedia) {
+  await act(async () => {
+    await media.play();
+    media.emit('playing');
+  });
+}
+
 describe('PlayerView', () => {
   beforeEach(() => {
     vi.spyOn(HTMLMediaElement.prototype, 'load').mockImplementation(() => undefined);
@@ -599,6 +606,109 @@ describe('PlayerView', () => {
       expect(controller.getState().toast?.message).toBe(
         'Full screen is not available on this device',
       );
+    });
+  });
+
+  describe('controls auto hide (M08-S07)', () => {
+    afterEach(() => vi.useRealTimers());
+
+    it('hides after 3 seconds of playing without input and returns on input', async () => {
+      vi.useFakeTimers();
+      const { media, region } = setup();
+      await startPlaying(media);
+      expect(region.dataset.controls).toBe('visible');
+      act(() => void vi.advanceTimersByTime(2900));
+      expect(region.dataset.controls).toBe('visible');
+      act(() => void vi.advanceTimersByTime(200));
+      expect(region.dataset.controls).toBe('hidden');
+      fireEvent.pointerMove(region, { pointerType: 'mouse' });
+      expect(region.dataset.controls).toBe('visible');
+      act(() => void vi.advanceTimersByTime(3100));
+      expect(region.dataset.controls).toBe('hidden');
+      fireEvent.keyDown(region, { key: 'Shift' });
+      expect(region.dataset.controls).toBe('visible');
+    });
+
+    it('stays visible while paused and while focus is inside the controls', async () => {
+      vi.useFakeTimers();
+      const { media, region } = setup();
+      act(() => media.pause());
+      act(() => void vi.advanceTimersByTime(10_000));
+      expect(region.dataset.controls).toBe('visible');
+      await startPlaying(media);
+      screen.getByRole('button', { name: /Mute/ }).focus();
+      act(() => void vi.advanceTimersByTime(10_000));
+      expect(region.dataset.controls).toBe('visible');
+    });
+  });
+
+  describe('full screen orientation and picture in picture (M08-S06, M08-S19)', () => {
+    it('locks landscape on a phone and releases the lock on exit', async () => {
+      stubMatchMedia(() => true);
+      const lock = vi.fn().mockResolvedValue(undefined);
+      const unlock = vi.fn();
+      vi.stubGlobal('screen', { orientation: { lock, unlock } });
+      const { ui, region } = setup();
+      region.requestFullscreen = vi.fn().mockResolvedValue(undefined);
+      await ui.click(screen.getByRole('button', { name: 'Full screen' }));
+      expect(lock).toHaveBeenCalledWith('landscape');
+      Object.defineProperty(document, 'fullscreenElement', { value: region, configurable: true });
+      document.exitFullscreen = vi.fn().mockResolvedValue(undefined);
+      await ui.click(screen.getByRole('button', { name: /full screen/i }));
+      expect(unlock).toHaveBeenCalled();
+      Object.defineProperty(document, 'fullscreenElement', { value: null, configurable: true });
+    });
+
+    it('uses native full screen on iOS Safari', async () => {
+      const { ui, region } = setup();
+      region.requestFullscreen = undefined as never;
+      const video = region.querySelector('video') as HTMLVideoElement & {
+        webkitEnterFullscreen?: () => void;
+      };
+      video.webkitEnterFullscreen = vi.fn();
+      await ui.click(screen.getByRole('button', { name: 'Full screen' }));
+      expect(video.webkitEnterFullscreen).toHaveBeenCalled();
+    });
+
+    it('shows the picture in picture button only where supported and toasts a refusal', async () => {
+      Object.defineProperty(document, 'pictureInPictureEnabled', { value: false, configurable: true });
+      const first = setup();
+      expect(screen.queryByRole('button', { name: 'Picture in picture' })).toBeNull();
+      first.unmount();
+      Object.defineProperty(document, 'pictureInPictureEnabled', { value: true, configurable: true });
+      const { ui, controller, region } = setup();
+      const video = region.querySelector('video') as HTMLVideoElement;
+      video.requestPictureInPicture = vi.fn().mockRejectedValue(new Error('no'));
+      await ui.click(screen.getByRole('button', { name: 'Picture in picture' }));
+      expect(controller.getState().toast?.message).toBe(
+        'Picture in picture is not available right now',
+      );
+      Object.defineProperty(document, 'pictureInPictureEnabled', { value: undefined, configurable: true });
+    });
+
+    it('sets the lock screen title and handlers through the Media Session API', () => {
+      const handlers: Record<string, unknown> = {};
+      vi.stubGlobal('navigator', {
+        ...navigator,
+        mediaSession: {
+          metadata: null,
+          setActionHandler: (name: string, fn: unknown) => (handlers[name] = fn),
+        },
+      });
+      vi.stubGlobal(
+        'MediaMetadata',
+        class {
+          constructor(public init: { title: string }) {}
+        },
+      );
+      const { media } = setup();
+      expect(typeof handlers.play).toBe('function');
+      expect(typeof handlers.seekforward).toBe('function');
+      expect((navigator.mediaSession.metadata as unknown as { init: { title: string } }).init.title).toBe(
+        'How Rain Is Made',
+      );
+      act(() => (handlers.seekforward as () => void)());
+      expect(media.currentTime).toBeGreaterThan(0);
     });
   });
 });
