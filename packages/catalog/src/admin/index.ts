@@ -6,3 +6,4 @@ export * from './home';
 export * from './captions';
 export * from './posters';
 export * from './notices';
+export * from './slugs';

@@ -26,6 +26,8 @@ export type Suitability = 'everyone' | 'kids' | 'older';
 
 export interface VideoRecord {
   id: string;
+  /** The address in /title/<slug>. */
+  slug: string;
   title: string;
   description: string;
   tags: string[];

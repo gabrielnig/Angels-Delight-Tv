@@ -49,6 +49,7 @@ interface Props {
 
 interface FormState {
   title: string;
+  slug: string;
   description: string;
   tags: string;
   categoryIds: string[];
@@ -59,6 +60,7 @@ interface FormState {
 
 const toForm = (video: VideoRecord): FormState => ({
   title: video.title,
+  slug: video.slug,
   description: video.description,
   tags: video.tags.join(', '),
   categoryIds: video.categoryIds,
@@ -104,6 +106,7 @@ export function VideoEditor({ video, categories, series, role, actions, viewerHr
     try {
       const result = await actions.update({
         title: form.title,
+        slug: form.slug,
         description: form.description,
         tags: form.tags
           .split(',')
@@ -198,6 +201,16 @@ export function VideoEditor({ video, categories, series, role, actions, viewerHr
             error={errors.title}
             maxLength={140}
             required
+          />
+          <TextField
+            label="Address"
+            hint="Shown in the link to this video. If you change it, the old address keeps working."
+            value={form.slug}
+            onChange={(e) => set('slug', e.target.value)}
+            error={errors.slug}
+            maxLength={120}
+            autoCapitalize="none"
+            spellCheck={false}
           />
           <TextArea
             label="Description"
