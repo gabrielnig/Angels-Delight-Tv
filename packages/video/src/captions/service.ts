@@ -13,9 +13,12 @@ import {
   type Cue,
   type CueWarning,
 } from '../vtt';
+import { cleanScript } from './align';
 import { ensureTrack, sha8Of, storeRevision, type CaptionRow } from './revisions';
 
 const { captions, captionTracks, videos, jobs } = schema;
+
+const SCRIPT_MAX_BYTES = 200 * 1024;
 
 export type CaptionState = 'none' | 'generating' | 'needs_review' | 'approved' | 'rejected';
 
@@ -154,7 +157,13 @@ export class CaptionService {
     assertStaff(actor);
     const { caption } = await this.load(captionId);
     const cues = parseVtt(await readText(this.originals, caption.storageKey));
-    return { caption, cues, warnings: validateCues(cues) };
+    return {
+      caption,
+      cues,
+      warnings: validateCues(cues),
+      /** Start times (ms) of cues to highlight. Only aligned revisions have any. */
+      lowConfidence: caption.lowConfidenceCues,
+    };
   }
 
   /**
@@ -177,10 +186,12 @@ export class CaptionService {
       .where(eq(captionTracks.id, trackId))
       .limit(1);
     if (!track) throw new NotFound('Caption track not found');
+    const next = cleanCues(cues);
     const revision = await storeRevision(this.db, this.originals, track, {
-      cues: cleanCues(cues),
+      cues: next,
       source: 'manual',
       createdBy: actor.accountId,
+      lowConfidenceCues: await this.flagsToKeep(trackId, next),
     });
     if (!options.keepApproved) return revision;
     await this.record(actor, 'captions.save_keep_approved', revision.id, {
@@ -188,6 +199,74 @@ export class CaptionService {
       revision: revision.revision,
     });
     return this.approve(actor, revision.id, { confirmWarnings: true });
+  }
+
+  /**
+   * A flagged cue stays flagged until someone edits it. Cues are matched by start time and text, so changing the
+   * wording or the timing counts as a review of that cue.
+   */
+  private async flagsToKeep(trackId: string, next: Cue[]): Promise<number[]> {
+    const [latest] = await this.db
+      .select()
+      .from(captions)
+      .where(eq(captions.trackId, trackId))
+      .orderBy(desc(captions.revision))
+      .limit(1);
+    if (!latest || latest.lowConfidenceCues.length === 0) return [];
+    const before = parseVtt(await readText(this.originals, latest.storageKey));
+    const flagged = new Set(latest.lowConfidenceCues);
+    return before
+      .filter((cue) => flagged.has(cue.startMs))
+      .filter((cue) =>
+        next.some(
+          (n) => n.startMs === cue.startMs && n.endMs === cue.endMs && n.text === cue.text,
+        ),
+      )
+      .map((cue) => cue.startMs);
+  }
+
+  /** The script text with speaker names and stage directions removed, as it will be used (M15-S02 edge). */
+  previewScript(script: string): string {
+    return cleanScript(script);
+  }
+
+  async getScript(actor: Actor, videoId: string): Promise<{ text: string; cleaned: string } | null> {
+    assertStaff(actor);
+    try {
+      const text = await readText(this.originals, `scripts/${videoId}.txt`);
+      return { text, cleaned: cleanScript(text) };
+    } catch (error) {
+      if (error instanceof NotFound) return null;
+      throw error;
+    }
+  }
+
+  /** Keeps the script next to the other private files of the video and queues alignment to the audio. */
+  async saveScript(
+    actor: Actor,
+    videoId: string,
+    script: string,
+  ): Promise<{ cleaned: string; jobId: string }> {
+    assertStaff(actor);
+    const cleaned = cleanScript(script);
+    if (cleaned.trim() === '') {
+      throw new ValidationFailed({ script: ['Paste the script text first.'] });
+    }
+    if (Buffer.byteLength(script) > SCRIPT_MAX_BYTES) {
+      throw new ValidationFailed({ script: ['This script is longer than 200 KB.'] });
+    }
+    const [video] = await this.db
+      .select({ id: videos.id })
+      .from(videos)
+      .where(eq(videos.id, videoId))
+      .limit(1);
+    if (!video) throw new NotFound('Video not found');
+    await this.originals.put(`scripts/${videoId}.txt`, new TextEncoder().encode(script), {
+      contentType: 'text/plain; charset=utf-8',
+    });
+    const queued = await this.regenerate(actor, videoId, 'align');
+    await this.record(actor, 'captions.script_saved', videoId, { videoId });
+    return { cleaned, jobId: queued.jobId };
   }
 
   async approve(

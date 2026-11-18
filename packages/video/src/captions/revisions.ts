@@ -42,6 +42,8 @@ export interface NewRevision {
   model?: string | null;
   createdBy?: string | null;
   reviewNote?: string | null;
+  /** Start times (ms) of cues to highlight in review. */
+  lowConfidenceCues?: number[];
 }
 
 /**
@@ -94,6 +96,7 @@ export async function storeRevision(
         model: input.model ?? null,
         createdBy: input.createdBy ?? null,
         reviewNote: input.reviewNote ?? null,
+        lowConfidenceCues: input.lowConfidenceCues ?? [],
       })
       .returning();
     return row!;

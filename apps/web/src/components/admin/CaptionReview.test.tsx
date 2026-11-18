@@ -56,3 +56,85 @@ describe('CaptionReview', () => {
     expect((screen.getByLabelText('Words in cue 1') as HTMLTextAreaElement).readOnly).toBe(true);
   });
 });
+
+describe('CaptionReview low confidence cues', () => {
+  const flaggedTrack = {
+    state: 'needs_review',
+    cues: [
+      { id: 'a', start: 0, end: 2000, text: 'Hello there' },
+      { id: 'b', start: 2000, end: 4000, text: 'Second line', lowConfidence: true },
+      { id: 'c', start: 4000, end: 6000, text: 'Third line', lowConfidence: true },
+    ],
+    updatedAt: 1,
+  } as never;
+
+  const flagged = (a = actions()) =>
+    render(
+      <ToastProvider>
+        <CaptionReview video={video} track={flaggedTrack} role="admin" actions={a} />
+      </ToastProvider>,
+    );
+
+  it('says how many cues need a check and marks each one with words', () => {
+    flagged();
+    expect(screen.getByText(/2 cues to check/i)).toBeInTheDocument();
+    expect(screen.getAllByText('Check this cue')).toHaveLength(2);
+    expect(document.querySelectorAll('.adm-cue--check')).toHaveLength(2);
+  });
+
+  it('clears the mark when the words of a cue are edited', () => {
+    flagged();
+    fireEvent.change(screen.getByLabelText('Words in cue 2'), { target: { value: 'Second line fixed' } });
+    expect(screen.getAllByText('Check this cue')).toHaveLength(1);
+    expect(screen.getByText(/1 cue to check/i)).toBeInTheDocument();
+  });
+
+  it('can show only the cues to check', () => {
+    flagged();
+    fireEvent.click(screen.getByLabelText('Show only cues to check'));
+    expect(screen.queryByLabelText('Words in cue 1')).toBeNull();
+    expect(screen.getByLabelText('Words in cue 2')).toBeInTheDocument();
+  });
+
+  it('shows nothing extra when no cue is flagged', () => {
+    view();
+    expect(screen.queryByText(/to check/i)).toBeNull();
+  });
+});
+
+describe('CaptionReview script alignment', () => {
+  it('previews the cleaned script and sends it for alignment', async () => {
+    const a = {
+      ...actions(),
+      previewScript: vi.fn().mockResolvedValue('Hello there'),
+      alignScript: vi.fn().mockResolvedValue({ ok: true }),
+    };
+    view(a as never);
+    fireEvent.click(screen.getByRole('button', { name: 'Align a script' }));
+    fireEvent.change(screen.getByLabelText('Script'), { target: { value: 'NARRATOR: Hello there' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Preview' }));
+    expect(await screen.findByText('Hello there', { selector: 'pre' })).toBeInTheDocument();
+    expect(a.previewScript).toHaveBeenCalledWith('NARRATOR: Hello there');
+    fireEvent.click(screen.getByRole('button', { name: 'Align to audio' }));
+    await vi.waitFor(() => expect(a.alignScript).toHaveBeenCalledWith('NARRATOR: Hello there'));
+  });
+
+  it('shows the plain reason when alignment is refused', async () => {
+    const a = {
+      ...actions(),
+      previewScript: vi.fn(),
+      alignScript: vi.fn().mockResolvedValue({ ok: false, error: 'Paste the script text first.' }),
+    };
+    view(a as never);
+    fireEvent.click(screen.getByRole('button', { name: 'Align a script' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Align to audio' }));
+    expect(await screen.findByText('Paste the script text first.')).toBeInTheDocument();
+  });
+
+  it('offers no script tools without the right to edit or without script support', () => {
+    view(actions(), 'viewer');
+    expect(screen.queryByRole('button', { name: 'Align a script' })).toBeNull();
+    view();
+    expect(screen.queryByRole('button', { name: 'Align a script' })).toBeNull();
+  });
+});

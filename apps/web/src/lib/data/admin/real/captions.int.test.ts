@@ -9,7 +9,7 @@ import {
 import { DrizzleJobMirror, JobProducer, ensureQueues } from '@ad/queue';
 import { FakeBoss } from '@ad/queue/testing';
 import { LocalStorage } from '@ad/storage';
-import { CaptionService } from '@ad/video';
+import { CaptionService, ensureTrack, storeRevision } from '@ad/video';
 import { eq } from 'drizzle-orm';
 import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
@@ -32,6 +32,7 @@ describe.skipIf(!integrationEnabled())('real caption service', () => {
   let t: ViewerTestDb;
   let root: string;
   let boss: FakeBoss;
+  let originals: LocalStorage;
   let editor: AdminActor;
   let admin: AdminActor;
   let viewer: AdminActor;
@@ -42,9 +43,10 @@ describe.skipIf(!integrationEnabled())('real caption service', () => {
     boss = new FakeBoss();
     await ensureQueues(boss);
     const producer = new JobProducer({ boss, mirror: new DrizzleJobMirror(t.app) });
+    originals = new LocalStorage({ root, bucket: 'originals', signingSecret: secret });
     const service = new CaptionService({
       db: t.app,
-      originals: new LocalStorage({ root, bucket: 'originals', signingSecret: secret }),
+      originals,
       media: new LocalStorage({ root, bucket: 'media', signingSecret: secret }),
       producer,
     });
@@ -84,6 +86,42 @@ describe.skipIf(!integrationEnabled())('real caption service', () => {
     expect(await realCaptionService.upload(editor, video.id, cues)).toEqual({ ok: true });
     return video;
   }
+
+  it('marks cues an aligned revision was unsure about, and drops the mark once the cue is edited', async () => {
+    const video = await seedVideo(t.setup, { title: 'Aligned', durationMs: 60_000 });
+    const trackRow = await ensureTrack(t.setup, video.id, 'en');
+    await storeRevision(t.setup, originals, trackRow, {
+      cues: [
+        { startMs: 0, endMs: 2000, text: 'Welcome.' },
+        { startMs: 2500, endMs: 4500, text: 'Fractions today.' },
+      ],
+      source: 'aligned',
+      lowConfidenceCues: [2500],
+    });
+    const { track } = await realCaptionService.track(editor, video.id);
+    expect(track?.cues.map((c) => c.lowConfidence === true)).toEqual([false, true]);
+    await realCaptionService.save(editor, video.id, [
+      cue('a', 0, 2000, 'Welcome.'),
+      cue('b', 2500, 4500, 'Fractions, today.'),
+    ]);
+    const after = await realCaptionService.track(editor, video.id);
+    expect(after.track?.cues.some((c) => c.lowConfidence)).toBe(false);
+  });
+
+  it('stores a script, queues alignment and previews the cleaned text', async () => {
+    const video = await seedVideo(t.setup, { title: 'Scripted', durationMs: 60_000 });
+    expect(await realCaptionService.previewScript(editor, 'NARRATOR: Hi there.')).toBe('Hi there.');
+    expect(await realCaptionService.alignScript(editor, video.id, 'NARRATOR: Hi there.')).toEqual({
+      ok: true,
+    });
+    const jobs = await t.setup.select().from(schema.jobs).where(eq(schema.jobs.videoId, video.id));
+    expect(jobs.map((j) => j.queue)).toContain('caption.generate');
+    expect(await realCaptionService.alignScript(editor, video.id, '   ')).toEqual({
+      ok: false,
+      error: 'Paste the script text first.',
+    });
+    await expect(realCaptionService.alignScript(viewer, video.id, 'Hi')).rejects.toThrow();
+  });
 
   it('refuses a viewer', async () => {
     await expect(realCaptionService.list(viewer)).rejects.toThrow();

@@ -337,4 +337,61 @@ describe.skipIf(!integrationEnabled())('CaptionService against Postgres and loca
       approvedRevisionId: revision.id,
     });
   });
+
+  describe('low confidence cues and scripts', () => {
+    const cues = [
+      { startMs: 0, endMs: 2000, text: 'Welcome to the lesson.' },
+      { startMs: 2500, endMs: 4500, text: 'Today we learn fractions.' },
+      { startMs: 5000, endMs: 7000, text: 'Thank you.' },
+    ];
+
+    async function flagged() {
+      const video = makeVideo({ createdBy: editor.accountId, status: 'ready', durationMs: 8000 });
+      await t.db.insert(schema.videos).values(video);
+      const track = await ensureTrack(t.db, video.id, 'en');
+      const revision = await storeRevision(t.db, originals, track, {
+        cues,
+        source: 'aligned',
+        lowConfidenceCues: [2500, 5000],
+      });
+      return { video, track, revision };
+    }
+
+    it('returns the flagged start times with a revision', async () => {
+      const { revision } = await flagged();
+      const loaded = await service.getRevision(editor, revision.id);
+      expect(loaded.lowConfidence).toEqual([2500, 5000]);
+    });
+
+    it('keeps a flag on a cue the editor did not touch and drops it from a cue they edited', async () => {
+      const { track } = await flagged();
+      const next = [
+        cues[0]!,
+        { ...cues[1]!, text: 'Today we learn about fractions.' },
+        cues[2]!,
+      ];
+      const saved = await service.saveRevision(editor, track.id, next);
+      expect(saved.lowConfidenceCues).toEqual([5000]);
+    });
+
+    it('stores a script for a video, cleaned for a preview, and queues alignment', async () => {
+      const { video } = await flagged();
+      const out = await service.saveScript(editor, video.id, 'NARRATOR: Hello there.\n[music]\nBye.');
+      expect(out.cleaned).toBe('Hello there.\nBye.');
+      expect(await text(originals, `scripts/${video.id}.txt`)).toBe('NARRATOR: Hello there.\n[music]\nBye.');
+      const job = await t.db.select().from(schema.jobs).where(eq(schema.jobs.videoId, video.id));
+      expect(job.some((j) => j.queue === 'caption.generate')).toBe(true);
+      expect((await service.getScript(editor, video.id))?.cleaned).toBe('Hello there.\nBye.');
+    });
+
+    it('previews a script without storing it, and refuses empty or huge ones and viewers', async () => {
+      expect(service.previewScript('A: Hi\n\n(softly) there')).toBe('Hi\nthere');
+      const { video } = await flagged();
+      await expect(service.saveScript(editor, video.id, '   ')).rejects.toBeInstanceOf(ValidationFailed);
+      await expect(
+        service.saveScript(editor, video.id, 'word '.repeat(60_000)),
+      ).rejects.toBeInstanceOf(ValidationFailed);
+      await expect(service.saveScript(viewer, video.id, 'Hello')).rejects.toBeInstanceOf(Forbidden);
+    });
+  });
 });

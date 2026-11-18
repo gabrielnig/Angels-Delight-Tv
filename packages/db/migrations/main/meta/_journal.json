@@ -169,6 +169,13 @@
       "when": 1794989671441,
       "tag": "0023_signup_invites",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1794989771441,
+      "tag": "0024_caption_low_confidence",
+      "breakpoints": true
     }
   ]
 }

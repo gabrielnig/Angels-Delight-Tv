@@ -32,6 +32,7 @@ import { ConfirmDialog, Dialog } from './Dialog';
 import { Checkbox, TextField } from './fields';
 import { Icon } from './Icon';
 import { ProgressBar } from './ProgressBar';
+import { ScriptPanel } from './ScriptPanel';
 import { Banner } from './states';
 import { useToast } from './Toast';
 
@@ -40,6 +41,9 @@ export interface ReviewActions {
   approve(): Promise<CaptionResult>;
   regenerate(): Promise<CaptionResult>;
   upload(cues: Cue[]): Promise<CaptionResult>;
+  /** Script tools. Leave both out to hide them. */
+  previewScript?(script: string): Promise<string>;
+  alignScript?(script: string): Promise<CaptionResult>;
 }
 
 type SaveState = 'saved' | 'dirty' | 'saving' | 'error';
@@ -96,6 +100,8 @@ export function CaptionReview({ video, track, role, actions, preview = false }: 
     for (const list of warnings.values()) for (const w of list) totals[w]++;
     return totals;
   }, [warnings]);
+  const toCheck = cues.filter((c) => c.lowConfidence).length;
+  const [onlyCheck, setOnlyCheck] = useState(false);
   const warningCount = [...warnings.values()].reduce((n, list) => n + list.length, 0);
 
   // ---- autosave ----
@@ -146,7 +152,8 @@ export function CaptionReview({ video, track, role, actions, preview = false }: 
   };
   const patch = (id: string, change: Partial<Cue>, key: string) =>
     commit(
-      cues.map((c) => (c.id === id ? { ...c, ...change } : c)),
+      // Editing a cue is the review of it, so it no longer needs a check.
+      cues.map((c) => (c.id === id ? { ...c, ...change, lowConfidence: false } : c)),
       `${id}:${key}`,
     );
 
@@ -255,6 +262,9 @@ export function CaptionReview({ video, track, role, actions, preview = false }: 
             Generate captions
           </Button>
         </div>
+        {actions.previewScript && actions.alignScript && canEdit ? (
+          <ScriptPanel preview={actions.previewScript} align={actions.alignScript} />
+        ) : null}
       </div>
     );
   }
@@ -281,8 +291,10 @@ export function CaptionReview({ video, track, role, actions, preview = false }: 
     return (
       <div className="adm-stack">
         <Banner tone="danger">
-          <strong>Captions could not be made for this video.</strong> {track.failure} Upload a
-          caption file or try again.
+          <strong>Captions could not be made for this video.</strong> {track.failure}{' '}
+          {track.failure?.includes('script does not match')
+            ? 'Try again without the script and the words will be recognised from the audio.'
+            : 'Upload a caption file or try again.'}
         </Banner>
         <div className="adm-row">
           <input
@@ -343,6 +355,9 @@ export function CaptionReview({ video, track, role, actions, preview = false }: 
 
   return (
     <div className="adm-stack">
+      {actions.previewScript && actions.alignScript && canEdit ? (
+        <ScriptPanel preview={actions.previewScript} align={actions.alignScript} />
+      ) : null}
       <div className="adm-toolbar" role="toolbar" aria-label="Caption tools">
         <Button icon="search" onClick={() => setFindOpen(true)}>
           Find and replace
@@ -480,6 +495,18 @@ export function CaptionReview({ video, track, role, actions, preview = false }: 
         </div>
 
         <section className="adm-review__cues" aria-label="Cues">
+          {toCheck > 0 ? (
+            <div className="adm-row" style={{ justifyContent: 'space-between' }}>
+              <Badge tone="warning" icon="alert">
+                {toCheck} {toCheck === 1 ? 'cue' : 'cues'} to check
+              </Badge>
+              <Checkbox
+                label="Show only cues to check"
+                checked={onlyCheck}
+                onChange={(e) => setOnlyCheck(e.target.checked)}
+              />
+            </div>
+          ) : null}
           <div className="adm-row" style={{ justifyContent: 'space-between' }}>
             <span className="adm-muted">{cues.length} cues</span>
             <Checkbox
@@ -490,11 +517,12 @@ export function CaptionReview({ video, track, role, actions, preview = false }: 
           </div>
           <ol className="adm-cuelist" ref={listRef}>
             {cues.map((cue, index) => {
+              if (onlyCheck && !cue.lowConfidence) return null;
               const list = warnings.get(cue.id) ?? [];
               return (
                 <li
                   key={cue.id}
-                  className={`adm-cue${index === active ? ' is-active' : ''}`}
+                  className={`adm-cue${index === active ? ' is-active' : ''}${cue.lowConfidence ? ' adm-cue--check' : ''}`}
                   aria-current={index === active ? 'true' : undefined}
                 >
                   <div className="adm-cue__head">
@@ -519,6 +547,11 @@ export function CaptionReview({ video, track, role, actions, preview = false }: 
                       disabled={!canEdit}
                       onCommit={(v) => patch(cue.id, { end: v }, 'end')}
                     />
+                    {cue.lowConfidence ? (
+                      <Badge tone="warning" icon="alert">
+                        Check this cue
+                      </Badge>
+                    ) : null}
                     {list.map((w) => (
                       <Badge key={w} tone="warning" icon="alert">
                         {WARNING_LABELS[w]}

@@ -11,7 +11,7 @@ import { PipelineError } from '../failure';
 import { sniffContainer } from '../magic';
 import { cuesFromWords } from '../vtt';
 import type { Transcriber } from './adapter';
-import { alignScript, cleanScript } from './align';
+import { alignScript, cleanScript, cuesFromAlignment } from './align';
 import { ensureTrack, storeRevision } from './revisions';
 
 export interface CaptionGeneratorDeps {
@@ -95,20 +95,23 @@ export class CaptionGenerator {
     const heard = await this.deps.transcriber.transcribe({ audio, language: 'en', signal });
 
     await progress('Building captions', 85);
-    let words = heard.words;
+    let cues = cuesFromWords(heard.words);
+    let lowConfidenceCues: number[] = [];
     let source: 'whisper' | 'aligned' = 'whisper';
-    if (script && words.length > 0) {
-      words = alignScript(cleanScript(script), words).words;
+    if (script && heard.words.length > 0) {
+      const aligned = cuesFromAlignment(alignScript(cleanScript(script), heard.words));
+      cues = aligned.cues;
+      lowConfidenceCues = aligned.lowConfidenceStarts;
       source = 'aligned';
     }
-    const cues = cuesFromWords(words);
 
     const track = await ensureTrack(db, videoId, language);
     await storeRevision(db, originals, track, {
       cues,
       source,
       model: heard.model,
-      reviewNote: words.length === 0 ? 'No speech detected' : null,
+      reviewNote: heard.words.length === 0 ? 'No speech detected' : null,
+      lowConfidenceCues,
     });
     await progress('Done', 100);
   }
