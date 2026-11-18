@@ -45,7 +45,7 @@ DNS and zone:
 2. DNS records: `<APP_DOMAIN>` and `www` as A records to the VPS IP, proxied (orange cloud). `<MEDIA_DOMAIN>` is created by the Worker custom domain step below.
 3. SSL/TLS mode Full (strict). Always Use HTTPS on. TLS 1.3 on, minimum TLS 1.2 (deliberate, see SECURITY.md section 14). HSTS enabled in the app headers.
 4. Create an Origin CA certificate for `<APP_DOMAIN>`, install the cert and key on the VPS under `/opt/angelsdelight/caddy/` (mode 600).
-5. Email DNS for the sending provider: SPF, DKIM, DMARC records.
+5. Email DNS for the sending provider: SPF, DKIM, DMARC records. Verify with `pnpm dns:check` (see LAUNCH-RUNBOOK step 1).
 6. Rate limiting rule (free plan allows a small number): throttle `POST /api/auth/*` per IP.
 7. Do not proxy any video traffic from the VPS. The media domain serves from R2 only.
 
