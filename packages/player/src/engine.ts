@@ -9,6 +9,8 @@ export interface PlayerMedia extends EventTarget {
   volume: number;
   muted: boolean;
   playbackRate: number;
+  /** Keeps the voice natural at 1.5x (M08-S10 AC2). Absent on very old engines. */
+  preservesPitch?: boolean;
   readonly buffered: { length: number; start(i: number): number; end(i: number): number };
   readonly error: { code: number } | null;
   play(): Promise<void>;

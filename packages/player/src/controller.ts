@@ -197,6 +197,7 @@ export class PlayerController {
     media.volume = this.prefs.volume;
     media.muted = this.prefs.muted;
     media.playbackRate = this.prefs.rate;
+    media.preservesPitch = true;
 
     for (const ev of [
       'play',
@@ -395,6 +396,7 @@ export class PlayerController {
       Math.abs(r - rate) < Math.abs(best - rate) ? r : best,
     );
     this.o.media.playbackRate = nearest;
+    this.o.media.preservesPitch = true;
     this.prefs.rate = nearest;
     this.set({ rate: nearest });
     this.persist();

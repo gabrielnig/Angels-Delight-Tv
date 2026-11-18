@@ -66,3 +66,43 @@ describe('watch telemetry (M08-S30)', () => {
     }).not.toThrow();
   });
 });
+
+describe('createWatchMetrics (M08-S30 AC1)', () => {
+  const metrics = (rebufferMs: number, final = false) => ({
+    startupMs: 900,
+    rebufferCount: 1,
+    rebufferMs,
+    errors: [],
+    averageBitrate: 800_000,
+    deviceClass: 'phone',
+    final,
+  });
+
+  it('sends only the stall time added since the last report', async () => {
+    const { createWatchMetrics } = await import('./telemetry');
+    const track = vi.fn();
+    const sink = createWatchMetrics({ videoId: VIDEO, client: { track } });
+    sink.report(metrics(0));
+    expect(track).not.toHaveBeenCalled();
+    sink.report(metrics(1200));
+    sink.report(metrics(1200));
+    sink.report(metrics(3000, true));
+    expect(track.mock.calls.map((c) => c[0])).toEqual([
+      { kind: 'rebuffer', videoId: VIDEO, rebufferMs: 1200 },
+      { kind: 'rebuffer', videoId: VIDEO, rebufferMs: 1800 },
+    ]);
+  });
+
+  it('never throws when the client does', async () => {
+    const { createWatchMetrics } = await import('./telemetry');
+    const sink = createWatchMetrics({
+      videoId: VIDEO,
+      client: {
+        track: () => {
+          throw new Error('offline');
+        },
+      },
+    });
+    expect(() => sink.report(metrics(500))).not.toThrow();
+  });
+});

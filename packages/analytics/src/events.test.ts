@@ -18,11 +18,12 @@ describe('parseBatch', () => {
         { kind: 'error', code: 'player.network', videoId },
         { kind: 'vitals', name: 'LCP', value: 2100.5, route: '/watch/[slug]' },
         { kind: 'startup', videoId, startupMs: 1800 },
+        { kind: 'rebuffer', videoId, rebufferMs: 900 },
       ],
     });
     expect(result.ok).toBe(true);
     if (result.ok) {
-      expect(result.events).toHaveLength(7);
+      expect(result.events).toHaveLength(8);
       expect(result.rejected).toBe(0);
       expect(result.deviceClass).toBe('phone');
       expect(result.saveData).toBe(true);
