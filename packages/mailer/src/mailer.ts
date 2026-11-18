@@ -175,4 +175,12 @@ export class Mailer {
   sendAccountDeleted(input: { to: string }) {
     return this.deliver(input.to, 'account_deleted', {});
   }
+
+  sendDeletionScheduled(input: { to: string; purgeDate: string; days: number }) {
+    return this.deliver(input.to, 'deletion_scheduled', {
+      cancelUrl: this.url('/account/deletion'),
+      purgeDate: input.purgeDate,
+      days: input.days,
+    });
+  }
 }

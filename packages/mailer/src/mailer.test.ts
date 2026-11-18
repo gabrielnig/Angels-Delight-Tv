@@ -105,4 +105,14 @@ describe('SmtpTransport', () => {
     await mailer.sendAccountDeleted({ to: 'a@example.com' });
     expect(transport.outbox[0]?.subject).not.toMatch(/[\r\n]/);
   });
+
+  it('sends the deletion notice with the purge date and a link to cancel by signing in', async () => {
+    const transport = new MemoryTransport();
+    const mailer = new Mailer(transport, settings);
+    await mailer.sendDeletionScheduled({ to: 'a@example.com', purgeDate: '1 Dec 2026', days: 14 });
+    const mail = transport.outbox[0];
+    expect(mail?.subject).toMatch(/will be deleted/i);
+    expect(mail?.text).toContain('1 Dec 2026');
+    expect(mail?.text).toContain('/account/deletion');
+  });
 });

@@ -1,7 +1,7 @@
 import { schema, withAccount } from '@ad/db';
 import { LimiterUnavailable, LOCKOUT_POLICIES, RATE_POLICIES } from '@ad/security';
 import { Conflict, hmacSha256, RateLimited, sha256, uuidv7 } from '@ad/shared';
-import { and, count, eq, isNull } from 'drizzle-orm';
+import { and, count, eq, isNotNull, isNull, lte } from 'drizzle-orm';
 import {
   checkCode,
   findEmailToken,
@@ -14,6 +14,7 @@ import { findAccountByEmailHash, isUniqueViolation } from './lookup';
 import { checkPassword } from './policy';
 import {
   DEFAULT_AUTH_CONFIG,
+  NO_META,
   AccountUnavailable,
   FieldErrors,
   InvalidCredentials,
@@ -25,6 +26,13 @@ import {
   type Logger,
   type RequestMeta,
 } from './types';
+
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+/** "1 Dec 2026" in UTC, for mails. */
+function formatDate(date: Date): string {
+  return `${date.getUTCDate()} ${MONTHS[date.getUTCMonth()]} ${date.getUTCFullYear()}`;
+}
 
 export interface SignUpInput {
   email: string;
@@ -487,6 +495,13 @@ export class AccountService {
       }
     | { status: 'needs_verification'; email: string }
     | { status: 'use_admin_login' }
+    | {
+        status: 'pending_deletion';
+        accountId: string;
+        role: string;
+        purgeAfter: Date;
+        session: { token: string; id: string };
+      }
   > {
     const email = normalizeEmail(input.email);
     const hash = email ? emailHash(email, this.deps.pepper) : null;
@@ -529,6 +544,32 @@ export class AccountService {
       return { status: 'use_admin_login' };
     }
 
+    if (account.status === 'pending_deletion') {
+      // M02-S08 AC2: the right password opens a session that can only see the cancel screen.
+      await this.closed(() => this.deps.lockouts.clear(this.lockKey(hash)));
+      const [pending] = await this.deps.db
+        .select({ purgeAfter: schema.accountDeletions.purgeAfter })
+        .from(schema.accountDeletions)
+        .where(eq(schema.accountDeletions.accountId, account.id));
+      const session = await this.deps.sessions.create({
+        accountId: account.id,
+        kind: 'viewer',
+        ipTrunc: meta.ipTrunc,
+        userAgent: meta.userAgent,
+      });
+      await this.audit('auth.login', 'success', meta, {
+        accountId: account.id,
+        role: account.role,
+        metadata: { pending_deletion: true },
+      });
+      return {
+        status: 'pending_deletion',
+        accountId: account.id,
+        role: account.role,
+        purgeAfter: pending?.purgeAfter ?? this.now(),
+        session: { token: session.token, id: session.session.id },
+      };
+    }
     if (account.status !== 'active') {
       await this.audit('auth.login', 'denied', meta, {
         accountId: account.id,
@@ -998,15 +1039,15 @@ export class AccountService {
   }
 
   /**
-   * Deletes the account (M02-S06, SECURITY.md section 10). Personal data goes in one transaction, then the
-   * account key is destroyed, which makes every remaining ciphertext (backups included) unreadable.
-   * If key destruction fails the row stays in account_deletions and destroyPendingKeys finishes the job.
+   * Requests deletion (M02-S06, D-092). The account moves to pending_deletion, every session ends and a mail
+   * with the purge date goes out. Nothing is removed until the grace period ends: signing in and cancelling
+   * restores it as it was. `purgeDueDeletions` finishes the job.
    */
   async deleteAccount(
     actor: Actor,
     input: { password: string; confirmation: string },
     meta: RequestMeta,
-  ): Promise<void> {
+  ): Promise<{ purgeAfter: Date }> {
     if (input.confirmation !== 'DELETE') {
       throw new FieldErrors({ confirmation: 'Type DELETE in capital letters to confirm' });
     }
@@ -1019,40 +1060,26 @@ export class AccountService {
     );
     const email = await confirmed.email();
     const now = this.now();
+    const purgeAfter = new Date(now.getTime() + this.deletionGraceDays() * 86400_000);
     try {
       await withAccount(
         this.deps.db,
         { accountId: actor.accountId, role: actor.role },
         async (tx) => {
-          await tx.delete(schema.profiles).where(eq(schema.profiles.accountId, actor.accountId));
           await tx.delete(schema.sessions).where(eq(schema.sessions.accountId, actor.accountId));
           await tx
-            .delete(schema.emailTokens)
-            .where(eq(schema.emailTokens.accountId, actor.accountId));
-          await tx.delete(schema.consents).where(eq(schema.consents.accountId, actor.accountId));
-          await tx
-            .delete(schema.mfaFactors)
-            .where(eq(schema.mfaFactors.accountId, actor.accountId));
-          await tx
-            .delete(schema.mfaRecoveryCodes)
-            .where(eq(schema.mfaRecoveryCodes.accountId, actor.accountId));
-          await tx
             .update(schema.accounts)
-            .set({
-              status: 'deleted',
-              deletedAt: now,
-              emailHash: null,
-              emailEnc: null,
-              displayNameEnc: null,
-              passwordHash: null,
-            })
-            .where(eq(schema.accounts.id, actor.accountId));
-          await tx.insert(schema.accountDeletions).values({
-            accountId: actor.accountId,
-            requestedAt: now,
-            mainDataPurgedAt: now,
-            backupsClearAfter: new Date(now.getTime() + 14 * 86400_000),
-          });
+            .set({ status: 'pending_deletion' })
+            .where(
+              and(eq(schema.accounts.id, actor.accountId), eq(schema.accounts.status, 'active')),
+            );
+          await tx
+            .insert(schema.accountDeletions)
+            .values({ accountId: actor.accountId, requestedAt: now, purgeAfter })
+            .onConflictDoUpdate({
+              target: schema.accountDeletions.accountId,
+              set: { requestedAt: now, purgeAfter },
+            });
         },
       );
     } catch (error) {
@@ -1064,11 +1091,165 @@ export class AccountService {
       }
       throw error;
     }
-    await this.shredKey(actor.accountId);
-    await this.audit('account.deleted', 'success', meta, {
-      metadata: { subject: Buffer.from(sha256(actor.accountId)).toString('hex').slice(0, 24) },
+    await this.audit('account.deletion_requested', 'success', meta, {
+      metadata: { subject: this.subject_(actor.accountId) },
     });
-    this.run(() => this.deps.mailer.sendAccountDeleted({ to: email }));
+    this.run(() =>
+      this.deps.mailer.sendDeletionScheduled({
+        to: email,
+        purgeDate: formatDate(purgeAfter),
+        days: this.deletionGraceDays(),
+      }),
+    );
+    return { purgeAfter };
+  }
+
+  /** What the cancel screen shows: whether a deletion is pending and when it happens. */
+  async getDeletionState(
+    actor: Actor,
+  ): Promise<{ pending: false } | { pending: true; purgeAfter: Date }> {
+    return withAccount(
+      this.deps.db,
+      { accountId: actor.accountId, role: actor.role },
+      async (tx) => {
+        const [row] = await tx
+          .select({
+            status: schema.accounts.status,
+            purgeAfter: schema.accountDeletions.purgeAfter,
+          })
+          .from(schema.accounts)
+          .leftJoin(
+            schema.accountDeletions,
+            eq(schema.accountDeletions.accountId, schema.accounts.id),
+          )
+          .where(eq(schema.accounts.id, actor.accountId));
+        if (row?.status !== 'pending_deletion' || !row.purgeAfter)
+          return { pending: false as const };
+        return { pending: true as const, purgeAfter: row.purgeAfter };
+      },
+    );
+  }
+
+  /** M02-S06 AC2: the owner, signed in during the grace period, makes the account active again. */
+  async cancelDeletion(actor: Actor, meta: RequestMeta): Promise<void> {
+    const restored = await withAccount(
+      this.deps.db,
+      { accountId: actor.accountId, role: actor.role },
+      async (tx) => {
+        const rows = await tx
+          .update(schema.accounts)
+          .set({ status: 'active' })
+          .where(
+            and(
+              eq(schema.accounts.id, actor.accountId),
+              eq(schema.accounts.status, 'pending_deletion'),
+            ),
+          )
+          .returning({ id: schema.accounts.id });
+        if (rows.length === 0) return false;
+        await tx
+          .delete(schema.accountDeletions)
+          .where(eq(schema.accountDeletions.accountId, actor.accountId));
+        return true;
+      },
+    );
+    if (!restored) throw new Conflict('This account is not waiting to be deleted');
+    await this.audit('account.deletion_cancelled', 'success', meta, {
+      accountId: actor.accountId,
+      role: actor.role,
+    });
+  }
+
+  /**
+   * The scheduled purge (M32-S03). Removes every account whose grace period is over: personal data in one
+   * transaction, then the key (crypto shredding), then the final mail. A failed key destruction leaves the row
+   * for `destroyPendingKeys`. Returns how many accounts it purged.
+   */
+  async purgeDueDeletions(): Promise<number> {
+    const now = this.now();
+    const due = await this.deps.db
+      .select({ accountId: schema.accountDeletions.accountId })
+      .from(schema.accountDeletions)
+      .where(
+        and(
+          isNull(schema.accountDeletions.mainDataPurgedAt),
+          lte(schema.accountDeletions.purgeAfter, now),
+        ),
+      );
+    let purged = 0;
+    for (const { accountId } of due) {
+      try {
+        if (await this.purgeOne(accountId, now)) purged++;
+      } catch (error) {
+        this.logger.error('account purge failed, will retry', { error: String(error) });
+      }
+    }
+    return purged;
+  }
+
+  private async purgeOne(accountId: string, now: Date): Promise<boolean> {
+    const done = await withAccount(this.deps.db, { accountId, role: 'viewer' }, async (tx) => {
+      const [account] = await tx
+        .select({ status: schema.accounts.status, emailEnc: schema.accounts.emailEnc })
+        .from(schema.accounts)
+        .where(eq(schema.accounts.id, accountId))
+        .for('update');
+      if (account?.status !== 'pending_deletion') return null;
+      await tx.delete(schema.profiles).where(eq(schema.profiles.accountId, accountId));
+      await tx.delete(schema.sessions).where(eq(schema.sessions.accountId, accountId));
+      await tx.delete(schema.emailTokens).where(eq(schema.emailTokens.accountId, accountId));
+      await tx.delete(schema.consents).where(eq(schema.consents.accountId, accountId));
+      await tx.delete(schema.mfaFactors).where(eq(schema.mfaFactors.accountId, accountId));
+      await tx
+        .delete(schema.mfaRecoveryCodes)
+        .where(eq(schema.mfaRecoveryCodes.accountId, accountId));
+      await tx
+        .update(schema.accounts)
+        .set({
+          status: 'deleted',
+          deletedAt: now,
+          emailHash: null,
+          emailEnc: null,
+          displayNameEnc: null,
+          passwordHash: null,
+        })
+        .where(eq(schema.accounts.id, accountId));
+      await tx
+        .update(schema.accountDeletions)
+        .set({
+          mainDataPurgedAt: now,
+          backupsClearAfter: new Date(now.getTime() + this.deletionGraceDays() * 86400_000),
+        })
+        .where(eq(schema.accountDeletions.accountId, accountId));
+      return account.emailEnc;
+    });
+    if (done === null) return false;
+    // The address is read before the key goes, because afterwards no one can open it.
+    let email: string | null = null;
+    try {
+      email = done ? await this.deps.keys.open(accountId, 'email', done) : null;
+    } catch (error) {
+      this.logger.error('could not read the address for the final notice', {
+        error: String(error),
+      });
+    }
+    await this.shredKey(accountId);
+    await this.audit('account.deleted', 'success', NO_META, {
+      metadata: { subject: this.subject_(accountId) },
+    });
+    if (email) {
+      const to = email;
+      this.run(() => this.deps.mailer.sendAccountDeleted({ to }));
+    }
+    return true;
+  }
+
+  private deletionGraceDays(): number {
+    return this.cfg.deletionGraceDays;
+  }
+
+  private subject_(accountId: string): string {
+    return Buffer.from(sha256(accountId)).toString('hex').slice(0, 24);
   }
 
   private async shredKey(accountId: string): Promise<boolean> {
@@ -1090,7 +1271,12 @@ export class AccountService {
     const pending = await this.deps.db
       .select({ accountId: schema.accountDeletions.accountId })
       .from(schema.accountDeletions)
-      .where(isNull(schema.accountDeletions.dekDestroyedAt));
+      .where(
+        and(
+          isNull(schema.accountDeletions.dekDestroyedAt),
+          isNotNull(schema.accountDeletions.mainDataPurgedAt),
+        ),
+      );
     let finished = 0;
     for (const row of pending) {
       if (await this.shredKey(row.accountId)) finished++;

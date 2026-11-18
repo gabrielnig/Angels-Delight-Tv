@@ -1,4 +1,10 @@
-import type { AccountOverview, AccountRepository, DeviceSession, ExportState, PlaybackSettings } from '../types';
+import type {
+  AccountOverview,
+  AccountRepository,
+  DeviceSession,
+  ExportState,
+  PlaybackSettings,
+} from '../types';
 
 const DEFAULTS: PlaybackSettings = {
   autoplayNext: true,
@@ -10,17 +16,41 @@ const DEFAULTS: PlaybackSettings = {
 };
 
 const globalStore = globalThis as unknown as {
-  __adFixtureAccount?: { playback: Map<string, PlaybackSettings>; devices: DeviceSession[]; exportState: ExportState };
+  __adFixtureAccount?: {
+    playback: Map<string, PlaybackSettings>;
+    devices: DeviceSession[];
+    exportState: ExportState;
+    deletionPending: boolean;
+  };
 };
 
 const state = (globalStore.__adFixtureAccount ??= {
   playback: new Map(),
   devices: [
-    { id: 'dev-1', label: 'Chrome on Android', place: 'Lagos, Nigeria', lastActive: 'Active now', current: true },
-    { id: 'dev-2', label: 'Safari on iPhone', place: 'Ibadan, Nigeria', lastActive: '2 days ago', current: false },
-    { id: 'dev-3', label: 'Edge on Windows', place: 'Abuja, Nigeria', lastActive: 'Yesterday', current: false },
+    {
+      id: 'dev-1',
+      label: 'Chrome on Android',
+      place: 'Lagos, Nigeria',
+      lastActive: 'Active now',
+      current: true,
+    },
+    {
+      id: 'dev-2',
+      label: 'Safari on iPhone',
+      place: 'Ibadan, Nigeria',
+      lastActive: '2 days ago',
+      current: false,
+    },
+    {
+      id: 'dev-3',
+      label: 'Edge on Windows',
+      place: 'Abuja, Nigeria',
+      lastActive: 'Yesterday',
+      current: false,
+    },
   ],
   exportState: { status: 'none' },
+  deletionPending: false,
 });
 
 export class FixtureAccount implements AccountRepository {
@@ -62,7 +92,8 @@ export class FixtureAccount implements AccountRepository {
   }
 
   async changePassword(_accountId: string, input: { current: string; next: string }) {
-    if (input.current === 'wrong-password') return { ok: false as const, reason: 'wrong_current' as const };
+    if (input.current === 'wrong-password')
+      return { ok: false as const, reason: 'wrong_current' as const };
     if (input.next.length < 10) return { ok: false as const, reason: 'weak' as const };
     const signedOut = state.devices.filter((d) => !d.current).length;
     state.devices = state.devices.filter((d) => d.current);
@@ -80,12 +111,26 @@ export class FixtureAccount implements AccountRepository {
 
   async deleteAccount(_accountId: string, input: { password: string; confirm: string }) {
     if (input.confirm !== 'DELETE') return { ok: false as const, reason: 'confirm' as const };
-    if (input.password === 'wrong-password') return { ok: false as const, reason: 'wrong_password' as const };
+    if (input.password === 'wrong-password')
+      return { ok: false as const, reason: 'wrong_password' as const };
+    state.deletionPending = true;
     return { ok: true as const, days: 14 };
+  }
+
+  async deletionState(_accountId?: string) {
+    return state.deletionPending
+      ? { pending: true as const, purgeDate: '1 Dec 2026', days: 14 }
+      : { pending: false as const };
+  }
+
+  async cancelDeletion(_accountId?: string) {
+    state.deletionPending = false;
+    return { ok: true as const };
   }
 }
 
 export function resetFixtureAccount() {
   state.playback.clear();
   state.exportState = { status: 'none' };
+  state.deletionPending = false;
 }

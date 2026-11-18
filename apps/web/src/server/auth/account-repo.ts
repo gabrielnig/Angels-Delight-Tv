@@ -11,7 +11,10 @@ import type {
 import { deviceLabel, relativeTime } from './devices';
 import type { GatewayIo } from './gateway';
 
-type Service = Pick<StaffService, 'getOverview' | 'changePassword' | 'deleteAccount'>;
+type Service = Pick<
+  StaffService,
+  'getOverview' | 'changePassword' | 'deleteAccount' | 'getDeletionState' | 'cancelDeletion'
+>;
 type Sessions = Pick<SessionService, 'list' | 'revokeOwn' | 'revokeAll'>;
 
 /** The viewer side of the account area (stats, playback settings, export). Implemented by AccountViewerData. */
@@ -32,6 +35,14 @@ export interface AccountViewerSource {
 export const EXPORT_FILE_NAME = 'angels-delight-data.json';
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+function daysUntil(date: Date, now: Date): number {
+  return Math.max(0, Math.ceil((date.getTime() - now.getTime()) / 86400_000));
+}
+
+function formatDay(date: Date): string {
+  return `${date.getUTCDate()} ${MONTHS[date.getUTCMonth()]} ${date.getUTCFullYear()}`;
+}
 
 function displayNameFrom(email: string): string {
   const local = email.split('@')[0] ?? '';
@@ -176,20 +187,20 @@ export class RealAccountRepository implements AccountRepository {
     }
   }
 
-  /** Deletion is immediate: personal data goes and the account key is destroyed (SECURITY.md section 10). */
+  /** Deletion starts a grace period: the account closes, every session ends and the owner can cancel by signing in. */
   async deleteAccount(
     accountId: string,
     input: { password: string; confirm: string },
   ): ReturnType<AccountRepository['deleteAccount']> {
     const actor = await this.actor(accountId);
     try {
-      await this.service.deleteAccount(
+      const { purgeAfter } = await this.service.deleteAccount(
         actor,
         { password: input.password, confirmation: input.confirm },
         await this.io.meta(),
       );
       await this.io.clearSession();
-      return { ok: true as const, days: 0 };
+      return { ok: true as const, days: daysUntil(purgeAfter, this.clock()) };
     } catch (error) {
       if (error instanceof FieldErrors) {
         if (error.fields.confirmation) return { ok: false as const, reason: 'confirm' as const };
@@ -197,6 +208,29 @@ export class RealAccountRepository implements AccountRepository {
       }
       if (error instanceof RateLimited)
         return { ok: false as const, reason: 'wrong_password' as const };
+      return { ok: false as const, reason: 'network' as const };
+    }
+  }
+
+  async deletionState(_accountId?: string): ReturnType<AccountRepository['deletionState']> {
+    const actor = await this.io.pendingDeletionActor();
+    if (!actor) return { pending: false };
+    const state = await this.service.getDeletionState(actor);
+    if (!state.pending) return { pending: false };
+    return {
+      pending: true,
+      purgeDate: formatDay(state.purgeAfter),
+      days: daysUntil(state.purgeAfter, this.clock()),
+    };
+  }
+
+  async cancelDeletion(_accountId?: string): ReturnType<AccountRepository['cancelDeletion']> {
+    const actor = await this.io.pendingDeletionActor();
+    if (!actor) return { ok: false as const, reason: 'network' as const };
+    try {
+      await this.service.cancelDeletion(actor, await this.io.meta());
+      return { ok: true as const };
+    } catch {
       return { ok: false as const, reason: 'network' as const };
     }
   }

@@ -341,7 +341,12 @@ export interface AccountRepository {
   ): Promise<
     { ok: true; days: number } | { ok: false; reason: 'wrong_password' | 'confirm' | 'network' }
   >;
+  /** Set while the account waits out the grace period (M02-S08). Only the cancel screen reads it. */
+  deletionState(accountId: string): Promise<DeletionState>;
+  cancelDeletion(accountId: string): Promise<{ ok: true } | { ok: false; reason: 'network' }>;
 }
+
+export type DeletionState = { pending: false } | { pending: true; purgeDate: string; days: number };
 
 export interface SiteContent {
   platformName: string;
