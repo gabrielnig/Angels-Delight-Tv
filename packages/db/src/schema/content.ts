@@ -335,6 +335,8 @@ export const rows = pgTable(
     title: text('title').notNull(),
     kind: rowKind('kind').notNull().default('curated'),
     categoryId: uuid('category_id').references(() => categories.id, { onDelete: 'set null' }),
+    /** A curated row that shows the episodes of one series, read from the episodes each time (M17-S02). */
+    seriesId: uuid('series_id').references(() => series.id, { onDelete: 'set null' }),
     position: integer('position').notNull(),
     isPublished: boolean('is_published').notNull().default(false),
     kidsVisible: boolean('kids_visible').notNull().default(false),

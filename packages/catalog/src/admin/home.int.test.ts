@@ -1,7 +1,9 @@
 import { schema } from '@ad/db';
+import { eq } from 'drizzle-orm';
 import { uuidv7, type Actor } from '@ad/shared';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { listPublishedRows } from '../rows';
+import { listPublishedRows, resolveRow } from '../rows';
+import { setAdminEpisode } from './series';
 import {
   createViewerTestDb,
   integrationEnabled,
@@ -129,7 +131,9 @@ describe.skipIf(!integrationEnabled())('admin home curation', () => {
       items.filter((i) => i.rows.title === title).map((i) => i.row_items.videoId);
     expect(byRow('Featured')).toEqual([b.id, a.id]);
     expect(byRow('Editor picks')).toEqual([a.id, b.id]); // the unknown id is dropped
-    expect(byRow('The course')).toEqual(course.episodes.map((e) => e.id));
+    // A series row is not a copy: it carries the series id and is read from the episodes each time.
+    expect(byRow('The course')).toEqual([]);
+    expect(rows[5]?.seriesId).toBe(course.id);
 
     const hidden = await t.setup.select().from(schema.rows);
     expect(hidden.find((r) => r.title === 'Most watched')?.isPublished).toBe(false);
@@ -197,5 +201,70 @@ describe.skipIf(!integrationEnabled())('admin home curation', () => {
     } finally {
       await fresh.drop();
     }
+  });
+
+  describe('series rows', () => {
+    const ctxNow = { mediaOrigin: 'https://media.test', now: () => new Date('2026-06-15T12:00:00Z') };
+    const cardsOf = async (title: string) =>
+      t.setup.transaction(async (tx) => {
+        const rows = await listPublishedRows(tx, { kids: false });
+        const found = rows.find((r) => r.title === title)!;
+        return (await resolveRow(tx, ctxNow, { kids: false }, found)).cards.map((c) => c.title);
+      });
+
+    it('follows episodes added, removed and reordered without publishing again', async () => {
+      const course = await seedSeries(t.setup, { seasonSizes: [2] });
+      const config: HomeConfig = {
+        heroIds: [],
+        rows: [row('follow', 'series', 'Follow the course', { sourceId: course.id })],
+      };
+      expect(await publishAdminHome(ctx, editor, config)).toEqual({ ok: true });
+      expect(await cardsOf('Follow the course')).toEqual(['Episode 1.1', 'Episode 1.2']);
+
+      const extra = await seedVideo(t.setup, { title: 'Bonus lesson' });
+      expect(await setAdminEpisode(ctx, editor, extra.id, course.id, 1, 3)).toEqual({ ok: true });
+      expect(await cardsOf('Follow the course')).toEqual(['Episode 1.1', 'Episode 1.2', 'Bonus lesson']);
+
+      expect(await setAdminEpisode(ctx, editor, course.episodes[0]!.id, null, null, null)).toEqual({
+        ok: true,
+      });
+      expect(await cardsOf('Follow the course')).toEqual(['Episode 1.2', 'Bonus lesson']);
+
+      expect(await setAdminEpisode(ctx, editor, extra.id, course.id, 1, 1)).toEqual({ ok: true });
+      expect(await cardsOf('Follow the course')).toEqual(['Bonus lesson', 'Episode 1.2']);
+    });
+
+    it('skips an episode that is unpublished or deleted and shows it again when it returns', async () => {
+      const course = await seedSeries(t.setup, { seasonSizes: [3] });
+      await publishAdminHome(ctx, editor, {
+        heroIds: [],
+        rows: [row('skip', 'series', 'Skip the hidden', { sourceId: course.id })],
+      });
+      const middle = course.episodes[1]!.id;
+      await t.setup.update(schema.videos).set({ deletedAt: new Date() }).where(eq(schema.videos.id, middle));
+      expect(await cardsOf('Skip the hidden')).toEqual(['Episode 1.1', 'Episode 1.3']);
+      await t.setup.update(schema.videos).set({ deletedAt: null }).where(eq(schema.videos.id, middle));
+      expect(await cardsOf('Skip the hidden')).toEqual(['Episode 1.1', 'Episode 1.2', 'Episode 1.3']);
+    });
+
+    it('shows an empty row, not an error, when the series is gone', async () => {
+      const course = await seedSeries(t.setup, { seasonSizes: [1] });
+      await publishAdminHome(ctx, editor, {
+        heroIds: [],
+        rows: [row('gone', 'series', 'Gone series', { sourceId: course.id })],
+      });
+      await t.setup.delete(schema.series).where(eq(schema.series.id, course.id));
+      expect(await cardsOf('Gone series')).toEqual([]);
+    });
+
+    it('reads a series row back into the editor config with its source', async () => {
+      const course = await seedSeries(t.setup, { seasonSizes: [1] });
+      await publishAdminHome(ctx, editor, {
+        heroIds: [],
+        rows: [row('readback', 'series', 'Readback', { sourceId: course.id })],
+      });
+      const home = await getAdminHome(ctx, editor);
+      expect(home.state.published.rows[0]).toMatchObject({ type: 'series', sourceId: course.id });
+    });
   });
 });
