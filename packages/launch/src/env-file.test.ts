@@ -43,6 +43,16 @@ describe('updateEnvText', () => {
 });
 
 describe('envValuesFor', () => {
+  it('drops characters that would break an env file or be expanded by compose', () => {
+    const values = envValuesFor({
+      platformName: 'Joy $HOME #1 "TV" <b>',
+      domain: 'tv.example',
+      supportEmail: 'help@tv.example',
+      adminOwnerEmail: 'o@tv.example',
+    });
+    expect(values.EMAIL_FROM).toBe('Joy HOME 1 TV b <no-reply@tv.example>');
+  });
+
   it('derives origins and the From address from the domain', () => {
     const values = envValuesFor({
       platformName: 'Name',

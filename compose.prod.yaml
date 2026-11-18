@@ -1,0 +1,219 @@
+# Production stack for one VPS. Run from the repository checkout on the server (deploy.sh does this):
+#   docker compose --env-file /opt/angelsdelight/.env -f compose.prod.yaml up -d
+# Images are built in CI and pulled by git sha (TAG). The VPS never builds. Validate without a daemon:
+#   ENV_FILE=.env.production.example TAG=test docker compose -f compose.prod.yaml --profile ops config -q
+# Database urls are built here from the per role passwords, so each container only receives its own role.
+
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: 20m
+    max-file: '5'
+
+x-hardening: &hardening
+  restart: unless-stopped
+  read_only: true
+  cap_drop: [ALL]
+  security_opt: ['no-new-privileges:true']
+  logging: *logging
+
+services:
+  postgres:
+    image: ${POSTGRES_IMAGE:-postgres:17-alpine}
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?run pnpm secrets:generate}
+      POSTGRES_DB: ad
+      DB_PASSWORD_MIGRATOR: ${DB_PASSWORD_MIGRATOR:?run pnpm secrets:generate}
+      DB_PASSWORD_APP: ${DB_PASSWORD_APP:?run pnpm secrets:generate}
+      DB_PASSWORD_WORKER: ${DB_PASSWORD_WORKER:?run pnpm secrets:generate}
+      DB_PASSWORD_KEYS_APP: ${DB_PASSWORD_KEYS_APP:?run pnpm secrets:generate}
+      DB_PASSWORD_KEYS_SHRED: ${DB_PASSWORD_KEYS_SHRED:?run pnpm secrets:generate}
+      DB_PASSWORD_MAINTENANCE: ${DB_PASSWORD_MAINTENANCE:?run pnpm secrets:generate}
+    command:
+      - postgres
+      - -c
+      - shared_buffers=${PG_SHARED_BUFFERS:-2GB}
+      - -c
+      - max_connections=50
+      - -c
+      - password_encryption=scram-sha-256
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./packages/db/sql/roles.sql:/docker-entrypoint-initdb.d/00-roles.sql:ro
+      - ./ops/postgres/01-logins.sh:/docker-entrypoint-initdb.d/01-logins.sh:ro
+    networks: [backend]
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U postgres -d ad']
+      interval: 10s
+      timeout: 3s
+      retries: 10
+    logging: *logging
+
+  # One shot. deploy.sh runs it before the new web and worker start, and aborts the deploy if it fails.
+  migrate:
+    profiles: ['ops']
+    image: ${IMAGE_PREFIX:-ghcr.io/gabrielnig/angels-delight-tv}-worker:${TAG:?set TAG to the release tag}
+    environment:
+      DATABASE_URL_MIGRATE: postgres://ad_migrator:${DB_PASSWORD_MIGRATOR}@postgres:5432/ad
+      KEYS_DATABASE_URL_MIGRATE: postgres://ad_migrator:${DB_PASSWORD_MIGRATOR}@postgres:5432/ad_keys
+    command: ['node_modules/.bin/tsx', 'node_modules/@ad/db/src/migrate-cli.ts']
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks: [backend]
+    restart: 'no'
+    logging: *logging
+
+  web:
+    <<: *hardening
+    image: ${IMAGE_PREFIX:-ghcr.io/gabrielnig/angels-delight-tv}-web:${TAG:?set TAG to the release tag}
+    env_file: ${ENV_FILE:-.env.production}
+    environment:
+      APP_VERSION: ${TAG}
+      DATABASE_URL: postgres://ad_app:${DB_PASSWORD_APP}@postgres:5432/ad
+      KEYS_DATABASE_URL: postgres://ad_keys_app:${DB_PASSWORD_KEYS_APP}@postgres:5432/ad_keys
+      KEYS_DATABASE_URL_SHRED: postgres://ad_keys_shred:${DB_PASSWORD_KEYS_SHRED}@postgres:5432/ad_keys
+      PWA_ICONS_DIR: ${PWA_ICONS_DIR:-/data/brand}
+    tmpfs:
+      - /tmp
+      - /app/apps/web/.next/cache:uid=1000,gid=1000,mode=0755
+    volumes:
+      - ${BRAND_DIR:-/opt/angelsdelight/brand}:/data/brand:ro
+    expose: ['3000']
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks: [backend, edge]
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          "fetch('http://127.0.0.1:3000/healthz').then(r => process.exit(r.ok ? 0 : 1), () => process.exit(1))",
+        ]
+      interval: 15s
+      timeout: 3s
+      start_period: 30s
+      retries: 3
+
+  worker:
+    <<: *hardening
+    image: ${IMAGE_PREFIX:-ghcr.io/gabrielnig/angels-delight-tv}-worker:${TAG:?set TAG to the release tag}
+    env_file: ${ENV_FILE:-.env.production}
+    environment:
+      APP_VERSION: ${TAG}
+      DATABASE_URL_WORKER: postgres://ad_worker:${DB_PASSWORD_WORKER}@postgres:5432/ad
+      DATABASE_URL_MAINTENANCE: postgres://ad_maintenance:${DB_PASSWORD_MAINTENANCE}@postgres:5432/ad
+      KEYS_DATABASE_URL_SHRED: postgres://ad_keys_shred:${DB_PASSWORD_KEYS_SHRED}@postgres:5432/ad_keys
+      WORKER_SCRATCH_DIR: /scratch
+      WHISPER_URL: http://whisper:8000
+    tmpfs:
+      - /tmp
+    volumes:
+      - scratch:/scratch
+    cpus: ${WORKER_CPUS:-3}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks: [backend, edge]
+
+  whisper:
+    <<: *hardening
+    image: ${IMAGE_PREFIX:-ghcr.io/gabrielnig/angels-delight-tv}-whisper:${TAG:?set TAG to the release tag}
+    environment:
+      WHISPER_MODEL: ${WHISPER_MODEL:-small.en}
+      WHISPER_COMPUTE_TYPE: ${WHISPER_COMPUTE_TYPE:-int8}
+      HF_HOME: /models/.hf
+    tmpfs:
+      - /tmp
+    volumes:
+      - whisper-models:/models
+    mem_limit: ${WHISPER_MEM_LIMIT:-3g}
+    cpus: 2
+    networks: [backend, edge]
+
+  caddy:
+    image: ${CADDY_IMAGE:-caddy:2-alpine}
+    restart: unless-stopped
+    environment:
+      APP_DOMAIN: ${APP_DOMAIN:?set APP_DOMAIN}
+    ports:
+      - '80:80'
+      - '443:443'
+    volumes:
+      - ./ops/Caddyfile:/etc/caddy/Caddyfile:ro
+      - ${ORIGIN_CERT_DIR:-/opt/angelsdelight/caddy}:/etc/caddy/certs:ro
+      - ${MAINTENANCE_DIR:-/opt/angelsdelight/maintenance}:/srv/maintenance:ro
+      - caddy-data:/data
+      - caddy-logs:/var/log/caddy
+    depends_on: [web]
+    networks: [edge]
+    logging: *logging
+
+  # Tools for the owner and the developer, run on demand: docker compose --profile ops run --rm tools apply ...
+  tools:
+    profiles: ['ops']
+    image: ${IMAGE_PREFIX:-ghcr.io/gabrielnig/angels-delight-tv}-tools:${TAG:?set TAG to the release tag}
+    env_file: ${ENV_FILE:-.env.production}
+    environment:
+      DATABASE_URL: postgres://ad_app:${DB_PASSWORD_APP}@postgres:5432/ad
+      DATABASE_URL_MIGRATE: postgres://ad_migrator:${DB_PASSWORD_MIGRATOR}@postgres:5432/ad
+      KEYS_DATABASE_URL: postgres://ad_keys_app:${DB_PASSWORD_KEYS_APP}@postgres:5432/ad_keys
+      KEYS_DATABASE_URL_SHRED: postgres://ad_keys_shred:${DB_PASSWORD_KEYS_SHRED}@postgres:5432/ad_keys
+      PWA_ICONS_DIR: ${PWA_ICONS_DIR:-/data/brand}
+    volumes:
+      - ${CLIENT_DIR:-/opt/angelsdelight/client}:/client:ro
+      - ${CONTENT_DIR:-/opt/angelsdelight/content}:/content:ro
+      - ${BRAND_DIR:-/opt/angelsdelight/brand}:/data/brand
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks: [backend, edge]
+    restart: 'no'
+    logging: *logging
+
+  # Nightly encrypted dumps of both databases to the R2 backup bucket (ops/backup.sh calls this from cron).
+  # Connects as the postgres superuser, because row level security is forced on the tables, so only a superuser
+  # can dump them all. The private keys that open the dumps are never on this server.
+  backup:
+    profiles: ['ops']
+    image: ${IMAGE_PREFIX:-ghcr.io/gabrielnig/angels-delight-tv}-tools:${TAG:?set TAG to the release tag}
+    entrypoint: ['ad-tool', 'backup']
+    environment:
+      BACKUP_DB_URL: postgres://postgres:${POSTGRES_PASSWORD}@postgres:5432/ad
+      BACKUP_KEYS_DB_URL: postgres://postgres:${POSTGRES_PASSWORD}@postgres:5432/ad_keys
+      BACKUP_PUBLIC_KEY_DB_B64: ${BACKUP_PUBLIC_KEY_DB_B64:?run pnpm secrets:generate}
+      BACKUP_PUBLIC_KEY_KEYS_B64: ${BACKUP_PUBLIC_KEY_KEYS_B64:?run pnpm secrets:generate}
+      BACKUP_S3_ENDPOINT: ${BACKUP_S3_ENDPOINT:?set the R2 endpoint}
+      BACKUP_S3_ACCESS_KEY_ID: ${BACKUP_S3_ACCESS_KEY_ID:?set the backup token}
+      BACKUP_S3_SECRET_ACCESS_KEY: ${BACKUP_S3_SECRET_ACCESS_KEY:?set the backup token}
+      BACKUP_BUCKET: ${BACKUP_BUCKET:-ad-backups}
+      BACKUP_RETAIN_DB_DAYS: ${BACKUP_RETAIN_DB_DAYS:-35}
+      BACKUP_RETAIN_KEYS_DAYS: ${BACKUP_RETAIN_KEYS_DAYS:-14}
+      BACKUP_RETAIN_LOCAL_DAYS: ${BACKUP_RETAIN_LOCAL_DAYS:-7}
+      BACKUP_PING_URL: ${BACKUP_PING_URL:-}
+      BACKUP_LOCAL_DIR: /backups
+    volumes:
+      - ${BACKUP_DIR:-/opt/angelsdelight/backups}:/backups
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks: [backend, edge]
+    restart: 'no'
+    logging: *logging
+
+networks:
+  # No route out, so Postgres cannot be reached from or talk to the internet.
+  backend:
+    internal: true
+  edge: {}
+
+volumes:
+  postgres-data:
+  scratch:
+  whisper-models:
+  caddy-data:
+  caddy-logs:

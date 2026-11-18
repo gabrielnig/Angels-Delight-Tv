@@ -14,6 +14,8 @@ RUN apt-get update \
   && apt-get install -y --no-install-recommends ffmpeg \
   && rm -rf /var/lib/apt/lists/*
 ENV NODE_ENV=production
+# Scratch space for encodes. compose.prod.yaml mounts a volume here, which keeps this owner.
+RUN mkdir /scratch && chown node:node /scratch
 WORKDIR /app
 COPY --from=build --chown=node:node /out ./
 USER node

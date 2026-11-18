@@ -21,7 +21,9 @@
     "brand:generate": "tsx scripts/generate-brand-kit.ts",
     "launch:apply": "tsx packages/launch/src/cli/apply.ts",
     "secrets:generate": "tsx packages/launch/src/cli/secrets.ts",
-    "content:import": "tsx packages/launch/src/cli/import.ts"
+    "content:import": "tsx packages/launch/src/cli/import.ts",
+    "backup:run": "tsx packages/launch/src/cli/backup.ts",
+    "backup:restore": "tsx packages/launch/src/cli/restore.ts"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.5",
