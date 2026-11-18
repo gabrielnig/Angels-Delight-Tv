@@ -1,6 +1,6 @@
 # Deployment
 
-Status: design stage, no environment exists yet. Placeholders in angle brackets (`<APP_DOMAIN>`, `<MEDIA_DOMAIN>`) are filled when the client confirms the domain. Nothing here hardcodes the final name or domain.
+Status: built and verified as far as a machine with no Docker daemon allows. The files are `compose.prod.yaml`, `ops/Caddyfile`, `ops/deploy.sh`, `ops/backup.sh`, `ops/setup-vps.sh`, `ops/update-cloudflare-ufw.sh`, `ops/Dockerfile.tools` and `.env.production.example`. The step by step procedure is `docs/LAUNCH-RUNBOOK.md`, and what the client supplies is `docs/CLIENT-INPUTS.md`. Placeholders in angle brackets (`<APP_DOMAIN>`, `<MEDIA_DOMAIN>`) are filled when the client confirms the domain. Nothing here hardcodes the final name or domain.
 
 Related: `docs/ARCHITECTURE.md`, `docs/SECURITY.md`, `docs/DEV-SETUP.md`.
 
@@ -85,7 +85,7 @@ Turnstile (optional): create a widget for `<APP_DOMAIN>` and set the two env var
 
 ## 4. Production compose
 
-`/opt/angelsdelight/compose.prod.yaml` (summary of required properties):
+`compose.prod.yaml` in the repository root, run from the clone at `/opt/angels-delight/repo`. Images are pulled by git sha (`TAG`) from `${IMAGE_PREFIX}-web`, `-worker`, `-whisper` and `-tools`, and the VPS never builds. The `backend` network is `internal: true`, only Caddy is on `edge`. The `migrate`, `tools` and `backup` services are in the `ops` profile, so a plain `up -d` never starts them. Validate without a daemon: `ENV_FILE=.env.production.example TAG=test docker compose -f compose.prod.yaml --profile ops config -q`. Summary of properties:
 
 | Service | Properties |
 |---|---|
@@ -122,12 +122,12 @@ Access logs must not record query strings on `/api/play/*` and `/api/hls/*`: con
 
 ## 5. Origin firewall: Cloudflare ranges only
 
-`scripts/update-cloudflare-ufw.sh` (to be added in the repo) downloads `https://www.cloudflare.com/ips-v4` and `ips-v6`, replaces the `ufw` rules for ports 80 and 443 with those ranges, and runs weekly from cron. The app trusts `CF-Connecting-IP` only because the firewall guarantees traffic came through Cloudflare (`TRUSTED_PROXY_MODE=cloudflare`).
+`ops/update-cloudflare-ufw.sh` downloads `https://www.cloudflare.com/ips-v4` and `ips-v6`, replaces the `ufw` rules for ports 80 and 443 with those ranges, and runs weekly from cron, which `ops/setup-vps.sh` installs. The app trusts `CF-Connecting-IP` only because the firewall guarantees traffic came through Cloudflare (`TRUSTED_PROXY_MODE=cloudflare`).
 
 ## 6. Environment and secrets on the server
 
-- File `/opt/angelsdelight/.env`, owner root, mode 600, created from `.env.example` names. Values generated on the server with `openssl rand -base64 32` where a random secret is needed.
-- Owner-level `DATABASE_URL_MIGRATE` is stored in a separate file `/opt/angelsdelight/.env.migrate` (mode 600), passed only to the `migrate` service.
+- File `/opt/angels-delight/.env`, owner deploy user, mode 600. Run `pnpm secrets:generate` once on the owner's machine: it copies `.env.production.example`, fills every empty secret with fresh random values (including one password per database role, D-117) and makes the two backup keypairs in an offline folder. Secret values are never printed. Every variable in the example carries a tag: client, owner, generated, default or applied.
+- The migrator password is in the same file but only the `migrate` and `tools` services read it, and compose builds each container's connection strings from its own role only.
 - `FIELD_KEK` and `HLS_KEK` are also stored offline by the owner (password manager plus a printed or encrypted copy). Losing them is unrecoverable.
 - Never commit, paste into chat tools, or echo these values in CI logs.
 
@@ -146,15 +146,15 @@ curl -fsS https://<APP_DOMAIN>/api/ready
 docker compose -f compose.prod.yaml ps
 ```
 
-`scripts/deploy.sh <sha>` wraps these steps, records the previous tag in `/opt/angelsdelight/.last-good` and the new one after the health check passes.
+`ops/deploy.sh <sha>` wraps these steps: it checks out the ref, pulls, starts Postgres, runs `migrate` (the deploy stops there if it fails, and the running release is untouched), restarts, waits up to 120 seconds for `/healthz` inside the web container, and records the release in `/opt/angels-delight/.deploy/current` (the one before it in `previous`). If the new release is not healthy it redeploys the previous one and exits non zero. `ops/deploy.sh --rollback` redeploys `previous` without migrating. The health endpoints are `/healthz` and `/readyz`, aliases of `/api/health` and `/api/ready`.
 
 Migration policy (expand and contract): every migration must work with both the previous and the new app version. Add columns and tables first, backfill, switch the code, remove old structures in a later release. This allows image rollback without a database restore. Destructive migrations require a fresh backup taken immediately before.
 
-Maintenance mode: Caddy serves a static page (`/opt/angelsdelight/caddy/maintenance.html`) when a flag file exists. Used for restores and risky migrations.
+Maintenance mode: Caddy serves a 503 page from `MAINTENANCE_DIR` (default `/opt/angelsdelight/maintenance`) when the flag file `ON` exists there next to `maintenance.html` (`touch` it to turn on, remove it to turn off). Used for restores and risky migrations.
 
 ## 8. Rollback
 
-1. Application: `TAG=$(cat .last-good) docker compose -f compose.prod.yaml up -d`. Works because migrations are backward compatible.
+1. Application: `ops/deploy.sh --rollback`. Works because migrations are backward compatible.
 2. Database: restore only when data was damaged (section 10). Put the site in maintenance mode first.
 3. Edge Worker: `wrangler rollback` to the previous version.
 4. Cloudflare settings: changes are recorded in the audit log of the account, revert manually.
@@ -172,14 +172,14 @@ Maintenance mode: Caddy serves a static page (`/opt/angelsdelight/caddy/maintena
 
 | What | How | Where | Retention |
 |---|---|---|---|
-| Main database | Nightly `pg_dump --format=custom`, encrypted with `age` to the owner's public key | `ad-backups/db/` and 7 days on the VPS | 35 days |
-| Keys database | Nightly dump, encrypted separately with a different `age` key | `ad-backups/keys/` | 14 days maximum, so shredded DEKs leave backups quickly |
+| Main database | Nightly `pg_dump --format=custom` as the postgres superuser, encrypted with AES-256-GCM whose key is wrapped with the owner's RSA public key (D-116) | `ad-backups/db/` and 7 days on the VPS | 35 days |
+| Keys database | Nightly dump, encrypted with a different RSA keypair | `ad-backups/keys/` | 14 days maximum, so shredded DEKs leave backups quickly |
 | R2 media and originals | No copy of media (re-derivable from originals). Originals: ask the client to keep a second copy of source files | Client drive | n/a |
 | Configuration | `compose.prod.yaml`, Caddyfile, Worker config are in git. `.env` is stored by the owner | Password manager | n/a |
 
 Targets: RPO 24 hours, RTO 4 hours. A restore is rehearsed before launch and then quarterly: restore both dumps to a scratch Postgres, start the app against it, log in, play a video. Upgrade path if RPO matters more: WAL archiving with pgBackRest.
 
-Backup credentials use the `ad-backup` token only. The `age` private keys never sit on the VPS.
+Backup credentials use the `ad-backup` token only. The private keys never sit on the VPS. Backups run nightly from cron (`ops/backup.sh`), pick files by the UTC timestamp in the name, and ping `BACKUP_PING_URL` on success so a missed night raises an alert. Restore with `pnpm backup:restore --target db --private-key <file> --target-url <scratch database url>`. It refuses the live database names (D-118). The restore test is `packages/launch/src/backup/restore.int.test.ts`, which needs `TEST_DATABASE_ADMIN_URL` and `pg_dump`/`pg_restore` on the path.
 
 ## 11. Cost notes
 

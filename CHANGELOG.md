@@ -67,3 +67,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 ### Lane M3: media and brand
 
 - Add image variants and generated posters, sprite seek previews, failed encode cleanup, caption script alignment, a placeholder brand kit, six theme presets with a publish e2e, and branded emails. See `docs/lanes/M3-media-brand.md`.
+
+### Lane M1: launch tooling
+
+- Added `pnpm launch:apply`, `pnpm secrets:generate`, `pnpm content:import`, `pnpm backup:run` and `pnpm backup:restore` in the new `@ad/launch` package, `client.example.json`, the production compose file, Caddyfile, `ops/` scripts, tools image and `.env.production.example`, `/healthz` and `/readyz`, a Lighthouse mobile budget, and `docs/LAUNCH-RUNBOOK.md` and `docs/CLIENT-INPUTS.md`. `docs/DEPLOYMENT.md` and `docs/DEV-SETUP.md` now match what was built.
