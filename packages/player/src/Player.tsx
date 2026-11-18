@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { PlayerController } from './controller';
 import type { NetworkMonitor, PageEvents, PlayerEngine } from './engine';
+import type { CaptionStyle } from './captionStyle';
 import { readBandwidthSeed, saveBandwidth } from './bandwidth';
 import { createPlayerEngine } from './hlsEngine';
 import type { ProgressSink } from './progress';
@@ -25,6 +26,7 @@ export interface PlayerProps {
   profileId: string;
   title: string;
   posterUrl?: string;
+  captionStyle?: CaptionStyle;
   /** Origin that serves playlists and keys, for example https://tv.example.org. */
   appOrigin: string;
   sessionProvider: SessionProvider;
@@ -187,6 +189,7 @@ export function Player(props: PlayerProps) {
       controller={controller}
       title={props.title}
       posterUrl={props.posterUrl}
+      captionStyle={props.captionStyle}
       videoRef={videoRef}
       next={props.next ?? null}
       {...(props.end ? { end: props.end } : {})}

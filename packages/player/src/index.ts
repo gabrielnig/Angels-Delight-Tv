@@ -52,3 +52,17 @@ export {
 } from './types';
 export { createHttpProgressSink, createHttpSessionProvider } from './http';
 export { clampBandwidth, readBandwidthSeed, saveBandwidth } from './bandwidth';
+export {
+  CAPTION_BACKGROUNDS,
+  CAPTION_CONTRASTS,
+  CAPTION_SIZES,
+  DEFAULT_CAPTION_STYLE,
+  captionStyleVars,
+  contrastRatio,
+  normalizeCaptionStyle,
+  resolveCaptionColors,
+  type CaptionBackground,
+  type CaptionContrast,
+  type CaptionSize,
+  type CaptionStyle,
+} from './captionStyle';

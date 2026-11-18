@@ -6,10 +6,12 @@ import {
   useMemo,
   useRef,
   useState,
+  type CSSProperties,
   type KeyboardEvent,
   type PointerEvent,
   type Ref,
 } from 'react';
+import { DEFAULT_CAPTION_STYLE, captionStyleVars, type CaptionStyle } from '../captionStyle';
 import type { PlayerController } from '../controller';
 import { formatClock } from '../format';
 import { TapTracker } from '../gestures';
@@ -41,6 +43,8 @@ export interface PlayerViewProps {
   controller: PlayerController | null;
   title: string;
   posterUrl?: string | undefined;
+  /** Caption size, background and contrast for this profile (M11-S03). */
+  captionStyle?: CaptionStyle | undefined;
   videoRef?: Ref<HTMLVideoElement>;
   next?: UpNextItem | null;
   end?: EndScreenData;
@@ -326,6 +330,7 @@ export function PlayerView(props: PlayerViewProps) {
       role="region"
       aria-label={`Video player: ${title}`}
       tabIndex={-1}
+      style={captionStyleVars(props.captionStyle ?? DEFAULT_CAPTION_STYLE) as CSSProperties}
       data-compact={compact || undefined}
       data-fullscreen={fullscreen || undefined}
       data-controls={controlsVisible ? 'visible' : 'hidden'}
