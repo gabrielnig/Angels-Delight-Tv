@@ -106,7 +106,7 @@ export interface SettingsServiceOptions {
   store: SettingsStore;
   logger: Logger;
   now?: () => number;
-  /** Who may change `super` tier keys. Defaults to the Super admin role (D-125). */
+  /** Who may change `super` tier keys. Defaults to the Super admin role (D-128). */
   isSuper?: (actor: Actor) => boolean;
 }
 

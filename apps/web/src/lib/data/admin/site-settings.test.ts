@@ -46,7 +46,7 @@ describe('siteSettingsAdmin (fixture runtime)', () => {
     ).toBe(true);
   });
 
-  it('keeps Features and limits for a Super admin (M29-S02, D-125)', async () => {
+  it('keeps Features and limits for a Super admin (M29-S02, D-128)', async () => {
     const asAdmin = await siteSettingsAdmin.load(admin);
     const asSuper = await siteSettingsAdmin.load(superAdmin);
     expect(asAdmin.ok && asAdmin.data.canChangeFlags).toBe(false);
