@@ -97,6 +97,8 @@ const webShape = {
 
   SMTP_URL: z.string().regex(/^smtps?:\/\//, 'must be an smtp url'),
   EMAIL_FROM: z.string().min(3),
+  /** Signs bounce and complaint callbacks. The endpoint stays closed until this is set. */
+  EMAIL_WEBHOOK_SECRET: z.string().min(16).optional(),
   TURNSTILE_SITE_KEY: z.string().min(1).optional(),
   TURNSTILE_SECRET_KEY: z.string().min(1).optional(),
 };

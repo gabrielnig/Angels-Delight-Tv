@@ -42,3 +42,17 @@ export const staffNotificationPrefs = pgTable('staff_notification_prefs', {
   dailySummary: boolean('daily_summary').notNull().default(false),
   updatedAt: updatedAt(),
 });
+
+/**
+ * Addresses that bounced or complained (M21-S01 AC2). Stored as a keyed hash, never the address, so the list
+ * holds no personal data. Non essential mail to these addresses is skipped.
+ */
+export const emailSuppressions = pgTable(
+  'email_suppressions',
+  {
+    emailHash: text('email_hash').primaryKey(),
+    reason: text('reason').notNull(),
+    createdAt: createdAt(),
+  },
+  (t) => [check('email_suppressions_reason_known', sql`${t.reason} IN ('bounce', 'complaint')`)],
+);

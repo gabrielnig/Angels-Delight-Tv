@@ -39,6 +39,7 @@ const cases: Array<[TemplateName, Record<string, string | number>]> = [
   ['two_factor_reset', { signInUrl: 'https://tv.example.org/admin/login' }],
   ['staff_lockout_alert', { account: 'e***@example.org', minutes: 30 }],
   ['account_deleted', {}],
+  ['welcome', { homeUrl: 'https://tv.example.org/' }],
   ['export_ready', { linkUrl: 'https://tv.example.org/api/account/export?token=abc', hours: 24 }],
   ['export_failed', { retryUrl: 'https://tv.example.org/account/data' }],
   [
@@ -115,5 +116,33 @@ describe('renderTemplate', () => {
     expect(() =>
       renderTemplate('reset_password', { linkUrl: 'javascript:alert(1)', minutes: 30 }, brand),
     ).toThrow(TemplateError);
+  });
+});
+
+describe('every template (M21-S01 AC3)', () => {
+  const rich: BrandContext = { ...brand, logoUrl: 'https://tv.example.org/logo.png' };
+  it.each(cases)(
+    '%s has html and text, one column, under 30 KB, no tracking pixel',
+    (name, vars) => {
+      const out = renderTemplate(name, vars, rich);
+      expect(out.text.length).toBeGreaterThan(20);
+      expect(out.html.length).toBeGreaterThan(100);
+      expect(Buffer.byteLength(out.html)).toBeLessThan(30 * 1024);
+      const imgs = out.html.match(/<img\b[^>]*>/g) ?? [];
+      expect(imgs.length).toBeLessThanOrEqual(1);
+      for (const img of imgs) {
+        expect(img).toContain('alt=');
+        expect(img).not.toMatch(/width="?[01]"?[\s>]/);
+        expect(img).not.toMatch(/height="?[01]"?[\s>]/);
+      }
+      expect(out.html).not.toMatch(/<(script|iframe|link|form)\b/i);
+      expect(out.html).not.toMatch(/(utm_|track|pixel|beacon)/i);
+      expect(out.html).toContain('help@example.org');
+    },
+  );
+  it.each(cases)('%s uses no dashes or emojis', (name, vars) => {
+    const out = renderTemplate(name, vars, brand);
+    expect(out.subject + out.text).not.toMatch(/[\u2013\u2014]/);
+    expect(out.subject + out.text).not.toMatch(/\p{Extended_Pictographic}/u);
   });
 });

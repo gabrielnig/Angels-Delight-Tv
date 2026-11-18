@@ -37,6 +37,7 @@ export type TemplateName =
   | 'email_change_notice'
   | 'two_factor_reset'
   | 'staff_lockout_alert'
+  | 'welcome'
   | 'account_deleted'
   | 'deletion_scheduled'
   | 'export_ready'
@@ -72,6 +73,19 @@ interface Definition {
 }
 
 const DEFINITIONS: Record<TemplateName, Definition> = {
+  welcome: {
+    required: ['homeUrl'],
+    links: ['homeUrl'],
+    build: (v, b) => ({
+      subject: `Welcome to ${b.appName}`,
+      intro: [
+        `Your email is confirmed and your account on ${b.appName} is ready.`,
+        'Pick a profile and start watching.',
+      ],
+      action: { label: 'Start watching', url: v.homeUrl! },
+      outro: ['You can change your playback and caption settings any time from your account.'],
+    }),
+  },
   verify_email: {
     required: ['code', 'linkUrl'],
     links: ['linkUrl'],
@@ -324,10 +338,10 @@ function toHtml(content: Content, brand: BrandContext, subject: string): string 
 <table role="presentation" width="100%" cellspacing="0" cellpadding="0"><tr><td align="center">
 <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:560px;background:${card};border-radius:12px"><tr><td style="padding:32px">
 ${
-    logo
-      ? `<p style="margin:0 0 24px"><img src="${escapeHtml(logo)}" alt="${escapeHtml(brand.appName)}" height="40" style="display:block;height:40px;max-width:240px;width:auto;border:0"></p>`
-      : `<p style="margin:0 0 24px;font-size:18px;font-weight:700;color:${colour}">${escapeHtml(brand.appName)}</p>`
-  }
+  logo
+    ? `<p style="margin:0 0 24px"><img src="${escapeHtml(logo)}" alt="${escapeHtml(brand.appName)}" height="40" style="display:block;height:40px;max-width:240px;width:auto;border:0"></p>`
+    : `<p style="margin:0 0 24px;font-size:18px;font-weight:700;color:${colour}">${escapeHtml(brand.appName)}</p>`
+}
 ${parts.join('\n')}
 <p style="margin:24px 0 0;font-size:14px;line-height:1.5;color:${muted}">Need help? Write to <a href="mailto:${support}" style="color:${colour}">${support}</a>.</p>
 </td></tr></table>
