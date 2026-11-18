@@ -30,6 +30,7 @@ import type {
   HomeRowsPage,
   Page,
   Progress,
+  PublicPreview,
   SeriesDetail,
   SeriesSummary,
   Suggestion,
@@ -119,7 +120,12 @@ export class RealCatalog implements CatalogRepository {
       const wide = toThumb(slot.heroImage);
       return { item: wide ? { ...item, thumbnail: wide } : item };
     });
-    return { hero, rows: this.catalogRows(result.rows), empty: false, nextCursor: result.nextCursor };
+    return {
+      hero,
+      rows: this.catalogRows(result.rows),
+      empty: false,
+      nextCursor: result.nextCursor,
+    };
   }
 
   async homeRows(ctx: ViewerContext, cursor: string): Promise<HomeRowsPage> {
@@ -267,6 +273,36 @@ export class RealCatalog implements CatalogRepository {
       categorySlug: categories[0]?.slug ?? '',
       categoryName: categories[0]?.name ?? '',
       publishedAt: publishedAt ?? '',
+    };
+  }
+
+  async publicPreview(slug: string, kind: 'video' | 'series'): Promise<PublicPreview | null> {
+    const catalog = catalogContext(this.service);
+    const found = await this.service.db.transaction((tx) =>
+      findTitle(tx, catalog, { kids: false }, { slug, kind }),
+    );
+    if (!found) return null;
+    if (found.type === 'redirect') return { type: 'redirect', to: redirectPath(found.to) };
+    const { card, categories, publishedAt } = found.title;
+    const item = cardToItem(card);
+    if (item.kind === 'series') {
+      return {
+        type: 'series',
+        item: {
+          ...item,
+          categorySlug: categories[0]?.slug ?? '',
+          categoryName: categories[0]?.name ?? '',
+        },
+      };
+    }
+    return {
+      type: 'video',
+      item: {
+        ...(item as VideoSummary),
+        categorySlug: categories[0]?.slug ?? '',
+        categoryName: categories[0]?.name ?? '',
+        publishedAt: publishedAt ?? '',
+      },
     };
   }
 

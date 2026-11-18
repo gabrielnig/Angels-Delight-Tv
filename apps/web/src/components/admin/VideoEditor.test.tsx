@@ -56,11 +56,25 @@ describe('VideoEditor', () => {
       'description',
       'episodeNumber',
       'seriesId',
+      'slug',
       'suitability',
       'tags',
       'title',
     ]);
     expect(patch.title).toBe('Staying Safe Online 2');
+  });
+
+  it('shows the address with a note that the old one keeps working, and sends a change', async () => {
+    const actions = setup('vid_safe_online');
+    const field = screen.getByLabelText('Address');
+    expect(field).toHaveValue(get('vid_safe_online').slug);
+    expect(screen.getByText(/old address keeps working/i)).toBeInTheDocument();
+    await userEvent.clear(field);
+    await userEvent.type(field, 'safe-online-2');
+    await userEvent.click(screen.getByRole('button', { name: 'Save changes' }));
+    await waitFor(() => expect(actions.update).toHaveBeenCalled());
+    const patch = (actions.update.mock.calls[0] as unknown as [Record<string, unknown>])[0];
+    expect(patch.slug).toBe('safe-online-2');
   });
 
   it('shows field errors from the server and keeps the typed text', async () => {

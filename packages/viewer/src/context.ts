@@ -1,6 +1,6 @@
 import type { Database } from '@ad/db';
 import { RateLimited } from '@ad/shared';
-import type { CatalogContext } from '@ad/catalog';
+import type { CatalogCache, CatalogContext } from '@ad/catalog';
 import { DEFAULT_RULES, type ViewerRules } from './rules';
 
 /** Seals profile names with the account's own key. Lane B supplies the per user key implementation. */
@@ -32,6 +32,11 @@ export const VIEWER_RATE_POLICIES: Record<
 };
 
 /** Everything the viewer services need besides the actor. Built once at startup, passed to every service call. */
+/** Runs a catalog read through the shared cache when there is one. Only for reads that do not depend on the viewer. */
+export function shared<T>(ctx: ViewerContext, key: unknown[], load: () => Promise<T>): Promise<T> {
+  return ctx.catalogCache ? ctx.catalogCache.remember(JSON.stringify(key), load) : load();
+}
+
 export interface ViewerContext {
   db: Database;
   /** Public base url of the media bucket, used to build artwork urls. */
@@ -42,6 +47,8 @@ export interface ViewerContext {
   /** Spends one attempt from a bucket (see VIEWER_RATE_POLICIES). Absent means unlimited, which only tests and early dev use. */
   rateLimit?: RateLimitCheck;
   now?: () => Date;
+  /** Shared 60 second cache for catalog reads that do not depend on the viewer (M04-S05). Absent means no caching. */
+  catalogCache?: CatalogCache;
   rules?: Partial<ViewerRules>;
 }
 

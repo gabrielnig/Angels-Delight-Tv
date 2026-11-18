@@ -1,4 +1,5 @@
 import { AppError, RateLimited, ValidationFailed } from '@ad/shared';
+import { createHash } from 'node:crypto';
 import type { ZodType } from 'zod';
 
 export const NO_STORE = { 'Cache-Control': 'private, no-store' } as const;
@@ -10,6 +11,24 @@ export function json(
   const headers = new Headers(init.headers);
   headers.set('Cache-Control', NO_STORE['Cache-Control']);
   return Response.json(data, { status: init.status ?? 200, headers });
+}
+
+/**
+ * A catalog read that can be revalidated (M04-S05). The tag is a hash of the body, so an unchanged page costs the
+ * client one small 304 instead of the whole body. `private, no-cache` keeps shared caches out, because these
+ * answers hold the profile's own progress, and makes the browser ask every time instead of guessing.
+ */
+export function etagJson(request: Request, data: unknown): Response {
+  const body = JSON.stringify(data);
+  const tag = `"${createHash('sha256').update(body).digest('base64url').slice(0, 22)}"`;
+  const headers = new Headers({ ETag: tag, 'Cache-Control': 'private, no-cache' });
+  const offered = (request.headers.get('if-none-match') ?? '')
+    .split(',')
+    .map((value) => value.trim().replace(/^W\//, ''));
+  if (offered.includes(tag) || offered.includes('*'))
+    return new Response(null, { status: 304, headers });
+  headers.set('Content-Type', 'application/json');
+  return new Response(body, { status: 200, headers });
 }
 
 /** Turns a service error into the stable JSON error shape. Anything else is left for withRequest to report as 500. */

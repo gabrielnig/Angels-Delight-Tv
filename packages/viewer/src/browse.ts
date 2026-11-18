@@ -11,7 +11,7 @@ import {
   type Page,
 } from '@ad/catalog';
 import { annotateCards, type TitleCardDto } from './annotate';
-import { catalogContext, type ViewerContext } from './context';
+import { catalogContext, shared, type ViewerContext } from './context';
 import { audienceOf, loadOwnedProfile } from './profiles';
 
 export interface BrowseInput {
@@ -38,7 +38,10 @@ export async function listBrowseCategories(
 ): Promise<CategoryDto[]> {
   return withAccount(ctx.db, actor, async (tx) => {
     const profile = await loadOwnedProfile(tx, actor, input.profileId);
-    return listCategories(tx, catalogContext(ctx), audienceOf(profile));
+    const audience = audienceOf(profile);
+    return shared(ctx, ['categories', audience.kids], () =>
+      listCategories(tx, catalogContext(ctx), audience),
+    );
   });
 }
 
@@ -50,23 +53,40 @@ export async function browse(
   return withAccount(ctx.db, actor, async (tx) => {
     const profile = await loadOwnedProfile(tx, actor, input.profileId);
     const audience = audienceOf(profile);
-    const category =
-      input.categorySlug === undefined ? null : await findCategory(tx, input.categorySlug);
-    if (input.categorySlug !== undefined && !category) {
-      return { category: null, items: [], nextCursor: null, total: 0 };
-    }
-    const page = await listTitles(tx, catalogContext(ctx), audience, {
-      categorySlug: input.categorySlug,
-      sort: input.sort ?? 'newest',
-      duration: input.duration,
-      limit: input.limit,
-      cursor: input.cursor,
-    });
-    const total = await countTitles(tx, catalogContext(ctx), audience, {
-      categorySlug: input.categorySlug,
-      sort: input.sort ?? 'newest',
-      duration: input.duration,
-    });
+    // The titles on a page, and how many there are, are the same for everyone in this audience.
+    // Progress and My List are added per profile below, outside the cache.
+    const shown = await shared(
+      ctx,
+      [
+        'browse',
+        audience.kids,
+        input.categorySlug,
+        input.sort,
+        input.duration,
+        input.limit,
+        input.cursor,
+      ],
+      async () => {
+        const category =
+          input.categorySlug === undefined ? null : await findCategory(tx, input.categorySlug);
+        if (input.categorySlug !== undefined && !category) return null;
+        const page = await listTitles(tx, catalogContext(ctx), audience, {
+          categorySlug: input.categorySlug,
+          sort: input.sort ?? 'newest',
+          duration: input.duration,
+          limit: input.limit,
+          cursor: input.cursor,
+        });
+        const total = await countTitles(tx, catalogContext(ctx), audience, {
+          categorySlug: input.categorySlug,
+          sort: input.sort ?? 'newest',
+          duration: input.duration,
+        });
+        return { category, page, total };
+      },
+    );
+    if (!shown) return { category: null, items: [], nextCursor: null, total: 0 };
+    const { category, page, total } = shown;
     return {
       category,
       items: await annotateCards(tx, profile.id, page.items),

@@ -3,7 +3,7 @@ import { render, screen, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { ToastProvider } from '@ad/ui';
 import type { TitleDetail, VideoSummary } from '../../lib/data';
-import { PublicTitle, TitleView } from './TitleView';
+import { PublicSeries, PublicTitle, TitleView } from './TitleView';
 
 vi.mock('../../app/actions', () => ({ toggleListAction: vi.fn() }));
 
@@ -123,5 +123,44 @@ describe('PublicTitle', () => {
     pub();
     expect(screen.getByRole('img', { name: 'Rivers of Nigeria' })).toBeInTheDocument();
     expect(document.querySelector('video')).toBeNull();
+  });
+});
+
+describe('PublicSeries', () => {
+  const pub = () =>
+    render(
+      <PublicSeries
+        slug="money-basics"
+        title="Money basics"
+        description="Short lessons on money."
+        episodes={6}
+        category="Life Skills"
+        thumbnail={video.thumbnail}
+      />,
+    );
+
+  it('shows the series with its episode count and category', () => {
+    pub();
+    expect(screen.getByRole('heading', { level: 1, name: 'Money basics' })).toBeInTheDocument();
+    expect(screen.getByText('6 episodes')).toBeInTheDocument();
+    expect(screen.getByText('Life Skills')).toBeInTheDocument();
+    expect(screen.getByRole('img', { name: 'Money basics' })).toBeInTheDocument();
+  });
+
+  it('says one episode in the singular', () => {
+    render(<PublicSeries slug="s" title="T" description="d" episodes={1} category="C" />);
+    expect(screen.getByText('1 episode')).toBeInTheDocument();
+  });
+
+  it('sends the visitor back to the series after signing in or signing up', () => {
+    pub();
+    expect(screen.getByRole('link', { name: 'Sign in to watch' })).toHaveAttribute(
+      'href',
+      '/sign-in?next=%2Fseries%2Fmoney-basics',
+    );
+    expect(screen.getByRole('link', { name: 'Create account' })).toHaveAttribute(
+      'href',
+      '/sign-up',
+    );
   });
 });

@@ -25,10 +25,7 @@ export function toThumb(poster: ArtworkDto | null): Thumb | undefined {
   return thumb;
 }
 
-/**
- * Cards carry no category and no publish date, so those fields stay empty. Screens that need a category
- * (title and series pages) read it from the detail DTO instead.
- */
+/** Cards carry the first visible category and the publish date. A title with no category gets empty strings. */
 export function cardToItem(
   card: Pick<
     TitleCardDto,
@@ -42,18 +39,21 @@ export function cardToItem(
     | 'kidsSafe'
     | 'hasCaptions'
     | 'poster'
+    | 'categorySlug'
+    | 'categoryName'
+    | 'publishedAt'
   >,
 ): CatalogItem {
   const common = {
     slug: card.slug,
     title: card.title,
     description: card.description ?? '',
-    categorySlug: '',
-    categoryName: '',
+    categorySlug: card.categorySlug ?? '',
+    categoryName: card.categoryName ?? '',
     thumbnail: toThumb(card.poster),
     hasCaptions: card.hasCaptions,
     kidsSafe: card.kidsSafe,
-    publishedAt: '',
+    publishedAt: card.publishedAt ?? '',
   };
   if (card.kind === 'series') {
     return {

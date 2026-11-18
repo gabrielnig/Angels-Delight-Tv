@@ -4,6 +4,7 @@ import { realAuthEnabled } from '../server/auth/mode';
 import { getSession as getRealSession } from '../server/auth/session';
 import { realDataEnabled } from '../server/data/mode';
 import { cookieProfileIo } from '../server/data/profile-io';
+import { can } from './admin/can';
 import { getAccount, getProfiles } from './data';
 import type { Profile, ViewerContext, ViewerSession } from './data';
 
@@ -47,6 +48,7 @@ async function getRealViewerSession(): Promise<ViewerSession | null> {
     verified: real.emailVerified,
     memberSince: overview.memberSince,
     profile: profiles.find((p) => p.id === selected) ?? null,
+    canUpload: can(real.role, 'video.upload'),
   };
 }
 

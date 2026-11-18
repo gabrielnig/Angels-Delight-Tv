@@ -14,7 +14,12 @@ const items = ['One', 'Two'].map((title) => ({
 
 beforeEach(() => {
   vi.useFakeTimers();
-  window.matchMedia = ((q: string) => ({ matches: false, media: q, addEventListener() {}, removeEventListener() {} })) as never;
+  window.matchMedia = ((q: string) => ({
+    matches: false,
+    media: q,
+    addEventListener() {},
+    removeEventListener() {},
+  })) as never;
 });
 afterEach(() => {
   vi.useRealTimers();

@@ -1,3 +1,4 @@
+import { catalogCache } from '@ad/catalog';
 import 'server-only';
 import { PasswordHasher } from '@ad/auth';
 import { accounts, withAccount } from '@ad/db';
@@ -39,6 +40,7 @@ function build(): ViewerRuntime {
   const ctx: ViewerContext = {
     db: services.db,
     mediaOrigin: services.env.MEDIA_ORIGIN,
+    catalogCache,
     nameCipher,
     async verifyPassword(accountId, password) {
       const actor: Actor = { accountId, role: 'viewer' };

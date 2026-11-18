@@ -1,10 +1,11 @@
 import { and, eq, sql } from 'drizzle-orm';
 import { assets, categories, videoCategories, videos, withAccount } from '@ad/db';
-import { writeAudit } from '@ad/audit';
+import { writeAudit } from '../audit';
 import { Forbidden, NotFound, ValidationFailed, isUuid, type Actor } from '@ad/shared';
 import { rowsOf } from '../sql';
 import type { Tx } from '../types';
 import { publish, unpublish } from '../publishing';
+import { changeSlug } from './slugs';
 import {
   OK,
   fail,
@@ -24,6 +25,7 @@ function assertAdmin(actor: Actor): void {
 
 interface Row {
   id: string;
+  slug: string;
   title: string;
   description: string | null;
   tags: string[];
@@ -72,6 +74,7 @@ function toVideo(row: Row): AdminVideo {
           : 'none';
   return {
     id: row.id,
+    slug: row.slug,
     title: row.title,
     description: row.description ?? '',
     tags: row.tags ?? [],
@@ -110,7 +113,7 @@ function toVideo(row: Row): AdminVideo {
 }
 
 const SELECT = sql`
-  SELECT v.id, v.title, v.description, v.tags, v.status, v.publish_state, v.publish_at, v.published_at,
+  SELECT v.id, v.slug, v.title, v.description, v.tags, v.status, v.publish_state, v.publish_at, v.published_at,
     v.duration_ms, v.original_bytes, v.poster_asset_id, pa.alt_text AS poster_alt, v.poster_focus,
     v.suitability, v.kids_safe, v.created_by, v.created_at, v.updated_at, v.deleted_at,
     v.failure_code, v.failure_message, v.caption_override_reason,
@@ -363,6 +366,8 @@ export async function getAdminVideos(
 
 export interface VideoEdit {
   title?: string;
+  /** The address in /title/<slug>. The old address keeps working as a redirect. */
+  slug?: string;
   description?: string;
   tags?: string[];
   categoryIds?: string[];
@@ -387,6 +392,10 @@ export async function updateAdminVideo(
     if (!current) throw new NotFound('Video not found');
     const set: Partial<typeof videos.$inferInsert> = {};
     if (edit.title !== undefined) set.title = edit.title;
+    if (edit.slug !== undefined) {
+      const problem = await changeSlug(tx, 'video', id, current.slug, edit.slug);
+      if (problem) throw new ValidationFailed({ slug: [problem] });
+    }
     if (edit.description !== undefined) set.description = edit.description || null;
     if (edit.tags !== undefined) set.tags = edit.tags;
     if (edit.suitability !== undefined) {
@@ -424,7 +433,7 @@ export async function updateAdminVideo(
       actorRole: actor.role,
       targetType: 'video',
       targetId: id,
-      summary: `Edited ${set.title ?? current.title}`,
+      summary: `Edited ${set.title ?? current.title}${edit.slug !== undefined && edit.slug !== current.slug ? `, address now ${edit.slug}` : ''}`,
       extra: { fields: Object.keys(edit) },
     });
   });

@@ -68,6 +68,24 @@ describe.skipIf(!integrationEnabled())('viewer api', () => {
     expect(found.total).toBe(1);
   });
 
+  it('revalidates catalog reads with an ETag and answers 304 when nothing changed (M04-S05)', async () => {
+    signedIn = me.actor;
+    const q = `profileId=${me.profileId}`;
+    for (const path of [`/api/home?${q}`, `/api/browse?${q}`, `/api/browse/categories?${q}`]) {
+      const handler = path.startsWith('/api/home')
+        ? api.home
+        : path.includes('categories')
+          ? api.categories
+          : api.browse;
+      const first = await handler(req(path));
+      const tag = first.headers.get('etag');
+      expect(tag, path).toMatch(/^"/);
+      expect(first.headers.get('cache-control')).toBe('private, no-cache');
+      const again = await handler(req(path, { headers: { 'if-none-match': tag! } }));
+      expect(again.status, path).toBe(304);
+    }
+  });
+
   it('hides another account profile as not found on every read', async () => {
     signedIn = me.actor;
     const q = `profileId=${other.profileId}`;

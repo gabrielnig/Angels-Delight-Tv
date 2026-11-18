@@ -422,6 +422,10 @@ PK `(profile_id, video_id)`. Index `(profile_id, updated_at DESC) WHERE complete
 
 RLS: `watch_progress_owner` (`ALL`): `USING` and `WITH CHECK (owns_profile(profile_id))` where `owns_profile` is a `SECURITY DEFINER`, `STABLE` function checking `profiles.account_id = current_setting('app.account_id', true)::uuid`. The service additionally checks that the video is visible to the profile before writing.
 
+### 7.1a `watch_progress_removals`
+
+The position a viewer had before "Remove from row" (M09-S07), kept so Undo works on any server and after a restart. Columns: `profile_id` (cascade), `requested_id` (the id the card carried, for an episode possibly the series), `video_id` (cascade), `position_ms` (not negative), `removed_at`. PK `(profile_id, requested_id)`. Undo is valid for 5 minutes, once, and only while no newer progress exists. Rows older than the window are cleared by the next removal for that profile. RLS: `watch_progress_removals_owner`, same as `watch_progress`.
+
 ### 7.2 `my_list`
 
 | Column | Type | Null | Notes |
@@ -602,5 +606,6 @@ The schema in `packages/db/src/schema` is the source of truth. These changes wer
 | 0017 | `staff_directory()` also returns the sealed display name. |
 | 0023 | New table `signup_invites` (`code_hash` unique, `hint`, `label`, `max_uses` 1 to 1000, `uses`, `expires_at`, `revoked_at`, `created_by`) for viewer sign up invite codes. The app role can read, insert and update, not delete. |
 | 0025 | `rows.series_id` (nullable, set null on delete): a curated Home row that follows the episodes of one series. |
+| 0029 | New table `watch_progress_removals` (section 7.1a) with owner RLS and app role grants, for the persisted Continue Watching undo. |
 
 Row level security summary additions: `search_history` is on and forced like `watch_progress`. `admin_invites`, `auth_lockouts`, `verification_codes`, `site_daily_stats`, `analytics_counters` and `slug_redirects` have no policies and are reached only by their own modules.

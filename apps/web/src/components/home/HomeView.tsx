@@ -43,7 +43,15 @@ function cards(items: CatalogItem[], inList: Set<string>) {
 }
 
 /** Screens 14 and 15. Hero, Continue watching, My List, then curated rows. */
-export async function HomeView({ ctx, dataSaver }: { ctx: ViewerContext; dataSaver?: boolean }) {
+export async function HomeView({
+  ctx,
+  dataSaver,
+  canUpload,
+}: {
+  ctx: ViewerContext;
+  dataSaver?: boolean;
+  canUpload?: boolean;
+}) {
   const catalog = getCatalog();
   const library = getLibrary();
   const [home, continueResult, listResult, idsResult] = await Promise.all([
@@ -61,7 +69,13 @@ export async function HomeView({ ctx, dataSaver }: { ctx: ViewerContext; dataSav
 
   if (home.empty) {
     const site = await getSite().content();
-    return <HomeEmpty platformName={site.platformName} kids={ctx.audience === 'kids'} />;
+    return (
+      <HomeEmpty
+        platformName={site.platformName}
+        kids={ctx.audience === 'kids'}
+        canUpload={canUpload}
+      />
+    );
   }
 
   const inList = new Set(idsResult);
@@ -101,7 +115,11 @@ export async function HomeView({ ctx, dataSaver }: { ctx: ViewerContext; dataSav
           </Row>
         ))}
         {home.nextCursor ? (
-          <HomeRowsLoader initialCursor={home.nextCursor} inList={idsResult} profileId={ctx.profileId} />
+          <HomeRowsLoader
+            initialCursor={home.nextCursor}
+            inList={idsResult}
+            profileId={ctx.profileId}
+          />
         ) : null}
       </div>
     </>

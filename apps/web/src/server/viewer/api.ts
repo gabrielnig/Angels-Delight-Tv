@@ -53,7 +53,7 @@ import {
 } from './active-profile';
 import { assertSameOrigin } from '@ad/security';
 import { z } from 'zod';
-import { errorResponse, json, parseWith, queryObject, readJson } from './http';
+import { errorResponse, etagJson, json, parseWith, queryObject, readJson } from './http';
 
 /** The player's progress sink shape (`ProgressUpdate` in @ad/player): seconds, not milliseconds. */
 const watchProgressBody = z.object({
@@ -252,16 +252,16 @@ export function createViewerApi(rt: ViewerRuntime) {
 
     home: guard(async (req, actor) => {
       const q = parseWith(homeQuery, queryObject(req));
-      return json(await getHome(rt.ctx, actor, q));
+      return etagJson(req, await getHome(rt.ctx, actor, q));
     }),
 
     browse: guard(async (req, actor) => {
       const { category, ...q } = parseWith(browseQuery, queryObject(req));
-      return json(await browse(rt.ctx, actor, { ...q, categorySlug: category }));
+      return etagJson(req, await browse(rt.ctx, actor, { ...q, categorySlug: category }));
     }),
     categories: guard(async (req, actor) => {
       const q = parseWith(profileIdQuery, queryObject(req));
-      return json({ categories: await listBrowseCategories(rt.ctx, actor, q) });
+      return etagJson(req, { categories: await listBrowseCategories(rt.ctx, actor, q) });
     }),
 
     search: guard(async (req, actor) => {
@@ -292,7 +292,7 @@ export function createViewerApi(rt: ViewerRuntime) {
       const q = parseWith(titleDetailQuery, queryObject(req));
       const key = params.id ?? '';
       const input = isUuid(key) ? { id: key } : { slug: key };
-      return json(await getTitleDetail(rt.ctx, actor, { ...q, ...input }));
+      return etagJson(req, await getTitleDetail(rt.ctx, actor, { ...q, ...input }));
     }),
 
     progress: {

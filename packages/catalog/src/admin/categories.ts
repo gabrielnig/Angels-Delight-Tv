@@ -1,6 +1,6 @@
 import { and, asc, eq, sql } from 'drizzle-orm';
 import { categories, videoCategories, withAccount } from '@ad/db';
-import { writeAudit } from '@ad/audit';
+import { writeAudit } from '../audit';
 import { Forbidden, isUuid, type Actor } from '@ad/shared';
 import { rowsOf } from '../sql';
 import type { Tx } from '../types';

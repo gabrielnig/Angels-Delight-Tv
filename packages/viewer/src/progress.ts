@@ -1,6 +1,6 @@
 import { and, desc, eq, gte, inArray, sql } from 'drizzle-orm';
 import type { profiles } from '@ad/db';
-import { watchProgress, withAccount } from '@ad/db';
+import { watchProgress, watchProgressRemovals, withAccount } from '@ad/db';
 import { isUuid, NotFound, type Actor } from '@ad/shared';
 import {
   episodeOrder,
@@ -224,20 +224,125 @@ export async function getProgress(
   });
 }
 
-/** "Remove from row" (M09-S07): forgets the position so the title starts from the beginning. */
+/** How long Undo works after "Remove from row". The toast is shorter, this covers a slow tap or a reload. */
+export const PROGRESS_UNDO_WINDOW_MS = 5 * 60_000;
+
+/**
+ * "Remove from row" (M09-S07): forgets the position so the title starts from the beginning. The old position is
+ * kept in the database for the undo window, so Undo works on any server and after a restart. `requestedId` is the
+ * id the card carried, which for an episode can be the series, and defaults to the video.
+ */
 export async function removeProgress(
   ctx: ViewerContext,
   actor: Actor,
-  input: { profileId: string; videoId: string },
+  input: { profileId: string; videoId: string; requestedId?: string },
 ): Promise<void> {
+  const now = clockOf(ctx);
   await withAccount(ctx.db, actor, async (tx) => {
     const profile = await loadOwnedProfile(tx, actor, input.profileId);
     if (!isUuid(input.videoId)) return;
+    const [existing] = await tx
+      .select()
+      .from(watchProgress)
+      .where(and(eq(watchProgress.profileId, profile.id), eq(watchProgress.videoId, input.videoId)))
+      .for('update');
+    await tx
+      .delete(watchProgressRemovals)
+      .where(
+        and(
+          eq(watchProgressRemovals.profileId, profile.id),
+          sql`${watchProgressRemovals.removedAt} < ${new Date(now.getTime() - PROGRESS_UNDO_WINDOW_MS).toISOString()}::timestamptz`,
+        ),
+      );
+    if (!existing) return;
+    if (existing.positionMs > 0) {
+      const requestedId =
+        input.requestedId !== undefined && isUuid(input.requestedId)
+          ? input.requestedId
+          : input.videoId;
+      const values = {
+        profileId: profile.id,
+        requestedId,
+        videoId: input.videoId,
+        positionMs: existing.positionMs,
+        removedAt: now,
+      };
+      await tx
+        .insert(watchProgressRemovals)
+        .values(values)
+        .onConflictDoUpdate({
+          target: [watchProgressRemovals.profileId, watchProgressRemovals.requestedId],
+          set: values,
+        });
+    }
     await tx
       .delete(watchProgress)
       .where(
         and(eq(watchProgress.profileId, profile.id), eq(watchProgress.videoId, input.videoId)),
       );
+  });
+}
+
+/**
+ * Undo of "Remove from row". Puts the saved position back when the undo window is open and nothing newer was
+ * watched since. Returns false when there is nothing to restore, so the screen can say so. An undo can be used once.
+ */
+export async function restoreProgress(
+  ctx: ViewerContext,
+  actor: Actor,
+  input: { profileId: string; requestedId: string },
+): Promise<boolean> {
+  const rules = rulesOf(ctx);
+  const now = clockOf(ctx);
+  return withAccount(ctx.db, actor, async (tx) => {
+    const profile = await loadOwnedProfile(tx, actor, input.profileId);
+    if (!isUuid(input.requestedId)) return false;
+    const [removal] = await tx
+      .select()
+      .from(watchProgressRemovals)
+      .where(
+        and(
+          eq(watchProgressRemovals.profileId, profile.id),
+          eq(watchProgressRemovals.requestedId, input.requestedId),
+        ),
+      )
+      .for('update');
+    if (!removal) return false;
+    await tx
+      .delete(watchProgressRemovals)
+      .where(
+        and(
+          eq(watchProgressRemovals.profileId, profile.id),
+          eq(watchProgressRemovals.requestedId, input.requestedId),
+        ),
+      );
+    if (now.getTime() - removal.removedAt.getTime() > PROGRESS_UNDO_WINDOW_MS) return false;
+    const [newer] = await tx
+      .select({ updatedAt: watchProgress.updatedAt })
+      .from(watchProgress)
+      .where(
+        and(eq(watchProgress.profileId, profile.id), eq(watchProgress.videoId, removal.videoId)),
+      );
+    if (newer) return false;
+    let durationMs: number;
+    try {
+      durationMs = await requirePlayableDuration(tx, ctx, audienceOf(profile), removal.videoId);
+    } catch (error) {
+      if (error instanceof NotFound) return false;
+      throw error;
+    }
+    const positionMs = Math.min(removal.positionMs, durationMs);
+    if (positionMs < rules.minProgressMs) return false;
+    await tx.insert(watchProgress).values({
+      profileId: profile.id,
+      videoId: removal.videoId,
+      positionMs,
+      durationMs,
+      completed: false,
+      completedAt: null,
+      updatedAt: now,
+    });
+    return true;
   });
 }
 

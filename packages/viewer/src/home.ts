@@ -14,7 +14,7 @@ import {
   type SeeAll,
 } from '@ad/catalog';
 import { annotateCards, type TitleCardDto } from './annotate';
-import { catalogContext, rulesOf, type ViewerContext } from './context';
+import { catalogContext, rulesOf, shared, type ViewerContext } from './context';
 import { loadMyList } from './my-list';
 import { videoPlayTarget, seriesPlayTarget, type PlayTarget } from './play-target';
 import { audienceOf, loadOwnedProfile } from './profiles';
@@ -90,7 +90,9 @@ export async function getHome(
   return withAccount(ctx.db, actor, async (tx) => {
     const profile = await loadOwnedProfile(tx, actor, input.profileId);
     const audience = audienceOf(profile);
-    const descriptors = await listPublishedRows(tx, audience);
+    const descriptors = await shared(ctx, ['home-rows', audience.kids], () =>
+      listPublishedRows(tx, audience),
+    );
     const configured = await configuredRowKinds(tx);
 
     const plan: PlanEntry[] = [];
@@ -115,7 +117,9 @@ export async function getHome(
         if (personalRow) rows.push(personalRow);
         continue;
       }
-      const resolved = await resolveRow(tx, catalog, audience, descriptor);
+      const resolved = await shared(ctx, ['home-row', audience.kids, descriptor.id], () =>
+        resolveRow(tx, catalog, audience, descriptor),
+      );
       if (resolved.cards.length === 0) continue;
       rows.push({
         id: descriptor.id,
