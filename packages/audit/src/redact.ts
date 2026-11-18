@@ -1,5 +1,9 @@
+/**
+ * The one policy for every audit writer: a field whose name looks like a secret, a hash, an address or a one
+ * time code is replaced, and email addresses inside any string are masked.
+ */
 const SECRET_KEY =
-  /pass(word)?|secret|token|authorization|cookie|api_?key|private_?key|kek|pepper|credential|otp|recovery_?code|session_?id/i;
+  /pass(word)?|secret|token|authorization|cookie|api_?key|private_?key|kek|pepper|credential|otp|recovery_?code|session_?id|hash|e-?mail|(^|[^a-z])code$|[a-z]Code$/i;
 const EMAIL = /[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/g;
 const MAX_STRING = 500;
 const MAX_ARRAY = 50;

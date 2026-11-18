@@ -9,7 +9,8 @@ import {
 import { type WebEnv, loadWebEnv } from '@ad/config';
 import { createDb, createPool } from '@ad/db';
 import { Mailer, SmtpTransport } from '@ad/mailer';
-import { AuditWriter, LockoutStore, RateLimiter } from '@ad/security';
+import { AuditWriter } from '@ad/audit';
+import { LockoutStore, RateLimiter } from '@ad/security';
 import { createLogger } from '@ad/shared';
 
 export interface AuthRuntime {

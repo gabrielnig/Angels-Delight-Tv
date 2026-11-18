@@ -1,7 +1,8 @@
 import { createDb, schema, type Database } from '@ad/db';
 import { createTestDatabase, type TestDatabase } from '@ad/db/testing';
 import { Mailer, MemoryTransport } from '@ad/mailer';
-import { AuditWriter, LockoutStore, RateLimiter } from '@ad/security';
+import { AuditWriter } from '@ad/audit';
+import { LockoutStore, RateLimiter } from '@ad/security';
 import type { AccountRole } from '@ad/shared';
 import { eq } from 'drizzle-orm';
 import pg from 'pg';
