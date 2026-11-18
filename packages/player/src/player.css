@@ -238,6 +238,24 @@
   background: var(--color-player-ink);
 }
 
+.adp-seek__tip--preview {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-1);
+}
+
+.adp-seek__preview {
+  overflow: hidden;
+  border-radius: var(--radius-sm);
+  background: var(--color-player-bg);
+}
+
+.adp-seek__preview-img {
+  background-repeat: no-repeat;
+}
+
 .adp-seek__tip {
   position: absolute;
   bottom: 1.75rem;

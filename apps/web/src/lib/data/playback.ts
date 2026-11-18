@@ -55,6 +55,8 @@ export interface WatchData {
   video: WatchVideo;
   /** Approved and not yet approved tracks may both be present. The player attaches approved ones only. */
   captions: CaptionTrack[];
+  /** Seek preview map. Absent when the video has no sprite sheets. */
+  spriteUrl?: string;
   saved: { positionSeconds: number; finished: boolean } | null;
   next: NextVideo | null;
   upNext: UpNextTileData[];

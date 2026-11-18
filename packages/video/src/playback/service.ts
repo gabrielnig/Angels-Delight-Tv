@@ -36,6 +36,8 @@ export interface PlaybackStore {
   profile(profileId: string, accountId: string): Promise<{ id: string; isKids: boolean } | null>;
   wrappedKey(videoId: string): Promise<Uint8Array | null>;
   captions(videoId: string): Promise<PublicCaption[]>;
+  /** Key of the seek preview map under the media origin, or null when none was made. */
+  spriteKey(videoId: string): Promise<string | null>;
 }
 
 /** Structural match for `RateLimiter.enforce` in @ad/security, which throws RateLimited when denied. */
@@ -80,6 +82,8 @@ export interface SessionInfo {
   expiresAt: string;
   masterUrl: string;
   captions: { language: string; label: string; isDefault: boolean; url: string }[];
+  /** WebVTT map for seek preview thumbnails, or null. */
+  sprite: string | null;
   preview: boolean;
 }
 
@@ -118,6 +122,11 @@ export class PlaybackService {
     }));
   }
 
+  private async spriteUrl(videoId: string): Promise<string | null> {
+    const key = await this.deps.store.spriteKey(videoId);
+    return key ? `${this.deps.mediaOrigin.replace(/\/+$/, '')}/${key}` : null;
+  }
+
   private async session(
     videoId: string,
     token: string,
@@ -130,6 +139,7 @@ export class PlaybackService {
       expiresAt: new Date((Math.floor(this.now()) + seconds) * 1000).toISOString(),
       masterUrl: `${origin}/api/play/${videoId}/master.m3u8`,
       captions: await this.captionList(videoId),
+      sprite: await this.spriteUrl(videoId),
       preview,
     };
   }
