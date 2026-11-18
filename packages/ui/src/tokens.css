@@ -64,6 +64,24 @@
   --color-tile-peach: #FFE3DA;
   --color-tile-lavender: #ECE4FF;
 
+  /* ---- Fixed: profile avatar fills on the account screens (S27 to S31), ink text above 9:1 ---- */
+  --color-avatar-mint: #BFE3D0;
+  --color-avatar-lemon: #F7D27A;
+  --color-avatar-sky: #B9D8F5;
+  --color-avatar-peach: #F2B1AC;
+  --color-avatar-lavender: #D9CCF5;
+
+  /* ---- Fixed: account screen accents (S27 to S31) ---- */
+  --color-danger-border: #E8B4AE;
+  --color-danger-surface: #FFFBFA;
+  --color-danger-ink: #8F1D13;      /* text on danger tint, 8:1 */
+  --color-warning-strong: #B26A00;  /* password strength bars and word */
+  --color-switch-off: #6E7179;
+  --color-switch-locked: #C9C8C1;
+  --color-toast-ok: #7BE0A0;        /* tick on the dark toast */
+  --color-preview-from: #2B3A55;    /* caption preview backdrop */
+  --color-preview-to: #12263A;
+
   /* ---- Typography: themeable family, fixed fallbacks ---- */
   --font-sans: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   --font-display: var(--font-sans);

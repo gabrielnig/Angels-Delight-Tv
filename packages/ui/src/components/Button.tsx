@@ -5,7 +5,8 @@ import { cx } from './cx';
 import { Icon, type IconName } from './Icon';
 import { Link } from './Link';
 
-export type ButtonVariant = 'primary' | 'accent' | 'secondary' | 'ghost' | 'danger' | 'on-dark';
+export type ButtonVariant =
+  'primary' | 'accent' | 'secondary' | 'ghost' | 'danger' | 'danger-outline' | 'on-dark';
 export type ButtonSize = 'sm' | 'md' | 'lg';
 
 interface Common {
