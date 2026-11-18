@@ -224,3 +224,13 @@ describe('SignInForm', () => {
     expect(screen.getByRole('status')).toHaveTextContent('Your password was changed.');
   });
 });
+
+describe('SignInForm layout hooks (S01)', () => {
+  it('marks the forgot password link as end aligned', () => {
+    render(<SignInForm onSubmit={vi.fn()} onDone={vi.fn()} signUpOpen />);
+    expect(screen.getByRole('link', { name: 'Forgot your password?' })).toHaveClass(
+      'web-link',
+      'web-link--end',
+    );
+  });
+});
