@@ -162,8 +162,8 @@ Maintenance mode: Caddy serves a 503 page from `MAINTENANCE_DIR` (default `/opt/
 
 ## 9. Monitoring
 
-- Uptime checks (a free external monitor) on `https://<APP_DOMAIN>/api/ready` and on a synthetic check that fetches a known public image from `https://<MEDIA_DOMAIN>/...` with a valid signature. Alert by email and phone push.
-- Host: disk usage above 80 percent, memory pressure, container restarts, failed backups (the backup script pings a dead man's switch URL on success).
+- Uptime checks (a free external monitor, every minute, alert after 3 failures by email and push) on `https://<APP_DOMAIN>/healthz`, `https://<APP_DOMAIN>/readyz` and `https://<APP_DOMAIN>/api/health/worker` (503 when the worker has not reported for 5 minutes, M24-S02 AC2), plus a certificate expiry check that alerts 14 days out. Also a synthetic check that fetches a known public image from `https://<MEDIA_DOMAIN>/...` with a valid signature. Alert by email and phone push.
+- Host: disk usage above 85 percent, memory pressure, container restarts, failed backups (the backup script pings a dead man's switch URL on success).
 - App: admin dashboard shows queue depth, failed jobs, last encode durations. Postgres `pg_stat_statements` enabled for slow query review.
 - Cloudflare analytics: cache hit ratio for the media host, Worker request count against the plan limit.
 - Sentry (optional): `SENTRY_DSN` for web and worker, `sendDefaultPii: false`, scrubber on. Sentry hosted outside Nigeria is a cross-border transfer, so list it in the privacy notice, or run self-hosted GlitchTip instead (Sentry SDK compatible). Alert thresholds per SECURITY.md section 17. Auto-fix proposals are advisory and applied by a human as ARKDEV.

@@ -70,6 +70,7 @@ const MAIN_TABLES = [
   'view_events',
   'watch_progress',
   'watch_progress_removals',
+  'worker_heartbeats',
 ];
 
 describe('schema definition', () => {

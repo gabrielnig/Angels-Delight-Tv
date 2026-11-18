@@ -85,3 +85,9 @@ export const jobs = pgTable(
       .where(sql`${t.status} IN ('queued', 'running') AND ${t.videoId} IS NOT NULL`),
   ],
 );
+
+/** One row per running process that reports in. The uptime monitor alerts when the worker row is stale (M24-S02). */
+export const workerHeartbeats = pgTable('worker_heartbeats', {
+  name: text('name').primaryKey(),
+  beatAt: timestamptz('beat_at').notNull().defaultNow(),
+});
