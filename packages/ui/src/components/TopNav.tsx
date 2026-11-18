@@ -27,6 +27,7 @@ export function TopNav({
   links,
   currentPath,
   profileName,
+  profileAvatarId,
   menu,
   searchHref = '/search',
   overHero = false,
@@ -39,6 +40,8 @@ export function TopNav({
   links: NavLink[];
   currentPath: string;
   profileName: string;
+  /** The profile's illustrated avatar. Without it the first letter is shown. */
+  profileAvatarId?: string;
   menu: MenuItem[];
   searchHref?: string;
   overHero?: boolean;
@@ -165,7 +168,7 @@ export function TopNav({
                 aria-expanded={open}
                 onClick={() => setOpen((value) => !value)}
               >
-                <Avatar name={profileName} size={32} />
+                <Avatar name={profileName} avatarId={profileAvatarId} size={32} />
               </button>
               {open ? (
                 <div
