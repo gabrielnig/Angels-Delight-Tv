@@ -78,7 +78,10 @@ describe('alignScript on fixtures', () => {
   });
 
   it('ignores case, punctuation, curly quotes and accents when matching', () => {
-    const out = alignScript(`It${APOS}s a caf${E_ACUTE}, isn${APOS}t it?`, heard("it's a cafe isn't it"));
+    const out = alignScript(
+      `It${APOS}s a caf${E_ACUTE}, isn${APOS}t it?`,
+      heard("it's a cafe isn't it"),
+    );
     expect(out.lowConfidence).toEqual([]);
   });
 
@@ -106,9 +109,9 @@ describe('alignScript on fixtures', () => {
   });
 
   it('rejects a script about something else', () => {
-    expect(() => alignScript('Elephants walk slowly across the wide river bank today.', heard(SPOKEN))).toThrow(
-      /does not match|lined up/,
-    );
+    expect(() =>
+      alignScript('Elephants walk slowly across the wide river bank today.', heard(SPOKEN)),
+    ).toThrow(/does not match|lined up/);
   });
 
   it('copes with a ten minute lesson quickly', () => {

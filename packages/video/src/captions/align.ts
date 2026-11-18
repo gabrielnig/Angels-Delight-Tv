@@ -89,7 +89,11 @@ function pairWords(scriptKeys: string[], heardKeys: string[]): Pair[] {
   const n = scriptKeys.length;
   const m = heardKeys.length;
   if ((n + 1) * (m + 1) > MAX_CELLS) {
-    throw new PipelineError('caption_failed', `script and audio too long to align (${n} by ${m} words)`, true);
+    throw new PipelineError(
+      'caption_failed',
+      `script and audio too long to align (${n} by ${m} words)`,
+      true,
+    );
   }
   const steps = new Uint8Array((n + 1) * (m + 1));
   const width = m + 1;
@@ -159,7 +163,10 @@ export function alignScript(
     throw new PipelineError('script_mismatch', 'script or recognised words were empty');
   }
   const minProbability = options.minProbability ?? MIN_PROBABILITY;
-  const pairs = pairWords(tokens.map(normalise), recognised.map((w) => normalise(w.word)));
+  const pairs = pairWords(
+    tokens.map(normalise),
+    recognised.map((w) => normalise(w.word)),
+  );
 
   const lined = pairs.filter((pair) => pair.kind !== 'substitute').length;
   const matchRatio = lined / Math.min(tokens.length, recognised.length);
@@ -229,7 +236,10 @@ export function alignScript(
 }
 
 /** Cues with the start times of the ones that hold a flagged word, so the review screen can highlight them. */
-export function cuesFromAlignment(result: AlignResult): { cues: Cue[]; lowConfidenceStarts: number[] } {
+export function cuesFromAlignment(result: AlignResult): {
+  cues: Cue[];
+  lowConfidenceStarts: number[];
+} {
   const cues = cuesFromWords(result.words);
   const flagged = result.lowConfidence.map((k) => result.words[k]!);
   const lowConfidenceStarts = cues
