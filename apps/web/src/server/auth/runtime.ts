@@ -9,6 +9,7 @@ import {
 import { type WebEnv, loadWebEnv } from '@ad/config';
 import { createDb, createPool } from '@ad/db';
 import { Mailer, SmtpTransport } from '@ad/mailer';
+import { emailBrandFrom } from './email-brand';
 import { AuditWriter } from '@ad/audit';
 import { themeRuntime } from '../../lib/data/admin/theme-runtime';
 import { LockoutStore, RateLimiter } from '@ad/security';
@@ -68,6 +69,7 @@ function build(env: WebEnv): AuthRuntime {
     appName: 'Angels Delight TV',
     appOrigin: env.APP_ORIGIN,
     supportEmail,
+    brand: async () => emailBrandFrom(await themeRuntime(), env.MEDIA_ORIGIN),
   });
   const staff = new StaffService({
     db,
