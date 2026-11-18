@@ -211,8 +211,8 @@ export async function revokeOtherDevicesAction() {
   return getAccount().revokeOtherDevices(await currentAccountId());
 }
 
-export async function requestExportAction() {
-  return getAccount().requestExport(await currentAccountId());
+export async function requestExportAction(input: { password: string }) {
+  return getAccount().requestExport(await currentAccountId(), input);
 }
 
 export async function cancelDeletionAction() {

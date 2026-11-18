@@ -185,5 +185,14 @@ describe.skipIf(!integrationEnabled())('account viewer data', () => {
       });
       expect(other.verifyExportToken(token)).toBeNull();
     });
+
+    it('signs a token that lasts until the given expiry, for the 24 hour email link', async () => {
+      const token = data.signExportToken('acct-1', new Date(NOW.getTime() + 24 * 3600_000));
+      clock.now = new Date(NOW.getTime() + 23 * 3600_000);
+      expect(data.verifyExportToken(token)).toBe('acct-1');
+      clock.now = new Date(NOW.getTime() + 25 * 3600_000);
+      expect(data.verifyExportToken(token)).toBeNull();
+      clock.now = NOW;
+    });
   });
 });

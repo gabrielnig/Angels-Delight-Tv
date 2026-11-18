@@ -17,7 +17,9 @@ export type TemplateName =
   | 'two_factor_reset'
   | 'staff_lockout_alert'
   | 'account_deleted'
-  | 'deletion_scheduled';
+  | 'deletion_scheduled'
+  | 'export_ready'
+  | 'export_failed';
 
 export interface RenderedMail {
   subject: string;
@@ -188,6 +190,30 @@ const DEFINITIONS: Record<TemplateName, Definition> = {
         'Backups are cleared within 14 days.',
       ],
       outro: ['Thank you for learning with us.'],
+    }),
+  },
+  export_ready: {
+    required: ['linkUrl', 'hours'],
+    links: ['linkUrl'],
+    build: (v, b) => ({
+      subject: `Your ${b.appName} data export is ready`,
+      intro: [
+        'Your file has your account, profiles, My List and watch progress. It never includes your password.',
+      ],
+      action: { label: 'Download my data', url: v.linkUrl! },
+      outro: [
+        `The link works for ${v.hours} hours and needs you to be signed in. If you did not ask for this, change your password.`,
+      ],
+    }),
+  },
+  export_failed: {
+    required: ['retryUrl'],
+    links: ['retryUrl'],
+    build: (v, b) => ({
+      subject: `We could not build your export on ${b.appName}`,
+      intro: ['Something went wrong while building your file. Nothing was lost.'],
+      action: { label: 'Try again', url: v.retryUrl! },
+      outro: ['If it keeps failing, write to us and we will help.'],
     }),
   },
   deletion_scheduled: {

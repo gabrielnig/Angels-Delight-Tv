@@ -28,11 +28,17 @@ export interface AccountViewerSource {
     profileId: string,
     patch: Partial<PlaybackSettings>,
   ): Promise<PlaybackSettings>;
-  buildExport(accountId: string, account: { email: string; memberSince: string }): Promise<unknown>;
-  signExportToken(accountId: string): string;
+  /** The background export job (M02-S05). */
+  exports: {
+    request(
+      accountId: string,
+      password: string,
+    ): Promise<{ status: 'started' | 'already' | 'wrong_password' }>;
+    state(accountId: string): Promise<ExportState>;
+    /** Starts the job without waiting for it. */
+    kick(): void;
+  };
 }
-
-export const EXPORT_FILE_NAME = 'angels-delight-data.json';
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
@@ -81,32 +87,32 @@ export class RealAccountRepository implements AccountRepository {
     return this.viewer.savePlayback(await this.signedInAccount(), profileId, patch);
   }
 
-  /** Exports are built on request and are not stored, so there is never an earlier export to show. */
-  async exportState(_accountId?: string): Promise<ExportState> {
-    return this.viewer ? { status: 'none' } : this.fallback.exportState();
+  /** The latest export request: none, being built, ready with a 24 hour link, or failed (S30 states 1 to 4). */
+  async exportState(accountId?: string): Promise<ExportState> {
+    if (!this.viewer) return this.fallback.exportState();
+    return this.viewer.exports.state(accountId ?? (await this.signedInAccount()));
   }
 
-  /**
-   * Builds the file now to size it, and hands back a ten minute link that rebuilds it. A queued job with an
-   * email link (M02-S05) waits for the worker, see docs/lanes/K1-viewer-integration.md.
-   */
-  async requestExport(accountId: string): Promise<ExportState> {
-    if (!this.viewer) return this.fallback.requestExport();
-    const actor = await this.actor(accountId);
-    const info = await this.service.getOverview(actor);
-    const file = await this.viewer.buildExport(accountId, {
-      email: info.email,
-      memberSince: info.memberSince.toISOString(),
-    });
-    const bytes = Buffer.byteLength(JSON.stringify(file, null, 2));
-    return {
-      status: 'ready',
-      requestedAt: 'just now',
-      fileName: EXPORT_FILE_NAME,
-      sizeLabel: bytes < 1024 ? `${bytes} bytes` : `${(bytes / 1024).toFixed(1)} KB`,
-      expiresLabel: 'in 10 minutes',
-      downloadHref: `/api/account/export?token=${this.viewer.signExportToken(accountId)}`,
-    };
+  /** Needs the account password. Starts the background job, which mails the link (M02-S05). */
+  async requestExport(
+    accountId: string,
+    input: { password: string },
+  ): ReturnType<AccountRepository['requestExport']> {
+    if (!this.viewer) return this.fallback.requestExport(accountId, input);
+    try {
+      await this.actor(accountId);
+      const result = await this.viewer.exports.request(accountId, input.password);
+      if (result.status === 'wrong_password')
+        return { ok: false as const, reason: 'wrong_password' as const };
+      if (result.status === 'started') this.viewer.exports.kick();
+      return {
+        ok: true as const,
+        already: result.status === 'already',
+        state: await this.viewer.exports.state(accountId),
+      };
+    } catch {
+      return { ok: false as const, reason: 'network' as const };
+    }
   }
 
   private async actor(accountId: string) {

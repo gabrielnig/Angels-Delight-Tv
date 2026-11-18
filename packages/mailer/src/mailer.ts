@@ -183,4 +183,15 @@ export class Mailer {
       days: input.days,
     });
   }
+
+  sendExportReady(input: { to: string; token: string; hours: number }) {
+    return this.deliver(input.to, 'export_ready', {
+      linkUrl: this.url('/api/account/export', { token: input.token }),
+      hours: input.hours,
+    });
+  }
+
+  sendExportFailed(input: { to: string }) {
+    return this.deliver(input.to, 'export_failed', { retryUrl: this.url('/account/data') });
+  }
 }

@@ -259,8 +259,10 @@ export class AccountViewerData {
   }
 
   /** A link that works for ten minutes and only for this account. The route still needs the signed in session. */
-  signExportToken(accountId: string): string {
-    const expires = Math.floor(this.now().getTime() / 1000) + EXPORT_TOKEN_SECONDS;
+  signExportToken(accountId: string, expiresAt?: Date): string {
+    const expires = expiresAt
+      ? Math.floor(expiresAt.getTime() / 1000)
+      : Math.floor(this.now().getTime() / 1000) + EXPORT_TOKEN_SECONDS;
     return `${accountId}.${expires}.${this.mac(accountId, expires)}`;
   }
 
