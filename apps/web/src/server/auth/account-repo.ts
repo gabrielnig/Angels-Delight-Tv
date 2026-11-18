@@ -13,7 +13,14 @@ import type { GatewayIo } from './gateway';
 
 type Service = Pick<
   StaffService,
-  'getOverview' | 'changePassword' | 'deleteAccount' | 'getDeletionState' | 'cancelDeletion'
+  | 'getOverview'
+  | 'changePassword'
+  | 'deleteAccount'
+  | 'getDeletionState'
+  | 'cancelDeletion'
+  | 'setDisplayName'
+  | 'requestEmailChange'
+  | 'confirmEmailChange'
 >;
 type Sessions = Pick<SessionService, 'list' | 'revokeOwn' | 'revokeAll'>;
 
@@ -142,13 +149,61 @@ export class RealAccountRepository implements AccountRepository {
       ? await this.viewer.stats(accountId)
       : { watchedThisMonth: 0, minutesLearning: 0, myListCount: 0 };
     return {
-      displayName: displayNameFrom(info.email),
+      displayName: info.displayName ?? displayNameFrom(info.email),
       email: info.email,
       verified: info.emailVerified,
       memberSince: `${since.getUTCDate()} ${MONTHS[since.getUTCMonth()]} ${since.getUTCFullYear()}`,
       ...stats,
       devices: devices.length,
+      passwordChanged: formatDay(info.passwordChangedAt),
     };
+  }
+
+  async updateName(accountId: string, name: string): ReturnType<AccountRepository['updateName']> {
+    const actor = await this.actor(accountId);
+    try {
+      const saved = await this.service.setDisplayName(actor, { name }, await this.io.meta());
+      return { ok: true as const, name: saved };
+    } catch (error) {
+      if (error instanceof FieldErrors) return { ok: false as const, reason: 'invalid' as const };
+      return { ok: false as const, reason: 'network' as const };
+    }
+  }
+
+  async requestEmailChange(
+    accountId: string,
+    input: { newEmail: string; password: string },
+  ): ReturnType<AccountRepository['requestEmailChange']> {
+    const actor = await this.actor(accountId);
+    try {
+      const result = await this.service.requestEmailChange(actor, input, await this.io.meta());
+      return { ok: true as const, pendingEmail: result.pendingEmail };
+    } catch (error) {
+      if (error instanceof FieldErrors) {
+        if (error.fields.password) return { ok: false as const, reason: 'wrong_password' as const };
+        if (error.fields.newEmail === 'That is already your email')
+          return { ok: false as const, reason: 'same_email' as const };
+        return { ok: false as const, reason: 'invalid_email' as const };
+      }
+      if (error instanceof RateLimited)
+        return { ok: false as const, reason: 'wrong_password' as const };
+      return { ok: false as const, reason: 'network' as const };
+    }
+  }
+
+  async confirmEmailChange(
+    accountId: string,
+    input: { code: string },
+  ): ReturnType<AccountRepository['confirmEmailChange']> {
+    const actor = await this.actor(accountId);
+    try {
+      const result = await this.service.confirmEmailChange(actor, input, await this.io.meta());
+      return result.status === 'changed'
+        ? { ok: true as const }
+        : { ok: false as const, reason: result.status };
+    } catch {
+      return { ok: false as const, reason: 'network' as const };
+    }
   }
 
   async devices(accountId: string): Promise<DeviceSession[]> {
