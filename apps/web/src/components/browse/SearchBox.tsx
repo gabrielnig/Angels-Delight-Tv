@@ -36,6 +36,8 @@ export interface SearchBoxProps {
   onNavigate: (href: string) => void;
   loadSuggestions: (q: string) => Promise<Suggestion[]>;
   initialValue?: string;
+  /** Called after the debounce with the trimmed text, so results can follow the typing (M06-S03). */
+  onLiveQuery?: (q: string) => void;
   debounceMs?: number;
   autoFocus?: boolean;
 }
@@ -46,6 +48,7 @@ export function SearchBox({
   onNavigate,
   loadSuggestions,
   initialValue = '',
+  onLiveQuery,
   debounceMs = 250,
   autoFocus,
 }: SearchBoxProps) {
@@ -58,6 +61,9 @@ export function SearchBox({
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [recent, setRecent] = useState<string[]>([]);
   const seq = useRef(0);
+  const lastLive = useRef(initialValue.trim());
+  const live = useRef(onLiveQuery);
+  live.current = onLiveQuery;
 
   const query = value.trim();
   const showingRecent = query === '' && recent.length > 0;
@@ -74,10 +80,16 @@ export function SearchBox({
   useEffect(() => {
     if (query === '') {
       setSuggestions([]);
-      return;
     }
     const mine = ++seq.current;
     const timer = setTimeout(() => {
+      // One character is too broad to be worth a search. Clearing the box goes back to the empty state.
+      const wanted = query.length >= 2 || query === '' ? query : lastLive.current;
+      if (wanted !== lastLive.current) {
+        lastLive.current = wanted;
+        live.current?.(wanted);
+      }
+      if (query === '') return;
       loadSuggestions(query)
         .then((result) => {
           if (mine === seq.current) setSuggestions(result);
