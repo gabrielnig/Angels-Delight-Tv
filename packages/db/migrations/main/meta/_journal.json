@@ -183,6 +183,13 @@
       "when": 1794990599080,
       "tag": "0025_rows_series_source",
       "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1794990600080,
+      "tag": "0026_site_page_placeholders",
+      "breakpoints": true
     }
   ]
 }

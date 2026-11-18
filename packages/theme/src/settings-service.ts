@@ -447,13 +447,17 @@ export class SettingsService {
         id: 'terms',
         label: 'Terms page',
         done: terms !== null && !isPlaceholderBody(terms.html),
-        detail: terms ? 'Published' : 'Terms page has placeholder text',
+        detail:
+          terms && !isPlaceholderBody(terms.html) ? 'Published' : 'Terms page has placeholder text',
       },
       {
         id: 'privacy',
         label: 'Privacy page',
         done: privacy !== null && !isPlaceholderBody(privacy.html),
-        detail: privacy ? 'Published' : 'Privacy page has placeholder text',
+        detail:
+          privacy && !isPlaceholderBody(privacy.html)
+            ? 'Published'
+            : 'Privacy page has placeholder text',
       },
       {
         id: 'domain',
