@@ -54,5 +54,5 @@ test('sign up inline links', async ({ page, context }) => {
 
 test('legal contents links', async ({ page }) => {
   await page.goto('/privacy');
-  await expectBig(page, '.web-legal__toc a', 'contents link');
+  await expectBig(page, '.acct-toc__link', 'contents link');
 });
