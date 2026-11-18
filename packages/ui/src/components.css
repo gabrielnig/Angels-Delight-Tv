@@ -99,6 +99,12 @@
   color: var(--color-player-ink);
 }
 
+.ad-btn[data-variant='danger-outline'] {
+  background: var(--color-surface);
+  color: var(--color-danger);
+  border-color: var(--color-danger);
+}
+
 .ad-btn[data-variant='on-dark'] {
   background: color-mix(in srgb, var(--color-player-ink) 16%, transparent);
   color: var(--color-player-ink);
@@ -2048,12 +2054,24 @@
   color: var(--color-info);
 }
 
-.ad-banner[data-tone='danger'] { background: var(--color-danger-tint); }
-.ad-banner[data-tone='danger'] > svg { color: var(--color-danger); }
-.ad-banner[data-tone='success'] { background: var(--color-success-tint); }
-.ad-banner[data-tone='success'] > svg { color: var(--color-success); }
-.ad-banner[data-tone='warning'] { background: var(--color-warning-tint); }
-.ad-banner[data-tone='warning'] > svg { color: var(--color-warning); }
+.ad-banner[data-tone='danger'] {
+  background: var(--color-danger-tint);
+}
+.ad-banner[data-tone='danger'] > svg {
+  color: var(--color-danger);
+}
+.ad-banner[data-tone='success'] {
+  background: var(--color-success-tint);
+}
+.ad-banner[data-tone='success'] > svg {
+  color: var(--color-success);
+}
+.ad-banner[data-tone='warning'] {
+  background: var(--color-warning-tint);
+}
+.ad-banner[data-tone='warning'] > svg {
+  color: var(--color-warning);
+}
 
 .ad-banner__body {
   flex: 1;

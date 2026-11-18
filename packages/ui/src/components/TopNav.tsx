@@ -27,6 +27,7 @@ export function TopNav({
   links,
   currentPath,
   profileName,
+  profileAvatarId,
   menu,
   searchHref = '/search',
   overHero = false,
@@ -34,11 +35,14 @@ export function TopNav({
   onExitKids,
   switchHref = '/profiles?switch=1',
   onBack,
+  skin = 'default',
 }: {
   brand: { name: string; href: string; logoUrl?: string };
   links: NavLink[];
   currentPath: string;
   profileName: string;
+  /** The profile's illustrated avatar. Without it the first letter is shown. */
+  profileAvatarId?: string;
   menu: MenuItem[];
   searchHref?: string;
   overHero?: boolean;
@@ -47,6 +51,8 @@ export function TopNav({
   switchHref?: string;
   /** Shows a Back button before the brand on phones, for detail pages. */
   onBack?: () => void;
+  /** `soft` sits on the page colour with a search circle and a profile pill that shows the name (S27 to S31). */
+  skin?: 'default' | 'soft';
 }) {
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
@@ -115,6 +121,7 @@ export function TopNav({
         className="ad-nav"
         data-surface={solid ? 'solid' : 'clear'}
         data-back={onBack ? 'true' : undefined}
+        data-skin={skin === 'soft' ? 'soft' : undefined}
       >
         <div className="ad-nav__inner">
           {onBack ? (
@@ -165,7 +172,10 @@ export function TopNav({
                 aria-expanded={open}
                 onClick={() => setOpen((value) => !value)}
               >
-                <Avatar name={profileName} size={32} />
+                <Avatar name={profileName} avatarId={profileAvatarId} size={32} />
+                {skin === 'soft' ? (
+                  <span className="ad-nav__avatar-name">{profileName}</span>
+                ) : null}
               </button>
               {open ? (
                 <div
@@ -246,11 +256,14 @@ export function SiteFooter({
   year,
   links,
   className,
+  supportEmail,
 }: {
   platformName: string;
   year: number;
   links: NavLink[];
   className?: string;
+  /** When set the footer shows the support address beside the name and year (S27 to S31). */
+  supportEmail?: string;
 }) {
   return (
     <footer className={cx('ad-footer', className)}>
@@ -262,7 +275,8 @@ export function SiteFooter({
         ))}
       </nav>
       <p className="ad-footer__note">
-        {platformName} {year}
+        {supportEmail ? <span className="ad-footer__support">{supportEmail}</span> : null}
+        {supportEmail ? `${platformName}, ${year}` : `${platformName} ${year}`}
       </p>
     </footer>
   );

@@ -74,3 +74,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 ### Lane A2: admin stories audit
 
 - Audit M12 to M20 and M27 to M30 stories, merge the audit writers, read retention from settings, add invite codes, fix analytics export rows, keep series rows on Home in step, page the video list in the database, coalesce caption autosaves, and add the staff bell with email choices.
+
+### Lane P1: sign in and sign up to the mockups
+
+- Rebuilt S01 sign in (landing split and mobile) and S02 sign up (desktop bar, card, mobile sticky submit) to match `S01_landing_sign_in*.dc.html` and `S02_sign_up*.dc.html`, including every stacked state, with Space Grotesk headings, the four segment strength meter and checklist, Caps Lock hint, invite code field and the session ended notice from `?notice=ended`. Real auth behaviour, Turnstile and enumeration safe messages are unchanged. See `docs/lanes/P1-auth-pages.md`.

@@ -17,6 +17,14 @@ describe('DeletionNotice (S30 state 6)', () => {
     expect(screen.getByRole('button', { name: 'Sign out' })).toBeInTheDocument();
   });
 
+  it('draws the warning circle with the trash icon above the heading', () => {
+    const { container } = render(
+      <DeletionNotice purgeDate="1 Dec 2026" days={14} onCancel={vi.fn()} onSignOut={vi.fn()} />,
+    );
+    expect(container.querySelector('.acct-closing__icon svg')).not.toBeNull();
+    expect(container.querySelector('.acct-closing')).toHaveAttribute('data-screen', 'pending');
+  });
+
   it('says "tomorrow" style copy without a negative number on the last day', () => {
     render(
       <DeletionNotice purgeDate="1 Dec 2026" days={1} onCancel={vi.fn()} onSignOut={vi.fn()} />,

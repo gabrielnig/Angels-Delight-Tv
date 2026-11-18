@@ -337,6 +337,8 @@ export type SelectProfileResult =
 
 export interface PlaybackSettings {
   autoplayNext: boolean;
+  /** A short silent preview on Home when a title is hovered or paused on. Off by default (S29). */
+  autoplayPreviews: boolean;
   dataSaver: boolean;
   quality: 'auto' | '1080' | '720' | '480' | '360';
   speed: number;
@@ -374,10 +376,28 @@ export interface AccountOverview {
   minutesLearning: number;
   myListCount: number;
   devices: number;
+  /** When the password last changed, for example "12 Aug 2026". */
+  passwordChanged: string;
 }
+
+export type EmailChangeFailure = 'wrong_password' | 'invalid_email' | 'same_email' | 'network';
 
 export interface AccountRepository {
   overview(accountId: string): Promise<AccountOverview>;
+  /** Saves the name shown on the account screen (S27 Edit name). */
+  updateName(
+    accountId: string,
+    name: string,
+  ): Promise<{ ok: true; name: string } | { ok: false; reason: 'invalid' | 'network' }>;
+  /** Starts an email change: a 6 digit code goes to the new address. Needs the account password (M02-S02). */
+  requestEmailChange(
+    accountId: string,
+    input: { newEmail: string; password: string },
+  ): Promise<{ ok: true; pendingEmail: string } | { ok: false; reason: EmailChangeFailure }>;
+  confirmEmailChange(
+    accountId: string,
+    input: { code: string },
+  ): Promise<{ ok: true } | { ok: false; reason: 'invalid' | 'expired' | 'too_many' | 'network' }>;
   playback(profileId: string): Promise<PlaybackSettings>;
   savePlayback(profileId: string, patch: Partial<PlaybackSettings>): Promise<PlaybackSettings>;
   /** One time move of choices an older version kept in this browser. Later calls change nothing. */

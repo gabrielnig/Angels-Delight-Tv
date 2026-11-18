@@ -23,6 +23,8 @@ export interface ModalProps {
   /** Inline error banner. The dialog stays open. */
   error?: string;
   className?: string;
+  /** Drops the corner close button. Use when the footer already has a Cancel (S28, S30 dialogs). */
+  hideClose?: boolean;
 }
 
 export function Modal({
@@ -36,6 +38,7 @@ export function Modal({
   closeOnEscape = true,
   error,
   className,
+  hideClose = false,
 }: ModalProps) {
   const titleId = useId();
   const dialogRef = useRef<HTMLDivElement>(null);
@@ -114,7 +117,9 @@ export function Modal({
           <h2 id={titleId} ref={headingRef} tabIndex={-1} className="ad-modal__title">
             {title}
           </h2>
-          <IconButton label="Close" icon="close" onClick={() => onCloseRef.current()} />
+          {hideClose ? null : (
+            <IconButton label="Close" icon="close" onClick={() => onCloseRef.current()} />
+          )}
         </header>
         <div className="ad-modal__body">
           {error ? (

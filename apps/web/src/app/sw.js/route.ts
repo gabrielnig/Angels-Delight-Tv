@@ -1,6 +1,6 @@
 import { loadWebEnv } from '@ad/config';
 import { buildServiceWorkerSource } from '../../lib/pwa/sw-source';
-import { SW_PRECACHE, OFFLINE_URL } from '../../lib/pwa/constants';
+import { SW_PRECACHE, SW_SAVED_PAGES, OFFLINE_URL } from '../../lib/pwa/constants';
 
 export const dynamic = 'force-dynamic';
 
@@ -17,6 +17,7 @@ export async function GET(): Promise<Response> {
     offlineUrl: OFFLINE_URL,
     precache: SW_PRECACHE,
     imageBases: [mediaBase],
+    savedPages: SW_SAVED_PAGES,
   });
   return new Response(source, {
     headers: {

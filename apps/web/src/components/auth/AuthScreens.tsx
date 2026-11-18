@@ -20,11 +20,13 @@ export function SignInScreen({
   next,
   signUpOpen,
   notice,
+  noticeTone,
   turnstileSiteKey,
 }: {
   next?: string;
   signUpOpen: boolean;
   notice?: string;
+  noticeTone?: 'success' | 'info';
   turnstileSiteKey?: string;
 }) {
   const router = useRouter();
@@ -33,6 +35,7 @@ export function SignInScreen({
       next={next}
       signUpOpen={signUpOpen}
       notice={notice}
+      noticeTone={noticeTone}
       turnstileSiteKey={turnstileSiteKey}
       onSubmit={signInAction}
       onDone={(destination) => {

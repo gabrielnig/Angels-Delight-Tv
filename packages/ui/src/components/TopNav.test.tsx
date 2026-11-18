@@ -193,6 +193,33 @@ describe('SiteFooter', () => {
     expect(screen.getByRole('link', { name: 'Privacy' })).toHaveAttribute('href', '/privacy');
     expect(screen.getByText(/Angels Delight TV 2026/)).toBeInTheDocument();
   });
+
+  it('shows the illustrated profile avatar instead of a letter when the profile has one (M3)', () => {
+    const { container, rerender } = render(
+      <TopNav
+        brand={{ name: 'Angels Delight TV', href: '/' }}
+        links={links}
+        currentPath="/"
+        profileName="Ada"
+        profileAvatarId="sun"
+        menu={menu}
+      />,
+    );
+    const avatar = container.querySelector('.ad-nav__avatar .ad-avatar');
+    expect(avatar?.getAttribute('data-art')).toBe('sun');
+    rerender(
+      <TopNav
+        brand={{ name: 'Angels Delight TV', href: '/' }}
+        links={links}
+        currentPath="/"
+        profileName="Ada"
+        menu={menu}
+      />,
+    );
+    expect(
+      container.querySelector('.ad-nav__avatar .ad-avatar')?.getAttribute('data-art'),
+    ).toBeNull();
+  });
 });
 
 describe('TopNav back button (S18 phone)', () => {
@@ -221,3 +248,47 @@ describe('TopNav back button (S18 phone)', () => {
   });
 });
 
+describe('soft skin and support footer (S27 to S31)', () => {
+  it('marks the header soft and shows the profile name beside the avatar', () => {
+    const { container } = render(
+      <TopNav
+        brand={{ name: 'Angels Delight TV', href: '/' }}
+        links={links}
+        currentPath="/account"
+        profileName="Chinedu"
+        menu={menu}
+        skin="soft"
+      />,
+    );
+    expect(container.querySelector('header')?.getAttribute('data-skin')).toBe('soft');
+    expect(container.querySelector('.ad-nav__avatar-name')?.textContent).toBe('Chinedu');
+  });
+
+  it('leaves the default header without a name label', () => {
+    const { container } = render(
+      <TopNav
+        brand={{ name: 'Angels Delight TV', href: '/' }}
+        links={links}
+        currentPath="/"
+        profileName="Chinedu"
+        menu={menu}
+      />,
+    );
+    expect(container.querySelector('header')?.hasAttribute('data-skin')).toBe(false);
+    expect(container.querySelector('.ad-nav__avatar-name')).toBeNull();
+  });
+
+  it('puts the support address before the name and year in the footer', () => {
+    const { container } = render(
+      <SiteFooter
+        platformName="Angels Delight TV"
+        year={2026}
+        links={[{ label: 'Terms', href: '/terms' }]}
+        supportEmail="support@angelsdelight.tv"
+      />,
+    );
+    expect(container.querySelector('.ad-footer__note')?.textContent).toBe(
+      'support@angelsdelight.tvAngels Delight TV, 2026',
+    );
+  });
+});

@@ -67,6 +67,8 @@ test('My List saves a title and shows it', async () => {
     'aria-pressed',
     'true',
   );
+  // The button flips at once and the save follows. Leave the page only after the confirmation toast.
+  await expect(page.getByText('Added to My List', { exact: true })).toBeVisible();
 
   await page.goto('/my-list');
   await expect(page.getByText(title).first()).toBeVisible();
@@ -76,18 +78,32 @@ test('My List saves a title and shows it', async () => {
 });
 
 test('progress saved through the API shows as Continue Watching and resumes', async () => {
-  await page.goto('/browse');
-  await page.locator('a[href^="/title/"]').first().click();
-  await expect(page).toHaveURL(/\/title\/(.+)$/);
-  const slug = page.url().split('/title/')[1]!.split('?')[0]!;
-  const title = await page.getByRole('heading', { level: 1 }).innerText();
-
   const profiles = await (await page.request.get('/api/profiles')).json();
   const profileId = profiles.profiles[0].id as string;
-  const detail = await (
-    await page.request.get(`/api/titles/${slug}?profileId=${profileId}&kind=video`)
-  ).json();
-  const videoId = detail.card.id as string;
+  // Other specs may have published short clips into the same catalogue. Resume needs a title longer than 2 minutes.
+  await page.goto('/browse');
+  const hrefs = await page
+    .locator('a[href^="/title/"]')
+    .evaluateAll((els) =>
+      els.map((el) => (el as HTMLAnchorElement).getAttribute('href') as string),
+    );
+  let slug = '';
+  let videoId = '';
+  for (const href of hrefs) {
+    const candidate = href.split('/title/')[1]!.split('?')[0]!;
+    const found = await (
+      await page.request.get(`/api/titles/${candidate}?profileId=${profileId}&kind=video`)
+    ).json();
+    if ((found.card?.durationMs ?? 0) >= 120_000) {
+      slug = candidate;
+      videoId = found.card.id as string;
+      break;
+    }
+  }
+  expect(slug, 'a title of at least 2 minutes in the catalogue').not.toBe('');
+  await page.goto(`/title/${slug}`);
+  await expect(page).toHaveURL(/\/title\/(.+)$/);
+  const title = await page.getByRole('heading', { level: 1 }).innerText();
   const origin = new URL(page.url()).origin;
   const saved = await page.request.post('/api/progress', {
     headers: { origin },
@@ -101,10 +117,10 @@ test('progress saved through the API shows as Continue Watching and resumes', as
   ).toBeVisible();
   await page.reload();
   await page.goto(`/title/${slug}`);
-  await expect(page.getByRole('link', { name: /^Continue/ })).toBeVisible();
+  await expect(page.getByRole('link', { name: /^Resume/ })).toBeVisible();
   await expect(page.getByRole('link', { name: 'Start over' })).toHaveAttribute('href', /\?t=0$/);
 
-  await page.getByRole('link', { name: /^Continue/ }).click();
+  await page.getByRole('link', { name: /^Resume/ }).click();
   await expect(page).toHaveURL(new RegExp(`/watch/${videoId}`));
   await expect(page.getByText(title).first()).toBeVisible();
 });

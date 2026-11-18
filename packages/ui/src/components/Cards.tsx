@@ -216,6 +216,7 @@ export function SeriesCard({
   href,
   thumbnail,
   episodeCount,
+  seasonCount = 1,
   priority,
   inList,
   onToggleList,
@@ -225,19 +226,24 @@ export function SeriesCard({
   href: string;
   thumbnail?: Thumbnail;
   episodeCount: number;
+  /** Shown instead of the episode count on the badge when there is more than one season. */
+  seasonCount?: number;
   priority?: boolean;
   inList?: boolean;
   onToggleList?: () => void;
   className?: string;
 }) {
-  const countText = `${episodeCount} episode${episodeCount === 1 ? '' : 's'}`;
+  const episodesText = `${episodeCount} episode${episodeCount === 1 ? '' : 's'}`;
+  const manySeasons = seasonCount > 1;
+  const seasonsText = `${seasonCount} seasons`;
+  const countText = manySeasons ? `${seasonsText}, ${episodesText}` : episodesText;
   return (
     <article className={cx('ad-card ad-card--series', className)}>
       <Link href={href} className="ad-card__link">
         <span className="ad-card__stack">
           <Thumb thumbnail={thumbnail} title={title} priority={priority}>
             <span className="ad-card__badge" aria-hidden="true">
-              <Badge variant="duration">{countText}</Badge>
+              <Badge variant="duration">{manySeasons ? seasonsText : episodesText}</Badge>
             </span>
           </Thumb>
         </span>

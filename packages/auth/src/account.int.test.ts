@@ -45,6 +45,29 @@ describe.skipIf(!integrationEnabled())('account overview, email change and delet
     });
   });
 
+  describe('display name (S27 Edit name)', () => {
+    it('is empty until set, then stored encrypted and returned with the password change date', async () => {
+      const m = await registerMember(h, auth);
+      const { actor } = await signInActor(h, auth, m);
+      const before = await auth.getOverview(actor);
+      expect(before.displayName).toBeNull();
+      expect(before.passwordChangedAt).toBeInstanceOf(Date);
+      await auth.setDisplayName(actor, { name: '  Chinedu  Okafor ' }, h.meta);
+      expect((await auth.getOverview(actor)).displayName).toBe('Chinedu Okafor');
+    });
+
+    it('refuses an empty or very long name', async () => {
+      const m = await registerMember(h, auth);
+      const { actor } = await signInActor(h, auth, m);
+      await expect(auth.setDisplayName(actor, { name: '   ' }, h.meta)).rejects.toBeInstanceOf(
+        FieldErrors,
+      );
+      await expect(
+        auth.setDisplayName(actor, { name: 'x'.repeat(81) }, h.meta),
+      ).rejects.toBeInstanceOf(FieldErrors);
+    });
+  });
+
   describe('password tries left', () => {
     it('counts down with each wrong confirmation', async () => {
       const m = await registerMember(h, auth);

@@ -5,7 +5,8 @@ import { cx } from './cx';
 import { Icon, type IconName } from './Icon';
 import { Link } from './Link';
 
-export type ButtonVariant = 'primary' | 'accent' | 'secondary' | 'ghost' | 'danger' | 'on-dark';
+export type ButtonVariant =
+  'primary' | 'accent' | 'secondary' | 'ghost' | 'danger' | 'danger-outline' | 'on-dark';
 export type ButtonSize = 'sm' | 'md' | 'lg';
 
 interface Common {
@@ -45,7 +46,7 @@ export function Button({
       data-size={size}
       data-full={fullWidth ? 'true' : undefined}
       aria-busy={loading ? 'true' : undefined}
-      aria-disabled={loading ? 'true' : undefined}
+      aria-disabled={loading ? 'true' : rest['aria-disabled']}
       onClick={loading ? (event) => event.preventDefault() : onClick}
     >
       {loading ? <Spinner /> : icon ? <Icon name={icon} size={20} /> : null}
