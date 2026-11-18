@@ -221,7 +221,7 @@ Cost watch items: Worker request volume, R2 operations if cache hit ratio drops,
 [ ] Edge Worker deployed, unsigned and bad-signature requests return 403
 [ ] Origin CA cert installed, Full (strict) on, origin firewall allows only Cloudflare
 [ ] .env created on the server, offline copies of KEKs stored
-[ ] Migrations applied, first admin created with MFA enrolled
+[ ] Migrations applied, first Super admin created (`pnpm db:seed:admin`) with MFA enrolled
 [ ] SECURITY.md pre-deployment checklist fully ticked
 [ ] Email SPF, DKIM, DMARC verified, signup and reset emails land in inbox
 [ ] All 100 videos uploaded, encoded, captions reviewed and approved, categories and home rows curated

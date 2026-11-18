@@ -1,7 +1,16 @@
 import { and, eq, lte, sql } from 'drizzle-orm';
 import { series, videos, withAccount, type Database } from '@ad/db';
 import { writeAudit } from './audit';
-import { Conflict, Forbidden, NotFound, isUuid, ValidationFailed, type Actor } from '@ad/shared';
+import {
+  Conflict,
+  Forbidden,
+  NotFound,
+  isUuid,
+  ValidationFailed,
+  type Actor,
+  isStaffRole,
+  isAdminRole,
+} from '@ad/shared';
 import { rowsOf } from './sql';
 import type { Tx } from './types';
 
@@ -55,7 +64,7 @@ const LABELS: Record<ChecklistKey, string> = {
 };
 
 function assertStaff(actor: Actor): void {
-  if (actor.role !== 'editor' && actor.role !== 'admin') throw new Forbidden('Editors only');
+  if (!isStaffRole(actor.role)) throw new Forbidden('Editors only');
 }
 
 function resultOf(row: {
@@ -158,7 +167,7 @@ export async function publish(
   }
   const override = input.captionOverride;
   if (override) {
-    if (actor.role !== 'admin') throw new Forbidden('Only an admin can override captions');
+    if (!isAdminRole(actor.role)) throw new Forbidden('Only an admin can override captions');
     if (override.reason.trim().length < MIN_OVERRIDE_REASON) {
       throw new ValidationFailed({ captionOverride: ['Give a reason for the override'] });
     }

@@ -1,7 +1,15 @@
 import { and, eq, sql } from 'drizzle-orm';
 import { assets, categories, videoCategories, videos, withAccount } from '@ad/db';
 import { writeAudit } from '../audit';
-import { Forbidden, NotFound, ValidationFailed, isUuid, type Actor } from '@ad/shared';
+import {
+  Forbidden,
+  NotFound,
+  ValidationFailed,
+  isUuid,
+  type Actor,
+  isStaffRole,
+  isAdminRole,
+} from '@ad/shared';
 import { rowsOf } from '../sql';
 import type { Tx } from '../types';
 import { publish, unpublish } from '../publishing';
@@ -17,10 +25,10 @@ import {
 } from './types';
 
 function assertStaff(actor: Actor): void {
-  if (actor.role !== 'editor' && actor.role !== 'admin') throw new Forbidden('Editors only');
+  if (!isStaffRole(actor.role)) throw new Forbidden('Editors only');
 }
 function assertAdmin(actor: Actor): void {
-  if (actor.role !== 'admin') throw new Forbidden('Admins only');
+  if (!isAdminRole(actor.role)) throw new Forbidden('Admins only');
 }
 
 interface Row {
@@ -637,7 +645,7 @@ export async function bulkAdminVideos(
 ): Promise<{ succeeded: string[]; failed: Array<{ id: string; reason: string }> }> {
   assertStaff(actor);
   if (action.type === 'trash') {
-    if (actor.role !== 'admin')
+    if (!isAdminRole(actor.role))
       return {
         succeeded: [],
         failed: ids.map((id) => ({ id, reason: 'Only an admin can move videos to Trash.' })),

@@ -17,7 +17,7 @@ export default async function SystemPage() {
   const crumbs = [{ label: 'Admin', href: '/admin' }, { label: 'System' }];
   try {
     const [jobs, storage, quality] = await Promise.all([
-      systemService.jobs(actor),
+      can(actor.role, 'system.jobs') ? systemService.jobs(actor) : Promise.resolve([]),
       systemService.storage(actor),
       systemService.quality(actor),
     ]);
@@ -33,7 +33,8 @@ export default async function SystemPage() {
           storage={storage}
           quality={quality}
           now={Date.now()}
-          canAct
+          canAct={can(actor.role, 'system.jobs')}
+          showJobs={can(actor.role, 'system.jobs')}
           actions={{ retry: retryJobAction, discard: discardJobAction }}
         />
       </>

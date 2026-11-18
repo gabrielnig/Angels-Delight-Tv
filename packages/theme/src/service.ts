@@ -5,6 +5,7 @@ import {
   ValidationFailed,
   type Actor,
   type Logger,
+  isAdminRole,
 } from '@ad/shared';
 import { COLOR_KEYS, ThemeValidationError } from '@ad/ui';
 import { THEME_CACHE_TTL_MS, TtlCache } from './cache';
@@ -102,7 +103,7 @@ export interface DraftAssets {
 const FALLBACK_TTL_MS = 5_000;
 
 function assertAdmin(actor: Actor): void {
-  if (actor.role !== 'admin') throw new Forbidden('Only an admin can change the theme');
+  if (!isAdminRole(actor.role)) throw new Forbidden('Only an admin can change the theme');
 }
 
 function toValidationError(error: unknown): never {

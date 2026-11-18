@@ -19,7 +19,7 @@ case "$cmd" in
     echo "  secrets     generate secrets for the production env file"
     echo "  backup      encrypted dump of both databases to the backup bucket"
     echo "  restore     restore a dump into a scratch database (never the live one)"
-    echo "  seed-admin  create the first owner account"
+    echo "  seed-admin  create the first Super admin account (add --promote for an existing admin)"
     ;;
   *)
     echo "Unknown command: $cmd" >&2

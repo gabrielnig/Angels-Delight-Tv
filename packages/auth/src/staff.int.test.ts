@@ -32,7 +32,7 @@ describe.skipIf(!integrationEnabled())('staff sign in, two factor, invites and r
   const codeNow = (secret: string) => totpAt(base32Decode(secret), h.deps.clock!().getTime());
 
   /** A staff account that finished enrolment and holds a staff session. */
-  async function staffMember(role: 'editor' | 'admin') {
+  async function staffMember(role: 'editor' | 'admin' | 'super_admin') {
     const member = await registerMember(h, staff);
     await h.dbs.admin.db
       .update(schema.accounts)
@@ -56,7 +56,7 @@ describe.skipIf(!integrationEnabled())('staff sign in, two factor, invites and r
     };
   }
 
-  const loginPending = async (member: TestMember, role: 'editor' | 'admin') => {
+  const loginPending = async (member: TestMember, role: 'editor' | 'admin' | 'super_admin') => {
     const login = await staff.adminSignIn(
       { email: member.email, password: member.password },
       h.meta,
@@ -123,7 +123,7 @@ describe.skipIf(!integrationEnabled())('staff sign in, two factor, invites and r
     });
 
     it('locks for 30 minutes after three failures and warns the admins by email', async () => {
-      const boss = await staffMember('admin');
+      const boss = await staffMember('super_admin');
       const target = await staffMember('editor');
       const before = h.mailsTo(boss.member.email);
       for (let i = 0; i < 3; i++)
@@ -273,7 +273,7 @@ describe.skipIf(!integrationEnabled())('staff sign in, two factor, invites and r
 
   describe('invites', () => {
     it('lets an admin invite someone, stores the address sealed and mails a 72 hour link', async () => {
-      const boss = await staffMember('admin');
+      const boss = await staffMember('super_admin');
       const email = address();
       const invite = await staff.createInvite(boss.actor, { email, role: 'editor' }, h.meta);
       expect(h.tokenFor(email)).toBeTruthy();
@@ -291,7 +291,7 @@ describe.skipIf(!integrationEnabled())('staff sign in, two factor, invites and r
       await expect(
         staff.createInvite(editor.actor, { email: address(), role: 'editor' }, h.meta),
       ).rejects.toBeInstanceOf(Forbidden);
-      const boss = await staffMember('admin');
+      const boss = await staffMember('super_admin');
       h.advance(11 * 60);
       await expect(
         staff.createInvite(boss.actor, { email: address(), role: 'editor' }, h.meta),
@@ -303,7 +303,7 @@ describe.skipIf(!integrationEnabled())('staff sign in, two factor, invites and r
     });
 
     it('a new person sets a password, gets the role, and must enrol before reaching admin', async () => {
-      const boss = await staffMember('admin');
+      const boss = await staffMember('super_admin');
       const email = address();
       await staff.createInvite(boss.actor, { email, role: 'editor' }, h.meta);
       const token = h.tokenFor(email);
@@ -327,7 +327,7 @@ describe.skipIf(!integrationEnabled())('staff sign in, two factor, invites and r
     });
 
     it('grants the role on an existing viewer account after they confirm with their password', async () => {
-      const boss = await staffMember('admin');
+      const boss = await staffMember('super_admin');
       const viewer = await registerMember(h, staff);
       const live = await signInActor(h, staff, viewer);
       await staff.createInvite(boss.actor, { email: viewer.email, role: 'editor' }, h.meta);
@@ -350,7 +350,7 @@ describe.skipIf(!integrationEnabled())('staff sign in, two factor, invites and r
     });
 
     it('rejects an expired, revoked or made up invite', async () => {
-      const boss = await staffMember('admin');
+      const boss = await staffMember('super_admin');
       const lapsed = address();
       await staff.createInvite(boss.actor, { email: lapsed, role: 'editor' }, h.meta);
       const lapsedToken = h.tokenFor(lapsed);
@@ -376,7 +376,7 @@ describe.skipIf(!integrationEnabled())('staff sign in, two factor, invites and r
     });
 
     it('a new invite for the same address voids the older one', async () => {
-      const boss = await staffMember('admin');
+      const boss = await staffMember('super_admin');
       const email = address();
       await staff.createInvite(boss.actor, { email, role: 'editor' }, h.meta);
       const first = h.tokenFor(email);
@@ -391,7 +391,7 @@ describe.skipIf(!integrationEnabled())('staff sign in, two factor, invites and r
 
     it('shows an empty list when nothing is pending', async () => {
       const solo = new StaffService(h.deps);
-      const boss = await staffMember('admin');
+      const boss = await staffMember('super_admin');
       const invites = await solo.listInvites(boss.actor);
       for (const invite of invites) await solo.revokeInvite(boss.actor, invite.id, h.meta);
       expect(await solo.listInvites(boss.actor)).toEqual([]);
@@ -400,7 +400,7 @@ describe.skipIf(!integrationEnabled())('staff sign in, two factor, invites and r
 
   describe('roles', () => {
     it('changes a role, audits old and new, and ends the sessions of someone demoted to viewer', async () => {
-      const boss = await staffMember('admin');
+      const boss = await staffMember('super_admin');
       const editor = await staffMember('editor');
       await staff.changeRole(
         boss.actor,
@@ -416,7 +416,7 @@ describe.skipIf(!integrationEnabled())('staff sign in, two factor, invites and r
     });
 
     it('ends the sessions of someone promoted, so the new role starts from a fresh sign in (L-7)', async () => {
-      const boss = await staffMember('admin');
+      const boss = await staffMember('super_admin');
       const editor = await staffMember('editor');
       await staff.changeRole(
         boss.actor,
@@ -427,7 +427,7 @@ describe.skipIf(!integrationEnabled())('staff sign in, two factor, invites and r
     });
 
     it('ends the sessions of someone moved between staff roles in either direction (L-7)', async () => {
-      const boss = await staffMember('admin');
+      const boss = await staffMember('super_admin');
       const other = await staffMember('admin');
       await staff.changeRole(
         boss.actor,
@@ -438,20 +438,25 @@ describe.skipIf(!integrationEnabled())('staff sign in, two factor, invites and r
     });
 
     it('the SQL role and status functions refuse a caller id that is not the request context (L-2)', async () => {
-      const boss = await staffMember('admin');
+      const boss = await staffMember('super_admin');
       const editor = await staffMember('editor');
       const victim = await registerMember(h, staff);
       const call = (ctx: { accountId: string; role: 'admin' | 'viewer' } | null) => {
         const q = sql`SELECT staff_set_role(${boss.member.id}::uuid, ${editor.member.id}::uuid, 'viewer'::account_role, 'editor'::account_role)`;
-        return ctx ? withAccount(h.dbs.app.db, ctx, (tx) => tx.execute(q)) : h.dbs.app.db.execute(q);
+        return ctx
+          ? withAccount(h.dbs.app.db, ctx, (tx) => tx.execute(q))
+          : h.dbs.app.db.execute(q);
       };
       // No context at all, and a context for somebody else: both are refused even though p_actor is a real admin.
       await expect(call(null)).rejects.toThrow();
       await expect(call({ accountId: editor.member.id, role: 'admin' })).rejects.toThrow();
-      const status = withAccount(h.dbs.app.db, { accountId: editor.member.id, role: 'admin' }, (tx) =>
-        tx.execute(
-          sql`SELECT staff_set_account_status(${boss.member.id}::uuid, ${victim.id}::uuid, 'suspended'::account_status, 'x')`,
-        ),
+      const status = withAccount(
+        h.dbs.app.db,
+        { accountId: editor.member.id, role: 'admin' },
+        (tx) =>
+          tx.execute(
+            sql`SELECT staff_set_account_status(${boss.member.id}::uuid, ${victim.id}::uuid, 'suspended'::account_status, 'x')`,
+          ),
       );
       await expect(status).rejects.toThrow();
       // The matching context works.
@@ -459,7 +464,7 @@ describe.skipIf(!integrationEnabled())('staff sign in, two factor, invites and r
     });
 
     it('refuses a change to your own role, a stale view, and a caller who is not an admin', async () => {
-      const boss = await staffMember('admin');
+      const boss = await staffMember('super_admin');
       const editor = await staffMember('editor');
       await expect(
         staff.changeRole(
@@ -485,7 +490,7 @@ describe.skipIf(!integrationEnabled())('staff sign in, two factor, invites and r
     });
 
     it('needs a recent password confirmation', async () => {
-      const boss = await staffMember('admin');
+      const boss = await staffMember('super_admin');
       const editor = await staffMember('editor');
       h.advance(11 * 60);
       await expect(
@@ -498,7 +503,7 @@ describe.skipIf(!integrationEnabled())('staff sign in, two factor, invites and r
     });
 
     it('lists staff with role, last sign in and two factor state for admins only', async () => {
-      const boss = await staffMember('admin');
+      const boss = await staffMember('super_admin');
       const editor = await staffMember('editor');
       const list = await staff.listStaff(boss.actor);
       const row = list.find((s) => s.accountId === editor.member.id);
@@ -509,7 +514,7 @@ describe.skipIf(!integrationEnabled())('staff sign in, two factor, invites and r
 
   describe('two factor reset and self service', () => {
     it('lets an admin reset another account, confirmed with their own code, and mails that person', async () => {
-      const boss = await staffMember('admin');
+      const boss = await staffMember('super_admin');
       const editor = await staffMember('editor');
       h.advance(31);
       const before = h.mailsTo(editor.member.email);
@@ -541,7 +546,7 @@ describe.skipIf(!integrationEnabled())('staff sign in, two factor, invites and r
     });
 
     it('refuses a self reset, a wrong code and a caller who is not an admin', async () => {
-      const boss = await staffMember('admin');
+      const boss = await staffMember('super_admin');
       const editor = await staffMember('editor');
       h.advance(31);
       await expect(

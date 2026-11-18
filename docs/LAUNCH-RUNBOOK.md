@@ -101,7 +101,7 @@ The tools run in the `tools` image through compose. Put `client.json`, `brand/` 
 ```bash
 cd /opt/angels-delight/repo
 run() { TAG=$(cat /opt/angels-delight/.deploy/current) ENV_FILE=/opt/angels-delight/.env docker compose --env-file /opt/angels-delight/.env --profile ops run --rm tools "$@"; }
-run seed-admin                                   # interactive: asks for the owner email and a password, never reads them from the environment
+run seed-admin                                   # interactive: creates the first Super admin: asks for the email and a password, never reads them from the environment
 run apply --config /client/client.json --dry-run
 run apply --config /client/client.json
 ```

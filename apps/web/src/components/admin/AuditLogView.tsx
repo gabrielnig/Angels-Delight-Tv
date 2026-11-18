@@ -28,11 +28,16 @@ export function AuditLogView({
   nextCursor,
   query,
   selected,
+  restricted = false,
+  canExport = true,
 }: {
   rows: AuditRow[];
   nextCursor: string | null;
   query: AuditQuery;
   selected: AuditRow | null;
+  /** True for an admin: the log shows content actions only, security entries are for a Super admin. */
+  restricted?: boolean;
+  canExport?: boolean;
 }) {
   const filtered = Boolean(
     query.action || query.actor || query.target || query.outcome || query.from || query.to,
@@ -40,6 +45,11 @@ export function AuditLogView({
   const exportQs = serializeAuditQuery(query, ['cursor', 'entry']);
   return (
     <div className="adm-stack">
+      {restricted ? (
+        <p className="adm-muted" style={{ margin: 0 }}>
+          You see content actions only. Security entries are for a Super admin.
+        </p>
+      ) : null}
       <form
         method="get"
         className="adm-toolbar"
@@ -100,12 +110,14 @@ export function AuditLogView({
           Filter
         </Button>
         {filtered ? <LinkButton href="/admin/audit-log">Clear</LinkButton> : null}
-        <LinkButton
-          href={`/admin/audit-log/export${exportQs ? `?${exportQs}` : ''}`}
-          icon="download"
-        >
-          Export CSV
-        </LinkButton>
+        {canExport ? (
+          <LinkButton
+            href={`/admin/audit-log/export${exportQs ? `?${exportQs}` : ''}`}
+            icon="download"
+          >
+            Export CSV
+          </LinkButton>
+        ) : null}
       </form>
 
       <div className="adm-review">

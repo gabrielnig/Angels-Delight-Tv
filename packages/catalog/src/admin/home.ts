@@ -2,7 +2,7 @@ import { createHash } from 'node:crypto';
 import { eq, notInArray, sql } from 'drizzle-orm';
 import { categories, rowItems, rows, series, settings, withAccount } from '@ad/db';
 import { writeAudit } from '../audit';
-import { Forbidden, isUuid, type Actor, type RowKind } from '@ad/shared';
+import { Forbidden, isUuid, type Actor, type RowKind, isStaffRole } from '@ad/shared';
 import { rowsOf } from '../sql';
 import type { Tx } from '../types';
 import { OK, fail, type AdminContext, type CommandResult } from './types';
@@ -46,7 +46,7 @@ const KEYS = {
 } as const;
 
 function assertStaff(actor: Actor): void {
-  if (actor.role !== 'editor' && actor.role !== 'admin') throw new Forbidden('Editors only');
+  if (!isStaffRole(actor.role)) throw new Forbidden('Editors only');
 }
 
 const plain = (id: string, type: HomeRowType, name: string): HomeRowConfig => ({
@@ -232,7 +232,10 @@ async function syncRows(tx: Tx, config: HomeConfig): Promise<void> {
     } else if (row.type === 'series') {
       // Not a copy of the episodes: the viewer side reads them from the series each time, so the row follows it.
       if (!row.sourceId || !isUuid(row.sourceId)) continue;
-      const [found] = await tx.select({ id: series.id }).from(series).where(eq(series.id, row.sourceId));
+      const [found] = await tx
+        .select({ id: series.id })
+        .from(series)
+        .where(eq(series.id, row.sourceId));
       if (!found) continue;
       seriesId = found.id;
     }

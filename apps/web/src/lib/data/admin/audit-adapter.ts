@@ -1,5 +1,6 @@
-import { auditCsv } from '@ad/audit';
+import { auditCsv, isSecurityAction } from '@ad/audit';
 import type { AuditRecord } from '@ad/audit';
+import { isSuperAdminRole } from '@ad/shared';
 import type { AuditRow } from './types';
 
 type Outcome = AuditRow['outcome'];
@@ -72,11 +73,22 @@ export function serializeAuditQuery(query: AuditQuery, drop: Array<keyof AuditQu
   return params.toString();
 }
 
-export function filterAudit(rows: AuditRow[], q: AuditQuery): AuditRow[] {
+/** A Super admin reads the whole log, everyone else sees content actions only (M20-S02 AC3). */
+export function auditScopeFor(role: unknown): AuditScope {
+  return isSuperAdminRole(role) ? 'all' : 'content';
+}
+export type AuditScope = 'all' | 'content';
+
+export function filterAudit(
+  rows: AuditRow[],
+  q: AuditQuery,
+  scope: AuditScope = 'all',
+): AuditRow[] {
   const from = q.from ? Date.parse(`${q.from}T00:00:00Z`) : null;
   const to = q.to ? Date.parse(`${q.to}T00:00:00Z`) + 86_400_000 : null;
   return rows.filter(
     (r) =>
+      (scope === 'all' || !isSecurityAction(r.action)) &&
       (!q.action ||
         (q.action.endsWith('.') ? r.action.startsWith(q.action) : r.action === q.action)) &&
       (!q.actor ||

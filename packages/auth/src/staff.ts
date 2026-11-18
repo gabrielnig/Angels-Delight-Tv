@@ -9,10 +9,12 @@ import {
   NotFound,
   RateLimited,
   uuidv7,
+  isStaffRole as isStaffRoleName,
+  roleAtLeast,
   type AccountRole,
 } from '@ad/shared';
 import { and, desc, eq, inArray, isNull, ne, sql } from 'drizzle-orm';
-import { AccountService } from './accounts';
+import { AccountService, formatDate } from './accounts';
 import { emailHash, maskEmail, normalizeEmail } from './identifiers';
 import { findAccountByEmailHash, isUniqueViolation } from './lookup';
 import {
@@ -26,7 +28,12 @@ import {
   qrSvg,
   verifyTotp,
 } from './totp';
-import { generateInviteCode, inviteCodeHash, inviteStatus, type SignupInviteStatus } from './signup-invites';
+import {
+  generateInviteCode,
+  inviteCodeHash,
+  inviteStatus,
+  type SignupInviteStatus,
+} from './signup-invites';
 import { generateToken, hashToken } from './tokens';
 import {
   FieldErrors,
@@ -37,8 +44,8 @@ import {
   type RequestMeta,
 } from './types';
 
-type StaffRole = 'editor' | 'admin';
-const isStaffRole = (role: string): role is StaffRole => role === 'editor' || role === 'admin';
+type StaffRole = 'editor' | 'admin' | 'super_admin';
+const isStaffRole = (role: string): role is StaffRole => isStaffRoleName(role);
 
 const enc = new TextEncoder();
 const dec = new TextDecoder();
@@ -97,7 +104,7 @@ export class StaffService extends AccountService {
     const account = await this.loadOwn(actor.accountId);
     if (!account || account.status !== 'active' || !isStaffRole(account.role))
       throw new Forbidden();
-    if (minimum === 'admin' && account.role !== 'admin') throw new Forbidden();
+    if (!roleAtLeast(account.role, minimum)) throw new Forbidden();
     return { ...account, role: account.role as StaffRole };
   }
 
@@ -243,7 +250,12 @@ export class StaffService extends AccountService {
         tx
           .select({ id: schema.accounts.id, emailEnc: schema.accounts.emailEnc })
           .from(schema.accounts)
-          .where(and(eq(schema.accounts.role, 'admin'), eq(schema.accounts.status, 'active'))),
+          .where(
+            and(
+              inArray(schema.accounts.role, ['admin', 'super_admin']),
+              eq(schema.accounts.status, 'active'),
+            ),
+          ),
       );
       for (const admin of admins) {
         if (!admin.emailEnc) continue;
@@ -492,13 +504,13 @@ export class StaffService extends AccountService {
     input: { accountId: string; code: string },
     meta: RequestMeta,
   ): Promise<void> {
-    const admin = await this.staffAccount(actor, 'admin');
+    const admin = await this.staffAccount(actor, 'super_admin');
     if (input.accountId === admin.id)
       throw new Forbidden('Use a recovery code to reset your own two factor sign in');
     await this.checkTotp(admin.id, admin.role, input.code, meta, { requireConfirmed: true });
     const target = await withAccount(
       this.deps.db,
-      { accountId: admin.id, role: 'admin' },
+      { accountId: admin.id, role: admin.role },
       async (tx) => {
         const [row] = await tx
           .select({
@@ -548,11 +560,12 @@ export class StaffService extends AccountService {
     input: { email: string; role: string },
     meta: RequestMeta,
   ): Promise<{ id: string; expiresAt: Date }> {
-    const admin = await this.staffAccount(actor, 'admin');
+    const admin = await this.staffAccount(actor, 'super_admin');
     await this.assertRecentReauth(actor);
     const email = normalizeEmail(input.email);
     if (!email) throw new FieldErrors({ email: 'Enter a valid email address' });
-    if (!isStaffRole(input.role)) throw new FieldErrors({ role: 'Choose Editor or Admin' });
+    if (!isStaffRole(input.role))
+      throw new FieldErrors({ role: 'Choose Editor, Admin or Super admin' });
     await this.deps.limiter.enforce(RATE_POLICIES.inviteSend, this.subject('invite', admin.id));
 
     const hash = emailHash(email, this.deps.pepper);
@@ -597,7 +610,7 @@ export class StaffService extends AccountService {
   }
 
   async listInvites(actor: Actor): Promise<InviteSummary[]> {
-    await this.staffAccount(actor, 'admin');
+    await this.staffAccount(actor, 'super_admin');
     const rows = await this.deps.db
       .select()
       .from(schema.adminInvites)
@@ -614,7 +627,7 @@ export class StaffService extends AccountService {
   }
 
   async revokeInvite(actor: Actor, inviteId: string, meta: RequestMeta): Promise<void> {
-    const admin = await this.staffAccount(actor, 'admin');
+    const admin = await this.staffAccount(actor, 'super_admin');
     await this.deps.db
       .update(schema.adminInvites)
       .set({ revokedAt: this.now() })
@@ -834,12 +847,83 @@ export class StaffService extends AccountService {
   }
 
   // ---------------------------------------------------------------------------------------------
+  // Deleting a viewer account at the owner's request (M27-S03 AC3, Super admin only)
+  // ---------------------------------------------------------------------------------------------
+
+  async deleteViewerAccount(
+    actor: Actor,
+    input: { accountId: string; confirmation: string },
+    meta: RequestMeta,
+  ): Promise<{ purgeAfter: Date }> {
+    const boss = await this.staffAccount(actor, 'super_admin');
+    if (input.confirmation !== 'DELETE')
+      throw new FieldErrors({ confirmation: 'Type DELETE in capital letters to confirm' });
+    const now = this.now();
+    const purgeAfter = new Date(now.getTime() + this.deletionGraceDays() * 86400_000);
+    let owner: { emailEnc: Uint8Array | null } | undefined;
+    try {
+      owner = await withAccount(
+        this.deps.db,
+        { accountId: boss.id, role: boss.role },
+        async (tx) => {
+          const [row] = await tx
+            .select({ emailEnc: schema.accounts.emailEnc })
+            .from(schema.accounts)
+            .where(
+              and(eq(schema.accounts.id, input.accountId), eq(schema.accounts.role, 'viewer')),
+            );
+          await tx.execute(
+            sql`SELECT staff_request_account_deletion(${boss.id}::uuid, ${input.accountId}::uuid, ${purgeAfter.toISOString()}::timestamptz)`,
+          );
+          return row;
+        },
+      );
+    } catch (error) {
+      switch (pgCode(error)) {
+        case '42501':
+        case 'AD002':
+          throw new Forbidden('You cannot delete this account');
+        case 'AD003':
+          throw new NotFound();
+        default:
+          throw error;
+      }
+    }
+    await this.deps.sessions.revokeAll(input.accountId);
+    await this.deps.audit.record({
+      action: 'admin.account_deletion_requested',
+      outcome: 'success',
+      actorAccountId: boss.id,
+      actorRole: boss.role,
+      targetType: 'account',
+      targetId: input.accountId,
+      ipTrunc: meta.ipTrunc,
+      requestId: meta.requestId,
+    });
+    if (owner?.emailEnc) {
+      const to = await this.deps.keys.open(
+        input.accountId,
+        'email',
+        new Uint8Array(owner.emailEnc),
+      );
+      this.run(() =>
+        this.deps.mailer.sendDeletionScheduled({
+          to,
+          purgeDate: formatDate(purgeAfter),
+          days: this.deletionGraceDays(),
+        }),
+      );
+    }
+    return { purgeAfter };
+  }
+
+  // ---------------------------------------------------------------------------------------------
   // Roles
   // ---------------------------------------------------------------------------------------------
 
   async listStaff(actor: Actor): Promise<StaffMember[]> {
-    const admin = await this.staffAccount(actor, 'admin');
-    const rows = await withAccount(this.deps.db, { accountId: admin.id, role: 'admin' }, (tx) =>
+    const admin = await this.staffAccount(actor, 'super_admin');
+    const rows = await withAccount(this.deps.db, { accountId: admin.id, role: admin.role }, (tx) =>
       tx
         .select({
           id: schema.accounts.id,
@@ -880,7 +964,7 @@ export class StaffService extends AccountService {
     input: { accountId: string; role: string; expectedRole: string },
     meta: RequestMeta,
   ): Promise<void> {
-    const admin = await this.staffAccount(actor, 'admin');
+    const admin = await this.staffAccount(actor, 'super_admin');
     await this.assertRecentReauth(actor);
     if (
       !ACCOUNT_ROLES.includes(input.role as AccountRole) ||
@@ -892,7 +976,7 @@ export class StaffService extends AccountService {
     try {
       const result = await withAccount(
         this.deps.db,
-        { accountId: admin.id, role: 'admin' },
+        { accountId: admin.id, role: admin.role },
         (tx) =>
           tx.execute<{ staff_set_role: string }>(
             sql`SELECT staff_set_role(${admin.id}::uuid, ${input.accountId}::uuid, ${input.role}::account_role, ${input.expectedRole}::account_role)`,

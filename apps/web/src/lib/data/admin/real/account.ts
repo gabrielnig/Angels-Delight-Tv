@@ -21,7 +21,7 @@ function staffActor(actor: { accountId: string; role: string; sessionId?: string
   if (!actor.sessionId) throw new Error('This action needs a signed in staff session');
   return {
     accountId: actor.accountId,
-    role: actor.role as 'editor' | 'admin',
+    role: actor.role as 'editor' | 'admin' | 'super_admin',
     sessionId: actor.sessionId,
   };
 }

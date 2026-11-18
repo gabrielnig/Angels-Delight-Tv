@@ -17,12 +17,18 @@ import { realSystemService } from './system';
 describe.skipIf(!integrationEnabled())('real system and dashboard services', () => {
   let t: ViewerTestDb;
   let admin: AdminActor;
+  let plainAdmin: AdminActor;
   let editor: AdminActor;
   const queued: Array<{ queue: string; payload: unknown; options: unknown }> = [];
 
   beforeAll(async () => {
     t = await createViewerTestDb();
     admin = {
+      accountId: (await seedAccount(t.setup, 'super_admin')).id,
+      role: 'super_admin',
+      name: 'Arkdev',
+    };
+    plainAdmin = {
       accountId: (await seedAccount(t.setup, 'admin')).id,
       role: 'admin',
       name: 'Chiamaka Okafor',
@@ -48,6 +54,13 @@ describe.skipIf(!integrationEnabled())('real system and dashboard services', () 
   });
   beforeEach(() => {
     queued.length = 0;
+  });
+
+  it('keeps failed jobs, retry and discard for a Super admin, and storage for admins (M30-S03)', async () => {
+    await expect(realSystemService.jobs(plainAdmin)).rejects.toThrow();
+    await expect(realSystemService.retryJob(plainAdmin, 'x')).rejects.toThrow();
+    await expect(realSystemService.discardJob(plainAdmin, 'x', 'because')).rejects.toThrow();
+    await expect(realSystemService.storage(plainAdmin)).resolves.toBeDefined();
   });
 
   it('is admin only', async () => {

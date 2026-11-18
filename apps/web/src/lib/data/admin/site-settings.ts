@@ -45,7 +45,7 @@ async function load(actor: AdminActor): Promise<SiteSettingsDto> {
       PageSlug,
       PageDto
     >,
-    canChangeFlags: can(actor.role, 'settings.site'),
+    canChangeFlags: can(actor.role, 'settings.flags'),
   };
 }
 

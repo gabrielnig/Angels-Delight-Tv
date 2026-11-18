@@ -1,7 +1,15 @@
 import { and, eq, sql } from 'drizzle-orm';
 import { episodes, seasons, series, videos, withAccount } from '@ad/db';
 import { writeAudit } from '../audit';
-import { Forbidden, NotFound, ValidationFailed, isUuid, uuidv7, type Actor } from '@ad/shared';
+import {
+  Forbidden,
+  NotFound,
+  ValidationFailed,
+  isUuid,
+  uuidv7,
+  type Actor,
+  isStaffRole,
+} from '@ad/shared';
 import { rowsOf } from '../sql';
 import type { Tx } from '../types';
 import { publish, unpublish } from '../publishing';
@@ -33,7 +41,7 @@ export interface AdminSeriesDetail {
 }
 
 function assertStaff(actor: Actor): void {
-  if (actor.role !== 'editor' && actor.role !== 'admin') throw new Forbidden('Editors only');
+  if (!isStaffRole(actor.role)) throw new Forbidden('Editors only');
 }
 
 const NOT_FOUND = 'Series not found.';
@@ -190,7 +198,13 @@ export async function updateAdminSeries(
         slugText = problem;
         return null;
       }
-      await audit(tx, actor, 'series.update', id, `Changed the address of ${current.title} to ${edit.slug}`);
+      await audit(
+        tx,
+        actor,
+        'series.update',
+        id,
+        `Changed the address of ${current.title} to ${edit.slug}`,
+      );
     }
     if (Object.keys(set).length) {
       await tx.update(series).set(set).where(eq(series.id, id));

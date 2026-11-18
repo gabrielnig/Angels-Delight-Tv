@@ -7,6 +7,8 @@ const OK: CommandResult = { ok: true };
 const DAY = 86_400_000;
 export const INVITE_DAYS = 7;
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+export type StaffRoleName = 'editor' | 'admin' | 'super_admin';
+export const STAFF_ROLES: readonly StaffRoleName[] = ['editor', 'admin', 'super_admin'];
 
 export function maskEmail(email: string): string {
   const at = email.indexOf('@');
@@ -131,6 +133,34 @@ export function revokeSessions(
   return OK;
 }
 
+export function deleteUserAccount(
+  s: AdminStore,
+  id: string,
+  confirmation: string,
+  actorId: string,
+  actorName: string,
+  now: number,
+): CommandResult {
+  if (confirmation !== 'DELETE') return fail('Type DELETE in capital letters to confirm.');
+  if (id === actorId) return fail('You cannot delete your own account here.');
+  const user = s.users.find((u) => u.id === id);
+  if (!user) return fail('User not found.');
+  s.users = s.users.filter((u) => u.id !== id);
+  pushAudit(
+    s,
+    {
+      action: 'user.delete_requested',
+      targetType: 'user',
+      targetId: id,
+      summary: `Started deleting ${maskEmail(user.email)} at their request`,
+    },
+    actorId,
+    actorName,
+    now,
+  );
+  return OK;
+}
+
 export function filterUsers(
   users: AdminStore['users'],
   query: { q?: string; status?: 'active' | 'suspended' | '' },
@@ -148,14 +178,14 @@ export function filterUsers(
 export function inviteStaff(
   s: AdminStore,
   rawEmail: string,
-  role: 'editor' | 'admin',
+  role: StaffRoleName,
   actorId: string,
   actorName: string,
   now: number,
 ): CommandResult {
   const email = rawEmail.trim().toLowerCase();
   if (!EMAIL.test(email)) return fail('Enter a full email address, like name@example.com.');
-  if (role !== 'editor' && role !== 'admin') return fail('Choose a role.');
+  if (!STAFF_ROLES.includes(role)) return fail('Choose a role.');
   if (s.staff.some((m) => m.email === email)) return fail('That person already has admin access.');
   if (s.invites.some((i) => i.email === email))
     return fail('That person already has a pending invite. Resend it instead.');
@@ -237,17 +267,18 @@ export function revokeInvite(
 export function changeRole(
   s: AdminStore,
   staffId: string,
-  role: 'editor' | 'admin',
+  role: StaffRoleName,
   actorId: string,
   actorName: string,
   now: number,
 ): CommandResult {
   const member = s.staff.find((m) => m.id === staffId);
   if (!member) return fail('Person not found.');
-  if (role !== 'editor' && role !== 'admin') return fail('Choose a role.');
+  if (!STAFF_ROLES.includes(role)) return fail('Choose a role.');
+  if (member.id === actorId) return fail('You cannot change your own role.');
   if (member.role === role) return OK;
-  if (member.role === 'admin' && s.staff.filter((m) => m.role === 'admin').length <= 1)
-    return fail('There must be at least one admin. Make someone else an admin first.');
+  if (member.role === 'super_admin' && s.staff.filter((m) => m.role === 'super_admin').length <= 1)
+    return fail('There must be at least one Super admin');
   const before = member.role;
   member.role = role;
   pushAudit(

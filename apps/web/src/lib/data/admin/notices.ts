@@ -1,5 +1,5 @@
 import 'server-only';
-import { Forbidden } from '@ad/shared';
+import { Forbidden, isStaffRole } from '@ad/shared';
 import { delegating } from './mode';
 import type { AdminActor } from './types';
 
@@ -67,7 +67,7 @@ const SEED: Omit<NoticeDto, 'read'>[] = [
 ];
 
 function guard(actor: AdminActor): void {
-  if (actor.role !== 'editor' && actor.role !== 'admin') throw new Forbidden();
+  if (!isStaffRole(actor.role)) throw new Forbidden();
 }
 
 const fixture: NoticesService = {

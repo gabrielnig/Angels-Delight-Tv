@@ -40,6 +40,8 @@ export default async function AuditLogPage({
           nextCursor={page.nextCursor}
           query={query}
           selected={selected}
+          restricted={!can(actor.role, 'audit.security')}
+          canExport={can(actor.role, 'audit.export')}
         />
       </>
     );
