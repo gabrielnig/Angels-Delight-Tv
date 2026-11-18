@@ -471,3 +471,9 @@ Format: decision, options considered, why, reversible or not. Newest first. Deci
 - Options: keep both writers, or make the security writer call `redact` but stay in `@ad/security`.
 - Why: two writers on one table drifted (one dropped keys, the other masked values) and a new field could leak through one and not the other. `@ad/audit` already depends on `@ad/security` for `truncateIp`, so the writer cannot live in security.
 - Reversible: yes.
+
+## D-091 Retention windows come from settings, read at each run (lane A2)
+- Decision: new setting `audit.retention_months` (6 to 120, default 24, Super admin, not public, shown in Site settings). The monthly audit prune and the raw view event prune read their window from `settings` on every run through `readSetting` (`@ad/theme/settings`, a subpath that skips the logo and image code), and fall back to the registry default when the row is missing or invalid. The worker role already has SELECT on `settings`.
+- Options: keep a compiled default, or pass the window as a job payload.
+- Why: M20-S04 asks for a retention setting, and a change should apply without a deploy. The analytics prune had the same gap (`analytics.raw_retention_days` existed but was never read), so the registry default (90 days) now governs raw events instead of the 730 day compiled constant.
+- Reversible: yes.

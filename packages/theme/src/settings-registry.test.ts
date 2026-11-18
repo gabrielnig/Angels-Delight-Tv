@@ -66,6 +66,19 @@ describe('registry shape', () => {
     }
   });
 
+  it('has an audit retention in months, default 24, super admin only and never public', () => {
+    const def = SETTING_DEFS['audit.retention_months'];
+    expect(def.default).toBe(24);
+    expect(def.tier).toBe('super');
+    expect(def.isPublic).toBe(false);
+    expect(parse('audit.retention_months', 5).success).toBe(false);
+    expect(parse('audit.retention_months', 6).success).toBe(true);
+    expect(parse('audit.retention_months', 120).success).toBe(true);
+    expect(parse('audit.retention_months', 121).success).toBe(false);
+    expect(parse('audit.retention_months', 12.5).success).toBe(false);
+    expect(PUBLIC_SETTING_KEYS).not.toContain('audit.retention_months');
+  });
+
   it('rejects unknown keys', () => {
     expect(isSettingKey('__proto__')).toBe(false);
     expect(isSettingKey('constructor')).toBe(false);

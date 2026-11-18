@@ -58,6 +58,7 @@ const NUMBER_RULES: Partial<Record<SettingKey, NumberRule>> = {
   'playback.start_threshold_seconds': { min: 0, max: 60 },
   'playback.rewind_seconds': { min: 0, max: 30 },
   'analytics.raw_retention_days': { min: 7, max: 730 },
+  'audit.retention_months': { min: 6, max: 120 },
 };
 const NUMBER_KEYS = Object.keys(NUMBER_RULES) as SettingKey[];
 const MAINTENANCE_KEYS: SettingKey[] = ['maintenance.banner', 'maintenance.mode'];

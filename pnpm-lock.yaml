@@ -167,6 +167,9 @@ importers:
       '@ad/storage':
         specifier: workspace:*
         version: link:../../packages/storage
+      '@ad/theme':
+        specifier: workspace:*
+        version: link:../../packages/theme
       '@ad/video':
         specifier: workspace:*
         version: link:../../packages/video
