@@ -316,6 +316,8 @@ export interface PlaybackSettings {
   speed: number;
   captionsDefault: boolean;
   captionSize: 'small' | 'medium' | 'large' | 'xlarge';
+  captionBackground: 'none' | 'dark' | 'solid';
+  captionContrast: 'standard' | 'high';
 }
 
 export interface DeviceSession {

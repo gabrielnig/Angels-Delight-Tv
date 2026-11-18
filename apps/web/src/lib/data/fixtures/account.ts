@@ -13,6 +13,8 @@ const DEFAULTS: PlaybackSettings = {
   speed: 1,
   captionsDefault: true,
   captionSize: 'medium',
+  captionBackground: 'dark',
+  captionContrast: 'standard',
 };
 
 const globalStore = globalThis as unknown as {

@@ -12,6 +12,8 @@ const initial = {
   speed: 1,
   captionsDefault: false,
   captionSize: 'medium' as const,
+  captionBackground: 'dark' as const,
+  captionContrast: 'standard' as const,
 };
 const wrap = (save: (p: object) => Promise<unknown>) =>
   render(
@@ -50,5 +52,27 @@ describe('PlaybackSettingsForm', () => {
     wrap(save);
     await user.selectOptions(screen.getByRole('combobox', { name: 'Video quality' }), '720');
     expect(save).toHaveBeenCalledWith({ quality: '720' });
+  });
+
+  it('saves the caption background and high contrast choices', async () => {
+    const save = vi.fn().mockResolvedValue(initial);
+    const user = userEvent.setup();
+    wrap(save);
+    await user.selectOptions(screen.getByRole('combobox', { name: 'Caption background' }), 'solid');
+    expect(save).toHaveBeenCalledWith({ captionBackground: 'solid' });
+    await user.click(screen.getByRole('switch', { name: /High contrast captions/ }));
+    expect(save).toHaveBeenCalledWith({ captionContrast: 'high' });
+  });
+
+  it('shows a live caption preview that follows the choices', async () => {
+    const save = vi.fn().mockResolvedValue(initial);
+    const user = userEvent.setup();
+    wrap(save);
+    const preview = screen.getByTestId('caption-preview');
+    expect(preview.style.getPropertyValue('--adp-cap-size')).toBe('20px');
+    await user.selectOptions(screen.getByRole('combobox', { name: 'Caption size' }), 'xlarge');
+    expect(preview.style.getPropertyValue('--adp-cap-size')).toBe('34px');
+    await user.selectOptions(screen.getByRole('combobox', { name: 'Caption background' }), 'none');
+    expect(preview.style.getPropertyValue('--adp-cap-bg')).toBe('transparent');
   });
 });

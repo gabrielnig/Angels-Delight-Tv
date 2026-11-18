@@ -1,4 +1,10 @@
-import type { CaptionTrack, PlayerPreferences, RelatedItem, UpNextItem } from '@ad/player';
+import type {
+  CaptionStyle,
+  CaptionTrack,
+  PlayerPreferences,
+  RelatedItem,
+  UpNextItem,
+} from '@ad/player';
 
 /**
  * Data access for the Watch page (screens 21 and 22). Lane C implements the real service
@@ -62,6 +68,8 @@ export interface WatchData {
   upNext: UpNextTileData[];
   related: RelatedItem[];
   preferences: PlayerPreferences;
+  /** Caption size, background and contrast chosen for this profile (M11-S03). */
+  captionStyle: CaptionStyle;
   inMyList: boolean;
 }
 

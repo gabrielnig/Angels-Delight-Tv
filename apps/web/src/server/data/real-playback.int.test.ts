@@ -113,6 +113,7 @@ describe.skipIf(!integrationEnabled())('real playback data', () => {
       rate: 1,
       captionsOn: true,
     });
+    expect(data.captionStyle).toEqual({ size: 'medium', background: 'dark', contrast: 'standard' });
   });
 
   it('has no saved position for a video that was not watched and uses the profile settings', async () => {

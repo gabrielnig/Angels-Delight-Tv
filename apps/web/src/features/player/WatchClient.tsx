@@ -173,6 +173,7 @@ export function WatchClient({
             progressSink={progressSink}
             captions={data.captions}
             spriteUrl={data.spriteUrl ?? null}
+            captionStyle={data.captionStyle}
             resume={resume}
             preferences={preferences}
             onPreferencesChange={onPreferencesChange}
