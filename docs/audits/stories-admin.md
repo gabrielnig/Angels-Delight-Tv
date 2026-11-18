@@ -4,17 +4,17 @@ Independent audit of every Must and Should story for modules M12 to M20, M27 to 
 
 Status rules: **done with test** means every acceptance criterion is implemented and a test proves it. **done without test** means the code exists but a criterion has no test. **partial** means a criterion is not met in code. **missing** means no implementation.
 
-Super admin: there is no Super admin role (D-034). Anything the stories reserve for Super admin is open to any admin. This is the single largest cause of partial rows.
+Super admin: the role exists since lane f1 (D-125), the rows reserved for it are enforced on the server and in SQL.
 
 | Story | Priority | Status | Evidence | Gap |
 |---|---|---|---|---|
 | M12-S01 Admin sign in | Must | done with test | packages/auth/src/staff.int.test.ts; signin.int.test.ts; staff-recovery.int.test.ts (wrong password counts to the admin lockout, reset clears it, D-104) | Generic failure copy and 30 minute lock are proven; no browser level test of the sign in page |
 | M12-S02 Two factor authentication enrolment | Must | done with test | packages/auth/src/staff.int.test.ts; totp.test.ts; seed-admin.int.test.ts; MyAccountView.test.tsx (recovery codes) |  |
-| M12-S03 Reset an admin's 2FA | Should | partial | staff.int.test.ts (reset, sessions end, audit); RolesInvites.test.tsx | AC1 says Super admin and there is no Super admin role (D-034): any admin can reset. The self reset block is tested |
+| M12-S03 Reset an admin's 2FA | Should | done with test | packages/auth/src/super-admin.int.test.ts (admin and forged actor refused, self reset refused, Super admin resets with own code); staff.int.test.ts (sessions end, mail); RolesInvites.test.tsx | Super admin only since D-125 |
 | M12-S04 Role based access | Must | done with test | packages/auth/src/guards.test.ts; apps/web/src/lib/admin/can tests; session.test.ts; AdminShell.test.tsx (nav by role) |  |
-| M12-S05 Invite an admin user | Must | partial | staff.int.test.ts (invite, expiry, single use); RolesInvites.test.tsx; real/people.int.test.ts | Roles are editor and admin only, so the Super admin invite choice does not exist |
-| M12-S06 Change or remove a role | Must | partial | staff.int.test.ts (last admin guard, sessions end); real/people.int.test.ts | Same Super admin gap. Last admin guard is proven |
-| M12-S07 Roles screen | Must | done with test | RolesInvites.test.tsx; real/people.int.test.ts | Shows admin and editor only (D-034) |
+| M12-S05 Invite an admin user | Must | done with test | super-admin.int.test.ts (admin refused, Super admin invites any staff role); staff.int.test.ts (expiry, single use); real/people.int.test.ts | Super admin only since D-125 |
+| M12-S06 Change or remove a role | Must | done with test | super-admin.int.test.ts (admin and forged role refused in the service and in SQL, self change refused, last Super admin guard on update, suspend and delete, concurrent change conflict); staff.int.test.ts (sessions end); real/people.int.test.ts | Trigger `keep_one_active_admin` guards the last Super admin (D-125) |
+| M12-S07 Roles screen | Must | done with test | RolesInvites.test.tsx (Super admin column, last Super admin note, own role locked); nav.test.ts (hidden from admin); real/people.int.test.ts | Page checks `roles.view`; others get the no access screen |
 | M12-S08 Admin session timeout | Must | done with test | SessionExpiryWarning.test.tsx; packages/auth/src/sessions.int.test.ts; ReauthDialog.test.tsx |  |
 | M12-S09 My admin account | Should | done with test | MyAccountView.test.tsx; real/account.int.test.ts; NotificationPrefsCard.test.tsx (email choices) |  |
 | M13-S01 Open the upload screen | Must | done with test | UploadLane.test.tsx; packages/video/src/upload/service.int.test.ts |  |
@@ -86,27 +86,31 @@ Super admin: there is no Super admin role (D-034). Anything the stories reserve 
 | M19-S06 Daily rollups | Must | done with test | analytics.int.test.ts; apps/worker/src/maintenance.int.test.ts; prunes.int.test.ts (raw retention from settings) |  |
 | M19-S07 Privacy of analytics | Must | done with test | identity.test.ts; ingest.test.ts; rate-limit.test.ts |  |
 | M20-S01 Record audit entries | Must | done with test | packages/audit/src/audit-writer.int.test.ts; redact.test.ts; entry.test.ts (one writer, one redaction policy, D-090) |  |
-| M20-S02 Browse the audit log | Must | partial | query.test.ts; audit.int.test.ts; AuditLogView.test.tsx; audit-adapter.test.ts | AC3 limits the log to Super admin and any admin can open it (D-034) |
+| M20-S02 Browse the audit log | Must | done with test | query.test.ts (security, staff, role and job prefixes); audit.int.test.ts; AuditLogView.test.tsx (restricted note); audit-adapter.test.ts (scope by role) | Admin sees content actions only, Super admin sees all (D-125) |
 | M20-S03 Export audit log | Should | partial | csv.test.ts; audit-adapter.test.ts | Export is truncated at a row cap, not a background job |
 | M20-S04 Retention | Should | done with test | retention.test.ts; apps/worker/src/prunes.int.test.ts; settings-read.int.test.ts (audit.retention_months, D-091) |  |
 | M27-S01 Search viewer accounts | Should | done with test | real/people.int.test.ts; users-commands.test.ts |  |
 | M27-S02 View an account | Should | done with test | real/people.int.test.ts; account.int.test.ts |  |
-| M27-S03 Support actions | Should | partial | staff.int.test.ts (suspend, resend, sessions end); users-commands.test.ts | Hard delete and password reset on behalf are limited to admins, not Super admin (D-034) |
+| M27-S03 Support actions | Should | done with test | staff.int.test.ts; users-commands.test.ts; super-admin.int.test.ts (delete account: admin, editor and forged role refused, SQL refuses, typed word, audit, mail); real/people.int.test.ts; RolesInvites.test.tsx (Delete account dialog) | Delete is Super admin only. Password reset on behalf is not built as an admin action, the owner uses the reset link |
 | M29-S01 Platform details | Must | done with test | settings-service.test.ts; SiteSettingsView.test.tsx; real-site.test.ts |  |
-| M29-S02 Feature flags and limits | Must | partial | settings-registry.test.ts; settings-service.test.ts; SiteSettingsView.test.tsx; settings-read.int.test.ts | Applies within 60 seconds is by cache expiry and is not timed in a test; Super admin only tier maps to any admin (D-034) |
+| M29-S02 Feature flags and limits | Must | done with test | settings-registry.test.ts; settings-service.test.ts (Super admin default, 60 second cache); site-settings.test.ts (admin refused, Super admin saves); SiteSettingsView.test.tsx; settings-read.int.test.ts | Super tier keys need `super_admin` (D-125) |
 | M29-S03 Invite only sign up | Should | done with test | packages/auth/src/signup-invites.int.test.ts; real/invite-codes.int.test.ts; InviteCodesTab.test.tsx; SignUpForm tests (D-099) |  |
 | M30-S01 Reliable jobs | Must | done with test | packages/queue/src/queue.int.test.ts; worker.test.ts |  |
 | M30-S02 Scheduled jobs | Must | done with test | apps/worker/src/maintenance.int.test.ts; handlers.test.ts (crons) |  |
-| M30-S03 Dead jobs screen | Should | partial | SystemView.test.tsx; real/system.int.test.ts | Screen lists failed and dead jobs; Retry is available to any admin, not Super admin only (D-034) |
+| M30-S03 Dead jobs screen | Should | done with test | SystemView.test.tsx (Jobs tab hidden from admin); real/system.int.test.ts (admin refused jobs, retry and discard) | Super admin only (D-125) |
 | M30-S04 Job concurrency control | Should | done with test | packages/queue/src/definitions.test.ts; queue.int.test.ts |  |
 
 ## Counts by status
 
-- done with test: 79
+- done with test: 86
 - done without test: 2
-- partial: 10
+- partial: 3
 - missing: 0
 - Total: 91
+
+## Gaps fixed by lane f1 (slice 1)
+
+- Super admin role (D-125): M12-S03, M12-S05, M12-S06, M12-S07, M20-S02, M27-S03, M29-S02, M30-S03 and the last Super admin guard.
 
 ## Gaps fixed by lane a2
 
@@ -117,7 +121,6 @@ Super admin: there is no Super admin role (D-034). Anything the stories reserve 
 
 ## Open gaps
 
-- No Super admin role (D-034): M12-S03, M12-S05, M12-S06, M20-S02, M27-S03, M29-S02, M30-S03.
 - Emails from notification choices, the hourly and daily summaries: not built (D-112).
 - CSV and audit exports are inline with a row cap, not background jobs (M19-S05, M20-S03).
 - No tamper evident audit chain (M20-S05, a Could).
