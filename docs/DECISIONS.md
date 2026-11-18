@@ -529,3 +529,8 @@ Format: decision, options considered, why, reversible or not. Newest first. Deci
 - Options: call the admin HTTP API with a token; skip by file name; import metadata after the upload; attach posters synchronously.
 - Why: the services already hold the validation, quota, audit and queue rules, so the tool cannot bypass them. A checksum survives renames and moves, a name does not. Writing the checksum and metadata first makes every crash point resumable by simply running the same command again.
 - Reversible: yes. The tool is additive. The align choice in the probe step is one conditional.
+## D-102 Failed encode cleanup removes partial output only, and Replace file reuses the upload API (lane M3)
+- Decision: `/admin/encoding/failed` lists failed videos with the plain reason, attempts, whether the original is still stored and the partial output left behind (`v/{prefix}/`, `templates/{id}/` and the sprite files). Clean up deletes those files and the rendition rows, never the original, captions or the failure record, so Retry starts fresh. Editors can retry and clean up. The technical detail is returned to admins only. Replace file opens the upload screen with `?replace={videoId}`, which sends `replaceVideoId` to the existing upload API (one file, the old source and prefix are handled by the upload service).
+- Options: clean up automatically after the last retry, delete the original of a failed video, a separate cleanup queue.
+- Why: automatic deletion would remove evidence while the admin is still reading the reason, and deleting the original makes Retry impossible. A direct service call is enough because cleanup is quick and safe to repeat.
+- Reversible: yes. Nothing here changes existing data formats.
