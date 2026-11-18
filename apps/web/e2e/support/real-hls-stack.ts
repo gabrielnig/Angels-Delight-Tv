@@ -199,7 +199,6 @@ export async function startRealHlsStack(options: StackOptions = {}): Promise<Rea
     await originals.put(
       `templates/${videoId}/${height}.m3u8`,
       new TextEncoder().encode(buildVariantTemplate({ videoId, segments: playlist.segments })),
-      {},
     );
     for (const name of (await readdir(outDir)).filter((f) => f.endsWith('.ts'))) {
       segmentFiles.set(`v/${mediaPrefix}/${height}/${name}`, await readFile(join(outDir, name)));
@@ -215,7 +214,6 @@ export async function startRealHlsStack(options: StackOptions = {}): Promise<Rea
   await originals.put(
     `templates/${videoId}/master.m3u8`,
     new TextEncoder().encode(buildMasterTemplate(master)),
-    {},
   );
 
   // ---- the real edge worker in workerd, on its own origin ----
@@ -288,6 +286,7 @@ export async function startRealHlsStack(options: StackOptions = {}): Promise<Rea
     getViewer: async () => ({ accountId: 'acc-1', profileId: 'prof-1' }),
     getActor: async () => ({ accountId: 'acc-1', role: 'admin' }),
     clientIp: () => '127.0.0.1',
+    // eslint-disable-next-line no-console -- the harness has no logger and a hidden 500 would waste a debugging hour
     onUnexpected: (error) => console.error('stack: unexpected', error),
   });
 
