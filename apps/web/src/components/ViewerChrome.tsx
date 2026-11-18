@@ -6,12 +6,15 @@ import { BottomTabBar, SiteFooter, TopNav, type MenuItem } from '@ad/ui';
 import { signOutAction } from '../app/actions';
 import { clearServiceWorkerCaches } from '../lib/pwa/purge';
 import { useSearchShortcut } from './browse/useSearchShortcut';
+import { ProfileIdProvider } from '../lib/profile-context';
 import { KidsExitDialog } from './KidsExitDialog';
+import { QueueSync } from './pwa/QueueSync';
 
 export interface ChromeProps {
   platformName: string;
   logoUrl?: string;
   profileName: string;
+  profileId: string;
   kids: boolean;
   footerLinks: Array<{ label: string; href: string }>;
   year: number;
@@ -35,6 +38,7 @@ export function ViewerChrome({
   platformName,
   logoUrl,
   profileName,
+  profileId,
   kids,
   footerLinks,
   year,
@@ -65,33 +69,36 @@ export function ViewerChrome({
   ];
 
   return (
-    <div className="web-shell" data-kids={kids ? 'true' : undefined}>
-      <TopNav
-        brand={{ name: platformName, href: '/', logoUrl }}
-        links={LINKS}
-        currentPath={pathname}
-        profileName={profileName}
-        menu={menu}
-        overHero={pathname === '/'}
-        kids={kids}
-        onExitKids={() => setExitOpen(true)}
-      />
-      <main id="main" className="web-main" tabIndex={-1}>
-        {children}
-      </main>
-      <SiteFooter platformName={platformName} year={year} links={footerLinks} />
-      <BottomTabBar tabs={TABS} currentPath={pathname} />
-      {kids ? (
-        <KidsExitDialog
-          open={exitOpen}
-          onClose={() => setExitOpen(false)}
-          onUnlocked={() => {
-            setExitOpen(false);
-            router.push('/profiles');
-            router.refresh();
-          }}
+    <ProfileIdProvider id={profileId}>
+      <QueueSync profileId={profileId} />
+      <div className="web-shell" data-kids={kids ? 'true' : undefined}>
+        <TopNav
+          brand={{ name: platformName, href: '/', logoUrl }}
+          links={LINKS}
+          currentPath={pathname}
+          profileName={profileName}
+          menu={menu}
+          overHero={pathname === '/'}
+          kids={kids}
+          onExitKids={() => setExitOpen(true)}
         />
-      ) : null}
-    </div>
+        <main id="main" className="web-main" tabIndex={-1}>
+          {children}
+        </main>
+        <SiteFooter platformName={platformName} year={year} links={footerLinks} />
+        <BottomTabBar tabs={TABS} currentPath={pathname} />
+        {kids ? (
+          <KidsExitDialog
+            open={exitOpen}
+            onClose={() => setExitOpen(false)}
+            onUnlocked={() => {
+              setExitOpen(false);
+              router.push('/profiles');
+              router.refresh();
+            }}
+          />
+        ) : null}
+      </div>
+    </ProfileIdProvider>
   );
 }

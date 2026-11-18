@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { Button, ButtonLink, useToast } from '@ad/ui';
-import { toggleListAction } from '../../app/actions';
+import { useListToggle } from '../../lib/pwa/useListToggle';
 import type { PrimaryAction } from '../../lib/title-cta';
 
 export interface TitleActionsProps {
@@ -11,7 +11,7 @@ export interface TitleActionsProps {
   inList: boolean;
   /** Shown to other apps when the link is shared. Share is hidden when this is missing. */
   shareTitle?: string;
-  toggle?: (itemKey: string, add: boolean) => Promise<void>;
+  toggle?: (itemKey: string, add: boolean) => Promise<void | 'sent' | 'queued'>;
 }
 
 /** Play, Resume or Watch again, Start over, an optimistic My List toggle and Share (M07, M10-S01). */
@@ -20,8 +20,10 @@ export function TitleActions({
   itemKey,
   inList: initial,
   shareTitle,
-  toggle = toggleListAction,
+  toggle: toggleProp,
 }: TitleActionsProps) {
+  const queued = useListToggle();
+  const toggle = toggleProp ?? queued;
   const [inList, setInList] = useState(initial);
   const [manualUrl, setManualUrl] = useState<string | null>(null);
   const toast = useToast();
@@ -30,8 +32,16 @@ export function TitleActions({
     const next = !inList;
     setInList(next);
     try {
-      await toggle(itemKey, next);
-      toast.show({ message: next ? 'Added to My List' : 'Removed from My List', variant: 'success' });
+      const outcome = await toggle(itemKey, next);
+      toast.show({
+        message:
+          outcome === 'queued'
+            ? 'Saved on this device. It will sync when you are back online.'
+            : next
+              ? 'Added to My List'
+              : 'Removed from My List',
+        variant: 'success',
+      });
     } catch {
       setInList(!next);
       toast.show({ message: 'We could not update My List. Try again.', variant: 'error' });

@@ -28,7 +28,10 @@ describe('TitleActions', () => {
       'href',
       '/watch/a',
     );
-    expect(screen.getByRole('link', { name: 'Start over' })).toHaveAttribute('href', '/watch/a?t=0');
+    expect(screen.getByRole('link', { name: 'Start over' })).toHaveAttribute(
+      'href',
+      '/watch/a?t=0',
+    );
   });
 
   it('toggles My List optimistically with aria-pressed and says so', async () => {
@@ -55,7 +58,13 @@ describe('TitleActions', () => {
     const share = vi.fn().mockResolvedValue(undefined);
     Object.assign(navigator, { share });
     wrap(
-      <TitleActions primary={play} itemKey="video:a" inList={false} toggle={vi.fn()} shareTitle="Rivers" />,
+      <TitleActions
+        primary={play}
+        itemKey="video:a"
+        inList={false}
+        toggle={vi.fn()}
+        shareTitle="Rivers"
+      />,
     );
     await userEvent.click(screen.getByRole('button', { name: 'Share' }));
     expect(share).toHaveBeenCalledWith(expect.objectContaining({ title: 'Rivers' }));
@@ -67,7 +76,13 @@ describe('TitleActions', () => {
     const writeText = vi.fn().mockResolvedValue(undefined);
     Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true });
     wrap(
-      <TitleActions primary={play} itemKey="video:a" inList={false} toggle={vi.fn()} shareTitle="Rivers" />,
+      <TitleActions
+        primary={play}
+        itemKey="video:a"
+        inList={false}
+        toggle={vi.fn()}
+        shareTitle="Rivers"
+      />,
     );
     await userEvent.click(screen.getByRole('button', { name: 'Share' }));
     expect(await screen.findByText('Link copied')).toBeInTheDocument();
@@ -76,5 +91,15 @@ describe('TitleActions', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Share' }));
     const box = await screen.findByRole('textbox', { name: 'Link to share' });
     expect((box as HTMLInputElement).value).toContain('http');
+  });
+
+  it('says the change was saved on this device when it was queued offline', async () => {
+    const toggle = vi.fn().mockResolvedValue('queued');
+    wrap(<TitleActions primary={play} itemKey="video:a" inList={false} toggle={toggle} />);
+    await userEvent.click(screen.getByRole('button', { name: /My List/ }));
+    expect(
+      await screen.findByText('Saved on this device. It will sync when you are back online.'),
+    ).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /My List/ })).toHaveAttribute('aria-pressed', 'true');
   });
 });
