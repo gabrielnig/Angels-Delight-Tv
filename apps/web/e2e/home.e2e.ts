@@ -15,7 +15,10 @@ test('Home shows the hero, rows and the main navigation', async ({ page }) => {
 
 test('a card opens its title page', async ({ page }) => {
   await page.goto('/');
-  const card = page.getByRole('link', { name: /min$|minutes?|episodes?/i }).first();
+  const card = page
+    .locator('a[href^="/title/"], a[href^="/series/"]')
+    .filter({ hasText: /min|minutes?|episodes?/i })
+    .first();
   await card.click();
   await expect(page).toHaveURL(/\/(title|series)\//);
   await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
