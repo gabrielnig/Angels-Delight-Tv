@@ -31,6 +31,8 @@ export interface VideoRuntime {
   devStorage?: (request: Request) => Promise<Response>;
   devMedia?: (request: Request, key: string) => Promise<Response>;
   onUnexpected?(error: unknown, request: Request): void;
+  /** A refused playback request (M31-S02 AC2). Receives no token or account id. */
+  onDenied?: Parameters<typeof createPlaybackHandlers>[0]['onDenied'];
 }
 
 const PLAYLIST_FILE = /^(master|\d{3,4})\.m3u8$/;
@@ -60,6 +62,7 @@ export function createVideoApi(rt: VideoRuntime) {
     // happens in development. Production sets TRUSTED_PROXY_MODE=cloudflare.
     clientIp: (request) => clientIp(request.headers, rt.trustedProxyMode) ?? 'untrusted',
     onUnexpected: rt.onUnexpected,
+    ...(rt.onDenied ? { onDenied: rt.onDenied } : {}),
   });
 
   async function staff(
