@@ -94,6 +94,7 @@ export class FixtureCatalog implements CatalogRepository {
     items = items.filter((i) => matchesLength(seconds(i), query.length));
     if (query.sort === 'shortest') items = [...items].sort((a, b) => seconds(a) - seconds(b));
     else if (query.sort === 'longest') items = [...items].sort((a, b) => seconds(b) - seconds(a));
+    else if (query.sort === 'az') items = [...items].sort((a, b) => a.title.localeCompare(b.title));
     return pageOf(items, query.cursor, query.limit ?? 10);
   }
 

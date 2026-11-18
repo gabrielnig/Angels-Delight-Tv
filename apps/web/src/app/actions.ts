@@ -200,7 +200,7 @@ export async function suggestAction(q: string): Promise<Suggestion[]> {
 export async function loadMoreBrowseAction(query: {
   categorySlug?: string;
   length?: 'any' | 'short' | 'medium' | 'long';
-  sort?: 'newest' | 'shortest' | 'longest';
+  sort?: 'newest' | 'shortest' | 'longest' | 'az';
   cursor: string;
 }) {
   const { ctx } = await context();

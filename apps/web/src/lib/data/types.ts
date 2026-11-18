@@ -122,7 +122,7 @@ export interface HomeRowsPage {
   nextCursor: string | null;
 }
 
-export type BrowseSort = 'newest' | 'shortest' | 'longest';
+export type BrowseSort = 'newest' | 'shortest' | 'longest' | 'az';
 export type BrowseLength = 'any' | 'short' | 'medium' | 'long';
 
 export interface BrowseQuery {
