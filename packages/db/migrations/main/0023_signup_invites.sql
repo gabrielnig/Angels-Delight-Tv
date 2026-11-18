@@ -13,7 +13,6 @@ CREATE TABLE "signup_invites" (
 	CONSTRAINT "signup_invites_max_uses_range" CHECK ("signup_invites"."max_uses" BETWEEN 1 AND 1000)
 );
 --> statement-breakpoint
-ALTER TABLE "videos" ADD COLUMN "sprite_key" text;--> statement-breakpoint
 ALTER TABLE "signup_invites" ADD CONSTRAINT "signup_invites_created_by_accounts_id_fk" FOREIGN KEY ("created_by") REFERENCES "public"."accounts"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
 CREATE UNIQUE INDEX "signup_invites_code_hash_uniq" ON "signup_invites" USING btree ("code_hash");--> statement-breakpoint
 -- Same reason as 0006: the 0005 grant loop ran before this table existed. No delete, codes are revoked instead.
