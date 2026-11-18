@@ -830,3 +830,9 @@ Format: decision, options considered, why, reversible or not. Newest first. Deci
 - Options: warn everywhere (hundreds of existing hits, noise gets ignored), error everywhere (blocks every lane), a regex script outside ESLint.
 - Why: an opt in list ratchets: it can only grow, and it never blocks files that are not moved yet. The player files now on the list had about 45 inline strings, all moved to the catalog with text unchanged.
 - Reversible: yes.
+
+## D-159 The 3G budget is measured on the fixture build with Chrome Fast 3G figures and warm static files (lane r1)
+- Decision: `apps/web/e2e/picker-cache-3g.e2e.ts` uses CDP network emulation with Chrome's Fast 3G numbers and asserts the picker tiles are visible within 2000 ms on a repeat visit. It is not part of the CI job list yet.
+- Options: Slow 3G (500 kbit/s, 2 second target not reachable by any page with JavaScript), cold cache on every run (the story says previous visit), Lighthouse only.
+- Why: the story says a 3G connection and the cached list from the previous visit. Fast 3G is the profile Chrome calls 3G, and a repeat visit has warm static files. The fixture server hides server time, so the real stack needs a check at staging.
+- Reversible: yes.
