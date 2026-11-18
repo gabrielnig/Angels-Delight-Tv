@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { notFound, redirect } from 'next/navigation';
+import { notFound, permanentRedirect } from 'next/navigation';
 import { Badge } from '@ad/ui';
 import { AppShell } from '../../../../components/Shell';
 import { PublicSeries } from '../../../../components/title/TitleView';
@@ -42,7 +42,7 @@ export default async function SeriesPage({
   if (!(await getSession())) {
     const preview = await getCatalog().publicPreview(slug, 'series');
     if (!preview) notFound();
-    if (preview.type === 'redirect') redirect(preview.to);
+    if (preview.type === 'redirect') permanentRedirect(preview.to);
     if (preview.type !== 'series') notFound();
     const { item } = preview;
     return (
@@ -61,7 +61,7 @@ export default async function SeriesPage({
   const { ctx } = await requireProfile(`/series/${slug}`);
   const detail = await getCatalog().series(ctx, slug);
   if (!detail) notFound();
-  if ('redirect' in detail) redirect(detail.redirect);
+  if ('redirect' in detail) permanentRedirect(detail.redirect);
   const { series, seasons, next } = detail;
   const nextVideo = seasons.flatMap((s) => s.episodes).find((e) => e.video.id === next.videoId);
   const rows = seasonRows(seasons);

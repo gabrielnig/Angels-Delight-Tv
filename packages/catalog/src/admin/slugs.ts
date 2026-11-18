@@ -4,12 +4,37 @@ import { rowsOf } from '../sql';
 
 const SLUG = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 
+/** Words that are routes or system names, so a title cannot take them over (M04-S02). */
+export const RESERVED_SLUGS: ReadonlySet<string> = new Set([
+  'admin',
+  'api',
+  'watch',
+  'title',
+  'series',
+  'browse',
+  'search',
+  'account',
+  'profiles',
+  'settings',
+  'sign-in',
+  'sign-up',
+  'verify-email',
+  'forgot-password',
+  'reset-password',
+  'my-list',
+  'help',
+  'about',
+  'terms',
+  'privacy',
+]);
+
 export type SlugKind = 'video' | 'series';
 
 /** Why a slug cannot be used, in words an editor can act on, or null when it is fine. */
 export function slugProblem(slug: string): string | null {
   if (slug.length < 3 || slug.length > 120) return 'Use 3 to 120 characters for the address.';
   if (!SLUG.test(slug)) return 'Use lower case letters, numbers and single hyphens only.';
+  if (RESERVED_SLUGS.has(slug)) return 'That address is reserved. Choose another.';
   return null;
 }
 

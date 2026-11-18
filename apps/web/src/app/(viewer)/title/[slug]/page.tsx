@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { notFound, redirect } from 'next/navigation';
+import { notFound, permanentRedirect } from 'next/navigation';
 import { formatDuration } from '@ad/ui';
 import { AppShell } from '../../../../components/Shell';
 import { PublicTitle, TitleBlocked, TitleView } from '../../../../components/title/TitleView';
@@ -34,7 +34,7 @@ export default async function TitlePage({ params }: Params) {
   if (!session) {
     const preview = await getCatalog().publicPreview(slug, 'video');
     if (!preview) notFound();
-    if (preview.type === 'redirect') redirect(preview.to);
+    if (preview.type === 'redirect') permanentRedirect(preview.to);
     if (preview.type !== 'video') notFound();
     const video = preview.item;
     return (
@@ -53,7 +53,7 @@ export default async function TitlePage({ params }: Params) {
   const { ctx } = await requireProfile(`/title/${slug}`);
   const detail = await getCatalog().title(ctx, slug);
   if (!detail) notFound();
-  if ('redirect' in detail) redirect(detail.redirect);
+  if ('redirect' in detail) permanentRedirect(detail.redirect);
   if ('blocked' in detail) {
     return (
       <AppShell>
