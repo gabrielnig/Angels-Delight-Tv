@@ -1,6 +1,19 @@
 import { describe, expect, it, vi } from 'vitest';
-import { createMessages, formatDuration, formatNumber, msg, type CatalogShape } from './messages';
+import {
+  createMessages as createTyped,
+  formatDuration,
+  formatNumber,
+  msg,
+  type CatalogShape,
+} from './messages';
 import { EN_NG } from './en-ng';
+
+// These tests use ad hoc catalogs, so the key type is widened to string.
+const createMessages = (...args: Parameters<typeof createTyped>) =>
+  createTyped(...args) as unknown as (
+    key: string,
+    params?: Record<string, string | number>,
+  ) => string;
 
 describe('createMessages', () => {
   const en: CatalogShape = {
@@ -35,7 +48,7 @@ describe('createMessages', () => {
   it('returns the key and logs when no catalog has it', () => {
     const onMissing = vi.fn();
     const t = createMessages('en-NG', { 'en-NG': en }, onMissing);
-    expect(t('nope' as never)).toBe('nope');
+    expect(t('nope')).toBe('nope');
     expect(onMissing).toHaveBeenCalledWith('nope', 'en-NG');
   });
 
