@@ -49,6 +49,8 @@ export function ViewerChrome({
   const [exitOpen, setExitOpen] = useState(false);
   const [, startTransition] = useTransition();
   useSearchShortcut(router.push);
+  // Title pages have a Back button and their own sticky Play bar instead of the tab bar (S18).
+  const detail = pathname.startsWith('/title/');
 
   const menu: MenuItem[] = [
     { label: 'Switch profile', href: '/profiles?switch=1' },
@@ -81,12 +83,13 @@ export function ViewerChrome({
           overHero={pathname === '/'}
           kids={kids}
           onExitKids={() => setExitOpen(true)}
+          onBack={detail ? () => router.back() : undefined}
         />
         <main id="main" className="web-main" tabIndex={-1}>
           {children}
         </main>
         <SiteFooter platformName={platformName} year={year} links={footerLinks} />
-        <BottomTabBar tabs={TABS} currentPath={pathname} />
+        {detail ? null : <BottomTabBar tabs={TABS} currentPath={pathname} />}
         {kids ? (
           <KidsExitDialog
             open={exitOpen}

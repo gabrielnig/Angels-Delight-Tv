@@ -33,6 +33,7 @@ export function TopNav({
   kids = false,
   onExitKids,
   switchHref = '/profiles?switch=1',
+  onBack,
 }: {
   brand: { name: string; href: string; logoUrl?: string };
   links: NavLink[];
@@ -44,6 +45,8 @@ export function TopNav({
   kids?: boolean;
   onExitKids?: () => void;
   switchHref?: string;
+  /** Shows a Back button before the brand on phones, for detail pages. */
+  onBack?: () => void;
 }) {
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
@@ -108,8 +111,17 @@ export function TopNav({
       <a className="ad-skip" href="#main">
         Skip to main content
       </a>
-      <header className="ad-nav" data-surface={solid ? 'solid' : 'clear'}>
+      <header
+        className="ad-nav"
+        data-surface={solid ? 'solid' : 'clear'}
+        data-back={onBack ? 'true' : undefined}
+      >
         <div className="ad-nav__inner">
+          {onBack ? (
+            <button type="button" className="ad-nav__back" aria-label="Back" onClick={onBack}>
+              <Icon name="back" size={24} />
+            </button>
+          ) : null}
           <Link href={brand.href} className="ad-nav__brand" aria-label={`${brand.name}, home`}>
             {brand.logoUrl ? (
               <img src={brand.logoUrl} alt="" height={32} />
