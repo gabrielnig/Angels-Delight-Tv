@@ -115,4 +115,13 @@ describe('SmtpTransport', () => {
     expect(mail?.text).toContain('1 Dec 2026');
     expect(mail?.text).toContain('/account/deletion');
   });
+
+  it('sends the export link for 24 hours and the failure notice', async () => {
+    const transport = new MemoryTransport();
+    const mailer = new Mailer(transport, settings);
+    await mailer.sendExportReady({ to: 'a@example.com', token: 'abc.def', hours: 24 });
+    expect(transport.outbox[0]?.text).toContain('/api/account/export?token=abc.def');
+    await mailer.sendExportFailed({ to: 'a@example.com' });
+    expect(transport.outbox[1]?.subject).toMatch(/could not build your export/i);
+  });
 });

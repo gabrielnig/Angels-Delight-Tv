@@ -348,7 +348,13 @@ export interface AccountRepository {
     | { ok: false; reason: 'wrong_current' | 'weak' | 'network' }
   >;
   exportState(accountId: string): Promise<ExportState>;
-  requestExport(accountId: string): Promise<ExportState>;
+  requestExport(
+    accountId: string,
+    input: { password: string },
+  ): Promise<
+    | { ok: true; already: boolean; state: ExportState }
+    | { ok: false; reason: 'wrong_password' | 'network' }
+  >;
   deleteAccount(
     accountId: string,
     input: { password: string; confirm: string },

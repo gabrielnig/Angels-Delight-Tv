@@ -7,7 +7,9 @@ const file = {
   profiles: [],
 };
 
-function setup(over: { account?: string | null; tokenAccount?: string | null } = {}) {
+function setup(
+  over: { account?: string | null; tokenAccount?: string | null; active?: boolean } = {},
+) {
   const account = over.account === undefined ? 'a1' : over.account;
   const data = {
     verifyExportToken: vi.fn(() => (over.tokenAccount === undefined ? 'a1' : over.tokenAccount)),
@@ -16,6 +18,7 @@ function setup(over: { account?: string | null; tokenAccount?: string | null } =
   const handler = createExportHandler({
     sessionAccountId: async () => account,
     accountInfo: async () => ({ email: 'a@b.c', memberSince: 'x' }),
+    hasActiveExport: async () => over.active ?? true,
     data,
   });
   return { handler, data };
@@ -35,9 +38,19 @@ describe('account export download', () => {
     expect(JSON.parse(await res.text())).toEqual(file);
   });
 
-  it('needs a signed in session', async () => {
+  it('sends a signed out visitor of the emailed link to sign in and back', async () => {
     const { handler, data } = setup({ account: null });
-    expect((await handler(req())).status).toBe(401);
+    const res = await handler(req());
+    expect(res.status).toBe(302);
+    expect(res.headers.get('location')).toBe(
+      '/sign-in?next=' + encodeURIComponent('/api/account/export?token=abc'),
+    );
+    expect(data.buildExport).not.toHaveBeenCalled();
+  });
+
+  it('answers 404 when the export has expired or was never made', async () => {
+    const { handler, data } = setup({ active: false });
+    expect((await handler(req())).status).toBe(404);
     expect(data.buildExport).not.toHaveBeenCalled();
   });
 

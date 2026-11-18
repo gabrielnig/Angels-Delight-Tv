@@ -371,6 +371,9 @@ describe.skipIf(!integrationEnabled())('account overview, email change and delet
       const m = await registerMember(h, auth);
       const { actor } = await signInActor(h, auth, m);
       await withProfiles(m);
+      await h.dbs.admin.db
+        .insert(schema.dataExports)
+        .values({ accountId: m.id, requestedAt: h.deps.clock!() });
       const sealedEmail = (
         await h.dbs.admin.db.select().from(schema.accounts).where(eq(schema.accounts.id, m.id))
       )[0]!.emailEnc!;
@@ -405,6 +408,7 @@ describe.skipIf(!integrationEnabled())('account overview, email change and delet
         schema.consents,
         schema.mfaFactors,
         schema.mfaRecoveryCodes,
+        schema.dataExports,
       ]) {
         expect(
           await h.dbs.admin.db.select().from(table).where(eq(table.accountId, m.id)),

@@ -2,7 +2,7 @@ import { createRealAccount, createRealAuth } from '../../server/auth/real-data';
 import { realAuthEnabled } from '../../server/auth/mode';
 import { realDataEnabled } from '../../server/data/mode';
 import {
-  accountViewerData,
+  accountViewerSource,
   createRealCatalog,
   createRealLibrary,
   createRealProfiles,
@@ -49,7 +49,7 @@ function data(): Registry {
     profiles: real ? createRealProfiles() : new FixtureProfiles(),
     auth: realAuthEnabled() ? createRealAuth() : new FixtureAuth(),
     account: realAuthEnabled()
-      ? createRealAccount(real ? accountViewerData() : undefined)
+      ? createRealAccount(real ? accountViewerSource() : undefined)
       : new FixtureAccount(),
     site: new FixtureSite(),
   });

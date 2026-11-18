@@ -1,6 +1,6 @@
 import { createExportHandler } from '../../../../server/data/export-route';
 import { realDataEnabled } from '../../../../server/data/mode';
-import { accountViewerData } from '../../../../server/data/real-data';
+import { accountViewerData, exportJobs } from '../../../../server/data/real-data';
 import { authRuntime } from '../../../../server/auth/runtime';
 import { getSession } from '../../../../server/auth/session';
 import { withRequest } from '../../../../lib/observability/with-request';
@@ -26,6 +26,7 @@ export async function GET(request: Request): Promise<Response> {
       });
       return { email: info.email, memberSince: info.memberSince.toISOString() };
     },
+    hasActiveExport: (accountId) => exportJobs().hasActive(accountId),
     data: accountViewerData(),
   });
   return withRequest((req) => handler(req), {

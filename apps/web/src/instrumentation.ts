@@ -12,4 +12,14 @@ export async function register(): Promise<void> {
     intervalMs: 15 * 60_000,
     logger,
   });
+  // Export jobs (M02-S05): the request kicks one at once, this tick retries and picks up anything left over.
+  const { realDataEnabled } = await import('./server/data/mode');
+  if (realDataEnabled()) {
+    const { exportJobs } = await import('./server/data/real-data');
+    startShredRetry({
+      run: () => exportJobs().runPending(),
+      intervalMs: 2 * 60_000,
+      logger: createLogger({ bindings: { component: 'export-jobs' } }),
+    });
+  }
 }

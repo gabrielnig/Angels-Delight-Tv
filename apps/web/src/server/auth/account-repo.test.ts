@@ -196,8 +196,13 @@ describe('RealAccountRepository with viewer data', () => {
       quality: '720',
       ...patch,
     })),
-    buildExport: vi.fn(async () => ({ profiles: [], exportedAt: 'x', account: {} })),
-    signExportToken: vi.fn(() => 'tok.1.mac'),
+    exports: {
+      request: vi.fn(async (_a: string, password: string) => ({
+        status: password === 'pw' ? ('started' as const) : ('wrong_password' as const),
+      })),
+      state: vi.fn(async () => ({ status: 'pending' as const })),
+      kick: vi.fn(),
+    },
   });
 
   it('fills the overview numbers from the viewer data', async () => {
@@ -219,17 +224,30 @@ describe('RealAccountRepository with viewer data', () => {
     expect(v.savePlayback).toHaveBeenCalledWith('a1', 'p1', { dataSaver: true });
   });
 
-  it('starts an export as a short lived download link', async () => {
-    const { repo } = setup(service, {}, viewer());
-    expect(await repo.exportState('a1')).toEqual({ status: 'none' });
-    const state = await repo.requestExport('a1');
-    expect(state).toMatchObject({
-      status: 'ready',
-      fileName: 'angels-delight-data.json',
-      downloadHref: '/api/account/export?token=tok.1.mac',
-      expiresLabel: 'in 10 minutes',
+  it('starts the export job with the password and kicks the background run', async () => {
+    const v = viewer();
+    const { repo } = setup(service, {}, v);
+    expect(await repo.requestExport('a1', { password: 'pw' })).toEqual({
+      ok: true,
+      already: false,
+      state: { status: 'pending' },
     });
-    expect(state.sizeLabel).toMatch(/KB|bytes/);
+    expect(v.exports.kick).toHaveBeenCalled();
+  });
+
+  it('refuses a wrong password and does not start the job', async () => {
+    const v = viewer();
+    const { repo } = setup(service, {}, v);
+    expect(await repo.requestExport('a1', { password: 'nope' })).toEqual({
+      ok: false,
+      reason: 'wrong_password',
+    });
+    expect(v.exports.kick).not.toHaveBeenCalled();
+  });
+
+  it('reads the export state from the job table', async () => {
+    const { repo } = setup(service, {}, viewer());
+    expect(await repo.exportState('a1')).toEqual({ status: 'pending' });
   });
 
   it('reports the grace period instead of an immediate deletion', async () => {
