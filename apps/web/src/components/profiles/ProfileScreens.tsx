@@ -9,6 +9,7 @@ import {
   updateProfileAction,
 } from '../../app/actions';
 import type { Profile } from '../../lib/data';
+import { clearServiceWorkerCaches } from '../../lib/pwa/purge';
 import { ProfileForm } from './ProfileForm';
 import { ProfilePicker } from './ProfilePicker';
 
@@ -30,13 +31,20 @@ export function PickerScreen({
       max={max}
       mode={mode}
       autoSkip={autoSkip}
+      onExitManage={() => router.push('/profiles')}
       onSelect={async (id) => {
         await selectProfileAction(id);
+        // A failed purge forces a full reload so nothing of the last profile is shown (M03-S14).
+        if (!clearServiceWorkerCaches(navigator)) {
+          window.location.assign('/');
+          return;
+        }
         router.push('/');
         router.refresh();
       }}
       onSignOut={async () => {
         await signOutAction();
+        clearServiceWorkerCaches(navigator);
         router.push('/');
         router.refresh();
       }}
@@ -48,7 +56,9 @@ export function EditScreen({
   profile,
   limitReached,
   lastAdult,
+  suggestedName,
 }: {
+  suggestedName?: string;
   profile?: Profile;
   limitReached: boolean;
   lastAdult: boolean;
@@ -61,6 +71,7 @@ export function EditScreen({
   return (
     <ProfileForm
       profile={profile}
+      suggestedName={suggestedName}
       limitReached={limitReached}
       lastAdult={lastAdult}
       onDone={done}

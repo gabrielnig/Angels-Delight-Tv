@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useState, type FormEvent } from 'react';
+import { useEffect, useRef, useState, type FormEvent } from 'react';
 import {
   Avatar,
   Banner,
@@ -40,8 +40,11 @@ export function ProfileForm({
   onDelete,
   onDone,
   cancelHref = '/profiles/manage',
+  suggestedName,
 }: {
   profile?: Profile;
+  /** Pre-fills the name of a first profile, from the email prefix. */
+  suggestedName?: string;
   limitReached?: boolean;
   /** True when this is the only adult profile, so it cannot be deleted. */
   lastAdult?: boolean;
@@ -53,7 +56,7 @@ export function ProfileForm({
   const editing = Boolean(profile);
   const formRef = useRef<HTMLFormElement>(null);
   const requestFocus = useFocusFirstInvalid(formRef);
-  const [name, setName] = useState(profile?.name ?? '');
+  const [name, setName] = useState(profile?.name ?? suggestedName ?? '');
   const [tone, setTone] = useState<AvatarTone>((profile?.tone as AvatarTone | undefined) ?? 'sky');
   const [kids, setKids] = useState(profile?.kids ?? false);
   const [language, setLanguage] = useState(profile?.language ?? 'en');
@@ -67,6 +70,20 @@ export function ProfileForm({
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | undefined>();
+
+  const [discardOpen, setDiscardOpen] = useState(false);
+  const dirty =
+    name !== (profile?.name ?? suggestedName ?? '') ||
+    tone !== ((profile?.tone as AvatarTone | undefined) ?? 'sky') ||
+    kids !== (profile?.kids ?? false) ||
+    (editing && (language !== (profile?.language ?? 'en') || autoplay !== (profile?.autoplayNext ?? true)));
+
+  useEffect(() => {
+    if (!dirty) return;
+    const warn = (event: BeforeUnloadEvent) => event.preventDefault();
+    window.addEventListener('beforeunload', warn);
+    return () => window.removeEventListener('beforeunload', warn);
+  }, [dirty]);
 
   const needsPassword = Boolean(profile?.kids) && !kids;
   const nameProblem = !name.trim() ? 'Type a name for this profile.' : undefined;
@@ -242,10 +259,32 @@ export function ProfileForm({
         <Button type="submit" size="lg" loading={busy} disabled={limitReached && !editing}>
           {editing ? 'Save changes' : 'Create profile'}
         </Button>
-        <ButtonLink href={cancelHref} variant="secondary" size="lg">
+        <ButtonLink
+          href={cancelHref}
+          variant="secondary"
+          size="lg"
+          onClick={(event) => {
+            if (!dirty) return;
+            event.preventDefault();
+            setDiscardOpen(true);
+          }}
+        >
           Cancel
         </ButtonLink>
       </div>
+
+      <ConfirmDialog
+        open={discardOpen}
+        title="Discard your changes?"
+        description="You have changes that are not saved."
+        confirmLabel="Discard changes"
+        cancelLabel="Keep editing"
+        onConfirm={() => {
+          setDiscardOpen(false);
+          onDone();
+        }}
+        onClose={() => setDiscardOpen(false)}
+      />
 
       {editing && onDelete ? (
         <div className="web-danger">

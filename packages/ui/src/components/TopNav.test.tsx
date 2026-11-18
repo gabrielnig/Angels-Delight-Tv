@@ -122,7 +122,13 @@ describe('TopNav', () => {
       />,
     );
     expect(screen.queryByRole('navigation', { name: 'Main' })).toBeNull();
-    await userEvent.setup().click(screen.getByRole('button', { name: 'Exit kids mode' }));
+    const user = userEvent.setup();
+    await user.click(screen.getByRole('button', { name: /Profile menu, Tobi/ }));
+    expect(screen.getAllByRole('menuitem').map((item) => item.textContent)).toEqual([
+      'Switch profile',
+      'Exit kids mode',
+    ]);
+    await user.click(screen.getByRole('menuitem', { name: 'Exit kids mode' }));
     expect(onExit).toHaveBeenCalled();
   });
 

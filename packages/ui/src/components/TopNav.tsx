@@ -33,6 +33,7 @@ export function TopNav({
   overHero = false,
   kids = false,
   onExitKids,
+  switchHref = '/profiles?switch=1',
 }: {
   brand: { name: string; href: string; logoUrl?: string };
   links: NavLink[];
@@ -43,6 +44,7 @@ export function TopNav({
   overHero?: boolean;
   kids?: boolean;
   onExitKids?: () => void;
+  switchHref?: string;
 }) {
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
@@ -93,6 +95,13 @@ export function TopNav({
     items[next]?.focus();
   }
 
+  // A Kids profile keeps only Switch profile and Exit kids mode (M35-S02).
+  const items: MenuItem[] = kids
+    ? [
+        { label: 'Switch profile', href: switchHref },
+        { label: 'Exit kids mode', onSelect: onExitKids },
+      ]
+    : menu;
   const solid = !overHero || scrolled;
 
   return (
@@ -135,64 +144,58 @@ export function TopNav({
             <Link href={searchHref} className="ad-iconbtn" aria-label="Search" data-variant="plain">
               <Icon name="search" size={24} />
             </Link>
-            {kids ? (
-              <Button variant="secondary" size="sm" icon="lock" onClick={onExitKids}>
-                Exit kids mode
-              </Button>
-            ) : (
-              <div className="ad-nav__account">
-                <button
-                  ref={triggerRef}
-                  type="button"
-                  className="ad-nav__avatar"
-                  aria-label={`Profile menu, ${profileName}`}
-                  aria-haspopup="menu"
-                  aria-expanded={open}
-                  onClick={() => setOpen((value) => !value)}
+            <div className="ad-nav__account">
+              <button
+                ref={triggerRef}
+                type="button"
+                className="ad-nav__avatar"
+                aria-label={`Profile menu, ${profileName}`}
+                aria-haspopup="menu"
+                aria-expanded={open}
+                onClick={() => setOpen((value) => !value)}
+              >
+                <Avatar name={profileName} size={32} />
+              </button>
+              {open ? (
+                <div
+                  ref={menuRef}
+                  className="ad-menu"
+                  role="menu"
+                  aria-label="Profile menu"
+                  onKeyDown={onMenuKeyDown}
                 >
-                  <Avatar name={profileName} size={32} />
-                </button>
-                {open ? (
-                  <div
-                    ref={menuRef}
-                    className="ad-menu"
-                    role="menu"
-                    aria-label="Profile menu"
-                    onKeyDown={onMenuKeyDown}
-                  >
-                    <p className="ad-menu__head" aria-hidden="true">
-                      {profileName}
-                    </p>
-                    {menu.map((item) =>
-                      item.href ? (
-                        <Link
-                          key={item.label}
-                          href={item.href}
-                          role="menuitem"
-                          className="ad-menu__item"
-                          onClick={() => setOpen(false)}
-                        >
-                          {item.label}
-                        </Link>
-                      ) : (
-                        <button
-                          key={item.label}
-                          type="button"
-                          role="menuitem"
-                          className="ad-menu__item"
-                          onClick={() => {
-                            setOpen(false);
-                            item.onSelect?.();
-                          }}
-                        >
-                          {item.label}
-                        </button>
-                      ),
-                    )}
-                  </div>
-                ) : null}
-              </div>
-            )}
+                  <p className="ad-menu__head" aria-hidden="true">
+                    {profileName}
+                  </p>
+                  {items.map((item) =>
+                    item.href ? (
+                      <Link
+                        key={item.label}
+                        href={item.href}
+                        role="menuitem"
+                        className="ad-menu__item"
+                        onClick={() => setOpen(false)}
+                      >
+                        {item.label}
+                      </Link>
+                    ) : (
+                      <button
+                        key={item.label}
+                        type="button"
+                        role="menuitem"
+                        className="ad-menu__item"
+                        onClick={() => {
+                          setOpen(false);
+                          item.onSelect?.();
+                        }}
+                      >
+                        {item.label}
+                      </button>
+                    ),
+                  )}
+                </div>
+              ) : null}
+            </div>
           </div>
         </div>
       </header>

@@ -4,6 +4,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useState, useTransition, type ReactNode } from 'react';
 import { BottomTabBar, SiteFooter, TopNav, type MenuItem } from '@ad/ui';
 import { signOutAction } from '../app/actions';
+import { clearServiceWorkerCaches } from '../lib/pwa/purge';
 import { KidsExitDialog } from './KidsExitDialog';
 
 export interface ChromeProps {
@@ -54,6 +55,7 @@ export function ViewerChrome({
       onSelect: () =>
         startTransition(async () => {
           await signOutAction();
+          clearServiceWorkerCaches(navigator);
           router.push('/');
           router.refresh();
         }),
