@@ -277,6 +277,7 @@ describe.skipIf(!integrationEnabled())('real admin services over the catalog', (
           status: 'processing',
           url: null,
           score: null,
+          previewRatio: 16 / 9,
         },
       ]);
       await expect(realVideoService.uploadPoster(viewer, video.id, bytes)).rejects.toThrow();
