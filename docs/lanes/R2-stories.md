@@ -14,8 +14,14 @@ Stories: M08-S27, M06-S09 (Must), M36-S02 (viewer side), M36-S03. Decisions D-15
 - `pnpm vitest run apps/web/src/lib/admin/poster-rules.test.ts apps/web/src/components/admin/PosterPicker.test.tsx`
 - With `TEST_DATABASE_ADMIN_URL` set: `packages/video/src/image/service.int.test.ts`, `packages/catalog/src/admin/videos.int.test.ts`, `apps/web/src/lib/data/admin/real/catalog.int.test.ts -t recuts`.
 
+## Part 2 (gaps closed, D-160 and D-161)
+- Hero art: `setAdminPoster` also recuts `videos.hero_asset_id` from the hero's own source (purpose `hero`); `ImageService.adoptRecut` switches the right column by purpose.
+- Real source shape: `processImage` returns `full` (a 480 wide webp of the whole picture) for non 16:9 sources; the service stores it in `assets.variants` with `full: true`; `artworkFromRow` drops it for viewers; `listPosterAssets` shows it and reports `previewRatio`; `cropPreviewStyle(focus, zoom, frameRatio, sourceRatio)` and the picker use it. A fresh client upload uses the local file's own shape.
+- Failure: `ImageService.failRecut`, worker `onFailed` for `image.process`, `StaffNotifier.posterRecutFailed` (bell notice, kind `encode_failed`), `AdminVideo.posterRecut` (`processing` or `failed`) and a banner in `PosterPicker`.
+- Two failing tests in `catalog.int.test.ts` fixed at the root: the list cursor became keyset based (an opaque string, not the offset `'1'`), and `PosterAssetDto` gained `score`; the tests were stale, the code was right.
+- Extra scoped tests: `packages/video/src/image/process.test.ts`, `packages/catalog/src/artwork.test.ts`, `packages/catalog/src/admin/posters.int.test.ts`, `apps/worker/src/handlers.test.ts`, `apps/worker/src/notifier.int.test.ts`.
+
 ## Gaps
-- Hero art (`hero_asset_id`) is not recut; only posters.
-- The preview assumes a 16:9 source. Uploads of another shape are centre cut to 16:9 for the picker thumbnail, so the preview for them is approximate.
-- `catalog.int.test.ts` has two failures that exist on main (video list paging, custom poster key list); not touched.
-- A recut that fails leaves the video on the uncut poster; there is no admin notice yet.
+- Series hero art is not recut, because series have no saved focus.
+- Pictures processed before part 2 have no full preview, so their crop preview for a non 16:9 source is still an approximation. Uploading the picture again fixes it.
+- The poster page does not refresh by itself while a recut is being made; reload to see the state change.
