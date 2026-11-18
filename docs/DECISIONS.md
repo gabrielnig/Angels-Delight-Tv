@@ -483,3 +483,9 @@ Format: decision, options considered, why, reversible or not. Newest first. Deci
 - Options: a signed cancel link in the mail, or a worker job.
 - Why: sign in already proves ownership, so no second token type is needed. The web process already holds the shred connection and runs the retry job, and the worker role has no identity grants.
 - Reversible: yes. Pending accounts do not show in the admin users list.
+
+## D-093 Image variants: webp plus jpeg, one ladder per purpose, frames go through image.process (lane M3)
+- Decision: `image.process` (sharp, in `@ad/video`) crops to 16:9 and writes webp and jpeg at 320 to 1280 px for posters, 640 to 1920 px for hero art and 160 to 480 px for thumbnails, never upscaling, into `img/{assetId}/{width}-{hash}.{ext}`. Each variant in `assets.variants` gains an optional `format`. Rows without it are webp. Viewer cards use a `picture` with a webp source and a jpeg image. Video frames from `video.thumbnails` are stored as sources and sized by `image.process`. Custom posters are checked on the server (JPG or PNG by bytes, 5 MB, at least 1280 by 720) and stored under `uploads/{videoId}/{assetId}`. With no variants a generated gradient poster with the title is shown.
+- Options: webp only, avif as well, process in the web process.
+- Why: jpeg costs little and covers old Android browsers common in the audience, avif encodes too slowly on the worker, and a queue job keeps uploads fast.
+- Reversible: yes. Dropping jpeg is one line in the processor.
