@@ -167,3 +167,20 @@ describe('durationBucketOf', () => {
     expect(durationBucketOf('long')).toBe('long');
   });
 });
+
+describe('toThumb placeholders', () => {
+  it('carries the stored blur and colour so cards can draw them while the image loads', () => {
+    const thumb = toThumb({ ...poster, placeholderBlur: 'data:image/webp;base64,AAAA' })!;
+    expect(thumb.placeholderBlur).toBe('data:image/webp;base64,AAAA');
+    expect(thumb.placeholderColor).toBe('#abc');
+  });
+  it('omits the blur when the row has none, leaving the colour as the fallback', () => {
+    const thumb = toThumb({ ...poster, placeholderBlur: null })!;
+    expect(thumb.placeholderBlur).toBeUndefined();
+    expect(thumb.placeholderColor).toBe('#abc');
+  });
+  it('ignores a placeholder colour that is not six or three digit hex', () => {
+    const thumb = toThumb({ ...poster, placeholderColor: 'red;background:url(x)' })!;
+    expect(thumb.placeholderColor).toBeUndefined();
+  });
+});

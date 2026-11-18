@@ -245,3 +245,41 @@ describe('VideoCard hover overlay', () => {
     ).toBeInTheDocument();
   });
 });
+
+describe('card artwork placeholder and fade in (M36-S02, M08-S27)', () => {
+  const blur = 'data:image/webp;base64,UklGRhoAAABXRUJQVlA4';
+  const withBlur = { ...base.thumbnail, placeholderBlur: blur, placeholderColor: '#3366cc' };
+
+  it('draws the stored blur behind the image and keeps the image hidden until it loads', () => {
+    const { container } = render(<VideoCard {...base} thumbnail={withBlur} />);
+    const layer = container.querySelector<HTMLElement>('.ad-card__blur');
+    expect(layer).not.toBeNull();
+    expect(layer!.style.backgroundImage).toContain(blur);
+    const img = container.querySelector('img')!;
+    expect(img.getAttribute('data-loaded')).toBe('false');
+    fireEvent.load(img);
+    expect(img.getAttribute('data-loaded')).toBe('true');
+  });
+
+  it('falls back to the placeholder colour when there is no blur', () => {
+    const { container } = render(
+      <VideoCard {...base} thumbnail={{ ...base.thumbnail, placeholderColor: '#3366cc' }} />,
+    );
+    expect(container.querySelector('.ad-card__blur')).toBeNull();
+    const thumb = container.querySelector<HTMLElement>('.ad-card__thumb')!;
+    expect(thumb.style.backgroundColor).not.toBe('');
+  });
+
+  it('leaves the image visible when there is no placeholder at all', () => {
+    const { container } = render(<VideoCard {...base} />);
+    expect(container.querySelector('.ad-card__blur')).toBeNull();
+    expect(container.querySelector('img')!.hasAttribute('data-loaded')).toBe(false);
+  });
+
+  it('swaps to the fallback tile when the image fails', () => {
+    const { container } = render(<VideoCard {...base} thumbnail={withBlur} />);
+    fireEvent.error(container.querySelector('img')!);
+    expect(container.querySelector('img')).toBeNull();
+    expect(container.querySelector('.ad-card__fallback')).not.toBeNull();
+  });
+});

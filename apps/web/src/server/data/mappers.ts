@@ -1,3 +1,4 @@
+import { safePlaceholderBlur, safePlaceholderColor } from '@ad/ui';
 import type { ArtworkDto, DurationBucket } from '@ad/catalog';
 import { AVATAR_IDS, type ProfileDto, type TitleCardDto } from '@ad/viewer';
 import type { BrowseLength, CatalogItem, Profile, Thumb } from '../../lib/data/types';
@@ -18,6 +19,10 @@ export function toThumb(poster: ArtworkDto | null): Thumb | undefined {
     list.find((v) => v.width >= PREFERRED_WIDTH) ?? list[list.length - 1]!;
   const set = (list: ArtworkDto['variants']) => list.map((v) => `${v.url} ${v.width}w`).join(', ');
   const thumb: Thumb = { src: pick(main).url, srcSet: set(main) };
+  const blur = safePlaceholderBlur(poster?.placeholderBlur);
+  const color = safePlaceholderColor(poster?.placeholderColor);
+  if (blur) thumb.placeholderBlur = blur;
+  if (color) thumb.placeholderColor = color;
   if (webp.length > 0 && jpeg.length > 0) {
     thumb.fallbackSrc = pick(jpeg).url;
     thumb.fallbackSrcSet = set(jpeg);

@@ -13,6 +13,26 @@
   object-fit: cover;
 }
 
+/* Blur placeholder under the image, and the fade in once the image has loaded (M08-S27, M36-S02). */
+.ad-poster__blur {
+  position: absolute;
+  inset: 0;
+  background-position: center;
+  background-size: cover;
+  filter: blur(var(--space-3));
+  transform: scale(1.15);
+}
+
+.ad-poster__img[data-loaded] {
+  position: relative;
+  opacity: 0;
+  transition: opacity var(--motion-base) var(--ease-standard);
+}
+
+.ad-poster__img[data-loaded='true'] {
+  opacity: 1;
+}
+
 .ad-poster--empty {
   background: var(--color-tile-sky);
 }

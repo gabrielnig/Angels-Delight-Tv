@@ -12,6 +12,10 @@ export interface Thumb {
   /** jpeg copy for browsers that cannot read webp. */
   fallbackSrc?: string;
   fallbackSrcSet?: string;
+  /** Tiny webp data url drawn blurred while the image loads (M36-S02). */
+  placeholderBlur?: string;
+  /** Hex colour drawn while the image loads when there is no blur. */
+  placeholderColor?: string;
 }
 
 export interface Profile {
