@@ -2,7 +2,7 @@ import type { AuthGateway } from '../types';
 
 /**
  * Fixture auth rules, for demos and tests only. The real gateway comes from lane B.
- *  - password "wrong-password" is refused, "lock-me-out" reports a lockout, "offline-please" a network error
+ *  - password "wrong-password" is refused, "unavailable-please" reports sign in unavailable, "lock-me-out" reports a lockout, "offline-please" a network error
  *  - verification code 000000 is wrong, 111111 expired, anything else is accepted
  */
 export class FixtureAuth implements AuthGateway {
@@ -12,11 +12,14 @@ export class FixtureAuth implements AuthGateway {
     if (!email.includes('@')) return { ok: false as const, reason: 'invalid' as const };
     if (password === 'lock-me-out') return { ok: false as const, reason: 'locked' as const, minutes: 12 };
     if (password === 'offline-please') return { ok: false as const, reason: 'network' as const };
+    if (password === 'unavailable-please') return { ok: false as const, reason: 'unavailable' as const };
     if (password === 'wrong-password') return { ok: false as const, reason: 'invalid' as const };
     return { ok: true as const, next: safeNext(next) };
   }
 
   async signUp({ email, password }: { email: string; password: string }) {
+    if (password === 'offline-please') return { ok: false as const, reason: 'network' as const };
+    if (password === 'rate-limit-please') return { ok: false as const, reason: 'rate_limited' as const };
     if (!email.includes('@')) return { ok: false as const, reason: 'invalid_email' as const };
     if (password.length < 10) return { ok: false as const, reason: 'weak_password' as const };
     return { ok: true as const, next: '/verify-email' };
