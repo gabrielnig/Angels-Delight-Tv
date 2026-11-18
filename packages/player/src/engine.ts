@@ -51,6 +51,8 @@ export interface PlayerEngine {
   setQuality(selection: QualitySelection, cap: number | null): void;
   /** Step down one rendition. Returns false when already on the lowest. */
   dropQuality(): boolean;
+  /** Start time of the segment containing `time`, when the engine knows its playlist. */
+  segmentStart?(time: number): number | null;
   setToken(token: string | null): void;
   on(listener: (event: EngineEvent) => void): () => void;
   destroy(): void;
