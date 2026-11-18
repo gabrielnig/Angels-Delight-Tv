@@ -130,4 +130,48 @@ describe('CardGrid', () => {
     resolve({ items: [video(2)], total: 2, nextCursor: null });
     await waitFor(() => expect(screen.getAllByRole('listitem')).toHaveLength(2));
   });
+
+  it('labels each card Video or Series when asked', () => {
+    const series: CatalogItem = {
+      kind: 'series',
+      slug: 'farming',
+      title: 'Farming basics',
+      description: 'd',
+      episodeCount: 4,
+      seasonCount: 1,
+      categorySlug: 'c',
+      categoryName: 'C',
+      kidsSafe: true,
+      hasCaptions: false,
+      publishedAt: '',
+    } as never;
+    wrap(
+      <CardGrid
+        initialItems={[video(1), series]}
+        total={2}
+        nextCursor={null}
+        inList={[]}
+        loadMore={vi.fn()}
+        countLabel="results"
+        showType
+      />,
+    );
+    const items = screen.getAllByRole('listitem');
+    expect(items[0]).toHaveTextContent('Video');
+    expect(items[1]).toHaveTextContent('Series');
+  });
+
+  it('shows no type label by default', () => {
+    wrap(
+      <CardGrid
+        initialItems={[video(1)]}
+        total={1}
+        nextCursor={null}
+        inList={[]}
+        loadMore={vi.fn()}
+        countLabel="videos"
+      />,
+    );
+    expect(screen.getAllByRole('listitem')[0]).not.toHaveTextContent(/^Video$/);
+  });
 });
