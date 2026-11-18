@@ -1,6 +1,5 @@
 import { defaultSettings } from '@ad/theme/settings';
 import { describe, expect, it } from 'vitest';
-import { FixtureSite } from '../../lib/data/fixtures/site';
 import { RealSite } from './real-site';
 
 const settings = (overrides: Record<string, unknown> = {}) => ({
@@ -17,7 +16,6 @@ describe('RealSite content', () => {
         'platform.support_email': 'help@sisterv.test',
         'features.signups_open': false,
       }),
-      new FixtureSite(),
     );
     expect(await site.content()).toMatchObject({
       platformName: 'Sister V TV',
@@ -28,7 +26,7 @@ describe('RealSite content', () => {
   });
 
   it('keeps sign up open and the name default when nothing is stored', async () => {
-    const content = await new RealSite(settings(), new FixtureSite()).content();
+    const content = await new RealSite(settings()).content();
     expect(content.signUpOpen).toBe(true);
     expect(content.platformName).toBe('Angels Delight TV');
   });
@@ -42,7 +40,7 @@ describe('RealSite content', () => {
       endsAt,
     });
     const content = (overrides: Record<string, unknown>) =>
-      new RealSite(settings(overrides), new FixtureSite(), () => now).content();
+      new RealSite(settings(overrides), () => now).content();
     expect((await content({ 'maintenance.mode': true })).maintenance.active).toBe(true);
     expect(
       (
@@ -61,49 +59,77 @@ describe('RealSite content', () => {
     ).toBeUndefined();
   });
 
-  it('serves the draft fallback until the admin publishes a page', async () => {
-    const site = new RealSite(
-      { ...settings(), getPublishedPage: async () => null },
-      new FixtureSite(),
-    );
+  it('marks the placeholder as a draft until the admin publishes a page, with no fixture text', async () => {
+    const site = new RealSite({ ...settings(), getPublishedPage: async () => null });
+    for (const slug of ['terms', 'privacy', 'about', 'help']) {
+      const page = await site.legal(slug);
+      expect(page?.slug).toBe(slug);
+      expect(page?.draft).toBe(true);
+      expect(page?.html).toContain('before launch');
+      expect(JSON.stringify(page)).not.toContain('Be kind and do not share your password');
+    }
+  });
+
+  it('serves the seeded placeholder version from the database as a draft', async () => {
+    const site = new RealSite({
+      ...settings(),
+      getPublishedPage: async (slug: string) => ({
+        slug,
+        title: 'Terms of use',
+        html: '<p>[Add your terms of use here before launch]</p>',
+        version: 1,
+        updatedAt: '2026-11-18T00:00:00.000Z',
+      }),
+    } as never);
     const page = await site.legal('terms');
-    expect(page?.slug).toBe('terms');
     expect(page?.draft).toBe(true);
+    expect(page?.updated).toBe('18 Nov 2026');
   });
 
   it('serves the published page the admin edited, with a contents list', async () => {
-    const site = new RealSite(
-      {
-        ...settings(),
-        getPublishedPage: async (slug: string) => ({
-          slug,
-          title: 'Terms of use',
-          html: '<h2>Rules</h2><p>Be kind.</p>',
-          version: 2,
-          updatedAt: '2026-11-17T10:00:00.000Z',
-        }),
-      } as never,
-      new FixtureSite(),
-    );
+    const site = new RealSite({
+      ...settings(),
+      getPublishedPage: async (slug: string) => ({
+        slug,
+        title: 'Terms of use',
+        html: '<h2>Rules</h2><p>Be kind.</p>',
+        version: 2,
+        updatedAt: '2026-11-17T10:00:00.000Z',
+      }),
+    } as never);
     const page = await site.legal('terms');
     expect(page?.draft).toBe(false);
     expect(page?.html).toContain('Be kind.');
     expect(page?.sections.map((s) => s.heading)).toEqual(['Rules']);
   });
 
-  it('keeps the help page on the questions list and unknown slugs on the fallback', async () => {
+  it('reads the help page from the editor too and answers null for unknown slugs', async () => {
     const asked: string[] = [];
-    const site = new RealSite(
-      {
-        ...settings(),
-        getPublishedPage: async (slug: string) => {
-          asked.push(slug);
-          return null;
-        },
-      } as never,
-      new FixtureSite(),
-    );
+    const site = new RealSite({
+      ...settings(),
+      getPublishedPage: async (slug: string) => {
+        asked.push(slug);
+        return null;
+      },
+    } as never);
     expect(await site.legal('nope')).toBeNull();
     expect(asked).toEqual([]);
+    await site.legal('help');
+    expect(asked).toEqual(['help']);
+    const questions = (await site.helpArticles()).map((a) => a.id);
+    expect(questions).toEqual(
+      expect.arrayContaining(['verify-email', 'reset-password', 'data-use', 'captions', 'install']),
+    );
+  });
+
+  it('keeps footer links to the four pages and the value lines from defaults', async () => {
+    const content = await new RealSite(settings()).content();
+    expect(content.footerLinks.map((l) => l.href)).toEqual([
+      '/terms',
+      '/privacy',
+      '/about',
+      '/help',
+    ]);
+    expect(content.valueLines.length).toBeGreaterThan(0);
   });
 });
