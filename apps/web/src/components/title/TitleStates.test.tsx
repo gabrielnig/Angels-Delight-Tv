@@ -19,9 +19,9 @@ describe('title page states (S18)', () => {
   it('says the video could not be found and points to browsing by subject', () => {
     const { container } = render(<TitleNotFound />);
     expect(screen.getByRole('heading', { level: 1, name: 'We could not find that video' })).toBeInTheDocument();
-    expect(
-      screen.getByText('The link may be old, or the video may have been removed. Try browsing by subject instead.'),
-    ).toBeInTheDocument();
+    expect(container).toHaveTextContent(
+      'The link may be old, or the video may have been removed. Try browsing by subject instead.',
+    );
     expect(screen.getByRole('link', { name: 'Browse subjects' })).toHaveAttribute('href', '/browse');
     expect(container.querySelector('.tv-state__icon[data-tone="neutral"]')).not.toBeNull();
   });
@@ -30,9 +30,9 @@ describe('title page states (S18)', () => {
     const reset = vi.fn();
     const { container } = render(<TitleError reference="7F3K9Q2" onRetry={reset} />);
     expect(screen.getByRole('heading', { level: 1, name: 'We could not load this video' })).toBeInTheDocument();
-    expect(
-      screen.getByText('Something went wrong on our side. Your place in the video is safe. Reference 7F3K9Q2.'),
-    ).toBeInTheDocument();
+    expect(container).toHaveTextContent(
+      'Something went wrong on our side. Your place in the video is safe. Reference 7F3K9Q2.',
+    );
     await userEvent.click(screen.getByRole('button', { name: 'Try again' }));
     expect(reset).toHaveBeenCalled();
     expect(screen.getByRole('link', { name: 'Back to Home' })).toHaveAttribute('href', '/');
@@ -40,8 +40,9 @@ describe('title page states (S18)', () => {
   });
 
   it('leaves the reference out when there is none', () => {
-    render(<TitleError onRetry={vi.fn()} />);
-    expect(screen.getByText('Something went wrong on our side. Your place in the video is safe.')).toBeInTheDocument();
+    const { container } = render(<TitleError onRetry={vi.fn()} />);
+    expect(container).toHaveTextContent('Something went wrong on our side. Your place in the video is safe.');
+    expect(container).not.toHaveTextContent('Reference');
   });
 
   it('shows a skeleton with the poster and text geometry, marked busy', () => {
@@ -55,5 +56,10 @@ describe('title page states (S18)', () => {
   it('shows nothing for the first 300ms so quick loads never flash', () => {
     const { container } = render(<TitleSkeleton />);
     expect(container.querySelector('.tv-sk')).toBeNull();
+  });
+
+  it('marks the lines phones leave out, as in the mobile mockup', () => {
+    const { container } = render(<TitleError reference="R1" onRetry={vi.fn()} />);
+    expect(container.querySelectorAll('.tv-state__wide')).toHaveLength(2);
   });
 });

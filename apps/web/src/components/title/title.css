@@ -408,6 +408,10 @@
   line-height: var(--leading-normal);
 }
 
+.tv-state__wide {
+  display: none;
+}
+
 .tv-state__actions {
   display: flex;
   flex-direction: column;
@@ -590,6 +594,14 @@
 
   .tv-state__title {
     font-size: var(--text-h3);
+  }
+
+  span.tv-state__wide {
+    display: inline;
+  }
+
+  a.tv-state__wide {
+    display: inline-flex;
   }
 
   .tv-state__text {
