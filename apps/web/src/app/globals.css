@@ -162,6 +162,8 @@ a {
   font-size: var(--text-h1);
   font-weight: var(--weight-bold);
   line-height: var(--leading-tight);
+  max-width: 14ch;
+  text-wrap: balance;
 }
 
 .web-split__points {
@@ -290,6 +292,14 @@ a {
   align-self: flex-start;
   min-height: var(--touch-target);
   font-weight: var(--weight-semibold);
+}
+
+.web-form__alt {
+  text-align: center;
+}
+
+.web-link--end {
+  align-self: flex-end;
 }
 
 .web-form__alt a,
