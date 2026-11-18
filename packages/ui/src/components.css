@@ -1330,6 +1330,20 @@
   bottom: var(--space-2);
 }
 
+.ad-card__cc {
+  position: absolute;
+  left: var(--space-2);
+  bottom: var(--space-2);
+  padding: 1px var(--space-2);
+  border: 1px solid var(--color-ink);
+  border-radius: var(--radius-sm);
+  background: var(--color-scrim-top);
+  color: var(--color-ink);
+  font-size: var(--text-caption);
+  font-weight: var(--weight-semibold);
+  line-height: var(--leading-snug);
+}
+
 .ad-card__title {
   display: -webkit-box;
   -webkit-line-clamp: 2;

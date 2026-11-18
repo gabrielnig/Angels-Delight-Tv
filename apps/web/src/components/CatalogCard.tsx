@@ -64,6 +64,7 @@ export function CatalogCard({
         thumbnail={item.thumbnail}
         episodeCount={item.episodeCount}
         seasonCount={item.seasonCount}
+        hasCaptions={item.hasCaptions}
         priority={priority}
         inList={inList}
         onToggleList={onToggle}
@@ -79,6 +80,7 @@ export function CatalogCard({
       meta={showMeta ? metaLine(item) : undefined}
       description={item.description}
       priority={priority}
+      hasCaptions={item.hasCaptions}
       inList={inList}
       onToggleList={onToggle}
     />
