@@ -233,6 +233,64 @@ describe.skipIf(!integrationEnabled())('ImageService against Postgres and local 
       expect(source).not.toBe(cut);
     });
 
+    it('switches the hero image, not the poster, when a hero recut is ready', async () => {
+      const heroSource = await newAsset('hero', await split());
+      await service.process(heroSource);
+      const posterSource = await newAsset('thumbnail', await split());
+      const focus = { x: 90, y: 50, zoom: 200 };
+      const video = makeVideo({
+        posterAssetId: posterSource,
+        heroAssetId: heroSource,
+        posterFocus: focus,
+      });
+      await t.db.insert(schema.videos).values(video);
+      const cut = uuidv7();
+      const rawKey = `recuts/${video.id}/${cut}`;
+      await originals.put(rawKey, await split());
+      await t.db.insert(schema.assets).values({
+        id: cut,
+        purpose: 'hero',
+        status: 'processing',
+        rawKey,
+        mime: 'image/png',
+        cutFrom: heroSource,
+        cutFocus: focus,
+        createdBy: owner,
+      });
+      await service.process(cut);
+      const row = (
+        await t.db.select().from(schema.videos).where(eq(schema.videos.id, video.id))
+      )[0]!;
+      expect(row.heroAssetId).toBe(cut);
+      expect(row.posterAssetId).toBe(posterSource);
+    });
+
+    it('marks a recut failed and keeps the old poster, saying which video it was for', async () => {
+      const { cut, video, source } = await seedCut({ x: 90, y: 50, zoom: 200 });
+      const info = await service.failRecut(cut);
+      expect(info).toEqual({ videoId: video.id });
+      expect((await load(cut)).status).toBe('failed');
+      const row = (
+        await t.db.select().from(schema.videos).where(eq(schema.videos.id, video.id))
+      )[0]!;
+      expect(row.posterAssetId).toBe(source);
+    });
+
+    it('does not report a failure for an ordinary asset, a finished recut, or one no video waits for', async () => {
+      const plain = await newAsset('thumbnail', await picture());
+      expect(await service.failRecut(plain)).toBeNull();
+      const done = await seedCut({ x: 90, y: 50, zoom: 200 });
+      await service.process(done.cut);
+      expect(await service.failRecut(done.cut)).toBeNull();
+      expect((await load(done.cut)).status).toBe('ready');
+      const stale = await seedCut({ x: 90, y: 50, zoom: 200 });
+      await t.db
+        .update(schema.videos)
+        .set({ posterFocus: { x: 10, y: 10, zoom: 100 } })
+        .where(eq(schema.videos.id, stale.video.id));
+      expect(await service.failRecut(stale.cut)).toBeNull();
+    });
+
     it('removes an older recut of the same picture that no video uses any more', async () => {
       const first = await seedCut({ x: 90, y: 50, zoom: 200 });
       await service.process(first.cut);

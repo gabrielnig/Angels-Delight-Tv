@@ -482,7 +482,7 @@ export async function setAdminPoster(
   if (!isUuid(id)) throw new NotFound('Video not found');
   return withAccount(ctx.db, actor, async (tx) => {
     const [video] = await tx
-      .select({ id: videos.id, title: videos.title })
+      .select({ id: videos.id, title: videos.title, heroAssetId: videos.heroAssetId })
       .from(videos)
       .where(and(eq(videos.id, id), sql`${videos.deletedAt} IS NULL`))
       .for('update');
@@ -511,41 +511,77 @@ export async function setAdminPoster(
     const alt = input.alt.trim().slice(0, 200);
     const focus = { ...input.focus, zoom: input.zoom };
     const isDefault = focus.x === 50 && focus.y === 50 && focus.zoom === 100;
-    let posterAssetId = asset.id;
-    let enqueueId: string | null = null;
     await tx.update(assets).set({ altText: alt }).where(eq(assets.id, asset.id));
-    if (input.recut && !isDefault && asset.rawKey) {
+
+    /**
+     * Picks the asset a video should show for one source picture and crop. A recut already made is reused, a missing
+     * one is created and queued, and the worker switches the video over when it is ready (M36-S03).
+     */
+    const toQueue: string[] = [];
+    const cutFor = async (
+      source: { id: string; rawKey: string | null },
+      purpose: 'thumbnail' | 'hero',
+      altText: string | null,
+    ): Promise<string> => {
+      if (!input.recut || isDefault || !source.rawKey) return source.id;
       const existing = await tx
         .select({ id: assets.id, status: assets.status, cutFocus: assets.cutFocus })
         .from(assets)
-        .where(eq(assets.cutFrom, asset.id));
+        .where(eq(assets.cutFrom, source.id));
+      // A failed recut is not reused, so saving again tries again.
       const match = existing.find(
         (row) => row.status !== 'failed' && sameCrop(row.cutFocus, focus),
       );
       if (match) {
-        await tx.update(assets).set({ altText: alt }).where(eq(assets.id, match.id));
-        // A recut still being made is adopted by the worker when it finishes.
-        if (match.status === 'ready') posterAssetId = match.id;
-      } else {
-        const cutId = uuidv7();
-        const rawKey = `recuts/${id}/${cutId}`;
-        await input.recut.copySource(asset.rawKey, rawKey);
-        await tx.insert(assets).values({
-          id: cutId,
-          purpose: 'thumbnail',
-          status: 'processing',
-          rawKey,
-          mime: 'image/png',
-          altText: alt,
-          cutFrom: asset.id,
-          cutFocus: focus,
-          createdBy: actor.accountId,
-        });
-        enqueueId = cutId;
+        if (altText !== null)
+          await tx.update(assets).set({ altText }).where(eq(assets.id, match.id));
+        return match.status === 'ready' ? match.id : source.id;
+      }
+      const cutId = uuidv7();
+      const rawKey = `recuts/${id}/${cutId}`;
+      await input.recut.copySource(source.rawKey, rawKey);
+      await tx.insert(assets).values({
+        id: cutId,
+        purpose,
+        status: 'processing',
+        rawKey,
+        mime: 'image/png',
+        altText,
+        cutFrom: source.id,
+        cutFocus: focus,
+        createdBy: actor.accountId,
+      });
+      toQueue.push(cutId);
+      return source.id;
+    };
+
+    const posterAssetId = await cutFor(asset, 'thumbnail', alt);
+    const set: { posterAssetId: string; posterFocus: typeof focus; heroAssetId?: string } = {
+      posterAssetId,
+      posterFocus: focus,
+    };
+    // Hero art takes the same focus, cut from its own source (saved focus applies to all variants).
+    if (video.heroAssetId) {
+      const [hero] = await tx
+        .select({ id: assets.id, cutFrom: assets.cutFrom, rawKey: assets.rawKey })
+        .from(assets)
+        .where(eq(assets.id, video.heroAssetId));
+      const [heroSource] = hero?.cutFrom
+        ? await tx
+            .select({ id: assets.id, rawKey: assets.rawKey })
+            .from(assets)
+            .where(eq(assets.id, hero.cutFrom))
+        : hero
+          ? [{ id: hero.id, rawKey: hero.rawKey }]
+          : [];
+      if (heroSource) {
+        const heroId = await cutFor(heroSource, 'hero', null);
+        // While a recut is being made the current hero stays, unless the focus went back to the centre.
+        if (isDefault || (input.recut && heroId !== heroSource.id)) set.heroAssetId = heroId;
       }
     }
-    await tx.update(videos).set({ posterAssetId, posterFocus: focus }).where(eq(videos.id, id));
-    if (enqueueId) await input.recut!.enqueue('image.process', { assetId: enqueueId });
+    await tx.update(videos).set(set).where(eq(videos.id, id));
+    for (const assetId of toQueue) await input.recut!.enqueue('image.process', { assetId });
     await writeAudit(tx, {
       action: 'video.poster',
       outcome: 'success',
