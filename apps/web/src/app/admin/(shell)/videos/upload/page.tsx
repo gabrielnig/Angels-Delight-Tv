@@ -3,15 +3,23 @@ import { forbidden } from 'next/navigation';
 import { PageHeader } from '@/components/admin/PageHeader';
 import { UploadScreen } from '@/components/admin/UploadScreen';
 import { can } from '@/lib/admin/can';
-import { uploadTransportMode } from '@/lib/data/admin/services';
+import { uploadTransportMode, videoService } from '@/lib/data/admin/services';
 import { requireActor } from '@/lib/data/admin/session-next';
 import { registerUploadAction } from '../actions';
 
 export const metadata: Metadata = { title: 'Upload videos' };
 
-export default async function UploadPage() {
+export default async function UploadPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ replace?: string }>;
+}) {
   const actor = await requireActor('/admin/videos/upload');
   if (!can(actor.role, 'video.upload')) forbidden();
+  const { replace } = await searchParams;
+  const target = replace
+    ? await videoService.get(actor, replace).catch(() => null)
+    : null;
   return (
     <>
       <PageHeader
@@ -25,6 +33,7 @@ export default async function UploadPage() {
       />
       <UploadScreen
         registerUpload={uploadTransportMode() === 'fixture' ? registerUploadAction : undefined}
+        {...(target ? { replace: { videoId: target.id, title: target.title } } : {})}
       />
     </>
   );

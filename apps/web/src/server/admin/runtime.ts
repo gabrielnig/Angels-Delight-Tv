@@ -6,7 +6,7 @@ import { DrizzleJobMirror, JobProducer, createProducerBoss, bossAdapter } from '
 import { sql } from 'drizzle-orm';
 import { eq } from 'drizzle-orm';
 import type { Actor } from '@ad/shared';
-import { CaptionService } from '@ad/video';
+import { CaptionService, FailedEncodeService } from '@ad/video';
 import { recordAudit } from '@ad/audit';
 import { createStorage, storageConfigFromEnv, type StorageAdapter } from '@ad/storage';
 import type { KeyService, SessionService, StaffService } from '@ad/auth';
@@ -22,6 +22,8 @@ export interface AdminRuntime {
   enqueue: JobProducer['enqueue'];
   /** The private bucket for uploaded sources (posters, later other images). */
   originals(): StorageAdapter;
+  /** Failed encode inspection and cleanup (M14-S06). */
+  failedEncodes(): FailedEncodeService;
   /** Public base url of the media bucket, for picker previews. */
   mediaOrigin(): string;
   /** Review and approval of caption revisions (lane D). */
@@ -56,6 +58,9 @@ export function setAdminRuntime(
     names: async () => new Map(),
     originals: () => {
       throw new Error('This test did not provide originals storage');
+    },
+    failedEncodes: () => {
+      throw new Error('This test did not provide the failed encode service');
     },
     mediaOrigin: () => 'https://media.test',
     captions: async () => {
@@ -139,6 +144,7 @@ export async function staffNames(
 function build(): AdminRuntime {
   let producer: Promise<JobProducer> | undefined;
   let originalsStorage: StorageAdapter | undefined;
+  let failedService: FailedEncodeService | undefined;
   const getProducer = () =>
     (producer ??= createProducerBoss({
       connectionString: getServices().env.DATABASE_URL,
@@ -164,6 +170,15 @@ function build(): AdminRuntime {
       return (originalsStorage ??= createStorage(
         storageConfigFromEnv(env, env.BUCKET_ORIGINALS, env.MEDIA_URL_SECRET),
       ));
+    },
+    failedEncodes() {
+      const services = getServices();
+      return (failedService ??= new FailedEncodeService({
+        db: services.db,
+        originals: adminRuntime().originals(),
+        media: services.mediaStorage,
+        logger: services.logger,
+      }));
     },
     mediaOrigin: () => getServices().env.MEDIA_ORIGIN,
     captions: async () => {

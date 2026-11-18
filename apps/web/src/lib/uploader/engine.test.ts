@@ -407,3 +407,21 @@ describe('laneFingerprint', () => {
     expect(laneFingerprint(fakeFile('a.mp4', 5, 123))).toBe('a.mp4:5:123');
   });
 });
+
+describe('uploader engine: replacing the file of a video', () => {
+  const VIDEO = '0192f0a0-0000-7000-8000-0000000000aa';
+
+  it('tells the server which video the upload replaces', async () => {
+    const { transport, uploader } = make();
+    uploader.add(fakeFile('fixed.mp4', 10 * MIB), { replaceVideoId: VIDEO });
+    await settled(uploader);
+    expect(transport.started[0]).toMatchObject({ replaceVideoId: VIDEO });
+  });
+
+  it('sends nothing extra for a normal upload', async () => {
+    const { transport, uploader } = make();
+    uploader.add(fakeFile('new.mp4', 10 * MIB));
+    await settled(uploader);
+    expect(transport.started[0]!.replaceVideoId).toBeUndefined();
+  });
+});

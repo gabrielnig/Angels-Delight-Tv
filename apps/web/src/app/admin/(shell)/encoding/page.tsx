@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { forbidden } from 'next/navigation';
 import { EncodingQueue } from '@/components/admin/EncodingQueue';
+import { LinkButton } from '@/components/admin/Button';
 import { PageHeader } from '@/components/admin/PageHeader';
 import { can } from '@/lib/admin/can';
 import { videoService } from '@/lib/data/admin/services';
@@ -19,6 +20,11 @@ export default async function EncodingPage() {
         crumbs={[{ label: 'Admin', href: '/admin' }, { label: 'Encoding' }]}
         title="Encoding queue"
         lead="Videos being prepared for streaming."
+        actions={
+          <LinkButton href="/admin/encoding/failed" variant="ghost">
+            Failed encodes
+          </LinkButton>
+        }
       />
       <EncodingQueue jobs={jobs} now={Date.now()} retry={retryEncodeAction} />
     </>
