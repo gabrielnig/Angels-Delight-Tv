@@ -43,6 +43,7 @@ export {
   PLAYBACK_RATES,
   type CaptionTrack,
   type MetricsSink,
+  type PlaybackTelemetry,
   type PlaybackMetrics,
   type PlayerPreferences,
   type PlayerState,

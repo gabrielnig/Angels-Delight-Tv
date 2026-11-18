@@ -122,3 +122,18 @@ export interface PlaybackMetrics {
 export interface MetricsSink {
   report(metrics: PlaybackMetrics): void;
 }
+
+/**
+ * Where playback facts go for analytics and the player quality dashboard (M08-S30, M24-S04). Mirrors the
+ * play tracker in @ad/analytics so the web app can pass one straight in. Times are milliseconds.
+ */
+export interface PlaybackTelemetry {
+  onStartup(startupMs: number, rebufferMs?: number): void;
+  onTimeUpdate(positionMs: number, playing: boolean): void;
+  onPause(): void;
+  onEnded(): void;
+  onHide(): void;
+  setHeight(height: number): void;
+  /** A code such as `player.network`. Never a message. */
+  onError(code: string): void;
+}

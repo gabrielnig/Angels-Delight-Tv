@@ -9,7 +9,13 @@ import type { ProgressSink } from './progress';
 import { readNetworkHints, type NetworkHints } from './quality';
 import type { ResumeInput } from './resume';
 import { TokenManager, type PlaybackSession, type SessionProvider } from './token';
-import type { CaptionTrack, MetricsSink, PlayerPreferences, UpNextItem } from './types';
+import type {
+  CaptionTrack,
+  MetricsSink,
+  PlaybackTelemetry,
+  PlayerPreferences,
+  UpNextItem,
+} from './types';
 import type { EndScreenData } from './ui/EndScreen';
 import type { OverlayLinks } from './ui/Overlays';
 import { PlayerView } from './ui/PlayerView';
@@ -38,6 +44,7 @@ export interface PlayerProps {
   onSignIn?: () => void;
   onForbidden?: () => void;
   metrics?: MetricsSink;
+  telemetry?: PlaybackTelemetry;
   deviceClass?: string;
   hints?: NetworkHints;
   autoplay?: boolean;
@@ -151,6 +158,7 @@ export function Player(props: PlayerProps) {
         ...(p.resume ? { resume: p.resume } : {}),
         ...(p.next !== undefined ? { upNext: p.next } : {}),
         ...(p.metrics ? { metrics: p.metrics } : {}),
+        ...(p.telemetry ? { telemetry: p.telemetry } : {}),
         ...(p.deviceClass ? { deviceClass: p.deviceClass } : {}),
         ...(p.autoplay !== undefined ? { autoplay: p.autoplay } : {}),
         ...(p.countdownSeconds ? { countdownSeconds: p.countdownSeconds } : {}),

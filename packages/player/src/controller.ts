@@ -23,6 +23,7 @@ import {
   PLAYBACK_RATES,
   type CaptionTrack,
   type MetricsSink,
+  type PlaybackTelemetry,
   type PlayerErrorKind,
   type PlayerPreferences,
   type PlayerState,
@@ -57,6 +58,7 @@ export interface PlayerControllerOptions {
   progressIntervalMs?: number;
   autoplay?: boolean;
   metrics?: MetricsSink;
+  telemetry?: PlaybackTelemetry;
   deviceClass?: string;
   onPreferencesChange?: (preferences: PlayerPreferences) => void;
   onNext?: (item: UpNextItem) => void;
@@ -223,6 +225,7 @@ export class PlayerController {
       this.cleanups.push(
         this.o.page.onVisibility((hidden) => {
           if (hidden) {
+            this.tell((t) => t.onHide());
             this.syncProgress();
             void this.reporter.flush('hidden');
           }
@@ -587,6 +590,7 @@ export class PlayerController {
         this.onFirstFrame();
         break;
       case 'pause':
+        this.tell((t) => t.onPause());
         this.reporter.setPlaying(false);
         this.set({ playing: false });
         if (!media.ended) {
@@ -654,6 +658,8 @@ export class PlayerController {
     if (this.firstFrame) return;
     this.firstFrame = true;
     this.startupMs = Date.now() - this.startedAt;
+    const startup = this.startupMs;
+    this.tell((t) => t.onStartup(startup));
     if (this.firstFrameTimer) clearTimeout(this.firstFrameTimer);
     if (!this.state.error) this.set({ phase: 'ready', buffering: false });
   }
@@ -661,6 +667,11 @@ export class PlayerController {
   private onTime(): void {
     const { media } = this.o;
     this.sync();
+    if (Number.isFinite(media.currentTime)) {
+      const ms = Math.round(media.currentTime * 1000);
+      const playing = !media.paused;
+      this.tell((t) => t.onTimeUpdate(ms, playing));
+    }
     if (this.stallStartedAt !== null && media.currentTime > this.stallAt + 0.1) this.clearStall();
     const remaining = media.duration - media.currentTime;
     const next = this.o.upNext;
@@ -725,6 +736,7 @@ export class PlayerController {
 
   private onEnded(): void {
     const { media } = this.o;
+    this.tell((t) => t.onEnded());
     this.reporter.setPlaying(false);
     this.reporter.update(media.duration, media.duration);
     void this.reporter.flush('ended');
@@ -780,6 +792,7 @@ export class PlayerController {
       });
     } else if (e.type === 'level') {
       this.currentHeight = e.height;
+      this.tell((t) => t.setHeight(e.height));
       if (e.bitrate) this.bitrates.push(e.bitrate);
       this.set({ quality: this.qualityState() });
     } else {
@@ -790,6 +803,7 @@ export class PlayerController {
   private onEngineError(err: EngineError): void {
     if (!err.fatal) return;
     this.errors.push(`${err.kind}${err.status ? `:${err.status}` : ''}`);
+    this.tell((t) => t.onError(`player.${err.kind}`));
     switch (err.kind) {
       case 'auth':
       case 'forbidden':
@@ -896,6 +910,17 @@ export class PlayerController {
       slowNotice: false,
       announce: ERROR_ANNOUNCE[kind],
     });
+  }
+
+  /** Telemetry is best effort: a failing sink never touches playback. */
+  private tell(fn: (t: PlaybackTelemetry) => void): void {
+    const sink = this.o.telemetry;
+    if (!sink) return;
+    try {
+      fn(sink);
+    } catch {
+      // ignore
+    }
   }
 
   private toast(t: Omit<PlayerToast, 'id'>, ms: number): void {
