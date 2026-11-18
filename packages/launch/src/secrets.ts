@@ -1,6 +1,15 @@
 import { generateKeyPairSync, randomBytes } from 'node:crypto';
 import { updateEnvText } from './env-file';
 
+const DB_ROLE_PASSWORD_NAMES = [
+  'DB_PASSWORD_MIGRATOR',
+  'DB_PASSWORD_APP',
+  'DB_PASSWORD_WORKER',
+  'DB_PASSWORD_KEYS_APP',
+  'DB_PASSWORD_KEYS_SHRED',
+  'DB_PASSWORD_MAINTENANCE',
+] as const;
+
 /** Secrets the generator fills in. Base64 keys are 32 random bytes (the loaders in @ad/config check this). */
 export const GENERATED_SECRET_NAMES = [
   'FIELD_KEK',
@@ -9,7 +18,7 @@ export const GENERATED_SECRET_NAMES = [
   'PLAYBACK_TOKEN_SECRET',
   'MEDIA_URL_SECRET',
   'POSTGRES_PASSWORD',
-  'DB_ROLE_PASSWORD',
+  ...DB_ROLE_PASSWORD_NAMES,
 ] as const;
 
 const BASE64_KEYS = [
@@ -25,7 +34,7 @@ export function generateSecretValues(
 ): Record<string, string> {
   const values: Record<string, string> = {};
   for (const name of BASE64_KEYS) values[name] = random(32).toString('base64');
-  for (const name of ['POSTGRES_PASSWORD', 'DB_ROLE_PASSWORD']) {
+  for (const name of ['POSTGRES_PASSWORD', ...DB_ROLE_PASSWORD_NAMES]) {
     values[name] = random(24).toString('base64url').slice(0, 32);
   }
   return values;

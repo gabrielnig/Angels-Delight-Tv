@@ -1,0 +1,81 @@
+# Production reverse proxy. Cloudflare terminates the visitor's TLS (Full strict) and talks to this server with the
+# Origin CA certificate. APP_DOMAIN comes from the environment. docs/DEPLOYMENT.md section 4.
+{
+	# Cloudflare provides the certificate, so Caddy must not try to obtain one.
+	auto_https off
+	servers {
+		# The app trusts CF-Connecting-IP only because the firewall admits Cloudflare ranges alone.
+		trusted_proxies static private_ranges
+	}
+}
+
+(secure_log) {
+	log {
+		output file /var/log/caddy/access.log {
+			roll_size 50mb
+			roll_keep 5
+		}
+		format filter {
+			wrap json
+			fields {
+				# Playback tokens and signed urls travel in the query string. They never reach the log.
+				request>uri query {
+					delete pt
+					delete sig
+					delete exp
+					delete token
+				}
+				request>headers>Authorization delete
+				request>headers>Cookie delete
+				resp_headers>Set-Cookie delete
+			}
+		}
+	}
+}
+
+https://{$APP_DOMAIN} {
+	tls /etc/caddy/certs/origin.pem /etc/caddy/certs/origin.key
+	import secure_log
+	encode zstd gzip
+
+	request_body {
+		max_size 2MB
+	}
+
+	# Maintenance mode: create /opt/angelsdelight/maintenance/ON and put maintenance.html next to it.
+	@maintenance file {
+		root /srv/maintenance
+		try_files /ON
+	}
+	handle @maintenance {
+		root * /srv/maintenance
+		rewrite * /maintenance.html
+		header Cache-Control "no-store"
+		file_server {
+			status 503
+		}
+	}
+
+	handle {
+		reverse_proxy web:3000 {
+			health_uri /healthz
+			health_interval 15s
+			header_up X-Real-IP {http.request.header.CF-Connecting-IP}
+		}
+	}
+
+	header {
+		-Server
+		X-Content-Type-Options nosniff
+	}
+}
+
+# Plain http only answers the health probe and sends everything else to https.
+http://{$APP_DOMAIN} {
+	handle /healthz {
+		reverse_proxy web:3000
+	}
+	handle {
+		redir https://{host}{uri} permanent
+	}
+}

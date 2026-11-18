@@ -50,6 +50,6 @@ export function envValuesFor(config: ClientConfig): Record<string, string> {
     APP_ORIGIN: `https://${config.domain}`,
     MEDIA_ORIGIN: `https://${mediaDomain}`,
     SUPPORT_EMAIL: config.supportEmail,
-    EMAIL_FROM: `${config.platformName.replace(/[<>"\r\n]/g, '')} <no-reply@${config.domain}>`,
+    EMAIL_FROM: `${config.platformName.replace(/[<>"'`$#\\\r\n]/g, '').trim()} <no-reply@${config.domain}>`,
   };
 }
