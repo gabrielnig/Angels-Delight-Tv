@@ -162,6 +162,13 @@
       "when": 1794989158022,
       "tag": "0022_video_sprite",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1794989671441,
+      "tag": "0023_signup_invites",
+      "breakpoints": true
     }
   ]
 }

@@ -4,7 +4,7 @@ import {
   InvalidCredentials,
   KeyUnavailable,
   ReauthRequired,
-  SignUpClosed,
+  InviteRequired,
   TokenRejected,
 } from '@ad/auth';
 import { MailDeliveryError } from '@ad/mailer';
@@ -43,7 +43,8 @@ export function toFormState(error: unknown): FormState {
     return { error: 'This link is not valid. Request a new one.' };
   }
   if (error instanceof ReauthRequired) return { error: error.message };
-  if (error instanceof SignUpClosed) return { error: 'Sign up is closed right now.' };
+  if (error instanceof InviteRequired)
+    return { error: 'That invite code is not valid. Check it and try again.' };
   if (error instanceof AccountUnavailable) return { error: error.message };
   if (error instanceof MailDeliveryError) {
     return { error: 'We could not send the email. Please try again in a moment.' };

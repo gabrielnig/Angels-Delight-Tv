@@ -10,6 +10,7 @@ import { type WebEnv, loadWebEnv } from '@ad/config';
 import { createDb, createPool } from '@ad/db';
 import { Mailer, SmtpTransport } from '@ad/mailer';
 import { AuditWriter } from '@ad/audit';
+import { themeRuntime } from '../../lib/data/admin/theme-runtime';
 import { LockoutStore, RateLimiter } from '@ad/security';
 import { createLogger } from '@ad/shared';
 
@@ -80,6 +81,9 @@ function build(env: WebEnv): AuthRuntime {
     pepper: env.EMAIL_HASH_PEPPER,
     kek: env.FIELD_KEK,
     config: { supportEmail, devSkipMfa: env.DEV_SKIP_MFA },
+    signUpPolicy: async () => ({
+      open: await (await themeRuntime()).settings.get('features.signups_open'),
+    }),
     isBreached: (password) =>
       isPasswordBreached(password, {
         onUnavailable: (e) => logger.warn('hibp unavailable', { e: String(e) }),

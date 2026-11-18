@@ -58,3 +58,29 @@ export const adminInvites = pgTable(
       .where(sql`${t.acceptedAt} IS NULL AND ${t.revokedAt} IS NULL`),
   ],
 );
+
+/**
+ * Sign up invite codes for a soft launch (M29-S03). Only the hash of a code is stored. `uses` counts accounts
+ * created with it and is bumped by one conditional update, so a code cannot pass its limit under concurrency.
+ */
+export const signupInvites = pgTable(
+  'signup_invites',
+  {
+    id: pk(),
+    codeHash: bytea('code_hash').notNull(),
+    /** The last characters of the code, so an admin can tell codes apart without seeing the code again. */
+    hint: text('hint').notNull(),
+    label: text('label').notNull().default(''),
+    maxUses: integer('max_uses').notNull(),
+    uses: integer('uses').notNull().default(0),
+    expiresAt: timestamptz('expires_at'),
+    revokedAt: timestamptz('revoked_at'),
+    createdBy: uuid('created_by').references(() => accounts.id, { onDelete: 'set null' }),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    check('signup_invites_uses_in_range', sql`${t.uses} >= 0 AND ${t.uses} <= ${t.maxUses}`),
+    check('signup_invites_max_uses_range', sql`${t.maxUses} BETWEEN 1 AND 1000`),
+    uniqueIndex('signup_invites_code_hash_uniq').on(t.codeHash),
+  ],
+);

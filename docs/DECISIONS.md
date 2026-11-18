@@ -511,3 +511,9 @@ Format: decision, options considered, why, reversible or not. Newest first. Deci
 - Options: a separate `video.sprites` queue, signed sprite urls, hover preview clips.
 - Why: reusing the thumbnails job and its downloaded source avoids a second download, sprites are 160 px stills so they leak no more than the poster does, and clips would break the low data rules.
 - Reversible: yes. Clear `sprite_key` and the player shows only the time tip.
+
+## D-099 Invite only sign up uses hashed codes and the sign up flag (lane A2)
+- Decision: `features.signups_open` set to false means invite only (not closed). Sign up then needs a code from `signup_invites` (migration 0023). Codes are 10 characters from a 32 letter alphabet without look alikes, stored only as a hash with the last two characters as a hint, and shown once when created. A use is counted by one conditional update inside the sign up transaction, so a failed sign up does not burn a code and parallel sign ups cannot pass the limit. A missing, wrong, used up, expired or revoked code gives one message, and the code is checked before the existing account lookup so it cannot be used to probe addresses. Admins manage codes in Site settings, Invite codes. The auth service reads the flag at each sign up through `signUpPolicy`, and viewer site content (name, tagline, support email, sign up mode, maintenance) now follows settings with real data.
+- Options: store codes in clear so admins can re-read them, a separate invite only flag, or close sign up completely.
+- Why: M29-S02 defines the flag as open or invite only, a stolen database should not hand out working codes, and a lost code is cheaply replaced by creating another.
+- Reversible: yes.
