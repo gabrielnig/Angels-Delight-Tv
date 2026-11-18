@@ -55,7 +55,11 @@ export async function sign(secret: Uint8Array, key: string, exp: number): Promis
     false,
     ['sign'],
   );
-  const mac = await crypto.subtle.sign('HMAC', material, new TextEncoder().encode(`${key}\n${exp}`));
+  const mac = await crypto.subtle.sign(
+    'HMAC',
+    material,
+    new TextEncoder().encode(`${key}\n${exp}`),
+  );
   return toBase64Url(mac);
 }
 
@@ -199,7 +203,8 @@ export async function handle(
   if (!object) return plain(404, 'Not found', cors);
 
   if (range) {
-    headers['content-range'] = `bytes ${range.offset}-${range.offset + range.length - 1}/${head.size}`;
+    headers['content-range'] =
+      `bytes ${range.offset}-${range.offset + range.length - 1}/${head.size}`;
     headers['content-length'] = String(range.length);
     return new Response(object.body, { status: 206, headers });
   }
