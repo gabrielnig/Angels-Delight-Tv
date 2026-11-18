@@ -112,7 +112,8 @@ describe('PlayerView chrome', () => {
     });
 
     it('has no fade animation when the viewer prefers reduced motion', () => {
-      const block = /@media \(prefers-reduced-motion: reduce\)\s*\{[\s\S]*?\n\}/.exec(css)?.[0] ?? '';
+      const block =
+        /@media \(prefers-reduced-motion: reduce\)\s*\{[\s\S]*?\n\}/.exec(css)?.[0] ?? '';
       expect(block).toMatch(/transition:\s*none\s*!important/);
       expect(block).toMatch(/animation:\s*none\s*!important/);
     });

@@ -8,6 +8,8 @@ export interface HlsConfigOptions {
   appOrigin: string;
   getToken: () => string | null;
   /** The hls.js default loader class, injected so this module needs no hls.js import. */
+  /** Last measured estimate from this device. Without it the conservative default is used. */
+  initialBandwidth?: number | null;
   BaseLoader: new () => { load(context: { url: string }, ...rest: never[]): void };
 }
 
@@ -41,7 +43,7 @@ function retryPolicy() {
 export function createHlsConfig(opts: HlsConfigOptions): HlsJsConfig {
   return {
     autoStartLoad: false,
-    abrEwmaDefaultEstimate: 500_000,
+    abrEwmaDefaultEstimate: opts.initialBandwidth ?? 500_000,
     capLevelToPlayerSize: true,
     maxBufferLength: 30,
     maxMaxBufferLength: 60,

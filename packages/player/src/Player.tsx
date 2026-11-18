@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { PlayerController } from './controller';
 import type { NetworkMonitor, PageEvents, PlayerEngine } from './engine';
+import { readBandwidthSeed, saveBandwidth } from './bandwidth';
 import { createPlayerEngine } from './hlsEngine';
 import type { ProgressSink } from './progress';
 import { readNetworkHints, type NetworkHints } from './quality';
@@ -47,6 +48,14 @@ export interface PlayerProps {
   /** Test seam: supply network and page event sources. */
   network?: NetworkMonitor;
   page?: PageEvents;
+}
+
+function deviceStorage(): Storage | null {
+  try {
+    return typeof window === 'undefined' ? null : window.localStorage;
+  } catch {
+    return null;
+  }
 }
 
 const browserNetwork: NetworkMonitor = {
@@ -116,7 +125,13 @@ export function Player(props: PlayerProps) {
       }
       const engine = await (p.createEngine
         ? p.createEngine(video)
-        : createPlayerEngine({ video, appOrigin, getToken: () => tokens?.token ?? null }));
+        : createPlayerEngine({
+            video,
+            appOrigin,
+            getToken: () => tokens?.token ?? null,
+            initialBandwidth: readBandwidthSeed(deviceStorage()),
+            onBandwidth: (bps) => saveBandwidth(deviceStorage(), bps),
+          }));
       if (cancelled) {
         engine.destroy();
         return;

@@ -26,7 +26,11 @@ export interface EngineError {
 }
 
 export type EngineEvent =
-  | { type: 'levels'; heights: number[]; /** False when the renditions carry no audio. Omitted when unknown. */ audio?: boolean }
+  | {
+      type: 'levels';
+      heights: number[];
+      /** False when the renditions carry no audio. Omitted when unknown. */ audio?: boolean;
+    }
   | { type: 'level'; height: number; bitrate?: number }
   | { type: 'error'; error: EngineError };
 

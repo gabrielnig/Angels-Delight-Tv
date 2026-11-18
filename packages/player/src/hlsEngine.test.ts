@@ -33,6 +33,7 @@ class FakeHls implements HlsInstanceLike {
     { height: 480, bitrate: 900_000 },
     { height: 720, bitrate: 1_800_000 },
   ];
+  bandwidthEstimate = 0;
   currentLevel = 2;
   // keeps `levels` assignable with details in tests
   loadLevel = 2;
@@ -167,6 +168,27 @@ describe('createHlsEngine with a fake hls.js', () => {
     };
     expect(e.segmentStart?.(7.5)).toBe(6);
     expect(e.segmentStart?.(99)).toBeNull();
+  });
+
+  it('reports the bandwidth estimate on level switches and on destroy, and seeds the first estimate', () => {
+    FakeHls.instances = [];
+    const seen: number[] = [];
+    const e = createHlsEngine({
+      Hls,
+      video: video(),
+      appOrigin: APP,
+      getToken: () => 'T',
+      initialBandwidth: 1_100_000,
+      onBandwidth: (bps) => seen.push(bps),
+    });
+    e.load({ src: `${APP}/m.m3u8`, startPosition: 0, lowData: false, cap: null });
+    const hls = last();
+    expect(hls.config.abrEwmaDefaultEstimate).toBe(1_100_000);
+    hls.bandwidthEstimate = 2_000_000;
+    hls.fire('switched', { level: 1 });
+    hls.bandwidthEstimate = 2_400_000;
+    e.destroy();
+    expect(seen).toEqual([2_000_000, 2_400_000]);
   });
 
   it('reports the ladder and level switches', () => {
