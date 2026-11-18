@@ -1,4 +1,5 @@
-import { VITAL_NAMES, type AnalyticsEvent } from '@ad/analytics';
+import { VITAL_NAMES } from '@ad/analytics/client';
+import type { AnalyticsEvent } from '@ad/analytics';
 
 type VitalName = (typeof VITAL_NAMES)[number];
 const SUPPORTED: readonly string[] = VITAL_NAMES;
