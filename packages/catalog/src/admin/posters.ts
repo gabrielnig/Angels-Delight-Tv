@@ -1,8 +1,9 @@
 import { and, eq, like, or, sql } from 'drizzle-orm';
 import { assets, videos, withAccount } from '@ad/db';
+import { writeAudit } from '@ad/audit';
 import { Forbidden, NotFound, isUuid, uuidv7, type Actor } from '@ad/shared';
 import { mediaUrl } from '../artwork';
-import type { AdminContext } from './types';
+import { OK, fail, type AdminContext, type CommandResult } from './types';
 
 function assertStaff(actor: Actor): void {
   if (actor.role !== 'editor' && actor.role !== 'admin') throw new Forbidden('Editors only');
@@ -124,5 +125,59 @@ export async function getPosterAssetStatus(
     const [row] = await tx.select({ status: assets.status }).from(assets).where(eq(assets.id, assetId));
     if (!row) throw new NotFound('Picture not found');
     return { status: row.status };
+  });
+}
+
+export interface ArtworkRecordEdit {
+  /** Text alternative read by screen readers. Null clears it. */
+  alt?: string | null;
+  /** Six digit hex shown while the picture loads. */
+  placeholderColor?: string | null;
+}
+
+/**
+ * Edits the record behind a picture (M36): its alt text and the placeholder colour. The files and sizes belong to
+ * the pipeline and cannot be changed here. Every viewer of every title that uses the picture sees the change.
+ */
+export async function updateArtworkRecord(
+  ctx: AdminContext,
+  actor: Actor,
+  assetId: string,
+  edit: ArtworkRecordEdit,
+): Promise<CommandResult> {
+  assertStaff(actor);
+  if (!isUuid(assetId)) return fail('Picture not found.');
+  const set: Partial<typeof assets.$inferInsert> = {};
+  if (edit.alt !== undefined) {
+    const alt = edit.alt === null ? null : edit.alt.trim().replace(/\s+/g, ' ');
+    if (alt !== null && alt.length > 200) return fail('Keep the alt text to 200 characters.');
+    set.altText = alt || null;
+  }
+  if (edit.placeholderColor !== undefined) {
+    if (edit.placeholderColor !== null && !/^#[0-9a-fA-F]{6}$/.test(edit.placeholderColor))
+      return fail('Use a six digit colour such as #1F6FB5.');
+    set.placeholderColor = edit.placeholderColor?.toUpperCase() ?? null;
+  }
+  return withAccount(ctx.db, actor, async (tx) => {
+    const [asset] = await tx
+      .select({ id: assets.id, status: assets.status })
+      .from(assets)
+      .where(eq(assets.id, assetId))
+      .for('update');
+    if (!asset) return fail('Picture not found.');
+    if (asset.status !== 'ready') return fail('This picture is still processing.');
+    if (Object.keys(set).length === 0) return OK;
+    await tx.update(assets).set(set).where(eq(assets.id, assetId));
+    await writeAudit(tx, {
+      action: 'asset.update',
+      outcome: 'success',
+      actorAccountId: actor.accountId,
+      actorRole: actor.role,
+      targetType: 'asset',
+      targetId: assetId,
+      summary: 'Edited the alt text or placeholder colour of a picture',
+      extra: { fields: Object.keys(edit) },
+    });
+    return OK;
   });
 }
