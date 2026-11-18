@@ -10,7 +10,7 @@ import {
   type UpNextItem,
 } from '@ad/player';
 import { useRouter } from 'next/navigation';
-import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import type { PlaybackTransport, WatchData } from '@/lib/data/playback';
 import {
   createFixtureSessionProvider,
@@ -20,7 +20,14 @@ import {
 import { getAnalyticsClient } from '@/lib/analytics/browser';
 import { createWatchTelemetry } from './telemetry';
 import { toViewerProgressBody } from './progress-body';
-import { loadPreferences, savePreferences } from './preferences';
+import {
+  clearLegacyPreferences,
+  loadPreferences,
+  readLegacyPreferences,
+  savePreferences,
+  serverChanges,
+  type ServerPatch,
+} from './preferences';
 import {
   BROWSE_PATH,
   HELP_PATH,
@@ -43,6 +50,23 @@ export interface WatchClientProps {
   startAt: number | null;
   /** Details rendered between the player and the action buttons. */
   children?: ReactNode;
+  /**
+   * Where speed, captions, data saver and autoplay are kept for the profile (M03-S09). Without it they are not
+   * saved. `migrate` moves what an older version kept in this browser, once.
+   */
+  prefsSync?: {
+    save(profileId: string, patch: ServerPatch): Promise<unknown>;
+    migrate(
+      profileId: string,
+      legacy: ServerPatch,
+    ): Promise<{
+      speed: number;
+      captionsDefault: boolean;
+      captionLanguage: string;
+      dataSaver: boolean;
+      autoplayNext: boolean;
+    }>;
+  };
   /** Test seams passed straight to the player. */
   testing?: Pick<PlayerProps, 'createEngine' | 'network' | 'page' | 'hints' | 'autoplay'>;
 }
@@ -75,6 +99,7 @@ export function WatchClient({
   progressTransport = transport,
   startAt,
   children,
+  prefsSync,
   testing,
 }: WatchClientProps) {
   const router = useRouter();
@@ -98,14 +123,55 @@ export function WatchClient({
     [progressTransport],
   );
 
+  // Choices an older version kept in this browser move to the profile before the player starts (M03-S09).
+  const [serverPrefs, setServerPrefs] = useState(data.preferences);
+  const [prefsReady, setPrefsReady] = useState(false);
+  useEffect(() => {
+    const legacy = prefsSync ? readLegacyPreferences(storage(), viewer.profileId) : null;
+    if (!prefsSync || !legacy) {
+      setPrefsReady(true);
+      return;
+    }
+    let cancelled = false;
+    prefsSync
+      .migrate(viewer.profileId, legacy)
+      .then((saved) => {
+        if (cancelled) return;
+        setServerPrefs((current) => ({
+          ...current,
+          rate: saved.speed,
+          captionsOn: viewer.kids || saved.captionsDefault,
+          captionLanguage: saved.captionLanguage,
+          dataSaver: saved.dataSaver,
+          autoplayNext: saved.autoplayNext,
+        }));
+        clearLegacyPreferences(storage(), viewer.profileId);
+      })
+      .catch(() => undefined)
+      .finally(() => {
+        if (!cancelled) setPrefsReady(true);
+      });
+    return () => {
+      cancelled = true;
+    };
+    // Once per profile on this page.
+  }, [viewer.profileId]);
+
   const preferences = useMemo(
-    () => loadPreferences(storage(), viewer.profileId, { kids: viewer.kids }, data.preferences),
-    // The server defaults are part of this video's data, so they cannot change while the player is open.
-    [viewer.profileId, viewer.kids],
+    () => loadPreferences(storage(), viewer.profileId, { kids: viewer.kids }, serverPrefs),
+    // Server values cannot change while the player is open, only before it starts.
+    [viewer.profileId, viewer.kids, serverPrefs],
   );
+  const lastSynced = useRef<PlayerPreferences | null>(null);
   const onPreferencesChange = useCallback(
-    (prefs: PlayerPreferences) => savePreferences(storage(), viewer.profileId, prefs),
-    [viewer.profileId],
+    (prefs: PlayerPreferences) => {
+      savePreferences(storage(), viewer.profileId, prefs);
+      const patch = serverChanges(lastSynced.current ?? preferences, prefs);
+      if (Object.keys(patch).length === 0) return;
+      lastSynced.current = prefs;
+      void prefsSync?.save(viewer.profileId, patch)?.catch(() => undefined);
+    },
+    [viewer.profileId, preferences, prefsSync],
   );
 
   const resume = useMemo(() => {
@@ -162,7 +228,7 @@ export function WatchClient({
   return (
     <>
       <div className="watch__player">
-        {origin && sessionProvider ? (
+        {origin && sessionProvider && prefsReady ? (
           <Player
             videoId={video.id}
             profileId={viewer.profileId}

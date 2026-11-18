@@ -9,6 +9,8 @@ const announcedKey = (profileId: string | null) => `ad.datasaver.told.${profileI
 export interface UseDataSaverOptions {
   /** Called after a manual change, so the profile service can persist it server side (M25-S03 AC3). */
   onChange?: (on: boolean) => void;
+  /** The profile's own Data saver choice from the server. When on, it applies on every device. */
+  profileSetting?: boolean;
 }
 
 /**
@@ -17,7 +19,7 @@ export interface UseDataSaverOptions {
  */
 export function useDataSaver(profileId: string | null, options: UseDataSaverOptions = {}) {
   const [state, setState] = useState({ on: false, announce: false });
-  const { onChange } = options;
+  const { onChange, profileSetting } = options;
 
   useEffect(() => {
     const resolved = resolveDataSaver({
@@ -30,8 +32,11 @@ export function useDataSaver(profileId: string | null, options: UseDataSaverOpti
     } catch {
       told = false;
     }
-    setState({ on: resolved.on, announce: resolved.announce && !told });
-  }, [profileId]);
+    setState({
+      on: resolved.on || profileSetting === true,
+      announce: resolved.announce && !told && profileSetting !== true,
+    });
+  }, [profileId, profileSetting]);
 
   const setOn = useCallback(
     (on: boolean) => {

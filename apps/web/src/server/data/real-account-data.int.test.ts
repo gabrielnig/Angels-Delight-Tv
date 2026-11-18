@@ -76,6 +76,62 @@ describe.skipIf(!integrationEnabled())('account viewer data', () => {
     });
   });
 
+  describe('player preferences per profile (M03-S09)', () => {
+    it('stores the caption language and keeps it with the other choices', async () => {
+      const u = await h.makeUser();
+      expect(DEFAULT_PLAYBACK.captionLanguage).toBe('en');
+      const saved = await data.savePlayback(u.accountId, u.profileId, {
+        captionLanguage: 'yo',
+        speed: 1.5,
+      });
+      expect(saved).toMatchObject({ captionLanguage: 'yo', speed: 1.5 });
+      await data.savePlayback(u.accountId, u.profileId, { dataSaver: true });
+      expect(await data.playback(u.accountId, u.profileId)).toMatchObject({
+        captionLanguage: 'yo',
+        speed: 1.5,
+        dataSaver: true,
+      });
+      await expect(
+        data.savePlayback(u.accountId, u.profileId, { captionLanguage: 'not a code!' }),
+      ).rejects.toThrow();
+    });
+
+    it('moves values saved on this device to the profile once, and only the listed fields', async () => {
+      const u = await h.makeUser();
+      const first = await data.migrateDevicePlayback(u.accountId, u.profileId, {
+        speed: 1.25,
+        captionsDefault: true,
+        captionLanguage: 'ig',
+        dataSaver: true,
+        autoplayNext: false,
+        quality: '4k' as never,
+        volume: 0.2 as never,
+      });
+      expect(first).toMatchObject({
+        speed: 1.25,
+        captionsDefault: true,
+        captionLanguage: 'ig',
+        dataSaver: true,
+        autoplayNext: false,
+        quality: 'auto',
+      });
+      const second = await data.migrateDevicePlayback(u.accountId, u.profileId, { speed: 2 });
+      expect(second.speed).toBe(1.25);
+      await data.savePlayback(u.accountId, u.profileId, { speed: 0.75 });
+      expect((await data.playback(u.accountId, u.profileId)).speed).toBe(0.75);
+      const third = await data.migrateDevicePlayback(u.accountId, u.profileId, { speed: 2 });
+      expect(third.speed).toBe(0.75);
+    });
+
+    it('does not migrate into another account profile', async () => {
+      const u = await h.makeUser();
+      const other = await h.makeUser();
+      await expect(
+        data.migrateDevicePlayback(u.accountId, other.profileId, { speed: 2 }),
+      ).rejects.toThrow();
+    });
+  });
+
   describe('playback settings', () => {
     it('returns defaults, then saves a merged patch', async () => {
       const u = await h.makeUser();

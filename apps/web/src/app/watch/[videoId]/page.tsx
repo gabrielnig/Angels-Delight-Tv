@@ -1,4 +1,5 @@
 import '@ad/player/player.css';
+import { migrateDevicePrefsAction, savePlayerPrefsAction } from '@/app/actions';
 import type { Metadata } from 'next';
 import { cookies } from 'next/headers';
 import { notFound } from 'next/navigation';
@@ -63,6 +64,7 @@ export default async function WatchPage({ params, searchParams }: PageProps) {
           transport={getTransport()}
           progressTransport={getProgressTransport()}
           startAt={parseStartAt(query.t)}
+          prefsSync={{ save: savePlayerPrefsAction, migrate: migrateDevicePrefsAction }}
         >
           <WatchDetails data={data} />
         </WatchClient>

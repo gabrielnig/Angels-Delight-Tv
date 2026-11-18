@@ -14,6 +14,7 @@ export const DEFAULT_PLAYBACK: PlaybackSettings = {
   captionSize: 'medium',
   captionBackground: 'dark',
   captionContrast: 'standard',
+  captionLanguage: 'en',
 };
 
 const QUALITIES = ['auto', '1080', '720', '480', '360'] as const;
@@ -21,6 +22,7 @@ const SPEEDS = [0.5, 0.75, 1, 1.25, 1.5, 2] as const;
 const CAPTION_SIZES = ['small', 'medium', 'large', 'xlarge'] as const;
 const CAPTION_BACKGROUNDS = ['none', 'dark', 'solid'] as const;
 const CAPTION_CONTRASTS = ['standard', 'high'] as const;
+const LANGUAGE_CODE = /^[a-z]{2,3}(-[A-Za-z0-9]{2,8}){0,2}$/;
 const EXPORT_TOKEN_SECONDS = 10 * 60;
 const LAGOS_OFFSET_MS = 60 * 60 * 1000;
 const encoder = new TextEncoder();
@@ -84,7 +86,30 @@ function readPrefs(row: {
       CAPTION_CONTRASTS,
       DEFAULT_PLAYBACK.captionContrast,
     ),
+    captionLanguage:
+      typeof stored.captionLanguage === 'string' && LANGUAGE_CODE.test(stored.captionLanguage)
+        ? stored.captionLanguage
+        : DEFAULT_PLAYBACK.captionLanguage,
   };
+}
+
+function storedPrefs(row: { playbackPrefs: unknown }): Record<string, unknown> {
+  return typeof row.playbackPrefs === 'object' && row.playbackPrefs !== null
+    ? (row.playbackPrefs as Record<string, unknown>)
+    : {};
+}
+
+/** Keeps only the fields a device could have stored, each checked like a normal save. Anything else is dropped. */
+function legacyPatch(legacy: Record<string, unknown>): Partial<PlaybackSettings> {
+  const out: Partial<PlaybackSettings> = {};
+  if (typeof legacy.speed === 'number' && SPEEDS.includes(legacy.speed as (typeof SPEEDS)[number]))
+    out.speed = legacy.speed;
+  if (typeof legacy.captionsDefault === 'boolean') out.captionsDefault = legacy.captionsDefault;
+  if (typeof legacy.captionLanguage === 'string' && LANGUAGE_CODE.test(legacy.captionLanguage))
+    out.captionLanguage = legacy.captionLanguage;
+  if (typeof legacy.dataSaver === 'boolean') out.dataSaver = legacy.dataSaver;
+  if (typeof legacy.autoplayNext === 'boolean') out.autoplayNext = legacy.autoplayNext;
+  return out;
 }
 
 function validatePatch(patch: Partial<PlaybackSettings>): void {
@@ -102,6 +127,11 @@ function validatePatch(patch: Partial<PlaybackSettings>): void {
     bad.captionBackground = ['Pick a listed background'];
   if (patch.captionContrast !== undefined && !CAPTION_CONTRASTS.includes(patch.captionContrast))
     bad.captionContrast = ['Pick a listed contrast'];
+  if (
+    patch.captionLanguage !== undefined &&
+    (typeof patch.captionLanguage !== 'string' || !LANGUAGE_CODE.test(patch.captionLanguage))
+  )
+    bad.captionLanguage = ['Pick a language code'];
   for (const key of ['autoplayNext', 'dataSaver', 'captionsDefault'] as const) {
     if (patch[key] !== undefined && typeof patch[key] !== 'boolean') bad[key] = ['Use on or off'];
   }
@@ -169,7 +199,8 @@ export class AccountViewerData {
     validatePatch(patch);
     const actor = viewerActor(accountId);
     return withAccount(this.service.db, actor, async (tx) => {
-      const current = readPrefs(await loadOwnedProfile(tx, actor, profileId));
+      const updatedRow = await loadOwnedProfile(tx, actor, profileId);
+      const current = readPrefs(updatedRow);
       const next: PlaybackSettings = { ...current, ...patch };
       const [updated] = await tx
         .update(profiles)
@@ -177,12 +208,52 @@ export class AccountViewerData {
           autoplayNext: next.autoplayNext,
           dataSaver: next.dataSaver,
           playbackPrefs: {
+            ...storedPrefs(updatedRow),
             quality: next.quality,
             speed: next.speed,
             captionsDefault: next.captionsDefault,
             captionSize: next.captionSize,
             captionBackground: next.captionBackground,
             captionContrast: next.captionContrast,
+            captionLanguage: next.captionLanguage,
+          },
+        })
+        .where(and(eq(profiles.id, profileId), eq(profiles.accountId, accountId)))
+        .returning();
+      if (!updated) throw new NotFound('Profile not found');
+      return readPrefs(updated);
+    });
+  }
+
+  /**
+   * One time move of the choices an older version kept in this browser (speed, captions, data saver, autoplay) to
+   * the profile. It applies once per profile: the first call writes and marks the profile, later calls change
+   * nothing, so a second device cannot overwrite what was saved since.
+   */
+  async migrateDevicePlayback(
+    accountId: string,
+    profileId: string,
+    legacy: Record<string, unknown>,
+  ): Promise<PlaybackSettings> {
+    const actor = viewerActor(accountId);
+    return withAccount(this.service.db, actor, async (tx) => {
+      const row = await loadOwnedProfile(tx, actor, profileId);
+      const stored = storedPrefs(row);
+      if (stored.deviceMigrated === true) return readPrefs(row);
+      const next: PlaybackSettings = { ...readPrefs(row), ...legacyPatch(legacy) };
+      const [updated] = await tx
+        .update(profiles)
+        .set({
+          autoplayNext: next.autoplayNext,
+          dataSaver: next.dataSaver,
+          playbackPrefs: {
+            ...stored,
+            quality: next.quality,
+            speed: next.speed,
+            captionsDefault: next.captionsDefault,
+            captionSize: next.captionSize,
+            captionLanguage: next.captionLanguage,
+            deviceMigrated: true,
           },
         })
         .where(and(eq(profiles.id, profileId), eq(profiles.accountId, accountId)))

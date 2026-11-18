@@ -27,6 +27,8 @@ export interface Profile {
   lastUsedHere?: boolean;
   /** A four digit PIN guards this profile (M03-S12). The PIN itself never leaves the server. */
   hasPin?: boolean;
+  /** The profile's saved Data saver choice (M03-S09). */
+  dataSaver?: boolean;
 }
 
 export interface ViewerSession {
@@ -318,6 +320,8 @@ export interface PlaybackSettings {
   captionSize: 'small' | 'medium' | 'large' | 'xlarge';
   captionBackground: 'none' | 'dark' | 'solid';
   captionContrast: 'standard' | 'high';
+  /** Default caption language, a code such as en or yo. */
+  captionLanguage: string;
 }
 
 export interface DeviceSession {
@@ -352,6 +356,11 @@ export interface AccountRepository {
   overview(accountId: string): Promise<AccountOverview>;
   playback(profileId: string): Promise<PlaybackSettings>;
   savePlayback(profileId: string, patch: Partial<PlaybackSettings>): Promise<PlaybackSettings>;
+  /** One time move of choices an older version kept in this browser. Later calls change nothing. */
+  migrateDevicePlayback(
+    profileId: string,
+    legacy: Record<string, unknown>,
+  ): Promise<PlaybackSettings>;
   devices(accountId: string): Promise<DeviceSession[]>;
   revokeDevice(accountId: string, id: string): Promise<void>;
   revokeOtherDevices(accountId: string): Promise<number>;
