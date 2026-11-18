@@ -1,5 +1,10 @@
 import { schema } from '@ad/db';
-import { createTestDatabase, integrationEnabled, makeAccount, type TestDatabase } from '@ad/db/testing';
+import {
+  createTestDatabase,
+  integrationEnabled,
+  makeAccount,
+  type TestDatabase,
+} from '@ad/db/testing';
 import { uuidv7 } from '@ad/shared';
 import { LocalStorage } from '@ad/storage';
 import { eq } from 'drizzle-orm';
@@ -23,7 +28,9 @@ describe.skipIf(!integrationEnabled())('ImageService against Postgres and local 
 
   const picture = async (width = 1600, height = 900) =>
     new Uint8Array(
-      await sharp({ create: { width, height, channels: 3, background: '#3366cc' } }).png().toBuffer(),
+      await sharp({ create: { width, height, channels: 3, background: '#3366cc' } })
+        .png()
+        .toBuffer(),
     );
 
   beforeAll(async () => {
@@ -59,7 +66,7 @@ describe.skipIf(!integrationEnabled())('ImageService against Postgres and local 
   const load = async (id: string) =>
     (await t.db.select().from(schema.assets).where(eq(schema.assets.id, id)))[0]!;
 
-  it('stores webp and jpeg variants in the media bucket and marks the asset ready', async () => {
+  it('stores avif, webp and jpeg variants in the media bucket and marks the asset ready', async () => {
     const id = await newAsset('thumbnail', await picture());
     await service.process(id);
     const asset = await load(id);
@@ -69,7 +76,11 @@ describe.skipIf(!integrationEnabled())('ImageService against Postgres and local 
     expect(asset.placeholderColor).toMatch(/^#[0-9a-f]{6}$/);
     expect(asset.width).toBe(1600);
     const formats = new Set(asset.variants.map((v) => v.format));
-    expect(formats).toEqual(new Set(['webp', 'jpeg']));
+    expect(formats).toEqual(new Set(['avif', 'webp', 'jpeg']));
+    expect(asset.placeholderBlur).toMatch(/^data:image\/webp;base64,/);
+    expect(asset.placeholderBlur!.length).toBeLessThan(1024);
+    for (const variant of asset.variants.filter((v) => v.format === 'avif'))
+      expect(variant.key.endsWith('.avif')).toBe(true);
     for (const variant of asset.variants) {
       expect(variant.key.startsWith(`img/${id}/${variant.width}-`)).toBe(true);
       expect((await media.head(variant.key))?.bytes).toBe(variant.bytes);

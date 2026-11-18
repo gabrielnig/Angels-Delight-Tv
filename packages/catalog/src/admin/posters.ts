@@ -21,6 +21,8 @@ export interface PosterAssetDto {
   status: 'processing' | 'ready' | 'failed';
   /** Smallest variant, for the picker. Null until the picture is processed. */
   url: string | null;
+  /** 0 to 100 for a frame cut from the video: how well lit and sharp it is. Null for uploads and older frames. */
+  score: number | null;
 }
 
 /** Frames and uploads for one video, frames first in order, then uploads newest first. */
@@ -39,6 +41,7 @@ export async function listPosterAssets(
         rawKey: assets.rawKey,
         status: assets.status,
         variants: assets.variants,
+        candidateScore: assets.candidateScore,
         createdAt: assets.createdAt,
       })
       .from(assets)
@@ -50,7 +53,7 @@ export async function listPosterAssets(
       );
     const preview = (variants: (typeof rows)[number]['variants']) => {
       const small = [...variants]
-        .filter((v) => v.format !== 'jpeg')
+        .filter((v) => v.format !== 'jpeg' && v.format !== 'avif')
         .sort((a, b) => a.width - b.width)[0];
       const any = small ?? [...variants].sort((a, b) => a.width - b.width)[0];
       return any ? mediaUrl(mediaOrigin, any.key) : null;
@@ -65,6 +68,7 @@ export async function listPosterAssets(
       label,
       status: row.status,
       url: row.status === 'ready' ? preview(row.variants) : null,
+      score: source === 'frame' ? row.candidateScore : null,
     });
     const frames = rows
       .filter((r) => r.rawKey?.startsWith('candidates/'))

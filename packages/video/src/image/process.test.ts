@@ -10,15 +10,17 @@ async function source(width: number, height: number, format: 'png' | 'jpeg' = 'p
 }
 
 describe('processImage', () => {
-  it('makes webp and jpeg at every poster width, never wider than the source', async () => {
+  it('makes avif, webp and jpeg at every poster width, never wider than the source', async () => {
     const out = await processImage(await source(1000, 600), 'poster');
     const widths = [...new Set(out.variants.map((v) => v.width))].sort((a, b) => a - b);
     expect(widths).toEqual([320, 480, 640, 960]);
     for (const width of widths) {
-      expect(out.variants.filter((v) => v.width === width).map((v) => v.format).sort()).toEqual([
-        'jpeg',
-        'webp',
-      ]);
+      expect(
+        out.variants
+          .filter((v) => v.width === width)
+          .map((v) => v.format)
+          .sort(),
+      ).toEqual(['avif', 'jpeg', 'webp']);
     }
   });
 
@@ -29,7 +31,8 @@ describe('processImage', () => {
       const meta = await sharp(v.bytes).metadata();
       expect(meta.width).toBe(v.width);
       expect(meta.height).toBe(v.height);
-      expect(meta.format).toBe(v.format);
+      // sharp reports an avif file as heif.
+      expect(meta.format).toBe(v.format === 'avif' ? 'heif' : v.format);
     }
   });
 
@@ -39,6 +42,42 @@ describe('processImage', () => {
     const thumb = await processImage(await source(1280, 720), 'thumbnail');
     expect(Math.max(...thumb.variants.map((v) => v.width))).toBe(480);
     expect(IMAGE_PRESETS.thumbnail.widths[0]).toBe(160);
+  });
+
+  it('has the 320, 640 and 960 wide variants the story asks for in every format', async () => {
+    const out = await processImage(await source(1400, 800), 'poster');
+    for (const format of ['avif', 'webp', 'jpeg'] as const)
+      for (const width of [320, 640, 960])
+        expect(out.variants.some((v) => v.width === width && v.format === format)).toBe(true);
+  });
+
+  it('gives hero art a 320 wide size for Data saver as well', async () => {
+    expect(IMAGE_PRESETS.hero.widths[0]).toBe(320);
+    const hero = await processImage(await source(2600, 1462), 'hero');
+    expect(hero.variants.some((v) => v.width === 320)).toBe(true);
+  });
+
+  it('makes a blur placeholder under 1 KB that decodes to a small picture of the same shape', async () => {
+    const out = await processImage(await source(1600, 900), 'poster');
+    expect(out.placeholderBlur).toMatch(/^data:image\/webp;base64,[A-Za-z0-9+/=]+$/);
+    const bytes = Buffer.from(out.placeholderBlur.split(',')[1]!, 'base64');
+    expect(bytes.length).toBeLessThan(1024);
+    expect(out.placeholderBlur.length).toBeLessThan(1400);
+    const meta = await sharp(bytes).metadata();
+    expect(meta.format).toBe('webp');
+    expect(meta.width! / meta.height!).toBeCloseTo(16 / 9, 0);
+  });
+
+  it('keeps the blur under 1 KB even for a busy picture', async () => {
+    const noise = Buffer.alloc(1600 * 900 * 3);
+    for (let i = 0; i < noise.length; i++) noise[i] = (i * 2654435761) % 251;
+    const busy = new Uint8Array(
+      await sharp(noise, { raw: { width: 1600, height: 900, channels: 3 } })
+        .png()
+        .toBuffer(),
+    );
+    const out = await processImage(busy, 'poster');
+    expect(Buffer.from(out.placeholderBlur.split(',')[1]!, 'base64').length).toBeLessThan(1024);
   });
 
   it('reports a placeholder colour and the source size', async () => {

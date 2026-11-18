@@ -9,8 +9,8 @@ import { ImageRejected, processImage, type ImagePreset } from './process';
 const { assets } = schema;
 
 const IMMUTABLE = 'public, max-age=31536000, immutable';
-const MIME = { webp: 'image/webp', jpeg: 'image/jpeg' } as const;
-const EXT = { webp: 'webp', jpeg: 'jpg' } as const;
+const MIME = { avif: 'image/avif', webp: 'image/webp', jpeg: 'image/jpeg' } as const;
+const EXT = { avif: 'avif', webp: 'webp', jpeg: 'jpg' } as const;
 
 export interface ImageServiceDeps {
   db: Database;
@@ -27,7 +27,7 @@ export function presetFor(purpose: string): ImagePreset {
   return 'poster';
 }
 
-/** `image.process`: turns one source picture into sized webp and jpeg variants (M36). */
+/** `image.process`: turns one source picture into sized avif, webp and jpeg variants and a tiny blur placeholder (M36). */
 export class ImageService {
   private readonly logger: Logger;
   constructor(private readonly deps: ImageServiceDeps) {
@@ -62,11 +62,20 @@ export class ImageService {
     }
 
     const base = `img/${assetId}/`;
-    const stored: { width: number; height: number; key: string; bytes: number; format: 'webp' | 'jpeg' }[] = [];
+    const stored: {
+      width: number;
+      height: number;
+      key: string;
+      bytes: number;
+      format: 'avif' | 'webp' | 'jpeg';
+    }[] = [];
     for (const variant of result.variants) {
       const hash = createHash('sha256').update(variant.bytes).digest('hex').slice(0, 8);
       const key = `${base}${variant.width}-${hash}.${EXT[variant.format]}`;
-      await media.put(key, variant.bytes, { contentType: MIME[variant.format], cacheControl: IMMUTABLE });
+      await media.put(key, variant.bytes, {
+        contentType: MIME[variant.format],
+        cacheControl: IMMUTABLE,
+      });
       stored.push({
         width: variant.width,
         height: variant.height,
@@ -87,6 +96,7 @@ export class ImageService {
         bytes: source.length,
         sha256: createHash('sha256').update(source).digest(),
         placeholderColor: result.placeholderColor,
+        placeholderBlur: result.placeholderBlur,
       })
       .where(eq(assets.id, assetId));
     this.logger.info('image processed', { assetId, variants: stored.length });

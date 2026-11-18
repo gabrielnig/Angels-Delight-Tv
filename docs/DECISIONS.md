@@ -788,3 +788,9 @@ Format: decision, options considered, why, reversible or not. Newest first. Deci
 - Options: require the VPS address to match (breaks when proxied), skip the address checks, read the selectors from new env variables.
 - Why: Cloudflare proxying is the documented setup, and a check that fails on it would be ignored. A stale range list can only cause a false failure that is easy to see.
 - Reversible: yes.
+
+## D-134 Poster frames are scored, and variants gain AVIF and a stored blur (lane f1)
+- Decision: the artwork step extracts six frames at the middle of each sixth of the video. Each gets a 0 to 100 score from a small greyscale copy: light (nothing at or below 10 of 255 or at or above 245), contrast and edge sharpness (a Laplacian filter), taking the lower of light and the mean of contrast and sharpness, so a black frame is 0. A frame under 35 is retried at two nearby points (4 percent of the duration either side) and the best is kept. The best frame becomes the default poster, ties going to the frame nearest the middle. A frame that cannot be scored is kept with no score. When every scored frame is under 35 the picker suggests uploading a picture. Images also get AVIF variants (quality 50) next to WebP and JPEG, and a blur placeholder (a 24 pixel wide WebP, stepped down until the data url is under 1 KB) stored in `assets.placeholder_blur`. Migration 0034 adds the blur column and `candidate_score`, with check constraints. The viewer lists AVIF first in a `picture`, and thumbnails ignore AVIF.
+- Options: score with an external model, extract more frames and pick, store AVIF only, draw the blur on every card now.
+- Why: the story asks for a simple score, so a cheap local measure keeps the encode job light. The blur is stored and exposed; drawing it on cards is a viewer change that can follow without another migration.
+- Reversible: yes. Frames and variants can be regenerated.

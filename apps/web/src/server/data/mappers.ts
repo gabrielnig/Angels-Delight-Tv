@@ -10,7 +10,7 @@ const TONES = ['sky', 'mint', 'lemon', 'peach', 'lavender'] as const;
 export function toThumb(poster: ArtworkDto | null): Thumb | undefined {
   const all = poster?.variants ?? [];
   const jpeg = all.filter((v) => v.format === 'jpeg');
-  const webp = all.filter((v) => v.format !== 'jpeg');
+  const webp = all.filter((v) => v.format !== 'jpeg' && v.format !== 'avif');
   // Rows without webp (not produced today) still work from jpeg alone.
   const main = webp.length > 0 ? webp : jpeg;
   if (main.length === 0) return undefined;

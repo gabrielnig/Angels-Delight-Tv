@@ -4,12 +4,13 @@ import { mkdir, readdir, readFile, stat, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { schema, type Database } from '@ad/db';
 import type { ClassifiedFailure, JobProducer } from '@ad/queue';
-import { Conflict, NotFound, createLogger, uuidv7, type Logger } from '@ad/shared';
+import { Conflict, LOW_FRAME_SCORE, NotFound, createLogger, uuidv7, type Logger } from '@ad/shared';
 import type { StorageAdapter } from '@ad/storage';
 import { and, asc, eq, like, sql } from 'drizzle-orm';
 import { PipelineError, toPipelineError } from '../failure';
 import { generateHlsKey, unwrapHlsKey, wrapHlsKey, type Keyring } from '../hls-key';
 import { DEFAULT_LADDER, codecsFor, planLadder, type PlannedRung, type RungSpec } from '../ladder';
+import { scoreFrame } from '../image/score';
 import { sniffContainer, type Container } from '../magic';
 import {
   buildMasterTemplate,
@@ -87,6 +88,18 @@ async function mapLimit<T>(
     }
   });
   await Promise.all(workers);
+}
+
+/** How many poster frames to offer, and how far (as a share of the duration) to move a frame that scores low. */
+const POSTER_CANDIDATES = 6;
+const POSTER_RETRY_SHIFT = 0.04;
+
+async function scoreOrNull(frame: Buffer): Promise<number | null> {
+  try {
+    return (await scoreFrame(frame)).score;
+  } catch {
+    return null;
+  }
 }
 
 export class VideoPipeline {
@@ -502,7 +515,11 @@ export class VideoPipeline {
       .where(and(eq(renditions.videoId, video.id), eq(renditions.height, rung.height)));
   }
 
-  /** `video.thumbnails`: three poster candidates at 10, 50 and 90 percent (ARCHITECTURE section 13). */
+  /**
+   * `video.thumbnails`: six poster candidates at evenly spaced points (M36-S01). Each frame gets a score for light,
+   * contrast and sharpness. A frame that scores low is tried again at two nearby points and the best one is kept, so
+   * a black frame between scenes does not become a candidate. The best scoring frame is the default poster.
+   */
   async thumbnails(videoId: string, progress: ProgressFn): Promise<void> {
     const prior = await this.deps.db
       .select({ id: assets.id })
@@ -518,42 +535,63 @@ export class VideoPipeline {
       async (dir) => {
         const { path, container, probe } = await this.fetchSource(videoId, dir);
         const seconds = probe.durationMs / 1000;
-        const width = 1280;
-        const created: string[] = [];
-        for (const [index, fraction] of [0.1, 0.5, 0.9].entries()) {
-          await progress('Making thumbnails', 10 + index * 30);
-          const output = join(dir, `thumb-${index + 1}.webp`);
-          const at = Math.min(Math.max(seconds * fraction, 0), Math.max(seconds - 0.5, 0));
-          const result = await this.runner.run(
-            this.ffmpegPath(),
-            thumbnailArgs({ input: path, container, atSeconds: at, width, output }),
-            { timeoutMs: 120_000, niceness: this.deps.ffmpeg?.niceness ?? 10 },
-          );
-          if (result.code !== 0)
-            throw new PipelineError(
-              'encode_failed',
-              `thumbnail ${index + 1}: ${result.stderr.slice(0, 300)}`,
+        const last = Math.max(seconds - 0.5, 0);
+        const clampAt = (at: number) => Math.min(Math.max(at, 0), last);
+
+        // Extract and score every frame first, so a failure part way leaves nothing behind.
+        const frames: { bytes: Buffer; score: number | null }[] = [];
+        for (let slot = 0; slot < POSTER_CANDIDATES; slot++) {
+          await progress('Making thumbnails', 5 + Math.round((slot / POSTER_CANDIDATES) * 70));
+          const base = (seconds * (slot + 0.5)) / POSTER_CANDIDATES;
+          const nearby = [0, seconds * POSTER_RETRY_SHIFT, -seconds * POSTER_RETRY_SHIFT];
+          let best: { bytes: Buffer; score: number | null } | null = null;
+          for (const [attempt, shift] of nearby.entries()) {
+            const frame = await this.extractFrame(
+              dir,
+              path,
+              container,
+              clampAt(base + shift),
+              `${slot + 1}-${attempt}`,
             );
-          const bytes = await readFile(output);
+            const scored = { bytes: frame, score: await scoreOrNull(frame) };
+            if (best === null || (scored.score ?? -1) > (best.score ?? -1)) best = scored;
+            // An unreadable frame cannot be improved by moving, and a good one needs no retry.
+            if (scored.score === null || scored.score >= LOW_FRAME_SCORE) break;
+          }
+          frames.push(best!);
+        }
+
+        const created: { id: string; score: number | null }[] = [];
+        for (const [index, frame] of frames.entries()) {
           const assetId = uuidv7();
           const rawKey = `candidates/${videoId}/${index + 1}`;
-          await this.deps.originals.put(rawKey, bytes, { contentType: 'image/webp' });
+          await this.deps.originals.put(rawKey, frame.bytes, { contentType: 'image/webp' });
           await this.deps.db.insert(assets).values({
             id: assetId,
             purpose: 'thumbnail',
             status: 'processing',
             rawKey,
             mime: 'image/webp',
-            bytes: bytes.length,
-            sha256: createHash('sha256').update(bytes).digest(),
+            bytes: frame.bytes.length,
+            sha256: createHash('sha256').update(frame.bytes).digest(),
+            candidateScore: frame.score,
           });
           await this.deps.producer.enqueue('image.process', { assetId });
-          created.push(assetId);
+          created.push({ id: assetId, score: frame.score });
         }
-        // The middle frame is the default poster until an admin picks another.
+        // The best frame is the default poster until an admin picks another. Ties go to the frame nearest the middle.
+        const middle = (POSTER_CANDIDATES - 1) / 2;
+        const ranked = created
+          .map((c, index) => ({ ...c, index }))
+          .sort(
+            (a, b) =>
+              (b.score ?? -1) - (a.score ?? -1) ||
+              Math.abs(a.index - middle) - Math.abs(b.index - middle) ||
+              a.index - b.index,
+          );
         await this.deps.db
           .update(videos)
-          .set({ posterAssetId: created[1], updatedAt: new Date() })
+          .set({ posterAssetId: ranked[0]!.id, updatedAt: new Date() })
           .where(and(eq(videos.id, videoId), sql`${videos.posterAssetId} IS NULL`));
         // Sprites are optional and never fail the job (M08-S29 error case: sprite failure is silent).
         try {
@@ -564,6 +602,24 @@ export class VideoPipeline {
         }
       },
     );
+  }
+
+  private async extractFrame(
+    dir: string,
+    input: string,
+    container: Container,
+    atSeconds: number,
+    name: string,
+  ): Promise<Buffer> {
+    const output = join(dir, `thumb-${name}.webp`);
+    const result = await this.runner.run(
+      this.ffmpegPath(),
+      thumbnailArgs({ input, container, atSeconds, width: 1280, output }),
+      { timeoutMs: 120_000, niceness: this.deps.ffmpeg?.niceness ?? 10 },
+    );
+    if (result.code !== 0)
+      throw new PipelineError('encode_failed', `thumbnail ${name}: ${result.stderr.slice(0, 300)}`);
+    return readFile(output);
   }
 
   private spritesEnabled = async () => (await this.deps.sprites?.enabled?.()) ?? true;
@@ -590,7 +646,8 @@ export class VideoPipeline {
       spriteArgs({ input: source, container, plan, outputPattern: join(outDir, 'sheet-%03d.jpg') }),
       { timeoutMs: 15 * 60_000, niceness: this.deps.ffmpeg?.niceness ?? 10 },
     );
-    if (result.code !== 0) throw new PipelineError('encode_failed', `sprites: ${result.stderr.slice(0, 300)}`);
+    if (result.code !== 0)
+      throw new PipelineError('encode_failed', `sprites: ${result.stderr.slice(0, 300)}`);
     const files = (await readdir(outDir)).filter((name) => name.endsWith('.jpg')).sort();
     if (files.length === 0) throw new PipelineError('encode_failed', 'sprites: no sheets written');
 
@@ -605,10 +662,17 @@ export class VideoPipeline {
       });
       names.push(name);
     }
-    const covered = { ...plan, frames: Math.min(plan.frames, names.length * plan.perSheet), sheets: names.length };
+    const covered = {
+      ...plan,
+      frames: Math.min(plan.frames, names.length * plan.perSheet),
+      sheets: names.length,
+    };
     const vtt = Buffer.from(buildSpriteVtt(covered, probe.durationMs / 1000, names));
     const key = `${base}map-${createHash('sha256').update(vtt).digest('hex').slice(0, 8)}.vtt`;
-    await this.deps.media.put(key, vtt, { contentType: 'text/vtt; charset=utf-8', cacheControl: SEGMENT_CACHE });
+    await this.deps.media.put(key, vtt, {
+      contentType: 'text/vtt; charset=utf-8',
+      cacheControl: SEGMENT_CACHE,
+    });
     await this.deps.db
       .update(videos)
       .set({ spriteKey: key, updatedAt: new Date() })

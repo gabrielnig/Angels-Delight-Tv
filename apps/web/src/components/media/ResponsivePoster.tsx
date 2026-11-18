@@ -87,9 +87,14 @@ export function ResponsivePoster({
   );
   return (
     <div className={classes} style={style}>
-      {sources.fallback ? (
+      {sources.fallback || sources.avif ? (
         <picture>
-          <source type="image/webp" srcSet={sources.srcSet} sizes={sizes} />
+          {sources.avif ? (
+            <source type="image/avif" srcSet={sources.avif.srcSet} sizes={sizes} />
+          ) : null}
+          {sources.fallback ? (
+            <source type="image/webp" srcSet={sources.srcSet} sizes={sizes} />
+          ) : null}
           {image}
         </picture>
       ) : (
