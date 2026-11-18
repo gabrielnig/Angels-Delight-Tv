@@ -51,6 +51,18 @@ describe.skipIf(!integrationEnabled())('worker staff notifier', () => {
     });
   });
 
+  it('tells staff a poster crop could not be applied and that the old poster stays', async () => {
+    const notifier = makeNotifier(t.db, createLogger({ write: () => undefined }));
+    await notifier.posterRecutFailed(videoId);
+    const rows = await t.db.select().from(schema.adminNotices);
+    expect(rows.find((r) => r.title === 'Poster crop could not be applied')).toMatchObject({
+      kind: 'encode_failed',
+      body: 'Fractions: the old poster is still showing. Open the poster page and save again.',
+      href: `/admin/videos/${videoId}/poster`,
+      videoId,
+    });
+  });
+
   it('copes with a video that is gone', async () => {
     const notifier = makeNotifier(t.db, createLogger({ write: () => undefined }));
     await expect(

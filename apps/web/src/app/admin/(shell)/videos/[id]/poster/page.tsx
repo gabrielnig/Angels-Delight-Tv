@@ -36,6 +36,7 @@ export default async function PosterPage({ params }: { params: Promise<{ id: str
         initial={{ posterId: video.posterId, alt: video.posterAlt, focus: video.posterFocus }}
         save={setPosterAction.bind(null, id)}
         assets={assets}
+        recut={video.posterRecut ?? null}
         uploadAction={uploadPosterAction.bind(null, id)}
         statusAction={posterStatusAction.bind(null, id)}
       />

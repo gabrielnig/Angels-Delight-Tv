@@ -20,7 +20,7 @@ import type {
 export interface VideoHandlerDeps {
   pipeline: Pick<VideoPipeline, 'probe' | 'encode' | 'thumbnails' | 'rewrapKey' | 'failVideo'>;
   captions: Pick<CaptionGenerator, 'generate'>;
-  images: Pick<ImageService, 'process'>;
+  images: Pick<ImageService, 'process' | 'failRecut'>;
   lifecycle: Pick<LifecycleService, 'purge' | 'enqueueExpired'>;
   uploads: Pick<UploadService, 'cleanupExpired'>;
   mirror: JobMirror;
@@ -34,6 +34,8 @@ export interface StaffNotifier {
   encodeFailed(videoId: string, reason: string): Promise<void>;
   captionsReady(videoId: string): Promise<void>;
   captionsFailed(videoId: string): Promise<void>;
+  /** A poster or hero recut could not be made, so the old picture stays (M36-S03). */
+  posterRecutFailed(videoId: string): Promise<void>;
 }
 
 /** Creates the queues, schedules the crons and registers one worker per lane D queue. */
@@ -91,6 +93,14 @@ export async function registerVideoHandlers(boss: BossLike, deps: VideoHandlerDe
     ...base,
     queue: QUEUES.imageProcess,
     handle: (p) => images.process(p.assetId),
+    async onFailed(p) {
+      // Only a recut someone is waiting for is worth a notice. Marking it failed also lets the poster picker say so.
+      const waiting = await images.failRecut(p.assetId).catch((err: unknown) => {
+        logger.warn('recut not marked failed', { err });
+        return null;
+      });
+      if (waiting) await tell((n) => n.posterRecutFailed(waiting.videoId));
+    },
   });
   await registerWorker(boss, {
     ...base,

@@ -193,6 +193,48 @@ describe('PosterPicker preview of a picture that is not 16 by 9 (M36-S03)', () =
   });
 });
 
+describe('PosterPicker recut state (M36-S03)', () => {
+  const ID = '0192f0a0-0000-7000-8000-0000000000bb';
+  const show = (recut: 'processing' | 'failed' | null) =>
+    render(
+      <PosterPicker
+        videoId="v1"
+        title="Staying Safe Online"
+        durationSeconds={100}
+        initial={{ posterId: ID, alt: 'Alt', focus: { x: 20, y: 30, zoom: 130 } }}
+        recut={recut}
+        save={vi.fn()}
+        assets={[
+          {
+            id: ID,
+            source: 'upload',
+            label: 'Your image',
+            status: 'ready',
+            url: 'https://m.test/a.webp',
+            score: null,
+            previewRatio: 16 / 9,
+          },
+        ]}
+      />,
+    );
+  it('says the crop failed and the old poster is still showing', () => {
+    show('failed');
+    const banner = screen.getByRole('alert');
+    expect(banner).toHaveTextContent('The crop could not be applied to the poster files');
+    expect(banner).toHaveTextContent('old poster is still showing');
+    expect(banner).toHaveTextContent('Save again');
+  });
+  it('says the crop is still being applied', () => {
+    show('processing');
+    expect(screen.getByRole('status')).toHaveTextContent('Applying the crop');
+  });
+  it('shows nothing when there is no recut to report', () => {
+    show(null);
+    expect(screen.queryByText(/crop could not be applied/i)).toBeNull();
+    expect(screen.queryByText(/Applying the crop/i)).toBeNull();
+  });
+});
+
 describe('PosterPicker low score warning (M36-S01)', () => {
   const frame = (n: number, score: number | null) => ({
     id: `a${n}`,
