@@ -12,6 +12,8 @@ export interface TitleActionsProps {
   /** Shown to other apps when the link is shared. Share is hidden when this is missing. */
   shareTitle?: string;
   toggle?: (itemKey: string, add: boolean) => Promise<void | 'sent' | 'queued'>;
+  /** `title` is the two row layout of the title page (S18). The default is one wrapping row. */
+  layout?: 'default' | 'title';
 }
 
 /** Play, Resume or Watch again, Start over, an optimistic My List toggle and Share (M07, M10-S01). */
@@ -21,6 +23,7 @@ export function TitleActions({
   inList: initial,
   shareTitle,
   toggle: toggleProp,
+  layout = 'default',
 }: TitleActionsProps) {
   const queued = useListToggle();
   const toggle = toggleProp ?? queued;
@@ -64,6 +67,50 @@ export function TitleActions({
     }
   }
 
+  const manual = manualUrl ? (
+    <input
+      className="web-title-actions__url"
+      readOnly
+      aria-label="Link to share"
+      value={manualUrl}
+      onFocus={(event) => event.currentTarget.select()}
+    />
+  ) : null;
+
+  if (layout === 'title') {
+    return (
+      <div className="tv-actions">
+        <div className="tv-actions__row tv-actions__row--play">
+          <ButtonLink href={primary.href} icon="play" size="lg" className="tv-actions__primary">
+            {primary.text}
+          </ButtonLink>
+          {primary.startOverHref ? (
+            <ButtonLink href={primary.startOverHref} variant="secondary" size="lg" icon="retry">
+              Start over
+            </ButtonLink>
+          ) : null}
+        </div>
+        <div className="tv-actions__row">
+          <Button
+            variant="secondary"
+            icon={inList ? 'check' : 'plus'}
+            aria-pressed={inList}
+            className="tv-actions__list"
+            onClick={() => void onToggle()}
+          >
+            {inList ? 'In My List' : 'My List'}
+          </Button>
+          {shareTitle ? (
+            <Button variant="secondary" icon="share" onClick={() => void onShare()}>
+              Share
+            </Button>
+          ) : null}
+        </div>
+        {manual}
+      </div>
+    );
+  }
+
   return (
     <div className="web-title-actions">
       <ButtonLink href={primary.href} icon="play">
@@ -87,15 +134,7 @@ export function TitleActions({
           Share
         </Button>
       ) : null}
-      {manualUrl ? (
-        <input
-          className="web-title-actions__url"
-          readOnly
-          aria-label="Link to share"
-          value={manualUrl}
-          onFocus={(event) => event.currentTarget.select()}
-        />
-      ) : null}
+      {manual}
     </div>
   );
 }

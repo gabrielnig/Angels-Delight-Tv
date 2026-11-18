@@ -1,9 +1,10 @@
 'use client';
 
 import { useState } from 'react';
+import { Icon } from '@ad/ui';
 
-/** About 4 lines at the page width. Longer text collapses behind More (M07-S01). */
-const COLLAPSE_AFTER = 240;
+/** Three lines at the page width. Longer text collapses behind Show more (M07-S01, S18). */
+const COLLAPSE_AFTER = 140;
 
 export function ExpandableText({ text, className }: { text: string; className?: string }) {
   const [open, setOpen] = useState(false);
@@ -25,7 +26,8 @@ export function ExpandableText({ text, className }: { text: string; className?: 
           aria-expanded={open}
           onClick={() => setOpen((value) => !value)}
         >
-          {open ? 'Less' : 'More'}
+          <span>{open ? 'Show less' : 'Show more'}</span>
+          <Icon name="chevronDown" size={16} className="web-expandable__chevron" />
         </button>
       ) : null}
     </div>
