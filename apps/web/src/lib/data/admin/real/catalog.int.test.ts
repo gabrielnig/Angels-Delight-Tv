@@ -10,6 +10,11 @@ import {
   seedVideo,
   type ViewerTestDb,
 } from '@ad/catalog/testing';
+import { FailedEncodeService } from '@ad/video';
+import { LocalStorage } from '@ad/storage';
+import { mkdtempSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import sharp from 'sharp';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { setAdminRuntime } from '@/server/admin/runtime';
@@ -18,6 +23,10 @@ import { realCollectionService } from './collections';
 import { realHomeService } from './home';
 import { realVideoService } from './videos';
 
+const failedRoot = mkdtempSync(join(tmpdir(), 'ad-failed-web-'));
+const failedStorage = (bucket: string) =>
+  new LocalStorage({ root: failedRoot, bucket, signingSecret: new Uint8Array(32).fill(3) });
+
 describe.skipIf(!integrationEnabled())('real admin services over the catalog', () => {
   let t: ViewerTestDb;
   let editor: AdminActor;
@@ -25,6 +34,7 @@ describe.skipIf(!integrationEnabled())('real admin services over the catalog', (
   let viewer: AdminActor;
   const queued: Array<{ queue: string; payload: unknown }> = [];
   const stored: string[] = [];
+  let failedService: FailedEncodeService;
 
   beforeAll(async () => {
     t = await createViewerTestDb();
@@ -34,6 +44,11 @@ describe.skipIf(!integrationEnabled())('real admin services over the catalog', (
     editor = { accountId: e.id, role: 'editor', name: 'Ngozi Eze' };
     admin = { accountId: a.id, role: 'admin', name: 'Chiamaka Okafor' };
     viewer = { accountId: v.id, role: 'viewer', name: 'Ada' };
+    failedService = new FailedEncodeService({
+      db: t.setup,
+      originals: failedStorage('originals'),
+      media: failedStorage('media'),
+    });
     setAdminRuntime({
       db: () => t.app,
       ctx: async () => ({ db: t.app }),
@@ -43,6 +58,7 @@ describe.skipIf(!integrationEnabled())('real admin services over the catalog', (
       }) as never,
       names: async (_actor, ids) => new Map(ids.map((id) => [id, 'Amina Bello'])),
       originals: () => ({ put: async (key: string) => void stored.push(key) }) as never,
+      failedEncodes: () => failedService,
     });
   });
   afterAll(async () => {
@@ -217,6 +233,34 @@ describe.skipIf(!integrationEnabled())('real admin services over the catalog', (
         { id: done.assetId, source: 'upload', label: 'Your image', status: 'processing', url: null },
       ]);
       await expect(realVideoService.uploadPoster(viewer, video.id, bytes)).rejects.toThrow();
+    });
+
+    it('lists failed encodes with technical detail for admins only, and cleans them up', async () => {
+      const failed = await seedVideo(t.setup, {
+        status: 'failed',
+        publishState: 'draft',
+        originalKey: 'originals/f/source.mp4',
+        failureCode: 'encode_failed',
+        failureMessage: 'The video could not be converted. Try exporting it again.',
+      });
+      await t.setup.insert(schema.jobs).values({
+        queue: 'video.encode',
+        videoId: failed.id,
+        status: 'failed',
+        errorDetail: 'ffmpeg exited with 1',
+        attempts: 3,
+      });
+      const asAdmin = (await realVideoService.failedEncodes(admin)).find((r) => r.videoId === failed.id)!;
+      expect(asAdmin).toMatchObject({ technical: 'ffmpeg exited with 1', attempts: 3, canRetry: true });
+      const asEditor = (await realVideoService.failedEncodes(editor)).find((r) => r.videoId === failed.id)!;
+      expect(asEditor.technical).toBeNull();
+      await expect(realVideoService.failedEncodes(viewer)).rejects.toThrow();
+      expect(await realVideoService.cleanupFailed(editor, failed.id)).toMatchObject({ ok: true, videos: 1 });
+      const ready = await seedVideo(t.setup, { title: 'Fine' });
+      expect(await realVideoService.cleanupFailed(editor, ready.id)).toEqual({
+        ok: false,
+        error: 'Only a failed video can be cleaned up.',
+      });
     });
 
     it('moves to Trash, restores, and queues a purge only for an admin', async () => {

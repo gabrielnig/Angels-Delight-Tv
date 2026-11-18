@@ -20,9 +20,12 @@ const ACCEPT = '.mp4,.mov,.mkv,video/mp4,video/quicktime,video/x-matroska';
 export function UploadScreen({
   registerUpload,
   maxFileLabel = '5 GB',
+  replace,
 }: {
   registerUpload?: (name: string, size: number) => Promise<{ id: string }>;
   maxFileLabel?: string;
+  /** Upload a new file for this existing video (a failed encode) instead of making a new draft. */
+  replace?: { videoId: string; title: string };
 }) {
   const { uploader, lanes, online } = useUploaderState();
   const [over, setOver] = useState(false);
@@ -33,9 +36,15 @@ export function UploadScreen({
 
   const addFiles = useCallback(
     (files: FileList | File[]) => {
-      for (const file of Array.from(files)) uploader.add(file);
+      const list = Array.from(files);
+      if (replace) {
+        // One file replaces one video.
+        if (list[0]) uploader.add(list[0], { replaceVideoId: replace.videoId });
+        return;
+      }
+      for (const file of list) uploader.add(file);
     },
-    [uploader],
+    [uploader, replace],
   );
 
   // Fixture: when a lane finishes and the server did not name a video, create the draft.
@@ -76,6 +85,12 @@ export function UploadScreen({
 
   return (
     <div className="adm-stack">
+      {replace ? (
+        <Banner tone="info">
+          Choose a new file for <strong>{replace.title}</strong>. It replaces the one that failed and
+          the video is prepared again.
+        </Banner>
+      ) : null}
       {!online ? (
         <Banner tone="warning">
           You are offline. Uploads will continue when you are back online.
@@ -103,7 +118,7 @@ export function UploadScreen({
         <input
           ref={input}
           type="file"
-          multiple
+          multiple={!replace}
           accept={ACCEPT}
           hidden
           aria-label="Choose videos to upload"
@@ -114,7 +129,7 @@ export function UploadScreen({
           }}
         />
         <Button variant="primary" onClick={() => input.current?.click()}>
-          Choose videos
+          {replace ? 'Choose the new file' : 'Choose videos'}
         </Button>
         <p className="adm-muted adm-drop__hint">
           MP4, MOV or MKV. Up to {maxFileLabel} each. You can add many at once.

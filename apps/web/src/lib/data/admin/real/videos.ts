@@ -191,6 +191,32 @@ export const realVideoService: VideoService = {
     // Real uploads create their own draft video through the upload API (lane D), never from the screen.
     throw new Forbidden('Uploads are created by the upload service.');
   },
+  async failedEncodes(actor) {
+    need(actor, 'video.edit');
+    const rows = await adminRuntime().failedEncodes().list();
+    return rows.map(({ failedAt, leftover, technical, ...row }) => ({
+      ...row,
+      failedAt: failedAt.toISOString(),
+      // Technical detail is for the developer and admins only (M14-S06, never shown to editors).
+      technical: actor.role === 'admin' ? technical : null,
+      leftoverFiles: leftover.files,
+      leftoverBytes: leftover.bytes,
+    }));
+  },
+  async cleanupFailed(actor, id) {
+    need(actor, 'video.edit');
+    try {
+      const out = await adminRuntime().failedEncodes().cleanup(id);
+      return { ok: true, videos: 1, ...out };
+    } catch (error) {
+      if (error instanceof Conflict) return { ok: false, error: error.message };
+      throw error;
+    }
+  },
+  async cleanupAllFailed(actor) {
+    need(actor, 'video.edit');
+    return { ok: true, ...(await adminRuntime().failedEncodes().cleanupAll()) };
+  },
   async encodingQueue(actor) {
     need(actor, 'video.edit');
     const all = await listAdminVideos(await context(), catalogActor(actor));
