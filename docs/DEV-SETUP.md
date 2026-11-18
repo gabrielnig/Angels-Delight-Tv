@@ -181,7 +181,29 @@ Never run the whole suite (see TDD-PROTOCOL.md section 2).
 
 `scripts/e2e-video-up.sh [port]` prepares databases `ad_e2e` and `ad_e2e_keys` on the local Postgres, applies the migrations, writes `.env.e2e-video` (throwaway secrets, local storage driver, `WHISPER_FAKE=true`) and seeds an admin and a viewer. Then start the worker and web with that environment and run the spec, see `docs/lanes/K2-video-integration.md`.
 
-## 7. Troubleshooting
+## 7. Launch tooling (production files and CLIs)
+
+These live in `packages/launch` and run on the host with `pnpm`, or in the `tools` image in production (`ad-tool <command>`).
+
+| Command | What it does |
+|---|---|
+| `pnpm secrets:generate` | Creates `.env.production` from `.env.production.example`, fills every empty secret, and writes the two backup keypairs to `offline-keys/`. Keep that folder off the server and out of git |
+| `pnpm launch:apply --config client.json [--dry-run]` | Validates the client file, then applies name, domain, contact, theme, logo, favicon, legal pages and PWA icons through the settings and theme services. Safe to run again. `--env-only` updates the env file values with no database |
+| `pnpm content:import --dir videos/ --manifest videos.csv --admin-email <owner> [--dry-run]` | Registers each file through the upload service with no HTTP, skips files already imported by checksum, resumes part uploads. The worker must have started once so the queue schema exists |
+| `pnpm backup:run`, `pnpm backup:restore` | Encrypted dump and restore (see `docs/DEPLOYMENT.md` section 10) |
+
+`client.example.json` at the repository root is the file to copy. Production files: `compose.prod.yaml`, `ops/`, `.env.production.example`. Scoped tests for them:
+
+```bash
+pnpm vitest run packages/launch/src          # config, manifest, apply, import, backup, compose, Caddyfile
+pnpm vitest run scripts/ops-deploy.test.ts   # deploy.sh with a fake docker
+CADDY_BIN=/path/to/caddy pnpm vitest run packages/launch/src/caddyfile.test.ts   # skips without a caddy binary
+export TEST_DATABASE_ADMIN_URL=postgres://postgres:postgres@localhost:5432/postgres   # restore and import integration tests
+```
+
+Lighthouse for Home on the mobile profile: `CHROME_PATH=/usr/bin/google-chrome ops/lighthouse/run.sh http://127.0.0.1:3000/` against a running build (budgets in `ops/lighthouse/budget.json`).
+
+## 8. Troubleshooting
 
 | Symptom | Likely cause and fix |
 |---|---|
