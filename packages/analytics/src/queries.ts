@@ -41,6 +41,18 @@ export interface SplitRow {
   percent: number;
 }
 
+/** One title on one Lagos day, for the CSV export (M19-S05). */
+export interface TitleDailyRow {
+  day: string;
+  videoId: string;
+  title: string;
+  /** The title was deleted after it was watched. Its numbers still count. */
+  archived: boolean;
+  views: number;
+  watchMs: number;
+  completions: number;
+}
+
 export interface QueryOptions {
   now?: () => Date;
   /** Short cache for numbers that include today (M19-S06 edge). 0 disables it. */
@@ -226,6 +238,48 @@ export function createAnalyticsQueries(db: SqlExecutor, options: QueryOptions = 
           return list.slice(0, opts.limit ?? 50);
         },
       );
+    },
+
+    /** Every title with views on each day of the range: rolled up days plus live rows for today. Not cached, not limited. */
+    async titleDaily(range: DayRange): Promise<TitleDailyRow[]> {
+      const s = split(range);
+      const rows = rowsOf<{
+        day: string;
+        video_id: string;
+        title: string;
+        archived: boolean;
+        views: string;
+        watch_ms: string;
+        completions: string;
+      }>(
+        await db.execute(sql`
+          WITH combined AS (
+            SELECT to_char(day, 'YYYY-MM-DD') AS day, video_id, views, watch_ms, completions
+            FROM video_daily_stats
+            WHERE day BETWEEN ${s.rolledFrom}::date AND ${s.rolledTo}::date
+            UNION ALL
+            SELECT ${s.today}, video_id, count(*)::int, COALESCE(sum(watched_ms), 0)::bigint,
+                   (count(*) FILTER (WHERE completed))::int
+            FROM view_events
+            WHERE started_at >= ${s.liveStart}::timestamptz AND started_at < ${s.liveEnd}::timestamptz
+              AND ${s.liveIncluded}
+            GROUP BY video_id
+          )
+          SELECT c.day, c.video_id, v.title, (v.deleted_at IS NOT NULL) AS archived,
+                 c.views, c.watch_ms, c.completions
+          FROM combined c JOIN videos v ON v.id = c.video_id
+          WHERE c.views > 0 OR c.watch_ms > 0
+          ORDER BY c.day, v.title, c.video_id`),
+      );
+      return rows.map((row) => ({
+        day: row.day,
+        videoId: row.video_id,
+        title: row.title,
+        archived: Boolean(row.archived),
+        views: num(row.views),
+        watchMs: num(row.watch_ms),
+        completions: num(row.completions),
+      }));
     },
 
     /** Daily views and a retention curve for one video. The curve needs raw rows, so it covers the raw retention window. */

@@ -534,3 +534,9 @@ Format: decision, options considered, why, reversible or not. Newest first. Deci
 - Options: clean up automatically after the last retry, delete the original of a failed video, a separate cleanup queue.
 - Why: automatic deletion would remove evidence while the admin is still reading the reason, and deleting the original makes Retry impossible. A direct service call is enough because cleanup is quick and safe to repeat.
 - Reversible: yes. Nothing here changes existing data formats.
+
+## D-103 The analytics export is one row per title per day (lane A2)
+- Decision: `Export CSV` returns `day, video_id, title, archived, views, watch_seconds, completions` for every title with views in the range, from rolled up days plus live rows for today (`titleDaily` in `@ad/analytics`). It replaces the earlier file that held the site totals and only the top 10 titles. Watch time is exact seconds (it was rounded to minutes, which showed 0 for short plays). Titles deleted after being watched stay in with `archived` set to yes. The route spends the per staff admin budget like the audit export. Formula characters in titles are neutralised by the shared `csvCell`.
+- Options: keep totals and top titles, or add the per title rows as a second block in the same file.
+- Why: M19-S05 asks for daily views and watch time per title. A single table loads straight into a spreadsheet pivot; a second block does not.
+- Reversible: yes.

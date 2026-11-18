@@ -50,8 +50,8 @@ import {
 import type { FieldResult } from './account-commands';
 import { FIXTURE_CODE, fixtureEmailOf } from './session';
 import type { MyAccount } from './types';
-import type { DayRange } from '@ad/analytics';
-import { buildFixtureOverview, buildFixtureVideo } from './analytics-rules';
+import type { DayRange, TitleDailyRow } from '@ad/analytics';
+import { buildFixtureOverview, buildFixtureTitleDaily, buildFixtureVideo } from './analytics-rules';
 import type { AnalyticsOverview, VideoAnalytics } from './analytics-rules';
 import { filterAudit } from './audit-adapter';
 import type { AuditQuery } from './audit-adapter';
@@ -731,6 +731,8 @@ export const auditService: AuditService = {
 export interface AnalyticsService {
   overview(actor: AdminActor, range: DayRange): Promise<AnalyticsOverview>;
   video(actor: AdminActor, id: string, range: DayRange): Promise<VideoAnalytics>;
+  /** Every title with views on each day of the range, for the CSV export. */
+  exportRows(actor: AdminActor, range: DayRange): Promise<TitleDailyRow[]>;
 }
 
 export const analyticsService: AnalyticsService = {
@@ -748,6 +750,12 @@ export const analyticsService: AnalyticsService = {
         : buildFixtureVideo(getStore(), id, range);
     if (!result) throw new NotFound('Video not found');
     return result;
+  },
+  async exportRows(actor, range) {
+    need(actor, 'analytics.view');
+    if (adminDataMode() === 'real')
+      return (await import('./analytics-real')).realAnalytics.exportRows(range);
+    return buildFixtureTitleDaily(getStore(), range);
   },
 };
 
