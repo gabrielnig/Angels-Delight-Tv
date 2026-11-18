@@ -15,6 +15,8 @@
     "test:file": "vitest run",
     "test:related": "vitest related --run",
     "footprint": "scripts/footprint-check.sh",
+    "sast": "scripts/sast.sh",
+    "sbom": "node scripts/sbom.mjs sbom.cdx.json",
     "hooks:install": "scripts/install-hooks.sh",
     "db:seed:admin": "pnpm --filter @ad/auth run seed:admin",
     "db:seed:demo": "pnpm --filter @ad/catalog run seed:demo",

@@ -48,6 +48,7 @@ export function EnrolForm({ qrSvg, secret, next }: Props) {
       <div
         role="img"
         aria-label="QR code for your authenticator app"
+        // nosemgrep: react-dangerouslysetinnerhtml (SVG from our own QR encoder, no user input)
         dangerouslySetInnerHTML={{ __html: qrSvg }}
       />
       <p className="adm-muted" style={{ margin: 0 }}>
