@@ -1,0 +1,16 @@
+{
+  "note": "budget is enforced now (set just above the measured baseline). target is where Home should get to. Tighten budget as the gap closes.",
+  "scores": {
+    "performance": { "budget": 0.75, "target": 0.9 },
+    "accessibility": { "budget": 0.95, "target": 1 },
+    "best-practices": { "budget": 0.9, "target": 0.95 }
+  },
+  "metrics": {
+    "largest-contentful-paint": { "budget": 2500, "target": 2000 },
+    "total-blocking-time": { "budget": 1000, "target": 300 },
+    "cumulative-layout-shift": { "budget": 0.1, "target": 0.05 },
+    "total-byte-weight": { "budget": 800000, "target": 500000 }
+  },
+  "scriptBytes": { "budget": 400000, "target": 300000 },
+  "thirdPartyRequests": { "budget": 0, "target": 0 }
+}
