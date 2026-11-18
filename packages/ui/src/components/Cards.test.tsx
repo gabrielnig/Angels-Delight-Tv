@@ -228,4 +228,20 @@ describe('VideoCard hover overlay', () => {
     );
     expect(screen.getByRole('link', { name: 'Farming basics, 8 episodes' })).toBeInTheDocument();
   });
+
+  it('marks cards that have captions with a CC badge that the link name also says (M11-S05)', () => {
+    const { container, rerender } = render(
+      <VideoCard title="Rain" href="/title/rain" durationSeconds={60} hasCaptions />,
+    );
+    expect(container.querySelector('.ad-card__cc')?.textContent).toBe('CC');
+    expect(
+      screen.getByRole('link', { name: 'Rain, 1 minute, captions available' }),
+    ).toBeInTheDocument();
+    rerender(<VideoCard title="Rain" href="/title/rain" durationSeconds={60} />);
+    expect(container.querySelector('.ad-card__cc')).toBeNull();
+    rerender(<SeriesCard title="Farming" href="/series/f" episodeCount={3} hasCaptions />);
+    expect(
+      screen.getByRole('link', { name: 'Farming, 3 episodes, captions available' }),
+    ).toBeInTheDocument();
+  });
 });
