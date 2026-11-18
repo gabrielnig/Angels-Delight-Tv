@@ -546,7 +546,7 @@ Format: decision, options considered, why, reversible or not. Newest first. Deci
 - Why: M12-S09 says a wrong code or password counts toward the admin lockout. With the viewer key a stolen staff session could try 5 passwords per 15 minutes without ever tripping the stricter admin lock, and a locked admin who reset their password stayed locked for 30 minutes.
 - Reversible: yes.
 
-## D-105 Player preferences live on the profile, volume and mute stay on the device (lane M2)
+## D-108 Player preferences live on the profile, volume and mute stay on the device (lane M2)
 - Decision: speed, captions on or off, caption language, caption size, data saver and autoplay are saved per profile on the server (`profiles.autoplay_next`, `data_saver` and `playback_prefs`, which gains `captionLanguage`). The player saves changes through `savePlayerPrefsAction` and starts from the server values. Volume and mute stay in this browser because they describe the device. Existing browser values move once: `migrateDevicePlayback` applies the listed fields the first time it is called for a profile and marks the profile (`deviceMigrated`), so a second device cannot overwrite later changes; the browser copy is then cleared. The player waits for that call before it starts, and starts with the server values if it fails. A profile with Data saver on applies it on every device, while the browser Save-Data hint still turns it on by default.
 - Options: keep localStorage as a cache that wins over the server, or move volume to the server too.
 - Why: a cache that wins means a change on one device never reaches another, which is the point of the story. Volume differs by speaker, so it should not follow the person.
@@ -568,7 +568,7 @@ Format: decision, options considered, why, reversible or not. Newest first. Deci
 - Why: sharp is already a dependency, SVG renders crisply at every size, and one source keeps every asset consistent. The old zlib script is removed.
 - Reversible: yes. Regenerate or replace the files.
 
-## D-106 Site pages come from the editor table, seeded with marked placeholders (lane M2)
+## D-109 Site pages come from the editor table, seeded with marked placeholders (lane M2)
 - Decision: terms, privacy, about and help are the pages the admin editor publishes (`settings` rows `pages.<slug>`). Migration 0026 seeds each with one published version of `[Add your ... here before launch]`, which the page shows under a Draft banner and the launch checklist reports as placeholder text. If a row is missing, the same placeholder text from `@ad/theme` stands in, never fixture text. Footer links, the sign in value lines and the common help questions are product defaults in `lib/site/defaults.ts`, shown under the editable help text. The fixture site is used only with the dev flags.
 - Options: seed through a CLI step, or keep the fixture text as the fallback.
 - Why: a migration runs on every deploy without a manual step, and is idempotent (`ON CONFLICT DO NOTHING`), so launch needs only the client's text.
