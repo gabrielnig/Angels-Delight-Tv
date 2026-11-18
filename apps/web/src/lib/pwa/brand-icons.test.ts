@@ -27,7 +27,7 @@ describe('readBrandIcon', () => {
     );
   });
 
-  it('only serves the four known file names, never a path', async () => {
+  it('only serves the known file names, never a path', async () => {
     const dir = await mkdtemp(join(tmpdir(), 'brand-'));
     await writeFile(join(dir, 'secret.txt'), 'x');
     expect(await readBrandIcon('../secret.txt', { brandDir: dir, fallbackDir: dir })).toBeNull();
@@ -37,6 +37,8 @@ describe('readBrandIcon', () => {
       'icon-512.png',
       'icon-maskable-512.png',
       'apple-touch-icon.png',
+      'favicon-32.png',
+      'placeholder-og.png',
     ]);
   });
 

@@ -18,6 +18,7 @@
     "hooks:install": "scripts/install-hooks.sh",
     "db:seed:admin": "pnpm --filter @ad/auth run seed:admin",
     "db:seed:demo": "pnpm --filter @ad/catalog run seed:demo",
+    "brand:generate": "tsx scripts/generate-brand-kit.ts",
     "launch:apply": "tsx packages/launch/src/cli/apply.ts",
     "secrets:generate": "tsx packages/launch/src/cli/secrets.ts",
     "content:import": "tsx packages/launch/src/cli/import.ts"

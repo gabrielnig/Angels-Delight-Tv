@@ -57,6 +57,8 @@ describe('root layout', () => {
   it('takes the viewport colour and the site name from the theme runtime', async () => {
     expect((await generateViewport()).themeColor).toBe('#123456');
     const metadata = await generateMetadata();
+    expect(metadata.icons).toMatchObject({ icon: [{ url: '/brand-icons/favicon-32.png' }] });
+    expect(metadata.openGraph?.images).toEqual(['/brand-icons/placeholder-og.png']);
     expect(metadata.title).toEqual({ default: 'Sister V TV', template: '%s | Sister V TV' });
   });
 });

@@ -7,6 +7,8 @@ export const BRAND_ICON_FILES = [
   'icon-512.png',
   'icon-maskable-512.png',
   'apple-touch-icon.png',
+  'favicon-32.png',
+  'placeholder-og.png',
 ] as const;
 
 export interface BrandIconSources {
