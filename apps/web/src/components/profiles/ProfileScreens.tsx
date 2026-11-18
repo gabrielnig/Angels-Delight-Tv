@@ -13,21 +13,25 @@ import type { Profile } from '../../lib/data';
 import { clearServiceWorkerCaches } from '../../lib/pwa/purge';
 import { ProfileForm } from './ProfileForm';
 import { PinDialog } from './PinDialog';
-import { ProfilePicker } from './ProfilePicker';
+import { clearPickerCache, type PickerProfile } from '../../lib/profiles/picker-cache';
+import { CachedPicker } from './CachedPicker';
 
 export function PickerScreen({
+  accountId,
   profiles,
   max,
   mode,
   autoSkip,
 }: {
-  profiles: Profile[];
+  accountId: string;
+  /** Null when the list could not be loaded, 'loading' while it is on its way: the cached list is drawn (M03-S13). */
+  profiles: Profile[] | null | 'loading';
   max: number;
   mode: 'pick' | 'manage';
   autoSkip?: boolean;
 }) {
   const router = useRouter();
-  const [pinFor, setPinFor] = useState<Profile | null>(null);
+  const [pinFor, setPinFor] = useState<PickerProfile | null>(null);
   const enter = () => {
     // A failed purge forces a full reload so nothing of the last profile is shown (M03-S14).
     if (!clearServiceWorkerCaches(navigator)) {
@@ -39,23 +43,25 @@ export function PickerScreen({
   };
   return (
     <>
-      <ProfilePicker
-        profiles={profiles}
+      <CachedPicker
+        accountId={accountId}
+        fresh={profiles}
+        onRetry={() => router.refresh()}
         max={max}
         mode={mode}
         autoSkip={autoSkip}
         onExitManage={() => router.push('/profiles')}
-        onSelect={async (id) => {
-          const target = profiles.find((p) => p.id === id);
-          if (target?.hasPin) {
+        onSelect={async (target) => {
+          if (target.hasPin) {
             setPinFor(target);
             return;
           }
-          const result = await selectProfileAction(id);
+          const result = await selectProfileAction(target.id);
           if (result.ok) enter();
-          else if (result.reason === 'pin_required' && target) setPinFor(target);
+          else if (result.reason === 'pin_required') setPinFor(target);
         }}
         onSignOut={async () => {
+          clearPickerCache(localStorage);
           await signOutAction();
           clearServiceWorkerCaches(navigator);
           router.push('/');

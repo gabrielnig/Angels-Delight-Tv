@@ -27,6 +27,7 @@ export function ProfilePicker({
   onRetry,
   onSignOut,
   autoSkip,
+  note,
   onSelect,
   onExitManage,
 }: {
@@ -39,6 +40,8 @@ export function ProfilePicker({
   onSignOut?: () => void;
   /** Skip the picker when the account has exactly one profile. */
   autoSkip?: boolean;
+  /** A small status line under the tiles, for example that the list may be out of date (M03-S13). */
+  note?: string;
   onSelect: (profileId: string) => void;
   /** Escape leaves manage mode (M03-S06). */
   onExitManage?: () => void;
@@ -139,6 +142,11 @@ export function ProfilePicker({
             </li>
           ) : null}
         </ul>
+        {note ? (
+          <p role="status" className="web-muted">
+            {note}
+          </p>
+        ) : null}
         {full ? (
           <p className="web-muted">
             {managing

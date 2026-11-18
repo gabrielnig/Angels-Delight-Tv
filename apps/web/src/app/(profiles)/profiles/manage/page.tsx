@@ -11,5 +11,12 @@ export default async function ManageProfilesPage() {
   if (session.profile?.kids) return <KidsGate what="Managing profiles" />;
   const repo = getProfiles();
   const profiles = await repo.list(session.accountId);
-  return <PickerScreen profiles={profiles} max={repo.maxProfiles} mode="manage" />;
+  return (
+    <PickerScreen
+      accountId={session.accountId}
+      profiles={profiles}
+      max={repo.maxProfiles}
+      mode="manage"
+    />
+  );
 }
