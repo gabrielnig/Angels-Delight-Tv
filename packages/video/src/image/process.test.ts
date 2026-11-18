@@ -137,3 +137,25 @@ describe('processImage', () => {
     expect(meta.exif).toBeUndefined();
   });
 });
+
+describe('processImage full picture preview (M36-S03)', () => {
+  it('adds a small preview of the whole picture when the source is not 16 by 9', async () => {
+    const out = await processImage(await source(1200, 1200), 'poster');
+    expect(out.full).toBeDefined();
+    const meta = await sharp(out.full!.bytes).metadata();
+    expect(meta.format).toBe('webp');
+    expect(meta.width).toBe(out.full!.width);
+    expect(out.full!.width / out.full!.height).toBeCloseTo(1, 2);
+    expect(out.full!.width).toBeLessThanOrEqual(480);
+    expect(out.variants.every((v) => v.width / v.height > 1.7)).toBe(true);
+  });
+  it('adds none for a 16 by 9 source, whose cut already shows the whole picture', async () => {
+    expect((await processImage(await source(1600, 900), 'poster')).full).toBeUndefined();
+  });
+  it('adds none for a recut, which is never shown in the picker', async () => {
+    const out = await processImage(await source(1200, 1200), 'poster', {
+      focus: { x: 30, y: 30, zoom: 120 },
+    });
+    expect(out.full).toBeUndefined();
+  });
+});

@@ -42,6 +42,11 @@ export interface ProcessedVariant {
 
 export interface ProcessedImage {
   variants: ProcessedVariant[];
+  /**
+   * Small webp of the whole picture, only when the source is not 16 by 9 (the cut variants then lose the edges) and
+   * not a recut. The admin poster picker shows it so the crop preview uses the real picture (M36-S03).
+   */
+  full?: ProcessedVariant;
   placeholderColor: string;
   /** A tiny webp as a data url, under 1 KB, drawn blurred while the real image loads (M36-S02). */
   placeholderBlur: string;
@@ -62,6 +67,7 @@ export class ImageRejected extends Error {
 
 /** Base64 grows by a third, so 700 bytes keeps the whole data url under 1 KB. */
 const BLUR_MAX_BYTES = 700;
+const FULL_PREVIEW_WIDTH = 480;
 const DEFAULT_MAX_PIXELS = 50_000_000;
 const clamp = (n: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, n));
 const hex = (n: number) => clamp(Math.round(n), 0, 255).toString(16).padStart(2, '0');
@@ -140,8 +146,20 @@ export async function processImage(
   }
 
   const pixel = await sharp(cropped).resize(1, 1, { fit: 'fill' }).removeAlpha().raw().toBuffer();
+  const odd = Math.abs(size.width / size.height / spec.ratio - 1) > 0.01;
+  let full: ProcessedVariant | undefined;
+  if (odd && !options.focus) {
+    const width = Math.min(FULL_PREVIEW_WIDTH, size.width);
+    const height = Math.max(1, Math.round((width * size.height) / size.width));
+    const webp = await sharp(oriented)
+      .resize(width, height, { fit: 'fill' })
+      .webp({ quality: 70 })
+      .toBuffer();
+    full = { width, height, format: 'webp', bytes: new Uint8Array(webp) };
+  }
   return {
     variants,
+    ...(full ? { full } : {}),
     placeholderBlur: await blurPlaceholder(cropped, spec.ratio),
     placeholderColor: `#${hex(pixel[0]!)}${hex(pixel[1]!)}${hex(pixel[2]!)}`,
     source: size,

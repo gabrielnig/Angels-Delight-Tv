@@ -53,15 +53,26 @@ const clampUnit = (n: number, lo: number, hi: number) => Math.min(hi, Math.max(l
 
 /**
  * Where the preview picture sits inside its frame so that it shows what the worker makes (M36-S03). The worker cuts
- * a 16 by 9 frame, 1 over zoom of the picture, centred on the focus and held inside the edges (cropRect in
- * @ad/video). A frame of another shape then shows a band of that cut, kept around the focus. The picture is assumed
- * to be 16 by 9, which is true of video frames and of the 1280 by 720 minimum for uploads.
+ * a 16 by 9 frame out of the real picture, 1 over zoom of its largest such frame, centred on the focus and held
+ * inside the edges (cropRect in @ad/video). A frame of another shape then shows a band of that cut, kept around the
+ * focus. `sourceRatio` is the width over height of the picture being previewed, 16 by 9 when it is not known.
  */
-export function cropPreviewStyle(focus: Focus, zoomPercent: number, frameRatio: number) {
+export function cropPreviewStyle(
+  focus: Focus,
+  zoomPercent: number,
+  frameRatio: number,
+  sourceRatio: number = POSTER_RATIO,
+) {
   const zoom = clampUnit(zoomPercent, 100, 200) / 100;
   const fx = clampUnit(focus.x, 0, 100) / 100;
   const fy = clampUnit(focus.y, 0, 100) / 100;
-  const cut = { w: 1 / zoom, h: 1 / zoom, left: 0, top: 0 };
+  const wide = sourceRatio >= POSTER_RATIO;
+  const cut = {
+    w: (wide ? POSTER_RATIO / sourceRatio : 1) / zoom,
+    h: (wide ? 1 : sourceRatio / POSTER_RATIO) / zoom,
+    left: 0,
+    top: 0,
+  };
   cut.left = clampUnit(fx - cut.w / 2, 0, 1 - cut.w);
   cut.top = clampUnit(fy - cut.h / 2, 0, 1 - cut.h);
   const region = { ...cut };

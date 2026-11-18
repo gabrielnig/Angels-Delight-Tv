@@ -23,6 +23,8 @@ export interface PosterAssetDto {
   url: string | null;
   /** 0 to 100 for a frame cut from the video: how well lit and sharp it is. Null for uploads and older frames. */
   score: number | null;
+  /** Width over height of the picture at `url`: the real source shape when a full preview exists, otherwise 16 by 9. */
+  previewRatio: number;
 }
 
 /** Frames and uploads for one video, frames first in order, then uploads newest first. */
@@ -51,12 +53,13 @@ export async function listPosterAssets(
           like(assets.rawKey, `uploads/${videoId}/%`),
         ),
       );
-    const preview = (variants: (typeof rows)[number]['variants']) => {
+    const pick = (variants: (typeof rows)[number]['variants']) => {
+      const full = variants.find((v) => v.full);
+      if (full) return full;
       const small = [...variants]
         .filter((v) => v.format !== 'jpeg' && v.format !== 'avif')
         .sort((a, b) => a.width - b.width)[0];
-      const any = small ?? [...variants].sort((a, b) => a.width - b.width)[0];
-      return any ? mediaUrl(mediaOrigin, any.key) : null;
+      return small ?? [...variants].sort((a, b) => a.width - b.width)[0];
     };
     const dto = (
       row: (typeof rows)[number],
@@ -67,8 +70,15 @@ export async function listPosterAssets(
       source,
       label,
       status: row.status,
-      url: row.status === 'ready' ? preview(row.variants) : null,
+      url:
+        row.status === 'ready' && pick(row.variants)
+          ? mediaUrl(mediaOrigin, pick(row.variants)!.key)
+          : null,
       score: source === 'frame' ? row.candidateScore : null,
+      previewRatio: (() => {
+        const shown = row.status === 'ready' ? pick(row.variants) : undefined;
+        return shown?.full ? shown.width / shown.height : 16 / 9;
+      })(),
     });
     const frames = rows
       .filter((r) => r.rawKey?.startsWith('candidates/'))
