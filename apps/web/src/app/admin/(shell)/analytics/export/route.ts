@@ -1,33 +1,35 @@
-import { csvCell } from '@ad/audit';
+import { RateLimited } from '@ad/shared';
 import { parseRange } from '@/lib/data/admin/analytics-rules';
+import { titleDailyCsv } from '@/lib/data/admin/analytics-export';
 import { analyticsService } from '@/lib/data/admin/services';
-import { allowed, getActor } from '@/lib/data/admin/session-next';
+import { allowed, getActor, spendAdminBudget } from '@/lib/data/admin/session-next';
 
 export const dynamic = 'force-dynamic';
 
+/** Daily views and watch time per title for the chosen range (M19-S05). */
 export async function GET(request: Request) {
   const actor = await getActor();
   if (!actor) return new Response('Sign in first.', { status: 401 });
   if (!allowed(actor, 'analytics.view'))
     return new Response('You do not have access to analytics.', { status: 403 });
+  try {
+    await spendAdminBudget(actor);
+  } catch (error) {
+    if (error instanceof RateLimited)
+      return new Response('Too many requests.', {
+        status: 429,
+        headers: { 'retry-after': String(error.retryAfterSeconds) },
+      });
+    throw error;
+  }
   const url = new URL(request.url);
   const { range } = parseRange({
     range: 'custom',
     from: url.searchParams.get('from') ?? '',
     to: url.searchParams.get('to') ?? '',
   });
-  const data = await analyticsService.overview(actor, range);
-  const line = (cells: unknown[]) => cells.map(csvCell).join(',');
-  const body = [
-    line(['day', 'views', 'watch_minutes']),
-    ...data.daily.map((d) => line([d.day, d.views, Math.round(d.watchMs / 60_000)])),
-    '',
-    line(['title', 'views', 'watch_minutes', 'finished_percent']),
-    ...data.top.map((t) =>
-      line([t.title, t.views, Math.round(t.watchMs / 60_000), Math.round(t.completionRate * 100)]),
-    ),
-  ].join('\n');
-  return new Response(`${body}\n`, {
+  const rows = await analyticsService.exportRows(actor, range);
+  return new Response(titleDailyCsv(rows), {
     headers: {
       'content-type': 'text/csv; charset=utf-8',
       'content-disposition': `attachment; filename="analytics-${range.from}-to-${range.to}.csv"`,

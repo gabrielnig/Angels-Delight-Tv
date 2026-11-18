@@ -5,6 +5,7 @@ import type {
   PeriodTotals,
   RetentionPoint,
   SplitRow,
+  TitleDailyRow,
   TopTitle,
 } from '@ad/analytics';
 import type { AdminStore } from './store';
@@ -192,4 +193,30 @@ export function buildFixtureVideo(
       completionRate: views ? 0.38 : 0,
     },
   };
+}
+
+/** Fixture rows for the per title export, built from the same fixture daily numbers as the video screen. */
+export function buildFixtureTitleDaily(
+  store: AdminStore,
+  range: DayRange,
+  now: Date = new Date(),
+): TitleDailyRow[] {
+  const rows: TitleDailyRow[] = [];
+  for (const video of store.videos) {
+    const detail = buildFixtureVideo(store, video.id, range, now);
+    if (!detail) continue;
+    for (const d of detail.daily) {
+      if (d.views === 0) continue;
+      rows.push({
+        day: d.day,
+        videoId: video.id,
+        title: video.title,
+        archived: false,
+        views: d.views,
+        watchMs: d.watchMs,
+        completions: Math.round(d.views * 0.38),
+      });
+    }
+  }
+  return rows.sort((a, b) => a.day.localeCompare(b.day) || a.title.localeCompare(b.title));
 }
