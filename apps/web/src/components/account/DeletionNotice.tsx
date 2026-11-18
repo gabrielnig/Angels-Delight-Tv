@@ -1,7 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { Banner, Button } from '@ad/ui';
+import { Button } from '@ad/ui';
+import { AcctIcon } from './icons';
 
 type Result = { ok: true } | { ok: false };
 
@@ -34,22 +35,31 @@ export function DeletionNotice({
   }
 
   return (
-    <div className="web-form web-form--center">
-      <h1 className="web-page__title">Your account is set to close</h1>
-      <p>
+    <div className="acct-closing" data-screen="pending">
+      <div className="acct-closing__icon">
+        <AcctIcon name="trash" size={32} />
+      </div>
+      <h1 className="acct__title">Your account is set to close</h1>
+      <p className="acct-muted">
         {`It will be removed on ${purgeDate}, in ${days} ${days === 1 ? 'day' : 'days'}. Cancel now and everything comes back as it was.`}
       </p>
       {outcome === 'restored' ? (
-        <Banner tone="success">Your account is back. Opening your profiles.</Banner>
+        <div className="acct-notice" role="status">
+          <AcctIcon name="check" size={20} />
+          <span className="acct-notice__text">Your account is back. Opening your profiles.</span>
+        </div>
       ) : null}
       {outcome === 'failed' ? (
-        <Banner tone="danger">We could not cancel the deletion. Try again.</Banner>
+        <div className="acct-notice" data-tone="error" role="alert">
+          <AcctIcon name="warning" size={20} />
+          <span className="acct-notice__text">We could not cancel the deletion. Try again.</span>
+        </div>
       ) : null}
-      <div className="web-form__actions">
+      <div className="acct-dialog__actions" data-center>
         <Button onClick={() => void cancel()} loading={busy}>
           Cancel deletion
         </Button>
-        <Button variant="ghost" onClick={() => void onSignOut()}>
+        <Button variant="secondary" onClick={() => void onSignOut()}>
           Sign out
         </Button>
       </div>

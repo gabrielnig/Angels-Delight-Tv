@@ -46,7 +46,7 @@ export function Button({
       data-size={size}
       data-full={fullWidth ? 'true' : undefined}
       aria-busy={loading ? 'true' : undefined}
-      aria-disabled={loading ? 'true' : undefined}
+      aria-disabled={loading ? 'true' : rest['aria-disabled']}
       onClick={loading ? (event) => event.preventDefault() : onClick}
     >
       {loading ? <Spinner /> : icon ? <Icon name={icon} size={20} /> : null}
