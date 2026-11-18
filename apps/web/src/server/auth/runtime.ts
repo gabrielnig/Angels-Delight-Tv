@@ -8,7 +8,8 @@ import {
 } from '@ad/auth';
 import { type WebEnv, loadWebEnv } from '@ad/config';
 import { createDb, createPool } from '@ad/db';
-import { Mailer, SmtpTransport } from '@ad/mailer';
+import { Mailer, OutageMonitor, RetryingTransport, SmtpTransport } from '@ad/mailer';
+import { createSuppressionStore } from '../email/suppression';
 import { emailBrandFrom } from './email-brand';
 import { AuditWriter } from '@ad/audit';
 import { themeRuntime } from '../../lib/data/admin/theme-runtime';
@@ -64,13 +65,22 @@ function build(env: WebEnv): AuthRuntime {
   });
   const from = env.EMAIL_FROM;
   const supportEmail = env.SUPPORT_EMAIL ?? /<([^>]+)>/.exec(from)?.[1] ?? from;
-  const mailer = new Mailer(SmtpTransport.fromUrl(env.SMTP_URL), {
-    from,
-    appName: 'Angels Delight TV',
-    appOrigin: env.APP_ORIGIN,
-    supportEmail,
-    brand: async () => emailBrandFrom(await themeRuntime(), env.MEDIA_ORIGIN),
+  const suppressions = createSuppressionStore(db, env.EMAIL_HASH_PEPPER);
+  const outage = new OutageMonitor({
+    alert: ({ since }) =>
+      logger.error('email provider outage', { since: since.toISOString(), alert: 'email_outage' }),
   });
+  const mailer = new Mailer(
+    new RetryingTransport(SmtpTransport.fromUrl(env.SMTP_URL), { monitor: outage }),
+    {
+      isSuppressed: (address) => suppressions.isSuppressed(address),
+      from,
+      appName: 'Angels Delight TV',
+      appOrigin: env.APP_ORIGIN,
+      supportEmail,
+      brand: async () => emailBrandFrom(await themeRuntime(), env.MEDIA_ORIGIN),
+    },
+  );
   const staff = new StaffService({
     db,
     keys,

@@ -644,3 +644,9 @@ Format: decision, options considered, why, reversible or not. Newest first. Deci
 - Options: answer 403 for every refusal, keep 401 and 403 as they are.
 - Why: the player treats 401 as "mint a new token and retry once", which is the M08-S21 recovery path, and treats 403 as a final refusal. Collapsing them to 403 would turn every token expiry into a hard stop. The log line and the publish gate meet the rest of the story.
 - Reversible: yes.
+
+## D-122 Email retry runs in the request, with a provider outage alert and a bounce list (lane a3)
+- Decision: M21-S01 asks for an outbox with a worker retrying up to 5 times. Mail still goes straight from the calling process (D-024). `RetryingTransport` now makes up to 5 attempts with waits of 0.25, 1, 3 and 8 seconds, never retries an SMTP 5xx answer, and an `OutageMonitor` writes an `email provider outage` error log once after 10 minutes of continuous failure. Bounces and complaints reach `/api/webhooks/email` (HMAC SHA256 in `x-webhook-signature`, closed until `EMAIL_WEBHOOK_SECRET` is set) and are stored as keyed hashes in `email_suppressions` (additive migration 0028). Only the welcome email is skipped for them; codes, resets and security notices always send. A welcome email goes out after the first verification.
+- Options: build an `email_outbox` table and a pg-boss sender, keep one attempt.
+- Why: an outbox is the right shape for a provider outage longer than the request, but it adds a table, a job and a state machine for a launch with one SMTP provider and low volume. In request retries cover the common blip, and the sign up flow already shows a clear "could not send" with resend. The cost is that a 15 second blip delays the request and a longer outage drops the email after the visitor sees the error. The alert is a log line the log shipper can page on.
+- Reversible: yes. Swapping `RetryingTransport` for an outbox writer changes only the transport given to `Mailer`.
