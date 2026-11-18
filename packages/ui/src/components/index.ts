@@ -16,6 +16,7 @@ export * from './PasswordField';
 export {
   evaluatePassword,
   MIN_PASSWORD_LENGTH,
+  zxcvbnScorer,
   type PasswordEvaluation,
   type PasswordScorer,
 } from './password';
