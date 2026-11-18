@@ -232,6 +232,18 @@ export async function changePasswordAction(input: { current: string; next: strin
   return getAccount().changePassword(await currentAccountId(), input);
 }
 
+export async function updateNameAction(input: { name: string }) {
+  return getAccount().updateName(await currentAccountId(), input.name);
+}
+
+export async function requestEmailChangeAction(input: { newEmail: string; password: string }) {
+  return getAccount().requestEmailChange(await currentAccountId(), input);
+}
+
+export async function confirmEmailChangeAction(input: { code: string }) {
+  return getAccount().confirmEmailChange(await currentAccountId(), input);
+}
+
 export async function revokeDeviceAction(id: string) {
   await getAccount().revokeDevice(await currentAccountId(), id);
 }

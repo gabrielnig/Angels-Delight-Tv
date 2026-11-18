@@ -8,6 +8,7 @@ import type {
 
 const DEFAULTS: PlaybackSettings = {
   autoplayNext: true,
+  autoplayPreviews: false,
   dataSaver: false,
   quality: 'auto',
   speed: 1,
@@ -25,6 +26,9 @@ const globalStore = globalThis as unknown as {
     exportState: ExportState;
     deletionPending: boolean;
     migrated: Set<string>;
+    name: string;
+    email: string;
+    pendingEmail: string | null;
   };
 };
 
@@ -56,20 +60,54 @@ const state = (globalStore.__adFixtureAccount ??= {
   exportState: { status: 'none' },
   deletionPending: false,
   migrated: new Set<string>(),
+  name: 'Adaeze Okafor',
+  email: 'adaeze.okafor@example.com',
+  pendingEmail: null,
 });
+
+/** The code the fixture accepts for an email change. Real data mails a random one. */
+export const FIXTURE_EMAIL_CODE = '123456';
 
 export class FixtureAccount implements AccountRepository {
   async overview(): Promise<AccountOverview> {
     return {
-      displayName: 'Adaeze Okafor',
-      email: 'adaeze.okafor@example.com',
+      displayName: state.name,
+      email: state.email,
       verified: true,
       memberSince: '3 Mar 2026',
       watchedThisMonth: 14,
       minutesLearning: 220,
       myListCount: 5,
       devices: state.devices.length,
+      passwordChanged: '12 Aug 2026',
     };
+  }
+
+  async updateName(_accountId: string, name: string) {
+    const clean = name.replace(/\s+/g, ' ').trim();
+    if (clean.length === 0 || clean.length > 80)
+      return { ok: false as const, reason: 'invalid' as const };
+    state.name = clean;
+    return { ok: true as const, name: clean };
+  }
+
+  async requestEmailChange(_accountId: string, input: { newEmail: string; password: string }) {
+    if (input.password === 'wrong-password')
+      return { ok: false as const, reason: 'wrong_password' as const };
+    const target = input.newEmail.trim().toLowerCase();
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(target))
+      return { ok: false as const, reason: 'invalid_email' as const };
+    if (target === state.email) return { ok: false as const, reason: 'same_email' as const };
+    state.pendingEmail = target;
+    return { ok: true as const, pendingEmail: target };
+  }
+
+  async confirmEmailChange(_accountId: string, input: { code: string }) {
+    if (!state.pendingEmail || input.code !== FIXTURE_EMAIL_CODE)
+      return { ok: false as const, reason: 'invalid' as const };
+    state.email = state.pendingEmail;
+    state.pendingEmail = null;
+    return { ok: true as const };
   }
 
   async playback(profileId: string) {
