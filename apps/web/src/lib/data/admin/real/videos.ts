@@ -134,11 +134,26 @@ export const realVideoService: VideoService = {
     need(actor, 'video.edit');
     const errors = validatePosterChoice(choice);
     if (Object.keys(errors).length) return { ok: false, error: Object.values(errors)[0]! };
+    const runtime = adminRuntime();
     return setAdminPoster(await context(), catalogActor(actor), id, {
       posterId: choice.posterId,
       alt: choice.alt,
       focus: { x: choice.focus.x, y: choice.focus.y },
       zoom: choice.zoom,
+      // A saved focus point recuts the generated files, so the viewer crop matches the admin preview (M36-S03).
+      recut: {
+        copySource: async (from, to) => {
+          const originals = runtime.originals();
+          const chunks: Buffer[] = [];
+          for await (const chunk of await originals.get(from))
+            chunks.push(Buffer.from(chunk as Buffer));
+          await originals.put(to, new Uint8Array(Buffer.concat(chunks)), {
+            contentType: 'application/octet-stream',
+          });
+        },
+        enqueue: (queue, payload) =>
+          runtime.enqueue(queue, payload, { createdBy: actor.accountId }),
+      },
     });
   },
   async posterAssets(actor, id) {

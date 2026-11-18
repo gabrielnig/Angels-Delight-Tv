@@ -3,6 +3,7 @@ import {
   createTestDatabase,
   integrationEnabled,
   makeAccount,
+  makeVideo,
   type TestDatabase,
 } from '@ad/db/testing';
 import { uuidv7 } from '@ad/shared';
@@ -124,5 +125,131 @@ describe.skipIf(!integrationEnabled())('ImageService against Postgres and local 
     await service.remove(id);
     expect(await media.list(`img/${id}/`)).toHaveLength(0);
     expect(await originals.head(`images/${id}/source`)).toBeNull();
+  });
+
+  describe('recut around a saved focus point (M36-S03)', () => {
+    /** Left half red, right half blue, so the crop position is easy to read back from the pixels. */
+    const split = async () =>
+      new Uint8Array(
+        await sharp({
+          create: { width: 1600, height: 900, channels: 3, background: '#cc0000' },
+        })
+          .composite([
+            {
+              input: await sharp({
+                create: { width: 800, height: 900, channels: 3, background: '#0000cc' },
+              })
+                .png()
+                .toBuffer(),
+              left: 800,
+              top: 0,
+            },
+          ])
+          .png()
+          .toBuffer(),
+      );
+    const readAll = async (key: string) => {
+      const chunks: Buffer[] = [];
+      for await (const chunk of await media.get(key)) chunks.push(Buffer.from(chunk as Buffer));
+      return Buffer.concat(chunks);
+    };
+    /** Colour of the left edge of the picture: red for the whole frame, blue once cropped to the right side. */
+    const leftEdge = async (key: string) => {
+      const meta = await sharp(await readAll(key)).metadata();
+      const bytes = await sharp(await readAll(key))
+        .extract({ left: 0, top: 0, width: Math.floor(meta.width! / 10), height: meta.height! })
+        .resize(1, 1)
+        .raw()
+        .toBuffer();
+      return { r: bytes[0]!, b: bytes[2]! };
+    };
+    const jpegKey = (asset: Awaited<ReturnType<typeof load>>) =>
+      asset.variants.filter((v) => v.format === 'jpeg').sort((a, b) => a.width - b.width)[0]!.key;
+
+    async function seedCut(focus: { x: number; y: number; zoom: number }) {
+      const source = await newAsset('thumbnail', await split());
+      await service.process(source);
+      const video = makeVideo({ posterAssetId: source, posterFocus: focus });
+      await t.db.insert(schema.videos).values(video);
+      const cut = uuidv7();
+      const rawKey = `recuts/${video.id}/${cut}`;
+      await originals.put(rawKey, await split());
+      await t.db.insert(schema.assets).values({
+        id: cut,
+        purpose: 'thumbnail',
+        status: 'processing',
+        rawKey,
+        mime: 'image/png',
+        cutFrom: source,
+        cutFocus: focus,
+        createdBy: owner,
+      });
+      return { source, cut, video };
+    }
+
+    it('crops the generated files around the focus point and not the centre', async () => {
+      const { source, cut } = await seedCut({ x: 90, y: 50, zoom: 200 });
+      await service.process(cut);
+      const recut = await load(cut);
+      expect(recut.status).toBe('ready');
+      const colour = await leftEdge(jpegKey(recut));
+      expect(colour.b).toBeGreaterThan(150);
+      expect(colour.r).toBeLessThan(60);
+      const plain = await leftEdge(jpegKey(await load(source)));
+      expect(plain.r).toBeGreaterThan(150);
+    });
+
+    it('points the video at the recut once it is ready, and only while the saved focus still matches', async () => {
+      const { cut, video, source } = await seedCut({ x: 90, y: 50, zoom: 200 });
+      await service.process(cut);
+      const after = (
+        await t.db.select().from(schema.videos).where(eq(schema.videos.id, video.id))
+      )[0]!;
+      expect(after.posterAssetId).toBe(cut);
+
+      const second = await seedCut({ x: 10, y: 50, zoom: 200 });
+      await t.db
+        .update(schema.videos)
+        .set({ posterFocus: { x: 50, y: 50, zoom: 100 } })
+        .where(eq(schema.videos.id, second.video.id));
+      await service.process(second.cut);
+      const kept = (
+        await t.db.select().from(schema.videos).where(eq(schema.videos.id, second.video.id))
+      )[0]!;
+      expect(kept.posterAssetId).toBe(second.source);
+      expect(source).not.toBe(cut);
+    });
+
+    it('removes an older recut of the same picture that no video uses any more', async () => {
+      const first = await seedCut({ x: 90, y: 50, zoom: 200 });
+      await service.process(first.cut);
+      const older = (await load(first.cut)).variants.map((v) => v.key);
+      const newer = uuidv7();
+      const rawKey = `recuts/${first.video.id}/${newer}`;
+      await originals.put(rawKey, await split());
+      await t.db.insert(schema.assets).values({
+        id: newer,
+        purpose: 'thumbnail',
+        status: 'processing',
+        rawKey,
+        mime: 'image/png',
+        cutFrom: first.source,
+        cutFocus: { x: 20, y: 50, zoom: 200 },
+        createdBy: owner,
+      });
+      await t.db
+        .update(schema.videos)
+        .set({ posterFocus: { x: 20, y: 50, zoom: 200 } })
+        .where(eq(schema.videos.id, first.video.id));
+      await service.process(newer);
+      expect(
+        await t.db.select().from(schema.assets).where(eq(schema.assets.id, first.cut)),
+      ).toHaveLength(0);
+      for (const key of older) expect(await media.head(key)).toBeNull();
+      expect(
+        (await t.db.select().from(schema.videos).where(eq(schema.videos.id, first.video.id)))[0]!
+          .posterAssetId,
+      ).toBe(newer);
+    });
   });
 });
