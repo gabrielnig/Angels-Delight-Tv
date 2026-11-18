@@ -1,8 +1,9 @@
 'use client';
 
 import { useRef, useState, type FormEvent } from 'react';
-import { Banner, Button, Checkbox, Input, Link, PasswordField } from '@ad/ui';
+import { Checkbox, Link } from '@ad/ui';
 import type { AuthResult } from '../../lib/data';
+import { AuthBanner, AuthField, AuthPasswordField, AuthSubmit } from './AuthParts';
 import { NETWORK_MESSAGE, RATE_LIMIT_MESSAGE, emailError } from './shared';
 import { useFocusFirstInvalid } from './useFocusFirstInvalid';
 import { CHECK_RUNNING_MESSAGE, useTurnstile } from './useTurnstile';
@@ -29,6 +30,7 @@ export function SignInForm({
   next,
   signUpOpen,
   notice,
+  noticeTone = 'success',
   turnstileSiteKey,
 }: {
   onSubmit: (values: SignInValues) => Promise<AuthResult>;
@@ -37,6 +39,8 @@ export function SignInForm({
   signUpOpen: boolean;
   /** Success notice, for example after a password reset. */
   notice?: string;
+  /** Success after a reset, information after a session ended. */
+  noticeTone?: 'success' | 'info';
   /** Turns on the Cloudflare Turnstile check. Leave out when no keys are configured. */
   turnstileSiteKey?: string;
 }) {
@@ -106,34 +110,36 @@ export function SignInForm({
   }
 
   return (
-    <form ref={formRef} className="web-form" onSubmit={submit} noValidate>
-      {notice && !problem ? <Banner tone="success">{notice}</Banner> : null}
+    <form ref={formRef} className="auth-form" onSubmit={submit} noValidate>
+      {notice && !problem ? <AuthBanner tone={noticeTone}>{notice}</AuthBanner> : null}
       {problem?.kind === 'invalid' ? (
-        <Banner tone="danger">
+        <AuthBanner tone="danger">
           That email or password is not right. Check them and try again.
-        </Banner>
+        </AuthBanner>
       ) : null}
-      {problem?.kind === 'network' ? <Banner tone="danger">{NETWORK_MESSAGE}</Banner> : null}
+      {problem?.kind === 'network' ? <AuthBanner tone="danger">{NETWORK_MESSAGE}</AuthBanner> : null}
       {problem?.kind === 'unavailable' ? (
-        <Banner tone="danger">Sign in is temporarily unavailable. Try again in a moment.</Banner>
+        <AuthBanner tone="warning">Sign in is temporarily unavailable. Try again in a moment.</AuthBanner>
       ) : null}
       {problem?.kind === 'rate_limited' ? (
-        <Banner tone="warning">{RATE_LIMIT_MESSAGE}</Banner>
+        <AuthBanner tone="warning" icon="clock">
+          {RATE_LIMIT_MESSAGE}
+        </AuthBanner>
       ) : null}
       {problem?.kind === 'locked' ? (
-        <Banner tone="warning" title="Sign in is paused">
+        <AuthBanner tone="warning" title="Sign in is paused">
           {`Too many attempts. Try again in ${problem.minutes} minutes.`}{' '}
           <Link href="/forgot-password">Reset your password</Link> if you cannot remember it.
-        </Banner>
+        </AuthBanner>
       ) : null}
-      {problem?.kind === 'checking' ? <Banner tone="info">{CHECK_RUNNING_MESSAGE}</Banner> : null}
+      {problem?.kind === 'checking' ? <AuthBanner tone="info">{CHECK_RUNNING_MESSAGE}</AuthBanner> : null}
       {problem?.kind === 'check' ? (
-        <Banner tone="info" title="One more step">
+        <AuthBanner tone="info" title="One more step">
           Too many attempts from this connection. Complete the check below, then try again.
-        </Banner>
+        </AuthBanner>
       ) : null}
 
-      <Input
+      <AuthField
         label="Email"
         type="email"
         name="email"
@@ -146,7 +152,7 @@ export function SignInForm({
         onBlur={() => setTouched((current) => ({ ...current, email: true }))}
         error={shownEmailError}
       />
-      <PasswordField
+      <AuthPasswordField
         label="Password"
         name="password"
         mode="current"
@@ -155,10 +161,13 @@ export function SignInForm({
         onChange={(event) => setPassword(event.target.value)}
         onBlur={() => setTouched((current) => ({ ...current, password: true }))}
         error={shownPasswordError}
+        invalid={problem?.kind === 'invalid'}
       />
-      <Link href="/forgot-password" className="web-link web-link--end">
-        Forgot your password?
-      </Link>
+      <div className="auth-forgot">
+        <Link href="/forgot-password" className="auth-link">
+          Forgot your password?
+        </Link>
+      </div>
       {turnstile.widget}
       {problem?.kind === 'check' && !turnstile.enabled ? (
         <Checkbox
@@ -167,16 +176,19 @@ export function SignInForm({
           onChange={(event) => setChecked(event.target.checked)}
         />
       ) : null}
-      <Button type="submit" size="lg" fullWidth loading={busy} disabled={lockedMinutes !== null}>
+      <AuthSubmit loading={busy} disabled={lockedMinutes !== null}>
         {busy
           ? 'Signing in'
           : lockedMinutes !== null
             ? `Try again in ${lockedMinutes} min`
             : 'Sign in'}
-      </Button>
+      </AuthSubmit>
       {signUpOpen ? (
-        <p className="web-form__alt">
-          New here? <Link href="/sign-up">Create an account</Link>
+        <p className="auth-alt">
+          New here?{' '}
+          <Link href="/sign-up" className="auth-link">
+            Create an account
+          </Link>
         </p>
       ) : null}
     </form>
