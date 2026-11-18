@@ -10,6 +10,8 @@ Packages: `db` (schema, migrations, RLS, `withAccount`), `config`, `shared`, `st
 Data modes: `VIEWER_FIXTURES=on`, `AUTH_FIXTURES=on`, `ADMIN_DATA=fixture` give fixtures outside production. Production always uses real services. Seeds: `pnpm db:seed:admin`, `pnpm db:seed:demo`.
 Run scoped tests only: `pnpm vitest run <path>`. Integration tests (`*.int.test.ts`) need `TEST_DATABASE_ADMIN_URL` (see `docs/DEV-SETUP.md` section 5). Install the hook once with `pnpm hooks:install`. Quality findings and the repeatable sweep: `docs/QUALITY-REVIEW.md`.
 
+Lane f1 (2026-11-18) closed the last admin and ops gaps: Super admin, email outbox, background exports, storage estimate, backup manifest and 14 daily plus 8 weekly retention, `pnpm dns:check`, poster scoring, AVIF and stored blur. See `docs/lanes/F1-final-admin.md`. Decisions D-128 to D-134.
+
 ## 2. Known Knowns (finalized core)
 Architecture and security decisions in `docs/ARCHITECTURE.md`, `docs/SECURITY.md`, `docs/DECISIONS.md`. Do not change without logging a decision.
 
