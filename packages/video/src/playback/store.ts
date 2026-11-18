@@ -45,6 +45,15 @@ export class DrizzlePlaybackStore implements PlaybackStore {
     return row?.wrapped ?? null;
   }
 
+  async spriteKey(videoId: string): Promise<string | null> {
+    const [row] = await this.db
+      .select({ key: videos.spriteKey })
+      .from(videos)
+      .where(eq(videos.id, videoId))
+      .limit(1);
+    return row?.key ?? null;
+  }
+
   async captions(videoId: string): Promise<PublicCaption[]> {
     const rows = await this.db
       .select({

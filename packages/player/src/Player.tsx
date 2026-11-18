@@ -25,6 +25,8 @@ export interface PlayerProps {
   initialSession?: PlaybackSession;
   progressSink: ProgressSink;
   captions?: CaptionTrack[];
+  /** Seek preview map (WebVTT of sprite tiles). Fetched on first hover, never with Data saver. */
+  spriteUrl?: string | null;
   resume?: Omit<ResumeInput, 'rewind' | 'minSaved'>;
   preferences?: Partial<PlayerPreferences>;
   onPreferencesChange?: (preferences: PlayerPreferences) => void;
@@ -168,6 +170,7 @@ export function Player(props: PlayerProps) {
       {...(props.links ? { links: props.links } : {})}
       {...(props.onSignIn ? { onSignIn: props.onSignIn } : {})}
       reference={reference}
+      spriteUrl={props.spriteUrl ?? null}
       autoplayNext={props.preferences?.autoplayNext ?? false}
       {...(props.countdownSeconds ? { countdownSeconds: props.countdownSeconds } : {})}
     />

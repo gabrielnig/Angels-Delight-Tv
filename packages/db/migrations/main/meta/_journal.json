@@ -155,6 +155,13 @@
       "when": 1794989058022,
       "tag": "0021_data_exports",
       "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1794989158022,
+      "tag": "0022_video_sprite",
+      "breakpoints": true
     }
   ]
 }

@@ -50,6 +50,8 @@ export interface PlayerViewProps {
   reference?: string;
   autoplayNext?: boolean;
   countdownSeconds?: number;
+  /** Seek preview map from the playback session. Ignored with Data saver on. */
+  spriteUrl?: string | null;
 }
 
 const HIDE_AFTER_MS = 3_000;
@@ -468,6 +470,7 @@ export function PlayerView(props: PlayerViewProps) {
           duration={state.duration}
           bufferedEnd={state.bufferedEnd}
           onSeek={(t) => controller?.seekTo(t)}
+          spriteUrl={state.quality.dataSaver ? null : props.spriteUrl}
         />
         <button
           type="button"
