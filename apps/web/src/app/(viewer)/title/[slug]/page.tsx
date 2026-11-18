@@ -4,6 +4,8 @@ import { formatDuration } from '@ad/ui';
 import { AppShell } from '../../../../components/Shell';
 import { PublicTitle, TitleBlocked, TitleView } from '../../../../components/title/TitleView';
 import { getCatalog, getLibrary } from '../../../../lib/data';
+import { previewMetadata } from '../../../../lib/seo';
+import { getRootTheme } from '../../../../lib/theme/root';
 import { itemKey } from '../../../../lib/format';
 import { getSession, requireProfile } from '../../../../lib/session';
 
@@ -11,26 +13,30 @@ type Params = { params: Promise<{ slug: string }> };
 
 export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const { slug } = await params;
-  const video = await getCatalog().publicTitle(slug);
-  if (!video) return { title: 'Video not found' };
-  return {
-    title: video.title,
-    description: video.description,
-    openGraph: {
-      title: video.title,
-      description: video.description,
-      type: 'video.other',
-      images: video.thumbnail ? [video.thumbnail.src] : undefined,
-    },
-  };
+  const preview = await getCatalog().publicPreview(slug, 'video');
+  if (!preview || preview.type !== 'video') return { title: 'Video not found' };
+  const { item } = preview;
+  const { platformName } = await getRootTheme();
+  return previewMetadata({
+    kind: 'video',
+    title: item.title,
+    description: item.description,
+    path: `/title/${item.slug}`,
+    siteName: platformName,
+    thumbnail: item.thumbnail,
+    durationSeconds: item.durationSeconds,
+  });
 }
 
 export default async function TitlePage({ params }: Params) {
   const { slug } = await params;
   const session = await getSession();
   if (!session) {
-    const video = await getCatalog().publicTitle(slug);
-    if (!video) notFound();
+    const preview = await getCatalog().publicPreview(slug, 'video');
+    if (!preview) notFound();
+    if (preview.type === 'redirect') redirect(preview.to);
+    if (preview.type !== 'video') notFound();
+    const video = preview.item;
     return (
       <AppShell>
         <PublicTitle

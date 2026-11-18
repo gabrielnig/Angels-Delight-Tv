@@ -1,5 +1,5 @@
 import { seedDemo } from '@ad/catalog';
-import { videos, watchProgress } from '@ad/db';
+import { slugRedirects, videos, watchProgress } from '@ad/db';
 import {
   categorize,
   createHarness,
@@ -261,7 +261,8 @@ describe.skipIf(!integrationEnabled())('real catalog repository', () => {
       const finished = await catalog.title(adultCtx(user), 'finished-one');
       const untouched = await catalog.title(adultCtx(user), 'fresh-one');
       if (!finished || 'blocked' in finished || 'redirect' in finished) throw new Error('detail');
-      if (!untouched || 'blocked' in untouched || 'redirect' in untouched) throw new Error('detail');
+      if (!untouched || 'blocked' in untouched || 'redirect' in untouched)
+        throw new Error('detail');
       expect(finished.play).toEqual({ label: 'watch_again', startSeconds: 0 });
       expect(untouched.play).toEqual({ label: 'play', startSeconds: 0 });
       expect(fresh.id).not.toBe(done.id);
@@ -363,6 +364,55 @@ describe.skipIf(!integrationEnabled())('real catalog repository', () => {
       expect(await catalog.publicTitle('public-one')).toMatchObject({ title: 'Public one' });
       expect(await catalog.publicTitle('draft-one')).toBeNull();
       expect(await catalog.publicTitle('absent')).toBeNull();
+    });
+
+    it('answers an old address with a redirect to the new one, for videos and series (M04-S02)', async () => {
+      const v = await seedVideo(h.db.setup, { slug: 'moved-video' });
+      await h.db.setup.insert(slugRedirects).values({ oldSlug: 'was-video', videoId: v.id });
+      expect(await catalog.publicPreview('was-video', 'video')).toEqual({
+        type: 'redirect',
+        to: '/title/moved-video',
+      });
+      const s = await seedSeries(h.db.setup, {
+        series: { slug: 'moved-series' },
+        seasonSizes: [1],
+      });
+      await h.db.setup.insert(slugRedirects).values({ oldSlug: 'was-series', seriesId: s.id });
+      expect(await catalog.publicPreview('was-series', 'series')).toEqual({
+        type: 'redirect',
+        to: '/series/moved-series',
+      });
+    });
+
+    it('previews a published series with its season and episode counts, and hides a draft one', async () => {
+      await seedSeries(h.db.setup, {
+        series: { slug: 'open-series', title: 'Open series' },
+        seasonSizes: [2, 1],
+      });
+      await seedSeries(h.db.setup, {
+        series: { slug: 'closed-series', publishState: 'draft', publishedAt: null },
+        seasonSizes: [1],
+      });
+      const open = await catalog.publicPreview('open-series', 'series');
+      expect(open).toMatchObject({
+        type: 'series',
+        item: { kind: 'series', title: 'Open series', episodeCount: 3 },
+      });
+      expect(await catalog.publicPreview('closed-series', 'series')).toBeNull();
+      expect(await catalog.publicPreview('open-series', 'video')).toBeNull();
+    });
+
+    it('sends an episode address to its series', async () => {
+      const s = await seedSeries(h.db.setup, { series: { slug: 'ep-series' }, seasonSizes: [1] });
+      const episode = s.episodes[0]!;
+      const row = await h.db.setup
+        .select({ slug: videos.slug })
+        .from(videos)
+        .where(eq(videos.id, episode.id));
+      expect(await catalog.publicPreview(row[0]!.slug, 'video')).toEqual({
+        type: 'redirect',
+        to: '/series/ep-series',
+      });
     });
 
     it('carries artwork when the title has a poster', async () => {

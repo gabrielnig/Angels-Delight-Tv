@@ -9,6 +9,7 @@ import type {
   HomeRowsPage,
   Page,
   Progress,
+  PublicPreview,
   SeriesDetail,
   Suggestion,
   TitleDetail,
@@ -153,6 +154,18 @@ export class FixtureCatalog implements CatalogRepository {
 
   async publicTitle(slug: string): Promise<VideoSummary | null> {
     return VIDEOS.find((v) => v.slug === slug && !v.series) ?? null;
+  }
+
+  async publicPreview(slug: string, kind: 'video' | 'series'): Promise<PublicPreview | null> {
+    if (kind === 'series') {
+      const series = SERIES.find((s) => s.slug === slug);
+      return series ? { type: 'series', item: series } : null;
+    }
+    const video = VIDEOS.find((v) => v.slug === slug);
+    if (!video) return null;
+    return video.series
+      ? { type: 'redirect', to: `/series/${video.series.slug}` }
+      : { type: 'video', item: video };
   }
 
   async series(ctx: ViewerContext, slug: string): Promise<SeriesDetail | null> {
