@@ -20,6 +20,8 @@ export interface AdminRuntime {
   /** Catalog context with the current caption approval setting (D-005). */
   ctx(): Promise<AdminContext>;
   enqueue: JobProducer['enqueue'];
+  /** Queues the worker job that builds one export file (M19-S05, M20-S03). Null when it was already queued. */
+  enqueueExport(exportId: string): Promise<string | null>;
   /** The private bucket for uploaded sources (posters, later other images). */
   originals(): StorageAdapter;
   /** Failed encode inspection and cleanup (M14-S06). */
@@ -58,6 +60,7 @@ export function setAdminRuntime(
     ctx: async () => ({ db: runtime.db() }),
     enqueue: (async () => ({ jobId: 'test-job', deduped: false })) as AdminRuntime['enqueue'],
     names: async () => new Map(),
+    enqueueExport: async () => 'test-boss-job',
     originals: () => {
       throw new Error('This test did not provide originals storage');
     },
@@ -170,6 +173,8 @@ function build(): AdminRuntime {
     },
     enqueue: (async (...args: Parameters<JobProducer['enqueue']>) =>
       (await getProducer()).enqueue(...args)) as JobProducer['enqueue'],
+    enqueueExport: async (exportId) =>
+      (await getProducer()).enqueueUntracked('exports.generate', { exportId }),
     originals() {
       const { env } = getServices();
       return (originalsStorage ??= createStorage(

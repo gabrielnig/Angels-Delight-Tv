@@ -82,12 +82,12 @@ Super admin: the role exists since lane f1 (D-128), the rows reserved for it are
 | M19-S02 Overview dashboard | Must | done with test | AnalyticsView.test.tsx; queries.test.ts; analytics.int.test.ts |  |
 | M19-S03 Top titles and per video analytics | Must | done with test | analytics.int.test.ts; AnalyticsView.test.tsx; histogram.test.ts |  |
 | M19-S04 Audience splits | Should | done with test | analytics.int.test.ts; AnalyticsView.test.tsx |  |
-| M19-S05 CSV export | Should | partial | analytics-export.test.ts; analytics.int.test.ts (titleDaily); export route test (D-103) | Rows are correct now. Large exports run inline with a row cap and a rate limit, not as a background job with a download link |
+| M19-S05 CSV export | Should | done with test | analytics-export.test.ts; analytics.int.test.ts (titleDaily); export route test (D-103); apps/worker/src/exports.int.test.ts; real/exports.int.test.ts (D-130) | Over 10,000 rows the export is a background job with an emailed download link |
 | M19-S06 Daily rollups | Must | done with test | analytics.int.test.ts; apps/worker/src/maintenance.int.test.ts; prunes.int.test.ts (raw retention from settings) |  |
 | M19-S07 Privacy of analytics | Must | done with test | identity.test.ts; ingest.test.ts; rate-limit.test.ts |  |
 | M20-S01 Record audit entries | Must | done with test | packages/audit/src/audit-writer.int.test.ts; redact.test.ts; entry.test.ts (one writer, one redaction policy, D-090) |  |
 | M20-S02 Browse the audit log | Must | done with test | query.test.ts (security, staff, role and job prefixes); audit.int.test.ts; AuditLogView.test.tsx (restricted note); audit-adapter.test.ts (scope by role) | Admin sees content actions only, Super admin sees all (D-128) |
-| M20-S03 Export audit log | Should | partial | csv.test.ts; audit-adapter.test.ts | Export is truncated at a row cap, not a background job |
+| M20-S03 Export audit log | Should | done with test | csv.test.ts; audit-adapter.test.ts; packages/audit/src/stream.int.test.ts; apps/worker/src/exports.int.test.ts (D-130) | Background job with an emailed link, capped only by the 2,000,000 row ceiling |
 | M20-S04 Retention | Should | done with test | retention.test.ts; apps/worker/src/prunes.int.test.ts; settings-read.int.test.ts (audit.retention_months, D-091) |  |
 | M27-S01 Search viewer accounts | Should | done with test | real/people.int.test.ts; users-commands.test.ts |  |
 | M27-S02 View an account | Should | done with test | real/people.int.test.ts; account.int.test.ts |  |
@@ -102,9 +102,9 @@ Super admin: the role exists since lane f1 (D-128), the rows reserved for it are
 
 ## Counts by status
 
-- done with test: 87
+- done with test: 89
 - done without test: 2
-- partial: 2
+- partial: 0
 - missing: 0
 - Total: 91
 
@@ -125,5 +125,4 @@ Super admin: the role exists since lane f1 (D-128), the rows reserved for it are
 
 ## Open gaps
 
-- CSV and audit exports are inline with a row cap, not background jobs (M19-S05, M20-S03).
 - No tamper evident audit chain (M20-S05, a Could).

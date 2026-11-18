@@ -1,5 +1,5 @@
 import 'server-only';
-import { countAudit, getAuditEntry, listAudit } from '@ad/audit';
+import { countAudit, getAuditEntry, iterateAudit, listAudit } from '@ad/audit';
 import type { AuditFilters } from '@ad/audit';
 import { getServices } from '@/lib/runtime/services';
 import { toAdminRow } from './audit-adapter';
@@ -33,6 +33,9 @@ export const realAudit = {
     const record = await getAuditEntry(getServices().db, id, scope);
     return record ? toAdminRow(record) : null;
   },
+  async count(q: AuditQuery, scope: AuditScope): Promise<number> {
+    return countAudit(getServices().db, filtersOf(q, scope));
+  },
   async exportRows(
     q: AuditQuery,
     max: number,
@@ -40,10 +43,13 @@ export const realAudit = {
   ): Promise<{ rows: AuditRow[]; total: number }> {
     const db = getServices().db;
     const filters = filtersOf(q, scope);
-    const [total, page] = await Promise.all([
-      countAudit(db, filters),
-      listAudit(db, filters, { limit: max }),
-    ]);
-    return { rows: page.items.map(toAdminRow), total };
+    const total = await countAudit(db, filters);
+    // The screen list stops at 200 a page; the export reads as many pages as it needs, up to `max`.
+    const records = [];
+    for await (const page of iterateAudit(db, filters, { pageSize: 1000 })) {
+      records.push(...page);
+      if (records.length >= max) break;
+    }
+    return { rows: records.slice(0, max).map(toAdminRow), total };
   },
 };

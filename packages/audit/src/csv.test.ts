@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { auditCsv, csvCell } from './csv';
+import {
+  AUDIT_CSV_HEADER,
+  TITLE_DAILY_CSV_HEADER,
+  auditCsv,
+  auditCsvLine,
+  csvCell,
+  titleDailyCsvLine,
+} from './csv';
 
 describe('csvCell', () => {
   it('neutralises spreadsheet formulas', () => {
@@ -46,5 +53,56 @@ describe('auditCsv', () => {
     expect(lines[1]).toContain("'=evil");
     expect(lines[1]).toContain('2026-03-01T10:00:00.000Z');
     expect(lines[1]).toContain('Published it');
+  });
+});
+
+describe('streaming pieces of the audit CSV', () => {
+  const record = {
+    id: 7,
+    occurredAt: new Date('2026-06-01T10:00:00Z'),
+    actorAccountId: null,
+    actorRole: 'admin',
+    action: 'video.edit',
+    outcome: 'success' as const,
+    targetType: 'video',
+    targetId: 'v1',
+    ipTrunc: null,
+    requestId: null,
+    metadata: { summary: '=cmd()' },
+  };
+
+  it('writes the header and each row separately, so a file can be built without holding every row', () => {
+    const whole = auditCsv([record, { ...record, id: 8 }]);
+    const parts = `${AUDIT_CSV_HEADER}\n${auditCsvLine(record)}\n${auditCsvLine({ ...record, id: 8 })}\n`;
+    expect(parts).toBe(whole);
+  });
+
+  it('still neutralises a formula in a streamed row', () => {
+    expect(auditCsvLine(record)).toContain("'=cmd()");
+  });
+});
+
+describe('title daily CSV pieces (M19-S05)', () => {
+  const row = {
+    day: '2026-06-01',
+    videoId: 'v1',
+    title: '=Fractions, part 1',
+    archived: false,
+    views: 3,
+    watchMs: 90_500,
+    completions: 1,
+  };
+
+  it('writes the header and a row with seconds, not milliseconds', () => {
+    expect(TITLE_DAILY_CSV_HEADER).toBe(
+      'day,video_id,title,archived,views,watch_seconds,completions',
+    );
+    expect(titleDailyCsvLine({ ...row, title: 'Fractions' })).toBe(
+      '2026-06-01,v1,Fractions,no,3,91,1',
+    );
+  });
+
+  it('neutralises a formula and quotes a comma in the title', () => {
+    expect(titleDailyCsvLine(row)).toBe(`2026-06-01,v1,"'=Fractions, part 1",no,3,91,1`);
   });
 });

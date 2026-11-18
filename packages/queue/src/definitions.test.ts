@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   CRON_SCHEDULES,
+  EXPORT_CRON_SCHEDULES,
   MAIL_CRON_SCHEDULES,
   MAINTENANCE_CRON_SCHEDULES,
   QUEUES,
@@ -95,6 +96,31 @@ describe('mail queues (M15-S01, M21-S03)', () => {
     for (const entry of [...CRON_SCHEDULES, ...MAINTENANCE_CRON_SCHEDULES]) {
       expect(mail).not.toContain(entry.queue);
     }
+  });
+});
+
+describe('export queues (M19-S05, M20-S03)', () => {
+  const exportId = '0192f0a0-0000-7000-8000-000000000009';
+
+  it('takes an export id only, and nothing else', () => {
+    expect(parsePayload('exports.generate', { exportId })).toEqual({ exportId });
+    expect(() => parsePayload('exports.generate', {})).toThrow();
+    expect(() => parsePayload('exports.generate', { exportId, params: { from: 'x' } })).toThrow();
+    expect(() => parsePayload('exports.generate', { exportId: 'not-an-id' })).toThrow();
+    expect(parsePayload('exports.cleanup', {})).toEqual({});
+  });
+
+  it('gives a big export a long expiry and no blind retry storm', () => {
+    expect(QUEUE_DEFINITIONS['exports.generate']).toMatchObject({ concurrency: 1, retryLimit: 1 });
+    expect(QUEUE_DEFINITIONS['exports.generate'].expireInSeconds).toBeGreaterThanOrEqual(30 * 60);
+  });
+
+  it('cleans up once a day in Lagos time', () => {
+    expect(MAIL_CRON_SCHEDULES.some((e) => e.queue === 'exports.cleanup')).toBe(false);
+    expect(MAINTENANCE_CRON_SCHEDULES.some((e) => e.queue === 'exports.cleanup')).toBe(false);
+    expect(EXPORT_CRON_SCHEDULES).toEqual([
+      { queue: 'exports.cleanup', cron: '45 3 * * *', timezone: 'Africa/Lagos' },
+    ]);
   });
 });
 

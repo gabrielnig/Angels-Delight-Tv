@@ -28,6 +28,8 @@ import type { VideoHandlerDeps } from './handlers';
 import { chooseTranscriber } from './transcriber';
 import type { MaintenanceDeps } from './maintenance';
 import type { MailDeps } from './mail';
+import type { ExportDeps } from './export-handlers';
+import { cleanupExports, generateExport } from './exports';
 import { makePrunes } from './prunes';
 
 // Cleanup never validates new uploads, so the limits here are placeholders.
@@ -130,5 +132,19 @@ export function buildMailDeps(
     drain: () => drainOutbox({ db, kek, mailer }),
     prune: () => pruneOutbox(db),
     digests: () => buildDigests({ db, kek }),
+  };
+}
+
+/** The export jobs (M19-S05, M20-S03). Files go to the private originals bucket under `exports/`. */
+export function buildExportDeps(
+  env: WorkerEnv,
+  db: Database,
+  logger: Logger,
+): Omit<ExportDeps, 'mirror' | 'logger'> {
+  const storage = createStorage(storageConfigFromEnv(env, env.BUCKET_ORIGINALS, env.HLS_KEK));
+  const rt = { db, storage, kek: env.FIELD_KEK, logger };
+  return {
+    generate: (exportId, options) => generateExport(rt, exportId, options),
+    cleanup: () => cleanupExports(rt),
   };
 }

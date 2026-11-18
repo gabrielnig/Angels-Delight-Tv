@@ -6,6 +6,7 @@ export * from './enums';
 export * from './identity';
 export * from './notices';
 export * from './outbox';
+export * from './exports';
 export * from './pipeline';
 export * from './platform';
 export { userKeys } from './keys';

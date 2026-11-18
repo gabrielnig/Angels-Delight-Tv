@@ -27,6 +27,18 @@ export class JobProducer {
     this.mirror = deps.mirror;
   }
 
+  /**
+   * Queues a job whose state lives in its own table (an export row), so there is no mirror row. One job per
+   * export id. Returns the pg-boss job id, or null when that export is already queued.
+   */
+  async enqueueUntracked<Q extends QueueName>(
+    queue: Q,
+    payload: PayloadInput<Q>,
+  ): Promise<string | null> {
+    const parsed = parsePayload(queue, payload) as { exportId?: string };
+    return this.boss.send(queue, parsed, { singletonKey: parsed.exportId });
+  }
+
   async enqueue<Q extends QueueName>(
     queue: Q,
     payload: PayloadInput<Q>,

@@ -60,6 +60,7 @@ const MAIN_TABLES = [
   'signup_invites',
   'site_daily_stats',
   'slug_redirects',
+  'staff_exports',
   'staff_notification_prefs',
   'theme_settings',
   'upload_sessions',
