@@ -72,6 +72,8 @@ export interface PlayerState {
   quality: PlayerQualityState;
   toast: PlayerToast | null;
   upNext: UpNextState;
+  /** False when the video has no audio track, so the volume controls are hidden (M08-S05). */
+  hasAudio: boolean;
   /** The network came back while the player was stopped by it. */
   backOnline: boolean;
   /** Text for the polite live region. */
