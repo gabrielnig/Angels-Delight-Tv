@@ -81,7 +81,7 @@ export class RealProfiles implements ProfilesRepository {
         viewerActor(accountId),
         {
           name: input.name,
-          avatarId: avatarFromTone(input.tone),
+          avatarId: input.avatarId ?? avatarFromTone(input.tone),
           isKids: input.kids,
           language: input.language,
           autoplayNext: input.autoplayNext,
@@ -101,7 +101,8 @@ export class RealProfiles implements ProfilesRepository {
   ): Promise<Result> {
     const patch: UpdateProfileInput = {};
     if (input.name !== undefined) patch.name = input.name;
-    if (input.tone !== undefined) patch.avatarId = avatarFromTone(input.tone);
+    if (input.avatarId !== undefined) patch.avatarId = input.avatarId;
+    else if (input.tone !== undefined) patch.avatarId = avatarFromTone(input.tone);
     if (input.kids !== undefined) patch.isKids = input.kids;
     if (input.language !== undefined) patch.language = input.language;
     if (input.autoplayNext !== undefined) patch.autoplayNext = input.autoplayNext;

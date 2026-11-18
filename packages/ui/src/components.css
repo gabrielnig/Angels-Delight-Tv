@@ -932,6 +932,10 @@
   font-size: var(--text-hero);
 }
 
+.ad-avatar__art {
+  display: block;
+}
+
 .ad-avatar--add {
   background: var(--color-surface-sunken);
   color: var(--color-muted);

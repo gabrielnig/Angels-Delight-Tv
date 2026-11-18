@@ -117,6 +117,7 @@ export function ProfilePicker({
                 <ProfileTile
                   name={profile.name}
                   tone={asTone(profile.tone)}
+                  avatarId={profile.avatarId}
                   kids={profile.kids}
                   editing
                   href={`/profiles/${profile.id}/edit`}
@@ -125,6 +126,7 @@ export function ProfilePicker({
                 <ProfileTile
                   name={profile.name}
                   tone={asTone(profile.tone)}
+                  avatarId={profile.avatarId}
                   kids={profile.kids}
                   onSelect={() => onSelect(profile.id)}
                 />

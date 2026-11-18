@@ -20,6 +20,8 @@ export interface Profile {
   kids: boolean;
   /** Pastel avatar tone name, one of sky, mint, lemon, peach, lavender. */
   tone?: string;
+  /** Illustrated avatar id (M03-S03), one of the twelve in @ad/ui AVATAR_ART_IDS. */
+  avatarId?: string;
   /** Adult profiles can manage the account. */
   owner: boolean;
   language: string;
@@ -283,6 +285,7 @@ export interface ProfileInput {
   name: string;
   kids: boolean;
   tone?: string;
+  avatarId?: string;
   language?: string;
   autoplayNext?: boolean;
   /** Four digits to set, or null to remove. Needs the account password. */

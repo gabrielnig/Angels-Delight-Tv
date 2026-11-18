@@ -66,6 +66,7 @@ export class FixtureProfiles implements ProfilesRepository {
       name: input.name.trim(),
       kids: input.kids,
       tone: input.tone,
+      avatarId: input.avatarId,
       owner: false,
       language: input.language ?? 'en',
       autoplayNext: input.autoplayNext ?? !input.kids,
@@ -99,6 +100,7 @@ export class FixtureProfiles implements ProfilesRepository {
       name: input.name?.trim() ?? current.name,
       kids: input.kids ?? current.kids,
       tone: input.tone ?? current.tone,
+      avatarId: input.avatarId ?? current.avatarId,
       language: input.language ?? current.language,
       autoplayNext: input.autoplayNext ?? current.autoplayNext,
     };
