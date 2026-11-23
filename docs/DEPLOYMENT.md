@@ -15,6 +15,8 @@ Related: `docs/ARCHITECTURE.md`, `docs/SECURITY.md`, `docs/DEV-SETUP.md`.
 
 Suggested size: 4 vCPU, 8 GB RAM, 150 GB or more disk (encode scratch, Postgres, Docker images). Confirm against the current Contabo plans.
 
+Contabo notes: the first login is `ssh root@<ip>` with the password or key from the order email, so do the user and ssh steps below first, test a second session as `deploy`, and only then turn root login off. Contabo has its own firewall panel (Network, Firewall). Keep it off, or allow 22 from your address and 80 and 443 from the Cloudflare ranges, because it applies before `ufw` and a mismatch makes the site unreachable while `ufw` looks fine. Cloudflare proxies only the web ports, so ssh to the server IP and test the site through the proxied domain, never the raw IP (the origin firewall refuses it by design). `docs/LAUNCH-RUNBOOK.md` step 4 has the full command sequence.
+
 ```bash
 # as root, once
 adduser deploy && usermod -aG sudo deploy
@@ -126,6 +128,8 @@ Access logs must not record query strings on `/api/play/*` and `/api/hls/*`: con
 
 ## 6. Environment and secrets on the server
 
+- `SMTP_URL=disabled` is the supported way to deploy before email credentials exist. The apps boot, every email send fails with "Email is not configured", outbox rows close as failed, the admin dashboard shows a warning, and `pnpm dns:check` fails on `email-configured` so it blocks launch. An empty `SMTP_URL` still refuses to start. See the runbook, step 6.
+
 - File `/opt/angels-delight/.env`, owner deploy user, mode 600. Run `pnpm secrets:generate` once on the owner's machine: it copies `.env.production.example`, fills every empty secret with fresh random values (including one password per database role, D-117) and makes the two backup keypairs in an offline folder. Secret values are never printed. Every variable in the example carries a tag: client, owner, generated, default or applied.
 - The migrator password is in the same file but only the `migrate` and `tools` services read it, and compose builds each container's connection strings from its own role only.
 - `FIELD_KEK` and `HLS_KEK` are also stored offline by the owner (password manager plus a printed or encrypted copy). Losing them is unrecoverable.
@@ -133,7 +137,11 @@ Access logs must not record query strings on `/api/play/*` and `/api/hls/*`: con
 
 ## 7. Deploy procedure
 
-CI (GitHub Actions) on merge to `main`: affected tests, lint, typecheck, audit, gitleaks, Semgrep, build and scan images, push tagged images. Deploy is a manual, reviewed step at launch, automated later if wanted.
+CI (`.github/workflows/ci.yml`) on pull requests and merge to `main`: affected tests, lint, typecheck, audit, secret scan, Semgrep, build, a11y and Lighthouse. It does not build images.
+
+Images come from the separate `release` workflow (`.github/workflows/release.yml`). It runs only on manual dispatch (Actions tab, release, Run workflow) or when a `v*` tag is pushed. For each of web, worker, whisper and tools it builds linux/amd64 with buildx and the GitHub Actions cache, scans with Trivy (fails on CRITICAL findings that have a fixed version, before anything is pushed), and pushes `ghcr.io/gabrielnig/angels-delight-tv-<name>` tagged with the full git sha, the 7 character short sha and, for tag pushes, the tag name. It authenticates with the job's `GITHUB_TOKEN` (`packages: write`), no stored secret. The web, worker and tools images build from the repository root (`docker build -f apps/web/Dockerfile .`), whisper from `apps/whisper`. Deploy is a manual, reviewed step at launch, automated later if wanted.
+
+First time with GHCR: new packages are private. Either make the four packages public (Package settings, Danger Zone, Change visibility), or log in on the VPS with a classic personal access token that has only `read:packages` (`docker login ghcr.io`). The images contain no secrets. Details are in `docs/LAUNCH-RUNBOOK.md`, Release.
 
 ```bash
 # on the VPS as deploy, with <sha> being the tag to release
@@ -216,6 +224,8 @@ Cost watch items: Worker request volume, R2 operations if cache hit ratio drops,
 ## 13. Launch checklist
 
 ```
+[ ] Release workflow green for the sha to deploy, four images in GHCR, VPS can pull them (public packages or read only token)
+[ ] SMTP_URL is a real smtp url, not `disabled` (no "Email is not configured" banner on the admin dashboard, dns:check has no FAIL)
 [ ] Client confirmed: name, domain, logo, colours, content, languages, rights to all content
 [ ] Domain bought in the client's account, nameservers on Cloudflare
 [ ] VPS in the client's account, hardened (section 2), updates on
