@@ -1,7 +1,7 @@
 import { makeNotifier } from './notifier';
 import { runNightlyRollup } from '@ad/analytics';
 import type { WorkerEnv } from '@ad/config';
-import { Mailer, SmtpTransport, type MailTransport } from '@ad/mailer';
+import { Mailer, transportFromSmtpUrl, type MailTransport } from '@ad/mailer';
 import { createDb, createPool, type Database } from '@ad/db';
 import {
   DrizzleJobMirror,
@@ -120,7 +120,7 @@ export function buildMailDeps(
   const from = env.EMAIL_FROM;
   const supportEmail = env.SUPPORT_EMAIL ?? /<([^>]+)>/.exec(from)?.[1] ?? from;
   const kek = env.FIELD_KEK;
-  const mailer = new Mailer(options.transport ?? SmtpTransport.fromUrl(env.SMTP_URL), {
+  const mailer = new Mailer(options.transport ?? transportFromSmtpUrl(env.SMTP_URL), {
     from,
     appName: 'Angels Delight TV',
     appOrigin: env.APP_ORIGIN,

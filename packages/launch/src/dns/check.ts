@@ -22,6 +22,8 @@ export interface DnsConfig {
   dkimSelectors: string[];
   /** For example `_spf.provider.example`. When set, the SPF record must include it. */
   spfInclude?: string;
+  /** True when SMTP_URL is the word disabled. Always a launch blocker. */
+  emailDisabled?: boolean;
   /** Addresses Cloudflare answers with when a name is proxied. Defaults to the published list. */
   cloudflareRanges?: string[];
 }
@@ -380,6 +382,17 @@ export async function runDnsCheck(config: DnsConfig, resolver: DnsResolver): Pro
     ),
   );
   checks.push(await checkMedia(resolver, config));
+  if (config.emailDisabled) {
+    checks.push(
+      result(
+        'email-configured',
+        'Email sending is configured',
+        'fail',
+        'Email is not configured: SMTP_URL is set to disabled, so sign up verification and password reset cannot reach anyone. Set a real SMTP_URL and redeploy before launch.',
+      ),
+    );
+    return { ok: false, checks };
+  }
   checks.push(await checkSpf(resolver, config));
   if (config.dkimSelectors.length === 0) {
     checks.push(

@@ -8,7 +8,7 @@ import {
 } from '@ad/auth';
 import { type WebEnv, loadWebEnv } from '@ad/config';
 import { createDb, createPool } from '@ad/db';
-import { Mailer, OutageMonitor, RetryingTransport, SmtpTransport } from '@ad/mailer';
+import { Mailer, OutageMonitor, RetryingTransport, transportFromSmtpUrl } from '@ad/mailer';
 import { createSuppressionStore } from '../email/suppression';
 import { emailBrandFrom } from './email-brand';
 import { AuditWriter } from '@ad/audit';
@@ -71,7 +71,7 @@ function build(env: WebEnv): AuthRuntime {
       logger.error('email provider outage', { since: since.toISOString(), alert: 'email_outage' }),
   });
   const mailer = new Mailer(
-    new RetryingTransport(SmtpTransport.fromUrl(env.SMTP_URL), { monitor: outage }),
+    new RetryingTransport(transportFromSmtpUrl(env.SMTP_URL), { monitor: outage }),
     {
       isSuppressed: (address) => suppressions.isSuppressed(address),
       from,

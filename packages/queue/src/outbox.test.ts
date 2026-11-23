@@ -25,6 +25,14 @@ describe('sealed addresses', () => {
 });
 
 describe('send errors', () => {
+  it('closes a row at once, with a clear text, when email is not configured', () => {
+    const off = Object.assign(new Error('Email is not configured. Set SMTP_URL to enable sending.'), {
+      name: 'EmailNotConfigured',
+    });
+    expect(isPermanentSendError(off)).toBe(true);
+    expect(describeSendError(off)).toMatch(/^Email is not configured/);
+  });
+
   it('treats an SMTP 5xx reply as permanent, also when wrapped', () => {
     const smtp = Object.assign(new Error('mailbox unavailable'), { responseCode: 550 });
     expect(isPermanentSendError(smtp)).toBe(true);

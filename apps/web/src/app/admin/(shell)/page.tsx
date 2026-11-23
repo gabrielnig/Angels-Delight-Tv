@@ -1,4 +1,6 @@
 import type { Metadata } from 'next';
+import { Banner } from '@/components/admin/states';
+import { EMAIL_NOT_CONFIGURED_WARNING, emailNotConfigured } from '@/lib/admin/email-status';
 import { DashboardView } from '@/components/admin/DashboardView';
 import { dashboardService } from '@/lib/data/admin/services';
 import { requireActor } from '@/lib/data/admin/session-next';
@@ -23,5 +25,10 @@ export default async function DashboardPage({
       timeZone: 'Africa/Lagos',
     }).format(new Date()),
   );
-  return <DashboardView data={data} name={actor.name} hour={hour} />;
+  return (
+    <>
+      {emailNotConfigured() ? <Banner tone="warning">{EMAIL_NOT_CONFIGURED_WARNING}</Banner> : null}
+      <DashboardView data={data} name={actor.name} hour={hour} />
+    </>
+  );
 }
