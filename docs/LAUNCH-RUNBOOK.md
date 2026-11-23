@@ -7,8 +7,30 @@ Conventions: `OWNER` is the machine of the owner or developer with the repositor
 ## Before the day (not counted in the two hours)
 
 - Accounts opened in the client's name, developer added as a member: domain registrar, Cloudflare, VPS provider, GitHub, email sending provider. Nameservers can take up to a day to move.
-- CI has built and pushed the four images for the sha to release (`-web`, `-worker`, `-whisper`, `-tools`). The `main` workflow does this on merge.
+- The release workflow has built and pushed the four images for the sha to release (`-web`, `-worker`, `-whisper`, `-tools`). It does not run on merge to `main`, you start it (see Release below).
 - The client file `client.json`, logo, favicon, legal texts, and the video folder with `videos.csv` are on OWNER, in the shapes described in `docs/CLIENT-INPUTS.md`.
+
+## Release: build and push the images (OWNER, about 20 minutes the first time)
+
+The `release` workflow (`.github/workflows/release.yml`) builds the four images for linux/amd64, scans each with Trivy (it fails on CRITICAL findings that have a fix, and nothing is pushed when it fails) and pushes them to `ghcr.io/gabrielnig/angels-delight-tv-{web,worker,whisper,tools}` tagged with the full git sha and the 7 character short sha. A `v*` tag push also adds the tag name. It never runs on a plain push to `main`.
+
+Start it from the GitHub Actions tab (Actions, release, Run workflow, branch `main`), or by tag:
+
+```bash
+git tag v1.0.0 && git push origin v1.0.0
+# or, from a machine with the gh CLI
+gh api -X POST repos/gabrielnig/Angels-Delight-Tv/actions/workflows/release.yml/dispatches -f ref=main
+```
+
+When the run is green, the release `<tag>` for step 7 is the full sha of the commit it ran on (also shown in the run summary). Use the full sha with `ops/deploy.sh`.
+
+First time with GHCR (one time per package, four packages):
+
+1. Packages are created private on first push. The workflow can push them using the repository token because the package is linked to the repository.
+2. The VPS must be able to pull. Pick one:
+   - Make the four packages public: GitHub, the repository owner's Packages tab, open each package, Package settings, Danger Zone, Change visibility, Public. The images hold no secrets (all configuration is injected at run time), so this is the least effort. No login is needed on the VPS then.
+   - Keep them private and use a read only token on the VPS: create a classic personal access token with only the `read:packages` scope (fine grained tokens cannot read GHCR yet), owned by an account that can see the packages, then `echo <token> | docker login ghcr.io -u <github user> --password-stdin` as the deploy user. Store the token in the client's password manager. It is a credential, rotate it when staff change.
+3. If a package shows a different owner or is not linked to the repository, open the package settings and use Connect repository, and under Manage Actions access give the repository write access.
 
 ## Steps
 
@@ -61,15 +83,41 @@ Attach the media domain to the Worker as a custom domain in the Cloudflare dashb
 
 ### 4. VPS setup (15 min)
 
+Contabo specific notes first, then the commands.
+
+- Contabo emails the root password (or lets you set a password or an SSH key when ordering). The first login is therefore `ssh root@<vps ip>`. Choose Ubuntu LTS at order time. The server has a public IPv4 and, usually, an IPv6.
+- Contabo has its own firewall panel (Customer Control Panel, Network, Firewall). Leave it off or on with the default allow all, and let `ufw` on the server be the only firewall. If you do turn the panel firewall on, it must allow TCP 22 from your address and TCP 80 and 443 from the Cloudflare ranges, or the site silently stops answering and `ufw` will look fine. When something is unreachable, check the panel first.
+- Cloudflare and `ufw`: ports 80 and 443 are open only to Cloudflare ranges (`ops/update-cloudflare-ufw.sh`, refreshed weekly by cron). So `curl http://<vps ip>` from your laptop is meant to time out. Test through the proxied domain, never the raw IP. SSH stays open to the world on port 22 unless you restrict it to a static address, which is better. Cloudflare does not proxy SSH, so keep `ssh` pointed at the server IP, not at the proxied domain name.
+- If the DNS A record is still grey cloud (not proxied) while you test, `ufw` will block you. Turn the proxy on first, or test from the VPS itself with `curl -k https://localhost`.
+
 ```bash
-ssh root@<vps>
-git clone https://github.com/gabrielnig/Angels-Delight-Tv /opt/angels-delight/repo
+# 1. First login as root from OWNER
+ssh root@<vps ip>
+
+# 2. Create the deploy user and give it your key (do this before you close the root session)
+adduser --disabled-password --gecos "" deploy
+usermod -aG sudo deploy
+install -d -m 700 -o deploy -g deploy /home/deploy/.ssh
+cat ~/.ssh/authorized_keys >> /home/deploy/.ssh/authorized_keys    # root's key, or paste your public key instead
+chown deploy:deploy /home/deploy/.ssh/authorized_keys && chmod 600 /home/deploy/.ssh/authorized_keys
+
+# 3. In a second terminal, confirm ssh deploy@<vps ip> works and that sudo works there. Only then:
+#    set PasswordAuthentication no and PermitRootLogin no in /etc/ssh/sshd_config, then
+systemctl restart ssh
+
+# 4. Install Docker, the firewall, data folders and cron (still as root, or sudo as deploy)
+apt-get update && apt-get install -y git
+git clone https://github.com/gabrielnig/Angels-Delight-Tv /opt/angels-delight/repo   # private repo: use a deploy key or a read only token
 bash /opt/angels-delight/repo/ops/setup-vps.sh      # Docker, firewall (SSH and Cloudflare only), data folders, cron
-install -m 600 origin.pem origin.key /opt/angelsdelight/caddy/
-docker login ghcr.io                                 # a read only token for the images
+usermod -aG docker deploy
+chown -R deploy:deploy /opt/angels-delight /opt/angelsdelight
+install -m 600 -o deploy origin.pem origin.key /opt/angelsdelight/caddy/
+
+# 5. Log out, log in again as deploy (group change), then for private images only
+docker login ghcr.io -u <github user>               # the read:packages token from the Release section. Skip if the packages are public.
 ```
 
-`setup-vps.sh` installs the nightly backup cron and the weekly Cloudflare range refresh.
+From here on use the `deploy` user, not root. `setup-vps.sh` installs the nightly backup cron and the weekly Cloudflare range refresh. Enable the 2 GB swap and the Docker log rotation from `docs/DEPLOYMENT.md` section 2 as well.
 
 ### 5. Secrets (5 min)
 
@@ -92,7 +140,16 @@ pnpm launch:apply --config client.json --env-only --dry-run   # shows which env 
 pnpm launch:apply --config client.json --env-only             # writes domain, origins and sender name into .env.production
 ```
 
-Then fill the values tagged `[owner]` in `.env.production`: R2 endpoint and tokens, SMTP url, optional Turnstile and error reporting keys, the backup token and the dead man's switch url. Every variable has a tag line above it, and the container refuses to start in production if a required one is missing or insecure. Copy the finished file to the VPS as `/opt/angels-delight/.env` with mode 600.
+Then fill the values tagged `[owner]` in `.env.production`: R2 endpoint and tokens, SMTP url (or the interim `disabled` mode below), optional Turnstile and error reporting keys, the backup token and the dead man's switch url. Every variable has a tag line above it, and the container refuses to start in production if a required one is missing or insecure. Copy the finished file to the VPS as `/opt/angels-delight/.env` with mode 600.
+
+No email yet (interim mode). If the client has not chosen an email provider by deploy day, set `SMTP_URL=disabled` and keep a real sender address in `EMAIL_FROM`. The site boots and everything except email works. What changes:
+
+- Sign up verification, password reset, invite and notification emails are not sent. Each attempt fails with the error "Email is not configured". Rows the worker takes from the email outbox are closed at once as `failed` with that text, and nothing is retried.
+- The admin dashboard shows a warning banner: "Email is not configured". Staff sign in works, but a viewer who signs up cannot verify, and nobody can reset a password by email.
+- Create the owner account with `run seed-admin` (step 8) as usual, since it needs no email. Do not invite other staff until email works.
+- `pnpm dns:check` always FAILS in this mode (check `email-configured`), and the smoke checklist below lists it as a launch blocker. It cannot be forgotten: go live only after this is fixed.
+- To finish: put a real `smtp://` or `smtps://` url in `SMTP_URL`, re-copy the env file to the VPS, run `ops/deploy.sh <tag>` again (a restart of web and worker is enough, same tag), set up SPF, DKIM and DMARC, and run `pnpm dns:check`.
+- An empty `SMTP_URL` still refuses to start. Only the exact word `disabled` is accepted, in any letter case.
 
 ### 7. First deploy (10 min)
 
@@ -134,7 +191,7 @@ In the admin, open each video's captions, fix names and Nigerian English terms, 
 
 ### 11. Smoke checklist (15 min)
 
-- [ ] `pnpm dns:check` shows no FAIL lines
+- [ ] `pnpm dns:check` shows no FAIL lines. Launch blocker: a FAIL on `email-configured`, or the admin dashboard banner "Email is not configured", means `SMTP_URL=disabled` is still set. Fix it before go live
 - [ ] `https://<domain>` loads over https with the client's name, logo and colours
 - [ ] `https://<domain>/readyz` is ok, `https://<media domain>` serves an image with a valid signature and refuses an unsigned one
 - [ ] Sign up, verify email arrives with the right sender name, log in, log out

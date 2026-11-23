@@ -855,3 +855,20 @@ Format: decision, options considered, why, reversible or not. Newest first. Deci
 - Why: one mechanism, themeable, no schema change, same files as before. The contrast gate does not read the font, and a test now asserts the gate result does not change with the font. Existing stored themes keep their saved key (Inter), so only new installs and a theme reset get Space Grotesk headings.
 - Also: the closing layout (pending deletion screen) gets the soft footer rules, and the Kids adults only card sits inside the `acct` scope so its heading token applies (it rendered at 16px). The pending deletion screen keeps the logo only header (M02-S08) where the mockup shows the full nav, because an account in grace cannot use the links.
 - Reversible: yes. Set `DEFAULT_THEME.fontKey` back to `inter`.
+
+## D-163 SMTP_URL=disabled is the supported no email mode, and auth mail is not written to the outbox (lane w1)
+- Decision: `SMTP_URL` accepts the exact word `disabled` (any letter case, stored lowercase) besides smtp and smtps urls. An empty or missing value still fails startup. In disabled mode web and worker use a `DisabledTransport` whose every send throws `EmailNotConfigured` ("Email is not configured. Set SMTP_URL to enable sending."). The retrying transport does not retry it and the worker outbox treats it as permanent, so queued rows close as `failed` with that text at once. The admin dashboard shows the existing warning Banner "Email is not configured". `pnpm dns:check` adds a failing `email-configured` check and skips SPF, DKIM and DMARC, and the runbook smoke checklist lists it as a launch blocker.
+- Options: a separate `EMAIL_DISABLED` flag (two settings that can disagree), writing verification and reset mail to the outbox as failed rows, accepting an empty `SMTP_URL`.
+- Why: one value, strict by default, visible in three places. Verification and reset mail is sent straight through the mailer, not through the outbox, and the outbox only has staff notice kinds and a kind check constraint. Storing reset and verify links as rows would need a migration and would keep single use secrets at rest, so the failure is raised and logged instead. Outbox rows the worker does hold are failed with the clear text.
+- Reversible: yes. Remove the transport branch and the schema alternative.
+
+## D-164 Images are released by a separate on demand workflow, scanned with a pinned Trivy container, pushed only if the scan passes (lane w1)
+- Decision: `.github/workflows/release.yml` runs on workflow_dispatch and v* tags only. Each of web, worker, whisper, tools is built for linux/amd64 into the local store, scanned with `ghcr.io/aquasecurity/trivy:0.69.3` (CRITICAL with a fix fails the job), then pushed with the full sha, the short sha and the tag name. Login uses `GITHUB_TOKEN` with `packages: write`.
+- Options: add image jobs to ci.yml on every push to main (slow, fills GHCR with untested shas), the trivy-action (its tags were hijacked in March 2026, GHSA-69fq-xp46-6x23), push first and scan after.
+- Why: the owner decides which sha goes live, a bad image never reaches the registry, and the scanner is a version the advisory names as safe. Bump `TRIVY_IMAGE` deliberately.
+- Reversible: yes.
+
+## D-165 The worker image needs drizzle-orm at run time (lane w1)
+- Decision: `drizzle-orm` moves from devDependencies to dependencies in `apps/worker/package.json`.
+- Options: leave it (the image installs with `pnpm deploy --prod`, so the worker crashed at boot with ERR_MODULE_NOT_FOUND from `src/notifier.ts`), or import it only through `@ad/db`.
+- Why: smallest correct change, found by running the deployed layout locally. Reversible: yes.
