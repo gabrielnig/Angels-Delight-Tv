@@ -1,0 +1,113 @@
+name: release
+
+# Builds the four production images and pushes them to GHCR, tagged by git sha. Runs only on demand or on a v* tag,
+# never on a push to main. ops/deploy.sh on the VPS pulls these tags and never builds.
+on:
+  workflow_dispatch:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: read
+  packages: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  # Must match the IMAGE_PREFIX default in compose.prod.yaml. GHCR needs it lowercase.
+  IMAGE_PREFIX: ghcr.io/gabrielnig/angels-delight-tv
+  # A fixed, known good Trivy release run as a container. Do not use the trivy-action tags or Trivy `latest`: the
+  # March 2026 supply chain compromise (GHSA-69fq-xp46-6x23) hit them. 0.69.3 is named safe in that advisory.
+  TRIVY_IMAGE: ghcr.io/aquasecurity/trivy:0.69.3
+
+jobs:
+  images:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: web
+            dockerfile: apps/web/Dockerfile
+            context: .
+          - name: worker
+            dockerfile: apps/worker/Dockerfile
+            context: .
+          # The whisper Dockerfile copies its files relative to its own folder.
+          - name: whisper
+            dockerfile: apps/whisper/Dockerfile
+            context: apps/whisper
+          - name: tools
+            dockerfile: ops/Dockerfile.tools
+            context: .
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Work out the tags
+        id: tags
+        run: |
+          short="$(git rev-parse --short=7 HEAD)"
+          image="${IMAGE_PREFIX}-${{ matrix.name }}"
+          list="${image}:${{ github.sha }},${image}:${short}"
+          if [ "${{ github.ref_type }}" = "tag" ]; then list="${list},${image}:${{ github.ref_name }}"; fi
+          echo "scan=${image}:${{ github.sha }}" >> "$GITHUB_OUTPUT"
+          {
+            echo 'list<<EOF'
+            echo "${list}" | tr ',' '\n'
+            echo 'EOF'
+          } >> "$GITHUB_OUTPUT"
+
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # Build into the local image store first, so a critical finding stops the release before anything is pushed.
+      - name: Build
+        uses: docker/build-push-action@v6
+        with:
+          context: ${{ matrix.context }}
+          file: ${{ matrix.dockerfile }}
+          platforms: linux/amd64
+          load: true
+          provenance: false
+          tags: ${{ steps.tags.outputs.scan }}
+          cache-from: type=gha,scope=${{ matrix.name }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.name }}
+
+      # Fails on CRITICAL findings that have a fixed version. Unfixed ones are reported by nobody and blocked by nobody.
+      - name: Trivy scan
+        run: |
+          docker run --rm \
+            -v /var/run/docker.sock:/var/run/docker.sock \
+            -v "${HOME}/.cache/trivy:/root/.cache/trivy" \
+            "${TRIVY_IMAGE}" image \
+            --severity CRITICAL --ignore-unfixed --exit-code 1 --no-progress \
+            "${{ steps.tags.outputs.scan }}"
+
+      # Same inputs, so the layer cache makes this a push of what was just built.
+      - name: Push
+        uses: docker/build-push-action@v6
+        with:
+          context: ${{ matrix.context }}
+          file: ${{ matrix.dockerfile }}
+          platforms: linux/amd64
+          push: true
+          provenance: false
+          tags: ${{ steps.tags.outputs.list }}
+          cache-from: type=gha,scope=${{ matrix.name }}
+
+      - name: Summary
+        run: |
+          {
+            echo "### ${{ matrix.name }}"
+            echo '```'
+            echo "${{ steps.tags.outputs.list }}"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
