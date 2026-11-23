@@ -194,16 +194,15 @@ importers:
       '@ad/video':
         specifier: workspace:*
         version: link:../../packages/video
+      drizzle-orm:
+        specifier: ^0.45.4
+        version: 0.45.4(@opentelemetry/api@1.10.0)(@types/pg@8.23.1)(pg@8.23.1)
       pg-boss:
         specifier: ^12.38.2
         version: 12.38.2(@opentelemetry/api@1.10.0)
       tsx:
         specifier: ^4.23.15
         version: 4.23.15
-    devDependencies:
-      drizzle-orm:
-        specifier: ^0.45.4
-        version: 0.45.4(@opentelemetry/api@1.10.0)(@types/pg@8.23.1)(pg@8.23.1)
 
   packages/analytics:
     dependencies:

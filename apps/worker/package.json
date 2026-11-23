@@ -24,10 +24,8 @@
     "@ad/storage": "workspace:*",
     "@ad/theme": "workspace:*",
     "@ad/video": "workspace:*",
+    "drizzle-orm": "^0.45.4",
     "pg-boss": "^12.38.2",
     "tsx": "^4.23.15"
-  },
-  "devDependencies": {
-    "drizzle-orm": "^0.45.4"
   }
 }
