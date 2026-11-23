@@ -6,6 +6,7 @@ const USAGE = `Usage: pnpm dns:check [--vps-ip <address>] [--dkim-selector <a,b>
        [--app-domain <name>] [--media-domain <name>] [--from-domain <name>] [--dns-server <ip>]
 Checks that the app domain points at the VPS, the media domain is the R2 custom domain, and that SPF, DKIM and DMARC
 are set for the sending domain. Domains default to APP_DOMAIN, MEDIA_DOMAIN and the domain in EMAIL_FROM.
+SMTP_URL=disabled (no email yet) always fails this check.
 Exit code 0 when nothing failed (warnings are shown), 1 when a check failed, 2 for bad input.`;
 
 const MARK = { pass: 'PASS', warn: 'WARN', fail: 'FAIL' } as const;
@@ -34,10 +35,11 @@ async function main(): Promise<number> {
   const fromDomain = (v['from-domain'] ?? domainOfAddress(process.env.EMAIL_FROM) ?? '')
     .trim()
     .toLowerCase();
+  const emailDisabled = (process.env.SMTP_URL ?? '').trim().toLowerCase() === 'disabled';
   const missing = [
     appDomain ? null : 'APP_DOMAIN (or --app-domain)',
     mediaDomain ? null : 'MEDIA_DOMAIN (or --media-domain)',
-    fromDomain ? null : 'EMAIL_FROM (or --from-domain)',
+    fromDomain || emailDisabled ? null : 'EMAIL_FROM (or --from-domain)',
   ].filter(Boolean);
   if (missing.length > 0) {
     console.error(`Missing: ${missing.join(', ')}`);
@@ -48,6 +50,7 @@ async function main(): Promise<number> {
     appDomain,
     mediaDomain,
     fromDomain,
+    emailDisabled,
     vpsIp: v['vps-ip'],
     dkimSelectors: (v['dkim-selector'] ?? '')
       .split(',')

@@ -74,7 +74,10 @@ export function isPermanentSendError(error: unknown): boolean {
   const code = responseCode(error);
   if (code !== null && code >= 500 && code < 600) return true;
   return (
-    error instanceof Error && (error.name === 'TemplateError' || error.name === 'AddressUnreadable')
+    error instanceof Error &&
+    (error.name === 'TemplateError' ||
+      error.name === 'AddressUnreadable' ||
+      error.name === 'EmailNotConfigured')
   );
 }
 

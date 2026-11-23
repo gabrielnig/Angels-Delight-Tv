@@ -1,6 +1,13 @@
 import { describe, expect, it, vi } from 'vitest';
 import { Mailer, MemoryTransport, type MailTransport, type OutgoingMail } from './mailer';
-import { OutageMonitor, RetryingTransport, RETRY_DELAYS_MS } from './delivery';
+import {
+  DisabledTransport,
+  OutageMonitor,
+  RetryingTransport,
+  RETRY_DELAYS_MS,
+  isEmailDisabled,
+  transportFromSmtpUrl,
+} from './delivery';
 
 const mail: OutgoingMail = { from: 'a@x.org', to: 'b@x.org', subject: 's', text: 't', html: 'h' };
 
@@ -138,5 +145,27 @@ describe('suppression', () => {
     });
     await mailer.sendWelcome({ to: 'a@example.com' });
     expect(transport.outbox).toHaveLength(1);
+  });
+});
+
+describe('disabled email (SMTP_URL=disabled)', () => {
+  it('recognises the value in any case and nothing else', () => {
+    expect(isEmailDisabled('disabled')).toBe(true);
+    expect(isEmailDisabled(' Disabled ')).toBe(true);
+    expect(isEmailDisabled('smtp://localhost:1025')).toBe(false);
+    expect(isEmailDisabled('')).toBe(false);
+    expect(isEmailDisabled(undefined)).toBe(false);
+  });
+
+  it('refuses every send with a clear, permanent error', async () => {
+    const transport = transportFromSmtpUrl('disabled');
+    await expect(transport.send(mail)).rejects.toMatchObject({
+      name: 'EmailNotConfigured',
+      message: expect.stringMatching(/Email is not configured/),
+    });
+  });
+
+  it('builds a real smtp transport for a url', () => {
+    expect(transportFromSmtpUrl('smtp://localhost:1025')).not.toBeInstanceOf(DisabledTransport);
   });
 });

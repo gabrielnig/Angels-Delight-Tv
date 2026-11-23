@@ -1,4 +1,4 @@
-import type { MailTransport, OutgoingMail } from './mailer';
+import { SmtpTransport, type MailTransport, type OutgoingMail } from './mailer';
 
 /** Waits before attempts 2 to 5 (M21-S01 AC1). Growing, and short enough to run inside a request. */
 export const RETRY_DELAYS_MS = [250, 1_000, 3_000, 8_000] as const;
@@ -46,6 +46,7 @@ export class OutageMonitor implements DeliveryMonitor {
 
 /** SMTP 5xx replies are permanent for that address; retrying only delays the answer. */
 function isPermanent(error: unknown): boolean {
+  if (error instanceof Error && error.name === 'EmailNotConfigured') return true;
   const code = (error as { responseCode?: unknown } | null)?.responseCode;
   return typeof code === 'number' && code >= 500 && code < 600;
 }
@@ -87,4 +88,26 @@ export class RetryingTransport implements MailTransport {
     this.options.monitor?.failure(last);
     throw last;
   }
+}
+
+/** The SMTP_URL value that turns sending off for a first deploy without email credentials. */
+export const DISABLED_SMTP_URL = 'disabled';
+
+export const EMAIL_NOT_CONFIGURED = 'Email is not configured';
+
+export function isEmailDisabled(smtpUrl: string | undefined): boolean {
+  return smtpUrl?.trim().toLowerCase() === DISABLED_SMTP_URL;
+}
+
+/** Fails every send. The error name is permanent for the outbox, so rows close as failed instead of retrying. */
+export class DisabledTransport implements MailTransport {
+  async send(): Promise<{ messageId: string }> {
+    throw Object.assign(new Error(`${EMAIL_NOT_CONFIGURED}. Set SMTP_URL to enable sending.`), {
+      name: 'EmailNotConfigured',
+    });
+  }
+}
+
+export function transportFromSmtpUrl(smtpUrl: string): MailTransport {
+  return isEmailDisabled(smtpUrl) ? new DisabledTransport() : SmtpTransport.fromUrl(smtpUrl);
 }

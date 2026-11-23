@@ -67,6 +67,15 @@ const commonShape = {
   BUCKET_MEDIA: z.string().min(3).default('ad-media'),
 };
 
+/**
+ * An smtp url, or the word `disabled` for a first deploy before email credentials exist. Disabled mode boots, every
+ * send fails with "Email is not configured", and `pnpm dns:check` refuses it as a launch blocker. Empty stays invalid.
+ */
+const smtpUrl = z
+  .string()
+  .regex(/^(smtps?:\/\/|disabled$)/i, 'must be an smtp url, or the word disabled')
+  .transform((v) => (v.toLowerCase() === 'disabled' ? 'disabled' : v));
+
 const webShape = {
   COOKIE_PREFIX_SECURE: bool.optional(),
   TRUSTED_PROXY_MODE: z.enum(['none', 'cloudflare']).default('none'),
@@ -95,7 +104,7 @@ const webShape = {
   MAX_UPLOAD_BYTES: int(5 * GIB, 1),
   UPLOAD_PART_BYTES: int(8 * MIB, 5 * MIB),
 
-  SMTP_URL: z.string().regex(/^smtps?:\/\//, 'must be an smtp url'),
+  SMTP_URL: smtpUrl,
   EMAIL_FROM: z.string().min(3),
   /** Signs bounce and complaint callbacks. The endpoint stays closed until this is set. */
   EMAIL_WEBHOOK_SECRET: z.string().min(16).optional(),
@@ -123,7 +132,7 @@ const workerShape = {
   /** The worker sends notification and export email from the outbox, and opens the saved staff addresses (M21-S03). */
   FIELD_KEK: key32,
   FIELD_KEK_PREVIOUS: key32.optional(),
-  SMTP_URL: z.string().regex(/^smtps?:\/\//, 'must be an smtp url'),
+  SMTP_URL: smtpUrl,
   EMAIL_FROM: z.string().min(3),
   SUPPORT_EMAIL: z.string().min(3).optional(),
   WHISPER_URL: z.url().optional(),

@@ -300,6 +300,24 @@ describe('report', () => {
   it('never contains more than names and plain words, and ok follows the failures', async () => {
     const report = await runDnsCheck(config, fake({}));
     expect(report.ok).toBe(false);
-    expect(report.checks.every((c) => c.detail.length > 0 && !/[\u2013\u2014]/.test(c.detail))).toBe(true);
+    expect(
+      report.checks.every((c) => c.detail.length > 0 && !/[\u2013\u2014]/.test(c.detail)),
+    ).toBe(true);
+  });
+});
+
+describe('email disabled (launch blocker)', () => {
+  it('fails with a clear message and skips the sender domain checks', async () => {
+    const report = await runDnsCheck({ ...config, emailDisabled: true }, fake({}));
+    const check = report.checks.find((c) => c.id === 'email-configured');
+    expect(check?.status).toBe('fail');
+    expect(check?.detail).toMatch(/Email is not configured/);
+    expect(report.ok).toBe(false);
+    expect(report.checks.some((c) => ['spf', 'dkim', 'dmarc'].includes(c.id))).toBe(false);
+  });
+
+  it('adds no such check when email is configured', async () => {
+    const report = await runDnsCheck(config, fake({}));
+    expect(report.checks.some((c) => c.id === 'email-configured')).toBe(false);
   });
 });

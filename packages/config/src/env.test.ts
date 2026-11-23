@@ -322,3 +322,29 @@ describe('loadMigrateEnv', () => {
     expect(failureNames(() => loadMigrateEnv({}))).toEqual(['DATABASE_URL_MIGRATE']);
   });
 });
+
+describe('SMTP_URL disabled mode (no email credentials yet)', () => {
+  it('boots web and worker in production with SMTP_URL=disabled', () => {
+    expect(() => loadWebEnv({ ...prodWeb, SMTP_URL: 'disabled' })).not.toThrow();
+    expect(loadWebEnv({ ...prodWeb, SMTP_URL: 'DISABLED' }).SMTP_URL).toBe('disabled');
+    expect(() =>
+      loadWorkerEnv({
+        ...devWorker,
+        ...s3Vars,
+        NODE_ENV: 'production',
+        APP_ORIGIN: 'https://app.example.com',
+        MEDIA_ORIGIN: 'https://video.example.com',
+        SMTP_URL: 'disabled',
+      }),
+    ).not.toThrow();
+  });
+
+  it('keeps the strict default: empty, missing or other words are refused', () => {
+    for (const value of ['', undefined, 'off', 'none', 'disabled2']) {
+      expect(failureNames(() => loadWebEnv({ ...prodWeb, SMTP_URL: value }))).toEqual(['SMTP_URL']);
+      expect(failureNames(() => loadWorkerEnv({ ...devWorker, SMTP_URL: value }))).toEqual([
+        'SMTP_URL',
+      ]);
+    }
+  });
+});
