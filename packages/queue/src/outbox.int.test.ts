@@ -39,6 +39,7 @@ function fakeMailer(behaviour: (call: Call, n: number) => Promise<void> | void =
     sendStaffExportReady: record('ready'),
     sendStaffExportFailed: record('failed'),
     sendViewerDigest: record('digest'),
+    sendDonationReceipt: record('receipt'),
   };
   return { mailer, calls };
 }

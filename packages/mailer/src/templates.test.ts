@@ -64,6 +64,7 @@ const cases: Array<[TemplateName, Record<string, string | number>]> = [
     { name: 'Audit log', rows: 52000, hours: 24, linkUrl: 'https://tv.example.org/admin/exports' },
   ],
   ['staff_export_failed', { name: 'Audit log', linkUrl: 'https://tv.example.org/admin/exports' }],
+  ['donation_receipt', { reference: 'ad-don-abcdefghij0123456789', amount: 'N5,000', date: '24 November 2026', orgName: 'Angels Delight' }],
   ['mfa_enabled', { securityUrl: 'https://tv.example.org/account/security' }],
   ['mfa_disabled', { securityUrl: 'https://tv.example.org/account/security' }],
   ['recovery_codes_low', { remaining: 2, securityUrl: 'https://tv.example.org/account/security' }],

@@ -54,7 +54,8 @@ export type TemplateName =
   | 'staff_summary'
   | 'staff_export_ready'
   | 'staff_export_failed'
-  | 'viewer_digest';
+  | 'viewer_digest'
+  | 'donation_receipt';
 
 export interface RenderedMail {
   subject: string;
@@ -423,6 +424,18 @@ const DEFINITIONS: Record<TemplateName, Definition> = {
       intro: ['Something went wrong while building your file. Nothing was lost.'],
       action: { label: 'Try again', url: v.linkUrl! },
       outro: ['If it keeps failing, tell the developer.'],
+    }),
+  },
+  donation_receipt: {
+    required: ['reference', 'amount', 'date', 'orgName'],
+    links: [],
+    build: (v, b) => ({
+      subject: `Your receipt from ${v.orgName}`,
+      intro: [
+        v.donorName ? `Thank you, ${v.donorName}.` : 'Thank you for your gift.',
+        `We received ${v.amount} on ${v.date}. Reference: ${v.reference}.`,
+      ],
+      outro: [v.taxNote ? String(v.taxNote) : `Keep this email as your record. Questions? Write to ${b.supportEmail}.`],
     }),
   },
   deletion_scheduled: {
