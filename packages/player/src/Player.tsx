@@ -57,6 +57,9 @@ export interface PlayerProps {
   autoplay?: boolean;
   countdownSeconds?: number;
   dataSaverMaxHeight?: number;
+  /** Theatre mode is owned by the watch page (M43-S08). */
+  theatre?: boolean;
+  onTheatreToggle?: () => void;
   /** Hands the controller to the host once it exists, and null when it is gone. The marker editor reads the time from it. */
   onController?: (controller: PlayerController | null) => void;
   /** Test seam: supply an engine instead of hls.js. */
@@ -209,6 +212,8 @@ export function Player(props: PlayerProps) {
       reference={reference}
       spriteUrl={props.spriteUrl ?? null}
       {...(props.chapters ? { chapters: props.chapters } : {})}
+      {...(props.onTheatreToggle ? { onTheatreToggle: props.onTheatreToggle } : {})}
+      {...(props.theatre !== undefined ? { theatre: props.theatre } : {})}
       autoplayNext={props.preferences?.autoplayNext ?? false}
       {...(props.countdownSeconds ? { countdownSeconds: props.countdownSeconds } : {})}
     />

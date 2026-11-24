@@ -1099,4 +1099,14 @@ Four ids were used twice by parallel lanes. They are never renumbered because la
 - Decision: `/api/home`, `/api/browse`, `/api/browse/categories`, `/api/search`, `/api/search/suggest`, `/api/titles/[id]` and the new `/api/titles/batch` use `publicGet`: a request with a session runs the existing personal handler unchanged, anything else runs the guest handler with the device audience. GET and HEAD only (405 otherwise). Guests are limited on the existing `api` bucket per address (`guest-ip:<ip>`) and per verified guest id, and on the `search` bucket for search routes. A `profileId` or `record` a guest sends is dropped by the guest schemas. Signed in requests to the batch route get no cards, because accounts have a server side Continue Watching. Personal routes keep the 401 guard.
 - Options: new `/api/public/*` routes, or the same routes with a personal first guard.
 - Why: One URL per resource, the client code does not branch, and the personal path is not touched. A limiter failure is passed on as an error, never treated as a bypass.
+## D-205 Theatre mode is a device level layout choice owned by the watch page (lane L4)
+- Decision: theatre mode is stored in `localStorage` key `ad.player.theatre` (on or off) and applied as `data-theatre` on the watch layout. The player only offers the button and the T key, and only from 960 px with a fine pointer, never in full screen and never when the host passes no handler (the admin preview opts out).
+- Options: a profile setting, or a device choice.
+- Why: it describes this screen, like volume, so it needs no schema or sync and works for guests.
+- Reversible: yes.
+
+## D-206 Skip is a button with the S key, fades after 8 seconds idle, and nothing skips on its own (lane L4)
+- Decision: the Skip button fades after 8 seconds without hover or focus, returns on pointer or key activity, uses the S key on desktop, and a skipped window is not offered again until the viewer seeks back before its start. There is no automatic skipping of intros.
+- Options: always visible, timed, or a per profile "skip intros automatically".
+- Why: fewer settings and no surprise on lessons where the intro carries content. Revisit if viewers ask.
 - Reversible: yes.

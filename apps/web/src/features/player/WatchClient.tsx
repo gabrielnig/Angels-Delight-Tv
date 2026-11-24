@@ -26,7 +26,9 @@ import {
   clearLegacyPreferences,
   loadPreferences,
   readLegacyPreferences,
+  readTheatre,
   savePreferences,
+  saveTheatre,
   serverChanges,
   type ServerPatch,
 } from './preferences';
@@ -106,6 +108,20 @@ export function WatchClient({
   testing,
 }: WatchClientProps) {
   const router = useRouter();
+  const playerBox = useRef<HTMLDivElement>(null);
+  const [theatre, setTheatre] = useState(false);
+  useEffect(() => setTheatre(readTheatre(storage())), []);
+  useEffect(() => {
+    // The watch page owns the layout, so the attribute goes on the page element the CSS targets.
+    const layout = playerBox.current?.closest('.watch');
+    layout?.setAttribute('data-theatre', theatre ? 'on' : 'off');
+  }, [theatre]);
+  const toggleTheatre = useCallback(() => {
+    setTheatre((on) => {
+      saveTheatre(storage(), !on);
+      return !on;
+    });
+  }, []);
   const online = useOnline();
   const [origin, setOrigin] = useState<string | null>(null);
   useEffect(() => setOrigin(window.location.origin), []);
@@ -256,7 +272,7 @@ export function WatchClient({
           {msg('guest.progress.notSaved')}
         </p>
       ) : null}
-      <div className="watch__player">
+      <div className="watch__player" ref={playerBox}>
         {origin && sessionProvider && prefsReady ? (
           <Player
             videoId={video.id}
@@ -268,6 +284,8 @@ export function WatchClient({
             progressSink={progressSink}
             captions={data.captions}
             spriteUrl={data.spriteUrl ?? null}
+            theatre={theatre}
+            onTheatreToggle={toggleTheatre}
             {...(data.markers ? { markers: data.markers } : {})}
             {...(data.chapters ? { chapters: data.chapters } : {})}
             captionStyle={data.captionStyle}
