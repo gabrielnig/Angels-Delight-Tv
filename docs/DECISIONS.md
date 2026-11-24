@@ -1850,3 +1850,9 @@ Decision: `video.preview` catches every error and records `failed` or `skipped` 
 - Options: A dedicated editor with a draft copy and publish button; the existing settings with the switch as the publish step.
 - Why: The settings screen already validates, audits and restricts these keys. A second editor and a draft copy would duplicate that for a page that changes a few times a year.
 - Reversible: Yes. A dedicated editor can be added on top of the same keys.
+
+## D-337 Account locale, mail locale and offline language (slice 17) (lane L7)
+- Decision: getLocale reads accounts.locale after the profile and before the cookie, but the column default en counts as not chosen so a cookie or Accept-Language still applies. The picker also stores the choice on the account. The mailer takes a localization hook (address to locale and catalog) and renders viewer templates from the mail.* keys with per key English fallback. Staff templates stay English. The offline page carries every enabled language and picks the one in localStorage ad:locale.
+- Options: Read accounts.locale as is; add a nullable column; ignore accounts.locale
+- Why: A new nullable column needs a migration and a backfill for little gain, and reading en as chosen would hide the visitor's cookie on every sign in.
+- Reversible: Yes

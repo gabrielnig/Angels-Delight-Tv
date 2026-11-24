@@ -14,6 +14,7 @@ import { type WebEnv, loadWebEnv } from '@ad/config';
 import { type Database, createDb, createPool } from '@ad/db';
 import { Mailer, OutageMonitor, RetryingTransport, transportFromSmtpUrl } from '@ad/mailer';
 import { googleConfigFrom } from './google-enabled';
+import { productionMailLocalizer } from '../email/localization';
 import { createSuppressionStore } from '../email/suppression';
 import { emailBrandFrom } from './email-brand';
 import { AuditWriter } from '@ad/audit';
@@ -88,6 +89,7 @@ function build(env: WebEnv): AuthRuntime {
       appOrigin: env.APP_ORIGIN,
       supportEmail,
       brand: async () => emailBrandFrom(await themeRuntime(), env.MEDIA_ORIGIN),
+      localization: productionMailLocalizer(db, env.EMAIL_HASH_PEPPER),
     },
   );
   const deps: AuthDeps = {

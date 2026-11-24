@@ -15,7 +15,8 @@ Scoped tests only: `pnpm vitest run <file>`.
 | 14 | Publish switch, viewer track lists, player t prop | 346 |
 | 15 | Admin caption screens by language | 356 |
 | 16 | Spoken language, multilingual Whisper, detection | 363 |
-| 17, 18, waves D onward, draft catalogs, docs | not built | none |
+| 17 | Mail templates by locale, offline page language, accounts.locale | L7c, see below |
+| 18, waves D onward, draft catalogs, docs | not built | none |
 
 ## Slice 1
 - `packages/shared/src/messages/locales.ts`: `LOCALES`, `LOCALE_CODES`, `normalizeLocale`, `parseAcceptLanguage`, `pickLocale`, `localeInfo`.
@@ -113,3 +114,9 @@ Scoped tests only: `pnpm vitest run <file>`.
 ## L7c (finishing build, worktree `/home/claude/wt2/L7c-build`)
 - Remaining order: (1) layout lang test, (2) slice 17, (3) extraction waves, (4) draft catalogs, (5) slice 18 and docs, (6) coverage failures.
 - (1) done: `layout.tsx` already passed the locale to `selectFonts` (slice 4); `layout.test.tsx` now pins it with a spy and checks `html lang`. No code fix was needed.
+- (2) slice 17 done (D-336). Mailer: `renderTemplate(name, vars, brand, {locale, catalog})`, viewer templates read `mail.*` keys (`packages/shared/src/messages/mail-messages.ts`) with per key English fallback; staff templates (`ENGLISH_ONLY`) stay English. `MailerSettings.localization(address)` is wired in `apps/web/src/server/email/localization.ts` (address hash to `accounts.locale`, enabled languages only). The worker mailer (digests) is not wired, so digests are English. Subjects carry no em or en dash (test).
+- `getLocale` now reads `accounts.locale` (`lib/i18n/account-locale.ts`), treating the default `en` as not chosen; the picker writes it through `setLanguage`'s optional `saveAccount`.
+- Offline page: `components/pwa/OfflineCopy.tsx` (table of every enabled language, picks `localStorage ad:locale`, English fallback), `lib/i18n/stored-locale.ts`, picker writes the key. Keys `offline.*` live in `l7-messages.ts` (my own file for extraction waves, spread into `EN_NG`). SavedPageLinks text and the page title are still English literals.
+- `messages-coverage.test.ts` key regex now allows underscores and scans `packages/mailer/src`; that cleared the sponsor.label.* and mail.* keys from the unused list.
+- Tests: `pnpm vitest run packages/mailer apps/web/src/server/email apps/web/src/lib/i18n/get-locale.test.ts apps/web/src/lib/i18n/account-locale.test.ts apps/web/src/lib/i18n/set-language.test.ts apps/web/src/lib/i18n/stored-locale.test.ts apps/web/src/components/pwa/OfflineCopy.test.tsx`.
+- Note: `layout-lang.test.tsx` already pinned `selectFonts(key, 'yo')`; the layout test added in step (1) duplicates that, harmless.

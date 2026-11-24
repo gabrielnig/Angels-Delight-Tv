@@ -5,6 +5,7 @@ import { useTransition } from 'react';
 import { LanguagePicker, type PickerLocale } from '@ad/ui';
 import { msg } from '@ad/shared/messages';
 import { setLanguageAction } from '../../app/actions-language';
+import { rememberLocale } from '../../lib/i18n/stored-locale';
 
 /** Wires the picker to the server action and refreshes the page in the new language. */
 export function LanguagePickerHost({
@@ -31,7 +32,10 @@ export function LanguagePickerHost({
       onSelect={(code) =>
         start(async () => {
           const result = await setLanguageAction(code);
-          if (result.ok) router.refresh();
+          if (result.ok) {
+            rememberLocale(result.locale);
+            router.refresh();
+          }
         })
       }
     />

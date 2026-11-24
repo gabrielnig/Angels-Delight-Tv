@@ -169,3 +169,39 @@ describe('disabled email (SMTP_URL=disabled)', () => {
     expect(transportFromSmtpUrl('smtp://localhost:1025')).not.toBeInstanceOf(DisabledTransport);
   });
 });
+
+describe('localization (M46-S18)', () => {
+  const settings = {
+    from: 'TV <no-reply@example.org>',
+    appName: 'TV',
+    appOrigin: 'https://tv.example.org',
+    supportEmail: 'help@example.org',
+  };
+
+  it('renders in the recipient locale when the settings supply one', async () => {
+    const transport = new MemoryTransport();
+    const mailer = new Mailer(transport, {
+      ...settings,
+      localization: async (address) =>
+        address === 'ada@example.com'
+          ? { locale: 'yo', catalog: { 'mail.welcome.subject': 'Kaabo si {appName}' } }
+          : undefined,
+    });
+    await mailer.sendWelcome({ to: 'ada@example.com' });
+    await mailer.sendWelcome({ to: 'bola@example.com' });
+    expect(transport.outbox[0]!.subject).toBe('Kaabo si TV');
+    expect(transport.outbox[1]!.subject).toBe('Welcome to TV');
+  });
+
+  it('a failing lookup sends English instead of dropping the mail', async () => {
+    const transport = new MemoryTransport();
+    const mailer = new Mailer(transport, {
+      ...settings,
+      localization: async () => {
+        throw new Error('db down');
+      },
+    });
+    await mailer.sendWelcome({ to: 'ada@example.com' });
+    expect(transport.outbox[0]!.subject).toBe('Welcome to TV');
+  });
+});

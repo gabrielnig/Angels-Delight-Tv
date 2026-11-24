@@ -1,16 +1,19 @@
 import { describe, expect, it, vi } from 'vitest';
 import { setLanguage, type SetLanguageDeps } from './set-language';
 
-const deps = (over: Partial<SetLanguageDeps> = {}): SetLanguageDeps & {
+const deps = (
+  over: Partial<SetLanguageDeps> = {},
+): SetLanguageDeps & {
   setCookie: ReturnType<typeof vi.fn>;
   saveProfile: ReturnType<typeof vi.fn>;
-} => ({
-  enabled: async () => ['en', 'yo'],
-  session: async () => null,
-  setCookie: vi.fn(),
-  saveProfile: vi.fn(async () => undefined),
-  ...over,
-}) as never;
+} =>
+  ({
+    enabled: async () => ['en', 'yo'],
+    session: async () => null,
+    setCookie: vi.fn(),
+    saveProfile: vi.fn(async () => undefined),
+    ...over,
+  }) as never;
 
 describe('setLanguage', () => {
   it('a guest choice sets the cookie only', async () => {
@@ -35,5 +38,23 @@ describe('setLanguage', () => {
     const d = deps({ session: async () => ({ accountId: 'a', profileId: 'p', kids: true }) });
     expect(await setLanguage('yo', d)).toEqual({ ok: false, reason: 'kids' });
     expect(d.setCookie).not.toHaveBeenCalled();
+  });
+  it('a signed in choice is stored on the account for mail and new devices', async () => {
+    const saveAccount = vi.fn(async () => undefined);
+    const d = deps({
+      session: async () => ({ accountId: 'a', profileId: 'p', kids: false }),
+      saveAccount,
+    });
+    await setLanguage('yo', d);
+    expect(saveAccount).toHaveBeenCalledWith('a', 'yo');
+  });
+  it('a failed account save does not undo the choice', async () => {
+    const d = deps({
+      session: async () => ({ accountId: 'a', profileId: 'p', kids: false }),
+      saveAccount: async () => {
+        throw new Error('db down');
+      },
+    });
+    expect(await setLanguage('yo', d)).toEqual({ ok: true, locale: 'yo' });
   });
 });
