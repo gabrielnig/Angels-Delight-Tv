@@ -93,10 +93,10 @@ button,input,select,textarea{font-family:inherit;font-size:15px;color:#1A1C22}
 .bulk .cnt{font-weight:700;font-size:15px;white-space:nowrap}
 .bulk .w{background:#fff;color:#1A1C22;border-color:#fff}
 .bulk .w.dng{color:#B42318}
-.bulk .w.off{background:#3A3D46;border-color:#3A3D46;color:#C9CCD3;cursor:not-allowed}
+.bulk .w.off{background:#2E3138;border-color:#2E3138;color:#A9AEB9;cursor:not-allowed}
 .bulk .clr{background:transparent;color:#fff;border-color:#A9AEB9}
 .bulk .lnk{display:inline-flex;align-items:center;min-height:44px;color:#FFC93C;font-weight:600;text-decoration:underline;white-space:nowrap}
-.bulk .mt{color:#C9CCD3;font-size:14px}
+.bulk .mt{color:#A9AEB9;font-size:14px}
 .bulk .focusd{outline:3px solid #FFC93C;outline-offset:2px}
 .tt{background:#1A1C22;color:#fff;font-size:13px;padding:8px 12px;border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.3);display:inline-block;max-width:280px;line-height:1.4}
 .scrim{background:rgba(26,28,34,.6);padding:32px;display:flex;justify-content:center;border-radius:12px}
@@ -116,14 +116,14 @@ button,input,select,textarea{font-family:inherit;font-size:15px;color:#1A1C22}
 .toast{width:360px;max-width:100%;border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.2);padding:4px 4px 4px 14px;display:flex;align-items:center;gap:10px;min-height:56px;border:1px solid}
 .toast.s{background:#E4F4EA;border-color:#1E7A46;color:#14532D}
 .toast.i{background:#E3F1FF;border-color:#1F6FB5;color:#14568F}
-.toast.e{background:#FDECEA;border-color:#B42318;color:#8E1B12}
+.toast.e{background:#FDECEA;border-color:#B42318;color:#8F1D13}
 .toast .t{flex:1;font-size:14px;font-weight:500;line-height:1.35;padding:6px 0}
 .toast .t small{display:block;font-weight:400;font-size:13px}
 .toast .ac{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:0 10px;font-weight:700;font-size:14px;text-decoration:underline}
 .cd{height:3px;background:#1E7A46;border-radius:2px}
 .rep{border:1px solid;border-radius:12px;padding:16px 20px;display:flex;flex-direction:column;gap:12px}
 .rep.w{background:#FFF3D6;border-color:#8A5A00;color:#5E3D00}
-.rep.d{background:#FDECEA;border-color:#B42318;color:#8E1B12}
+.rep.d{background:#FDECEA;border-color:#B42318;color:#8F1D13}
 .rep.s{background:#E4F4EA;border-color:#1E7A46;color:#14532D}
 .rep.n{background:#fff;border-color:#8A8D94;color:#1A1C22}
 .rep h3{font-size:16px}
@@ -135,7 +135,7 @@ button,input,select,textarea{font-family:inherit;font-size:15px;color:#1A1C22}
 .rep .acts{display:flex;gap:10px;flex-wrap:wrap}
 .lbx{display:flex;gap:12px;align-items:flex-start;min-height:44px}
 .warnp{background:#FFF3D6;border:1px solid #8A5A00;border-radius:8px;padding:12px 14px;color:#5E3D00;display:flex;gap:10px;font-size:14px}
-.erp{background:#FDECEA;border:1px solid #B42318;border-radius:8px;padding:12px 14px;color:#8E1B12;display:flex;gap:10px;font-size:14px}
+.erp{background:#FDECEA;border:1px solid #B42318;border-radius:8px;padding:12px 14px;color:#8F1D13;display:flex;gap:10px;font-size:14px}
 .infp{background:#E3F1FF;border:1px solid #1F6FB5;border-radius:8px;padding:12px 14px;color:#14568F;display:flex;gap:10px;font-size:14px}
 .pbar{height:8px;border-radius:999px;background:#ECEAE3;overflow:hidden}
 .pbar i{display:block;height:8px;border-radius:999px;background:#1F6FB5}
@@ -166,6 +166,15 @@ button,input,select,textarea{font-family:inherit;font-size:15px;color:#1A1C22}
 .mark{outline:2px dashed #B42318;outline-offset:2px}
 .okmark{outline:2px dashed #1E7A46;outline-offset:2px}
 .spin{width:18px;height:18px;border-radius:50%;border:3px solid currentColor;border-right-color:transparent;display:inline-block;flex:none}
+
+/* review L3: R30 44px targets, R33 spacer, R38 bar tokens */
+.tbl td a:not(.btn),.rep li a,.lst li a,.crd a:not(.btn){display:inline-flex;align-items:center;min-height:44px}
+.rep li{padding:0 14px;min-height:44px;align-items:center}
+.sw{height:44px;background:transparent!important;border-radius:0}
+.sw::before{content:"";position:absolute;left:0;right:0;top:9px;height:26px;border-radius:13px;background:#8A8D94}
+.sw.on::before{background:#1F6FB5}
+.sw::after{top:12px}
+.cbsp{display:block;width:20px;height:20px;flex:none}
 </style>
 </helmet>
 <div style="width:390px;background:#F5F5F2;min-height:700px"><div style="height:60px;background:#17181C;color:#fff;display:flex;align-items:center;gap:10px;padding:0 8px 0 8px"><span class="ib" style="border-color:#3A3D46;background:transparent;color:#fff"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none"><path d="M4 6h16M4 12h16M4 18h16"/></svg></span><span style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:18px;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Breadcrumbs</span><span class="ib" style="border-color:#3A3D46;background:transparent;color:#fff"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none"><path d="M6 16V11a6 6 0 0112 0v5l2 2H4zM10 20h4"/></svg></span></div><div style="display:flex;flex-direction:column;gap:24px;padding-bottom:40px"><section><div style="padding:0 16px"><div class="sectl">Two crumbs</div><div class="tip" style="margin:4px 0 10px">Only the parent shows, as a back link at least 44px high. The full trail stays in the accessibility tree.</div></div><div style="padding:0 16px"><nav aria-label="Breadcrumb" class="crumbs back"><ol><li class="par"><a class="" href="#"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none"><path d="M15 6l-6 6 6 6"/></svg>Admin</a></li><li><span aria-current="page" title="Encoding">Encoding</span></li></ol></nav><h1 style="font-size:24px;line-height:1.2">Encoding queue</h1></div></section><section><div style="padding:0 16px"><div class="sectl">Three crumbs, long title</div><div class="tip" style="margin:4px 0 10px">The back link goes to Videos. The long title is not in view, so the heading starts straight away.</div></div><div style="padding:0 16px"><nav aria-label="Breadcrumb" class="crumbs back"><ol><li><a class="" href="#">Admin</a></li><li class="par"><a class="" href="#"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none"><path d="M15 6l-6 6 6 6"/></svg>Videos</a></li><li><span aria-current="page" title="Understanding how plants make food from sunlight, water and air: a full lesson for primary school learners across Nigeria and the diaspora">Understanding how plants make food from sunlight, water and air: a full lesson for primary school learners across Nigeria and the diaspora</span></li></ol></nav><h1 style="font-size:24px;line-height:1.2">Understanding how plants make food</h1></div></section><section><div style="padding:0 16px"><div class="sectl">Single crumb</div><div class="tip" style="margin:4px 0 10px">The only crumb is the current page.</div></div><div style="padding:0 16px"><nav aria-label="Breadcrumb" class="crumbs back"><ol><li class="only"><span aria-current="page" title="Admin">Admin</span></li></ol></nav><h1 style="font-size:24px;line-height:1.2">Dashboard</h1></div></section><section><div style="padding:0 16px"><div class="sectl">Focus on the back link</div><div class="tip" style="margin:4px 0 10px">3px focus ring.</div></div><div style="padding:0 16px"><nav aria-label="Breadcrumb" class="crumbs back"><ol><li><a class="" href="#">Admin</a></li><li class="par"><a class="" href="#" style="outline:3px solid #1F6FB5;outline-offset:2px;border-radius:4px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none"><path d="M15 6l-6 6 6 6"/></svg>Videos</a></li><li><span aria-current="page" title="Why the Sky Is Blue">Why the Sky Is Blue</span></li></ol></nav><h1 style="font-size:24px;line-height:1.2">Why the Sky Is Blue</h1></div></section><section><div style="padding:0 16px"><div class="sectl">Viewer title page</div><div class="tip" style="margin:4px 0 10px">Crumbs stay hidden on phones, as today. The title page uses its own back control.</div></div><div style="padding:0 16px"><div style="border:1px dashed #8A8D94;border-radius:12px;padding:16px" class="mut">No breadcrumb on the viewer title page below the desktop breakpoint.</div></div></section></div></div>
