@@ -16,6 +16,8 @@ export interface TranslationStore {
   listApproved(locale: string): Promise<TranslationRow[]>;
   upsert(locale: string, input: UpsertInput): Promise<void>;
   setStatus(locale: string, key: string, status: RowStatus, reviewer: string | null): Promise<void>;
+  /** All rows or none. */
+  upsertMany(locale: string, inputs: readonly UpsertInput[]): Promise<void>;
 }
 
 export class MemoryStore implements TranslationStore {
@@ -40,6 +42,9 @@ export class MemoryStore implements TranslationStore {
       reviewedAt: null,
       updatedAt: new Date(),
     });
+  }
+  async upsertMany(locale: string, inputs: readonly UpsertInput[]) {
+    for (const input of inputs) await this.upsert(locale, input);
   }
   async setStatus(locale: string, key: string, status: RowStatus, reviewer: string | null) {
     const row = this.rows.get(this.id(locale, key));

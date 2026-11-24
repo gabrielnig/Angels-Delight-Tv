@@ -111,4 +111,25 @@ describe('TranslationService', () => {
     ]);
     expect(bump).toHaveBeenCalledTimes(3);
   });
+
+  it('Editors can import drafts, a dry run writes nothing and viewers are refused', async () => {
+    const { service, store, audit } = make();
+    const csv = 'key,translation\nnav.home,Ilé\nnav.nope,x\n';
+    const dry = await service.importCsv(editor, 'yo', csv, { dryRun: true });
+    expect(dry.added).toHaveLength(1);
+    expect(dry.rejected).toHaveLength(1);
+    expect(await store.list('yo')).toHaveLength(0);
+    expect(audit).toHaveLength(0);
+    await service.importCsv(editor, 'yo', csv);
+    expect((await store.list('yo'))[0]).toMatchObject({ key: 'nav.home', status: 'in_review' });
+    expect(audit.map((e) => e.action)).toEqual(['i18n.translation.import']);
+    await expect(service.importCsv({ accountId: 'v', role: 'viewer' }, 'yo', csv)).rejects.toThrow(/permission/);
+  });
+
+  it('exports csv and json for a locale', async () => {
+    const { service } = make();
+    await service.save(editor, 'yo', 'nav.home', 'Ilé');
+    expect(await service.exportCsv(editor, 'yo')).toContain('Ilé');
+    expect(JSON.parse(await service.exportJson(editor, 'yo'))).toEqual({});
+  });
 });
