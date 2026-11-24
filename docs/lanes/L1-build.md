@@ -10,7 +10,7 @@ Plan: `docs/plan/v2/L1-guest-access.md`. Rulings: `docs/plan/v2/RULINGS.md` (the
 | 2 | Watch page, local progress, analytics identity | merged | #227 |
 | 3 | Account free catalog path and public GETs | merged | #232 |
 | 4 | Guest chrome, title and series, Sign in to save | merged | #235 |
-| 5 | Home, Browse, Search for guests | todo | |
+| 5 | Home, Browse, Search for guests | on PR | see below |
 | 6 | Guest audience, Kids mode, settings | todo | |
 | 7 | My List explainer, return intent | todo | |
 | 8 | Guest Continue learning | todo | |
@@ -82,3 +82,11 @@ Exists:
 - Title and series pages use `getViewerOrGuest`. The signed out preview stays only for guest play off.
 
 Deviations: no `guest` prop on the shared `TopNav` (D-208). The sticky Play bar on a title page still shows the server label (Play) while the main button follows local progress. The `GuestResume` island of the plan is folded into `TitleActions`. The over-hero header backing is left to slice 5.
+
+## Slice 5 (Home, Browse, Search for guests)
+
+- `/` renders Home for a guest (guest play on). Browse, category and Search use `getViewerOrGuest`.
+- `lib/data/guest-library.ts` `forGuests(inner)` is now wired in `lib/data/index.ts` (D-233). Slice 3 left `guestLibrary` unwired.
+- Header over the hero: `data-over-hero` on `/` with the `--color-hero-chip-bg` backing.
+- `AuthScreens.test.tsx` pins that sign in clears service worker caches before navigating.
+- e2e `viewer-real` now expects `/browse` to stay and `/account` to redirect.

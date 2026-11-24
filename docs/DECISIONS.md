@@ -1234,3 +1234,9 @@ Per video tri state, site default (Super admin), Admin changes it with a reason 
 - Options: Eased fade, linear scrim, plan buffer value #9A9FAB.
 - Why: Linear keeps the worst frame at 3.98:1, the hold keeps white text above 4.5:1, and L4 landed the rail values first with tests.
 - Reversible: yes.
+
+## D-233 Guests land on Home and the library is split by context (lane L1)
+- Decision: A signed out visitor sees Home at `/` (the sign in card landing stays only when `features.guest_play` is off), and Browse, category and Search render for guests through `getViewerOrGuest`. `getLibrary()` is wrapped by `forGuests`, which answers a guest context from `guestLibrary` (empty reads, refused writes) and sends every other context to the real library, so a guest render can never reach an account table. The guest header over the hero uses the `--color-hero-chip-bg` token (the 0.6 dark backing from the design review) with a white edge. Hero Play already goes to `/watch/<id>` for videos. Slice 3 had created `guestLibrary` but never wired it; this slice does.
+- Options: branch inside every page, or one dispatch at the data layer.
+- Why: One place to fail closed, and pages stay the same for both kinds of viewer.
+- Reversible: yes.
