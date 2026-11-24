@@ -21,6 +21,7 @@ export {
   type LocaleInfo,
 } from './locales';
 export { BASELINES } from './catalogs';
+export { DRAFT_CATALOGS, DRAFT_LOCALES, draftEntries, type DraftCatalog } from './drafts';
 export { effectiveCatalog, resolveText, type DbRow, type MergeInput, type TextSource } from './merge';
 export { pseudo } from './pseudo';
 export {

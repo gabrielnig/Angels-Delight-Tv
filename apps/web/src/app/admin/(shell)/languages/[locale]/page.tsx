@@ -5,7 +5,7 @@ import { PageHeader } from '@/components/admin/PageHeader';
 import { can } from '@/lib/admin/can';
 import { requireActor } from '@/lib/data/admin/session-next';
 import { missingReport, workspaceData } from '@/lib/i18n/admin-queries';
-import { localeInfo } from '@ad/shared/messages';
+import { draftEntries, localeInfo } from '@ad/shared/messages';
 
 export const metadata: Metadata = { title: 'Translate' };
 export const dynamic = 'force-dynamic';
@@ -35,6 +35,7 @@ export default async function WorkspacePage({
         locale={{ code: info.code, endonym: info.endonym, englishName: info.englishName }}
         rows={rows}
         canApprove={can(actor.role, 'i18n.approve')}
+        hasDraft={Object.keys(draftEntries(info.code)).length > 0}
         missingHits={hits}
         initialQuery={typeof q === 'string' ? q : undefined}
       />

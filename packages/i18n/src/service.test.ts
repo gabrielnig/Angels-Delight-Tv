@@ -133,3 +133,48 @@ describe('TranslationService', () => {
     expect(JSON.parse(await service.exportJson(editor, 'yo'))).toEqual({});
   });
 });
+
+describe('loadDrafts (sample drafts pending native review)', () => {
+  const drafts = (locale: string) =>
+    locale === 'yo' ? ({ 'nav.home': 'Ilé', 'nav.browse': 'Ṣàwárí {name}', 'player.play': 'Ṣeré', 'nope.key': 'x' } as never) : {};
+
+  function withDrafts() {
+    const base = make();
+    const audit: AuditEvent[] = [];
+    const store = new MemoryStore();
+    const service = new TranslationService({
+      store,
+      english,
+      baseline: () => ({}),
+      drafts,
+      audit: async (e) => void audit.push(e),
+      settings: { uiLanguages: async () => ['en'], setUiLanguages: async () => {}, minPercent: async () => 80 },
+    });
+    return { ...base, service, store, audit };
+  }
+
+  it('writes draft rows, never approved ones, and skips unknown keys', async () => {
+    const { service, store } = withDrafts();
+    const result = await service.loadDrafts(editor, 'yo');
+    expect(result).toMatchObject({ added: 3, skipped: 1 });
+    const rows = await store.list('yo');
+    expect(rows.map((r) => r.status)).toEqual(['draft', 'draft', 'draft']);
+    expect(rows.every((r) => r.note?.includes('native review'))).toBe(true);
+  });
+
+  it('does not overwrite text a person already saved', async () => {
+    const { service, store } = withDrafts();
+    await service.save(editor, 'yo', 'nav.home', 'Ilé mi');
+    const result = await service.loadDrafts(editor, 'yo');
+    expect(result.added).toBe(2);
+    expect((await store.list('yo')).find((r) => r.key === 'nav.home')!.text).toBe('Ilé mi');
+  });
+
+  it('needs an editor, records an audit event, and is a no-op for a locale without drafts', async () => {
+    const { service, audit } = withDrafts();
+    await expect(service.loadDrafts({ accountId: 'x', role: 'analyst' as never }, 'yo')).rejects.toThrow();
+    await service.loadDrafts(editor, 'yo');
+    expect(audit.at(-1)).toMatchObject({ action: 'i18n.translation.import', targetId: 'yo:drafts:3' });
+    expect(await service.loadDrafts(editor, 'ig')).toMatchObject({ added: 0, skipped: 0 });
+  });
+});

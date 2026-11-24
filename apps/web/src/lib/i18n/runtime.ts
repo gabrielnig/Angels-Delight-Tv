@@ -11,7 +11,7 @@ import {
   type MissingReportRow,
   type TranslationStore,
 } from '@ad/i18n';
-import { BASELINES, EN_NG, type CatalogShape, type DbRow, type LocaleCode } from '@ad/shared/messages';
+import { BASELINES, EN_NG, draftEntries, type CatalogShape, type DbRow, type LocaleCode } from '@ad/shared/messages';
 import type { Actor } from '@ad/shared';
 import { realDataEnabled } from '../../server/data/mode';
 import { themeRuntime } from '../data/admin/theme-runtime';
@@ -71,6 +71,7 @@ export async function translationServiceFor(actor: Actor): Promise<TranslationSe
     store: rt.storeFor(actor),
     english: EN_NG as unknown as CatalogShape,
     baseline: (locale) => BASELINES[locale as Exclude<LocaleCode, 'en'>] ?? {},
+    drafts: draftEntries,
     audit: (event) => rt.audit(event),
     onChange: () => rt.cache.bump(),
     settings: {

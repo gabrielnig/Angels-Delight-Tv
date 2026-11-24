@@ -8,7 +8,7 @@ import {
 import { exportCsv, exportJson } from './export';
 import { planImport, type ImportPlan } from './import';
 import { hashText, summarize, type Summary } from './status';
-import type { TranslationStore } from './store';
+import type { TranslationStore, UpsertInput } from './store';
 
 export interface AuditEvent {
   action: string;
@@ -31,6 +31,8 @@ export interface ServiceDeps {
   store: TranslationStore;
   english: CatalogShape;
   baseline: (locale: string) => CatalogShape;
+  /** Sample drafts pending native review. Loaded on request as draft rows, never as approved text. */
+  drafts?: (locale: string) => CatalogShape;
   audit: (event: AuditEvent) => Promise<void>;
   settings: TranslationSettings;
   /** Called after every write so the catalog cache version moves. */
@@ -114,6 +116,43 @@ export class TranslationService {
       rejected: plan.rejected.length,
     });
     return plan;
+  }
+
+  /**
+   * Puts the sample draft text for a language into the workspace as draft rows, for a native reviewer to fix and an
+   * Admin to approve. Existing rows are never touched and nothing is approved.
+   */
+  async loadDrafts(actor: Actor, locale: string): Promise<{ added: number; skipped: number }> {
+    this.need(actor, 'editor');
+    this.translatable(locale);
+    const entries = this.deps.drafts?.(locale) ?? {};
+    const existing = new Set((await this.deps.store.list(locale)).map((r) => r.key));
+    const writes: UpsertInput[] = [];
+    let skipped = 0;
+    for (const [key, text] of Object.entries(entries)) {
+      const english = this.deps.english[key];
+      if (english === undefined || existing.has(key)) {
+        skipped++;
+        continue;
+      }
+      const result = validateTranslation({ locale, english, text });
+      if (result.errors.length > 0) {
+        skipped++;
+        continue;
+      }
+      writes.push({
+        key,
+        text: result.normalized,
+        status: 'draft',
+        sourceHash: hashText(english),
+        updatedBy: actor.accountId,
+        note: 'Sample draft, pending native review',
+      });
+    }
+    if (writes.length === 0) return { added: 0, skipped };
+    await this.deps.store.upsertMany(locale, writes);
+    await this.record(actor, 'i18n.translation.import', locale, `drafts:${writes.length}`, `Loaded ${writes.length} sample ${locale} drafts for review`, { skipped });
+    return { added: writes.length, skipped };
   }
 
   async save(actor: Actor, locale: string, key: string, text: MessageText, note?: string) {
