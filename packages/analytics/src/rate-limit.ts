@@ -21,6 +21,8 @@ export interface RateLimiter {
 /** Ingest limits, tunable here (docs/SECURITY.md section 7). Per batch, not per event. */
 export const ANALYTICS_LIMITS = {
   perIp: { name: 'analytics-ip', capacity: 120, refillPerSecond: 1 } satisfies BucketPolicy,
+  /** Sponsor impressions are counted per event, so they get their own bucket (M48). */
+  sponsorPerIp: { name: 'analytics-sponsor-ip', capacity: 30, refillPerSecond: 0.2 } satisfies BucketPolicy,
   perProfile: {
     name: 'analytics-profile',
     capacity: 60,

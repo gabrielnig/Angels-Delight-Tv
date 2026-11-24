@@ -927,3 +927,14 @@ Build rule: the sponsor card edge must be `--color-border-strong` after the them
 - S164 preview: the desktop and text only previews are drawn at their real 960 px width and shown at 45 percent so the card is not squeezed. The phone editor shows only phone previews.
 - `--font-mono` (R38) is used for references, account numbers and masked emails. Tokens as in L10 section 12.1.
 - Disabled "Publish changes" uses `--color-surface-sunken` with `--color-muted` text and gives a reason beside it (DESIGN-SYSTEM 4.2 rule 5).
+
+## 17. Paystack facts verified (24 November 2026)
+
+Checked against current Paystack documentation by the build. Where this section disagrees with sections 1 to 16 it wins. Details and sources are in `docs/lanes/L9-build.md`.
+
+- The signature header is `x-paystack-signature`, HMAC SHA512 over the raw body with the secret key. Success is a 200.
+- `charge.failed` is not a documented event. Failures are found by verify and the reconcile job. Refund events are `refund.pending`, `refund.processing`, `refund.processed` and `refund.failed`. Subscription events are `subscription.create`, `subscription.disable`, `subscription.not_renew` and `subscription.expiring_cards`, and `invoice.payment_failed` covers failed renewals.
+- Payloads have no event id, so the event key is a hash of event, reference and paid time.
+- A transaction reference may contain only letters, digits, `-`, `.` and `=`. Our references are `ad-don-` plus 20 letters and digits, not `ad_don_`.
+- Nigeria fees: local 1.5 percent plus NGN 100 (waived under NGN 2,500, capped at NGN 2,000), international cards 3.9 percent plus NGN 100.
+- USD needs an international payments request and a Zenith USD domiciliary account.

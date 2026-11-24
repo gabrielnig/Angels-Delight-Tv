@@ -64,6 +64,7 @@ const MAIN_TABLES = [
   'sponsor_daily_stats',
   'sponsor_placements',
   'sponsor_private',
+  'sponsor_reach_seen',
   'sponsors',
   'staff_exports',
   'staff_notification_prefs',

@@ -51,7 +51,7 @@ function decide(request) {
     return isPoster && !MEDIA_FILE.test(url.pathname) ? 'image' : 'bypass';
   }
   var path = url.pathname;
-  if (path.indexOf('/api/') === 0 || path === '/api' || path.indexOf('/admin') === 0 || path.indexOf('/v/') === 0) return 'bypass';
+  if (path.indexOf('/api/') === 0 || path === '/api' || path.indexOf('/s/') === 0 || path.indexOf('/admin') === 0 || path.indexOf('/v/') === 0) return 'bypass';
   if (MEDIA_FILE.test(path)) return 'bypass';
   if (request.mode === 'navigate') return 'navigate';
   if (path.indexOf('/_next/static/') === 0 || path.indexOf('/icons/') === 0 || path.indexOf('/brand-icons/') === 0 || path.indexOf('/fonts/') === 0) return 'static';

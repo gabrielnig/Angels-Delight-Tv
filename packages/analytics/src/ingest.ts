@@ -1,3 +1,4 @@
+import type { SponsorSlot } from '@ad/shared';
 import { lagosDay } from './day';
 import type { AnalyticsEvent, DeviceClass } from './events';
 import { normalizeSearchQuery, parseBatch } from './events';
@@ -27,10 +28,21 @@ export interface CounterBump {
   by?: number;
 }
 
+export interface SponsorTrack {
+  day: string;
+  creativeId: string;
+  slot: SponsorSlot;
+  /** Daily rotating hash for the reach figure, or null when there is no identity. */
+  viewerHash: string | null;
+  kind: 'imp' | 'clk';
+}
+
 export interface EventStore {
   /** Inserts or advances a play. `created` is true only for the call that made the row. */
   upsertView(row: ViewUpsert): Promise<{ created: boolean }>;
   bump(entry: CounterBump): Promise<void>;
+  /** Records a sponsor impression or click. Returns false when nothing was counted (not live, not placed). */
+  trackSponsor?(entry: SponsorTrack): Promise<boolean>;
 }
 
 /** What the route knows about the request. The profile and audience come from the session, never from the body. */
@@ -104,6 +116,15 @@ export async function ingestBatch(input: IngestInput): Promise<IngestResult> {
   const bump = (kind: string, key: string, by = 1) =>
     input.store.bump({ day, kind, key, by }).catch(() => undefined);
 
+  const impressionsSeen = new Set<string>();
+  const sponsorViewer = kids
+    ? null
+    : context.profileId
+      ? context.profileId
+      : context.subjectId
+        ? `guest:${context.subjectId}`
+        : null;
+
   const handle = async (event: AnalyticsEvent): Promise<void> => {
     switch (event.kind) {
       case 'view_start':
@@ -169,6 +190,24 @@ export async function ingestBatch(input: IngestInput): Promise<IngestResult> {
       case 'skip':
         await bump('skip', event.skipKind);
         return;
+      case 'sponsor_impression': {
+        // Never for kids: nothing is counted and no identity is touched.
+        if (kids || !input.store.trackSponsor) return;
+        if (impressionsSeen.has(event.impressionId)) return;
+        impressionsSeen.add(event.impressionId);
+        const verdict = await input.limiter
+          .consume(ANALYTICS_LIMITS.sponsorPerIp, context.ipKey)
+          .catch(() => ({ allowed: true, retryAfterSeconds: 0 }));
+        if (!verdict.allowed) return;
+        await input.store.trackSponsor({
+          day,
+          creativeId: event.creativeId,
+          slot: event.slot,
+          viewerHash: sponsorViewer ? viewerHash(input.secret, day, sponsorViewer) : null,
+          kind: 'imp',
+        });
+        return;
+      }
     }
   };
 
