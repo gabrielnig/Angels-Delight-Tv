@@ -15,12 +15,14 @@ Plan: `docs/plan/v2/L10-account-and-reach.md` (section 12 wins), rulings R24, R3
 
 - S7 (playback settings, L10b): `captionColor` (`white` or `yellow`) in `packages/player/src/captionStyle.ts` (`CAPTION_COLORS`, `captionColorAllowed`; yellow with no background and standard contrast is refused, the normaliser falls back to white), `PlaybackSettings.captionColor`, stored in `profiles.playback_prefs` jsonb (no migration), server refusal in `AccountViewerData.savePlayback`, caption colour row, Reset to defaults (confirm dialog, captions only), profile name heading, Data saver extra line and "This device is on Data saver" note from `navigator.connection.saveData`, copy `account.playback.*`. `captionEdge` already existed. Fixed `catalog.int.test.ts` publish fixture (PR 328): it broke when the maturity gate landed (commit 926eca1, L5), not an L10 change. `system.int.test.ts` passes on a clean main now. Tests: `captionStyle.test.ts`, `PlaybackSettings.test.tsx`, `real-account-data.int.test.ts`.
 
+- S8 (PR below in history): DESIGN-SYSTEM 3.3 Type family tokens, Mono family editor row, theme editor Fixed list. Test `scripts/l10-doc-sync.test.ts` (L10 doc checks live here, slice 11 extends it).
+
 ## Was in PR (slice 3, challenge half)
 - Env `VIEWER_MFA_ENABLED`, `RealAuthGateway.verifyTwoStep, verifyRecovery, hasTwoStepPending`, cookie `ad_mv` (`__Host-ad_mv`), `/sign-in/verify` page, `TwoStepForm`, actions `verifyTwoStepAction`, `verifyRecoveryAction`, copy in `packages/shared/src/messages/l10-messages.ts` (spread into `EN_NG`, add all later L10 keys there).
 
 ## Not built yet (resume here, in this order)
 1. (done, S7)
-2. `--font-mono` doc rows in DESIGN-SYSTEM.
+2. (done, S8)
 3. Google sign in (see plan slice 5 and 6).
 4. TV mode.
 5. Docs: M49 stories, MODULES, BUILD-PLAN, SCREEN-ARCHITECTURE, SECURITY, CLIENT-INPUTS, not now notes (offline downloads, passkeys), decisions D-L10-03 to D-L10-15.
