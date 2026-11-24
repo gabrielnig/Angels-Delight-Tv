@@ -1,17 +1,12 @@
-import { existsSync } from 'node:fs';
-import { resolve } from 'node:path';
 import type { MetadataRoute } from 'next';
 
 /**
  * What crawlers may read. The public catalog (Home, Browse, title and series pages) is open because visitors can
  * watch without an account (M40). Everything personal, every API route and every sign in page is closed, and so is
- * search, whose result pages have no value to an index. The sitemap line appears as soon as the app has one.
+ * search, whose result pages have no value to an index. The sitemap line names `/sitemap.xml` on the configured origin (M45-S01).
  */
 export default function robots(): MetadataRoute.Robots {
   const origin = process.env.APP_ORIGIN?.replace(/\/+$/, '');
-  const hasSitemap =
-    existsSync(resolve(process.cwd(), 'src/app/sitemap.ts')) ||
-    existsSync(resolve(__dirname, 'sitemap.ts'));
   return {
     rules: {
       userAgent: '*',
@@ -30,6 +25,6 @@ export default function robots(): MetadataRoute.Robots {
         '/verify-email',
       ],
     },
-    ...(origin && hasSitemap ? { sitemap: `${origin}/sitemap.xml` } : {}),
+    ...(origin ? { sitemap: `${origin}/sitemap.xml` } : {}),
   };
 }

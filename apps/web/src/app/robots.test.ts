@@ -1,5 +1,3 @@
-import { existsSync } from 'node:fs';
-import { resolve } from 'node:path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import robots from './robots';
 
@@ -38,10 +36,13 @@ describe('robots.txt (M40-S18)', () => {
       expect(disallow).not.toContain(open);
   });
 
-  it('names the sitemap whenever the app has one, with the app origin', () => {
+  it('names the sitemap on the configured origin (M45-S01 AC1)', () => {
     vi.stubEnv('APP_ORIGIN', 'https://angelsdelight.tv');
-    const hasSitemap = existsSync(resolve(__dirname, 'sitemap.ts'));
-    if (hasSitemap) expect(robots().sitemap).toBe('https://angelsdelight.tv/sitemap.xml');
-    else expect(robots().sitemap).toBeUndefined();
+    expect(robots().sitemap).toBe('https://angelsdelight.tv/sitemap.xml');
+  });
+
+  it('names no sitemap when the origin is not configured', () => {
+    vi.stubEnv('APP_ORIGIN', '');
+    expect(robots().sitemap).toBeUndefined();
   });
 });

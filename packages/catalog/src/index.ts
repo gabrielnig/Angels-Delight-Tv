@@ -11,3 +11,4 @@ export * from './publishing';
 export * from './seed-demo';
 export * from './admin';
 export * from './cache';
+export * from './sitemap';

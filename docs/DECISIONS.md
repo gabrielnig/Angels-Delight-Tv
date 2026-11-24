@@ -1444,3 +1444,14 @@ Per video tri state, site default (Super admin), Admin changes it with a reason 
 - Options: a text button inside the compact card, a chevron arrow with the whole card as the link.
 - Why: a text button takes about 90 px of the 190 px text column at 360 px, drops the headline to 3 lines and needs a taller box that pushes the first row down. The arrow keeps 112 px and the target is the whole card.
 - Reversible: yes. Review after a trial on low end Android phones in Lagos.
+## D-268 Sitemap is served by route handlers, 5,000 urls per file, real change dates only (lane L6)
+- Decision: `/sitemap.xml` is a route handler. One urlset while everything fits in 5,000 urls, otherwise an index that points at `/sitemaps/<n>.xml`. No changefreq or priority. `lastmod` is the real change date (a series takes the newest of itself and its episodes). A failed catalog read answers 503 with Retry-After 300, never an empty 200. Responses carry `s-maxage=3600`, so an unpublished title leaves the sitemap within an hour.
+- Options: the `sitemap.ts` metadata file with `generateSitemaps`, route handlers.
+- Why: only a handler can set the 503 status that story M45-S01 requires, and the plain `/sitemap.xml` address stays stable for `robots.txt`. The pure builder is shared, so moving to the file convention later is small.
+- Reversible: yes.
+
+## D-269 Kids only titles stay out of search engines (lane L6, R26)
+- Decision: a video is kids only when its suitability is Kids, or when an older row has no suitability and the kids flag is set (the derivation the admin screen already uses). Kids only videos are left out of the sitemap, and a series is listed only when it has at least one live episode that is not kids only. Titles for everyone are indexed. Page level `noindex` follows in the metadata slice.
+- Options: index everything, index general titles only.
+- Why: kids content is not marketed through search, and parents expect it. Titles marked for everyone still reach a wide audience.
+- Reversible: yes.
