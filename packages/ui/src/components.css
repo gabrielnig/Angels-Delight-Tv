@@ -1185,13 +1185,24 @@
   z-index: var(--z-toast);
   left: var(--space-4);
   right: var(--space-4);
-  bottom: calc(4.5rem + env(safe-area-inset-bottom));
+  /* Above the tab bar. The storage notice publishes its height as --notice-h (0 when hidden), and a toast lifts
+     above it by that height plus 12 px (DESIGN-SYSTEM 11.13). */
+  bottom: calc(
+    4.5rem + env(safe-area-inset-bottom) + var(--notice-h, 0px) + min(var(--notice-h, 0px), var(--space-3))
+  );
   display: flex;
   justify-content: center;
   pointer-events: none;
 }
 
 @media (min-width: 960px) {
+  .ad-toasts {
+    bottom: calc(var(--space-6) + var(--notice-h, 0px) + min(var(--notice-h, 0px), var(--space-3)));
+  }
+}
+
+/* The notice sits bottom right from 1024, so the toast goes back to the bottom left and never needs to lift. */
+@media (min-width: 1024px) {
   .ad-toasts {
     right: auto;
     bottom: var(--space-6);
