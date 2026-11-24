@@ -1116,3 +1116,9 @@ Four ids were used twice by parallel lanes. They are never renumbered because la
 - Options: leave standalone videos with no next title, or rank by a recommender.
 - Why: M08-S13 AC4 asks for a next title, the related list is already audience safe, and a recommender is out of scope for a free first release.
 - Reversible: yes.
+
+## D-208 Guest chrome lives in its own components and the title pages branch on viewer kind (lane L1)
+- Decision: A visitor without an account gets `GuestChrome` (header with Home, Browse, My List, search, Sign in and Create account when sign up is open; Primary tab bar; footer; skip link) from `AppShell`, in `apps/web/src/components/guest/`. The plan's `TopNav` `guest` prop was not used: it would have edited the shared `@ad/ui` TopNav that other lanes are changing, and the guest header has no profile menu to share. Title, series and watch pages use `getViewerOrGuest`; a guest sees the full page with the Sign in to save dialog behind My List (no `aria-pressed`, `aria-haspopup="dialog"`), and the Play button follows the place kept on this device (Play, Resume from m:ss after 5 seconds, Watch again). The old signed out preview with Sign in to watch stays only for `features.guest_play` off. A successful sign in clears the service worker caches, as sign out does. The over-hero header backing for the home page ships with slice 5, and the Kids toggle in the menu with slice 6.
+- Options: a `guest` prop on the shared TopNav, or a separate guest header.
+- Why: Keeps other lanes free of conflicts in `@ad/ui` and keeps guest and account chrome from sharing state they do not both have.
+- Reversible: yes.
