@@ -12,6 +12,7 @@ import {
 import { findUsableInvite, consumeInvite } from './signup-invites';
 import { emailHash, maskEmail, normalizeEmail } from './identifiers';
 import { findAccountByEmailHash, isUniqueViolation } from './lookup';
+import { signPendingMfa } from './mfa-pending';
 import { checkPassword } from './policy';
 import {
   DEFAULT_AUTH_CONFIG,
@@ -545,6 +546,7 @@ export class AccountService {
       }
     | { status: 'needs_verification'; email: string }
     | { status: 'use_admin_login' }
+    | { status: 'mfa_required'; accountId: string; pendingToken: string }
     | {
         status: 'pending_deletion';
         accountId: string;
@@ -601,6 +603,9 @@ export class AccountService {
         .select({ purgeAfter: schema.accountDeletions.purgeAfter })
         .from(schema.accountDeletions)
         .where(eq(schema.accountDeletions.accountId, account.id));
+      const challenge = await this.mfaChallenge(account.id);
+      if (challenge)
+        return { status: 'mfa_required', accountId: account.id, pendingToken: challenge };
       const session = await this.deps.sessions.create({
         accountId: account.id,
         kind: 'viewer',
@@ -664,6 +669,14 @@ export class AccountService {
       return { status: 'needs_verification', email };
     }
 
+    const challenge = await this.mfaChallenge(account.id);
+    if (challenge) {
+      await this.audit('auth.login_password', 'success', meta, {
+        accountId: account.id,
+        role: account.role,
+      });
+      return { status: 'mfa_required', accountId: account.id, pendingToken: challenge };
+    }
     const now = this.now();
     await withAccount(this.deps.db, { accountId: account.id, role: account.role }, (tx) =>
       tx
@@ -684,6 +697,21 @@ export class AccountService {
       role: account.role,
       session: { token: session.token, id: session.session.id },
     };
+  }
+
+  /**
+   * When the account has a confirmed second factor (and viewer two step is on), the first step ends here with a
+   * short lived signed note instead of a session (M49-S02 AC1).
+   */
+  protected async mfaChallenge(accountId: string): Promise<string | null> {
+    if (!this.cfg.viewerMfaEnabled) return null;
+    const [factor] = await this.deps.db
+      .select({ confirmedAt: schema.mfaFactors.confirmedAt })
+      .from(schema.mfaFactors)
+      .where(eq(schema.mfaFactors.accountId, accountId));
+    return factor?.confirmedAt
+      ? signPendingMfa(this.deps.pepper, accountId, this.now().getTime())
+      : null;
   }
 
   private async loginFailed(

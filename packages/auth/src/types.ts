@@ -26,6 +26,8 @@ export interface AuthConfig {
   signUpOpen: boolean;
   /** Development only: skips the second factor for staff. The web env schema rejects it in production. */
   devSkipMfa: boolean;
+  /** Viewer two step verification (M49). Off is an emergency switch: confirmed factors are then not asked for. */
+  viewerMfaEnabled: boolean;
 }
 
 export const DEFAULT_AUTH_CONFIG: AuthConfig = {
@@ -42,6 +44,7 @@ export const DEFAULT_AUTH_CONFIG: AuthConfig = {
   issuerName: 'Angels Delight TV',
   signUpOpen: true,
   devSkipMfa: false,
+  viewerMfaEnabled: true,
 };
 
 export interface Logger {

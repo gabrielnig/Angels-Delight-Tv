@@ -205,6 +205,52 @@ export class Mailer {
     return this.deliver(input.to, 'two_factor_reset', { signInUrl: this.url('/admin/login') });
   }
 
+  sendViewerTwoFactorReset(input: { to: string }) {
+    return this.deliver(input.to, 'two_factor_reset_viewer', { signInUrl: this.url('/sign-in') });
+  }
+
+  sendMfaEnabled(input: { to: string }) {
+    return this.deliver(input.to, 'mfa_enabled', { securityUrl: this.url('/account/security') });
+  }
+
+  sendMfaDisabled(input: { to: string }) {
+    return this.deliver(input.to, 'mfa_disabled', { securityUrl: this.url('/account/security') });
+  }
+
+  sendRecoveryCodesLow(input: { to: string; remaining: number }) {
+    return this.deliver(input.to, 'recovery_codes_low', {
+      remaining: input.remaining,
+      securityUrl: this.url('/account/security'),
+    });
+  }
+
+  sendRecoveryCodeUsed(input: { to: string; remaining: number }) {
+    return this.deliver(input.to, 'recovery_code_used', {
+      remaining: input.remaining,
+      securityUrl: this.url('/account/security'),
+    });
+  }
+
+  sendNewDeviceSignIn(input: { to: string; device: string; country: string; time: string }) {
+    return this.deliver(input.to, 'new_device_sign_in', {
+      device: input.device,
+      country: input.country,
+      time: input.time,
+      passwordUrl: this.url('/forgot-password'),
+      signOutUrl: this.url('/account/security'),
+    });
+  }
+
+  sendGoogleLinked(input: { to: string }) {
+    return this.deliver(input.to, 'google_linked', { securityUrl: this.url('/account/security') });
+  }
+
+  sendGoogleUnlinked(input: { to: string }) {
+    return this.deliver(input.to, 'google_unlinked', {
+      securityUrl: this.url('/account/security'),
+    });
+  }
+
   sendStaffLockoutAlert(input: { to: string; account: string; minutes: number }) {
     return this.deliver(input.to, 'staff_lockout_alert', {
       account: input.account,

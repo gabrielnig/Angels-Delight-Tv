@@ -85,4 +85,3 @@ export function inviteStatus(
   if (row.uses >= row.maxUses) return 'used_up';
   return 'active';
 }
-
