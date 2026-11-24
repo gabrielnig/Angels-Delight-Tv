@@ -1,7 +1,7 @@
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { EN_NG } from '@ad/shared/messages';
+import { BASELINES, EN_NG, validateTranslation } from '@ad/shared/messages';
 
 const ROOTS = [resolve(__dirname, '..'), resolve(__dirname, '../../../../packages/player/src')];
 
@@ -50,4 +50,20 @@ describe('message catalog coverage (M34-S04)', () => {
       expect(text, key).toContain(`'${key}'`);
     }
   });
+});
+
+describe('locale baseline catalogs (M46)', () => {
+  const english = EN_NG as unknown as Record<string, import('@ad/shared/messages').CatalogShape[string]>;
+  for (const [locale, catalog] of Object.entries(BASELINES)) {
+    it(`every ${locale} key exists in en-ng`, () => {
+      expect(Object.keys(catalog).filter((k) => !(k in EN_NG))).toEqual([]);
+    });
+    it(`every ${locale} value passes validation`, () => {
+      const bad = Object.entries(catalog).flatMap(([key, text]) => {
+        const r = validateTranslation({ locale, english: english[key]!, text });
+        return r.errors.map((e) => `${key}: ${e}`);
+      });
+      expect(bad).toEqual([]);
+    });
+  }
 });

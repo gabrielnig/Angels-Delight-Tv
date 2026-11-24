@@ -19,3 +19,12 @@ export {
   type LocaleCode,
   type LocaleInfo,
 } from './locales';
+export { BASELINES } from './catalogs';
+export { effectiveCatalog, resolveText, type DbRow, type MergeInput, type TextSource } from './merge';
+export { pseudo } from './pseudo';
+export {
+  pluralCategoriesFor,
+  validateTranslation,
+  type ValidateInput,
+  type ValidateResult,
+} from './validate';

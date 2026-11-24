@@ -89,6 +89,8 @@ const webShape = {
   TRUSTED_PROXY_MODE: z.enum(['none', 'cloudflare']).default('none'),
   EDGE_TOKEN_MODE: z.enum(['off', 'worker']).optional(),
   DEV_SKIP_MFA: bool.default(false),
+  /** Development only: every string is wrapped in the pseudo locale for layout and font QA (M46). Rejected in production. */
+  DEV_PSEUDO_LOCALE: bool.default(false),
   /** Kill switch for the service worker (M25-S02). Off serves a worker that clears caches and unregisters. */
   PWA_ENABLED: bool.default(true),
   /** Build id for cache names, logs and error reports. Set by CI to the git sha. */
@@ -244,6 +246,7 @@ const webSchema = withRules({ ...commonShape, ...webShape }, (env, add) => {
     );
   }
   if (env.NODE_ENV === 'production') {
+    if (env.DEV_PSEUDO_LOCALE) add('DEV_PSEUDO_LOCALE', 'must not be enabled in production');
     if (env.DEV_SKIP_MFA) add('DEV_SKIP_MFA', 'must not be enabled in production');
     if (env.COOKIE_PREFIX_SECURE === false) {
       add('COOKIE_PREFIX_SECURE', 'must be true in production');

@@ -1455,3 +1455,10 @@ Per video tri state, site default (Super admin), Admin changes it with a reason 
 - Options: index everything, index general titles only.
 - Why: kids content is not marketed through search, and parents expect it. Titles marked for everyone still reach a wide audience.
 - Reversible: yes.
+
+
+## D-270 Catalog layers and validation rules (lane L7)
+- Decision: Effective text is approved DB row, then committed baseline JSON per locale, then English. Translations are validated for placeholders, plural categories the locale uses, no HTML, no en or em dashes, NFC, and a 2.5 times length warning. Baselines ship empty and the Yoruba, Igbo, Hausa and Pidgin samples stay drafts until a native speaker approves.
+- Options: DB only, JSON only, per key merge.
+- Why: Git stays the long term record while volunteers edit without deploys; drafts never reach viewers.
+- Reversible: yes
