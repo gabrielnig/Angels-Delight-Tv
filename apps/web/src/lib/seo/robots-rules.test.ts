@@ -48,4 +48,11 @@ describe('robots rules (M45-S01 AC1, AC4)', () => {
   it('names no sitemap without an origin', () => {
     expect(buildRobots({ ...live, origin: undefined }).sitemap).toBeUndefined();
   });
+
+  it('closes the donation result pages and leaves /donate itself open', () => {
+    const disallow = [rule(buildRobots(live)).disallow].flat();
+    expect(disallow).toContain('/donate/thank-you');
+    expect(disallow).toContain('/donate/cancelled');
+    expect(disallow).not.toContain('/donate');
+  });
 });

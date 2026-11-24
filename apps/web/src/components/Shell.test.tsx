@@ -6,6 +6,7 @@ const mocks = vi.hoisted(() => ({
   session: null as unknown,
   guestPlay: true,
   audience: 'adult' as 'adult' | 'kids',
+  gate: 'off' as 'off' | 'kids' | 'ok',
 }));
 vi.mock('next/navigation', () => ({
   usePathname: () => '/browse',
@@ -25,6 +26,7 @@ vi.mock('../server/guest/guest-settings', () => ({
   guestPlayEnabled: async () => mocks.guestPlay,
 }));
 vi.mock('../server/guest/guest-view', () => ({ currentGuestAudience: async () => mocks.audience }));
+vi.mock('../server/donations/page-data', () => ({ currentDonateGate: async () => mocks.gate }));
 vi.mock('../lib/i18n/picker-data', () => ({ pickerData: async () => null }));
 vi.mock('../lib/i18n/server', async () => {
   const { msg } = await import('@ad/shared/messages');
@@ -41,6 +43,7 @@ describe('AppShell', () => {
     mocks.session = null;
     mocks.guestPlay = true;
     mocks.audience = 'adult';
+    mocks.gate = 'off';
   });
 
   it('gives a visitor without an account the guest chrome', async () => {
@@ -66,5 +69,18 @@ describe('AppShell', () => {
     mocks.audience = 'kids';
     await shell();
     expect(screen.queryByRole('navigation', { name: 'Main' })).toBeNull();
+  });
+
+  it('adds a Donate footer link only when donations are on and the viewer is not a kid', async () => {
+    await shell();
+    expect(screen.queryByRole('link', { name: 'Donate' })).not.toBeInTheDocument();
+    mocks.gate = 'kids';
+    document.body.innerHTML = '';
+    await shell();
+    expect(screen.queryByRole('link', { name: 'Donate' })).not.toBeInTheDocument();
+    mocks.gate = 'ok';
+    document.body.innerHTML = '';
+    await shell();
+    expect(screen.getByRole('link', { name: 'Donate' })).toHaveAttribute('href', '/donate');
   });
 });

@@ -6,6 +6,8 @@ export interface SitemapRows {
   videos: { slug: string; lastmod: Date }[];
   series: { slug: string; lastmod: Date }[];
   categories: { slug: string; lastmod: Date }[];
+  /** Public pages that exist only when a feature is on, for example /donate. */
+  extraPaths?: string[];
 }
 
 /** Well under the protocol limit of 50,000 urls and 50 MB per file (D-L6-4). */
@@ -21,7 +23,7 @@ const STATIC_PATHS = ['/', '/browse', '/about', '/help', '/privacy', '/terms'];
  */
 export function buildSitemapEntries(origin: string, rows: SitemapRows): SitemapEntry[] {
   const base = origin.replace(/\/+$/, '');
-  const entries: SitemapEntry[] = STATIC_PATHS.map((path) => ({ url: `${base}${path}` }));
+  const entries: SitemapEntry[] = [...STATIC_PATHS, ...(rows.extraPaths ?? [])].map((path) => ({ url: `${base}${path}` }));
   const add = (prefix: string, list: { slug: string; lastmod: Date }[]) => {
     for (const row of list) {
       const url = `${base}${prefix}${encodeURIComponent(row.slug)}`;
