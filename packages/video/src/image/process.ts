@@ -1,6 +1,7 @@
 import sharp from 'sharp';
 
-export type ImagePreset = 'poster' | 'hero' | 'thumbnail';
+export type ImagePreset =
+  'poster' | 'hero' | 'thumbnail' | 'sponsor_square' | 'sponsor_wide';
 export type ImageFormat = 'avif' | 'webp' | 'jpeg';
 
 export interface PresetSpec {
@@ -17,7 +18,16 @@ export const IMAGE_PRESETS: Record<ImagePreset, PresetSpec> = {
   poster: { widths: [320, 480, 640, 960, 1280], ratio: 16 / 9, minWidth: 320 },
   hero: { widths: [320, 640, 960, 1280, 1920], ratio: 16 / 9, minWidth: 640 },
   thumbnail: { widths: [160, 240, 320, 480], ratio: 16 / 9, minWidth: 160 },
+  /** Sponsor card images (M48): the 72 and 104 px slots at 2x, and a 400 px source minimum. */
+  sponsor_square: { widths: [144, 208, 400], ratio: 1, minWidth: 400 },
+  /** The optional wide image on the desktop card, 3 to 1, source at least 1200 wide. */
+  sponsor_wide: { widths: [600, 900, 1200], ratio: 3, minWidth: 1200 },
 };
+
+/** A sponsor asset is square unless the source is clearly wide. */
+export function sponsorPresetFor(width: number, height: number): 'sponsor_square' | 'sponsor_wide' {
+  return height > 0 && width / height >= 2 ? 'sponsor_wide' : 'sponsor_square';
+}
 
 export interface CropFocus {
   /** Percent from the left and from the top of the picture. */

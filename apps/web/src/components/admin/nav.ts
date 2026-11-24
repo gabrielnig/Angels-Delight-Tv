@@ -130,6 +130,13 @@ export const NAV_ITEMS: NavItem[] = [
     group: 'Insight and control',
     action: 'system.view',
   },
+  {
+    label: 'Sponsors',
+    href: '/admin/sponsors',
+    icon: 'sponsor',
+    group: 'Monetization',
+    action: 'sponsor.manage',
+  },
 ];
 
 export interface NavGroup {
@@ -182,6 +189,8 @@ const SEGMENT_LABELS: Record<string, string> = {
   roles: 'Roles and invites',
   'site-settings': 'Site settings',
   system: 'System',
+  sponsors: 'Sponsors',
+  report: 'Report',
   account: 'My account',
   poster: 'Poster',
 };

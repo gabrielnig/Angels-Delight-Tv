@@ -141,3 +141,22 @@ describe('can(role, action)', () => {
     expect(requiredRole('audit.read')).toBe('admin');
   });
 });
+
+describe('sponsors permissions (M48, D-263)', () => {
+  it('editors manage drafts, only admins go live, report exports are admin only', () => {
+    expect(requiredRole('sponsor.manage')).toBe('editor');
+    expect(requiredRole('sponsor.activate')).toBe('admin');
+    expect(requiredRole('sponsor.report.export')).toBe('admin');
+    expect(can('editor', 'sponsor.manage')).toBe(true);
+    expect(can('editor', 'sponsor.activate')).toBe(false);
+    expect(can('editor', 'sponsor.report.export')).toBe(false);
+    expect(can('viewer', 'sponsor.manage')).toBe(false);
+  });
+
+  it('has plain language labels', async () => {
+    const { ACTION_LABELS } = await import('./can-labels');
+    for (const action of ['sponsor.manage', 'sponsor.activate', 'sponsor.report.export'] as const) {
+      expect(ACTION_LABELS[action], action).toMatch(/\w/);
+    }
+  });
+});

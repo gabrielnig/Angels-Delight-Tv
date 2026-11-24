@@ -50,6 +50,16 @@ describe('navForRole', () => {
   });
 });
 
+describe('Monetization group (M48)', () => {
+  it('shows Sponsors to editors and above, not to viewers', () => {
+    expect(labels('editor')).toContain('Sponsors');
+    expect(labels('admin')).toContain('Sponsors');
+    expect(labels('viewer')).not.toContain('Sponsors');
+    const group = navForRole('editor').find((g) => g.items.some((i) => i.label === 'Sponsors'));
+    expect(group?.name).toBe('Monetization');
+  });
+});
+
 describe('isActive', () => {
   const videos = NAV_ITEMS.find((item) => item.label === 'Videos')!;
   const upload = NAV_ITEMS.find((item) => item.label === 'Upload')!;

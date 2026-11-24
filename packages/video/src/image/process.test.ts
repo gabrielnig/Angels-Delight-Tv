@@ -1,6 +1,6 @@
 import sharp from 'sharp';
 import { describe, expect, it } from 'vitest';
-import { IMAGE_PRESETS, ImageRejected, processImage } from './process';
+import { IMAGE_PRESETS, ImageRejected, processImage, sponsorPresetFor } from './process';
 
 async function source(width: number, height: number, format: 'png' | 'jpeg' = 'png') {
   const img = sharp({
@@ -157,5 +157,32 @@ describe('processImage full picture preview (M36-S03)', () => {
       focus: { x: 30, y: 30, zoom: 120 },
     });
     expect(out.full).toBeUndefined();
+  });
+});
+
+describe('sponsor presets (M48)', () => {
+  it('square sponsor images are cropped 1 to 1 with 2x widths for the 72 and 104 pixel slots', async () => {
+    const out = await processImage(await source(800, 600), 'sponsor_square');
+    const widths = [...new Set(out.variants.map((v) => v.width))].sort((a, b) => a - b);
+    expect(widths).toEqual([144, 208, 400]);
+    for (const v of out.variants) expect(v.height).toBe(v.width);
+  });
+
+  it('wide sponsor images are cropped 3 to 1', async () => {
+    const out = await processImage(await source(1500, 700), 'sponsor_wide');
+    const widths = [...new Set(out.variants.map((v) => v.width))].sort((a, b) => a - b);
+    expect(widths).toEqual([600, 900, 1200]);
+    for (const v of out.variants) expect(v.height).toBe(Math.round(v.width / 3));
+  });
+
+  it('refuses a square sponsor image under 400 pixels and a wide one under 1200', async () => {
+    await expect(processImage(await source(399, 399), 'sponsor_square')).rejects.toBeInstanceOf(ImageRejected);
+    await expect(processImage(await source(1199, 500), 'sponsor_wide')).rejects.toBeInstanceOf(ImageRejected);
+  });
+
+  it('picks the preset from the shape of the source', () => {
+    expect(sponsorPresetFor(1200, 400)).toBe('sponsor_wide');
+    expect(sponsorPresetFor(500, 500)).toBe('sponsor_square');
+    expect(sponsorPresetFor(900, 600)).toBe('sponsor_square');
   });
 });

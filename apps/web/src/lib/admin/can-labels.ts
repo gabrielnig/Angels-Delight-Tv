@@ -40,4 +40,7 @@ export const ACTION_LABELS: Record<AdminAction, string> = {
   'i18n.override': 'Publish a language below the threshold',
   'system.view': 'See system health',
   'system.jobs': 'Retry or discard failed jobs',
+  'sponsor.manage': 'Create and edit sponsor drafts',
+  'sponsor.activate': 'Take sponsors live, pause and archive them',
+  'sponsor.report.export': 'Export sponsor reports',
 };
