@@ -47,3 +47,10 @@ Scoped tests: `TEST_DATABASE_ADMIN_URL=postgres://postgres:postgres@localhost:54
 - `GuestIntent` has an optional `value` (-1, 1, 2) kept only for a like; a bad value is dropped on read. `TitleRating` remembers the tapped value and passes it to `SignInToSaveDialog`.
 - `GuestIntentApplier` now takes both kinds. A like with a value is replayed through `PUT /api/ratings` for the active profile (toast "Rating saved" or the error text). A like with no value is dropped.
 - Tests: `apps/web/src/lib/guest/intent.test.ts`, `components/guest/GuestIntentApplier.test.tsx`, `components/engage/TitleRating.test.tsx`.
+
+## Slice 4d (merged by L5a): card rating chip, Most liked, focus peek
+- `@ad/ui` `Cards.tsx`: `VideoCard` and `SeriesCard` take `rating` (`CardRating`: value, onChange, labels) and `mostLiked`. Actions cluster `.ad-card__actions` holds the chip (`CardRatingChip`, group named "Rate <title>", aria-pressed, chip first in DOM, `order` keeps the visual order) and My List. Exported `MostLikedLabel`. The link name says "Most liked" and "Your rating: Love this".
+- CSS: chip only inside `hover: hover and pointer: fine`, expands on `:hover` and `:focus-within`, R37 ring on in-image controls, `:has(:focus-visible)` scales and shows the peek with no delay, `.ad-row__item:focus-within` lifts above neighbours. R10 hover rules were already in place.
+- Web: `CatalogCard` saves through `PUT /api/ratings` with rollback and toast, only for a signed in non kids profile and an item that has `rating`. `ProfileKidsProvider` and `useProfileKids` added to `lib/profile-context`. `cardToItem` carries `rating` and `mostLiked`. Message keys `engage.rating.cardGroup`, `engage.rating.yours`, `engage.mostLiked`.
+- Tests: `packages/ui/src/components/Cards.test.tsx`, `packages/ui/src/cards-css.test.ts`, `apps/web/src/components/CatalogCard.test.tsx`, `apps/web/src/server/data/mappers.test.ts`.
+- Not done here: Most liked label on the title page, Most liked on the series card peek (series cards have no peek), maturity chip in the peek (slice 5, needs `maturityRank` on `TitleCard`), a cross card live update when one card of a title changes (M44-S02 AC2).
