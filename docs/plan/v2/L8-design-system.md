@@ -504,3 +504,209 @@ Mockups are `.dc.html` files in `/home/claude/ad/project/` named like the existi
 3. Screen reader pass on a row with the hover content `aria-hidden` (one announcement per card).
 4. Yoruba, Igbo and Hausa title sample in each of the six fonts at 360 px.
 5. Real hero images, the lightest three, for the scrim contrast test.
+
+## 13. Amendments (design review, 24 November 2026)
+
+Owner: the L8 reviewer. This section settles the open items with the rulings in `docs/plan/v2/RULINGS.md` (rulings win over sections 1 to 12 above and over the mockups). Build lanes copy the values and CSS below. Where this section and an earlier section disagree, this section wins. Evidence and the findings table are in `docs/reviews/v2/L8-review.md`. Every ratio below was computed with the WCAG formula (script in the review note), not estimated.
+
+### 13.1 Token additions and changes (copy into `tokens.css`, the skill reference `tokens.css` and DS section 3)
+
+| Token | Final value | Group | Replaces or note |
+|---|---|---|---|
+| `--cards-visible` | 2.3 base, 3.3 from 600, 4.3 from 960, 5.3 from 1280, 6.3 from 1920 | Layout | R11. Kids phone rows use 2.3 too (L2 had 2.1) |
+| `--page-gutter` | `clamp(1rem, 4vw, 3.5rem)` | Layout | No per breakpoint override |
+| `--card-gap` | 0.5rem below 960, 0.75rem from 960 | Layout | Matches S150 table |
+| `--card-scale` | 1.25 | Motion | R10 |
+| `--hover-card-delay` | 300ms (0ms under reduce) | Motion | R10. `--hover-intent-delay` stays as alias for one release |
+| `--motion-hover` | 250ms (0.01ms under reduce) | Motion | |
+| `--motion-press` | 0ms | Motion | |
+| `--ease-out-strong` | `cubic-bezier(0.22, 1, 0.36, 1)` | Motion | |
+| `--button-height-sm` / `-md` / `-lg` | 2rem / 2.5rem / 3rem | Layout | `lg` is 48 px. The mockup value 52 px was wrong and is fixed |
+| `--color-player-rail` | `#6A6E78` | Fixed | R34. Was `#3A3D46` (1.77:1). Now 3.75:1 on `--color-player-bg`. Accent fill on it 3.32:1 |
+| `--color-player-buffer` | `#9A9FAB` | Fixed | Was `#5B606B`, which would be darker than the new rail (1.24:1). Now 1.93:1 over the rail, 7.22:1 on the player |
+| `--color-card-progress-rail` | `#3A3D46` | Fixed | New. Continue watching and admin progress keep the dark rail (accent on it 7.06:1). L5 S129 already draws it this way |
+| `--color-bar-disabled-bg` | `#3A3D46` | Fixed | R38. Disabled action on the dark bulk bar |
+| `--color-bar-disabled-ink` | `#C9CCD3` | Fixed | R38. 6.75:1 on the disabled fill, 10.59:1 on `--color-sidebar-bg` |
+| `--color-hero-chip-bg` | `rgba(14, 15, 19, 0.6)` | Fixed | R12. Fill of the hero More info button, with a 1px `#FFFFFF` border. White text on it 5.03:1 even over a white image |
+| `--scrim-rgb` | `14, 15, 19` | Fixed | Channel triplet so gradients read the stop tokens |
+| `--scrim-hero-start` / `-mid` / `-end` | 0.85 / 0.45 / 0 | Fixed | R36 |
+| `--scrim-hero-hold-desktop` / `-mid-desktop` / `-end-desktop` | 40% / 60% / 100% | Fixed | R36 desktop (left to right) |
+| `--scrim-hero-hold-mobile` / `-mid-mobile` / `-end-mobile` | 50% / 65% / 80% | Fixed | R36 mobile (bottom to top) |
+| `--nav-scrim-hold` | 70% | Fixed | Nav scrim holds 0.85 over the text band (section 13.5) |
+| `--font-mono` | `ui-monospace, SFMono-Regular, Menlo, Consolas, monospace` | Fixed | R38. Already in `tokens.css` and the skill reference file. Missing from DS section 3: add the row. System stack, no web font, recovery codes only |
+| `--tabbar-height` | 3.5rem | Layout | S14 |
+| `--avatar-initial-120` / `-160` | 2.5rem / 3.5rem | Layout | F15 |
+
+Contrast gate additions for `packages/theme/src/token-pairs.test.ts`: player rail on player bg at least 3.0, accent on player rail at least 3.0, white on `--color-hero-chip-bg` over white at least 4.5, bar disabled ink on bar disabled bg at least 4.5, focus ring on bg at least 3.0 (4.81), accent ring on the worst hero scrim at least 3.0 (8.22), white on `rgba(scrim, 0.57)` over white at least 4.5 (4.53).
+
+### 13.2 R11 columns, peek and paging
+
+Final values are in 13.1. Computed geometry (card = (container minus 2 gutters minus gaps) divided by visible count; peek = what is left of the next card at scroll 0):
+
+| Viewport | Columns | Gutter | Gap | Card | Peek px | Peek share |
+|---|---|---|---|---|---|---|
+| 390 | 2.3 | 16 | 8 | 151.1 | 55.7 | 37% |
+| 600 | 3.3 | 24 | 8 | 161.7 | 66.9 | 41% |
+| 960 | 4.3 | 38.4 | 12 | 196.2 | 88.9 | 45% |
+| 1280 | 5.3 | 51.2 | 12 | 212.5 | 106.5 | 50% |
+| 1440 | 5.3 | 56 | 12 | 240.8 | 119.8 | 50% |
+| 1920 | 6.3 | 56 | 12 | 276.9 | 130.7 | 47% |
+
+Rules:
+1. The fraction is a layout parameter, not a peek percentage. Because the right gutter is open at scroll 0, the next card shows 37 to 50 percent. Gate test: peek share at 360, 390, 600, 960, 1280, 1440, 1920 and 2560 is between 30 and 55 percent. Do not subtract the right gutter a second time.
+2. Rails cap at 120rem. Text pages keep `--prose-max: 90rem`.
+3. Arrow click pages by a whole number of cards: `max(1, floor(var(--cards-visible)) - 1)` cards, so a card edge lands on the gutter with snap `proximity`. This replaces "one visible page minus one card" in S150 and matches L2 S94.
+4. The end card of a row is the "See all" card (L2). The copy is "See all" everywhere (DS, code and `Row.tsx`). L2 mockups that say "View all" are wrong. The end card never opens a hover card.
+
+### 13.3 R10 hover card (scale rule, origin, covering the title)
+
+```css
+:root { --card-scale: 1.25; --hover-card-delay: 300ms; --hover-intent-delay: var(--hover-card-delay); }
+
+.ad-card__thumb { transform-origin: center; }
+.ad-row__item:first-child .ad-card__thumb { transform-origin: left center; }
+.ad-row__item:last-child  .ad-card__thumb { transform-origin: right center; }
+
+/* Room for the scale. Real padding, no negative margin (it would cover the row heading and steal clicks from See all). */
+.ad-row__list {
+  padding-block: calc(var(--row-card-width) * 9 / 16 * (var(--card-scale) - 1) / 2);
+}
+.ad-row { margin-block-end: max(0px, calc(var(--row-gap) - var(--row-card-width) * 9 / 16 * (var(--card-scale) - 1))); }
+
+@media (hover: hover) and (pointer: fine) {
+  @container row (min-width: 600px) {
+    .ad-card__peek, .ad-card__title, .ad-card__meta { transition: opacity var(--motion-hover) var(--ease-out-strong); }
+    .ad-card__thumb { transition: transform var(--motion-hover) var(--ease-out-strong); } /* leave: no delay */
+    .ad-card:hover .ad-card__thumb { transform: scale(var(--card-scale)); transition-delay: var(--hover-card-delay); }
+    .ad-card:hover .ad-card__peek  { opacity: 1; transition-delay: var(--hover-card-delay); }
+    .ad-card:hover .ad-card__title,
+    .ad-card:hover .ad-card__meta  { opacity: 0; transition-delay: var(--hover-card-delay); }
+    .ad-row__item:hover { position: relative; z-index: var(--z-sticky); }
+  }
+}
+/* Keyboard: same content, no scale, no delay. */
+.ad-card:focus-within .ad-card__peek { opacity: 1; }
+@media (prefers-reduced-motion: reduce) {
+  .ad-card:hover .ad-card__thumb { transform: none; }
+}
+```
+
+Settled points:
+1. Scale 1.25, delay 300 ms on enter only (it sits in the `:hover` rule, so mouse out is immediate), 250 ms strong ease out, transform and opacity only. Shadow is a pseudo element whose opacity changes, never a transitioned `box-shadow`.
+2. Origin: R10 says first and last visible card. CSS cannot know the visible edge, so the origin is set for the first and last card of the list (DEC-L8-07). This meets the intent because growth per side is `0.125 x card width` and always fits the gutter from 600 up: 20.2 of 24 at 600, 32.7 of 38.4 at 959, 33.1 of 51.2 at 1279, 26.6 of 51.2 at 1280, 41.4 of 56 at 1919, 34.6 of 56 at 1920. A test asserts `0.125 x --row-card-width <= --page-gutter` at 600, 768, 959, 960, 1279, 1280, 1920 and 2560. At 599 the growth (29.4) exceeds the gutter (24), so the hover card is off below a 600 px row container (the `@container` guard above).
+3. The scaled thumb covers about half of the first title line (it grows 15.9 px below at 1360). The title and meta below the thumb fade to opacity 0 while the card is raised, because the peek repeats the title, length and subject. They stay in the DOM and the accessibility tree.
+4. The peek stays `aria-hidden`. Play, My List and the L5 rating chip are real buttons that are siblings of the card link. Buttons are 36 px visible with a `::before` hit area of 44 px (inset -4 px). They scale to 45 px visible. Rating chip levels are 44 px targets (L5).
+5. L5 S122 (500 ms, 4 px lift, no scale) and L2 S96 (portal above the row that closes on scroll) are replaced by this rule. The L2 portal idea is not used.
+
+### 13.4 R34, R37, R38 rail, tile focus and badges
+
+Seek rail (R34): tokens in 13.1. Rail height stays 4 px (8 px while hovered or focused), hit area `height: var(--touch-target)` (R30), the L4 mockups that draw a 5 px rail in `#3A3D46` with buffer `#5B606B` must change to `#6A6E78` and `#9A9FAB`.
+
+Profile tile and tile focus (R37). The ring is a real outline, 3 px, 2 px offset (the S155 first draft used a 3 px offset, wrong), so it survives forced colours; the offset gap shows the page background so the ring is judged on the page (4.81:1) and not on the avatar fill (peach 2.92:1).
+
+```css
+.ad-tile:focus-visible { outline: none; }
+.ad-tile:focus-visible .ad-tile__avatar {
+  outline: 3px solid var(--color-focus-ring);
+  outline-offset: 2px;
+  box-shadow: none;
+}
+@media (hover: hover) {
+  .ad-tile:hover .ad-tile__avatar {
+    box-shadow: 0 0 0 3px var(--color-focus-ring);
+    outline: 3px solid transparent;   /* shows in forced colours */
+  }
+}
+@media (forced-colors: active) {
+  .ad-tile:focus-visible .ad-tile__avatar { outline-color: Highlight; }
+}
+```
+The same rule applies to `.ad-card` links (ring on the thumb, 3 px, 2 px offset) and to every other `outline: none` that has a child ring. Hover is not a focus cue: the hover ring on the peach fill is 2.92:1 and is accepted because hover state is not required information.
+
+Caption badge (R38): `background: var(--color-surface); color: var(--color-ink); border: 1px solid var(--color-ink);` 11 px bold, radius `--radius-xs`, bottom left of the thumb. 17.03:1 on any thumbnail (before: ink on a 0.85 dark scrim, 1.35:1). L5's inline `.cc` (24 px high, 1.5 px muted border) is replaced by this badge on thumbnails and may stay inline only in meta rows, where it sits on the surface.
+
+Duration badge: white on `--color-player-control-bg` (0.72), 7.81:1 over a white image.
+
+Bulk bar disabled action (R38): `.bulk .w[aria-disabled='true'] { background: var(--color-bar-disabled-bg); border-color: var(--color-bar-disabled-bg); color: var(--color-bar-disabled-ink); cursor: not-allowed; }`. DS 4.2 rule 5 prefers an enabled button that explains on press; that choice stays with L3.
+
+Google mark (R38): the one documented brand colour exception. One component, `packages/ui/src/icons/GoogleMark.tsx`, an inline SVG with the four Google brand fills (`#4285F4`, `#EA4335`, `#FBBC05`, `#34A853`) and `aria-hidden`. The colour gate allowlists that exact path and nothing else. The button around it uses `--color-surface`, a `--color-border-strong` edge, 48 px height, label "Continue with Google" (R24), and the standard ring. The mark is not themeable.
+
+### 13.5 R35 nav: underline, fade step, scrim hold
+
+Findings that changed the spec: (a) the S152 fade used `--ease-standard` while flipping the text colour at a time based 35 percent. At 70 ms that easing is already at 50 percent opacity and white text on the worst case is 2.84:1, under 3:1. The fade is therefore `linear`, so time equals progress. (b) the nav scrim faded 0.85 to 0 linearly over the bar, so at the text centre alpha was 0.43 and white on a white image was 2.84:1. The scrim now holds 0.85 to 70 percent of the bar height (text band ends at 64 percent on the 56 px bar, 72 percent on the 68 px bar, alpha 0.595 there, 4.94:1).
+
+```css
+.ad-nav { --nav-ink: #fff; --nav-underline: var(--color-focus-ring-dark); --nav-ring: var(--color-focus-ring-dark);
+  color: var(--nav-ink);
+  transition: color 1ms linear calc(var(--motion-base) * 0.65); }            /* solid to clear: flip at 35 percent of the reverse fade (130 ms) */
+.ad-nav::before, .ad-nav::after { content: ''; position: absolute; inset: 0; pointer-events: none;
+  transition: opacity var(--motion-base) linear; }
+.ad-nav::before { z-index: -1; background: var(--color-surface); box-shadow: var(--shadow-1); opacity: 0; }
+.ad-nav::after  { z-index: -1; opacity: 1;
+  background: linear-gradient(to bottom,
+    rgba(var(--scrim-rgb), var(--scrim-hero-start)) 0, rgba(var(--scrim-rgb), var(--scrim-hero-start)) var(--nav-scrim-hold),
+    rgba(var(--scrim-rgb), 0) 100%); }
+.ad-nav[data-solid='true'] { --nav-ink: var(--color-ink); --nav-underline: var(--color-primary); --nav-ring: var(--color-focus-ring);
+  transition-delay: calc(var(--motion-base) * 0.35); }                         /* clear to solid: flip at 35 percent of the fade (70 ms) */
+.ad-nav[data-solid='true']::before { opacity: 1; }
+.ad-nav[data-solid='true']::after  { opacity: 0; }
+.ad-nav__link[aria-current='page'] { box-shadow: inset 0 -3px 0 var(--nav-underline); font-weight: 600; }
+```
+Rules: the active underline on the clear nav is `--color-focus-ring-dark` (R35, blue measured 2.41:1), on the solid nav `--color-primary` (5.25:1). Hover underline 2 px, current page 3 px. The text, underline and ring colours flip as one step at 35 percent of the fade (70 ms in, 130 ms out). Between 30 and 40 percent neither colour reaches 4.5:1 on the worst case (white 4.94 and ink 3.45 at 30, white 3.69 and ink 4.61 at 40), always above 3:1. Gate tests never sample inside the fade. Under reduce `--motion-base` is 0.01 ms so the delays collapse. Nav height stays 3.5 rem and 4.25 rem, solid after a 40 px sentinel (IntersectionObserver). Pages without a hero are solid from first paint.
+
+### 13.6 R36 hero scrim and text zone
+
+```css
+.ad-hero__scrim {
+  background:
+    linear-gradient(to bottom, rgba(var(--scrim-rgb), 0.6), rgba(var(--scrim-rgb), 0) 25%),       /* mobile top, under the nav */
+    linear-gradient(to top,
+      rgba(var(--scrim-rgb), var(--scrim-hero-start)) 0,
+      rgba(var(--scrim-rgb), var(--scrim-hero-start)) var(--scrim-hero-hold-mobile),
+      rgba(var(--scrim-rgb), var(--scrim-hero-mid)) var(--scrim-hero-mid-mobile),
+      rgba(var(--scrim-rgb), var(--scrim-hero-end)) var(--scrim-hero-end-mobile));
+}
+@media (min-width: 960px) {
+  .ad-hero__scrim {
+    background:
+      linear-gradient(to right,
+        rgba(var(--scrim-rgb), var(--scrim-hero-start)) 0,
+        rgba(var(--scrim-rgb), var(--scrim-hero-start)) var(--scrim-hero-hold-desktop),
+        rgba(var(--scrim-rgb), var(--scrim-hero-mid)) var(--scrim-hero-mid-desktop),
+        rgba(var(--scrim-rgb), var(--scrim-hero-end)) var(--scrim-hero-end-desktop)),
+      linear-gradient(to top, rgba(var(--scrim-rgb), var(--scrim-hero-start)) 0, rgba(var(--scrim-rgb), 0) 40%);
+  }
+  .ad-hero__text { max-width: min(32.5rem, calc(54% - var(--page-gutter))); }
+}
+```
+Facts: white text first drops under 4.5:1 on a white image at alpha 0.569, which is 54 percent of the width (desktop) and 60.5 percent of the height from the bottom (mobile). The title zone must stay inside that: desktop text right edge at most 54 percent of the hero width (the `max-width` above; at 960 a plain 520 px block would end at 58 percent and cross it), mobile text block top at most 60 percent of the height from the bottom (title and description clamp to two lines each, gate measured in Playwright at 360 and 390). The 0.45 mid stop gives white 3.07:1, so only large text (the title) may touch it. Description and meta stay inside the hold. This replaces the L2 scrims (0.88 to 46 then 0 at 74 percent, and 0.9 to 64 then 0 at 90 percent on mobile). Hero secondary (R12): `background: var(--color-hero-chip-bg); border: 1px solid #fff; color: #fff` (the fix to the S159 draft, which had no border). Arrows sit beside Pause from 960 (44 px circles). Rotation 10 s, stops after two loops, off under reduce and Data saver; under Data saver there is no rotation and no Pause, dots, arrows and swipe work and the next image is not prefetched (L2 S93).
+
+### 13.7 R23 font coverage test and language rule
+
+Measured from the shipped files with fontTools, `Y` is present. After S12 (vietnamese subset) the precomposed `ọ ẹ ị ụ` and capitals, U+0300, U+0301, U+0304 and U+0323 are covered everywhere. The vietnamese subset does not add the rows below, so they are the baseline the test pins.
+
+| Glyph | Inter | Space Grotesk | DM Sans | Poppins | Nunito | Lora |
+|---|---|---|---|---|---|---|
+| ṣ U+1E63, Ṣ | Y | Y | n (s + U+0323) | n (s + U+0323) | Y | n (s + U+0323) |
+| ǹ U+01F9 | Y | n | n | n | n | n |
+| ḿ U+1E3F | Y | n | n | n | n | n |
+| ṅ U+1E45 | Y | Y | n | n | Y | n |
+| ɓ U+0253, Ɓ | Y | n | n | n | Y | n |
+| ɗ U+0257, Ɗ | Y | n | n | n | Y | n |
+| ƙ U+0199, Ƙ | Y | n | n | n | n | n |
+| ƴ U+01B4, Ƴ | Y | n | n | n | Y | n |
+| ʼ U+02BC | Y | Y | n | Y | Y | Y |
+| ₦ U+20A6 | Y | Y | n | n | Y | n |
+
+Rules and test:
+1. Language rule (R23): for `lang` yo, ig and ha, `--font-display` is Inter (R23 names Yoruba and Igbo; Hausa is added because only Inter has ɓ ɗ ƙ ƴ). Inter loads only when the document language is one of these and the selected family is not Inter (`preload: false`, latin, latin-ext and vietnamese). The body stack of the selected family ends with the Inter fallback face before the system font for these languages.
+2. The coverage test is NFD aware: a character passes when the font has the precomposed code point or every code point of its NFD form (base plus combining mark), and reports which path passed.
+3. Test sets: Yoruba `ọ ẹ ṣ ọ̀ ẹ̀ ń ǹ ḿ à á è é ì í ò ó ù ú Ọ Ẹ Ṣ`, Igbo `ị ụ ṅ ị̄ ụ̄ Ị Ụ Ṅ`, Hausa `ɓ ɗ ƙ ƴ ʼ Ɓ Ɗ Ƙ Ƴ`, plus `₦`. Inter must pass all sets (it is the override family). Every other family must pass Yoruba and Igbo NFD aware, and its Hausa and naira gaps must equal the table above exactly (the test fails on a new gap and on a gap that closed, so the table stays true).
+4. S157 lists these rows. The theme editor sample line shows `Ọ̀rọ̀ ẹ̀kọ́ ṣe pàtàkì` and a Hausa line `Ɓarna ɗan ƙasa ƴan` so staff see a missing glyph before saving.
+
+### 13.8 Other settled points
+
+1. Button heights 2, 2.5 and 3 rem visual with a 44 px hit area (`::before`) and 8 px between neighbouring hit areas. Hero and auth use `lg` (48 px). All S150 to S159 mockups now draw `lg` at 48.
+2. Reduce uses the standard `reduce` value and zeroes instant, fast, base, slow, hover, press and the hover card delay. R31 hover rules live in `(hover: hover) and (pointer: fine)` when they move, reveal or scale.
+3. Errors show one action (R39). Copy sources: "Tap the plus on any video to save it for later." and a reference in caption text under the action. The old S20, S24 and S33 mockups were edited to match (they live in the shared project folder, not in git).
+4. Decision ids for the register (DEC-L8-13 to 17, next free D numbers at merge): nav fade is linear with flips at 70 and 130 ms; nav scrim holds 70 percent; hover card off below 600 px with the gutter invariant; seek rail `#6A6E78` with buffer `#9A9FAB` and a separate card progress rail; Inter is the display font for yo, ig and ha.
