@@ -7,6 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 ## [Unreleased]
 
 ### Added
+- Lane L6 search core (M45-S07 to S09): migration 0043 (`search_terms`, `search_synonyms`, `search_misses`), typo correction with a word list, synonym groups with a cap of 8 and exact matches first, subjects, anonymous misses with 90 day pruning, exact matching for short words.
 - Lane L6 share menu (M45-S06): `ShareMenu` with native share, Copy link, and admin chosen WhatsApp, Facebook, X and Email links, hidden for kids, bottom sheet under 600 px, literal `share.*` messages.
 - Lane L6 Discovery tab (M45-S05): settings `seo.*` and `consent.*`, a live search result and share card preview with a 160 character counter, share channel switches, storage notice text and version bump, root metadata that follows the settings, robots.txt and noindex that follow the indexing switch and close staging.
 - Lane L6 share images (M45-S03): `/og/title/<slug>` and `/og/series/<slug>` draw a 1200 by 630 jpeg under 300 KB from the poster with a four stop scrim (white text keeps 4.5 to 1 on a white poster), 404 for unpublished titles, default image fallback; `previewMetadata` takes `shareImagePath` and sets `og:locale`.

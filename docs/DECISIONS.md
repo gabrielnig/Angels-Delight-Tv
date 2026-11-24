@@ -1548,3 +1548,9 @@ Per video tri state, site default (Super admin), Admin changes it with a reason 
 - Options: Always a menu, native only, native with menu fallback
 - Why: People on phones expect their own share sheet, and desktop visitors in Nigeria mostly share through WhatsApp.
 - Reversible: Yes
+
+## D-286 Search stays in Postgres with a word list for corrections, synonym groups and an anonymous misses table (M45-S07 to S09) (lane L6)
+- Decision: No external search engine. A search_terms word list (live title and category words, trigram index) corrects long words that are not known words. Words of four characters or fewer match exactly and the old fuzzy title match is off unless every word has five characters. A raw search with no results, or with as many results for the corrected spelling, shows the corrected results with Showing results for. Synonym groups live in search_synonyms with a neutral seed, expand at most 8 words per query and rank below exact matches. search_misses stores only the normalised words, a count and a date, and is pruned after 90 days. Publishing and unpublishing refresh the word list in a savepoint.
+- Options: Meilisearch or Typesense, Postgres
+- Why: A free tier host with one datastore and a catalog under 10,000 titles. The kids rule holds because a correction is only used when the audience filtered search finds results.
+- Reversible: Yes, behind searchTitles
