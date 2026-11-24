@@ -45,6 +45,12 @@ describe('resolveSeoSettings (M45-S05)', () => {
     expect(resolveSeoSettings(base()).noticeEnabled).toBe(true);
   });
 
+  it('carries the support email so error pages can quote it (M45-S14)', () => {
+    expect(resolveSeoSettings({ ...base(), 'platform.support_email': 'help@example.org' }).supportEmail).toBe(
+      'help@example.org',
+    );
+  });
+
   it('carries indexing, channels and the template', () => {
     const s = resolveSeoSettings({ ...base(), 'seo.indexing': false });
     expect(s.indexing).toBe(false);
