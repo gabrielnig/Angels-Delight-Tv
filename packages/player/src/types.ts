@@ -1,3 +1,5 @@
+import type { ActiveChapter } from './chapters';
+import type { ActiveMarker } from './markers';
 import type { QualityMenu, QualitySelection } from './quality';
 
 export interface CaptionTrack {
@@ -76,6 +78,10 @@ export interface PlayerState {
   hasAudio: boolean;
   /** The network came back while the player was stopped by it. */
   backOnline: boolean;
+  /** The skip window the viewer is inside, or null (M43). */
+  marker: ActiveMarker | null;
+  /** The chapter the viewer is in, or null before the first one or with no chapters. */
+  chapter: ActiveChapter | null;
   /** Text for the polite live region. */
   announce: string;
 }
@@ -136,4 +142,6 @@ export interface PlaybackTelemetry {
   setHeight(height: number): void;
   /** A code such as `player.network`. Never a message. */
   onError(code: string): void;
+  /** The viewer used a Skip button or the S key. Positions in milliseconds. */
+  onSkip?(kind: 'intro' | 'recap' | 'credits' | 'next', fromMs: number, toMs: number): void;
 }

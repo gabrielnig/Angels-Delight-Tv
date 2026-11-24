@@ -10,6 +10,8 @@ export type ShortcutAction =
   | { type: 'toggle-fullscreen' }
   | { type: 'speed-step'; direction: -1 | 1 }
   | { type: 'next' }
+  | { type: 'skip' }
+  | { type: 'theatre' }
   | { type: 'help' };
 
 export interface KeyInput {
@@ -24,6 +26,10 @@ export interface KeyInput {
 
 export interface ShortcutContext {
   hasNext: boolean;
+  /** A skip window is active, so S skips it (M43). */
+  hasSkip?: boolean;
+  /** The host offers theatre mode, so T toggles it (M43). */
+  hasTheatre?: boolean;
 }
 
 export function isEditableTarget(target: EventTarget | null | undefined): boolean {
@@ -80,6 +86,12 @@ export function resolveShortcut(input: KeyInput, ctx: ShortcutContext): Shortcut
     case 'n':
     case 'N':
       return ctx.hasNext ? { type: 'next' } : null;
+    case 's':
+    case 'S':
+      return ctx.hasSkip ? { type: 'skip' } : null;
+    case 't':
+    case 'T':
+      return ctx.hasTheatre ? { type: 'theatre' } : null;
     case '?':
       return { type: 'help' };
     default:
@@ -106,6 +118,8 @@ export const SHORTCUT_HELP: readonly ShortcutHelpRow[] = [
   { keys: ['0 to 9'], action: 'Jump to 0 to 90 percent' },
   { keys: ['Shift ,', 'Shift .'], action: 'Slower or faster' },
   { keys: ['N'], action: 'Next episode' },
+  { keys: ['S'], action: 'Skip intro, recap or credits' },
+  { keys: ['T'], action: 'Theatre mode' },
   { keys: ['Esc'], action: 'Close menus or leave full screen' },
   { keys: ['?'], action: 'Open this list' },
 ];
