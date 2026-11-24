@@ -186,16 +186,3 @@ const SEGMENT_LABELS: Record<string, string> = {
   poster: 'Poster',
 };
 
-/** Breadcrumbs from the path. Dynamic ids use the titles map when given. */
-export function breadcrumbTrail(pathname: string, titles: Record<string, string> = {}): Crumb[] {
-  const parts = pathname.split('/').filter(Boolean).slice(1);
-  if (parts.length === 0) return [{ label: 'Admin' }];
-  const crumbs: Crumb[] = [{ label: 'Admin', href: '/admin' }];
-  let href = '/admin';
-  parts.forEach((part, index) => {
-    href += `/${part}`;
-    const label = SEGMENT_LABELS[part] ?? titles[part] ?? part;
-    crumbs.push(index === parts.length - 1 ? { label } : { label, href });
-  });
-  return crumbs;
-}

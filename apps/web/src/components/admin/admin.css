@@ -420,28 +420,6 @@
   display: grid;
   gap: var(--space-2);
 }
-.adm-crumbs ol {
-  display: flex;
-  flex-wrap: wrap;
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  color: var(--color-muted);
-  font-size: var(--text-caption);
-}
-.adm-crumbs li + li::before {
-  content: '/';
-  padding: 0 var(--space-2);
-}
-.adm-crumbs a {
-  display: inline-flex;
-  align-items: center;
-  min-height: var(--touch-target);
-  color: var(--color-muted);
-}
-.adm-crumbs [aria-current='page'] {
-  color: var(--color-ink);
-}
 .adm-pagehead__row {
   display: flex;
   flex-wrap: wrap;

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { breadcrumbTrail, isActive, navForRole, NAV_ITEMS } from './nav';
+import { isActive, navForRole, NAV_ITEMS } from './nav';
 
 const labels = (role: Parameters<typeof navForRole>[0]) =>
   navForRole(role).flatMap((group) => group.items.map((item) => item.label));
@@ -70,15 +70,3 @@ describe('isActive', () => {
   });
 });
 
-describe('breadcrumbTrail', () => {
-  it('builds crumbs from the path with a title for a dynamic id', () => {
-    expect(breadcrumbTrail('/admin/videos/abc', { abc: 'Why the Sky Is Blue' })).toEqual([
-      { label: 'Admin', href: '/admin' },
-      { label: 'Videos', href: '/admin/videos' },
-      { label: 'Why the Sky Is Blue' },
-    ]);
-  });
-  it('labels the dashboard root', () => {
-    expect(breadcrumbTrail('/admin')).toEqual([{ label: 'Admin' }]);
-  });
-});

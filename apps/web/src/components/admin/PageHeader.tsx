@@ -1,3 +1,4 @@
+import { Breadcrumbs } from '@ad/ui';
 import Link from 'next/link';
 import type { ReactNode } from 'react';
 import type { Crumb } from './nav';
@@ -15,19 +16,10 @@ export function PageHeader({
 }) {
   return (
     <header className="adm-pagehead">
-      <nav aria-label="Breadcrumb" className="adm-crumbs">
-        <ol>
-          {crumbs.map((crumb, index) => (
-            <li key={`${crumb.label}-${index}`}>
-              {crumb.href ? (
-                <Link href={crumb.href}>{crumb.label}</Link>
-              ) : (
-                <span aria-current="page">{crumb.label}</span>
-              )}
-            </li>
-          ))}
-        </ol>
-      </nav>
+      <Breadcrumbs
+        items={crumbs}
+        renderLink={({ href, children }) => <Link href={href}>{children}</Link>}
+      />
       <div className="adm-pagehead__row">
         <div>
           <h1 className="adm-h1">{title}</h1>

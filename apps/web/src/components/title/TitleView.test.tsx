@@ -65,9 +65,10 @@ const full = (patch: Partial<TitleDetail> = {}): TitleDetail =>
   });
 
 describe('TitleView layout (S18)', () => {
-  it('has a breadcrumb from Browse through the category to the current title', () => {
+  it('title page breadcrumb shows Browse, category and title', () => {
     view(full());
     const nav = screen.getByRole('navigation', { name: 'Breadcrumb' });
+    expect(nav).toHaveClass('ad-crumbs--viewer');
     const links = within(nav).getAllByRole('link');
     expect(links.map((a) => [a.textContent, a.getAttribute('href')])).toEqual([
       ['Browse', '/browse'],
