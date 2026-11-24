@@ -175,6 +175,7 @@ describe.skipIf(!integrationEnabled())('real admin services over the catalog', (
         publishState: 'draft',
         description: 'A lesson about rivers.',
         posterAssetId: poster,
+        maturityRank: 0,
       });
       await categorize(t.setup, { videoId: video.id }, cat.id);
 
