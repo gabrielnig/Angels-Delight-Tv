@@ -72,9 +72,12 @@
   --scrim-hero-hold-desktop: 40%;
   --scrim-hero-mid-desktop: 60%;
   --scrim-hero-end-desktop: 100%;
-  --scrim-hero-hold-mobile: 50%;
-  --scrim-hero-mid-mobile: 65%;
-  --scrim-hero-end-mobile: 80%;
+  --scrim-hero-mid-m: 0.7;   /* mobile mid alpha, measured so a two line title stays above 0.57 */
+  --scrim-hero-hold-mobile: 72%;
+  --scrim-hero-mid-mobile: 82%;
+  --scrim-hero-end-mobile: 96%;
+  --hero-fade: var(--motion-slow);
+  --hero-interval: 10s;  /* set per hero from the site setting */
   --nav-scrim-hold: 70%;
 
   /* ---- Fixed: pastel up-next and category tiles (ink text, all above 12:1) ---- */

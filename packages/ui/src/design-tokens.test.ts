@@ -78,7 +78,9 @@ describe('type tokens (DEC-L8-05, M47-S09)', () => {
     expect(prop('--text-hero')).toBe('calc(clamp(2rem, 5vw, 3.5rem) * var(--type-scale))');
     expect(prop('--text-hero', 'min-width: 960px')).toBeUndefined();
     const title = scanCss(components).filter((r) => r.selector === '.ad-hero__title');
-    expect(title.map((r) => /font-size:\s*([^;]+);/.exec(r.body)?.[1])).toEqual([
+    expect(
+      title.map((r) => /font-size:\s*([^;]+);/.exec(r.body)?.[1]).filter(Boolean),
+    ).toEqual([
       'var(--text-hero)',
     ]);
   });
@@ -132,9 +134,10 @@ describe('fixed colour and scrim tokens (section 13.1)', () => {
     ['--scrim-hero-hold-desktop', '40%'],
     ['--scrim-hero-mid-desktop', '60%'],
     ['--scrim-hero-end-desktop', '100%'],
-    ['--scrim-hero-hold-mobile', '50%'],
-    ['--scrim-hero-mid-mobile', '65%'],
-    ['--scrim-hero-end-mobile', '80%'],
+    ['--scrim-hero-mid-m', '0.7'],
+    ['--scrim-hero-hold-mobile', '72%'],
+    ['--scrim-hero-mid-mobile', '82%'],
+    ['--scrim-hero-end-mobile', '96%'],
     ['--nav-scrim-hold', '70%'],
     ['--font-mono', 'ui-monospace, SFMono-Regular, Menlo, Consolas, monospace'],
   ])('%s is %s', (name, value) => {

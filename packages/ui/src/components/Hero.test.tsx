@@ -25,6 +25,8 @@ const items: HeroItem[] = [
   },
 ];
 
+const plain = items.map(({ image: _image, ...rest }) => rest);
+
 describe('Hero', () => {
   it('is a labelled carousel region showing one slide', () => {
     render(<Hero items={items} label="Featured" />);
@@ -84,7 +86,7 @@ describe('Hero', () => {
 
   it('rotates only when asked and offers a pause control', async () => {
     vi.useFakeTimers();
-    render(<Hero items={items} label="Featured" autoRotateMs={7000} />);
+    render(<Hero items={plain} label="Featured" intervalMs={7000} />);
     act(() => {
       vi.advanceTimersByTime(7100);
     });
@@ -105,7 +107,7 @@ describe('Hero', () => {
   it('crossfades: the leaving slide stays for the fade then is removed', () => {
     vi.useFakeTimers();
     const { container } = render(
-      <Hero items={items} label="Featured" autoRotateMs={HERO_ROTATE_MS} />,
+      <Hero items={plain} label="Featured" intervalMs={HERO_ROTATE_MS} />,
     );
     act(() => {
       vi.advanceTimersByTime(HERO_ROTATE_MS + 50);
@@ -133,7 +135,7 @@ describe('Hero', () => {
     vi.useFakeTimers();
     try {
       const { container } = render(
-        <Hero items={items} label="Featured" autoRotateMs={HERO_ROTATE_MS} />,
+        <Hero items={items} label="Featured" intervalMs={HERO_ROTATE_MS} />,
       );
       act(() => {
         screen.getByRole('button', { name: 'Next slide' }).click();
@@ -142,19 +144,6 @@ describe('Hero', () => {
     } finally {
       window.matchMedia = original;
     }
-  });
-
-  it('stops rotating after two loops', () => {
-    vi.useFakeTimers();
-    render(<Hero items={items} label="Featured" autoRotateMs={1000} />);
-    act(() => {
-      vi.advanceTimersByTime(4100);
-    });
-    const at = screen.getByRole('heading').textContent;
-    act(() => {
-      vi.advanceTimersByTime(5000);
-    });
-    expect(screen.getByRole('heading').textContent).toBe(at);
   });
 
   it('shows a skeleton while loading', () => {

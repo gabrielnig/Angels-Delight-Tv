@@ -40,4 +40,17 @@ describe('HomeHero', () => {
     act(() => void vi.advanceTimersByTime(20000));
     expect(screen.getByRole('heading', { name: 'One' })).toBeInTheDocument();
   });
+
+  it('uses the interval from the site setting', () => {
+    render(<HomeHero items={items} label="Featured" profileId="p1" intervalSeconds={5} />);
+    act(() => void vi.advanceTimersByTime(5000));
+    expect(screen.getByRole('heading', { name: 'Two' })).toBeInTheDocument();
+  });
+
+  it('does not rotate when the site setting is off', () => {
+    render(<HomeHero items={items} label="Featured" profileId="p1" rotate={false} />);
+    act(() => void vi.advanceTimersByTime(30000));
+    expect(screen.getByRole('heading', { name: 'One' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /rotation/ })).toBeNull();
+  });
 });
