@@ -9,6 +9,13 @@ Scoped tests only: `pnpm vitest run <file>`.
 | 1 | Locale registry, plurals, numbers, dates, durations | 280 |
 | 2 | Catalog loader, merge, validation, pseudo locale, namespaces | 284 |
 | 3 | Migration 0040 and schema (ui tables, caption published, translation source) | see PR list |
+| 12 | Translation adapter | 323 |
+| 12b | Usage cap | 325 |
+| 13 | caption.translate queue and job | 337 |
+| 14 | Publish switch, viewer track lists, player t prop | 346 |
+| 15 | Admin caption screens by language | 356 |
+| 16 | Spoken language, multilingual Whisper, detection | 363 |
+| 17, 18, waves D onward, draft catalogs, docs | not built | none |
 
 ## Slice 1
 - `packages/shared/src/messages/locales.ts`: `LOCALES`, `LOCALE_CODES`, `normalizeLocale`, `parseAcceptLanguage`, `pickLocale`, `localeInfo`.
