@@ -14,6 +14,7 @@ const initial = {
   captionSize: 'medium' as const,
   captionBackground: 'dark' as const,
   captionContrast: 'standard' as const,
+  captionEdge: 'shadow' as const,
   captionLanguage: 'en',
 };
 const wrap = (save: (p: object) => Promise<unknown>, kids = false) =>
@@ -108,6 +109,17 @@ describe('PlaybackSettings state 1: default', () => {
     expect(save).toHaveBeenCalledWith({ captionBackground: 'solid' });
     await user.click(screen.getByRole('switch', { name: 'High contrast captions' }));
     expect(save).toHaveBeenCalledWith({ captionContrast: 'high' });
+  });
+
+  it('shows and saves the caption edge, and the preview follows it', async () => {
+    const save = vi.fn().mockResolvedValue(initial);
+    const user = userEvent.setup();
+    wrap(save);
+    const preview = screen.getByTestId('caption-preview');
+    const before = preview.style.getPropertyValue('--adp-cue-edge');
+    await user.selectOptions(screen.getByRole('combobox', { name: 'Caption edge' }), 'outline');
+    expect(save).toHaveBeenCalledWith({ captionEdge: 'outline' });
+    expect(preview.style.getPropertyValue('--adp-cue-edge')).not.toBe(before);
   });
 
   it('shows a live caption preview that follows the choices', async () => {

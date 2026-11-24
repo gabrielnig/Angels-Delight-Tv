@@ -1276,3 +1276,9 @@ Per video tri state, site default (Super admin), Admin changes it with a reason 
 - Options: leave the catalog closed to crawlers, or open it. Hash the address, or keep it.
 - Why: Open playback is the point of the lane, and shared links should preview and rank. Hashing costs nothing and matches the privacy table.
 - Reversible: yes.
+
+## D-240 Caption edge is a saved choice, and Edge None on a clear background is drawn as Shadow (lane L4, L4-D19)
+- Decision: caption appearance gains an Edge (none, shadow, outline), default shadow, saved in the profile `playbackPrefs` as `captionEdge` (no migration) and on the device for guests. When the background is None and the edge is None, the player draws Shadow and the panel says so. The saved value is not changed, so choosing a background again brings Edge None back.
+- Options: warn only, or correct the drawing.
+- Why: white text on a bright frame with no edge is unreadable, and a warning still leaves it unreadable.
+- Reversible: yes.

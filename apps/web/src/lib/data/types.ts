@@ -360,6 +360,7 @@ export interface PlaybackSettings {
   captionSize: 'small' | 'medium' | 'large' | 'xlarge';
   captionBackground: 'none' | 'dark' | 'solid';
   captionContrast: 'standard' | 'high';
+  captionEdge: 'none' | 'shadow' | 'outline';
   /** Default caption language, a code such as en or yo. */
   captionLanguage: string;
 }

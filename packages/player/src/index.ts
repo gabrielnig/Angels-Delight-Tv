@@ -70,6 +70,8 @@ export { clampBandwidth, readBandwidthSeed, saveBandwidth } from './bandwidth';
 export {
   CAPTION_BACKGROUNDS,
   CAPTION_CONTRASTS,
+  CAPTION_EDGES,
+  effectiveEdge,
   CAPTION_SIZES,
   DEFAULT_CAPTION_STYLE,
   captionStyleVars,
@@ -78,6 +80,7 @@ export {
   resolveCaptionColors,
   type CaptionBackground,
   type CaptionContrast,
+  type CaptionEdge,
   type CaptionSize,
   type CaptionStyle,
 } from './captionStyle';

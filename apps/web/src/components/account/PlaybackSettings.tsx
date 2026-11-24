@@ -143,6 +143,7 @@ export function PlaybackSettingsForm({
     size: values.captionSize,
     background: values.captionBackground,
     contrast: values.captionContrast,
+    edge: values.captionEdge,
   });
   // The strict CSP blocks the inline style attribute in server HTML, so the caption variables are also set
   // through the CSSOM after hydration, which the policy allows.
@@ -311,6 +312,23 @@ export function PlaybackSettingsForm({
               <option value="none">None</option>
               <option value="dark">Dark</option>
               <option value="solid">Solid</option>
+            </Choice>
+          )}
+        </Row>
+        <Row
+          id={id('edge')}
+          label="Caption edge"
+          hint="An outline or shadow keeps words readable on bright pictures."
+        >
+          {(ids) => (
+            <Choice
+              ids={ids}
+              value={values.captionEdge}
+              onChange={(v) => void apply({ captionEdge: v as PlaybackSettings['captionEdge'] })}
+            >
+              <option value="none">None</option>
+              <option value="shadow">Shadow</option>
+              <option value="outline">Outline</option>
             </Choice>
           )}
         </Row>

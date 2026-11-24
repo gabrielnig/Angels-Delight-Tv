@@ -4,6 +4,7 @@ import {
   createHttpProgressSink,
   createHttpSessionProvider,
   Player,
+  type CaptionStyle,
   type EndScreenData,
   type PlayerPreferences,
   type PlayerProps,
@@ -27,10 +28,13 @@ import { getAnalyticsClient } from '@/lib/analytics/browser';
 import { createWatchMetrics, createWatchTelemetry } from './telemetry';
 import { toViewerProgressBody } from './progress-body';
 import {
+  captionStylePatch,
   clearLegacyPreferences,
   loadPreferences,
+  readCaptionStyle,
   readLegacyPreferences,
   readTheatre,
+  saveCaptionStyle,
   savePreferences,
   saveTheatre,
   serverChanges,
@@ -221,6 +225,38 @@ export function WatchClient({
     return firstUnfinished(storage(), data.nextCandidates);
   }, [isGuest, data.next, data.nextCandidates]);
 
+  // The profile keeps the caption style for an account with sync. A guest, or a profile with nowhere to save,
+  // keeps it on this device (L4-07).
+  const styleKey = isGuest ? 'guest' : viewer.profileId;
+  const [captionStyle, setCaptionStyle] = useState<CaptionStyle>(data.captionStyle);
+  const savedStyle = useRef<CaptionStyle>(data.captionStyle);
+  useEffect(() => {
+    if (prefsSync) return;
+    const local = readCaptionStyle(storage(), styleKey);
+    if (!local) return;
+    savedStyle.current = local;
+    setCaptionStyle(local);
+  }, [prefsSync, styleKey]);
+  const onCaptionStyleChange = useCallback(
+    (next: CaptionStyle) => {
+      setCaptionStyle(next);
+      if (!prefsSync) {
+        saveCaptionStyle(storage(), styleKey, next);
+        savedStyle.current = next;
+        return;
+      }
+      const before = captionStylePatch(savedStyle.current);
+      const after = captionStylePatch(next);
+      const patch = Object.fromEntries(
+        Object.entries(after).filter(([key, value]) => before[key as keyof ServerPatch] !== value),
+      ) as ServerPatch;
+      savedStyle.current = next;
+      if (Object.keys(patch).length === 0) return;
+      void prefsSync.save(viewer.profileId, patch)?.catch(() => undefined);
+    },
+    [prefsSync, styleKey, viewer.profileId],
+  );
+
   const resume = useMemo(() => {
     const guestPlace = isGuest ? readGuestProgress(storage(), video.id) : null;
     const local =
@@ -307,7 +343,8 @@ export function WatchClient({
             onTheatreToggle={toggleTheatre}
             {...(data.markers ? { markers: data.markers } : {})}
             {...(data.chapters ? { chapters: data.chapters } : {})}
-            captionStyle={data.captionStyle}
+            captionStyle={captionStyle}
+            onCaptionStyleChange={onCaptionStyleChange}
             resume={resume}
             preferences={preferences}
             onPreferencesChange={onPreferencesChange}
