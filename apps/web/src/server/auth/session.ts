@@ -12,6 +12,8 @@ import {
   DEVICE_COOKIE_DAYS,
   deviceCookieName,
   twoStepCookieName,
+  googleStateCookieName,
+  googleNoteCookieName,
 } from './cookies';
 import { buildMeta, sameOriginOr403 } from './request';
 import { authRuntime } from './runtime';
@@ -96,6 +98,23 @@ export async function clearTwoStepCookie(): Promise<void> {
   const secure = authRuntime().secureCookies;
   (await cookies()).set(twoStepCookieName(secure), '', pendingCookieOptions(secure, 0));
 }
+
+async function setNamed(name: (secure: boolean) => string, value: string, maxAge: number) {
+  const secure = authRuntime().secureCookies;
+  (await cookies()).set(name(secure), value, pendingCookieOptions(secure, maxAge));
+}
+async function readNamed(name: (secure: boolean) => string) {
+  return (await cookies()).get(name(authRuntime().secureCookies))?.value;
+}
+
+export const setGoogleStateCookie = (value: string, maxAge: number) =>
+  setNamed(googleStateCookieName, value, maxAge);
+export const readGoogleStateCookie = () => readNamed(googleStateCookieName);
+export const clearGoogleStateCookie = () => setNamed(googleStateCookieName, '', 0);
+export const setGoogleNoteCookie = (value: string, maxAge: number) =>
+  setNamed(googleNoteCookieName, value, maxAge);
+export const readGoogleNoteCookie = () => readNamed(googleNoteCookieName);
+export const clearGoogleNoteCookie = () => setNamed(googleNoteCookieName, '', 0);
 
 export const getSession = cache(async (): Promise<SessionContext | null> => {
   const token = await readSessionToken();

@@ -233,3 +233,27 @@ describe('SignInForm layout hooks (S01)', () => {
     expect(link.parentElement).toHaveClass('auth-forgot');
   });
 });
+
+describe('SignInForm Continue with Google (M49-S05 AC1)', () => {
+  it('shows the divider and button under the main button when configured', () => {
+    render(
+      <SignInForm
+        onSubmit={vi.fn()}
+        onDone={vi.fn()}
+        signUpOpen
+        google={{ href: '/api/auth/google/start' }}
+        next="/library"
+      />,
+    );
+    const link = screen.getByRole('link', { name: 'Continue with Google' });
+    expect(link).toHaveAttribute('href', '/api/auth/google/start?next=%2Flibrary');
+    const submit = screen.getByRole('button', { name: 'Sign in' });
+    expect(submit.compareDocumentPosition(link) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  it('shows nothing about Google when it is not configured', () => {
+    render(<SignInForm onSubmit={vi.fn()} onDone={vi.fn()} signUpOpen />);
+    expect(screen.queryByText(/Google/)).not.toBeInTheDocument();
+    expect(screen.queryByText('or')).not.toBeInTheDocument();
+  });
+});

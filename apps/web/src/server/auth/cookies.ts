@@ -13,6 +13,16 @@ export function twoStepCookieName(secure: boolean): string {
   return secure ? '__Host-ad_mv' : 'ad_mv';
 }
 
+/** The signed state, nonce and PKCE verifier for one trip to Google. Lives ten minutes (M49-S05). */
+export function googleStateCookieName(secure: boolean): string {
+  return secure ? '__Host-ad_oauth' : 'ad_oauth';
+}
+
+/** The signed note between the Google callback and the link confirmation or consent screen. */
+export function googleNoteCookieName(secure: boolean): string {
+  return secure ? '__Host-ad_goog' : 'ad_goog';
+}
+
 /** A random id for this browser, used to tell a new device from a known one (M49-S13). Long lived, never shown. */
 export function deviceCookieName(secure: boolean): string {
   return secure ? '__Host-ad_dev' : 'ad_dev';

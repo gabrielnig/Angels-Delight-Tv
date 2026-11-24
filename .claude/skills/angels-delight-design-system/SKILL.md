@@ -28,8 +28,8 @@ Skip for pure backend, database or infrastructure changes with no UI or copy.
 ### Quick greps (run on changed files)
 
 ```bash
-# hardcoded colours (allowed only in the token file and theme defaults)
-grep -nE '#[0-9a-fA-F]{3,8}\b|rgba?\(|hsla?\(' <files>
+# hardcoded colours (allowed only in the token file, theme defaults, GoogleMark.tsx and google-button.css)
+grep -nE '#[0-9a-fA-F]{3,8}\b|rgba?\(|hsla?\(' <files> | grep -v -e 'components/auth/GoogleMark.tsx' -e 'components/auth/google-button.css'
 # hardcoded fonts
 grep -nE 'font-family' <files>      # only var(--font-*) allowed outside tokens
 # em and en dashes, emojis
@@ -57,6 +57,7 @@ Mark each as Pass, Fail or Not applicable.
 - [ ] Inputs and controls use `--color-border-strong`, not `--color-border`.
 - [ ] Text on images sits on a scrim or chip.
 - [ ] Status is never shown by colour alone: icon plus word.
+- [ ] `GoogleMark.tsx` and the Google button fill, stroke and label values in 11.26 are the only allowed raw colours. Any other Google brand colour in a component is a Blocker.
 
 ### States and behaviour
 - [ ] States present for every interactive element: default, hover (only inside `@media (hover: hover)`), focus, active, disabled, loading, error. Not applicable states are noted in the spec.

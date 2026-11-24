@@ -62,7 +62,7 @@ export class ViewerMfaService extends AccountService {
     return account;
   }
 
-  private async mailTo(accountId: string, send: (to: string) => Promise<unknown>): Promise<void> {
+  protected async mailTo(accountId: string, send: (to: string) => Promise<unknown>): Promise<void> {
     this.run(async () => {
       const account = await this.loadOwn(accountId);
       if (!account?.emailEnc) return;
@@ -120,7 +120,7 @@ export class ViewerMfaService extends AccountService {
     return read.accountId;
   }
 
-  private async openSession(accountId: string, meta: RequestMeta): Promise<ViewerMfaSignIn> {
+  protected async openSession(accountId: string, meta: RequestMeta): Promise<ViewerMfaSignIn> {
     const account = await this.loadOwn(accountId);
     if (
       !account ||

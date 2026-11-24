@@ -4,13 +4,16 @@ import {
   KeyService,
   PasswordHasher,
   SessionService,
+  GoogleAuthService,
   StaffService,
   ViewerMfaService,
+  createGoogleClient,
   isPasswordBreached,
 } from '@ad/auth';
 import { type WebEnv, loadWebEnv } from '@ad/config';
 import { type Database, createDb, createPool } from '@ad/db';
 import { Mailer, OutageMonitor, RetryingTransport, transportFromSmtpUrl } from '@ad/mailer';
+import { googleConfigFrom } from './google-enabled';
 import { createSuppressionStore } from '../email/suppression';
 import { emailBrandFrom } from './email-brand';
 import { AuditWriter } from '@ad/audit';
@@ -23,6 +26,8 @@ export interface AuthRuntime {
   db: Database;
   staff: StaffService;
   viewerMfa: ViewerMfaService;
+  /** Null unless both Google keys are set (M49-S05). */
+  google: GoogleAuthService | null;
   sessions: SessionService;
   keys: KeyService;
   limiter: RateLimiter;
@@ -112,11 +117,16 @@ function build(env: WebEnv): AuthRuntime {
   };
   const staff = new StaffService(deps);
   const viewerMfa = new ViewerMfaService(deps);
+  const googleConfig = googleConfigFrom(env);
+  const google = googleConfig
+    ? new GoogleAuthService(deps, { client: createGoogleClient(googleConfig) })
+    : null;
   return {
     env,
     db,
     staff,
     viewerMfa,
+    google,
     sessions,
     keys,
     limiter,

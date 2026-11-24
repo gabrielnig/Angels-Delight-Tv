@@ -365,6 +365,13 @@
       "when": 1795542196979,
       "tag": "0051_viewer_digest",
       "breakpoints": true
+    },
+    {
+      "idx": 52,
+      "version": "7",
+      "when": 1795542471114,
+      "tag": "0052_account_identities",
+      "breakpoints": true
     }
   ]
 }

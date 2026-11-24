@@ -124,6 +124,12 @@ const webShape = {
   EMAIL_WEBHOOK_SECRET: z.string().min(16).optional(),
   TURNSTILE_SITE_KEY: z.string().min(1).optional(),
   TURNSTILE_SECRET_KEY: z.string().min(1).optional(),
+  /**
+   * Optional Google sign in (M49-S05). Both or neither. With neither, no Google code path is reachable and the
+   * button never renders. The redirect URI is `${APP_ORIGIN}/api/auth/google/callback`. Never committed.
+   */
+  GOOGLE_CLIENT_ID: z.string().min(1).optional(),
+  GOOGLE_CLIENT_SECRET: z.string().min(1).optional(),
 };
 
 const FFMPEG_PRESETS = [
@@ -253,6 +259,12 @@ const webSchema = withRules({ ...commonShape, ...webShape }, (env, add) => {
     add(
       env.TURNSTILE_SITE_KEY ? 'TURNSTILE_SECRET_KEY' : 'TURNSTILE_SITE_KEY',
       'Turnstile site and secret keys must be set together',
+    );
+  }
+  if (Boolean(env.GOOGLE_CLIENT_ID) !== Boolean(env.GOOGLE_CLIENT_SECRET)) {
+    add(
+      env.GOOGLE_CLIENT_ID ? 'GOOGLE_CLIENT_SECRET' : 'GOOGLE_CLIENT_ID',
+      'Google client id and secret must be set together',
     );
   }
   if (env.NODE_ENV === 'production') {
