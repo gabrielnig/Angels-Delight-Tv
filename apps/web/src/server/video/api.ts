@@ -21,6 +21,11 @@ export interface VideoRuntime {
     getActor(request: Request): Promise<Actor>;
     getViewer(request: Request): Promise<{ accountId: string; profileId: string }>;
   };
+  /** Guest playback (M40). Absent means an anonymous session request is a plain 401. */
+  guest?: {
+    getGuest: NonNullable<Parameters<typeof createPlaybackHandlers>[0]['getGuest']>;
+    playEnabled: NonNullable<Parameters<typeof createPlaybackHandlers>[0]['guestPlayEnabled']>;
+  };
   upload: UploadService;
   playback: PlaybackService;
   captions: CaptionService;
@@ -58,6 +63,7 @@ export function createVideoApi(rt: VideoRuntime) {
     getViewer: rt.auth.getViewer,
     getActor: rt.auth.getActor,
     assertSameOrigin: sameOrigin,
+    ...(rt.guest ? { getGuest: rt.guest.getGuest, guestPlayEnabled: rt.guest.playEnabled } : {}),
     // Without a trusted proxy there is no reliable address. Everyone then shares one per IP bucket, which only
     // happens in development. Production sets TRUSTED_PROXY_MODE=cloudflare.
     clientIp: (request) => clientIp(request.headers, rt.trustedProxyMode) ?? 'untrusted',

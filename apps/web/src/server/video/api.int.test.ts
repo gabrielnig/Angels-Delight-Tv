@@ -27,12 +27,15 @@ import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { guestCookieName, guestSetCookie, signGuest } from '../guest/guest-cookie';
+import { resolveGuest } from '../guest/resolve-guest';
 import { createVideoApi, type VideoApi } from './api';
 
 const ORIGIN = 'https://app.test';
 const MIB = 1024 * 1024;
 const secret = new Uint8Array(32).fill(3);
 const hlsKek = new Uint8Array(32).fill(8);
+const guestSecret = new Uint8Array(32).fill(6);
 
 describe.skipIf(!integrationEnabled())('video api routes', () => {
   let h: ViewerHarness;
@@ -47,6 +50,8 @@ describe.skipIf(!integrationEnabled())('video api routes', () => {
     kind: 'none',
   };
   let limited = 0;
+  let guestPlay = false;
+  let guestKids = false;
   let key16: Uint8Array;
   let video: Awaited<ReturnType<typeof seedVideo>>;
 
@@ -146,6 +151,18 @@ describe.skipIf(!integrationEnabled())('video api routes', () => {
       playback,
       captions: new CaptionService({ db: h.db.app, originals, media, producer }),
       publishing: { db: h.db.app },
+      guest: {
+        playEnabled: async () => guestPlay,
+        getGuest: async (request, { mint }) => {
+          const r = resolveGuest(request, { secret: guestSecret, secure: true, mint });
+          if (!r) return null;
+          return {
+            guestId: r.guestId,
+            kids: guestKids,
+            ...(r.isNew ? { setCookie: guestSetCookie(guestSecret, true, r.guestId) } : {}),
+          };
+        },
+      },
       appOrigin: ORIGIN,
       trustedProxyMode: 'none',
       devStorage: createDevStorageHandler({
@@ -393,6 +410,120 @@ describe.skipIf(!integrationEnabled())('video api routes', () => {
       );
       expect(res.status).toBe(200);
       expect((await res.json()).preview).toBe(true);
+    });
+  });
+
+  describe('guest playback (M40-S02, S03)', () => {
+    const session = (headers: HeadersInit = {}, id = video.id) =>
+      api.play.session(post(`/api/play/${id}/session`, {}, headers), id);
+    const cookieOf = (res: Response) => res.headers.getSetCookie()[0]!.split(';')[0]!;
+
+    it('plays the whole chain with no account and one guest cookie', async () => {
+      current = { kind: 'none' };
+      guestPlay = true;
+      guestKids = false;
+      const res = await session();
+      expect(res.status).toBe(200);
+      const cookies = res.headers.getSetCookie();
+      expect(cookies).toHaveLength(1);
+      expect(cookies[0]).toMatch(
+        /^__Host-ad_guest=[^;]+; Max-Age=15552000; Path=\/; HttpOnly; Secure; SameSite=Lax$/,
+      );
+      const info = await res.json();
+      const auth = { authorization: `Bearer ${info.token}` };
+      const master = await api.play.playlist(
+        req(`/api/play/${video.id}/master.m3u8`, { headers: auth }),
+        video.id,
+        'master.m3u8',
+      );
+      expect(master.status).toBe(200);
+      const variant = await api.play.playlist(
+        req(`/api/play/${video.id}/360.m3u8`, { headers: auth }),
+        video.id,
+        '360.m3u8',
+      );
+      const body = await variant.text();
+      const exp = Number(/seg_00000\.ts\?exp=(\d+)/.exec(body)![1]);
+      const lifetime = exp - Math.floor(Date.now() / 1000);
+      expect(lifetime).toBeLessThanOrEqual(20 * 60);
+      expect(lifetime).toBeGreaterThan(19 * 60);
+      const key = await api.play.key(req(`/api/hls/keys/${video.id}`, { headers: auth }), video.id);
+      expect(key.status).toBe(200);
+      expect(new Uint8Array(await key.arrayBuffer())).toEqual(key16);
+    });
+
+    it('sets no cookie when a valid guest cookie is sent', async () => {
+      current = { kind: 'none' };
+      guestPlay = true;
+      const first = await session();
+      const second = await session({ cookie: cookieOf(first) });
+      expect(second.status).toBe(200);
+      expect(second.headers.getSetCookie()).toEqual([]);
+    });
+
+    it('treats a forged cookie as absent and issues a fresh one', async () => {
+      current = { kind: 'none' };
+      guestPlay = true;
+      const id = 'AAAAAAAAAAAAAAAAAAAAAA';
+      const forged = `${guestCookieName(true)}=${id}.forgedforgedforgedforgedforgedforgedforgedfo`;
+      const res = await session({ cookie: forged });
+      expect(res.status).toBe(200);
+      expect(res.headers.getSetCookie()).toHaveLength(1);
+      expect(res.headers.getSetCookie()[0]).not.toContain(id);
+      const wrongKey = `${guestCookieName(true)}=${signGuest(new Uint8Array(32).fill(1), id)}`;
+      expect((await session({ cookie: wrongKey })).headers.getSetCookie()).toHaveLength(1);
+    });
+
+    it('answers 401 when guest play is off, and an account session still wins when on', async () => {
+      current = { kind: 'none' };
+      guestPlay = false;
+      expect((await session()).status).toBe(401);
+      guestPlay = true;
+      current = { kind: 'viewer' };
+      const res = await api.play.session(
+        post(`/api/play/${video.id}/session`, { profileId: viewer.profileId }),
+        video.id,
+      );
+      expect(res.status).toBe(200);
+      expect(res.headers.getSetCookie()).toEqual([]);
+    });
+
+    it('refuses a cross origin guest request and sets no cookie', async () => {
+      current = { kind: 'none' };
+      guestPlay = true;
+      const res = await session({ origin: 'https://evil.test' });
+      expect(res.status).toBe(403);
+      expect(res.headers.getSetCookie()).toEqual([]);
+    });
+
+    it('answers 404 for a draft video', async () => {
+      current = { kind: 'none' };
+      guestPlay = true;
+      const draft = await seedVideo(h.db.setup, { publishState: 'draft', title: 'Draft G' });
+      expect((await session({}, draft.id)).status).toBe(404);
+    });
+
+    it('gives a Kids mode guest no session for a video that is not kids safe', async () => {
+      current = { kind: 'none' };
+      guestPlay = true;
+      const adult = await seedVideo(h.db.setup, { kidsSafe: false, title: 'Adult G' });
+      guestKids = true;
+      try {
+        expect((await session({}, adult.id)).status).toBe(404);
+        expect((await session()).status).toBe(200);
+      } finally {
+        guestKids = false;
+      }
+    });
+
+    it('never gives a guest a staff preview', async () => {
+      current = { kind: 'none' };
+      guestPlay = true;
+      const res = await api.play.session(
+        post(`/api/play/${video.id}/session`, { preview: true }),
+        video.id,
+      );
+      expect(res.status).toBe(401);
     });
   });
 

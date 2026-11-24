@@ -23,6 +23,10 @@ import { truncateIp } from '@ad/security';
 import { createLogger } from '@ad/shared';
 import { getActor, getViewer } from '../auth/request-actor';
 import { authRuntime } from '../auth/runtime';
+import { activeProfileKey } from '../viewer/runtime';
+import { guestSetCookie } from '../guest/guest-cookie';
+import { resolveGuest } from '../guest/resolve-guest';
+import { themeRuntime } from '../../lib/data/admin/theme-runtime';
 import { createVideoApi, type VideoApi } from './api';
 
 /** Web side of the job queue: a producer-only pg-boss client, started on first send. */
@@ -64,6 +68,7 @@ function build(): VideoApi {
     mirror: new DrizzleJobMirror(db),
   });
 
+  const guestSecret = activeProfileKey(env.PLAYBACK_TOKEN_SECRET);
   const local = env.STORAGE_DRIVER === 'local' && env.NODE_ENV !== 'production';
 
   return createVideoApi({
@@ -84,9 +89,30 @@ function build(): VideoApi {
       mediaSecret: env.MEDIA_URL_SECRET,
       keyring: keyring(env.HLS_KEK, env.HLS_KEK_PREVIOUS),
       limiter: auth.limiter,
+      guestSegmentTtlSeconds: async () =>
+        (await (await themeRuntime()).settings.get('limits.guest_segment_minutes')) * 60,
       appOrigin: env.APP_ORIGIN,
       mediaOrigin: env.MEDIA_ORIGIN,
     }),
+    guest: {
+      playEnabled: async () => (await themeRuntime()).settings.get('features.guest_play'),
+      getGuest: async (request, { mint }) => {
+        const resolved = resolveGuest(request, {
+          secret: guestSecret,
+          secure: auth.secureCookies,
+          mint,
+        });
+        if (!resolved) return null;
+        return {
+          guestId: resolved.guestId,
+          // The Kids mode device choice arrives with the guest audience setting.
+          kids: false,
+          ...(resolved.isNew
+            ? { setCookie: guestSetCookie(guestSecret, auth.secureCookies, resolved.guestId) }
+            : {}),
+        };
+      },
+    },
     captions: new CaptionService({ db, originals, media, producer, audit: auth.audit }),
     publishing: { db },
     appOrigin: env.APP_ORIGIN,
