@@ -80,6 +80,7 @@ export const NAV_ITEMS: NavItem[] = [
     group: 'Site',
     action: 'home.curate',
   },
+  { label: 'Languages', href: '/admin/languages', icon: 'desktop', group: 'Site', action: 'i18n.edit' },
   { label: 'Theme', href: '/admin/theme', icon: 'theme', group: 'Site', action: 'settings.theme' },
   {
     label: 'Site settings',
