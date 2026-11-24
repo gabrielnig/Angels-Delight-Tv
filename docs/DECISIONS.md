@@ -1088,3 +1088,15 @@ Four ids were used twice by parallel lanes. They are never renumbered because la
 - Options: guests uncounted as uniques, a daily hash of the guest id, an address based id.
 - Why: Most viewers will be guests, so uncounted guests would hide most uniques. A daily rotating hash keeps the M19-S07 promise. An address based id is weaker and personal data under the NDPA.
 - Reversible: yes.
+
+## D-203 The catalog serves guests through separate account free functions (lane L1)
+- Decision: Guests are served by functions that take an audience and no actor (`guestTitleDetail`, `getGuestHome`, `guestBrowse`, `guestCategories`, `guestSearch`, `guestSuggest`, `guestPopular`, `guestTitlesByIds`). They share the internals of the account path (`buildHome`, `browseFor`, `categoriesFor`, `searchFor`) with a null profile id, run in a plain transaction with no `withAccount`, and never touch a row level security table. Guest search writes nothing. In the web data layer the plan's `GuestViewerContext` union became an optional `guest: true` on the existing `ViewerContext` (`guestContext(audience)`: empty account id, profile `none`), because the union would have forced a change in every consumer and the fixtures already work from `ctx.audience` alone. `LibraryRepository` stays account only and a `guestLibrary` answers reads with nothing and refuses writes.
+- Options: a placeholder account and profile for guests, or separate guest functions sharing the same internals with no actor.
+- Why: A fake account would sit in policies and tests as a trap. A path with no actor cannot reach the personal tables, so a bug there fails closed.
+- Reversible: yes.
+
+## D-204 Public GETs use the same routes with a guard that prefers the account (lane L1)
+- Decision: `/api/home`, `/api/browse`, `/api/browse/categories`, `/api/search`, `/api/search/suggest`, `/api/titles/[id]` and the new `/api/titles/batch` use `publicGet`: a request with a session runs the existing personal handler unchanged, anything else runs the guest handler with the device audience. GET and HEAD only (405 otherwise). Guests are limited on the existing `api` bucket per address (`guest-ip:<ip>`) and per verified guest id, and on the `search` bucket for search routes. A `profileId` or `record` a guest sends is dropped by the guest schemas. Signed in requests to the batch route get no cards, because accounts have a server side Continue Watching. Personal routes keep the 401 guard.
+- Options: new `/api/public/*` routes, or the same routes with a personal first guard.
+- Why: One URL per resource, the client code does not branch, and the personal path is not touched. A limiter failure is passed on as an error, never treated as a bypass.
+- Reversible: yes.
