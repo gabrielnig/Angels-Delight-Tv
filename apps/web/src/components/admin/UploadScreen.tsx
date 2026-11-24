@@ -8,7 +8,7 @@ import {
   resolveDetails,
   toVideoPatch,
   validateDetails,
-  type ResolvedDetails,
+  type FileOverride,
   type UploadDetails,
 } from '@/lib/uploader/upload-details';
 import type { VideoPatch } from '@/lib/data/admin/video-commands';
@@ -18,6 +18,7 @@ import { Icon } from './Icon';
 import { Banner, EmptyState } from './states';
 import { UploadDetailsForm } from './UploadDetailsForm';
 import { UploadLane } from './UploadLane';
+import { UploadOverrides } from './UploadOverrides';
 import type { LaneActions } from './UploadLane';
 import { useUploaderState } from './UploaderContext';
 
@@ -52,7 +53,14 @@ export function UploadScreen({
   const [details, setDetails] = useState<UploadDetails>(EMPTY_DETAILS);
   const [formOpen, setFormOpen] = useState(true);
   const [notes, setNotes] = useState<string[]>([]);
-  const laneDetails = useRef(new Map<string, ResolvedDetails>());
+  // Place of each file in the batch, for episode numbering. Details are resolved when the draft exists,
+  // so a file that has not been registered yet follows the shared form and its own overrides.
+  const laneIndex = useRef(new Map<string, number>());
+  const [overrides, setOverrides] = useState<Record<string, FileOverride>>({});
+  const overridesRef = useRef(overrides);
+  overridesRef.current = overrides;
+  const detailsRef = useRef(details);
+  detailsRef.current = details;
   const applied = useRef(new Set<string>());
   const [saved, setSaved] = useState<Record<string, true>>({});
   const cursor = useRef(0);
@@ -66,17 +74,16 @@ export function UploadScreen({
         if (list[0]) uploader.add(list[0], { replaceVideoId: replace.videoId });
         return;
       }
-      const checked = validateDetails(
-        details,
-        new Set(categories.map((c) => c.id)),
-        new Set(series.map((s) => s.id)),
+      setNotes(
+        validateDetails(
+          details,
+          new Set(categories.map((c) => c.id)),
+          new Set(series.map((s) => s.id)),
+        ).errors,
       );
-      setNotes(checked.errors);
       for (const file of list) {
         const lane = uploader.add(file);
-        const resolved = resolveDetails(checked.details, undefined, cursor.current++);
-        if (resolved && Object.keys(toVideoPatch(resolved)).length > 0)
-          laneDetails.current.set(lane.id, resolved);
+        laneIndex.current.set(lane.id, cursor.current++);
       }
       if (list.length) setFormOpen(false);
     },
@@ -103,17 +110,25 @@ export function UploadScreen({
     if (!applyDetails) return;
     for (const lane of lanes) {
       const videoId = lane.videoId ?? videoIds[lane.id];
-      const resolved = laneDetails.current.get(lane.id);
-      if (!videoId || !resolved || applied.current.has(lane.id)) continue;
+      const index = laneIndex.current.get(lane.id);
+      if (!videoId || index === undefined || applied.current.has(lane.id)) continue;
       applied.current.add(lane.id);
-      void applyDetails(videoId, toVideoPatch(resolved))
+      const { details: current } = validateDetails(
+        detailsRef.current,
+        new Set(categories.map((c) => c.id)),
+        new Set(series.map((s) => s.id)),
+      );
+      const resolved = resolveDetails(current, overridesRef.current[lane.id], index);
+      const patch = resolved ? toVideoPatch(resolved) : {};
+      if (Object.keys(patch).length === 0) continue;
+      void applyDetails(videoId, patch)
         .then((r) => {
           if (r.ok) setSaved((cur) => ({ ...cur, [lane.id]: true }));
           else setNotes((cur) => [...cur, `${lane.name}: ${r.error ?? 'Details were not saved.'}`]);
         })
         .catch(() => setNotes((cur) => [...cur, `${lane.name}: Details were not saved.`]));
     }
-  }, [lanes, videoIds, applyDetails]);
+  }, [lanes, videoIds, applyDetails, categories, series]);
 
   const actions: LaneActions = {
     pause: (id) => uploader.pause(id),
@@ -159,6 +174,36 @@ export function UploadScreen({
           open={formOpen}
           onOpen={() => setFormOpen(true)}
           onClose={() => setFormOpen(false)}
+        />
+      ) : null}
+      {!replace ? (
+        <UploadOverrides
+          rows={lanes
+            .filter((l) => l.status !== 'rejected' && laneIndex.current.has(l.id))
+            .map((l) => ({
+              id: l.id,
+              name: l.name,
+              size: l.size,
+              locked: Boolean(l.videoId ?? videoIds[l.id]),
+              override: overrides[l.id] ?? {},
+            }))}
+          shared={details}
+          categories={categories}
+          series={series}
+          onChange={(id, patch) =>
+            setOverrides((cur) => {
+              const merged = { ...(cur[id] ?? {}), ...patch };
+              for (const key of Object.keys(merged) as Array<keyof FileOverride>)
+                if (merged[key] === undefined || merged[key] === '') delete merged[key];
+              return { ...cur, [id]: merged };
+            })
+          }
+          onReset={(id) =>
+            setOverrides((cur) => {
+              const { [id]: _gone, ...rest } = cur;
+              return rest;
+            })
+          }
         />
       ) : null}
       {notes.map((note) => (
