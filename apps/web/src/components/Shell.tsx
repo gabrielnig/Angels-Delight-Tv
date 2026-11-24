@@ -3,7 +3,10 @@ import type { ReactNode } from 'react';
 import { ButtonLink, Link, SiteFooter } from '@ad/ui';
 import { getSite } from '../lib/data';
 import { getSession } from '../lib/session';
+import { currentGuestAudience } from '../server/guest/guest-view';
+import { guestPlayEnabled } from '../server/guest/guest-settings';
 import { Brand } from './AuthLayouts';
+import { GuestChrome } from './guest/GuestChrome';
 import { ViewerChrome } from './ViewerChrome';
 
 /** Signed in with a profile: the full viewer chrome. Otherwise a light public header and footer. */
@@ -26,6 +29,20 @@ export async function AppShell({ children, skin }: { children: ReactNode; skin?:
       >
         {children}
       </ViewerChrome>
+    );
+  }
+  if (await guestPlayEnabled()) {
+    return (
+      <GuestChrome
+        platformName={site.platformName}
+        logoUrl={site.logoUrl}
+        footerLinks={site.footerLinks}
+        year={year}
+        signUpOpen={site.signUpOpen}
+        kids={(await currentGuestAudience()) === 'kids'}
+      >
+        {children}
+      </GuestChrome>
     );
   }
   return (

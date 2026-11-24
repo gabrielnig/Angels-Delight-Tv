@@ -10,7 +10,16 @@ import { TitleActions } from './TitleActions';
 import { TitlePoster } from './TitlePoster';
 
 /** Screen 18. Poster with play, details, two rows of actions, one description and a related row. */
-export function TitleView({ detail, inList }: { detail: TitleDetail; inList: boolean }) {
+export function TitleView({
+  detail,
+  inList,
+  guest,
+}: {
+  detail: TitleDetail;
+  inList: boolean;
+  /** Set for a visitor without an account (M40): My List opens the Sign in to save dialog. */
+  guest?: { signUpOpen: boolean };
+}) {
   const { video, progress, play } = detail;
   const started = play.label === 'resume' && progress;
   const watchHref = `/watch/${video.id}`;
@@ -54,7 +63,12 @@ export function TitleView({ detail, inList }: { detail: TitleDetail; inList: boo
             <span>{video.categoryName}</span>
             {video.ageLabel ? <span>{video.ageLabel}</span> : null}
             {video.hasCaptions ? (
-              <span className="tv-cc" role="img" aria-label="Captions available" title="Captions available">
+              <span
+                className="tv-cc"
+                role="img"
+                aria-label="Captions available"
+                title="Captions available"
+              >
                 <span aria-hidden="true">CC</span>
               </span>
             ) : null}
@@ -65,6 +79,16 @@ export function TitleView({ detail, inList }: { detail: TitleDetail; inList: boo
             itemKey={itemKey(video)}
             inList={inList}
             shareTitle={video.title}
+            guest={
+              guest
+                ? {
+                    signUpOpen: guest.signUpOpen,
+                    next: `/title/${video.slug}`,
+                    videoId: video.id,
+                    durationSeconds: video.durationSeconds,
+                  }
+                : undefined
+            }
           />
           {started ? (
             <div className="tv-progress">

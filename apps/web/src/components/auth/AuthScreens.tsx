@@ -1,5 +1,6 @@
 'use client';
 
+import { clearServiceWorkerCaches } from '../../lib/pwa/purge';
 import { useRouter } from 'next/navigation';
 import {
   requestResetAction,
@@ -39,6 +40,8 @@ export function SignInScreen({
       turnstileSiteKey={turnstileSiteKey}
       onSubmit={signInAction}
       onDone={(destination) => {
+        // Pages cached for a guest must not outlive the sign in (M40).
+        clearServiceWorkerCaches(navigator);
         router.push(destination);
         router.refresh();
       }}
