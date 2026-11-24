@@ -72,7 +72,7 @@ async function main(): Promise<void> {
         logger,
       });
       await registerMonetizationHandlers(queueBoss, {
-        ...buildMonetizationDeps(env, db, queueBoss),
+        ...buildMonetizationDeps(env, db, queueBoss, logger),
         mirror: video.mirror,
         logger,
       });
