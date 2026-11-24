@@ -9,6 +9,7 @@ import { requireActor } from '@/lib/data/admin/session-next';
 import {
   deleteUserAccountAction,
   reinstateUserAction,
+  resetTwoFactorForUserAction,
   revokeSessionsAction,
   suspendUserAction,
 } from '../actions';
@@ -41,6 +42,7 @@ export default async function UserPage({ params }: { params: Promise<{ id: strin
           suspend: suspendUserAction,
           reinstate: reinstateUserAction,
           revokeSessions: revokeSessionsAction,
+          resetTwoFactor: resetTwoFactorForUserAction,
           deleteAccount: deleteUserAccountAction,
         }}
       />

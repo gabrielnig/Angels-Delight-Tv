@@ -30,6 +30,7 @@ const globalStore = globalThis as unknown as {
     name: string;
     email: string;
     pendingEmail: string | null;
+    twoFactor: { enabled: boolean; remaining: number };
   };
 };
 
@@ -64,12 +65,63 @@ const state = (globalStore.__adFixtureAccount ??= {
   name: 'Adaeze Okafor',
   email: 'adaeze.okafor@example.com',
   pendingEmail: null,
+  twoFactor: { enabled: false, remaining: 0 },
 });
 
 /** The code the fixture accepts for an email change. Real data mails a random one. */
 export const FIXTURE_EMAIL_CODE = '123456';
 
+/** The code the fixture accepts for two step setup and turning off. */
+export const FIXTURE_TWO_FACTOR_CODE = '123456';
+const FIXTURE_CODES = ['k3m7q-9xw2d', 'p4t8z-2cn6v', 'h5r9b-7fj3s', 'w2d6g-4kq8m', 'x7n3v-5ht9c'];
+
 export class FixtureAccount implements AccountRepository {
+  async twoFactor() {
+    const { enabled, remaining } = state.twoFactor;
+    return { enabled, recoveryRemaining: remaining, low: enabled && remaining <= 2 };
+  }
+
+  async beginTwoFactor() {
+    return {
+      ok: true as const,
+      secret: 'JBSWY3DPEHPK3PXP',
+      uri: 'otpauth://totp/Angels%20Delight%20TV:demo?secret=JBSWY3DPEHPK3PXP',
+      qrSvg:
+        '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 8 8"><rect width="8" height="8" fill="#fff"/></svg>',
+    };
+  }
+
+  async confirmTwoFactor(_id: string, input: { code: string }) {
+    if (input.code !== FIXTURE_TWO_FACTOR_CODE)
+      return { ok: false as const, reason: 'wrong' as const };
+    state.twoFactor = { enabled: true, remaining: 10 };
+    return {
+      ok: true as const,
+      recoveryCodes: [...FIXTURE_CODES, ...FIXTURE_CODES].map((c, i) =>
+        i < 5 ? c : c.split('').reverse().join(''),
+      ),
+    };
+  }
+
+  async disableTwoFactor(_id: string, input: { password: string; code: string }) {
+    if (input.password === 'wrong-password')
+      return { ok: false as const, reason: 'wrong_password' as const };
+    if (input.code !== FIXTURE_TWO_FACTOR_CODE)
+      return { ok: false as const, reason: 'wrong_code' as const };
+    state.twoFactor = { enabled: false, remaining: 0 };
+    return { ok: true as const };
+  }
+
+  async regenerateRecoveryCodes(_id: string, input: { password: string }) {
+    if (input.password === 'wrong-password')
+      return { ok: false as const, reason: 'wrong_password' as const };
+    state.twoFactor = { enabled: true, remaining: 10 };
+    return {
+      ok: true as const,
+      recoveryCodes: [...FIXTURE_CODES, ...FIXTURE_CODES.map((c) => c.toUpperCase())],
+    };
+  }
+
   async overview(): Promise<AccountOverview> {
     return {
       displayName: state.name,

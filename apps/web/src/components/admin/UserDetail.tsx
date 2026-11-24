@@ -15,11 +15,13 @@ export interface UserActions {
   suspend(id: string, reason: string): Promise<CommandResult>;
   reinstate(id: string): Promise<CommandResult>;
   revokeSessions(id: string, reason: string): Promise<CommandResult>;
+  /** Admin only. Clears the person's two step verification (M49-S04). */
+  resetTwoFactor?(id: string, reason: string): Promise<CommandResult>;
   /** Super admin only. Starts the deletion the owner asked for. */
   deleteAccount?(id: string, confirmation: string): Promise<CommandResult>;
 }
 
-type Mode = 'suspend' | 'sessions' | 'reinstate' | 'delete' | null;
+type Mode = 'suspend' | 'sessions' | 'reinstate' | 'delete' | 'twofactor' | null;
 
 export function UserDetail({
   user,
@@ -55,30 +57,37 @@ export function UserDetail({
             ? actions.suspend(user.id, reason)
             : mode === 'sessions'
               ? actions.revokeSessions(user.id, reason)
-              : actions.reinstate(user.id),
+              : mode === 'twofactor'
+                ? actions.resetTwoFactor!(user.id, reason)
+                : actions.reinstate(user.id),
       mode === 'delete'
         ? 'Deletion started.'
         : mode === 'suspend'
           ? 'Account suspended.'
           : mode === 'sessions'
             ? 'Signed out everywhere.'
-            : 'Account reinstated.',
+            : mode === 'twofactor'
+              ? 'Two step verification reset.'
+              : 'Account reinstated.',
     );
     if (result.ok) close();
     else setError(result.error);
   }
-  const needsReason = mode === 'suspend' || mode === 'sessions';
+  const needsReason = mode === 'suspend' || mode === 'sessions' || mode === 'twofactor';
   const titles = {
     suspend: 'Suspend this account?',
     sessions: 'Sign out of every device?',
     reinstate: 'Reinstate this account?',
     delete: 'Delete this account?',
+    twofactor: 'Reset two step verification?',
   } as const;
   const help = {
     suspend:
       'The person is signed out and cannot sign in until you reinstate the account. Their profiles and lists are kept.',
     sessions: 'Every device is signed out. The person can sign in again with their password.',
     reinstate: 'The person can sign in again.',
+    twofactor:
+      'Use this only after you have checked it is really the owner, for example through the support email. Their authenticator and backup codes are removed, they are signed out everywhere and they get an email.',
     delete:
       'Use this only when the owner asked for it. The account is closed and their data is removed after the waiting period. They can cancel by signing in during that time.',
   } as const;
@@ -159,6 +168,11 @@ export function UserDetail({
               Reinstate account
             </Button>
           )}
+          {canAct && actions.resetTwoFactor ? (
+            <Button variant="secondary" onClick={() => setMode('twofactor')}>
+              Reset two step verification
+            </Button>
+          ) : null}
           {canDelete && actions.deleteAccount ? (
             <Button variant="danger" onClick={() => setMode('delete')}>
               Delete account
@@ -188,7 +202,9 @@ export function UserDetail({
                   ? 'Suspend account'
                   : mode === 'sessions'
                     ? 'Sign out everywhere'
-                    : 'Reinstate account'}
+                    : mode === 'twofactor'
+                      ? 'Reset two step verification'
+                      : 'Reinstate account'}
             </Button>
           </>
         }

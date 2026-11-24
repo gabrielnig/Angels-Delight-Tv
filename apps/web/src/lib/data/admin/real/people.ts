@@ -179,6 +179,18 @@ export const realPeopleService: PeopleService = {
     need(actor, 'users.bulk');
     return undoUserBulk(userBulkFor(realPeopleService, actor), actor.accountId, undo);
   },
+  async resetViewerTwoFactor(actor, id, reason) {
+    try {
+      need(actor, 'users.suspend');
+      const rt = adminRuntime();
+      const mfa = rt.auth().viewerMfa;
+      if (!mfa) return fail('Two step verification is not available here.');
+      await mfa.adminReset(staffActor(actor), { accountId: id, reason }, await rt.meta());
+      return OK;
+    } catch (error) {
+      return staffFailure(error);
+    }
+  },
   async revokeSessions(actor, id, reason) {
     try {
       need(actor, 'users.suspend');
@@ -261,7 +273,10 @@ export const realPeopleService: PeopleService = {
     await rt.auth().staff.assertRecentReauth(who);
     const service: StaffBulkService = {
       async staff() {
-        return (await rt.auth().staff.listStaff(who)).map((m) => ({ id: m.accountId, role: m.role }));
+        return (await rt.auth().staff.listStaff(who)).map((m) => ({
+          id: m.accountId,
+          role: m.role,
+        }));
       },
       async invites() {
         return (await rt.auth().staff.listInvites(who)).map((i) => ({

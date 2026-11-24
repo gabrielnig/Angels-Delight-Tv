@@ -9,7 +9,7 @@ import type { Actor } from '@ad/shared';
 import { CaptionService, FailedEncodeService } from '@ad/video';
 import { recordAudit } from '@ad/audit';
 import { createStorage, storageConfigFromEnv, type StorageAdapter } from '@ad/storage';
-import type { KeyService, SessionService, StaffService } from '@ad/auth';
+import type { KeyService, SessionService, StaffService, ViewerMfaService } from '@ad/auth';
 import type { RequestMeta } from '@ad/auth';
 import { getServices } from '@/lib/runtime/services';
 import { authRuntime } from '@/server/auth/runtime';
@@ -33,7 +33,12 @@ export interface AdminRuntime {
   /** Display names for staff accounts, by account id. Unknown ids are left out. */
   names(actor: Actor, ids: readonly string[]): Promise<Map<string, string>>;
   /** The auth services behind people, roles and my account (lane B). */
-  auth(): { staff: StaffService; sessions: SessionService; keys: KeyService };
+  auth(): {
+    staff: StaffService;
+    sessions: SessionService;
+    keys: KeyService;
+    viewerMfa?: ViewerMfaService;
+  };
   /** The field encryption key, for the sealed copy of a staff address that the worker mails (D-129). */
   fieldKek(): Uint8Array;
   /** Puts a new session cookie on the response, after a password change rotates the session. */
@@ -229,8 +234,8 @@ function build(): AdminRuntime {
       });
     },
     auth: () => {
-      const { staff, sessions, keys } = authRuntime();
-      return { staff, sessions, keys };
+      const { staff, sessions, keys, viewerMfa } = authRuntime();
+      return { staff, sessions, keys, viewerMfa };
     },
     fieldKek: () => getServices().env.FIELD_KEK,
     now: () => new Date(),

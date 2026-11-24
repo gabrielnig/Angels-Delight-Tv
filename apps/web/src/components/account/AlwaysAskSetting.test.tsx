@@ -24,7 +24,9 @@ describe('AlwaysAskSetting', () => {
     const onSave = vi.fn().mockRejectedValue(new Error('offline'));
     render(<AlwaysAskSetting initial={false} onSave={onSave} />);
     await userEvent.click(screen.getByRole('switch'));
-    await waitFor(() => expect(screen.getByRole('switch')).toHaveAttribute('aria-checked', 'false'));
+    await waitFor(() =>
+      expect(screen.getByRole('switch')).toHaveAttribute('aria-checked', 'false'),
+    );
     expect(screen.getByRole('alert')).toHaveTextContent('We could not save that. Try again.');
   });
 });
