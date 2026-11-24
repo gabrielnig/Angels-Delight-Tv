@@ -1462,3 +1462,9 @@ Per video tri state, site default (Super admin), Admin changes it with a reason 
 - Options: DB only, JSON only, per key merge.
 - Why: Git stays the long term record while volunteers edit without deploys; drafts never reach viewers.
 - Reversible: yes
+
+## D-271 Viewer two step verification is optional TOTP on the shared MFA core, with a signed pending note instead of a pending session and an Admin only reset (lane L10, D-L10-01, D-L10-02)
+- Decision: viewers can turn on an authenticator app (TOTP) with ten single use recovery codes. The mechanics live in `packages/auth/src/mfa-core.ts`, shared with staff. After a correct password `signIn` returns `mfa_required` with a signed ten minute note (`mfa-pending.ts`), not a session, so nothing opens account routes until the code is accepted. Wrong codes use the existing `mfa:<accountId>` lockout. Turning it off needs the password and a current code or recovery code and ends the other sessions. A lost phone and codes have no self service bypass: an Admin resets it with a reason, which is audited and mailed. Staff stay on their mandatory flow and cannot use the viewer service. The switch `viewerMfaEnabled` (env `VIEWER_MFA_ENABLED`, default on) turns the challenge off in an emergency.
+- Options: SMS codes (cost, SIM swap), email codes (same inbox as the password reset), a `pending_mfa` viewer session (needs a new session column because a viewer pending session looks like a normal one), TOTP with a signed note (chosen).
+- Why: staff TOTP, replay guard and lockout already exist, a note without a session cannot be mistaken for a signed in viewer, and email is a notice only so two step never depends on mail delivery.
+- Reversible: yes (the flag, or drop the service).
