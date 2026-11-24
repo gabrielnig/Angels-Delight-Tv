@@ -78,6 +78,8 @@ export interface VideoSummary {
   rating?: -1 | 1 | 2 | null;
   /** The computed Most liked label (M44-S05). */
   mostLiked?: boolean;
+  /** 0 (G) to 4 (18), null until rated (M44-S13). Cards hide G, the title page shows every rating. */
+  maturityRank?: number | null;
 }
 
 export interface SeriesSummary {
@@ -98,6 +100,7 @@ export interface SeriesSummary {
   publishedAt: string;
   rating?: -1 | 1 | 2 | null;
   mostLiked?: boolean;
+  maturityRank?: number | null;
 }
 
 export type CatalogItem = VideoSummary | SeriesSummary;

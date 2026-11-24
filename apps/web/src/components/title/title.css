@@ -134,6 +134,19 @@
   font-weight: var(--weight-bold);
 }
 
+/* The rating chip of the meta line, text on a solid chip. */
+.tv-rated {
+  display: inline-flex;
+  align-items: center;
+  height: 1.5rem;
+  padding: 0 var(--space-2);
+  border-radius: var(--radius-xs);
+  background: var(--color-player-bg);
+  color: var(--color-player-ink);
+  font-size: calc(0.75rem * var(--type-scale));
+  font-weight: var(--weight-bold);
+}
+
 /* ---------- Actions ---------- */
 
 .tv-actions {

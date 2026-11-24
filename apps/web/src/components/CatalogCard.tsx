@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { ContinueCard, Row, SeriesCard, VideoCard, useToast, type CardRating } from '@ad/ui';
 import { msg } from '@ad/shared/messages';
 import { restoreContinueAction, removeContinueAction } from '../app/actions';
+import { useMaturityLabels } from '../lib/maturity-context';
 import { useProfileId, useProfileKids } from '../lib/profile-context';
 import { useListToggle } from '../lib/pwa/useListToggle';
 import type { CatalogItem, Progress, VideoSummary } from '../lib/data';
@@ -30,6 +31,12 @@ export function CatalogCard({
   const toggle = toggleProp ?? queued;
   const toast = useToast();
   const key = itemKey(item);
+  const maturityLabels = useMaturityLabels();
+  // G is the norm on this site, so it draws no chip. Any other rank shows its label (S122).
+  const maturity =
+    item.maturityRank != null && item.maturityRank > 0
+      ? maturityLabels[item.maturityRank]
+      : undefined;
   const profileId = useProfileId();
   const kids = useProfileKids();
   const [rating, setRating] = useState<CardRating['value']>(item.rating ?? null);
@@ -115,6 +122,7 @@ export function CatalogCard({
         inList={inList}
         onToggleList={onToggle}
         mostLiked={item.mostLiked}
+        maturity={maturity}
         {...ratingProps}
       />
     );
@@ -132,6 +140,7 @@ export function CatalogCard({
       inList={inList}
       onToggleList={onToggle}
       mostLiked={item.mostLiked}
+      maturity={maturity}
       {...ratingProps}
     />
   );

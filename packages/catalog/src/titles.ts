@@ -18,6 +18,8 @@ export interface TitleCard {
   /** Null for a video. Counts live episodes only. */
   episodeCount: number | null;
   kidsSafe: boolean;
+  /** 0 (G) to 4 (18), null until rated. A card never leaves the database above the audience limit (M44). */
+  maturityRank: number | null;
   hasCaptions: boolean;
   poster: ArtworkDto | null;
   /** The first visible category by position, or null when the title has none (M06). */
@@ -58,6 +60,7 @@ interface CardRow extends ArtworkRow {
   duration_ms: number | null;
   episode_count: number | null;
   kids_safe: boolean;
+  maturity_rank: number | null;
   has_captions: boolean;
   sort_at: string | null;
   category_slug: string | null;
@@ -68,7 +71,7 @@ interface CardRow extends ArtworkRow {
 
 const CARD_COLUMNS =
   sql.raw(`t.kind, t.id, t.slug, t.title, t.description, t.duration_ms, t.episode_count,
-  t.kids_safe, t.has_captions, t.sort_at::text AS sort_at, t.title_key,
+  t.kids_safe, t.maturity_rank, t.has_captions, t.sort_at::text AS sort_at, t.title_key,
   (SELECT c.slug FROM categories c WHERE c.id = ANY(t.category_ids) AND c.is_visible ORDER BY c.position, c.name LIMIT 1) AS category_slug,
   (SELECT c.name::text FROM categories c WHERE c.id = ANY(t.category_ids) AND c.is_visible ORDER BY c.position, c.name LIMIT 1) AS category_name,
   pa.id AS poster_id, pa.alt_text AS poster_alt, pa.placeholder_color AS poster_color, pa.placeholder_blur AS poster_blur,
@@ -98,7 +101,7 @@ function titlesCte(
     : sql``;
   return sql`titles AS (
     SELECT 'video'::text AS kind, v.id, v.slug, v.title, v.description, v.duration_ms::int AS duration_ms,
-      NULL::int AS episode_count, v.kids_safe, coalesce(v.published_at, v.publish_at) AS sort_at,
+      NULL::int AS episode_count, v.kids_safe, v.maturity_rank, coalesce(v.published_at, v.publish_at) AS sort_at,
       v.poster_asset_id,
       (EXISTS (SELECT 1 FROM caption_tracks ct WHERE ct.video_id = v.id AND ct.approved_caption_id IS NOT NULL)
       AND coalesce(v.captions_enabled, NOT EXISTS (SELECT 1 FROM settings st WHERE st.key = 'features.captions_default_available' AND st.value = 'false'::jsonb))) AS has_captions,
@@ -110,7 +113,7 @@ function titlesCte(
     SELECT 'series'::text, s.id, s.slug, s.title, s.description, NULL::int,
       (SELECT count(*) FROM seasons esn JOIN episodes eep ON eep.season_id = esn.id JOIN videos ev ON ev.id = eep.video_id
         WHERE esn.series_id = s.id AND ${liveVideoSql('ev', audience, now)})::int,
-      s.kids_safe, coalesce(s.published_at, s.publish_at), s.poster_asset_id,
+      s.kids_safe, s.maturity_rank, coalesce(s.published_at, s.publish_at), s.poster_asset_id,
       EXISTS (SELECT 1 FROM seasons csn JOIN episodes cep ON cep.season_id = csn.id
         JOIN caption_tracks ct ON ct.video_id = cep.video_id AND ct.approved_caption_id IS NOT NULL
         WHERE csn.series_id = s.id),
@@ -131,6 +134,7 @@ function toCard(row: CardRow, mediaOrigin: string): TitleCard {
     durationMs: row.duration_ms,
     episodeCount: row.episode_count,
     kidsSafe: row.kids_safe,
+    maturityRank: row.maturity_rank ?? null,
     hasCaptions: row.has_captions,
     poster: artworkFromRow(row, mediaOrigin),
     categorySlug: row.category_slug,

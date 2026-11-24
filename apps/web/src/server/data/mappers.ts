@@ -27,7 +27,7 @@ export function cardToItem(
     | 'categoryName'
     | 'publishedAt'
   > &
-    Partial<Pick<TitleCardDto, 'rating' | 'mostLiked'>>,
+    Partial<Pick<TitleCardDto, 'rating' | 'mostLiked' | 'maturityRank'>>,
 ): CatalogItem {
   const common = {
     slug: card.slug,
@@ -41,6 +41,7 @@ export function cardToItem(
     publishedAt: card.publishedAt ?? '',
     ...(card.rating !== undefined ? { rating: card.rating } : {}),
     ...(card.mostLiked !== undefined ? { mostLiked: card.mostLiked } : {}),
+    ...(card.maturityRank !== undefined ? { maturityRank: card.maturityRank } : {}),
   };
   if (card.kind === 'series') {
     return {

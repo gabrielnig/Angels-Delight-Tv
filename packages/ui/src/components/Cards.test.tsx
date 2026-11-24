@@ -386,3 +386,30 @@ describe('card rating cluster and Most liked (M44-S03, S05)', () => {
     expect(screen.queryByText(/Most liked/)).toBeNull();
   });
 });
+
+describe('card maturity chip (M44-S13)', () => {
+  it('draws the chip in the peek, hidden from assistive technology, and speaks Rated in the link name', () => {
+    render(<VideoCard {...base} maturity="15" />);
+    const peek = screen.getByTestId('card-peek');
+    expect(within(peek).getByTestId('card-rated')).toHaveTextContent('15');
+    expect(peek).toHaveAttribute('aria-hidden', 'true');
+    expect(screen.getByRole('link')).toHaveAccessibleName(/Rated 15/);
+  });
+
+  it('draws nothing without a maturity label', () => {
+    render(<VideoCard {...base} />);
+    expect(screen.queryByTestId('card-rated')).toBeNull();
+  });
+
+  it('puts the chip and Most liked on one line that wraps together', () => {
+    render(<VideoCard {...base} maturity="18" mostLiked />);
+    const facts = screen.getByTestId('card-rated').parentElement!;
+    expect(facts).toHaveClass('ad-card__peek-facts');
+    expect(within(facts).getByText('Most liked')).toBeInTheDocument();
+  });
+
+  it('says Rated on a series card too', () => {
+    render(<SeriesCard title="Money 101" href="/series/m" episodeCount={4} maturity="12" />);
+    expect(screen.getByRole('link')).toHaveAccessibleName(/Rated 12/);
+  });
+});

@@ -256,6 +256,8 @@ export interface VideoCardProps {
   rating?: CardRating;
   /** The computed Most liked label, shown in the peek and spoken (M44-S05). */
   mostLiked?: boolean;
+  /** The maturity label to show in the peek, for example 12. Leave out for G and for unrated titles (M44-S13). */
+  maturity?: string;
   className?: string;
 }
 
@@ -273,6 +275,7 @@ export function VideoCard({
   onToggleList,
   rating,
   mostLiked,
+  maturity,
   className,
 }: VideoCardProps) {
   return (
@@ -286,6 +289,11 @@ export function VideoCard({
           <span className="ad-card__peek" data-testid="card-peek" aria-hidden="true">
             <span className="ad-card__peek-title">{title}</span>
             <span className="ad-card__peek-facts">
+              {maturity ? (
+                <span className="ad-card__rated" data-testid="card-rated">
+                  {maturity}
+                </span>
+              ) : null}
               <span className="ad-card__peek-length">{formatClock(durationSeconds)}</span>
               {subject ? <span className="ad-card__peek-subject">{subject}</span> : null}
               {mostLiked ? <MostLikedLabel /> : null}
@@ -300,6 +308,7 @@ export function VideoCard({
         <span className="ad-sr-only">
           , {spokenLength(durationSeconds)}
           {hasCaptions ? ', captions available' : ''}
+          {maturity ? `, Rated ${maturity}` : ''}
           {mostLiked ? ', Most liked' : ''}
           {spokenRating(rating)}
         </span>
@@ -388,6 +397,7 @@ export function SeriesCard({
   onToggleList,
   rating,
   mostLiked,
+  maturity,
   className,
 }: {
   title: string;
@@ -402,6 +412,8 @@ export function SeriesCard({
   onToggleList?: () => void;
   rating?: CardRating;
   mostLiked?: boolean;
+  /** Spoken as Rated 12. A series card has no peek, so the label is not drawn on it. */
+  maturity?: string;
   className?: string;
 }) {
   const episodesText = `${episodeCount} episode${episodeCount === 1 ? '' : 's'}`;
@@ -423,6 +435,7 @@ export function SeriesCard({
         <span className="ad-sr-only">
           , {countText}
           {hasCaptions ? ', captions available' : ''}
+          {maturity ? `, Rated ${maturity}` : ''}
           {mostLiked ? ', Most liked' : ''}
           {spokenRating(rating)}
         </span>
