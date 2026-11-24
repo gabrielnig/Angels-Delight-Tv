@@ -1,4 +1,5 @@
 import 'server-only';
+import { cookies, headers } from 'next/headers';
 import {
   BASELINES,
   EN_NG,
@@ -41,4 +42,33 @@ export async function getTranslator(locale: LocaleCode): Promise<Translate> {
     { 'en-NG': EN_NG as unknown as CatalogShape, [locale]: catalog },
     (key, loc) => sink(loc as LocaleCode, key),
   );
+}
+
+/** The viewer's language: ?lang=, profile, account, cookie, Accept-Language, site default (M46 4.2). */
+export async function getLocale(): Promise<LocaleCode> {
+  const [{ themeRuntime }, { getSession }, { LOCALE_COOKIE }, { resolveLocale }] = await Promise.all([
+    import('../data/admin/theme-runtime'),
+    import('../session'),
+    import('./cookie'),
+    import('./resolve'),
+  ]);
+  const h = await headers();
+  const settings = (await themeRuntime()).settings;
+  const enabled: string[] = await settings.get('content.ui_languages');
+  const fallback = (await settings.get('content.default_language')) as LocaleCode;
+  const hint = h.get('x-ad-locale-source') === 'query' ? h.get('x-ad-locale-hint') : null;
+  let profileLanguage: string | null = null;
+  try {
+    profileLanguage = (await getSession())?.profile?.language ?? null;
+  } catch {
+    profileLanguage = null;
+  }
+  return resolveLocale({
+    query: hint,
+    profileLanguage,
+    cookie: (await cookies()).get(LOCALE_COOKIE)?.value,
+    acceptLanguage: h.get('accept-language'),
+    enabled,
+    fallback,
+  });
 }

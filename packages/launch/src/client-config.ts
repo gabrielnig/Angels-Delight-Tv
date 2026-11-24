@@ -99,7 +99,11 @@ export const clientConfigSchema = z
       })
       .optional(),
     languages: z
-      .strictObject({ default: language, offered: z.array(language).min(1).max(12) })
+      .strictObject({
+        default: language,
+        offered: z.array(language).min(1).max(12),
+        ui: z.array(language).min(1).max(5).optional(),
+      })
       .refine((value) => value.offered.includes(value.default), {
         message: 'The default language must be one of the offered languages',
         path: ['default'],

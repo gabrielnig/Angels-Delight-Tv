@@ -2,11 +2,19 @@ import { and, asc, eq, sql } from 'drizzle-orm';
 import { profiles, withAccount } from '@ad/db';
 import { clampMaturityRank, Conflict, Forbidden, isUuid, NotFound, ValidationFailed, type Actor } from '@ad/shared';
 import type { Audience } from '@ad/catalog';
+import { LOCALE_CODES } from '@ad/shared/messages';
 import { spendAttempt, type ViewerContext } from './context';
 import { dbErrorInfo } from './db-errors';
 import { hashPin, PIN_PATTERN, verifyPin } from './pin';
 
 /** Avatar presets (M03-S03). Profiles store only the id, the artwork lives in the UI package and can be swapped. */
+/** Profile language must be a supported locale code (M46). */
+export function assertSupportedLanguage(language: string | undefined): void {
+  if (language !== undefined && !(LOCALE_CODES as readonly string[]).includes(language)) {
+    throw new ValidationFailed({ language: ['Pick one of the listed languages'] });
+  }
+}
+
 export const AVATAR_IDS = [
   'sun',
   'moon',
@@ -201,6 +209,7 @@ export async function createProfile(
     if (isFirst && input.isKids) {
       throw new ValidationFailed({ isKids: ['The first profile must be a grown-up profile'] });
     }
+    assertSupportedLanguage(input.language);
     await assertNameFree(ctx, actor.accountId, siblings, name);
     const taken = new Set(siblings.map((sibling) => sibling.position));
     let position = 0;
@@ -279,6 +288,7 @@ export async function updateProfile(
     if (typeof input.pin === 'string' && (input.isKids ?? current.isKids)) {
       throw new ValidationFailed({ pin: ['A PIN is only for grown-up profiles'] });
     }
+    assertSupportedLanguage(input.language);
     if (name !== undefined) await assertNameFree(ctx, actor.accountId, siblings, name);
 
     const changes: Partial<typeof profiles.$inferInsert> = {};

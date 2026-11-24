@@ -7,7 +7,9 @@ import './globals.css';
 import { WebVitals } from '../components/observability/WebVitals';
 import { PwaClient } from '../components/pwa/PwaClient';
 import { selectFonts } from '../lib/fonts';
+import { getLocale } from '../lib/i18n/server';
 import { getRootTheme } from '../lib/theme/root';
+import { localeInfo } from '@ad/shared/messages';
 import { Providers } from './providers';
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -34,9 +36,10 @@ export async function generateViewport(): Promise<Viewport> {
 export default async function RootLayout({ children }: { children: ReactNode }) {
   const nonce = (await headers()).get('x-nonce') ?? undefined;
   const theme = await getRootTheme(nonce);
-  const fonts = selectFonts(theme.injection.fontKey);
+  const locale = await getLocale();
+  const fonts = selectFonts(theme.injection.fontKey, locale);
   return (
-    <html lang="en" className={fonts.classNames} style={fonts.variables as CSSProperties}>
+    <html lang={localeInfo(locale)?.htmlLang ?? 'en-NG'} className={fonts.classNames} style={fonts.variables as CSSProperties}>
       <head>
         <style {...theme.styleProps} />
       </head>

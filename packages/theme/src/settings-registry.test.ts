@@ -263,3 +263,17 @@ describe('home settings (M41, R12, R13, R14)', () => {
     expect(SETTING_DEFS['home.hero_interval_seconds'].tier).toBe('admin');
   });
 });
+
+describe('language settings (M46)', () => {
+  it('ui_languages defaults to English only and accepts known codes', () => {
+    expect(defaultSettings()['content.ui_languages']).toEqual(['en']);
+    expect(parse('content.ui_languages', ['en', 'yo']).success).toBe(true);
+    expect(parse('content.ui_languages', []).success).toBe(false);
+    expect(parse('content.ui_languages', ['en', 'fr']).success).toBe(false);
+  });
+  it('publish_min_percent defaults to 80 and stays between 0 and 100', () => {
+    expect(defaultSettings()['i18n.publish_min_percent']).toBe(80);
+    expect(parse('i18n.publish_min_percent', 101).success).toBe(false);
+    expect(parse('i18n.publish_min_percent', 60).success).toBe(true);
+  });
+});

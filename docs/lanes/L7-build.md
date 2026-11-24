@@ -29,3 +29,9 @@ Scoped tests only: `pnpm vitest run <file>`.
 - Test: \`TEST_DATABASE_ADMIN_URL=postgres://postgres:postgres@localhost:5432/postgres pnpm vitest run packages/db/src/i18n.int.test.ts packages/db/src/schema.int.test.ts\`
 - Decision: see the "Caption track publish flag and missing key function" entry in docs/DECISIONS.md.
 - Snapshot note: migration 0039 (sponsors, another lane) shipped without a drizzle snapshot, so `meta/0040_snapshot.json` also contains the sponsor tables. The 0040 SQL file holds only the i18n statements. Its journal `when` is set above 0039 so databases already at 0039 still apply it.
+
+## Slice 4
+- `apps/web/src/lib/i18n/resolve.ts` (`resolveLocale`), `cookie.ts` (`LOCALE_COOKIE`, `localeCookieOptions`, `readLocaleCookie`), `server.ts` `getLocale()`. `proxy.ts` sets the cookie for `?lang=` and forwards `x-ad-locale-hint` and `x-ad-locale-source`. `layout.tsx` sets `<html lang>` and passes the locale to `selectFonts` (the L8 gap).
+- Settings `content.ui_languages` (default en) and `i18n.publish_min_percent` (80). Launch config `languages.ui` maps to `content.ui_languages`.
+- `assertSupportedLanguage` in `packages/viewer/src/profiles.ts` guards profile create and update.
+- Gap: `accounts.locale` is not read by `getLocale` (session has no field). `production-env.test.ts` fails on main from the Paystack variables (not this lane).
