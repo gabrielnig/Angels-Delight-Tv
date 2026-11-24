@@ -51,7 +51,7 @@ export function GuestChrome({
       <a className="ad-skip" href="#main">
         {msg('guest.nav.skip')}
       </a>
-      <header className="web-guestbar">
+      <header className="web-guestbar" data-over-hero={pathname === '/' ? 'true' : undefined}>
         <Link
           href="/"
           className="web-brand"

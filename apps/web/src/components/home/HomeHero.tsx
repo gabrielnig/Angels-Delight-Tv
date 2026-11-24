@@ -12,7 +12,7 @@ export function HomeHero({
 }: {
   items: HeroItem[];
   label: string;
-  profileId: string;
+  profileId: string | null;
   /** The profile's saved Data saver choice. */
   dataSaver?: boolean;
 }) {

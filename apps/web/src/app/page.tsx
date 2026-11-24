@@ -5,12 +5,25 @@ import { AuthSplit } from '../components/AuthLayouts';
 import { SignInScreen } from '../components/auth/AuthScreens';
 import { HomeSkeleton, HomeView } from '../components/home/HomeView';
 import { getSite } from '../lib/data';
+import { guestContext } from '../lib/data/types';
+import { currentGuestAudience } from '../server/guest/guest-view';
+import { guestPlayEnabled } from '../server/guest/guest-settings';
 import { requireProfile, getSession } from '../lib/session';
 import { turnstileSiteKey } from '../server/auth/turnstile-site';
 
-/** Signed out: the landing page with the sign in card. Signed in with a profile: Home. */
+/** Signed out: Home, or the landing page with the sign in card when guest play is off. Signed in with a profile: Home. */
 export default async function RootPage() {
   const session = await getSession();
+  if (!session && (await guestPlayEnabled())) {
+    // A visitor goes straight to Home (M40). Saving things asks them to sign in later.
+    return (
+      <AppShell>
+        <Suspense fallback={<HomeSkeleton />}>
+          <HomeView ctx={guestContext(await currentGuestAudience())} />
+        </Suspense>
+      </AppShell>
+    );
+  }
   if (!session) {
     const site = await getSite().content();
     return (

@@ -1,6 +1,6 @@
 import { AppShell } from '../../../components/Shell';
 import { BrowseView, parseLength, parseSort } from '../../../components/browse/BrowseView';
-import { requireProfile } from '../../../lib/session';
+import { getViewerOrGuest } from '../../../lib/session';
 
 export const metadata = { title: 'Browse' };
 
@@ -10,7 +10,7 @@ export default async function BrowsePage({
   searchParams: Promise<Record<string, string | undefined>>;
 }) {
   const sp = await searchParams;
-  const { ctx } = await requireProfile('/browse');
+  const { ctx } = await getViewerOrGuest('/browse');
   return (
     <AppShell>
       <BrowseView ctx={ctx} length={parseLength(sp.length)} sort={parseSort(sp.sort)} />

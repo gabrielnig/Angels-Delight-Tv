@@ -45,3 +45,20 @@
     display: flex;
   }
 }
+
+/* Over the home hero the bar is clear with a dark backing and a white edge, so white links keep their contrast (S81). */
+.web-guestbar[data-over-hero='true'] {
+  background: var(--color-hero-chip-bg);
+  color: var(--color-player-ink);
+  border-bottom: 1px solid var(--color-player-ink);
+  box-shadow: none;
+}
+
+.web-guestbar[data-over-hero='true'] .web-brand,
+.web-guestbar[data-over-hero='true'] .web-guestbar__link {
+  color: var(--color-player-ink);
+}
+
+.web-guestbar[data-over-hero='true'] :focus-visible {
+  outline-color: var(--color-focus-ring-dark);
+}

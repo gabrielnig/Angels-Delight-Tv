@@ -90,7 +90,7 @@ export async function HomeView({
       <HomeHero
         items={heroItems(home, progress)}
         label="Featured"
-        profileId={ctx.profileId}
+        profileId={ctx.guest ? null : ctx.profileId}
         dataSaver={dataSaver}
       />
       <div className="web-wide web-stack web-rows">

@@ -6,7 +6,7 @@ import { AppShell } from '../../../components/Shell';
 import { SearchGrid } from '../../../components/browse/BoundGrids';
 import { SearchScreen } from '../../../components/browse/SearchScreen';
 import { getCatalog, getLibrary } from '../../../lib/data';
-import { requireProfile } from '../../../lib/session';
+import { getViewerOrGuest } from '../../../lib/session';
 
 export const metadata = { title: 'Search' };
 
@@ -16,7 +16,7 @@ export default async function SearchPage({
   searchParams: Promise<{ q?: string }>;
 }) {
   const q = ((await searchParams).q ?? '').trim().slice(0, 100);
-  const { ctx } = await requireProfile('/search');
+  const { ctx } = await getViewerOrGuest('/search');
   let body;
   if (!q) {
     const popular = await getCatalog()

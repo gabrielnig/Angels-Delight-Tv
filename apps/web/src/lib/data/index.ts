@@ -1,3 +1,4 @@
+import { forGuests } from './guest-library';
 import { createRealAccount, createRealAuth } from '../../server/auth/real-data';
 import { realAuthEnabled } from '../../server/auth/mode';
 import { realDataEnabled } from '../../server/data/mode';
@@ -46,7 +47,7 @@ function data(): Registry {
   const real = realDataEnabled();
   return (registry.__adData = {
     catalog: real ? createRealCatalog() : new FixtureCatalog(),
-    library: real ? createRealLibrary() : new FixtureLibrary(),
+    library: forGuests(real ? createRealLibrary() : new FixtureLibrary()),
     profiles: real ? createRealProfiles() : new FixtureProfiles(),
     auth: realAuthEnabled() ? createRealAuth() : new FixtureAuth(),
     account: realAuthEnabled()
