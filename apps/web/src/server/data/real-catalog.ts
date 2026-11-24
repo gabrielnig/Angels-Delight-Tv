@@ -2,6 +2,13 @@ import {
   catalogContext,
   getHome,
   getTitleDetail,
+  getGuestHome,
+  guestBrowse,
+  guestCategories,
+  guestPopular,
+  guestSearch,
+  guestSuggest,
+  guestTitleDetail,
   browse,
   listBrowseCategories,
   search,
@@ -111,9 +118,16 @@ export class RealCatalog implements CatalogRepository {
     return viewerActor(ctx.accountId);
   }
 
+  /** What a guest is shown: the audience alone, no account, no profile (M40, D-G10). */
+  private guestAudience(ctx: ViewerContext) {
+    return { kids: ctx.audience === 'kids' };
+  }
+
   /** The hero and the first page of rows. Later pages come from `homeRows` as the viewer scrolls (M05-S04). */
   async home(ctx: ViewerContext): Promise<HomeData> {
-    const result = await getHome(this.service, this.actor(ctx), { profileId: ctx.profileId });
+    const result = ctx.guest
+      ? await getGuestHome(this.service, this.guestAudience(ctx))
+      : await getHome(this.service, this.actor(ctx), { profileId: ctx.profileId });
     if (result.catalogEmpty) return { hero: [], rows: [], empty: true };
     const hero = result.hero.map((slot) => {
       const item = cardToItem(slot.card);
@@ -129,10 +143,9 @@ export class RealCatalog implements CatalogRepository {
   }
 
   async homeRows(ctx: ViewerContext, cursor: string): Promise<HomeRowsPage> {
-    const result = await getHome(this.service, this.actor(ctx), {
-      profileId: ctx.profileId,
-      cursor,
-    });
+    const result = ctx.guest
+      ? await getGuestHome(this.service, this.guestAudience(ctx), { cursor })
+      : await getHome(this.service, this.actor(ctx), { profileId: ctx.profileId, cursor });
     return { rows: this.catalogRows(result.rows), nextCursor: result.nextCursor };
   }
 
@@ -152,9 +165,9 @@ export class RealCatalog implements CatalogRepository {
   }
 
   async categories(ctx: ViewerContext) {
-    const list = await listBrowseCategories(this.service, this.actor(ctx), {
-      profileId: ctx.profileId,
-    });
+    const list = ctx.guest
+      ? await guestCategories(this.service, this.guestAudience(ctx))
+      : await listBrowseCategories(this.service, this.actor(ctx), { profileId: ctx.profileId });
     return list.map<Category>((c) => ({
       slug: c.slug,
       name: c.name,
@@ -163,14 +176,16 @@ export class RealCatalog implements CatalogRepository {
   }
 
   async browse(ctx: ViewerContext, query: BrowseQuery): Promise<Page<CatalogItem>> {
-    const result = await browse(this.service, this.actor(ctx), {
-      profileId: ctx.profileId,
+    const input = {
       categorySlug: query.categorySlug,
       sort: query.sort,
       duration: durationBucketOf(query.length),
       limit: query.limit ?? PAGE_SIZE,
       cursor: query.cursor,
-    });
+    };
+    const result = ctx.guest
+      ? await guestBrowse(this.service, this.guestAudience(ctx), input)
+      : await browse(this.service, this.actor(ctx), { profileId: ctx.profileId, ...input });
     return {
       items: result.items.map(cardToItem),
       total: result.total,
@@ -181,13 +196,19 @@ export class RealCatalog implements CatalogRepository {
   /** A query shorter than the minimum is an empty page, the screen shows its own prompt for that. */
   async search(ctx: ViewerContext, q: string, cursor?: string): Promise<Page<CatalogItem>> {
     try {
-      const result = await search(this.service, this.actor(ctx), {
-        profileId: ctx.profileId,
-        query: q,
-        limit: PAGE_SIZE,
-        cursor,
-        record: cursor === undefined,
-      });
+      const result = ctx.guest
+        ? await guestSearch(this.service, this.guestAudience(ctx), {
+            query: q,
+            limit: PAGE_SIZE,
+            cursor,
+          })
+        : await search(this.service, this.actor(ctx), {
+            profileId: ctx.profileId,
+            query: q,
+            limit: PAGE_SIZE,
+            cursor,
+            record: cursor === undefined,
+          });
       return {
         items: result.items.map(cardToItem),
         total: result.total,
@@ -201,10 +222,9 @@ export class RealCatalog implements CatalogRepository {
 
   async suggest(ctx: ViewerContext, q: string): Promise<Suggestion[]> {
     try {
-      const found = await suggest(this.service, this.actor(ctx), {
-        profileId: ctx.profileId,
-        query: q,
-      });
+      const found = ctx.guest
+        ? await guestSuggest(this.service, this.guestAudience(ctx), q)
+        : await suggest(this.service, this.actor(ctx), { profileId: ctx.profileId, query: q });
       return found.map<Suggestion>((s) =>
         s.kind === 'category'
           ? { type: 'category', label: s.label, href: `/browse/${s.slug}` }
@@ -222,13 +242,15 @@ export class RealCatalog implements CatalogRepository {
 
   async popular(ctx: ViewerContext): Promise<VideoSummary[]> {
     const actor = this.actor(ctx);
-    const cards = await withAccount(this.service.db, actor, async (tx) => {
-      const profile = await loadOwnedProfile(tx, actor, ctx.profileId);
-      return popularTitles(tx, catalogContext(this.service), audienceOf(profile), {
-        limit: POPULAR_COUNT * 3,
-        fallbackToNewest: true,
-      });
-    });
+    const cards = ctx.guest
+      ? await guestPopular(this.service, this.guestAudience(ctx), { limit: POPULAR_COUNT * 3 })
+      : await withAccount(this.service.db, actor, async (tx) => {
+          const profile = await loadOwnedProfile(tx, actor, ctx.profileId);
+          return popularTitles(tx, catalogContext(this.service), audienceOf(profile), {
+            limit: POPULAR_COUNT * 3,
+            fallbackToNewest: true,
+          });
+        });
     return cards
       .map(cardToItem)
       .map(asVideo)
@@ -242,6 +264,8 @@ export class RealCatalog implements CatalogRepository {
     kind: 'video' | 'series',
   ): Promise<TitleDetailDto | null> {
     try {
+      if (ctx.guest)
+        return await guestTitleDetail(this.service, this.guestAudience(ctx), { slug, kind });
       return await getTitleDetail(this.service, this.actor(ctx), {
         profileId: ctx.profileId,
         slug,
