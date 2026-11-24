@@ -17,7 +17,10 @@ vi.mock('@/lib/data/playback.server', () => ({
   getProgressTransport: () => 'local',
   getTransport: () => 'http',
 }));
-vi.mock('@/server/player/player-settings', () => ({ playerCountdownSeconds: async () => 5 }));
+vi.mock('@/server/player/player-settings', () => ({
+  playerCountdownSeconds: async () => 5,
+  airplayEnabled: async () => false,
+}));
 vi.mock('@/features/player/WatchClient', () => ({ WatchClient: () => null }));
 vi.mock('@/features/player/WatchDetails', () => ({ WatchDetails: () => null }));
 vi.mock('@/features/player/UpNextList', () => ({ UpNextList: () => null }));

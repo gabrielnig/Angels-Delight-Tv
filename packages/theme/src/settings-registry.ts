@@ -216,6 +216,16 @@ export const SETTING_DEFS = {
     label: 'Captions are available to viewers by default',
     description: 'Videos that follow the site default offer captions. Each video can override this.',
   }),
+  'features.airplay': def({
+    schema: bool,
+    default: false,
+    isPublic: false,
+    tier: 'super',
+    group: 'features',
+    label: 'AirPlay button',
+    description:
+      'Show an AirPlay button on Safari. Turn on only after it has been tried on a real iPhone and Apple TV.',
+  }),
   'limits.max_profiles': def({
     schema: int(1, 10),
     default: 5,

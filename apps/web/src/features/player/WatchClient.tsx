@@ -89,6 +89,8 @@ export interface WatchClientProps {
   };
   /** Seconds the next video waits (site setting `playback.countdown_seconds`, 5 to 10). */
   countdownSeconds?: number | undefined;
+  /** Site flag `features.airplay`. Off until the device spike passes (R16). */
+  airplay?: boolean | undefined;
   /** Test seams passed straight to the player. */
   testing?: Pick<PlayerProps, 'createEngine' | 'network' | 'page' | 'hints' | 'autoplay'>;
 }
@@ -123,6 +125,7 @@ export function WatchClient({
   children,
   prefsSync: prefsSyncProp,
   countdownSeconds,
+  airplay,
   testing,
   signUpOpen,
   challengeSiteKey,
@@ -378,6 +381,7 @@ export function WatchClient({
             onPreferencesChange={onPreferencesChange}
             next={nextTitle}
             {...(countdownSeconds ? { countdownSeconds } : {})}
+            airplay={airplay === true}
             prefetchNext={prefetchNext}
             autoplayStreak={autoplayStreak}
             onNext={onNext}

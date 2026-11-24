@@ -6,7 +6,8 @@ import type { NetworkMonitor, PageEvents, PlayerEngine } from './engine';
 import type { CaptionStyle } from './captionStyle';
 import { makeReference } from './reference';
 import { readBandwidthSeed, saveBandwidth } from './bandwidth';
-import { createPlayerEngine } from './hlsEngine';
+import { showAirplayPicker } from './airplay';
+import { createNativeEngine, createPlayerEngine } from './hlsEngine';
 import type { ProgressSink } from './progress';
 import { readNetworkHints, type NetworkHints } from './quality';
 import type { PlayerChapter } from './chapters';
@@ -34,6 +35,8 @@ export interface PlayerProps {
   onCaptionStyleChange?: (style: CaptionStyle) => void;
   /** A kids profile follows its grown up's autoplay choice, so the Settings switch cannot be changed. */
   lockAutoplay?: boolean;
+  /** AirPlay button, off until the device spike passes (R16). Set from the `features.airplay` site setting. */
+  airplay?: boolean;
   /** Origin that serves playlists and keys, for example https://tv.example.org. */
   appOrigin: string;
   sessionProvider: SessionProvider;
@@ -185,6 +188,14 @@ export function Player(props: PlayerProps) {
         onPreferencesChange: (prefs) => latest.current.onPreferencesChange?.(prefs),
         onNext: (item) => latest.current.onNext?.(item),
         prefetchNext: (item) => latest.current.prefetchNext?.(item),
+        // AirPlay is off until the device spike passes (R16), so the controller gets no way to start it.
+        ...(p.airplay
+          ? {
+              createNativeEngine: () =>
+                createNativeEngine({ video, appOrigin, getToken: () => tokens?.token ?? null }),
+              showAirplayPicker: () => showAirplayPicker(video),
+            }
+          : {}),
         ...(p.autoplayStreak ? { autoplayStreak: p.autoplayStreak } : {}),
         onUnauthorized: () => latest.current.onSignIn?.(),
         onForbidden: () => latest.current.onForbidden?.(),
@@ -211,6 +222,7 @@ export function Player(props: PlayerProps) {
       title={props.title}
       posterUrl={props.posterUrl}
       captionStyle={props.captionStyle}
+      airplay={props.airplay === true}
       {...(props.lockAutoplay ? { lockAutoplay: true } : {})}
       {...(props.onCaptionStyleChange ? { onCaptionStyleChange: props.onCaptionStyleChange } : {})}
       videoRef={videoRef}

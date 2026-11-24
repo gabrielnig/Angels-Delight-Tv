@@ -66,6 +66,10 @@ export interface PlayerControllerOptions {
   prefetchNext?: (item: UpNextItem) => void;
   /** Autoplays in a row with no input. The host keeps it for the session so it survives page changes. */
   autoplayStreak?: { get(): number; set(value: number): void };
+  /** AirPlay (R16): builds the native HLS engine used while casting. Without it nothing is offered. */
+  createNativeEngine?: () => PlayerEngine;
+  /** Opens the device list. Returns false when the browser has none. */
+  showAirplayPicker?: () => boolean;
   progressIntervalMs?: number;
   autoplay?: boolean;
   metrics?: MetricsSink;
@@ -156,7 +160,12 @@ export class PlayerController {
   private pendingStop: PlayerErrorKind | null = null;
   private seekTimer: ReturnType<typeof setTimeout> | null = null;
 
+  /** The engine in use now. It changes once, when AirPlay needs native HLS. */
+  private engine: PlayerEngine;
+  private engineOff: () => void = () => undefined;
+
   constructor(private readonly o: PlayerControllerOptions) {
+    this.engine = o.engine;
     this.prefs = { ...DEFAULT_PREFERENCES, ...o.preferences };
     this.tracks = (o.captions ?? []).filter((t) => t.status === 'approved');
     this.dataSaverMaxHeight = o.dataSaverMaxHeight ?? 360;
@@ -196,6 +205,7 @@ export class PlayerController {
       backOnline: false,
       autoplayNext: this.prefs.autoplayNext,
       hint: null,
+      wireless: false,
       retries: 0,
       announce: '',
     };
@@ -218,7 +228,8 @@ export class PlayerController {
   // ---- lifecycle ----
 
   start(): void {
-    const { media, engine } = this.o;
+    const { media } = this.o;
+    const engine = this.engine;
     this.startedAt = Date.now();
     media.volume = this.prefs.volume;
     media.muted = this.prefs.muted;
@@ -245,7 +256,8 @@ export class PlayerController {
       media.addEventListener(ev, handler);
       this.cleanups.push(() => media.removeEventListener(ev, handler));
     }
-    this.cleanups.push(engine.on((e) => this.onEngine(e)));
+    this.engineOff = engine.on((e) => this.onEngine(e));
+    this.cleanups.push(() => this.engineOff());
     if (this.network)
       this.cleanups.push(this.network.subscribe((online) => this.onNetwork(online)));
     if (this.o.page) {
@@ -266,7 +278,7 @@ export class PlayerController {
       );
     }
     this.cleanups.push(
-      this.o.tokens.subscribe?.((s) => this.o.engine.setToken(s.token)) ?? (() => undefined),
+      this.o.tokens.subscribe?.((s) => this.engine.setToken(s.token)) ?? (() => undefined),
     );
     if (this.o.metrics) {
       this.metricsTimer = setInterval(() => {
@@ -303,7 +315,8 @@ export class PlayerController {
 
   private load(): void {
     this.loaded = true;
-    const { engine, tokens } = this.o;
+    const { tokens } = this.o;
+    const engine = this.engine;
     const lowData = detectLowData(this.o.hints) || this.prefs.dataSaver;
     engine.setToken(tokens.token);
     engine.load({
@@ -331,7 +344,7 @@ export class PlayerController {
     for (const t of [this.firstFrameTimer, this.toastTimer]) if (t) clearTimeout(t);
     if (this.metricsTimer) clearInterval(this.metricsTimer);
     for (const c of this.cleanups.splice(0)) c();
-    this.o.engine.destroy();
+    this.engine.destroy();
     this.listeners.clear();
   }
 
@@ -376,7 +389,8 @@ export class PlayerController {
     this.seekTimer = setTimeout(() => {
       this.seekTimer = null;
       if (this.disposed) return;
-      const { media, engine } = this.o;
+      const { media } = this.o;
+    const engine = this.engine;
       if (attempt === 0) {
         media.currentTime = target;
         engine.recover();
@@ -445,7 +459,7 @@ export class PlayerController {
     const cap = this.cap();
     if (typeof selection === 'number' && cap !== null && selection > cap) return;
     this.selected = selection;
-    this.o.engine.setQuality(selection, cap);
+    this.engine.setQuality(selection, cap);
     this.set({ quality: this.qualityState() });
   }
 
@@ -454,7 +468,7 @@ export class PlayerController {
     const cap = this.cap();
     if (typeof this.selected === 'number' && cap !== null && this.selected > cap)
       this.selected = 'auto';
-    this.o.engine.setQuality(this.selected, cap);
+    this.engine.setQuality(this.selected, cap);
     this.set({ quality: this.qualityState() });
     this.persist();
   }
@@ -504,7 +518,8 @@ export class PlayerController {
   retry(): void {
     const kind = this.state.error;
     if (!kind || kind === 'unsupported-browser') return;
-    const { engine, media } = this.o;
+    const { media } = this.o;
+    const engine = this.engine;
     this.set({
       retries: this.state.retries + 1,
       error: null,
@@ -844,7 +859,7 @@ export class PlayerController {
         }
         return;
       }
-      this.o.engine.dropQuality();
+      this.engine.dropQuality();
       this.set({ slowNotice: true, announce: msg('player.slowConnection') });
     }, SLOW_AFTER_MS);
     this.noteStallForDataSaver();
@@ -868,6 +883,50 @@ export class PlayerController {
       return;
     this.dataSaverHinted = true;
     this.set({ hint: { kind: 'data-saver' }, announce: msg('player.hint.dataSaver') });
+  }
+
+  /**
+   * AirPlay (R16). hls.js feeds the video element through MSE, which Safari cannot hand to a receiver, so the
+   * first time the viewer asks the player moves to native HLS at the same time, then shows the device list. If
+   * native HLS cannot start, playback stays here with a toast. Never offered until the device spike passes.
+   */
+  openAirplay(): void {
+    const show = this.o.showAirplayPicker;
+    if (!show) return;
+    if (this.engine.name !== 'native' && this.o.createNativeEngine) {
+      if (!this.switchToNative(this.o.createNativeEngine)) return;
+    }
+    show();
+  }
+
+  private switchToNative(create: () => PlayerEngine): boolean {
+    const { media, tokens } = this.o;
+    const at = media.currentTime;
+    const wasPlaying = !media.paused;
+    let next: PlayerEngine;
+    try {
+      next = create();
+    } catch {
+      this.notify(msg('player.airplay.failed'), 'error');
+      return false;
+    }
+    this.engineOff();
+    this.engine.destroy();
+    this.engine = next;
+    this.engineOff = next.on((e) => this.onEngine(e));
+    this.heights = [];
+    this.currentHeight = null;
+    this.selected = 'auto';
+    this.set({ quality: this.qualityState() });
+    next.setToken(tokens.token);
+    next.load({ src: tokens.masterUrl ?? '', startPosition: at, lowData: false, cap: null });
+    if (wasPlaying) this.play();
+    return true;
+  }
+
+  /** From the webkit wireless event: the surface says "Playing on AirPlay" while true. */
+  setWireless(on: boolean): void {
+    if (this.state.wireless !== on) this.set({ wireless: on });
   }
 
   dismissHint(): void {
@@ -966,8 +1025,8 @@ export class PlayerController {
     this.errors.push('media');
     this.mediaErrors += 1;
     if (this.mediaErrors === 1) {
-      this.o.engine.dropQuality();
-      this.o.engine.recoverMedia();
+      this.engine.dropQuality();
+      this.engine.recoverMedia();
       return;
     }
     this.setError('cannot-play');
@@ -1021,8 +1080,8 @@ export class PlayerController {
       this.setError('offline');
       return;
     }
-    if (this.o.engine.dropQuality()) {
-      this.o.engine.recover();
+    if (this.engine.dropQuality()) {
+      this.engine.recover();
       this.armStallRecovery();
       return;
     }
@@ -1042,8 +1101,8 @@ export class PlayerController {
       const resumePlayback = this.wantsPlayback();
       const session = await this.o.tokens.refresh();
       this.lastRefreshAt = Date.now();
-      this.o.engine.setToken(session.token);
-      this.o.engine.reload(this.o.media.currentTime);
+      this.engine.setToken(session.token);
+      this.engine.reload(this.o.media.currentTime);
       if (resumePlayback) this.play();
     } catch (e) {
       const k = e instanceof SessionError ? e.kind : 'network';
@@ -1083,7 +1142,7 @@ export class PlayerController {
           backOnline: true,
           announce: msg('player.backOnlineAnnounce'),
         });
-        this.o.engine.recover();
+        this.engine.recover();
       }
     }
   }

@@ -26,6 +26,7 @@ function mount(
     network?: FakeNetwork;
     prefsSync?: NonNullable<Parameters<typeof WatchClient>[0]['prefsSync']>;
     countdownSeconds?: number;
+    airplay?: boolean;
     viewer?: typeof viewer;
   } = {},
 ) {
@@ -39,6 +40,7 @@ function mount(
       startAt={extra.startAt ?? null}
       prefsSync={extra.prefsSync}
       countdownSeconds={extra.countdownSeconds}
+      airplay={extra.airplay}
       testing={{ createEngine: async () => engine, network }}
     >
       <h1>{data.video.title}</h1>
@@ -397,6 +399,38 @@ describe('WatchClient', () => {
       push.mockClear();
       prefetch.mockClear();
       sessionStorage.clear();
+    });
+
+    it('shows AirPlay only when the site flag is on and Safari sees a device (R16)', async () => {
+      const proto = HTMLMediaElement.prototype as unknown as Record<string, unknown>;
+      proto.webkitShowPlaybackTargetPicker = () => undefined;
+      try {
+        const off = mount(await dataFor('v-sky'));
+        await waitFor(() => expect(off.engine.loads).toHaveLength(1));
+        const v = document.querySelector('video')!;
+        act(() => {
+          v.dispatchEvent(
+            Object.assign(new Event('webkitplaybacktargetavailabilitychanged'), {
+              availability: 'available',
+            }),
+          );
+        });
+        expect(screen.queryByRole('button', { name: 'AirPlay' })).toBeNull();
+        off.unmount();
+
+        const on = mount(await dataFor('v-sky'), { airplay: true });
+        await waitFor(() => expect(on.engine.loads).toHaveLength(1));
+        act(() => {
+          document.querySelector('video')!.dispatchEvent(
+            Object.assign(new Event('webkitplaybacktargetavailabilitychanged'), {
+              availability: 'available',
+            }),
+          );
+        });
+        expect(await screen.findByRole('button', { name: 'AirPlay' })).toBeTruthy();
+      } finally {
+        delete proto.webkitShowPlaybackTargetPicker;
+      }
     });
 
     it('uses the site countdown from the page', async () => {

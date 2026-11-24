@@ -6,7 +6,7 @@ vi.mock('../../lib/data/admin/theme-runtime', () => ({
   themeRuntime: async () => ({ settings: { get } }),
 }));
 
-import { playerCountdownSeconds } from './player-settings';
+import { airplayEnabled, playerCountdownSeconds } from './player-settings';
 
 beforeEach(() => {
   get.mockReset();
@@ -31,5 +31,25 @@ describe('playerCountdownSeconds (L4-08)', () => {
       throw new Error('down');
     });
     expect(await playerCountdownSeconds()).toBe(5);
+  });
+});
+
+describe('airplayEnabled (L4-10, R16)', () => {
+  it('reads features.airplay and is off by default', async () => {
+    get.mockResolvedValue(true);
+    expect(await airplayEnabled()).toBe(true);
+    expect(get).toHaveBeenCalledWith('features.airplay');
+    get.mockResolvedValue(false);
+    expect(await airplayEnabled()).toBe(false);
+  });
+
+  it('is off when the settings cannot be read or hold something else', async () => {
+    get.mockImplementation(() => {
+      throw new Error('down');
+    });
+    expect(await airplayEnabled()).toBe(false);
+    get.mockReset();
+    get.mockResolvedValue('yes');
+    expect(await airplayEnabled()).toBe(false);
   });
 });

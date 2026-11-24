@@ -1300,3 +1300,9 @@ Per video tri state, site default (Super admin), Admin changes it with a reason 
 - Options: keep the Report link beside Try again, show the reference inside the sentence, hint on every stall.
 - Why: R39 allows one action per error, the reference is for support and should not read as part of the message, and a hint on every stall would become noise.
 - Reversible: yes.
+
+## D-244 AirPlay is a super tier site flag that is off by default, and the native engine switch stays until a device spike passes (lane L4, R16)
+- Decision: `features.airplay` (default off, not public) shows the AirPlay button, and only on Safari when it reports a device. Starting AirPlay builds a native engine first and keeps the current one if that fails. Picture in picture was reworked to cover the standard API and the iOS presentation mode. Chromecast is not built.
+- Options: always show the button on Safari, ship with no flag and no spike, build Chromecast now.
+- Why: R16 says AirPlay stays hidden until it works on a real iPhone and a Mac with an Apple TV, and the spike notes in docs/spikes/airplay.md say what to check and when to drop the engine switch.
+- Reversible: yes.

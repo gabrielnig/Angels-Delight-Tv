@@ -22,6 +22,7 @@ import { resolveShortcut } from '../keyboard';
 import type { UpNextItem } from '../types';
 import { EndScreen, type EndScreenData } from './EndScreen';
 import {
+  AirplayIcon,
   Back10Icon,
   CaptionsIcon,
   ChaptersIcon,
@@ -39,6 +40,8 @@ import {
 import { CaptionAppearance } from './CaptionAppearance';
 import { CaptionRows, ChapterRows, MenuShell, type MenuId } from './Menus';
 import { SettingsMenu } from './SettingsMenu';
+import { watchAirplayAvailability, watchWireless } from '../airplay';
+import { inPip, pipSupported as pipSupportedBy, togglePip as pipToggle, watchPip } from '../pip';
 import { ErrorOverlay, HintBar, Spinner, Toast, UpNextTile, type OverlayLinks } from './Overlays';
 import { SeekBar } from './SeekBar';
 import { SkipButton } from './SkipButton';
@@ -52,6 +55,8 @@ export interface PlayerViewProps {
   posterUrl?: string | undefined;
   /** Caption size, background and contrast for this profile (M11-S03). */
   captionStyle?: CaptionStyle | undefined;
+  /** AirPlay button, off until the device spike passes (R16). Safari still has to report a device. */
+  airplay?: boolean | undefined;
   /** A kids profile follows its grown up's autoplay choice, so the switch is shown but cannot be changed. */
   lockAutoplay?: boolean | undefined;
   /** Saves a changed caption style. Without it the Caption appearance entry is not offered. */
@@ -116,6 +121,9 @@ export function PlayerView(props: PlayerViewProps) {
   } | null>(null);
   const [posterFailed, setPosterFailed] = useState(false);
   const [pipSupported, setPipSupported] = useState(false);
+  const [pipActive, setPipActive] = useState(false);
+  const [videoNode, setVideoNode] = useState<HTMLVideoElement | null>(null);
+  const [airplayTarget, setAirplayTarget] = useState(false);
   const [activity, setActivity] = useState(0);
   const lastActivity = useRef(0);
   const playRef = useRef<HTMLButtonElement | null>(null);
@@ -126,6 +134,7 @@ export function PlayerView(props: PlayerViewProps) {
   const setVideo = useCallback(
     (el: HTMLVideoElement | null) => {
       videoEl.current = el;
+      setVideoNode(el);
       const r = props.videoRef;
       if (typeof r === 'function') r(el);
       else if (r) (r as { current: HTMLVideoElement | null }).current = el;
@@ -162,7 +171,6 @@ export function PlayerView(props: PlayerViewProps) {
 
   // ---- fullscreen, orientation, pip ----
   useEffect(() => {
-    setPipSupported(typeof document !== 'undefined' && Boolean(document.pictureInPictureEnabled));
     const onChange = () => setFullscreen(document.fullscreenElement === containerRef.current);
     document.addEventListener('fullscreenchange', onChange);
     return () => document.removeEventListener('fullscreenchange', onChange);
@@ -190,14 +198,35 @@ export function PlayerView(props: PlayerViewProps) {
     }
   }, [compact, controller]);
 
+  // Picture in picture: the standard API and the iOS webkit one, with state from the events (L4-10).
+  useEffect(() => {
+    if (!videoNode) return;
+    setPipSupported(pipSupportedBy(videoNode, document));
+    setPipActive(inPip(videoNode, document));
+    return watchPip(videoNode, document, setPipActive);
+  }, [videoNode]);
+
   const togglePip = useCallback(async () => {
     try {
-      if (document.pictureInPictureElement) await document.exitPictureInPicture();
-      else await videoEl.current?.requestPictureInPicture();
+      await pipToggle(videoEl.current, document);
     } catch {
       controller?.notify(msg('player.pipUnavailable'), 'error');
     }
   }, [controller]);
+
+  // AirPlay stays off until the device spike passes (R16): the host turns it on with `airplay`.
+  useEffect(() => {
+    if (!props.airplay || !videoNode) {
+      setAirplayTarget(false);
+      return;
+    }
+    const stopTarget = watchAirplayAvailability(videoNode, setAirplayTarget);
+    const stopWireless = watchWireless(videoNode, (w) => controller?.setWireless(w));
+    return () => {
+      stopTarget();
+      stopWireless();
+    };
+  }, [props.airplay, videoNode, controller]);
 
   // ---- caption tracks ----
   const tracks = state.captions.tracks;
@@ -512,6 +541,23 @@ export function PlayerView(props: PlayerViewProps) {
         />
       ) : null}
 
+      {pipActive || state.wireless ? (
+        <div className="adp-away" role="status">
+          <p className="adp-away__text">
+            {state.wireless ? msg('player.airplay.active') : msg('player.pip.active')}
+          </p>
+          {pipActive ? (
+            <button
+              type="button"
+              className="adp-btn adp-btn--primary"
+              onClick={() => void togglePip()}
+            >
+              {msg('player.pip.bringBack')}
+            </button>
+          ) : null}
+        </div>
+      ) : null}
+
       {state.hint && !state.error ? (
         <HintBar
           kind={state.hint.kind}
@@ -766,11 +812,23 @@ export function PlayerView(props: PlayerViewProps) {
           ) : null}
         </div>
 
+        {props.airplay && airplayTarget ? (
+          <button
+            type="button"
+            className="adp-ctl"
+            aria-label={msg('player.airplay.button')}
+            onClick={() => controller?.openAirplay()}
+          >
+            <AirplayIcon />
+          </button>
+        ) : null}
+
         {pipSupported ? (
           <button
             type="button"
             className="adp-ctl"
             aria-label={msg('player.pip')}
+            aria-pressed={pipActive}
             onClick={() => void togglePip()}
           >
             <PipIcon />

@@ -88,6 +88,8 @@ export interface PlayerState {
   marker: ActiveMarker | null;
   /** The chapter the viewer is in, or null before the first one or with no chapters. */
   chapter: ActiveChapter | null;
+  /** Playback is going to an AirPlay device. The surface says so and the quality list stays out of the way. */
+  wireless: boolean;
   /** A one sentence, one action hint about a slow connection, never blaming the viewer (L4-11). */
   hint: PlayerHint | null;
   /** Retries in a row since the last time playback ran. The reference line shows from the third. */
