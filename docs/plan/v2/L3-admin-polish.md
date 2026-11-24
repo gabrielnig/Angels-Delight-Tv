@@ -881,3 +881,74 @@ Format per CLAUDE.md: decision, options, why, reversible.
 ## 13. Owner questions
 
 None block the build. Two choices are worth a glance because they change who can do what, both already set to the recommended option and easy to reverse: (a) bulk approve of captions is Admin only, so an Editor still approves one at a time; (b) deleting a series becomes Admin only (it is Editor today).
+
+## 14. Amendments (design review, 24 November 2026)
+
+Review: `docs/reviews/v2/L3-review.md`. Where this section and an earlier section disagree, this section wins (rulings R21, R22, R30, R32, R33, R38 apply). The CSS below replaces the blocks it names.
+
+### 14.1 Breadcrumb CSS (replaces section 3.3 block, R30 and R32)
+
+Changes: links get `min-width: 44px` and centre their text; the current crumb is `display: inline-block` with `line-height: 44px` (an inline-flex box ignores `text-overflow: ellipsis`, so the cut never showed); the phone back link keeps the 44px box.
+
+```css
+.ad-crumbs ol { display: flex; flex-wrap: wrap; align-items: center; margin: 0; padding: 0; list-style: none; color: var(--color-muted); font-size: var(--text-caption); }
+.ad-crumbs li { display: inline-flex; align-items: center; min-width: 0; min-height: var(--touch-target); }
+.ad-crumbs li + li::before { content: '/'; flex: none; padding: 0 var(--space-2); }
+.ad-crumbs a { display: inline-flex; align-items: center; justify-content: center; min-width: var(--touch-target); min-height: var(--touch-target); line-height: var(--leading-normal, 1.5); color: var(--color-muted); }
+.ad-crumbs [aria-current='page'] { display: inline-block; min-width: 0; max-width: 40ch; line-height: var(--touch-target); color: var(--color-ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ad-crumbs--viewer a { color: var(--color-primary); text-decoration: underline; }
+```
+
+The phone block, the hover block and the viewer wrapper rule in 3.3 stay as written. Playwright check in the PR: every `a` and `[aria-current]` in a trail measures 44px tall, links at least 44px wide, and the current crumb of a 120 character title measures one line.
+
+### 14.2 Bulk bar CSS (replaces the `.adm-bulk*` description in section 4, R30 and R38)
+
+```css
+.adm-bulk { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-3); min-height: 3.75rem; padding: var(--space-2) var(--space-4); border-radius: var(--radius-lg); background: var(--color-sidebar-bg); color: var(--color-sidebar-ink); box-shadow: var(--shadow-3); }
+.adm-bulk__count { font-weight: 700; white-space: nowrap; }
+.adm-bulk__note { color: var(--color-sidebar-muted); font-size: var(--text-caption); }
+/* Select all N that match: a 44px high link, never a bare inline link (R30) */
+.adm-bulk__all { display: inline-flex; align-items: center; min-height: var(--touch-target); padding: 0 var(--space-1); color: var(--color-focus-ring-dark); font-weight: 600; text-decoration: underline; white-space: nowrap; }
+/* Disabled bar action uses tokens, not raw greys (R38). Keeps aria-disabled so it stays focusable and shows its reason. */
+.adm-bulk .ad-btn[aria-disabled='true'] { background: var(--color-sidebar-active); border-color: var(--color-sidebar-active); color: var(--color-sidebar-muted); cursor: not-allowed; }
+.adm-bulk :focus-visible { outline: 3px solid var(--color-focus-ring-dark); outline-offset: 2px; }
+```
+
+Measured: disabled text `--color-sidebar-muted` on `--color-sidebar-active` 5.86:1; note text on the bar 7.98:1; yellow link on the bar 11.55:1. The disabled edge is 1.36:1 against the bar, which WCAG exempts for inactive controls; the word and the reason on focus carry the meaning.
+
+### 14.3 Locked row spacer (R33)
+
+A row that cannot be selected (own account, a Super admin, a running job) shows no checkbox and no greyed box. The cell keeps a 20px wide empty spacer inside the normal 44px cell so text stays aligned with selectable rows, and the row states its reason in plain words under the name (for example "You cannot select your own account").
+
+```css
+.adm-select-spacer { display: block; flex: none; inline-size: 1.25rem; block-size: 1.25rem; }
+```
+
+The cell is `aria-hidden`; the reason text is real text in the row, so nothing relies on a disabled control.
+
+### 14.4 Switch hit area (R30)
+
+The switch (`role="switch"`) is a 44px high button; the 26px track is drawn inside it.
+
+```css
+.ad-switch { position: relative; inline-size: 2.75rem; block-size: var(--touch-target); flex: none; background: transparent; border: 0; }
+.ad-switch::before { content: ''; position: absolute; inset-inline: 0; top: 0.5625rem; block-size: 1.625rem; border-radius: 0.8125rem; background: var(--color-switch-off); }
+.ad-switch::after { content: ''; position: absolute; top: 0.75rem; inset-inline-start: 0.1875rem; inline-size: 1.25rem; block-size: 1.25rem; border-radius: 50%; background: var(--color-surface); }
+.ad-switch[aria-checked='true']::before { background: var(--color-primary); }
+.ad-switch[aria-checked='true']::after { inset-inline-start: 1.3125rem; }
+@media (prefers-reduced-motion: no-preference) { .ad-switch::after { transition: inset-inline-start var(--duration-fast) var(--ease-standard); } }
+```
+
+### 14.5 Links inside lists, tables and reports (R30)
+
+Any link in a table cell, report row or card list is `display: inline-flex; align-items: center; min-height: var(--touch-target)`. Report rows use `padding: 0 var(--space-3); min-height: var(--touch-target)`. The admin brand link in the sidebar header is also 44px high. Admin nav links already use `min-height: var(--touch-target)`; the build adds a Playwright check that every `.adm-nav a` measures 44px at 360, 390 and 1360 (R30).
+
+### 14.6 Colour tokens still to add (decision L3-D15)
+
+The mockups use four text inks on status tints that are not in `tokens.css`. Add them to `tokens.css`, DESIGN-SYSTEM section 3 and the Fixed group of the theme editor: `--color-info-ink: #14568F` (6.63:1 on `--color-info-tint`), `--color-success-ink: #14532D` (7.99:1 on `--color-success-tint`), `--color-warning-ink: #5E3D00` (8.88:1 on `--color-warning-tint`). Danger text on a tint uses the existing `--color-danger-ink` (#8F1D13, 7.8:1); the mockup value #8E1B12 was a near duplicate and is replaced.
+
+### 14.7 Rulings applied to this plan
+
+- R21: bulk approve of captions and series delete are Admin only. Section 5 already says so; the Editor disabled states in S105 and S107 carry the reason text.
+- R22: captions per video are On, Off or Follow site default, changed by an Admin only. Off hides CC and keeps every profile's saved choice (S109 viewer frame). The site default stays Super admin only (M42-S18, unchanged).
+- R34 applies to the S109 player frame: the seek rail uses `#6A6E78` (3.75:1 on the player surface) inside a 44px hit area.
