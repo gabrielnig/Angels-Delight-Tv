@@ -15,8 +15,11 @@ const seo = vi.hoisted(() => ({
 }));
 vi.mock('../server/seo/seo-settings', () => ({ getSeoSettings: async () => seo.value }));
 vi.mock('../lib/theme/root', () => ({ getRootTheme: (nonce?: string) => getRootTheme(nonce) }));
+const reqHeaders = vi.hoisted(() => ({ value: {} as Record<string, string> }));
+vi.mock('../components/tv/TvNav', () => ({ TvNav: () => <i data-testid="tvnav" /> }));
+vi.mock('./tv.css', () => ({}));
 vi.mock('next/headers', () => ({
-  headers: async () => new Headers({ 'x-nonce': 'abc123' }),
+  headers: async () => new Headers({ 'x-nonce': 'abc123', ...reqHeaders.value }),
   cookies: async () => ({ get: () => undefined }),
 }));
 // The language lookup reads the theme runtime and the session, which need a database. The layout test pins markup.
@@ -70,6 +73,7 @@ const theme = {
 
 describe('root layout', () => {
   beforeEach(() => {
+    reqHeaders.value = {};
     getRootTheme.mockReset();
     getRootTheme.mockResolvedValue(theme);
     seo.value = {
@@ -93,6 +97,27 @@ describe('root layout', () => {
     expect(html).toContain('<main>Page</main>');
     expect(html).toContain('data-testid="pwa"');
     expect(html).toContain('data-testid="vitals"');
+  });
+
+  it('sets data-tv for a TV browser and for the stored choice, and not otherwise (M49-S15)', async () => {
+    const render = async () =>
+      renderToStaticMarkup(await RootLayout({ children: <main>Page</main> }));
+    expect(await render()).not.toContain('data-tv');
+    reqHeaders.value = {
+      'user-agent': 'Mozilla/5.0 (SMART-TV; LINUX; Tizen 6.0) TV Safari/537.36',
+    };
+    expect(await render()).toContain('data-tv="on"');
+    reqHeaders.value = {
+      'user-agent': 'Mozilla/5.0 (SMART-TV; LINUX; Tizen 6.0) TV Safari/537.36',
+      cookie: 'ad_tv=off',
+    };
+    expect(await render()).not.toContain('data-tv');
+    reqHeaders.value = {
+      'user-agent': 'Mozilla/5.0 (Windows NT 10.0) Chrome/120',
+      cookie: 'ad_tv=on',
+    };
+    expect(await render()).toContain('data-tv="on"');
+    expect(await render()).toContain('data-testid="tvnav"');
   });
 
   it('gives error pages the configured support email', async () => {

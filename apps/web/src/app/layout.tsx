@@ -4,7 +4,9 @@ import type { CSSProperties, ReactNode } from 'react';
 import '@ad/ui/tokens.css';
 import '@ad/ui/components.css';
 import './globals.css';
+import './tv.css';
 import { AccountSupportProvider } from '../components/account/AccountSupport';
+import { TvNav } from '../components/tv/TvNav';
 import { StorageNotice } from '../components/consent/StorageNotice';
 import { WebVitals } from '../components/observability/WebVitals';
 import { PwaClient } from '../components/pwa/PwaClient';
@@ -12,6 +14,7 @@ import { selectFonts } from '../lib/fonts';
 import { CLIENT_NAMESPACES, pickNamespaces } from '../lib/i18n/namespaces';
 import { I18nProvider } from '../lib/i18n/provider';
 import { getLocale, loadCatalog } from '../lib/i18n/server';
+import { tvModeFromHeaders } from '../lib/tv/server';
 import { getRootTheme } from '../lib/theme/root';
 import { getSeoSettings } from '../server/seo/seo-settings';
 import { localeInfo } from '@ad/shared/messages';
@@ -44,10 +47,14 @@ export async function generateViewport(): Promise<Viewport> {
 }
 
 export default async function RootLayout({ children }: { children: ReactNode }) {
-  const nonce = (await headers()).get('x-nonce') ?? undefined;
+  const requestHeaders = await headers();
+  const nonce = requestHeaders.get('x-nonce') ?? undefined;
+  const tv = tvModeFromHeaders(requestHeaders);
   const theme = await getRootTheme(nonce);
   const locale = await getLocale();
-  const catalog = pickNamespaces(await loadCatalog(locale), CLIENT_NAMESPACES, { production: true });
+  const catalog = pickNamespaces(await loadCatalog(locale), CLIENT_NAMESPACES, {
+    production: true,
+  });
   const seo = await getSeoSettings();
   const fonts = selectFonts(theme.injection.fontKey, locale);
   return (
@@ -55,6 +62,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
       lang={localeInfo(locale)?.htmlLang ?? 'en-NG'}
       className={fonts.classNames}
       style={fonts.variables as CSSProperties}
+      {...(tv ? { 'data-tv': 'on' } : {})}
     >
       <head>
         <style {...theme.styleProps} />
@@ -65,9 +73,14 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
             <Providers>{children}</Providers>
           </AccountSupportProvider>
         </I18nProvider>
-        <StorageNotice enabled={seo.noticeEnabled} text={seo.noticeText} version={seo.noticeVersion} />
+        <StorageNotice
+          enabled={seo.noticeEnabled}
+          text={seo.noticeText}
+          version={seo.noticeVersion}
+        />
         <PwaClient platformName={theme.platformName} />
         <WebVitals />
+        <TvNav />
       </body>
     </html>
   );

@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { PlaybackSettingsForm } from './PlaybackSettings';
 
 const initial = {
@@ -296,5 +296,45 @@ describe('PlaybackSettings caption colour, reset and device note (M49-S11)', () 
   it('shows no device note when the device is not on Data saver', () => {
     wrap(vi.fn());
     expect(screen.queryByText('This device is on Data saver')).not.toBeInTheDocument();
+  });
+});
+
+describe('PlaybackSettings TV mode (M49-S15)', () => {
+  afterEach(() => {
+    document.cookie = 'ad_tv=; Path=/; Max-Age=0';
+    document.documentElement.removeAttribute('data-tv');
+  });
+
+  it('has a This device section with a TV mode choice that defaults to Automatic', () => {
+    wrap(vi.fn());
+    expect(screen.getByRole('heading', { name: 'This device' })).toBeInTheDocument();
+    const select = screen.getByRole('combobox', { name: 'TV mode' });
+    expect(select).toHaveValue('auto');
+    expect(screen.getByText(/larger text and a thick focus ring/i)).toBeInTheDocument();
+  });
+
+  it('turning it on sets the cookie and the page attribute without a server save', async () => {
+    const save = vi.fn().mockResolvedValue(undefined);
+    const user = userEvent.setup();
+    wrap(save);
+    await user.selectOptions(screen.getByRole('combobox', { name: 'TV mode' }), 'on');
+    expect(document.cookie).toContain('ad_tv=on');
+    expect(document.documentElement.getAttribute('data-tv')).toBe('on');
+    expect(save).not.toHaveBeenCalled();
+  });
+
+  it('turning it off beats a TV browser', async () => {
+    const user = userEvent.setup();
+    wrap(vi.fn());
+    await user.selectOptions(screen.getByRole('combobox', { name: 'TV mode' }), 'on');
+    await user.selectOptions(screen.getByRole('combobox', { name: 'TV mode' }), 'off');
+    expect(document.cookie).toContain('ad_tv=off');
+    expect(document.documentElement.hasAttribute('data-tv')).toBe(false);
+  });
+
+  it('shows the stored choice', () => {
+    document.cookie = 'ad_tv=on; Path=/';
+    wrap(vi.fn());
+    expect(screen.getByRole('combobox', { name: 'TV mode' })).toHaveValue('on');
   });
 });
