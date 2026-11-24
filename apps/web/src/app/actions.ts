@@ -330,6 +330,26 @@ export async function confirmEmailChangeAction(input: { code: string }) {
   return getAccount().confirmEmailChange(await currentAccountId(), input);
 }
 
+export async function twoFactorStateAction() {
+  return getAccount().twoFactor(await currentAccountId());
+}
+
+export async function beginTwoFactorAction() {
+  return getAccount().beginTwoFactor(await currentAccountId());
+}
+
+export async function confirmTwoFactorAction(input: { code: string }) {
+  return getAccount().confirmTwoFactor(await currentAccountId(), input);
+}
+
+export async function disableTwoFactorAction(input: { password: string; code: string }) {
+  return getAccount().disableTwoFactor(await currentAccountId(), input);
+}
+
+export async function regenerateRecoveryAction(input: { password: string }) {
+  return getAccount().regenerateRecoveryCodes(await currentAccountId(), input);
+}
+
 export async function revokeDeviceAction(id: string) {
   await getAccount().revokeDevice(await currentAccountId(), id);
 }

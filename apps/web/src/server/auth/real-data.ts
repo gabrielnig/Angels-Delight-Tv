@@ -75,5 +75,6 @@ export const createRealAccount = (viewer?: AccountViewerSource) => {
     requestIo(),
     () => new Date(),
     viewer,
+    runtime.viewerMfa,
   );
 };

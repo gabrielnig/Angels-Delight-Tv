@@ -1408,3 +1408,37 @@
 .acct-card[data-narrow] {
   max-width: 35rem;
 }
+
+/* Two step verification: backup codes and the setup key use the fixed mono face (R38). */
+.acct-codes {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.acct-code {
+  margin: 0;
+  padding: var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-sunken);
+  font-family: var(--font-mono);
+  font-weight: 600;
+  font-size: 1.0625rem;
+  letter-spacing: 0.08em;
+  user-select: all;
+  overflow-wrap: anywhere;
+}
+.acct-code[data-block] {
+  display: block;
+}
+.acct-qr {
+  display: block;
+  inline-size: 12rem;
+  block-size: 12rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+}

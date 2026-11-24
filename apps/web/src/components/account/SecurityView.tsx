@@ -2,11 +2,13 @@
 
 import { useCallback, useState } from 'react';
 import { revokeDeviceAction, revokeOtherDevicesAction } from '../../app/actions';
-import type { DeviceSession } from '../../lib/data';
+import type { DeviceSession, TwoFactorState } from '../../lib/data';
 import { ChangePasswordForm } from './ChangePassword';
 import { DevicesCard } from './DevicesPanel';
 import { EmailCard } from './EmailCard';
 import { InlineToast } from './InlineToast';
+import { TwoFactorCard } from './TwoFactorCard';
+import { msg } from '@ad/shared/messages';
 
 /** The security screen body (S28): toast slot, Password, Email, signed in devices. */
 export function SecurityView({
@@ -14,6 +16,7 @@ export function SecurityView({
   verified,
   passwordChanged,
   devices: initial,
+  twoFactor,
   revoke = revokeDeviceAction,
   revokeOthers = revokeOtherDevicesAction,
 }: {
@@ -21,6 +24,7 @@ export function SecurityView({
   verified: boolean;
   passwordChanged: string;
   devices: DeviceSession[];
+  twoFactor?: TwoFactorState;
   revoke?: (id: string) => Promise<unknown>;
   revokeOthers?: () => Promise<unknown>;
 }) {
@@ -71,6 +75,17 @@ export function SecurityView({
           });
         }}
       />
+      {twoFactor ? (
+        <TwoFactorCard
+          initial={twoFactor}
+          onChanged={(change) =>
+            setToast({
+              text:
+                change === 'on' ? msg('account.twoStep.onDone') : msg('account.twoStep.offDone'),
+            })
+          }
+        />
+      ) : null}
       <EmailCard
         email={email}
         verified={verified}

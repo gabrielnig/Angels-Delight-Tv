@@ -413,7 +413,44 @@ export interface AccountOverview {
 
 export type EmailChangeFailure = 'wrong_password' | 'invalid_email' | 'same_email' | 'network';
 
+export interface TwoFactorState {
+  enabled: boolean;
+  recoveryRemaining: number;
+  /** Two or fewer codes left. */
+  low: boolean;
+}
+
+export type TwoFactorProblem =
+  { ok: false; reason: 'network' } | { ok: false; reason: 'locked'; minutes: number };
+
 export interface AccountRepository {
+  twoFactor(accountId: string): Promise<TwoFactorState>;
+  /** Starts setup: a manual key, an authenticator link and a QR picture. Nothing is on until confirmed. */
+  beginTwoFactor(
+    accountId: string,
+  ): Promise<
+    { ok: true; secret: string; uri: string; qrSvg: string } | { ok: false; reason: 'network' }
+  >;
+  confirmTwoFactor(
+    accountId: string,
+    input: { code: string },
+  ): Promise<
+    { ok: true; recoveryCodes: string[] } | { ok: false; reason: 'wrong' } | TwoFactorProblem
+  >;
+  disableTwoFactor(
+    accountId: string,
+    input: { password: string; code: string },
+  ): Promise<
+    { ok: true } | { ok: false; reason: 'wrong_password' | 'wrong_code' } | TwoFactorProblem
+  >;
+  regenerateRecoveryCodes(
+    accountId: string,
+    input: { password: string },
+  ): Promise<
+    | { ok: true; recoveryCodes: string[] }
+    | { ok: false; reason: 'wrong_password' }
+    | TwoFactorProblem
+  >;
   overview(accountId: string): Promise<AccountOverview>;
   /** Saves the name shown on the account screen (S27 Edit name). */
   updateName(

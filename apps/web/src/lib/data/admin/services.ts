@@ -702,6 +702,8 @@ export interface PeopleService {
   suspend(actor: AdminActor, id: string, reason: string): Promise<CommandResult>;
   reinstate(actor: AdminActor, id: string): Promise<CommandResult>;
   revokeSessions(actor: AdminActor, id: string, reason: string): Promise<CommandResult>;
+  /** Admin only. Clears a viewer's two step verification after they lost the phone and the codes (M49-S04). */
+  resetViewerTwoFactor(actor: AdminActor, id: string, reason: string): Promise<CommandResult>;
   /** Suspend, reinstate or force sign out for many viewer accounts. Admin only (users.bulk). */
   bulkUsers(
     actor: AdminActor,
@@ -769,9 +771,22 @@ const fixturePeopleService: PeopleService = {
     need(actor, 'users.suspend');
     return revokeSessions(getStore(), id, reason, actor.accountId, actor.name, Date.now());
   },
+  async resetViewerTwoFactor(actor, id, reason) {
+    need(actor, 'users.suspend');
+    if (reason.trim().length < 3) return { ok: false, error: 'Say why you are resetting this.' };
+    if (!getStore().users.some((u) => u.id === id))
+      return { ok: false, error: 'That account was not found.' };
+    return { ok: true };
+  },
   async bulkUsers(actor, ids, action, bulkId) {
     need(actor, 'users.bulk');
-    return runUserBulk(userBulkFor(fixturePeopleService, actor), actor.accountId, ids, action, bulkId);
+    return runUserBulk(
+      userBulkFor(fixturePeopleService, actor),
+      actor.accountId,
+      ids,
+      action,
+      bulkId,
+    );
   },
   async undoUsers(actor, undo) {
     need(actor, 'users.bulk');

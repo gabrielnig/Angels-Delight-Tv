@@ -30,6 +30,10 @@ export async function revokeSessionsAction(id: string, reason: string) {
   return run((a) => peopleService.revokeSessions(a, String(id), String(reason)));
 }
 
+export async function resetTwoFactorForUserAction(id: string, reason: string) {
+  return run((a) => peopleService.resetViewerTwoFactor(a, String(id), String(reason)));
+}
+
 export async function deleteUserAccountAction(id: string, confirmation: string) {
   return run((a) => peopleService.deleteAccount(a, String(id), String(confirmation)));
 }

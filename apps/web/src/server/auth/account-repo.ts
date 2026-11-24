@@ -1,4 +1,9 @@
-import { FieldErrors, type SessionService, type StaffService } from '@ad/auth';
+import {
+  FieldErrors,
+  type SessionService,
+  type StaffService,
+  type ViewerMfaService,
+} from '@ad/auth';
 import { RateLimited } from '@ad/shared';
 import { FixtureAccount } from '../../lib/data/fixtures/account';
 import type {
@@ -21,6 +26,10 @@ type Service = Pick<
   | 'setDisplayName'
   | 'requestEmailChange'
   | 'confirmEmailChange'
+>;
+type Mfa = Pick<
+  ViewerMfaService,
+  'status' | 'beginEnrolment' | 'confirmEnrolment' | 'disable' | 'regenerateRecoveryCodes'
 >;
 type Sessions = Pick<SessionService, 'list' | 'revokeOwn' | 'revokeAll'>;
 
@@ -81,7 +90,90 @@ export class RealAccountRepository implements AccountRepository {
     private readonly io: GatewayIo,
     private readonly clock: () => Date = () => new Date(),
     private readonly viewer?: AccountViewerSource,
+    private readonly mfa?: Mfa,
   ) {}
+
+  private lockedOrNetwork(error: unknown) {
+    return error instanceof RateLimited
+      ? {
+          ok: false as const,
+          reason: 'locked' as const,
+          minutes: Math.max(1, Math.ceil(error.retryAfterSeconds / 60)),
+        }
+      : { ok: false as const, reason: 'network' as const };
+  }
+
+  async twoFactor(accountId: string): ReturnType<AccountRepository['twoFactor']> {
+    if (!this.mfa) return this.fallback.twoFactor();
+    return this.mfa.status(await this.actor(accountId));
+  }
+
+  async beginTwoFactor(accountId: string): ReturnType<AccountRepository['beginTwoFactor']> {
+    if (!this.mfa) return this.fallback.beginTwoFactor();
+    try {
+      const begun = await this.mfa.beginEnrolment(
+        await this.actor(accountId),
+        await this.io.meta(),
+      );
+      return { ok: true as const, ...begun };
+    } catch {
+      return { ok: false as const, reason: 'network' as const };
+    }
+  }
+
+  async confirmTwoFactor(
+    accountId: string,
+    input: { code: string },
+  ): ReturnType<AccountRepository['confirmTwoFactor']> {
+    if (!this.mfa) return this.fallback.confirmTwoFactor(accountId, input);
+    try {
+      const done = await this.mfa.confirmEnrolment(
+        await this.actor(accountId),
+        input,
+        await this.io.meta(),
+      );
+      return { ok: true as const, recoveryCodes: done.recoveryCodes };
+    } catch (error) {
+      if (error instanceof FieldErrors) return { ok: false as const, reason: 'wrong' as const };
+      return this.lockedOrNetwork(error);
+    }
+  }
+
+  async disableTwoFactor(
+    accountId: string,
+    input: { password: string; code: string },
+  ): ReturnType<AccountRepository['disableTwoFactor']> {
+    if (!this.mfa) return this.fallback.disableTwoFactor(accountId, input);
+    try {
+      await this.mfa.disable(await this.actor(accountId), input, await this.io.meta());
+      return { ok: true as const };
+    } catch (error) {
+      if (error instanceof FieldErrors)
+        return error.fields.password
+          ? { ok: false as const, reason: 'wrong_password' as const }
+          : { ok: false as const, reason: 'wrong_code' as const };
+      return this.lockedOrNetwork(error);
+    }
+  }
+
+  async regenerateRecoveryCodes(
+    accountId: string,
+    input: { password: string },
+  ): ReturnType<AccountRepository['regenerateRecoveryCodes']> {
+    if (!this.mfa) return this.fallback.regenerateRecoveryCodes(accountId, input);
+    try {
+      const recoveryCodes = await this.mfa.regenerateRecoveryCodes(
+        await this.actor(accountId),
+        input,
+        await this.io.meta(),
+      );
+      return { ok: true as const, recoveryCodes };
+    } catch (error) {
+      if (error instanceof FieldErrors)
+        return { ok: false as const, reason: 'wrong_password' as const };
+      return this.lockedOrNetwork(error);
+    }
+  }
 
   private async signedInAccount(): Promise<string> {
     const actor = await this.io.currentActor();
