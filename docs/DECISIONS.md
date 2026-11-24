@@ -1904,3 +1904,9 @@ Decision: `video.preview` catches every error and records `failed` or `skipped` 
 - Options: Ship them as baselines; ship nothing; ship as drafts the editor loads
 - Why: A baseline would show unreviewed text to children and parents the moment a language is enabled. Loading them as draft rows saves a reviewer typing from scratch and keeps the approval rule intact.
 - Reversible: Yes
+
+## D-348 Migration journal timestamps made strictly increasing before the first deploy (cleanup)
+- Decision: The `when` values in packages/db/migrations/main/meta/_journal.json are strictly increasing in file order (twelve entries from 0042 on were raised by one second steps), and packages/db/src/journal.test.ts enforces this plus file and number consistency for the main and keys journals.
+- Options: Leave the journal as it was; raise the out of order values; squash the migrations into one baseline.
+- Why: Drizzle runs a migration only when its `when` is newer than the latest applied one, so a database that was behind would silently skip 0042, 0048 to 0052, 0055 and 0056 and then miss tables. Fresh databases were never affected. No production database exists yet, so the change is safe now and would not be later. A development database already migrated to 0056 would try 0055 and 0056 again, so reset it (docker compose down -v) or delete their two rows from drizzle.__drizzle_migrations.
+- Reversible: Yes, but only before a production database exists.
