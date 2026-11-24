@@ -1622,3 +1622,9 @@ Per video tri state, site default (Super admin), Admin changes it with a reason 
 - Options: a notice per episode, a notice table written by the web app, a cron that scans every profile.
 - Why: no spam on a binge release, no duplicates on retry, and the worker role stays narrow.
 - Reversible: yes.
+
+## D-297 The storage inventory is built from the real names and durations, and the notice and toast cannot overlap (lane L6, M45)
+- Decision: `STORAGE_INVENTORY` lists every cookie, storage key and cache the visitor build sets, each row naming its source file and the text to find there, with durations taken from the same constants the code uses. A test fails on any placeholder, missing source or drifting duration. The notice sits bottom right from 1024 px, spans the width from 600 px, sits above the tab bar below 960 px, uses layer 30 and publishes `--notice-h` for the toast container. A stylesheet geometry test checks the two rectangles never intersect from 360 to 1920 px.
+- Options: keep the mockup list with Confirm at build badges; hand written privacy copy; a browser test.
+- Why: the Privacy page cannot promise what the code does not do, and jsdom has no layout, so the check reads the real CSS.
+- Reversible: yes.
