@@ -10,6 +10,7 @@ import { useSearchShortcut } from './browse/useSearchShortcut';
 import { ProfileIdProvider } from '../lib/profile-context';
 import { KidsExitDialog } from './KidsExitDialog';
 import { GuestIntentApplier } from './guest/GuestIntentApplier';
+import { ImportPrompt } from './guest/ImportPrompt';
 import { QueueSync } from './pwa/QueueSync';
 
 export interface ChromeProps {
@@ -94,6 +95,7 @@ export function ViewerChrome({
     <ProfileIdProvider id={profileId}>
       <QueueSync profileId={profileId} />
       <GuestIntentApplier />
+      <ImportPrompt profileId={profileId} kids={kids} />
       <div
         className="web-shell"
         data-kids={kids ? 'true' : undefined}

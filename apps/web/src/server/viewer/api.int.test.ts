@@ -120,6 +120,70 @@ describe.skipIf(!integrationEnabled())('viewer api', () => {
     expect(notJson.status).toBe(422);
   });
 
+  describe('POST /api/progress/import (M40-S17)', () => {
+    const item = () => ({
+      videoId: video.id,
+      positionMs: 30000,
+      finished: false,
+      updatedAt: Date.now() - 1000,
+    });
+
+    it('imports into the signed in profile and reports the counts', async () => {
+      signedIn = me.actor;
+      const res = await api.progress.import(
+        post('/api/progress/import', { profileId: me.profileId, items: [item()] }),
+      );
+      expect(res.status).toBe(200);
+      const body = await res.json();
+      expect(body.imported + body.skipped).toBe(1);
+    });
+
+    it('hides another account profile, refuses cross-origin and bad input', async () => {
+      signedIn = me.actor;
+      expect(
+        (
+          await api.progress.import(
+            post('/api/progress/import', { profileId: other.profileId, items: [item()] }),
+          )
+        ).status,
+      ).toBe(404);
+      expect(
+        (
+          await api.progress.import(
+            post(
+              '/api/progress/import',
+              { profileId: me.profileId, items: [item()] },
+              { headers: { origin: 'https://evil.test' } },
+            ),
+          )
+        ).status,
+      ).toBe(403);
+      expect(
+        (await api.progress.import(post('/api/progress/import', { profileId: me.profileId })))
+          .status,
+      ).toBe(422);
+      const tooMany = Array.from({ length: 101 }, item);
+      expect(
+        (
+          await api.progress.import(
+            post('/api/progress/import', { profileId: me.profileId, items: tooMany }),
+          )
+        ).status,
+      ).toBe(422);
+    });
+
+    it('is 401 without a session', async () => {
+      signedIn = null;
+      expect(
+        (
+          await api.progress.import(
+            post('/api/progress/import', { profileId: me.profileId, items: [item()] }),
+          )
+        ).status,
+      ).toBe(401);
+    });
+  });
+
   it('refuses cross-origin writes', async () => {
     signedIn = me.actor;
     const res = await api.progress.save(

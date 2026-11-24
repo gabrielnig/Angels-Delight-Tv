@@ -18,6 +18,7 @@ import {
   getProgress,
   getRecentSearches,
   getTitleDetail,
+  importGuestProgress,
   listBrowseCategories,
   listMyList,
   listProfiles,
@@ -55,6 +56,7 @@ import {
   suggestQuery,
   titleDetailQuery,
   titlesBatchQuery,
+  importProgressBody,
   updateProfileBody,
 } from '@ad/viewer/schemas';
 import {
@@ -405,6 +407,14 @@ export function createViewerApi(rt: ViewerRuntime) {
         async (req, actor) => {
           const body = parseWith(saveProgressBody, await readJson(req));
           return json({ progress: await saveProgress(rt.ctx, actor, body) });
+        },
+        { mutating: true },
+      ),
+      /** A visitor's device history, moved into the signed in profile once (M40-S17). The account wins. */
+      import: guard(
+        async (req, actor) => {
+          const body = parseWith(importProgressBody, await readJson(req));
+          return json(await importGuestProgress(rt.ctx, actor, body));
         },
         { mutating: true },
       ),
