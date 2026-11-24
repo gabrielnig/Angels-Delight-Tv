@@ -16,6 +16,8 @@ import {
   removeRow,
   resolvePreview,
   setHero,
+  setHeroText,
+  MAX_HERO_TEXT,
   toggleRow,
   duplicateNameNote,
   viewAllOpens,
@@ -251,5 +253,37 @@ describe('section summaries for the editor (M41-S06, S08)', () => {
   it('gives every addable type a one line meaning', () => {
     for (const t of ['manual', 'category', 'newest', 'series', 'smart', 'each_category', 'all_series'] as const)
       expect(ADD_TYPE_HINTS[t].length).toBeGreaterThan(10);
+  });
+});
+
+describe('hero slide text', () => {
+  const base = { ...defaultHome(), heroIds: ['a', 'b'] };
+
+  it('stores text as typed per title and drops blank fields', () => {
+    const r = setHeroText(base, 'a', { headline: 'Learn fractions ', blurb: '', buttonLabel: 'Start' });
+    expect(r.ok && r.config.heroText).toEqual({ a: { headline: 'Learn fractions ', buttonLabel: 'Start' } });
+  });
+
+  it('removes the entry when every field is blank', () => {
+    const first = setHeroText(base, 'a', { headline: 'Hi' });
+    const r = first.ok ? setHeroText(first.config, 'a', { headline: ' ' }) : first;
+    expect(r.ok && r.config.heroText).toEqual({});
+  });
+
+  it('refuses text over the limit and titles that are not in the hero', () => {
+    expect(setHeroText(base, 'a', { headline: 'x'.repeat(MAX_HERO_TEXT + 1) }).ok).toBe(false);
+    expect(setHeroText(base, 'zzz', { headline: 'Hi' }).ok).toBe(false);
+  });
+
+  it('prunes text when a title leaves the hero', () => {
+    const withText = setHeroText(base, 'b', { headline: 'Hi' });
+    const r = withText.ok ? setHero(withText.config, ['a']) : withText;
+    expect(r.ok && r.config.heroText).toEqual({});
+  });
+
+  it('validateConfig refuses long text', () => {
+    expect(
+      validateConfig({ ...base, heroText: { a: { headline: 'x'.repeat(MAX_HERO_TEXT + 1) } } }),
+    ).toMatch(/80/);
   });
 });

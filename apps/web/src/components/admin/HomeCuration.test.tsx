@@ -329,3 +329,19 @@ describe('restore launch defaults (M41-S09)', () => {
     expect(screen.getAllByRole('button', { name: 'Restore launch defaults' }).length).toBe(2);
   });
 });
+
+describe('HomeCuration hero text', () => {
+  it('shows slide text fields for a chosen hero title and marks the draft changed', () => {
+    const state = { draft: defaultHome(), published: defaultHome(), previous: null, publishedAt: null };
+    const v = s.videos.find((x) => x.publishState === 'published')!;
+    state.draft = { ...state.draft, heroIds: [v.id] };
+    state.published = state.draft;
+    render(
+      <ToastProvider>
+        <HomeCuration state={state} videos={s.videos} series={s.series} categories={s.categories} canCurate actions={{ saveDraft: ok(), publish: ok(), restore: ok() }} />
+      </ToastProvider>,
+    );
+    fireEvent.change(screen.getByLabelText(`Headline for ${v.title}`), { target: { value: 'Start here' } });
+    expect(screen.getByText('Unsaved changes')).toBeTruthy();
+  });
+});

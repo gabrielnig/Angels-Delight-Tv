@@ -46,8 +46,19 @@ export interface HomeRowConfig {
   kidsVisible?: boolean;
 }
 
+/** Optional words on a hero slide. Empty fields fall back to the title's own text. */
+export interface HeroText {
+  headline?: string;
+  blurb?: string;
+  buttonLabel?: string;
+}
+
+export const MAX_HERO_TEXT = 80;
+
 export interface HomeConfig {
   heroIds: string[];
+  /** Keyed by video id. Only titles that are in heroIds keep an entry. */
+  heroText?: Record<string, HeroText>;
   rows: HomeRowConfig[];
 }
 
@@ -146,6 +157,10 @@ export const cleanRowName = (name: string): string => name.trim().replace(/\s+/g
 export function validateHomeConfig(config: HomeConfig): string | null {
   if (config.rows.length > MAX_ROWS) return `Home can have up to ${MAX_ROWS} sections.`;
   if (config.heroIds.length > MAX_HERO) return `Choose up to ${MAX_HERO} hero titles.`;
+  for (const text of Object.values(config.heroText ?? {}))
+    for (const value of [text.headline, text.blurb, text.buttonLabel])
+      if ((value ?? '').length > MAX_HERO_TEXT)
+        return `Keep hero text to ${MAX_HERO_TEXT} characters`;
   for (const row of config.rows) {
     const name = cleanRowName(row.name);
     if (!name) return 'Give the section a name';
@@ -226,6 +241,16 @@ async function configFromRows(tx: Tx): Promise<HomeConfig | null> {
       .map((i) => i.videoId as string);
     if (row.kind === 'hero') {
       config.heroIds = ids.slice(0, MAX_HERO);
+      const heroText: Record<string, HeroText> = {};
+      for (const i of items) {
+        if (i.rowId !== row.id || !i.videoId || !config.heroIds.includes(i.videoId)) continue;
+        const text: HeroText = {};
+        if (i.heroHeadline) text.headline = i.heroHeadline;
+        if (i.heroBlurb) text.blurb = i.heroBlurb;
+        if (i.heroButtonLabel) text.buttonLabel = i.heroButtonLabel;
+        if (Object.keys(text).length) heroText[i.videoId] = text;
+      }
+      if (Object.keys(heroText).length) config.heroText = heroText;
       continue;
     }
     const type = row.kind === 'curated' && row.seriesId ? 'series' : TYPE_OF[row.kind];
@@ -299,6 +324,7 @@ async function syncRows(tx: Tx, config: HomeConfig): Promise<void> {
     viewAllUrl: string | null;
     minItems: number;
     kidsVisible: boolean;
+    heroText?: Record<string, HeroText>;
   };
   const usedSlugs = new Set<string>();
   const slugFor = (row: HomeRowConfig): string | null => {
@@ -333,6 +359,7 @@ async function syncRows(tx: Tx, config: HomeConfig): Promise<void> {
       categoryId: null,
       published: true,
       videoIds: heroIds,
+      heroText: config.heroText,
       slug: null,
       viewAllMode: 'none',
       viewAllUrl: null,
@@ -406,7 +433,19 @@ async function syncRows(tx: Tx, config: HomeConfig): Promise<void> {
     if (target.videoIds.length)
       await tx
         .insert(rowItems)
-        .values(target.videoIds.map((videoId, i) => ({ rowId: target.id, position: i, videoId })));
+        .values(
+          target.videoIds.map((videoId, i) => {
+            const text = target.kind === 'hero' ? target.heroText?.[videoId] : undefined;
+            return {
+              rowId: target.id,
+              position: i,
+              videoId,
+              heroHeadline: text?.headline?.trim() || null,
+              heroBlurb: text?.blurb?.trim() || null,
+              heroButtonLabel: text?.buttonLabel?.trim() || null,
+            };
+          }),
+        );
   }
 }
 

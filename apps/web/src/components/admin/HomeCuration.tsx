@@ -22,6 +22,7 @@ import { Button } from './Button';
 import { ConfirmDialog, Dialog } from './Dialog';
 import { PosterTile, seedOf } from './PosterTile';
 import { SelectField, Switch, TextField } from './fields';
+import { HeroSlots } from './HeroSlots';
 import { HomeSections } from './HomeSections';
 import { SectionEditor } from './SectionEditor';
 import { Banner } from './states';
@@ -233,6 +234,7 @@ export function HomeCuration({
                 })}
               </ol>
             )}
+            <HeroSlots config={config} videos={videos} canCurate={canCurate} onChange={(next) => apply({ ok: true, config: next })} />
             <div className="adm-row">
               <SelectField
                 label="Add hero title"

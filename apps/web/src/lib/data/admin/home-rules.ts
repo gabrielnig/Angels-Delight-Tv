@@ -35,8 +35,17 @@ export interface HomeRow {
   kidsVisible?: boolean;
 }
 
+export interface HeroText {
+  headline?: string;
+  blurb?: string;
+  buttonLabel?: string;
+}
+
+export const MAX_HERO_TEXT = 80;
+
 export interface HomeConfig {
   heroIds: string[];
+  heroText?: Record<string, HeroText>;
   rows: HomeRow[];
 }
 
@@ -240,7 +249,25 @@ export function moveTitle(
 export function setHero(config: HomeConfig, videoIds: string[]): HomeResult {
   const unique = [...new Set(videoIds)];
   if (unique.length > MAX_HERO) return fail(`Choose up to ${MAX_HERO} hero titles.`);
-  return ok({ ...config, heroIds: unique });
+  const heroText = Object.fromEntries(
+    Object.entries(config.heroText ?? {}).filter(([id]) => unique.includes(id)),
+  );
+  return ok({ ...config, heroIds: unique, heroText });
+}
+
+export function setHeroText(config: HomeConfig, videoId: string, text: HeroText): HomeResult {
+  if (!config.heroIds.includes(videoId)) return fail('That title is not in the hero');
+  const clean: HeroText = {};
+  for (const key of ['headline', 'blurb', 'buttonLabel'] as const) {
+    // Kept as typed so a space between words survives. Saving trims it.
+    const value = text[key] ?? '';
+    if (value.length > MAX_HERO_TEXT) return fail(`Keep hero text to ${MAX_HERO_TEXT} characters`);
+    if (value.trim()) clean[key] = value;
+  }
+  const heroText = { ...config.heroText };
+  if (Object.keys(clean).length) heroText[videoId] = clean;
+  else delete heroText[videoId];
+  return ok({ ...config, heroText });
 }
 
 export interface ResolvedPreviewRow {
@@ -323,6 +350,10 @@ export function resolvePreview(
 export function validateConfig(config: HomeConfig): string | null {
   if (config.rows.length > MAX_ROWS) return `Home can have up to ${MAX_ROWS} sections.`;
   if (config.heroIds.length > MAX_HERO) return `Choose up to ${MAX_HERO} hero titles.`;
+  for (const text of Object.values(config.heroText ?? {}))
+    for (const value of [text.headline, text.blurb, text.buttonLabel])
+      if ((value ?? '').length > MAX_HERO_TEXT)
+        return `Keep hero text to ${MAX_HERO_TEXT} characters`;
   for (const row of config.rows) {
     const name = cleanName(row.name);
     if (!name) return 'Give the section a name';
