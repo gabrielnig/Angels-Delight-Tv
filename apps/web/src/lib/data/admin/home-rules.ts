@@ -14,6 +14,9 @@ export type HomeRowType =
   | 'newest'
   | 'series'
   | 'smart'
+  | 'trending'
+  | 'top_ten'
+  | 'most_liked'
   | 'each_category'
   | 'all_series'
   | 'continue_watching'
@@ -33,6 +36,9 @@ export interface HomeRow {
   viewAllUrl?: string | null;
   minItems?: number;
   kidsVisible?: boolean;
+  /** Popular only: show the newest titles under fallbackTitle when too few qualify. */
+  fallbackToNewest?: boolean;
+  fallbackTitle?: string | null;
 }
 
 export interface HeroText {
@@ -62,13 +68,17 @@ export const MAX_ROWS = 12;
 export const HERO_FALLBACK_COUNT = 5;
 export const MAX_ROW_TITLES = 20;
 export const MAX_ROW_NAME = 60;
+export const MAX_FALLBACK_TITLE = 80;
 export const FIXED_TYPES: HomeRowType[] = ['continue_watching', 'my_list'];
 export const ROW_TYPE_LABELS: Record<HomeRowType, string> = {
   manual: 'Manual list',
   category: 'Category',
   newest: 'New',
   series: 'Series',
-  smart: 'Trending',
+  smart: 'Popular',
+  trending: 'Trending now',
+  top_ten: 'Top 10',
+  most_liked: 'Most liked',
   each_category: 'Each category (automatic)',
   all_series: 'All series (automatic)',
   continue_watching: 'Continue learning',
@@ -77,7 +87,15 @@ export const ROW_TYPE_LABELS: Record<HomeRowType, string> = {
 
 /** Titles a section needs before it shows. Same numbers as the real service (M41-S05). */
 export const defaultMinItems = (type: HomeRowType): number =>
-  type === 'smart' || type === 'each_category' ? 4 : type === 'all_series' ? 2 : 1;
+  type === 'trending' || type === 'top_ten' || type === 'most_liked'
+    ? 5
+    : type === 'smart'
+      ? 3
+      : type === 'each_category'
+        ? 4
+        : type === 'all_series'
+          ? 2
+          : 1;
 
 const cleanName = (name: string) => name.trim().replace(/\s+/g, ' ');
 
@@ -323,8 +341,8 @@ export function resolvePreview(
                 ? [...shown]
                     .sort((a, b) => (b.publishedAt ?? '').localeCompare(a.publishedAt ?? ''))
                     .slice(0, 12)
-                : r.type === 'smart'
-                  ? trending(shown, r.minItems ?? defaultMinItems('smart'))
+                : r.type === 'smart' || r.type === 'trending' || r.type === 'top_ten' || r.type === 'most_liked'
+                  ? trending(shown, r.minItems ?? defaultMinItems(r.type))
                   : [];
       return {
         id: r.id,
@@ -358,6 +376,8 @@ export function validateConfig(config: HomeConfig): string | null {
     const name = cleanName(row.name);
     if (!name) return 'Give the section a name';
     if (name.length > MAX_ROW_NAME) return `Keep the name to ${MAX_ROW_NAME} characters`;
+    if ((row.fallbackTitle ?? '').trim().length > MAX_FALLBACK_TITLE)
+      return `Keep the fallback title to ${MAX_FALLBACK_TITLE} characters`;
     if (row.viewAllMode === 'custom' && viewAllUrlProblem(row.viewAllUrl ?? ''))
       return VIEW_ALL_URL_MESSAGE;
     if (row.minItems !== undefined && (!Number.isInteger(row.minItems) || row.minItems < 1 || row.minItems > 20))
@@ -406,8 +426,8 @@ export function launchHome(titles: LaunchTitles = {}): HomeConfig {
     rows: [
       section('row_continue', 'continue_watching', named('Continue learning', titles.continueTitle), 1),
       section('row_list', 'my_list', 'My List', 1),
-      section('row_newest', 'newest', named('New this week', titles.newTitle), 1),
-      section('row_smart', 'smart', named('Most watched this week', titles.trendingTitle), 4),
+      section('row_trending', 'trending', named('Trending now', titles.trendingTitle), 5),
+      section('row_newest', 'newest', named('Newly added', titles.newTitle), 1),
       section('row_each_category', 'each_category', 'Browse by subject', 4),
       section('row_all_series', 'all_series', 'Series', 2),
     ],
@@ -416,13 +436,25 @@ export function launchHome(titles: LaunchTitles = {}): HomeConfig {
 
 /** One line meanings for the Add section dialog (S97 state 3). Built in sections are not offered. */
 export const ADD_TYPE_HINTS: Record<
-  'manual' | 'category' | 'newest' | 'series' | 'smart' | 'each_category' | 'all_series',
+  | 'manual'
+  | 'category'
+  | 'newest'
+  | 'series'
+  | 'smart'
+  | 'trending'
+  | 'top_ten'
+  | 'most_liked'
+  | 'each_category'
+  | 'all_series',
   string
 > = {
   manual: 'You pick the titles and their order.',
   category: 'The newest titles from one subject.',
   newest: 'The newest titles. Updates by itself.',
-  smart: 'Most watched this week. Hidden until 4 titles qualify.',
+  smart: 'Most watched this month. Hidden until 3 titles qualify, or shows the newest titles if you tick the fallback.',
+  trending: 'What is being watched right now. Hidden until 5 titles qualify.',
+  top_ten: 'The ten most watched titles, numbered one to ten.',
+  most_liked: 'The titles viewers rated Like or Love the most.',
   series: 'The episodes of one series.',
   each_category: 'One section for every subject with enough titles.',
   all_series: 'Series cards, newest first.',
@@ -433,7 +465,10 @@ export const ADD_TYPE_LABELS: Record<keyof typeof ADD_TYPE_HINTS, string> = {
   manual: 'Manual list',
   category: 'Category',
   newest: 'New',
-  smart: 'Trending (most watched)',
+  smart: 'Popular (most watched)',
+  trending: 'Trending now',
+  top_ten: 'Top 10',
+  most_liked: 'Most liked',
   series: 'Series (one series)',
   each_category: 'Each category (automatic)',
   all_series: 'All series (automatic)',
@@ -445,6 +480,9 @@ const KIND_OF: Record<HomeRowType, RowKind> = {
   newest: 'recently_added',
   series: 'curated',
   smart: 'popular',
+  trending: 'trending',
+  top_ten: 'top_ten',
+  most_liked: 'most_liked',
   each_category: 'each_category',
   all_series: 'all_series',
   continue_watching: 'continue_watching',
@@ -486,7 +524,10 @@ export function viewAllOpens(row: HomeRow, src: SectionSources): string | null {
   if (!target) return null;
   const words: Partial<Record<HomeRowType, string>> = {
     newest: 'All new videos',
-    smart: 'All trending videos',
+    smart: 'All popular videos',
+    trending: 'All trending videos',
+    top_ten: 'The top ten list',
+    most_liked: 'All most liked videos',
     all_series: 'All series',
     my_list: 'Your My List',
     series: 'The series page',

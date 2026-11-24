@@ -15,7 +15,7 @@ import {
   type RowDescriptor,
 } from '@ad/catalog';
 import { annotateCards, type TitleCardDto } from './annotate';
-import { audienceKey, catalogContext, rulesOf, shared, type ViewerContext } from './context';
+import { audienceKey, catalogContext, loadedRules, rulesOf, shared, type ViewerContext } from './context';
 import { loadMyList } from './my-list';
 import { videoPlayTarget, seriesPlayTarget, type PlayTarget } from './play-target';
 import { audienceOf, loadOwnedProfile } from './profiles';
@@ -112,7 +112,7 @@ async function buildHome(
   profile: ProfileRow | null,
   cursor: string | undefined,
 ): Promise<HomeDto> {
-  const rules = rulesOf(ctx);
+  const rules = await loadedRules(ctx);
   const offset = cursor === undefined ? 0 : decodeCursor(cursor, isOffsetCursor).o;
   const catalog = catalogContext(ctx);
   const rowRules = {
@@ -121,6 +121,14 @@ async function buildHome(
     popularWindowDays: rules.popularWindowDays,
     popularMinViews: rules.popularMinViews,
     popularMinTitles: rules.popularMinTitles,
+    trending: {
+      minTitles: rules.trendingMinTitles,
+      minSitePlays: rules.trendingMinSitePlays,
+      maxAgeHours: rules.trendingMaxAgeHours,
+      topTenSize: rules.topTenSize,
+      popularMinViews: rules.popularMinViews,
+      popularMinTitles: rules.popularMinTitles,
+    },
   };
   const descriptors = await shared(ctx, ['home-rows', audienceKey(audience)], async () =>
     expandRows(tx, catalog, audience, await listPublishedRows(tx, audience), rowRules),
@@ -186,7 +194,7 @@ async function resolvePersonalRow(
   kind: 'continue_watching' | 'my_list',
   descriptor?: RowDescriptor,
 ): Promise<HomeRowDto | null> {
-  const rules = rulesOf(ctx);
+  const rules = await loadedRules(ctx);
   if (kind === 'continue_watching') {
     const items = await loadContinueWatching(tx, ctx, profile);
     if (items.length === 0) return null;

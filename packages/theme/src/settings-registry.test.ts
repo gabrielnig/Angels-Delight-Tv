@@ -314,4 +314,23 @@ describe('translation.glossary (L7)', () => {
     expect(parse('translation.glossary', 'Angels Delight TV\nSister Vanessa').success).toBe(true);
     expect(parse('translation.glossary', 'x'.repeat(4097)).success).toBe(false);
   });
+
+  it('has private admin trending rules with the documented defaults and bounds', () => {
+    const keys = {
+      'trending.min_titles': [5, 1, 50],
+      'trending.min_site_plays': [50, 0, 100000],
+      'trending.max_age_hours': [3, 1, 72],
+      'trending.top_ten_size': [10, 3, 10],
+      'trending.popular_window_days': [30, 1, 365],
+      'trending.popular_min_views': [5, 1, 1000],
+      'trending.popular_min_titles': [3, 1, 20],
+    } as const;
+    for (const [key, [def, min, max]] of Object.entries(keys)) {
+      expect(SETTING_DEFS[key as SettingKey].default, key).toBe(def);
+      expect(parse(key as never, min).success, key).toBe(true);
+      expect(parse(key as never, max).success, key).toBe(true);
+      expect(parse(key as never, max + 1).success, key).toBe(false);
+      expect(parse(key as never, min - 1).success, key).toBe(false);
+    }
+  });
 });

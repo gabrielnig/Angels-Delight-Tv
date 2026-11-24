@@ -92,7 +92,10 @@ describe('sections list (M41-S06)', () => {
     const cases: Array<[string, string]> = [
       ['Manual list', 'Maths week'],
       ['New', 'New'],
-      ['Trending (most watched)', 'Trending'],
+      ['Popular (most watched)', 'Popular'],
+      ['Trending now', 'Trending now'],
+      ['Top 10', 'Top 10'],
+      ['Most liked', 'Most liked'],
       ['Each category (automatic)', 'Browse by subject'],
       ['All series (automatic)', 'Series'],
     ];
@@ -100,14 +103,30 @@ describe('sections list (M41-S06)', () => {
     for (const [label, name] of cases) {
       fireEvent.click(screen.getByRole('button', { name: 'Add section' }));
       const dialog = screen.getByRole('dialog');
-      expect(within(dialog).getAllByRole('radio').length).toBe(7);
+      expect(within(dialog).getAllByRole('radio').length).toBe(10);
       fireEvent.click(within(dialog).getByRole('radio', { name: new RegExp(label.replace(/[()]/g, '\\$&')) }));
       if (label === 'Manual list') type(within(dialog).getByLabelText('Section name'), name);
       expect((within(dialog).getByLabelText('Section name') as HTMLInputElement).value).toBe(name);
       fireEvent.click(within(dialog).getByRole('button', { name: 'Add section' }));
       expect((within(editor()).getByLabelText('Section name') as HTMLInputElement).value).toBe(name);
     }
-    expect(within(sections()).getByText('9 of 12')).toBeTruthy();
+    expect(within(sections()).getByText('12 of 12')).toBeTruthy();
+  });
+
+  it('offers the fallback tick and title only on a Popular section', () => {
+    view();
+    fireEvent.click(screen.getByRole('button', { name: 'Add section' }));
+    const dialog = screen.getByRole('dialog');
+    fireEvent.click(within(dialog).getByRole('radio', { name: /^Popular/ }));
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Add section' }));
+    expect(within(editor()).queryByLabelText('Title when it falls back')).toBeNull();
+    fireEvent.click(within(editor()).getByRole('switch', { name: 'Fall back to newest' }));
+    type(within(editor()).getByLabelText('Title when it falls back'), 'Fresh picks');
+    expect((within(editor()).getByLabelText('Title when it falls back') as HTMLInputElement).value).toBe('Fresh picks');
+    fireEvent.click(screen.getByRole('button', { name: 'Add section' }));
+    fireEvent.click(within(screen.getByRole('dialog')).getByRole('radio', { name: /^Top 10/ }));
+    fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Add section' }));
+    expect(within(editor()).queryByRole('switch', { name: 'Fall back to newest' })).toBeNull();
   });
 
   it('needs a source for a category section and takes its name as the default', () => {

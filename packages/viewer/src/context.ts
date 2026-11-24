@@ -56,6 +56,8 @@ export interface ViewerContext {
   /** Shared 60 second cache for catalog reads that do not depend on the viewer (M04-S05). Absent means no caching. */
   catalogCache?: CatalogCache;
   rules?: Partial<ViewerRules>;
+  /** Reads rules that staff can change in settings. Failures fall back to the defaults. */
+  loadRules?: () => Promise<Partial<ViewerRules>>;
 }
 
 export function catalogContext(ctx: ViewerContext): CatalogContext {
@@ -64,6 +66,12 @@ export function catalogContext(ctx: ViewerContext): CatalogContext {
 
 export function rulesOf(ctx: ViewerContext): ViewerRules {
   return { ...DEFAULT_RULES, ...ctx.rules };
+}
+
+/** Like rulesOf, with the settings backed rules layered on top. */
+export async function loadedRules(ctx: ViewerContext): Promise<ViewerRules> {
+  const loaded = await ctx.loadRules?.().catch(() => ({}));
+  return { ...rulesOf(ctx), ...loaded };
 }
 
 export function clockOf(ctx: ViewerContext): Date {

@@ -4,7 +4,8 @@ import { PasswordHasher, maskEmail } from '@ad/auth';
 import { sealViewerAddress } from '@ad/queue';
 import { accounts, withAccount } from '@ad/db';
 import { type BucketPolicy } from '@ad/security';
-import { VIEWER_RATE_POLICIES, type NameCipher, type ViewerContext } from '@ad/viewer';
+import { readSetting } from '@ad/theme';
+import { VIEWER_RATE_POLICIES, type NameCipher, type ViewerContext, type ViewerRules } from '@ad/viewer';
 import { hmacSha256, type Actor } from '@ad/shared';
 import { eq } from 'drizzle-orm';
 import { getServices } from '../../lib/runtime/services';
@@ -30,6 +31,34 @@ function policyFor(bucket: keyof typeof VIEWER_RATE_POLICIES): BucketPolicy {
   return { name: `viewer_${bucket}`, capacity, refillPerSecond: capacity / windowSeconds };
 }
 
+/** Settings backed rules, read at most once a minute per process. */
+function settingsRules(db: Parameters<typeof readSetting>[0]): () => Promise<Partial<ViewerRules>> {
+  let memo: { at: number; value: Partial<ViewerRules> } | null = null;
+  return async () => {
+    if (memo && Date.now() - memo.at < 60_000) return memo.value;
+    const [minTitles, minPlays, maxAge, topTen, window, minViews, minPopular] = await Promise.all([
+      readSetting(db, 'trending.min_titles'),
+      readSetting(db, 'trending.min_site_plays'),
+      readSetting(db, 'trending.max_age_hours'),
+      readSetting(db, 'trending.top_ten_size'),
+      readSetting(db, 'trending.popular_window_days'),
+      readSetting(db, 'trending.popular_min_views'),
+      readSetting(db, 'trending.popular_min_titles'),
+    ]);
+    const value: Partial<ViewerRules> = {
+      trendingMinTitles: minTitles,
+      trendingMinSitePlays: minPlays,
+      trendingMaxAgeHours: maxAge,
+      topTenSize: topTen,
+      popularWindowDays: window,
+      popularMinViews: minViews,
+      popularMinTitles: minPopular,
+    };
+    memo = { at: Date.now(), value };
+    return value;
+  };
+}
+
 /** Production wiring. Built once on first use, so importing a route never needs the environment. */
 function build(): ViewerRuntime {
   const services = getServices();
@@ -45,6 +74,7 @@ function build(): ViewerRuntime {
     db: services.db,
     mediaOrigin: services.env.MEDIA_ORIGIN,
     catalogCache,
+    loadRules: settingsRules(services.db),
     nameCipher,
     async verifyPassword(accountId, password) {
       const actor: Actor = { accountId, role: 'viewer' };

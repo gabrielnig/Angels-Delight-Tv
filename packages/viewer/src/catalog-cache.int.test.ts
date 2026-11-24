@@ -4,6 +4,7 @@ import { CatalogCache } from '@ad/catalog';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { browse, listBrowseCategories } from './browse';
 import { getHome } from './home';
+import { guestBrowse, guestCategories } from './guest';
 import { saveProgress } from './progress';
 import {
   categorize,
@@ -86,6 +87,20 @@ describe.skipIf(!process.env.TEST_DATABASE_ADMIN_URL)('catalog read cache (M04-S
     });
     expect(adultCats.some((c) => c.slug === shelf.slug)).toBe(true);
     expect(kidsCats.some((c) => c.slug === shelf.slug)).toBe(false);
+  });
+
+  it('does not let guests at different maturity ceilings share cached entries', async () => {
+    const shelf = await seedCategory(h.db.setup, 'Ceiling shelf');
+    const mild = await seedVideo(h.db.setup, { title: 'Mild', maturityRank: 0 });
+    const strong = await seedVideo(h.db.setup, { title: 'Strong', maturityRank: 3 });
+    await categorize(h.db.setup, { videoId: mild.id }, shelf.id);
+    await categorize(h.db.setup, { videoId: strong.id }, shelf.id);
+    const ask = (maxRank: number) =>
+      guestBrowse(h.ctx, { kids: false, maxRank }, { categorySlug: shelf.slug });
+    expect((await ask(4)).items.map((i) => i.title).sort()).toEqual(['Mild', 'Strong']);
+    expect((await ask(0)).items.map((i) => i.title)).toEqual(['Mild']);
+    expect((await ask(4)).items).toHaveLength(2);
+    expect(await guestCategories(h.ctx, { kids: false, maxRank: 0 })).toBeDefined();
   });
 
   it('caches home rows but still builds the personal rows fresh', async () => {

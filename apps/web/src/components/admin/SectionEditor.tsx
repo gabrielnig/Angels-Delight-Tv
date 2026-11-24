@@ -22,7 +22,7 @@ import { ViewAllField } from './ViewAllField';
 
 const hiddenWhile = (row: HomeRow, min: number) => {
   const base = min <= 1 ? 'Hidden while it has no titles.' : `Hidden while it has fewer than ${min} titles.`;
-  return row.type === 'smart' ? `${base} Trending never fills itself with new videos.` : base;
+  return row.type === 'smart' && !row.fallbackToNewest ? `${base} Popular never fills itself with new videos unless you tick the fallback.` : base;
 };
 
 /** The editor for one selected section: link, minimum titles, Kids visibility, titles and removal (M41-S07). */
@@ -148,6 +148,33 @@ export function SectionEditor({
           ) : (
             <p className="adm-field__hint">{hiddenWhile(row, min)}</p>
           )}
+        </div>
+      ) : null}
+
+      {row.type === 'smart' ? (
+        <div className="adm-field">
+          <span className="adm-field__label">Fall back to newest</span>
+          <Switch
+            label="Fall back to newest"
+            checked={row.fallbackToNewest === true}
+            disabled={!canCurate}
+            onLabel="On"
+            offLabel="Off"
+            onChange={(value) => patch({ fallbackToNewest: value })}
+          />
+          <p className="adm-field__hint">
+            When fewer titles qualify, show the newest titles instead of hiding the section.
+          </p>
+          {row.fallbackToNewest ? (
+            <TextField
+              label="Title when it falls back"
+              value={row.fallbackTitle ?? ''}
+              maxLength={80}
+              disabled={!canCurate}
+              hint="Shown instead of the section name. Leave blank for Newly added."
+              onChange={(e) => patch({ fallbackTitle: e.target.value })}
+            />
+          ) : null}
         </div>
       ) : null}
 

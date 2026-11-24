@@ -31,6 +31,11 @@ export interface ViewerRules {
   trendingWindowDays: number;
   /** Popular looks back this many days, counts titles with at least this many views, and shows at least this many titles. */
   popularWindowDays: number;
+  /** Trending, Top 10 and Most liked: titles and site plays needed, snapshot age limit, Top 10 length (M44-S07). */
+  trendingMinTitles: number;
+  trendingMinSitePlays: number;
+  trendingMaxAgeHours: number;
+  topTenSize: number;
   popularMinViews: number;
   popularMinTitles: number;
   /** An automatic category row needs this many live titles, and at most this many rows are made (M41-S05). */
@@ -57,6 +62,10 @@ export const DEFAULT_RULES: ViewerRules = {
   popularMinItems: 4,
   trendingWindowDays: 7,
   popularWindowDays: 30,
+  trendingMinTitles: 5,
+  trendingMinSitePlays: 50,
+  trendingMaxAgeHours: 3,
+  topTenSize: 10,
   popularMinViews: 5,
   popularMinTitles: 3,
   autoCategoryMinItems: 4,
