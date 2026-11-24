@@ -31,6 +31,7 @@ export default async function SeriesEditPage({ params }: { params: Promise<{ id:
       <SeriesEditor
         detail={detail}
         canManage
+        canDelete={can(actor.role, 'series.delete')}
         actions={{
           update: updateSeriesAction,
           remove: deleteSeriesAction,

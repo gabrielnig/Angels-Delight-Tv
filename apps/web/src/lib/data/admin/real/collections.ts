@@ -13,6 +13,7 @@ import {
   setAdminEpisode,
   updateAdminSeries,
 } from '@ad/catalog';
+import { runSeriesBulk, seriesBulkFor, undoSeriesBulk } from '../series-bulk';
 import type { CollectionService } from '../services';
 import { asResult, catalogActor, context, need, toRecords } from './shared';
 
@@ -66,8 +67,16 @@ export const realCollectionService: CollectionService = {
     return asResult(() => updateAdminSeries(ctx, catalogActor(actor), id, patch));
   },
   async deleteSeries(actor, id) {
-    need(actor, 'series.manage');
+    need(actor, 'series.delete');
     return deleteAdminSeries(await context(), catalogActor(actor), id);
+  },
+  async bulkSeries(actor, ids, action, bulkId) {
+    need(actor, 'series.manage');
+    return runSeriesBulk(seriesBulkFor(realCollectionService, actor), ids, action, bulkId);
+  },
+  async undoSeries(actor, undo) {
+    need(actor, 'series.manage');
+    return undoSeriesBulk(seriesBulkFor(realCollectionService, actor), undo);
   },
   async setEpisode(actor, videoId, seriesId, season, episode) {
     need(actor, 'series.manage');

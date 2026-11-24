@@ -398,7 +398,8 @@ import {
 import type { SaveResult, CaptionResult } from './caption-commands';
 import type { Cue } from '@/lib/admin/cues';
 import { validateCues } from '@/lib/admin/cues';
-import type { BulkIssue } from './bulk';
+import type { BulkIssue, BulkOutcome, BulkUndo } from './bulk';
+import { runSeriesBulk, seriesBulkFor, undoSeriesBulk, type SeriesBulkAction } from './series-bulk';
 import type { CaptionState, CaptionTrack } from './types';
 
 export interface CaptionRow {
@@ -537,6 +538,17 @@ export interface CollectionService {
   ): Promise<CommandResult>;
   updateSeries(actor: AdminActor, id: string, patch: SeriesPatch): Promise<CommandResult>;
   deleteSeries(actor: AdminActor, id: string): Promise<CommandResult>;
+  /** Publish, unpublish or delete many series. Delete is admin only (series.delete). */
+  bulkSeries(
+    actor: AdminActor,
+    ids: string[],
+    action: SeriesBulkAction,
+    bulkId: string,
+  ): Promise<BulkOutcome>;
+  undoSeries(
+    actor: AdminActor,
+    undo: BulkUndo,
+  ): Promise<{ succeeded: string[]; failed: BulkIssue[] }>;
   setEpisode(
     actor: AdminActor,
     videoId: string,
@@ -606,8 +618,16 @@ const fixtureCollectionService: CollectionService = {
     return updateSeries(getStore(), id, patch);
   },
   async deleteSeries(actor, id) {
-    need(actor, 'series.manage');
+    need(actor, 'series.delete');
     return deleteSeries(getStore(), id);
+  },
+  async bulkSeries(actor, ids, action, bulkId) {
+    need(actor, 'series.manage');
+    return runSeriesBulk(seriesBulkFor(fixtureCollectionService, actor), ids, action, bulkId);
+  },
+  async undoSeries(actor, undo) {
+    need(actor, 'series.manage');
+    return undoSeriesBulk(seriesBulkFor(fixtureCollectionService, actor), undo);
   },
   async setEpisode(actor, videoId, seriesId, season, episode) {
     need(actor, 'series.manage');

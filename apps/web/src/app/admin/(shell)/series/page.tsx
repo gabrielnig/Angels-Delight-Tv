@@ -5,7 +5,7 @@ import { SeriesList } from '@/components/admin/SeriesList';
 import { can } from '@/lib/admin/can';
 import { collectionService } from '@/lib/data/admin/services';
 import { requireActor } from '@/lib/data/admin/session-next';
-import { createSeriesAction } from './actions';
+import { bulkSeriesAction, createSeriesAction, undoBulkSeriesAction } from './actions';
 
 export const metadata: Metadata = { title: 'Series' };
 
@@ -20,7 +20,14 @@ export default async function SeriesPage() {
         title="Series"
         lead="Group episodes into seasons."
       />
-      <SeriesList series={series} canManage create={createSeriesAction} />
+      <SeriesList
+        series={series}
+        canManage
+        role={actor.role}
+        create={createSeriesAction}
+        bulk={bulkSeriesAction}
+        undo={undoBulkSeriesAction}
+      />
     </>
   );
 }

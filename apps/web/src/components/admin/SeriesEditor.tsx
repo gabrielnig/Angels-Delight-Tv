@@ -26,10 +26,13 @@ export interface SeriesActions {
 export function SeriesEditor({
   detail,
   canManage,
+  canDelete = true,
   actions,
 }: {
   detail: SeriesDetail;
   canManage: boolean;
+  /** Only an admin can delete a series (series.delete). */
+  canDelete?: boolean;
   actions: SeriesActions;
 }) {
   const router = useRouter();
@@ -155,7 +158,12 @@ export function SeriesEditor({
           The videos stay in your library. They are only removed from this series.
         </p>
         <div>
-          <Button variant="danger" disabled={!canManage} onClick={() => setConfirm(true)}>
+          <Button
+            variant="danger"
+            disabled={!canManage}
+            disabledReason={canDelete ? undefined : 'Only an admin can delete a series.'}
+            onClick={() => setConfirm(true)}
+          >
             Delete series
           </Button>
         </div>
