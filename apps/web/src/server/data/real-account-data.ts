@@ -1,5 +1,15 @@
 import { captionColorAllowed } from '@ad/player';
-import { myList, profiles, series, videos, watchProgress, withAccount } from '@ad/db';
+import {
+  myList,
+  profiles,
+  series,
+  titleRatings,
+  videos,
+  viewerNotices,
+  viewerNotificationPrefs,
+  watchProgress,
+  withAccount,
+} from '@ad/db';
 import { constantTimeEqual, hmacSha256, NotFound, ValidationFailed } from '@ad/shared';
 import { loadOwnedProfile, type ViewerContext as ServiceContext } from '@ad/viewer';
 import { and, asc, desc, eq, gte, inArray, sql } from 'drizzle-orm';
@@ -56,7 +66,19 @@ export interface ExportFile {
       completed: boolean;
       updatedAt: string;
     }>;
+    /** This profile's ratings: 1 Not for me, 2 Like, 3 Love as stored (M44). */
+    ratings: Array<{ title: string; slug: string; kind: 'video' | 'series'; value: number; ratedAt: string }>;
+    /** The notices shown to this profile (M44). Kids profiles have none. */
+    notices: Array<{ kind: string; title: string; body: string; createdAt: string; read: boolean }>;
   }>;
+  /** The account notification choices. The sealed email address is never exported (M44). */
+  notificationPrefs: {
+    bell: boolean;
+    newEpisodes: boolean;
+    newVideos: boolean;
+    emailFrequency: string;
+    emailConsentedAt: string | null;
+  };
 }
 
 function pick<T extends string | number>(value: unknown, allowed: readonly T[], fallback: T): T {
@@ -307,7 +329,11 @@ export class AccountViewerData {
         .where(eq(profiles.accountId, accountId))
         .orderBy(asc(profiles.position), asc(profiles.createdAt));
       const ids = owned.map((p) => p.id);
-      if (ids.length === 0) return { owned, saved: [], progress: [] };
+      const [prefs] = await tx
+        .select()
+        .from(viewerNotificationPrefs)
+        .where(eq(viewerNotificationPrefs.accountId, accountId));
+      if (ids.length === 0) return { owned, saved: [], progress: [], ratings: [], notices: [], prefs };
       const saved = await tx
         .select({
           profileId: myList.profileId,
@@ -336,7 +362,27 @@ export class AccountViewerData {
         .innerJoin(videos, eq(videos.id, watchProgress.videoId))
         .where(inArray(watchProgress.profileId, ids))
         .orderBy(desc(watchProgress.updatedAt));
-      return { owned, saved, progress };
+      const ratings = await tx
+        .select({
+          profileId: titleRatings.profileId,
+          value: titleRatings.value,
+          ratedAt: titleRatings.ratedAt,
+          videoTitle: videos.title,
+          videoSlug: videos.slug,
+          seriesTitle: series.title,
+          seriesSlug: series.slug,
+        })
+        .from(titleRatings)
+        .leftJoin(videos, eq(videos.id, titleRatings.videoId))
+        .leftJoin(series, eq(series.id, titleRatings.seriesId))
+        .where(inArray(titleRatings.profileId, ids))
+        .orderBy(desc(titleRatings.ratedAt));
+      const notices = await tx
+        .select()
+        .from(viewerNotices)
+        .where(inArray(viewerNotices.profileId, ids))
+        .orderBy(desc(viewerNotices.createdAt));
+      return { owned, saved, progress, ratings, notices, prefs };
     });
     const profilesOut: ExportFile['profiles'] = [];
     for (const profile of rows.owned) {
@@ -372,9 +418,39 @@ export class AccountViewerData {
             completed: p.completed,
             updatedAt: p.updatedAt.toISOString(),
           })),
+        ratings: rows.ratings
+          .filter((r) => r.profileId === profile.id)
+          .map((r) => ({
+            title: r.videoTitle ?? r.seriesTitle ?? '',
+            slug: r.videoSlug ?? r.seriesSlug ?? '',
+            kind: r.videoTitle !== null ? ('video' as const) : ('series' as const),
+            value: r.value,
+            ratedAt: r.ratedAt.toISOString(),
+          })),
+        notices: rows.notices
+          .filter((n) => n.profileId === profile.id)
+          .map((n) => ({
+            kind: n.kind,
+            title: n.title,
+            body: n.body,
+            createdAt: n.createdAt.toISOString(),
+            read: n.readAt !== null,
+          })),
       });
     }
-    return { exportedAt: this.now().toISOString(), account, profiles: profilesOut };
+    const prefs = rows.prefs;
+    return {
+      exportedAt: this.now().toISOString(),
+      account,
+      profiles: profilesOut,
+      notificationPrefs: {
+        bell: prefs?.bell ?? true,
+        newEpisodes: prefs?.newEpisodes ?? true,
+        newVideos: prefs?.newVideos ?? true,
+        emailFrequency: prefs?.emailFrequency ?? 'off',
+        emailConsentedAt: prefs?.addressConsentedAt?.toISOString() ?? null,
+      },
+    };
   }
 
   private mac(accountId: string, expires: number): string {

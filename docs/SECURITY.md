@@ -107,6 +107,7 @@ Roles:
 | Landing page, sign up, sign in | yes | yes | yes | yes | yes |
 | Browse, watch, search (own visible catalog) | yes, published titles only, Kids safe only in Kids mode, and only while `features.guest_play` is on (M40, D-194) | yes | yes | yes | yes |
 | Manage own profiles, list, progress, import device history | no (progress stays on the device) | yes | yes | yes | yes |
+| Read and mark own notices, change own notification choices and email digest, rate titles (adult profiles only, M44) | no | yes, own profile only, never on a kids profile | yes | yes | yes |
 | `/admin` access | no | no | yes | yes | yes |
 | Upload, edit videos, series, categories, home rows | no | no | yes | yes | yes |
 | Review and approve captions | no | no | yes | yes | yes |
@@ -165,6 +166,7 @@ Postgres token buckets (`rate_limit_buckets`). Keys combine route policy and sub
 |---|---|---|
 | Login | IP and email hash pair | 5 failures per 15 minutes, then a 15 minute lock for viewers (D-004, D-089), 3 failures and 30 minutes for staff. The owner gets a lockout email at most hourly |
 | Login | IP | 20 failures per 15 minutes |
+| Notices list, count, mark read, notification settings (M44) | Account | Same guarded budget as other viewer reads and writes. The unread count is polled at most once a minute by the bell. The one click unsubscribe route is token checked and rate limited per IP |
 | Signup | IP | 5 per hour |
 | Password reset request | email hash, IP | 3 per hour, 10 per hour |
 | Verification resend | account | 3 per hour |
@@ -223,6 +225,10 @@ PII inventory:
 | TOTP secret | `mfa_factors.secret_enc` | Per-user DEK |
 | IP address | sessions, audit, tokens | Truncated (IPv4 /24, IPv6 /48). Raw IP only in short-lived access logs |
 | Watch history | `watch_progress`, `view_events` | Owner-only RLS. Not recorded per profile for kids |
+| Ratings | `title_ratings` | Owner-only RLS per profile. Never for kids. Deleted with the profile |
+| Notices | `viewer_notices` | Owner-only RLS per profile. Never created for kids. Kept 60 days, at most 100 per profile, then pruned by the worker. Deleted with the profile |
+| Notification choices and digest address | `viewer_notification_prefs` | Owner-only RLS. The address is sealed with the field key (D-129) and cleared when the account email changes or the person unsubscribes. Deleted at account purge. Exported without the address |
+| Push subscriptions | not built (Could, M44-S16) | If built: endpoint and keys per device, generic payload, removed on sign out and at purge |
 | Country | `view_events.country` | Coarse, from the CDN header |
 
 Design (adapting baseline section 3):
@@ -251,6 +257,7 @@ Data minimisation: no date of birth, phone number, address or national id is col
 ## 12. Children, privacy and NDPR compliance notes
 
 Product rules:
+- Engagement (M44): kids profiles cannot rate, receive notices, see the bell or get the email digest, and the API answers 403 for them. Digest mail carries only generic titles from adult profiles, never what a child watched.
 - Accounts are held by adults. Signup requires accepting terms and a guardian declaration (`consents`). Children use kids profiles under that account.
 - Kids profile: content limited to `kids_safe`, no search outside kids-safe content, no external links, no profile management or leaving the profile without the PIN, no per-profile analytics (`view_events.profile_id` null, `audience = kids`), no personalised recommendations beyond Continue Watching stored for that profile.
 - No third party ads, no third-party trackers, no social features. First party sponsor cards only (M48): still images or text served from our own origin, one link through our own `/s/{id}` redirect, no sponsor script, pixel or HTML, never on kids profiles or Kids mode (selection, click, impression, cookie and checkout code all fail closed). Donations use a hosted redirect checkout, so card data never reaches us and no payment script loads on our pages. The CSP is unchanged: no new script, frame or form origin. The player and site load no third-party scripts except optional Cloudflare Turnstile on forms and Sentry if enabled (neither loads on kids playback pages).

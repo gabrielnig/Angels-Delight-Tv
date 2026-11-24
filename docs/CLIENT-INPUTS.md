@@ -24,6 +24,8 @@ All of these live in one file, `client.json`, copied from `client.example.json` 
 | Logo | `logo.path`, `logo.altText` | Logo service, header, emails, PWA icons | PNG or SVG, square or wide, at least 512 px |
 | Favicon | `favicon.path` | Favicon service | PNG |
 | Terms, privacy, about, help | `legal.<page>.file` or `.html` | Legal pages | Text must be approved by the client. A lawyer should review terms and privacy for NDPA compliance |
+| Maturity labels | Setting `maturity.labels`: five comma separated labels of 1 to 4 characters, all different (default G, PG, 12, 15, 18) | Maturity badge, profile limit select, admin rating select (M44) | Short labels the client approves for her audience |
+| Guest maximum rating | Setting `maturity.guest_max_rank` (0 to 4, default 2) | What a visitor without an account may see (M44) | A number the client chooses |
 | Footer, social links | `footerText`, `socialLinks` | Settings | Optional |
 | Languages | `languages.default`, `languages.offered` | Settings, caption languages | Codes such as `en`, `yo`, `ig`, `ha` |
 | Home sections | `home.seedDefaults`, `home.continueTitle`, `home.newTitle`, `home.trendingTitle` | Home sections (Admin, Home curation) | Optional. On a new site `apply` publishes six sections: Continue learning, My List, New this week, Most watched this week, Browse by subject, Series. It never touches a layout that already exists. Set `seedDefaults` to `false` to skip it |

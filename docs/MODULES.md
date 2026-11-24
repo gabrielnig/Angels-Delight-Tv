@@ -49,12 +49,13 @@ Related documents: `docs/PRD.md` (why), `docs/USER-STORIES.md` (what, per module
 | M36 | Artwork and thumbnails | Admin and backend | [READY] |
 | M40 | Guest access | Viewer and backend | [READY] |
 | M42 | Admin polish and bulk operations | Admin | [READY] |
+| M44 | Engagement (ratings, trending, notifications, graded maturity) | Viewer | [CLIENT] |
 | M45 | Discovery, SEO, consent and search | Viewer and admin | [READY] |
 | M47 | Design system tuning and guards | Cross cutting | [READY] |
 | M48 | Sponsors and donations | Viewer and admin | [CLIENT] |
 | M49 | Account security, activity and reach | Viewer and backend | [READY] |
 
-38 modules in total. M01 to M26 follow the planned set. M27 to M36 are modules found while breaking the brief down: they own behaviour that would otherwise be spread across several modules with nobody responsible.
+39 modules in total. M01 to M26 follow the planned set. M27 to M36 are modules found while breaking the brief down: they own behaviour that would otherwise be spread across several modules with nobody responsible.
 
 ## 2. Dependency overview
 
@@ -747,6 +748,23 @@ Each module lists: purpose, responsibilities, data owned, dependencies, client i
 **Client input.** Custom artwork if wanted [CLIENT, optional].
 
 ---
+
+### M44 Engagement [CLIENT]
+
+**Area.** Viewer, with a small admin part.
+
+**Purpose.** Give viewers ways to say what they like, find what is new, and keep their place, without tracking children: ratings, Trending and Most liked rows, notifications, graded maturity labels, Continue learning polish and My List filters.
+
+**Responsibilities.**
+- Notifications for adult profiles: a bell with a popover on desktop and a page on phones (`/notifications`), new episode and new video notices made by a worker job from `announced_at`, per account choices at `/account/notifications`, and an opt in email digest through the existing outbox with one click unsubscribe. Kids profiles get none. Notices are kept 60 days and at most 100 per profile.
+- Continue learning: the Next: E4 label, an episode label, a menu with Remove from row and an Undo, and a row title from the curated descriptor (default Continue learning).
+- My List: Started and Not started filters, four sorts, and the choice kept in the URL.
+- Ratings, maturity and trending are built in the same module by the L5 ratings slices.
+- Web push is a Could and is not built (D-296 notes the reason in the lane note).
+
+**Dependencies.** M03, M04, M05, M07, M09, M10, M17, M19, M21, M35, M01 and lane L1.
+
+**Notes.** The maturity labels and the guest maximum rating are client inputs (CLIENT-INPUTS section 2). Everything else is ready. Plan: `docs/plan/v2/L5-engagement.md`. Stories: M44-S01 to S25.
 
 ### M45 Discovery, SEO, consent and search [READY]
 

@@ -188,7 +188,7 @@ As a viewer, I want to set autoplay, data saver, default captions and speed memo
 
 ### M02-S05 Export my data (Should)
 As a viewer, I want to download my data, so that I can see what the platform holds.
-- AC1: Given I request an export, When I confirm with my password, Then a job starts and I receive an email with a link valid for 24 hours to a JSON file containing account, profiles, list items and progress.
+- AC1: Given I request an export, When I confirm with my password, Then a job starts and I receive an email with a link valid for 24 hours to a JSON file containing account, profiles, list items and progress. The export includes ratings and notices per profile (M44-S25).
 - AC2: Given I request more than one export in 24 hours, When I tap again, Then I am told the earlier export is still valid.
 - Edge: the export excludes password hash and tokens.
 - Error: job failure sends "We could not build your export" and keeps the request retryable.
@@ -257,9 +257,10 @@ As a viewer, I want to pick an avatar from a set, so that profiles are easy to t
 ### M03-S04 Edit a profile (Must)
 As a viewer, I want to rename or change a profile, so that it stays accurate.
 - AC1: Given I open Edit profile, When I change name or avatar and save, Then the change applies at once everywhere (picker, header).
-- AC2: Given I change the kids flag from off to on, When I save, Then the profile switches to kids rules at once and Continue Watching and My List hide non-kid titles (the data is kept, just hidden).
+- AC2: Given I change the kids flag from off to on, When I save, Then the profile switches to kids rules at once and Continue Watching and My List hide titles above the kids limit (rank 0) (the data is kept, just hidden).
 - AC3: Given I change the kids flag from on to off, When I save, Then I must enter the account password.
 - AC4: Given I leave with unsaved changes, When I press Back, Then I am asked to discard or keep editing.
+- AC5: Given I open Edit profile on an adult profile, When I change "Allow titles rated up to", Then the new limit applies at once, and raising it needs the account password (M44-S19).
 - Edge: editing a profile from inside a kids profile is blocked (M35).
 - Error: validation errors map to fields; concurrent edit from another device shows "This profile changed. Reload."
 - Empty: not applicable.
@@ -309,7 +310,7 @@ As a viewer, I want each profile to remember caption preference, so that caption
 ### M03-S10 Kids profile creation rules (Must)
 As a parent, I want to mark a profile as kids when I create it, so that children only see suitable titles.
 - AC1: Given I create a profile with Kids on, When I save, Then the profile has `is_kids = true` and the picker tile shows a Kids badge.
-- AC2: Given I create a kids profile, When the summary is shown, Then it lists the rules: kid suitable titles only, no account access, password needed to leave.
+- AC2: Given I create a kids profile, When the summary is shown, Then it lists the rules: titles rated G only, no account access, password needed to leave.
 - Edge: at least one non-kids profile must exist in the account so someone can manage it (the last non-kids profile cannot be set to kids or deleted).
 - Error: attempting to remove the last adult profile shows "Keep at least one grown-up profile".
 - Empty: not applicable.
@@ -353,11 +354,12 @@ As a viewer, I want the previous profile's settings and position to never leak, 
 
 ### M35-S01 Kids profile sees only kid titles (Must)
 As a parent, I want kids profiles to show only kid suitable titles, so that children are safe.
-- AC1: Given a kids profile is active, When any list is requested (Home, Browse, Search, Related, My List, Continue Watching), Then results contain only titles with suitability `kids`, enforced in the query, not in the UI.
+- AC1: Given a kids profile is active, When any list is requested (Home, Browse, Search, Related, My List, Continue Watching), Then results contain only titles with maturity rank 0 (G), enforced in the query, not in the UI.
 - AC2: Given a direct link to a non-kid title, When a kids profile opens it, Then it shows "This is not available on this profile" with a Back button.
 - AC3: Given a title's suitability changes to non-kid, When a kids profile has it in My List, Then it disappears from view at once.
 - AC4: Given Kids mode is on for a guest (M40-S09), When any list is requested, Then the same query filter applies.
-- Edge: a series is shown on a kids profile only when all its published episodes are kid suitable (or by series flag).
+- AC5: Given an adult profile with a maturity limit (M44-S19), When any list is requested, Then titles above the limit or without a rating never appear, enforced in the query.
+- Edge: a series is shown to a profile only when the series and at least one live episode are within the profile limit.
 - Edge: for guests the filter follows the device setting and is not a lock.
 - Error: filter failure returns an empty list, never an unfiltered one (fail closed).
 - Empty: when no kid titles exist, Home shows "Nothing here yet. Ask a grown-up to switch profile."
@@ -380,11 +382,11 @@ As a parent, I want to need my password to leave kids mode, so that children can
 - Error: network failure shows retry and keeps kids mode.
 - Empty: not applicable.
 
-### M35-S04 Admin sets title suitability (Must)
-As an admin, I want to mark each title as kids, general or mature, so that kids profiles are filtered correctly.
-- AC1: Given I edit a video, When I set suitability, Then it saves and an audit entry records the change.
-- AC2: Given suitability is not set, When I try to publish, Then a warning requires me to choose a value (default for new videos is `general`, not `kids`).
-- AC3: Given I bulk select videos, When I apply suitability, Then all selected update atomically.
+### M35-S04 Admin sets title maturity rating (superseded by M44-S18, kept for kids filtering) (Must)
+As an admin, I want to mark each title on a five step maturity scale, so that kids profiles are filtered correctly.
+- AC1: Given I edit a video, When I set the maturity rating, Then it saves and an audit entry records the change.
+- AC2: Given suitability is not set, When I try to publish, Then publishing is blocked until a maturity rating is chosen (no default, so nothing is rated G by accident).
+- AC3: Given I bulk select videos, When I apply a maturity rating, Then all selected update atomically.
 - Edge: for a series, setting suitability can cascade to episodes with a confirm step.
 - Error: partial bulk failure reports the failed ids and rolls back none or all (all or nothing).
 - Empty: not applicable.
@@ -453,6 +455,7 @@ As a viewer, I want rows of titles I can scroll sideways, so that I can scan man
 - AC2: Given a touch device, When I swipe the row, Then it scrolls with momentum and snaps to cards, and the page does not scroll vertically while I swipe horizontally.
 - AC3: Given a desktop, When I hover the row, Then previous and next arrows appear, and Left and Right arrows scroll when a card is focused.
 - AC4: Given a row has more than 20 items, When I reach the end, Then a "See all" card opens the category or list page.
+- Edge: the row types Trending now, Top 10 and Most liked follow the same card and arrow rules (M44-S07, S09, S10).
 - Edge: row heading is a real heading (h2) and cards are in a list for screen readers.
 - Error: a row that fails shows an inline "Could not load this row. Retry" while other rows still render.
 - Empty: rows with no items are not rendered.
@@ -460,7 +463,7 @@ As a viewer, I want rows of titles I can scroll sideways, so that I can scan man
 ### M05-S03 Title cards (Must)
 As a viewer, I want each card to show poster, title and duration, so that I can choose.
 - AC1: Given a card renders, When I look at it, Then I see a 16:9 poster, title (two lines max), duration, and a progress bar if started.
-- AC2: Given a card is hovered on desktop, When 400 ms pass, Then a lightweight overlay shows description and quick actions (Play, My List) with no video preview (data friendly).
+- AC2: Given a card is hovered on desktop, When 400 ms pass, Then a lightweight overlay shows description, the maturity label (unless G), a Most liked label when earned, and quick actions (Play, My List, rating) with no video preview (data friendly). The overlay is also shown on keyboard focus, and the controls sit outside the aria-hidden text.
 - AC3: Given a touch device, When I tap a card, Then it opens the Title detail page.
 - Edge: Data saver loads the smallest poster (320 px).
 - Error: missing poster shows a branded placeholder with the title text.
@@ -480,6 +483,7 @@ As a viewer, I want Continue Watching and My List at the top, so that my own thi
 - AC2: Given My List has items, When Home loads, Then My List row follows.
 - AC3: Given the editor moved these rows in curation (M17), When Home loads, Then the configured order applies.
 - Edge: rows are hidden when empty (no empty headings).
+- Edge: the Continue Watching card follows M44-S23.
 - Edge: guests have no My List row. A Continue Watching row appears from this device's progress (M40-S14).
 - Error: personal rows failing do not block the curated rows.
 - Empty: a new profile or a guest without device progress sees curated rows only.
@@ -603,7 +607,7 @@ As the owner, I want search protected from abuse, so that the database stays res
 
 ### M07-S01 Title detail page (Must)
 As a viewer, I want a page that explains a video before I play it, so that I know if it suits me.
-- AC1: Given I open `/title/<slug>`, When it loads, Then I see the poster, title, duration, categories, description, caption badge (CC), and primary button Play (or Resume from 2:14).
+- AC1: Given I open `/title/<slug>`, When it loads, Then I see the poster, title, duration, categories, description, caption badge (CC), maturity label, Most liked label when earned, the rating group (M44-S01), and primary button Play (or Resume from 2:14).
 - AC2: Given I started the video, When I look at the page, Then a progress bar shows with remaining time.
 - AC3: Given I tap My List, When it toggles, Then the button updates at once (optimistic) with an accessible pressed state.
 - AC4: Given I am a guest, When I tap My List, Then the Sign in to save dialog opens (M40-S07) and the button state does not change.
@@ -644,7 +648,7 @@ As a viewer, I want to share a title link, so that friends can open it from What
 
 ### M07-S05 Related titles (Should)
 As a viewer, I want suggestions on a title page, so that I can keep learning.
-- AC1: Given a title, When the page loads, Then a "More like this" row shows up to 12 titles sharing a category, excluding the current one and respecting kids filter.
+- AC1: Given a title, When the page loads, Then a "More like this" row shows up to 12 titles sharing a category, excluding the current one and respecting the kids filter and the profile maturity limit.
 - AC2: Given no related titles exist, When the page loads, Then the row is not rendered.
 - Edge: results are cached 5 minutes.
 - Error: failure hides the row silently.
@@ -654,6 +658,7 @@ As a viewer, I want suggestions on a title page, so that I can keep learning.
 As a visitor with a shared link, I want to see what the title is before signing up, so that I decide to join.
 - AC1: Given the owner has switched guest play off, When I open `/title/<slug>` signed out, Then I see poster, title, description and a Sign in to watch button, with no player.
 - AC2: Given I tap the button, When I go through sign in, Then I return to the title.
+- AC3: Given I am signed out and tap a rating or My List, When the dialog opens, Then it is the Sign in to save dialog and my choice is applied after sign in (M44-S04).
 - Edge: search engines can index the page (title, description, Open Graph).
 - Edge: with guest play on, the page is the full title page (M40-S05).
 - Error: not applicable.
@@ -992,7 +997,7 @@ As a viewer, I want a short rewind when resuming, so that I regain context.
 
 ### M09-S05 Series next episode logic (Must)
 As a viewer, I want a finished episode to be replaced by the next one, so that I continue the series.
-- AC1: Given I finish episode 3 of a series with 6 episodes, When progress is saved, Then Continue Watching shows episode 4 at position 0 with the label "Next: E4".
+- AC1: Given I finish episode 3 of a series with 6 episodes, When progress is saved, Then Continue Watching shows episode 4 at position 0 with the label "Next: E4". The card shows the "Next: E4" badge and the episode label (M44-S23).
 - AC2: Given I finish the last episode, When saved, Then the series leaves Continue Watching.
 - AC3: Given I am part way through episode 2 and episode 4 earlier, When the row renders, Then only one card per series shows: the most recently watched unfinished episode, or the next episode if the last one finished.
 - Edge: if the next episode is not published, the series leaves the row.
@@ -1009,7 +1014,7 @@ As a viewer using two devices, I want a sane result, so that I do not lose place
 
 ### M09-S07 Remove from Continue Watching (Should)
 As a viewer, I want to remove an item from the row, so that I can tidy it.
-- AC1: Given a card, When I open its menu and choose "Remove from row", Then it disappears at once (optimistic) with an Undo toast for 6 seconds.
+- AC1: Given a card, When I open its kebab menu and choose "Remove from row", Then it disappears at once (optimistic) with an Undo toast for 6 seconds.
 - AC2: Given I removed it, When I open the title, Then my position is cleared (it starts at 0).
 - Edge: kids profiles can remove but only inside their own profile.
 - Error: failure restores the card with an error toast.
@@ -1063,7 +1068,7 @@ As a viewer, I want to remove a saved title, so that the list stays tidy.
 
 ### M10-S03 My List page (Must)
 As a viewer, I want a page listing everything I saved, so that I can choose.
-- AC1: Given I open `/my-list`, When it loads, Then items show as a grid newest added first with card details.
+- AC1: Given I open `/my-list`, When it loads, Then items show as a grid, newest added first by default, with card details, and filter and sort controls (M44-S24).
 - AC2: Given a title is later unpublished, When I open the list, Then it is hidden but remains stored and returns if republished.
 - AC3: Given many items, When scrolling, Then items load in pages of 24 with Show more.
 - Edge: kids profile sees only kid titles.
@@ -1650,7 +1655,7 @@ As an editor, I want to pick the featured title, so that Home highlights what ma
 
 ### M17-S02 Create and order rows (Must)
 As an editor, I want to build and reorder rows, so that Home tells the story I want.
-- AC1: Given I add a row, When I choose a type (Manual list, Category, Newest, Series, Most watched this week) and a name, Then it appears in the list.
+- AC1: Given I add a row, When I choose a type (Manual list, Category, Newest, Series, Most watched this week) and a name, Then it appears in the list. Row types also include Trending now, Top 10 and Most liked (M44-S10).
 - AC2: Given rows, When I drag one (or use Move up and Move down buttons), Then the order saves and the preview updates.
 - AC3: Given I hide a row, When saved, Then it disappears from Home but is kept.
 - Edge: maximum 12 rows to protect performance.
@@ -1684,9 +1689,9 @@ As an editor, I want to set where Continue Watching and My List sit, so that Hom
 ### M17-S06 Smart rows (Could)
 As an editor, I want rows that fill themselves, so that Home stays fresh with little work.
 - AC1: Given a Newest row, When new titles publish, Then the row includes them automatically (limit 20).
-- AC2: Given Most watched this week, When rolled up daily, Then top titles by views of the last 7 days appear.
+- AC2: Given Trending now, When refreshed hourly, Then top titles by weighted plays of the last 7 Lagos days appear (M44-S07).
 - Edge: tie break by newer publish date.
-- Error: no data falls back to newest.
+- Error: thin data hides the row, and Popular may fall back to newest when ticked (M44-S08).
 - Empty: not applicable.
 
 ### M17-S07 Publish curation changes (Should)
@@ -1855,7 +1860,7 @@ As an admin, I want a summary of performance, so that I can see the trend.
 
 ### M19-S03 Top titles and per video analytics (Must)
 As an admin, I want to see which titles do best, so that I can make more of them.
-- AC1: Given the Top titles table, When shown, Then it lists title, views, watch time, completion rate, average percent watched, sortable.
+- AC1: Given the Top titles table, When shown, Then it lists title, views, watch time, completion rate, average percent watched, sortable. Likes, Love, Not for me and Positive share columns are available (M44-S06).
 - AC2: Given I open a video, When the detail loads, Then I see a daily views chart and a retention curve (percent still watching by time).
 - Edge: archived titles can be included with a toggle.
 - Error: load failure shows retry.
@@ -1977,6 +1982,7 @@ As the developer, I want proper domain authentication, so that emails reach inbo
 As an admin, I want to choose which emails I get, so that my inbox is not flooded.
 - AC1: Given `/admin/account`, When I toggle categories (failures, captions ready, daily summary), Then they save per admin.
 - Edge: security emails cannot be turned off.
+- Edge: viewer notification settings are separate and live at /account/notifications (M44-S14).
 - Error: not applicable.
 - Empty: not applicable.
 
@@ -2116,6 +2122,7 @@ As Tobi, I want a Data saver setting, so that I use less of my bundle.
 - AC1: Given Data saver is on, When I watch, Then quality is capped at 360p, hero rotation and hover previews are off, posters load at 320 px, and next episode is not prefetched.
 - AC2: Given the browser sends Save-Data, When I first visit, Then Data saver defaults to on and I am told once.
 - AC3: Given I toggle it in the player menu or settings, When changed, Then it applies at once and persists for the profile.
+- AC4: Given Data saver is on, When I browse, Then the notification count is fetched only when I open the bell (M44-S11).
 - Edge: the player shows an estimate "About 3 MB per minute at 360p" in settings.
 - Error: not applicable.
 - Empty: not applicable.
@@ -2254,7 +2261,7 @@ As an admin, I want to set platform name, tagline and contacts, so that nothing 
 
 ### M29-S02 Feature flags and limits (Must)
 As a Super admin, I want switches and limits, so that I can change behaviour without a deploy.
-- AC1: Given the flags, When I change them (sign up open or invite only, kids profiles on, My List on, autoplay default, data saver default, captions required, profile limit, lockout thresholds, finish and start thresholds, rewind seconds), Then they apply within 60 seconds.
+- AC1: Given the flags, When I change them (sign up open or invite only, kids profiles on, My List on, autoplay default, data saver default, captions required, profile limit, lockout thresholds, finish and start thresholds, rewind seconds, maturity labels, guest maximum rating, trending window and minimums, Most liked minimums, notice retention), Then they apply within 60 seconds.
 - AC2: Given an invalid value (negative, too large), When saving, Then it is rejected with limits shown.
 - Edge: every change is audited with old and new values.
 - Error: config read failure falls back to compiled safe defaults and logs.
@@ -2374,7 +2381,7 @@ As the developer, I want a tested restore procedure, so that backups are real.
 
 ### M32-S03 Account deletion purge (Should)
 As a viewer, I want deletion to really remove my data, so that I can leave.
-- AC1: Given the grace period ends, When the purge job runs, Then rows for account, profiles, sessions, progress, lists and search history are deleted, and backups age out under the retention policy (documented in the Privacy page).
+- AC1: Given the grace period ends, When the purge job runs, Then rows for account, profiles, sessions, progress, ratings, notices, notification settings, push subscriptions, lists and search history are deleted, and backups age out under the retention policy (documented in the Privacy page).
 - AC2: Given audit entries, When purged, Then only hashed identifiers remain.
 - Edge: cancelling within the grace period restores everything.
 - Error: partial purge retries until complete.
@@ -3643,4 +3650,239 @@ As the owner, I want saved lessons to expire and be removed, so that the offline
 - AC3: Given I open Saved lessons, When it loads, Then each shows size and days left with a Remove button.
 - Edge: a Kids profile only sees kids titles.
 - Error: if the licence cannot be renewed, the title says "Reconnect to keep this".
+
+## M44 Engagement
+
+### M44-S01 Rate a title (Must)
+As a viewer, I want to tell the platform what I think of a title, so that I can find good ones again and others can too.
+- AC1: Given I am signed in on an adult profile and open a title or series page, When I look at the actions, Then I see a group "Rate this title" with Not for me, I like this and Love this.
+- AC2: Given I choose one, When I tap it, Then it shows pressed at once (optimistic), the other two are not pressed, and a toast says "Rating saved".
+- AC3: Given I choose the level that is already pressed, When I tap it, Then my rating is cleared and the toast offers Undo for 6 seconds.
+- AC4: Given the server rejects the change, When it fails, Then the control reverts and a persistent error toast says "We could not save your rating. Try again."
+- Edge: ratings belong to the profile, another profile on the account has its own. Rating a series rates the whole series, episodes cannot be rated on their own. Rating twice is idempotent.
+- Error: the title was unpublished meanwhile, show "This title is no longer available" and keep the control disabled.
+- Empty: a title never rated shows no pressed button.
+
+### M44-S02 Change or review my ratings (Should)
+As a viewer, I want to see what I rated, so that I can change my mind.
+- AC1: Given I have rated titles, When I open a card or page for one, Then my level shows pressed.
+- AC2: Given I change a rating, When it saves, Then every card of that title on the current page updates.
+- Edge: ratings of titles that were unpublished are kept and return if the title returns.
+- Error: not applicable.
+- Empty: not applicable.
+
+### M44-S03 Ratings on the title page and the hover card (Must)
+As a viewer, I want to rate from where I choose, so that it takes one tap.
+- AC1: Given a desktop with a mouse, When a card is hovered for 300 ms (ruling R10) or focused, Then a thumb button shows in the card actions beside My List and expands to the three levels on hover or focus.
+- AC2: Given a touch device, When I look at a card, Then there is no rating control on the card, and the title page has the full group.
+- AC3: Given a keyboard user, When focus is on a card, Then Tab reaches My List and the rating chip, the hover overlay text is shown on focus too, and every control has an accessible name.
+- AC4: Given a title page at 360 px, When it loads, Then Play is a full width button and My List, rating group and Share sit in a second row with 44 px targets and no horizontal scroll.
+- Edge: Data saver does not change the controls.
+- Error: failure behaves as in M44-S01.
+- Empty: not applicable.
+
+### M44-S04 Guests are asked to sign in to save a rating (Should)
+As a visitor without an account, I want a clear way to keep my rating, so that I can join when I am ready.
+- AC1: Given I am a guest, When I tap a rating, Then the "Sign in to save" dialog opens with the reason "Sign in to rate this title" and nothing is stored on the server or the device except the pending intent.
+- AC2: Given I sign in or sign up, When I return to the title, Then my rating is applied once to my chosen profile and a toast says "Saved to your profile".
+- AC3: Given the intent is older than 15 minutes or was tampered with, When I return, Then it is ignored.
+- AC4: Given I choose a kids profile after signing in, When the intent is a rating, Then it is dropped silently.
+- Edge: I tap Not now, the dialog closes and the control stays unpressed.
+- Error: replay failure shows "We could not save your rating. Try again." and keeps the control usable.
+- Empty: not applicable.
+
+### M44-S05 Most liked label (Should)
+As a viewer, I want to see which titles people liked most, so that I can pick well.
+- AC1: Given a title has at least 10 ratings and at least 85 percent Like or Love, When it ranks in the top quarter of eligible titles (at most 10), Then the title page and hover card show a "Most liked" label.
+- AC2: Given fewer than 10 ratings, When the page loads, Then no label and no count show to viewers.
+- AC3: Given the numbers change, When the 15 minute rollup runs, Then labels update.
+- Edge: one eligible title still gets the label. Counts are never shown to viewers.
+- Error: if stats cannot load, the label is omitted and the page works.
+- Empty: new platform, no labels.
+
+### M44-S06 Admin rating analytics (Should)
+As an admin, I want to see how titles are rated, so that I can make more of what people like.
+- AC1: Given `/admin/analytics`, When Top titles shows, Then columns Likes, Love, Not for me and Positive share are available and sortable.
+- AC2: Given a title with fewer than 10 ratings, When shown, Then it says "Under 10 ratings" instead of counts.
+- AC3: Given the CSV export, When I export, Then the three counts are included as current totals.
+- Edge: no rater identity is ever shown.
+- Error: partial failure shows retry per tile (as M19-S02).
+- Empty: "No ratings yet".
+
+### M44-S07 Trending now row (Must)
+As a viewer, I want to see what others are watching now, so that I can join in.
+- AC1: Given the Trending now row, When Home loads, Then it lists up to 20 titles ranked by plays in the last 7 Lagos days, newer days weighing more, filtered for my profile (kids and maturity).
+- AC2: Given fewer than 5 titles have at least 10 plays, or the site had fewer than 50 plays in the window, When Home loads, Then the row is not rendered (no fake trending).
+- AC3: Given one viewer plays a title many times in a day, When counted, Then that viewer adds at most 3 plays per day.
+- AC4: Given the snapshot is older than 3 hours, When Home loads, Then the row is not rendered and an admin warning shows on the System page.
+- Edge: series appear, scored by their episodes.
+- Error: row failure shows the inline row retry like M05-S02.
+- Empty: row not rendered.
+
+### M44-S08 Popular row and cold start (Must)
+As an admin, I want a Popular row that is honest on a new site, so that Home is never empty or misleading.
+- AC1: Given the Popular row, When Home loads, Then it lists titles by views in the last 30 days with at least 5 views each, series included.
+- AC2: Given fewer than 3 titles qualify and "Fall back to newest" is ticked, When Home loads, Then the row shows with the editor's fallback title (default "Newly added") and newest titles.
+- AC3: Given fewer than 3 qualify and the option is off, When Home loads, Then the row is not rendered.
+- Edge: kids profiles see kid titles only.
+- Error: as M44-S07.
+- Empty: as AC3.
+
+### M44-S09 Top 10 numbered row (Could)
+As a viewer, I want a clear top ten list, so that I know what is biggest.
+- AC1: Given Top 10 is switched on in Home curation, When 10 titles qualify for my profile, Then the row shows exactly 10 tiles numbered 1 to 10 after my filters.
+- AC2: Given fewer than 10 qualify, When Home loads, Then the row is not rendered.
+- AC3: Given a screen reader, When the row is read, Then it is an ordered list and each link starts with "Number 3,".
+- Edge: the numeral is large display type on a scrim, never the only way to tell rank (position and text carry it).
+- Error: as M44-S07.
+- Empty: not rendered.
+
+### M44-S10 Curate the new row kinds (Should)
+As an editor, I want to add Trending, Top 10 and Most liked rows, so that Home stays fresh with no weekly work.
+- AC1: Given Home curation, When I add a row, Then the type list includes Trending now, Top 10, Most liked with one line of help each.
+- AC2: Given a Popular row, When I edit it, Then I can tick "Fall back to newest" and set the fallback title.
+- AC3: Given a launch seed, When the site is first set up, Then rows exist in this order: Continue Watching, My List, Trending now, Newly added, one per category.
+- Edge: kids visibility is set per row as today.
+- Error: save failure keeps my edits and shows retry.
+- Empty: not applicable.
+
+### M44-S11 Notification bell for viewers (Must)
+As a viewer, I want a bell that tells me about new things, so that I come back.
+- AC1: Given I am signed in on an adult profile, When there are unread notices, Then the bell shows the count (9+ above 9) with a spoken "3 unread notifications".
+- AC2: Given I open the bell on desktop, When the popover opens, Then I see the latest 10 with "Mark all as read" and "See all"; on a phone it opens `/notifications`.
+- AC3: Given I tap a notice, When it opens, Then it is marked read and goes to the title or series page.
+- AC4: Given Data saver is on, When I browse, Then the count is fetched only when I open the bell.
+- Edge: read state is per profile.
+- Error: load failure shows "We could not load notifications. Try again."
+- Empty: "Nothing new. We will tell you when something arrives."
+
+### M44-S12 New episode notices (Must)
+As a viewer, I want to know when a series I follow has a new episode, so that I keep watching.
+- AC1: Given a series is in my My List or I watched an episode in the last 120 days, When a new episode goes live, Then I get one notice "3 new episodes of <title>" per run.
+- AC2: Given the episode is above my profile's maturity limit, When it goes live, Then I get no notice.
+- AC3: Given the job runs twice, When it finishes, Then I have exactly one notice.
+- Edge: scheduled publishing counts when the promotion time passes. Videos that were live before launch never notify.
+- Error: a failed run retries and never creates a duplicate.
+- Empty: not applicable.
+
+### M44-S13 New video notices (Should)
+As a viewer, I want a daily note when new videos arrive, so that I can browse them.
+- AC1: Given new standalone videos went live today, When the job runs, Then I get one grouped notice per day, "5 new videos", with the first three titles.
+- AC2: Given I switched "New videos" off, When videos go live, Then no notice is created.
+- Edge: videos above my maturity limit are not counted.
+- Error: as M44-S12.
+- Empty: not applicable.
+
+### M44-S14 Notification settings per account (Must)
+As an account owner, I want to choose what I am told, so that I am not flooded.
+- AC1: Given `/account/notifications`, When I open it, Then I can switch Bell, New episodes and New videos, choose email Off, Daily or Weekly, and see my masked address.
+- AC2: Given email is off by default, When I switch it on, Then the page states in one line what will be sent and I confirm, and the consent time is recorded.
+- AC3: Given I change my account email, When it saves, Then the email notification address follows.
+- Edge: security emails cannot be turned off and are not listed.
+- Error: save failure reverts the switch and shows an error toast.
+- Empty: not applicable.
+
+### M44-S15 Email digest (Should)
+As an account owner who opted in, I want one short email, so that I hear about new things without checking the site.
+- AC1: Given email is Daily or Weekly, When the digest job runs at 07:20 Lagos time (Monday for weekly), Then I get one email with at most 10 lines (title and link), HTML and plain text, under 30 KB, no tracking pixels.
+- AC2: Given my address is on the suppression list, When the job runs, Then nothing is sent.
+- AC3: Given the email, When I open it, Then it has a one click Unsubscribe link and the List-Unsubscribe header, and the link works without signing in.
+- AC4: Given the email content, When it is built, Then it never names a profile, never includes kids profile activity, and is limited by the primary profile's maturity limit.
+- Edge: no notices means no email. Copy follows UI writing rules.
+- Error: provider outage queues the mail with the outbox retry rules (M21-S01).
+- Empty: not applicable.
+
+### M44-S16 Web push (Could)
+As a viewer on a phone, I want a push when something new arrives, so that I do not miss it.
+- AC1: Given push is supported and configured, When I press "Turn on push" on the settings page, Then the browser asks permission only after that press, and a subscription is stored sealed.
+- AC2: Given a push is sent, When it shows, Then it says "New on <site name>" with a count and no title.
+- AC3: Given I tap it, When it opens, Then I land on `/notifications` (or Home under a kids lock).
+- Edge: three failed sends or 30 days without success remove the subscription.
+- Error: permission denied shows how to allow it, without nagging.
+- Empty: the button is hidden when push is not configured.
+
+### M44-S17 Kids profile notification rules (Must)
+As a parent, I want notifications to stay out of kids profiles, so that children see nothing they should not.
+- AC1: Given a kids profile is active, When any page loads, Then no bell shows and `/notifications` shows "This is not available on this profile".
+- AC2: Given a kids profile exists, When new titles go live, Then no notices are created for it.
+- AC3: Given the notification API, When called under a kids lock, Then it answers 403 and the count is 0.
+- AC4: Given push, When a kids profile is active, Then subscribing is refused.
+- Edge: switching to an adult profile restores the bell after the password step.
+- Error: not applicable.
+- Empty: not applicable.
+
+### M44-S18 Admin sets a maturity rating (Must)
+As an admin, I want to rate each title on a five step scale, so that profiles can be limited precisely.
+- AC1: Given I edit a video or series, When I choose a Maturity rating (default labels G, PG, 12, 15, 18), Then it saves and an audit entry records old and new value.
+- AC2: Given no rating is chosen, When I try to publish, Then publishing is blocked with "Choose a maturity rating".
+- AC3: Given I bulk select videos, When I apply a rating, Then all update or none do, and failed ids are listed.
+- AC4: Given a series, When I set its rating, Then I can apply it to all episodes after a confirm.
+- Edge: labels come from site settings and can be renamed without code.
+- Error: validation shows the five valid values.
+- Empty: not applicable.
+
+### M44-S19 Profile maturity limit (Must)
+As a parent, I want to set the highest rating each profile may watch, so that each person sees what suits them.
+- AC1: Given Edit profile on an adult profile, When I choose "Allow titles rated up to", Then the limit saves and applies at once to every list, search and playback.
+- AC2: Given I raise the limit, When I save, Then I must enter the account password.
+- AC3: Given I lower the limit, When I save, Then no password is needed.
+- AC4: Given a kids profile, When I open its settings, Then the limit is fixed at the lowest rating and says why.
+- Edge: turning Kids off sets the limit to 12 and I can change it right away; the last adult profile rules of M03-S10 still apply.
+- Error: wrong password shows "That password is not right" and keeps the old limit. Concurrent edit shows "This profile changed. Reload."
+- Empty: not applicable.
+
+### M44-S20 Maturity is enforced everywhere (Must)
+As a parent, I want the limit to hold on every path, so that it cannot be bypassed.
+- AC1: Given a profile limited to 12, When it opens Home, Browse, Search, suggestions, Related, My List, Continue Watching, a series page, a title URL or a watch URL, Then titles rated above 12 or unrated never appear and direct links answer as not found.
+- AC2: Given a playback session or key request for such a title, When made, Then it is refused.
+- AC3: Given the filter cannot be evaluated, When a query fails, Then the result is empty, never unfiltered (fail closed).
+- Edge: titles in My List above the limit are kept and hidden, with the existing hidden count message.
+- Error: not applicable.
+- Empty: as M35-S01.
+
+### M44-S21 Maturity badge (Should)
+As a viewer, I want to see a title's rating before I play, so that I know what to expect.
+- AC1: Given a title page, When it loads, Then the rating label shows next to the duration, with a visually hidden full phrase "Rated 15".
+- AC2: Given a card on desktop hover or focus, When the overlay shows, Then it includes the rating label unless the title is G.
+- Edge: labels follow the site setting.
+- Error: not applicable.
+- Empty: unrated titles are not visible to limited profiles, so no empty badge appears.
+
+### M44-S22 Legacy compatibility and migration (Must)
+As the developer, I want the new ratings to keep the old kids flag working, so that nothing breaks during rollout.
+- AC1: Given the migration runs, When it completes, Then every video and series has a rank (kids safe titles 0, "older" 3, the rest 2) and `kids_safe` equals rank 0 everywhere.
+- AC2: Given any writer sets a rank, When it saves, Then `kids_safe` follows by trigger.
+- AC3: Given the old API fields, When read, Then they still return the same values for one release.
+- Edge: rollback of the code leaves the data valid.
+- Error: a mismatch between `kids_safe` and rank is reported by a check query in the runbook.
+- Empty: not applicable.
+
+### M44-S23 Continue Watching polish (Should)
+As a viewer, I want the row to say exactly where I am, so that I resume with confidence.
+- AC1: Given an episode card, When shown, Then it carries "S1 E4", and a "Next: E4" badge when the card is the next episode at position 0.
+- AC2: Given any card, When shown, Then the time left reads "12 min left" or "1 h 05 min left".
+- AC3: Given I open the card menu (kebab), When I choose "Remove from row", Then the card disappears at once with Undo for 6 seconds; "Go to title page" opens the title.
+- AC4: Given a keyboard, When the menu is open, Then arrow keys move, Enter chooses, Escape closes and focus returns to the kebab.
+- Edge: the row title comes from curation.
+- Error: failure restores the card with an error toast.
+- Empty: not shown when empty.
+
+### M44-S24 My List filters and sort (Should)
+As a viewer with a long list, I want to filter and sort it, so that I find what I need.
+- AC1: Given `/my-list`, When I choose All, Started or Not started, Then the grid shows only those, with a count on each choice, and the choice is in the URL.
+- AC2: Given I choose Newest added, Oldest added, A to Z or Z to A, When applied, Then the order changes in the query and pages of 24 stay in order without repeats.
+- AC3: Given a filter has no results, When shown, Then I see a plain sentence and a "Show all" action.
+- AC4: Given I am offline, When I open the list, Then I see the saved first page with "Showing saved list".
+- Edge: a finished title counts as Started. A series counts as Started when any episode is started. Kids and maturity limits apply.
+- Error: load failure shows retry and keeps the choices.
+- Empty: as M10-S03.
+
+### M44-S25 Engagement data privacy and deletion (Must)
+As a viewer, I want my ratings and notices handled with care, so that I can trust the platform.
+- AC1: Given my data export, When it is ready, Then it includes my ratings and notices for each profile.
+- AC2: Given account deletion completes, When the purge runs, Then ratings, notices, notification settings and push subscriptions are gone.
+- AC3: Given the privacy page, When viewed, Then it states what is stored (ratings per profile, notices, optional email and push settings) and for how long (notices 60 days).
+- AC4: Given analytics, When counted, Then only totals per title are used and no rater is identifiable; kids profiles contribute no ratings.
+- Edge: deleting a profile deletes its ratings and notices.
+- Error: partial purge retries until complete (M32-S03).
 - Empty: not applicable.

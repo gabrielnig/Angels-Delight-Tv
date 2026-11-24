@@ -71,9 +71,11 @@ From `/home/claude/shared-protocols/docs/UI-UX-STANDARD.md`:
 | `/title/[slug]` | Title detail | Yes |
 | `/series/[slug]?season=` | Series page | Yes |
 | `/watch/[videoId]?t=` | Watch | Yes |
-| `/my-list` | My List | Yes |
+| `/my-list?filter=&sort=` | My List with filter and sort kept in the URL (M44-S24) | Yes |
+| `/notifications` | Notifications, the phone page behind the bell (M44-S11). Kids profiles see a plain explanation | Yes, adult only |
 | `/account` | Account overview | Yes, adult only |
 | `/account/security` | Password, email, sessions | Adult only |
+| `/account/notifications` | Notification choices and the email digest (M44-S14, S15) | Adult only |
 | `/settings/playback` | Playback settings | Yes (limited for kids) |
 | `/account/data` | Export and delete | Adult only |
 
@@ -134,6 +136,8 @@ From `/home/claude/shared-protocols/docs/UI-UX-STANDARD.md`:
 - **Session timer warning.** Dialog 2 minutes before expiry.
 
 ### 4.3 Reusable components
+
+Engagement additions (M44): the notification bell sits at the right of the viewer top bar for adult profiles, with a popover on desktop and a link to `/notifications` on phones. Home rows now include Continue learning with a menu on each card, and the curated row kinds Trending now, Top 10 and Most liked.
 Title card, row, hero, skeleton variants (card, row, table row, form), status badge (colour plus text), progress bar, empty state block, error card with retry, confirm dialog (names the object, states consequence), toast, tabs and pills (solid fill when active, neutral border when inactive), data table with cursor pagination, drop zone, upload row, upload preview card, code input, password field with checklist and meter, avatar tile, chip, switch, select, tooltip, stepper, rich text editor (minimal), colour field, drag and drop list with keyboard reordering, video player, caption cue editor, chart with table toggle.
 
 ### 4.4 Standard states (every screen defines these)
@@ -185,6 +189,7 @@ Format: number, name, route, form factors to mock. "M" is mobile (360 px), "D" i
 27. Account overview (M+D)
 28. Account security: password, email, sessions (M+D)
 29. Playback settings (M+D)
+29a. Notification settings (M+D)
 30. Data and privacy: export, delete account (M+D)
 31. Legal page, About, Help (same)
 

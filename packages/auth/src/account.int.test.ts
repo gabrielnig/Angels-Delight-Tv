@@ -400,6 +400,22 @@ describe.skipIf(!integrationEnabled())('account overview, email change and delet
       const sealedEmail = (
         await h.dbs.admin.db.select().from(schema.accounts).where(eq(schema.accounts.id, m.id))
       )[0]!.emailEnc!;
+      const [owned] = await h.dbs.admin.db
+        .select({ id: schema.profiles.id })
+        .from(schema.profiles)
+        .where(eq(schema.profiles.accountId, m.id));
+      await h.dbs.admin.db.insert(schema.viewerNotificationPrefs).values({
+        accountId: m.id,
+        addressEnc: Buffer.from('sealed'),
+        emailFrequency: 'daily',
+      });
+      await h.dbs.admin.db.insert(schema.viewerNotices).values({
+        profileId: owned!.id,
+        kind: 'new_video',
+        title: 'Fresh',
+        href: '/browse',
+        dedupeKey: 'purge-1',
+      });
       await auth.deleteAccount(actor, { password: m.password, confirmation: 'DELETE' }, h.meta);
       await h.settle();
       const before = h.mailsTo(m.email);
@@ -432,11 +448,24 @@ describe.skipIf(!integrationEnabled())('account overview, email change and delet
         schema.mfaFactors,
         schema.mfaRecoveryCodes,
         schema.dataExports,
+        schema.viewerNotificationPrefs,
       ]) {
         expect(
           await h.dbs.admin.db.select().from(table).where(eq(table.accountId, m.id)),
         ).toHaveLength(0);
       }
+      expect(
+        await h.dbs.admin.db
+          .select()
+          .from(schema.viewerNotices)
+          .where(eq(schema.viewerNotices.profileId, owned!.id)),
+      ).toHaveLength(0);
+      expect(
+        await h.dbs.admin.db
+          .select()
+          .from(schema.titleRatings)
+          .where(eq(schema.titleRatings.profileId, owned!.id)),
+      ).toHaveLength(0);
       const keys = await h.dbs.admin.keysPool.query(
         'SELECT 1 FROM user_keys WHERE account_id = $1',
         [m.id],
