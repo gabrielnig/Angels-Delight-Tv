@@ -379,6 +379,13 @@
       "when": 1796000000000,
       "tag": "0053_row_popular_fallback",
       "breakpoints": true
+    },
+    {
+      "idx": 54,
+      "version": "7",
+      "when": 1796000001000,
+      "tag": "0054_donation_checkout",
+      "breakpoints": true
     }
   ]
 }
