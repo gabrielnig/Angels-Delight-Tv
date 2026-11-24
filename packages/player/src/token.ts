@@ -5,12 +5,13 @@ export interface PlaybackSession {
   masterUrl: string;
 }
 
-export type SessionErrorKind = 'auth' | 'gone' | 'network' | 'rate-limited';
+export type SessionErrorKind = 'auth' | 'gone' | 'network' | 'rate-limited' | 'challenge';
 
 /**
  * Thrown by a SessionProvider.
  * auth: 401, the viewer must sign in again. gone: 404, 410 or an unpublished video.
  * network: the request could not be made. rate-limited: 429.
+ * challenge: a visitor with no account was asked to prove they are a person and did not (M40-S11).
  */
 export class SessionError extends Error {
   readonly kind: SessionErrorKind;

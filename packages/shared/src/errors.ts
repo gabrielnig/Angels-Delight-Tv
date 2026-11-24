@@ -1,5 +1,11 @@
 export type ErrorCode =
-  'unauthorized' | 'forbidden' | 'not_found' | 'conflict' | 'validation_failed' | 'rate_limited';
+  | 'unauthorized'
+  | 'forbidden'
+  | 'not_found'
+  | 'conflict'
+  | 'validation_failed'
+  | 'rate_limited'
+  | 'challenge_required';
 
 export abstract class AppError extends Error {
   abstract readonly code: ErrorCode;
@@ -63,6 +69,19 @@ export class RateLimited extends AppError {
   ) {
     super(message);
     this.name = 'RateLimited';
+  }
+}
+
+/**
+ * A visitor with no account must pass a human check before a playback session is minted (M40-S11). 403 so
+ * a client that does not know the code treats it as refused, with a code the player can answer.
+ */
+export class ChallengeRequired extends AppError {
+  readonly code = 'challenge_required';
+  readonly status = 403;
+  constructor(message = 'Please confirm you are a person to keep watching') {
+    super(message);
+    this.name = 'ChallengeRequired';
   }
 }
 

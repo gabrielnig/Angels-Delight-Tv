@@ -25,6 +25,8 @@ export interface VideoRuntime {
   guest?: {
     getGuest: NonNullable<Parameters<typeof createPlaybackHandlers>[0]['getGuest']>;
     playEnabled: NonNullable<Parameters<typeof createPlaybackHandlers>[0]['guestPlayEnabled']>;
+    /** Present when Turnstile is configured. Absent means no escalation, the limits alone apply. */
+    challenge?: Parameters<typeof createPlaybackHandlers>[0]['guestChallenge'];
   };
   upload: UploadService;
   playback: PlaybackService;
@@ -64,6 +66,7 @@ export function createVideoApi(rt: VideoRuntime) {
     getActor: rt.auth.getActor,
     assertSameOrigin: sameOrigin,
     ...(rt.guest ? { getGuest: rt.guest.getGuest, guestPlayEnabled: rt.guest.playEnabled } : {}),
+    ...(rt.guest?.challenge ? { guestChallenge: rt.guest.challenge } : {}),
     // Without a trusted proxy there is no reliable address. Everyone then shares one per IP bucket, which only
     // happens in development. Production sets TRUSTED_PROXY_MODE=cloudflare.
     clientIp: (request) => clientIp(request.headers, rt.trustedProxyMode) ?? 'untrusted',

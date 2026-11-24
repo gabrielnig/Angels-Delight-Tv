@@ -8,6 +8,11 @@ export interface HttpSessionOptions {
   /** Omitted for a guest: the body then carries no profile and the server reads the guest cookie. */
   profileId?: string;
   fetchFn?: FetchFn;
+  /**
+   * Called when the server asks a visitor to prove they are a person. Resolves to a Turnstile token, or null when
+   * they did not pass. Absent means the request fails with a `challenge` error (M40-S11).
+   */
+  solveChallenge?: () => Promise<string | null>;
 }
 
 function toEpochMs(value: unknown): number | null {
@@ -31,17 +36,39 @@ export function createHttpSessionProvider(opts: HttpSessionOptions): SessionProv
   const doFetch: FetchFn = opts.fetchFn ?? ((input, init) => fetch(input, init));
   return {
     async createSession(videoId, signal) {
-      let response: Response;
-      try {
-        response = await doFetch(`${origin}/api/play/${encodeURIComponent(videoId)}/session`, {
-          method: 'POST',
-          credentials: 'include',
-          headers: { 'content-type': 'application/json' },
-          body: JSON.stringify(opts.profileId === undefined ? {} : { profileId: opts.profileId }),
-          ...(signal ? { signal } : {}),
-        });
-      } catch {
-        throw new SessionError('network');
+      const send = async (challengeToken?: string): Promise<Response> => {
+        try {
+          return await doFetch(`${origin}/api/play/${encodeURIComponent(videoId)}/session`, {
+            method: 'POST',
+            credentials: 'include',
+            headers: {
+              'content-type': 'application/json',
+              ...(challengeToken ? { 'x-turnstile-token': challengeToken } : {}),
+            },
+            body: JSON.stringify(opts.profileId === undefined ? {} : { profileId: opts.profileId }),
+            ...(signal ? { signal } : {}),
+          });
+        } catch {
+          throw new SessionError('network');
+        }
+      };
+      const asksForChallenge = async (r: Response): Promise<boolean> => {
+        if (r.status !== 403) return false;
+        const body = (await r
+          .clone()
+          .json()
+          .catch(() => null)) as {
+          error?: { code?: unknown };
+        } | null;
+        return body?.error?.code === 'challenge_required';
+      };
+      let response = await send();
+      if (await asksForChallenge(response)) {
+        const token = opts.solveChallenge ? await opts.solveChallenge() : null;
+        if (!token) throw new SessionError('challenge');
+        // One more try only. A token works once, so a wrong answer ends here and does not loop.
+        response = await send(token);
+        if (await asksForChallenge(response)) throw new SessionError('challenge');
       }
       if (response.status === 401) throw new SessionError('auth');
       if ([403, 404, 410].includes(response.status)) throw new SessionError('gone');

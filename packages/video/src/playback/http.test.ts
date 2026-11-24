@@ -1,4 +1,4 @@
-import { Forbidden, NotFound, Unauthorized } from '@ad/shared';
+import { Forbidden, NotFound, RateLimited, Unauthorized } from '@ad/shared';
 import { describe, expect, it } from 'vitest';
 import { createPlaybackHandlers } from './http';
 
@@ -185,13 +185,25 @@ describe('playback handlers', () => {
       over: {
         play?: boolean;
         guest?: { guestId: string; kids: boolean; setCookie?: string } | null;
+        challenge?: {
+          required: (ip: string) => Promise<boolean>;
+          verify: (request: Request, ip: string) => Promise<boolean>;
+          recordDenial: (ip: string) => Promise<void>;
+        };
+        startGuest?: () => Promise<unknown>;
       } = {},
     ) {
       const calls: unknown[][] = [];
       const mints: boolean[] = [];
       const service = {
         startSession: async (...a: unknown[]) => (calls.push(['session', ...a]), { token: 't' }),
-        startGuestSession: async (...a: unknown[]) => (calls.push(['guest', ...a]), { token: 'g' }),
+        startGuestSession: async (...a: unknown[]) => {
+          if (over.startGuest) return over.startGuest();
+          return (calls.push(['guest', ...a]), { token: 'g' });
+        },
+        master: async () => {
+          throw new Forbidden('nope');
+        },
       };
       const handlers = createPlaybackHandlers({
         service: service as never,
@@ -209,6 +221,7 @@ describe('playback handlers', () => {
         },
         clientIp: () => '9.9.9.9',
         guestPlayEnabled: async () => over.play ?? true,
+        ...(over.challenge ? { guestChallenge: over.challenge } : {}),
         getGuest: async (_r, o) => {
           mints.push(o.mint);
           return over.guest === undefined ? { guestId: 'gid', kids: false } : over.guest;
@@ -259,6 +272,82 @@ describe('playback handlers', () => {
       expect(res.status).toBe(403);
       expect(calls).toEqual([]);
       expect(mints).toEqual([]);
+    });
+
+    describe('challenge escalation (M40-S11)', () => {
+      const challenge = (
+        over: Partial<NonNullable<Parameters<typeof guestSetup>[0]>['challenge']> = {},
+      ) => ({
+        required: async () => false,
+        verify: async () => true,
+        recordDenial: async () => undefined,
+        ...over,
+      });
+
+      it('mints as usual when no challenge is needed', async () => {
+        const { handlers, calls } = guestSetup({ challenge: challenge() });
+        expect((await handlers.session(post(), VID)).status).toBe(200);
+        expect(calls).toHaveLength(1);
+      });
+
+      it('answers 403 challenge_required, mints nothing and sets no cookie when one is needed and missing', async () => {
+        const { handlers, calls, mints } = guestSetup({
+          guest: { guestId: 'gid', kids: false, setCookie: 'c=1' },
+          challenge: challenge({ required: async () => true, verify: async () => false }),
+        });
+        const res = await handlers.session(post(), VID);
+        expect(res.status).toBe(403);
+        expect(((await res.json()) as { error: { code: string } }).error.code).toBe(
+          'challenge_required',
+        );
+        expect(res.headers.getSetCookie()).toEqual([]);
+        expect(calls).toEqual([]);
+        expect(mints).toEqual([]);
+      });
+
+      it('lets a verified challenge through', async () => {
+        const { handlers, calls } = guestSetup({
+          challenge: challenge({ required: async () => true, verify: async () => true }),
+        });
+        expect((await handlers.session(post(), VID)).status).toBe(200);
+        expect(calls).toHaveLength(1);
+      });
+
+      it('counts a rate limited session as a denial for the address', async () => {
+        const denials: string[] = [];
+        const { handlers } = guestSetup({
+          startGuest: async () => {
+            throw new RateLimited(30);
+          },
+          challenge: challenge({ recordDenial: async (ip) => void denials.push(ip) }),
+        });
+        expect((await handlers.session(post(), VID)).status).toBe(429);
+        expect(denials).toEqual(['9.9.9.9']);
+      });
+
+      it('counts a refused playlist (403) but never a plain 401, and never fails the answer', async () => {
+        const denials: string[] = [];
+        const { handlers } = guestSetup({
+          challenge: challenge({
+            recordDenial: async (ip) => {
+              denials.push(ip);
+              throw new Error('store down');
+            },
+          }),
+        });
+        const res = await handlers.master(new Request('https://app/x'), VID);
+        expect(res.status).toBe(403);
+        expect(denials).toEqual(['9.9.9.9']);
+      });
+
+      it('does not challenge a signed in viewer', async () => {
+        const { handlers, calls } = guestSetup({
+          challenge: challenge({ required: async () => true, verify: async () => false }),
+        });
+        const res = await handlers.session(post({ cookie: 'acct' }), VID);
+        expect(res.status).toBe(200);
+        expect(calls[0]![0]).toBe('session');
+      });
     });
 
     it('never gives a guest a preview', async () => {

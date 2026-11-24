@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   AppError,
+  ChallengeRequired,
   Conflict,
   Forbidden,
   NotFound,
@@ -19,6 +20,8 @@ describe('AppError subclasses', () => {
     expect(toHttpStatus(new Conflict())).toBe(409);
     expect(toHttpStatus(new ValidationFailed({ title: ['required'] }))).toBe(422);
     expect(toHttpStatus(new RateLimited(30))).toBe(429);
+    expect(toHttpStatus(new ChallengeRequired())).toBe(403);
+    expect(new ChallengeRequired().code).toBe('challenge_required');
   });
 
   it('turns an unknown error into a 500', () => {

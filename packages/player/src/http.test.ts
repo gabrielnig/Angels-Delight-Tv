@@ -99,6 +99,63 @@ describe('createHttpSessionProvider', () => {
   });
 });
 
+describe('createHttpSessionProvider challenge (M40-S11)', () => {
+  const ok = () =>
+    res(200, { token: 'v1.k.p.m', expiresAt: '2026-11-17T10:30:00Z', masterUrl: '/m.m3u8' });
+  const asked = () => res(403, { error: { code: 'challenge_required', message: 'x' } });
+
+  it('throws a challenge error when asked and there is no way to answer', async () => {
+    const fetchFn = vi.fn().mockResolvedValue(asked());
+    const provider = createHttpSessionProvider({ appOrigin: 'https://app.test', fetchFn });
+    await expect(provider.createSession('v1')).rejects.toMatchObject({ kind: 'challenge' });
+    expect(fetchFn).toHaveBeenCalledTimes(1);
+  });
+
+  it('gets a token from the host and tries once more with it in the header', async () => {
+    const fetchFn = vi.fn().mockResolvedValueOnce(asked()).mockResolvedValueOnce(ok());
+    const solveChallenge = vi.fn().mockResolvedValue('tok');
+    const provider = createHttpSessionProvider({
+      appOrigin: 'https://app.test',
+      fetchFn,
+      solveChallenge,
+    });
+    await expect(provider.createSession('v1')).resolves.toMatchObject({ token: 'v1.k.p.m' });
+    expect(fetchFn).toHaveBeenCalledTimes(2);
+    const retry = fetchFn.mock.calls[1]![1] as RequestInit;
+    expect((retry.headers as Record<string, string>)['x-turnstile-token']).toBe('tok');
+  });
+
+  it('gives up with a challenge error when the visitor does not pass it', async () => {
+    const fetchFn = vi.fn().mockResolvedValue(asked());
+    const provider = createHttpSessionProvider({
+      appOrigin: 'https://app.test',
+      fetchFn,
+      solveChallenge: async () => null,
+    });
+    await expect(provider.createSession('v1')).rejects.toMatchObject({ kind: 'challenge' });
+    expect(fetchFn).toHaveBeenCalledTimes(1);
+  });
+
+  it('asks only once per attempt, so a wrong token cannot loop', async () => {
+    const fetchFn = vi.fn().mockResolvedValue(asked());
+    const solveChallenge = vi.fn().mockResolvedValue('tok');
+    const provider = createHttpSessionProvider({
+      appOrigin: 'https://app.test',
+      fetchFn,
+      solveChallenge,
+    });
+    await expect(provider.createSession('v1')).rejects.toMatchObject({ kind: 'challenge' });
+    expect(solveChallenge).toHaveBeenCalledTimes(1);
+    expect(fetchFn).toHaveBeenCalledTimes(2);
+  });
+
+  it('keeps a plain 403 as gone', async () => {
+    const fetchFn = vi.fn().mockResolvedValue(res(403, { error: { code: 'forbidden' } }));
+    const provider = createHttpSessionProvider({ appOrigin: 'https://app.test', fetchFn });
+    await expect(provider.createSession('v1')).rejects.toMatchObject({ kind: 'gone' });
+  });
+});
+
 describe('createHttpProgressSink', () => {
   const update = {
     videoId: 'v1',
