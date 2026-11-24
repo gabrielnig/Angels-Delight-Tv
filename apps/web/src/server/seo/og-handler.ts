@@ -7,6 +7,8 @@ export interface OgDeps {
   siteName(): Promise<string>;
   freeLine(): string;
   defaultImageUrl(): Promise<string>;
+  /** False for a kids only title (R26). Optional so callers that do not care keep working. */
+  indexable?(slug: string, kind: 'video' | 'series'): Promise<boolean>;
   fetchPoster(url: string): Promise<Buffer | null>;
   render(input: OgRenderInput): Promise<Buffer>;
 }
@@ -23,12 +25,16 @@ export function createOgHandler(deps: OgDeps) {
     if (!found || found.type === 'redirect' || found.type !== kind) {
       return new Response('Not found', { status: 404 });
     }
+    // A failed lookup keeps the picture out of the index rather than risk listing it.
+    const listed = deps.indexable ? await deps.indexable(slug, kind).catch(() => false) : true;
+    const robots: Record<string, string> = listed ? {} : { 'x-robots-tag': 'noindex' };
     const fallback = async () =>
       new Response(null, {
         status: 302,
         headers: {
           location: new URL(await deps.defaultImageUrl(), request.url).toString(),
           'cache-control': 'public, max-age=300',
+          ...robots,
         },
       });
     const posterUrl = pickPosterUrl(found.item.thumbnail);
@@ -41,7 +47,7 @@ export function createOgHandler(deps: OgDeps) {
         poster: await deps.fetchPoster(posterUrl),
       });
       return new Response(new Uint8Array(jpeg), {
-        headers: { 'content-type': 'image/jpeg', 'cache-control': CACHE },
+        headers: { 'content-type': 'image/jpeg', 'cache-control': CACHE, ...robots },
       });
     } catch {
       return fallback();
