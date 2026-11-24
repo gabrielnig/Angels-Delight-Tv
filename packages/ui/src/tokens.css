@@ -51,8 +51,11 @@
   --color-player-bg: #0E0F13;
   --color-player-ink: #FFFFFF;
   --color-player-muted: #B4B8C2;
-  --color-player-rail: #3A3D46;
-  --color-player-buffer: #5B606B;
+  --color-player-rail: #6A6E78;
+  --color-player-buffer: #9CA0AA;
+  --color-player-border: #3A3D46;
+  --color-player-surface-raised: #1B1D24;
+  --color-player-switch-off: #6E7179;
   --color-player-control-bg: rgba(14, 15, 19, 0.72);
   --color-scrim-top: rgba(14, 15, 19, 0.85);
   --color-scrim-bottom: rgba(14, 15, 19, 0.0);

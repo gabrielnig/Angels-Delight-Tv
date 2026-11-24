@@ -49,7 +49,7 @@
 }
 
 .adp[data-controls='visible'] .adp-video::-webkit-media-text-track-container {
-  transform: translateY(-4.5rem);
+  transform: translateY(-6.5rem);
 }
 
 .adp-poster {
@@ -60,7 +60,7 @@
   object-fit: cover;
   pointer-events: none;
   opacity: 1;
-  transition: opacity 150ms ease-out;
+  transition: opacity var(--motion-fast) ease-out;
 }
 
 .adp-poster[data-state='hidden'] {
@@ -80,6 +80,32 @@
 
 /* ---- controls ---- */
 
+/*
+  Control scrim (plan 11.2 items 1 and 2). It holds 0.9 from the bottom to above the seek rail, then eases
+  out. It sits below the tile, the controls (menus live inside them) and toasts, so it never paints over them.
+*/
+.adp::after {
+  content: '';
+  position: absolute;
+  inset: auto 0 0 0;
+  height: 11rem;
+  background: linear-gradient(
+    to top,
+    color-mix(in srgb, var(--color-player-bg) 90%, transparent) 0%,
+    color-mix(in srgb, var(--color-player-bg) 90%, transparent) 58%,
+    color-mix(in srgb, var(--color-player-bg) 55%, transparent) 82%,
+    transparent 100%
+  );
+  opacity: 0;
+  transition: opacity var(--motion-base) ease-out;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.adp[data-controls='visible']::after {
+  opacity: 1;
+}
+
 .adp-top {
   position: absolute;
   inset: 0 0 auto 0;
@@ -88,7 +114,7 @@
     max(var(--space-4), env(safe-area-inset-left));
   background: linear-gradient(to bottom, var(--color-scrim-top), var(--color-scrim-bottom));
   opacity: 0;
-  transition: opacity 200ms ease-out;
+  transition: opacity var(--motion-base) ease-out;
   pointer-events: none;
 }
 
@@ -110,9 +136,8 @@
   gap: 0 var(--space-2);
   padding: var(--space-8) max(var(--space-4), env(safe-area-inset-right))
     max(var(--space-2), env(safe-area-inset-bottom)) max(var(--space-4), env(safe-area-inset-left));
-  background: linear-gradient(to top, var(--color-scrim-top), var(--color-scrim-bottom));
   opacity: 0;
-  transition: opacity 200ms ease-out;
+  transition: opacity var(--motion-base) ease-out;
   pointer-events: none;
   z-index: 3;
 }
@@ -150,10 +175,6 @@
   min-width: 3.25rem;
 }
 
-.adp-ctl:hover {
-  background: var(--color-player-control-bg);
-}
-
 .adp-ctl[data-on] {
   color: var(--color-accent);
 }
@@ -173,7 +194,8 @@
 .adp-tile button:focus-visible,
 .adp-volume__slider:focus-visible {
   outline: 3px solid var(--color-focus-ring-dark);
-  outline-offset: 2px;
+  outline-offset: 3px;
+  box-shadow: 0 0 0 3px var(--color-player-bg);
 }
 
 .adp-time {
@@ -201,7 +223,7 @@
   accent-color: var(--color-accent);
 }
 
-/* ---- seek bar: 4px rail growing to 8px, 32px tall hit area ---- */
+/* ---- seek bar: 5px rail growing to 8px (transform only), 44px tall hit area ---- */
 
 .adp-seek {
   order: -1;
@@ -209,24 +231,30 @@
   position: relative;
   display: flex;
   align-items: center;
-  height: 2rem;
+  height: var(--touch-target);
   cursor: pointer;
   touch-action: none;
 }
 
-.adp-seek__rail {
+.adp-seek__body {
   position: relative;
   width: 100%;
-  height: 4px;
-  border-radius: var(--radius-pill);
-  background: var(--color-player-rail);
-  transition: height 120ms ease-out;
+  height: 8px;
 }
 
-.adp-seek:hover .adp-seek__rail,
+.adp-seek__rail {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  border-radius: var(--radius-pill);
+  background: var(--color-player-rail);
+  transform: scaleY(0.625);
+  transition: transform var(--motion-fast) ease-out;
+}
+
 .adp-seek[data-dragging] .adp-seek__rail,
 .adp-seek:focus-visible .adp-seek__rail {
-  height: 8px;
+  transform: scaleY(1);
 }
 
 .adp-seek__buffered,
@@ -252,6 +280,13 @@
   margin: -8px 0 0 -8px;
   border-radius: 50%;
   background: var(--color-player-ink);
+  transform: scale(0.625);
+  transition: transform var(--motion-fast) ease-out;
+}
+
+.adp-seek[data-dragging] .adp-seek__thumb,
+.adp-seek:focus-visible .adp-seek__thumb {
+  transform: scale(1);
 }
 
 .adp-seek__tip--preview {
@@ -274,7 +309,7 @@
 
 .adp-seek__tip {
   position: absolute;
-  bottom: 1.75rem;
+  bottom: 2rem;
   transform: translateX(-50%);
   padding: var(--space-1) var(--space-2);
   border-radius: var(--radius-sm);
@@ -298,7 +333,7 @@
   overflow-y: auto;
   padding: var(--space-2);
   border-radius: var(--radius-md);
-  background: var(--color-sidebar-bg);
+  background: var(--color-player-surface-raised);
   color: var(--color-player-ink);
   box-shadow: var(--shadow-3);
   z-index: 5;
@@ -330,7 +365,6 @@
   cursor: pointer;
 }
 
-.adp-menu__row:hover,
 .adp-menu__row[aria-checked='true'] {
   background: var(--color-sidebar-active);
 }
@@ -358,7 +392,7 @@
 .adp-menu__note {
   margin: var(--space-2) 0 0;
   padding: var(--space-3) var(--space-3) var(--space-2);
-  border-top: 1px solid var(--color-player-rail);
+  border-top: 1px solid var(--color-player-border);
   color: var(--color-player-muted);
   font-size: var(--text-caption);
 }
@@ -414,10 +448,10 @@
 .adp-spinner {
   width: 3rem;
   height: 3rem;
-  border: 4px solid var(--color-player-rail);
+  border: 4px solid var(--color-player-border);
   border-top-color: var(--color-accent);
   border-radius: 50%;
-  animation: adp-spin 800ms linear infinite;
+  animation: adp-spin var(--motion-spin) linear infinite;
 }
 
 .adp-spinner__label {
@@ -488,18 +522,10 @@
   color: var(--color-on-accent);
 }
 
-.adp-btn--primary:hover {
-  background: var(--color-accent-hover);
-}
-
 .adp-btn--ghost {
   border-color: var(--color-player-muted);
   background: transparent;
   color: var(--color-player-ink);
-}
-
-.adp-btn--ghost:hover {
-  background: var(--color-sidebar-hover);
 }
 
 .adp-banner {
@@ -569,8 +595,8 @@
   max-width: 18rem;
   border-radius: var(--radius-md);
   background: var(--color-sidebar-bg);
-  animation: adp-slide 250ms ease-out;
-  z-index: 3;
+  animation: adp-slide var(--motion-base) ease-out;
+  z-index: 2;
 }
 
 .adp-tile__main {
@@ -619,7 +645,7 @@
   background: var(--color-player-control-bg);
   font-weight: var(--weight-bold);
   font-size: var(--text-lead);
-  animation: adp-fade 700ms ease-out forwards;
+  animation: adp-fade var(--motion-spin) ease-out forwards;
   pointer-events: none;
   z-index: 2;
 }
@@ -755,7 +781,7 @@
 }
 
 .adp-ring__rail {
-  stroke: var(--color-player-rail);
+  stroke: var(--color-player-border);
 }
 
 .adp-ring__fill {
@@ -812,7 +838,7 @@
   justify-content: space-between;
   gap: var(--space-4);
   padding: var(--space-2) 0;
-  border-bottom: 1px solid var(--color-player-rail);
+  border-bottom: 1px solid var(--color-player-border);
 }
 
 .adp-dialog__row dt {
@@ -884,7 +910,43 @@
   }
 }
 
+/* Hover only on devices that really hover (R31). Touch gets the pressed state only. */
+@media (hover: hover) and (pointer: fine) {
+  .adp-ctl:hover {
+    background: var(--color-player-control-bg);
+  }
+
+  .adp-menu__row:hover {
+    background: var(--color-sidebar-active);
+  }
+
+  .adp-btn--primary:hover {
+    background: var(--color-accent-hover);
+  }
+
+  .adp-btn--ghost:hover {
+    background: var(--color-sidebar-hover);
+  }
+
+  .adp-seek:hover .adp-seek__rail {
+    transform: scaleY(1);
+  }
+
+  .adp-seek:hover .adp-seek__thumb {
+    transform: scale(1);
+  }
+}
+
 @media (forced-colors: active) {
+  .adp-ctl:focus-visible,
+  .adp-seek:focus-visible,
+  .adp-btn:focus-visible,
+  .adp-menu__row:focus-visible,
+  .adp-tile button:focus-visible {
+    outline-color: Highlight;
+    box-shadow: none;
+  }
+
   .adp-seek__played,
   .adp-seek__thumb {
     background: Highlight;

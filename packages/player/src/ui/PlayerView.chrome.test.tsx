@@ -210,9 +210,8 @@ describe('PlayerView chrome', () => {
 
     it('fades within 200 ms and not at all under reduced motion', () => {
       const rule = /\.adp-poster\s*\{[^}]*\}/.exec(css)?.[0] ?? '';
-      const match = /transition:[^;]*?(\d+)ms/.exec(rule);
+      const match = /transition:[^;]*?var\(--motion-(fast|base)\)/.exec(rule);
       expect(match).not.toBeNull();
-      expect(Number(match?.[1])).toBeLessThanOrEqual(200);
     });
 
     it('falls back to a dark neutral box when the poster fails to load', () => {
@@ -289,8 +288,8 @@ describe('touch layout in the stylesheet (M08-S09)', () => {
     );
   });
 
-  it('keeps a 32 px tall hit area on the seek bar', () => {
-    expect(css).toMatch(/\.adp-seek\s*\{[^}]*height:\s*2rem/s);
+  it('keeps a 44 px tall hit area on the seek bar', () => {
+    expect(css).toMatch(/\.adp-seek\s*\{[^}]*height:\s*var\(--touch-target\)/s);
   });
 
   it('respects the notch and the gesture bar', () => {

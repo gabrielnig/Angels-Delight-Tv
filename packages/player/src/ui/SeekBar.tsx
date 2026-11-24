@@ -115,9 +115,11 @@ export function SeekBar({
       onPointerLeave={() => !dragging && setHover(null)}
       onKeyDown={onKeyDown}
     >
-      <div className="adp-seek__rail">
-        <div className="adp-seek__buffered" style={{ width: `${buffered}%` }} />
-        <div className="adp-seek__played" style={{ width: `${played}%` }} />
+      <div className="adp-seek__body">
+        <div className="adp-seek__rail">
+          <div className="adp-seek__buffered" style={{ width: `${buffered}%` }} />
+          <div className="adp-seek__played" style={{ width: `${played}%` }} />
+        </div>
         <div className="adp-seek__thumb" style={{ left: `${played}%` }} />
       </div>
       {hover ? (
