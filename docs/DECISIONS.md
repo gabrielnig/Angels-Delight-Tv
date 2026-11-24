@@ -1076,3 +1076,15 @@ Four ids were used twice by parallel lanes. They are never renumbered because la
 - Options: require a republish, or apply at once.
 - Why: corrections are small and frequent and the data is display only. Skip only seeks forward, so a bad marker never hides content.
 - Reversible: yes.
+
+## D-201 Guest progress lives in one localStorage key with a cap of 100 (lane L1)
+- Decision: Guest watched places are kept on the device in the single key `ad:guest:progress:v1` as `{ v: 1, items: { [videoId]: { p, d, f, t } } }`, capped at 100 titles with the least recently written dropped first. A corrupt, blocked or full store is treated as empty and never stops playback, and the unsaved place is reported once ("Your place is not being saved on this device."). The session transport and the progress transport are separate types: the plan said transport mode `local`, but `PlaybackTransport` drives both the session provider and the sink, so progress got `ProgressTransport = 'http' | 'fixture' | 'local'`.
+- Options: per video keys as the fixture sink does, one capped key, IndexedDB.
+- Why: A cap and eviction need one place, one read is cheap on low end phones, and the version field allows a later migration. IndexedDB adds async code for no gain at 100 small entries. The existing local sink writes one key per video with no timestamp and no cap, so it could not meet the cap.
+- Reversible: yes, the version field allows a migration.
+
+## D-202 Guest analytics identity is a daily hash of the guest id (lane L1)
+- Decision: Analytics hashes `guest:<guest id>` with the Lagos day, so a guest counts as one unique viewer per day and the id itself is never stored. A guest in Kids mode stores no identity, as a kids profile does. A signed in profile always wins over a guest cookie. The ingest context carries an optional `subjectId` and the guest view row keeps `profile_id` null.
+- Options: guests uncounted as uniques, a daily hash of the guest id, an address based id.
+- Why: Most viewers will be guests, so uncounted guests would hide most uniques. A daily rotating hash keeps the M19-S07 promise. An address based id is weaker and personal data under the NDPA.
+- Reversible: yes.
