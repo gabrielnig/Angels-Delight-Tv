@@ -1,5 +1,6 @@
 'use client';
 
+import { useT } from '../../lib/i18n/provider';
 import { useEffect, useRef, type ReactNode } from 'react';
 import { Button, ButtonLink } from '@ad/ui';
 import './errors.css';
@@ -36,6 +37,7 @@ export function ErrorPage({
   action,
   children,
 }: ErrorPageProps) {
+  const msg = useT();
   const heading = useRef<HTMLHeadingElement>(null);
   useEffect(() => heading.current?.focus(), []);
   return (
@@ -58,21 +60,22 @@ export function ErrorPage({
               type="search"
               name="q"
               maxLength={100}
-              placeholder="Search for a lesson"
-              aria-label="Search for a lesson"
+              placeholder={msg('errors.searchForALesson')}
+              aria-label={msg('errors.searchForALesson')}
               autoComplete="off"
             />
           </form>
         ) : null}
         {supportEmail ? (
           <p className="ad-error__small">
-            If it keeps happening, email <span className="ad-error__mono">{supportEmail}</span>
+            {msg('errors.ifItKeepsHappening')}{' '}
+            <span className="ad-error__mono">{supportEmail}</span>
             {reference ? ' and quote the reference below.' : '.'}
           </p>
         ) : null}
         {reference ? (
           <p className="ad-error__small">
-            Reference: <span className="ad-error__mono">{reference}</span>
+            {msg('errors.reference')} <span className="ad-error__mono">{reference}</span>
           </p>
         ) : null}
         <div className="ad-error__actions">

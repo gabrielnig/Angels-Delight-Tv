@@ -1,5 +1,7 @@
 'use client';
 
+import type { Translate } from '@ad/shared/messages';
+import { useT } from '../../lib/i18n/provider';
 import { useRouter } from 'next/navigation';
 import { useState, type FormEvent } from 'react';
 import { Button, Modal, OtpInput } from '@ad/ui';
@@ -13,18 +15,20 @@ type RequestResult = { ok: true; pendingEmail: string } | { ok: false; reason: E
 type ConfirmResult =
   { ok: true } | { ok: false; reason: 'invalid' | 'expired' | 'too_many' | 'network' };
 
-const REQUEST_PROBLEM: Record<EmailChangeFailure, string> = {
-  wrong_password: 'Password is not right.',
-  invalid_email: 'Enter your full email, for example name@example.com.',
-  same_email: 'That is already your email.',
+const requestProblem = (msg: Translate): Record<EmailChangeFailure, string> => ({
+  wrong_password: msg('account.passwordNotRight'),
+  invalid_email: msg('account.enterYourFullEmail'),
+  same_email: msg('account.thatIsAlreadyYour'),
   network: NETWORK_MESSAGE,
-};
-const CODE_PROBLEM: Record<'invalid' | 'expired' | 'too_many' | 'network', string> = {
-  invalid: 'That code is not right. Check it and try again.',
-  expired: 'That code has expired. Close this and ask for a new one.',
-  too_many: 'Too many tries. Ask for a new code in a few minutes.',
+});
+const codeProblem = (
+  msg: Translate,
+): Record<'invalid' | 'expired' | 'too_many' | 'network', string> => ({
+  invalid: msg('account.thatCodeIsNot'),
+  expired: msg('account.thatCodeHasExpired'),
+  too_many: msg('account.tooManyTriesAsk'),
   network: NETWORK_MESSAGE,
-};
+});
 
 /** The Email card (S28) with the two step change: new address and password, then the 6 digit code. */
 export function EmailCard({
@@ -40,6 +44,7 @@ export function EmailCard({
   confirm?: (input: { code: string }) => Promise<ConfirmResult>;
   onChanged?: () => void;
 }) {
+  const msg = useT();
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [step, setStep] = useState<'address' | 'code'>('address');
@@ -67,7 +72,7 @@ export function EmailCard({
       if (result.ok) {
         setNewEmail(result.pendingEmail);
         setStep('code');
-      } else setProblem(REQUEST_PROBLEM[result.reason]);
+      } else setProblem(requestProblem(msg)[result.reason]);
     } catch {
       setProblem(NETWORK_MESSAGE);
     } finally {
@@ -85,7 +90,7 @@ export function EmailCard({
         onChanged?.();
         router.refresh();
       } else {
-        setProblem(CODE_PROBLEM[result.reason]);
+        setProblem(codeProblem(msg)[result.reason]);
         setCode('');
       }
     } catch {
@@ -98,7 +103,7 @@ export function EmailCard({
   return (
     <section className="acct-card" data-gap="3" aria-labelledby="acct-email">
       <h2 id="acct-email" className="acct-h2">
-        Email
+        {msg('account.email')}
       </h2>
       <div className="acct-row" data-between data-wrap data-tight>
         <div className="acct-col">
@@ -107,22 +112,20 @@ export function EmailCard({
             <span className="acct-row acct-email__badge" data-tight>
               <span className="acct-badge" data-tone="ok">
                 <AcctIcon name="check" size={14} strokeWidth={3} />
-                Verified
+                {msg('account.verified')}
               </span>
             </span>
           ) : null}
         </div>
         <Button variant="secondary" onClick={() => setOpen(true)}>
-          Change email
+          {msg('account.changeEmail')}
         </Button>
       </div>
-      <p className="acct-muted acct-small">
-        We will send a 6 digit code to your new address before the change takes effect.
-      </p>
+      <p className="acct-muted acct-small">{msg('account.weWillSendA')}</p>
       <Modal
         open={open}
         onClose={close}
-        title={step === 'address' ? 'Change your email' : 'Enter the code'}
+        title={step === 'address' ? msg('account.changeYourEmail') : msg('account.enterTheCode')}
         className="acct-dialog"
         hideClose
         dismissOnScrim={false}
@@ -146,16 +149,16 @@ export function EmailCard({
             />
             <div className="acct-dialog__actions">
               <Button variant="secondary" onClick={close}>
-                Cancel
+                {msg('account.cancel')}
               </Button>
               <Button type="submit" loading={busy}>
-                Send code
+                {msg('account.sendCode')}
               </Button>
             </div>
           </form>
         ) : (
           <div className="acct-dialog__form">
-            <p className="acct-muted">{`We sent a 6 digit code to ${newEmail}. It works for a short time.`}</p>
+            <p className="acct-muted">{msg('account.weSentA6', { newEmail })}</p>
             <OtpInput
               value={code}
               onChange={setCode}
@@ -166,7 +169,7 @@ export function EmailCard({
             />
             <div className="acct-dialog__actions">
               <Button variant="secondary" onClick={close}>
-                Cancel
+                {msg('account.cancel')}
               </Button>
             </div>
           </div>

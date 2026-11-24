@@ -1,5 +1,6 @@
 'use client';
 
+import { useT } from '../../lib/i18n/provider';
 import { useEffect, useState } from 'react';
 import { evaluatePassword, MIN_PASSWORD_LENGTH, zxcvbnScorer, type PasswordScorer } from '@ad/ui';
 import { AcctIcon } from './icons';
@@ -30,6 +31,7 @@ export function PasswordStrength({
   value: string;
   scorer?: PasswordScorer;
 }) {
+  const msg = useT();
   const [score, setScore] = useState(0);
   useEffect(() => {
     if (!value) return;
@@ -44,11 +46,16 @@ export function PasswordStrength({
   if (!value) return null;
   const ev = evaluatePassword(value, score);
   const rules = passwordRules(value);
-  const word = ev.label === 'Too short' ? 'Weak' : ev.label;
+  const word =
+    ev.label === 'Strong'
+      ? msg('account.strengthStrong')
+      : ev.label === 'Okay'
+        ? msg('account.strengthOkay')
+        : msg('account.strengthWeak');
   const rows: [boolean, string][] = [
-    [rules.length, `At least ${MIN_PASSWORD_LENGTH} characters`],
-    [rules.mix, 'A letter and a number'],
-    [rules.common, 'Not a common password'],
+    [rules.length, msg('account.atLeastCharacters', { count: MIN_PASSWORD_LENGTH })],
+    [rules.mix, msg('account.aLetterAndA')],
+    [rules.common, msg('account.notACommonPassword')],
   ];
   return (
     <>
@@ -59,7 +66,7 @@ export function PasswordStrength({
           ))}
         </div>
         <p className="acct-strength__word" aria-live="polite">
-          <span className="ad-sr-only">Password strength: </span>
+          <span className="ad-sr-only">{msg('account.passwordStrength')} </span>
           {word}
         </p>
       </div>

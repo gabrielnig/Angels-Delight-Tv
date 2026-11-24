@@ -1,5 +1,6 @@
 'use client';
 
+import { useT } from '../../lib/i18n/provider';
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import {
   Avatar,
@@ -65,6 +66,7 @@ export function ProfileForm({
   /** Enabled interface languages (content.ui_languages). */
   languages?: readonly string[];
 }) {
+  const msg = useT();
   const editing = Boolean(profile);
   const formRef = useRef<HTMLFormElement>(null);
   const requestFocus = useFocusFirstInvalid(formRef);
@@ -113,15 +115,15 @@ export function ProfileForm({
   const raisesLimit = editing && !kids && Number(rank) > savedRank;
   const needsPassword = (Boolean(profile?.kids) && !kids) || pinChange || raisesLimit;
   const pinProblem =
-    !kids && pin !== '' && !/^\d{4}$/.test(pin) ? 'Use exactly four digits.' : undefined;
-  const nameProblem = !name.trim() ? 'Type a name for this profile.' : undefined;
+    !kids && pin !== '' && !/^\d{4}$/.test(pin) ? msg('profiles.useExactlyFourDigits') : undefined;
+  const nameProblem = !name.trim() ? msg('profiles.typeANameFor') : undefined;
   const passwordProblem =
     needsPassword && !password
       ? pinChange
-        ? 'Enter your account password to change the PIN.'
+        ? msg('profiles.enterYourAccountPassword3')
         : profile?.kids && !kids
-          ? 'Enter your account password to make this an adult profile.'
-          : 'Enter your account password to raise the limit.'
+          ? msg('profiles.enterYourAccountPassword4')
+          : msg('profiles.enterYourAccountPassword5')
       : undefined;
 
   async function submit(event: FormEvent) {
@@ -153,16 +155,12 @@ export function ProfileForm({
         return;
       }
       if (result.reason === 'duplicate') {
-        setNameServerError(
-          `You already have a profile called ${name.trim()}. Choose a different name.`,
-        );
+        setNameServerError(msg('profiles.youAlreadyHaveA', { value1: name.trim() }));
         requestFocus();
-      } else if (result.reason === 'limit')
-        setBanner('You have reached 5 profiles. Delete a profile before adding another.');
-      else if (result.reason === 'last_adult')
-        setBanner('This is the last adult profile. Make another profile an adult profile first.');
+      } else if (result.reason === 'limit') setBanner(msg('profiles.youHaveReached5'));
+      else if (result.reason === 'last_adult') setBanner(msg('profiles.thisIsTheLast'));
       else if (result.reason === 'password_required') {
-        setPasswordServerError('That password is not right. Check it and try again.');
+        setPasswordServerError(msg('profiles.thatPasswordIsNot'));
         requestFocus();
       } else setBanner(NETWORK_MESSAGE);
     } catch {
@@ -181,9 +179,9 @@ export function ProfileForm({
       if (result.ok) {
         setConfirmOpen(false);
         onDone();
-      } else setDeleteError('We could not delete this profile. Try again.');
+      } else setDeleteError(msg('profiles.weCouldNotDelete'));
     } catch {
-      setDeleteError('We could not delete this profile. Try again.');
+      setDeleteError(msg('profiles.weCouldNotDelete'));
     } finally {
       setDeleting(false);
     }
@@ -192,14 +190,16 @@ export function ProfileForm({
   return (
     <form ref={formRef} className="web-form web-profileform" onSubmit={submit} noValidate>
       <div>
-        <h1 className="web-auth__title">{editing ? 'Edit profile' : 'Add a profile'}</h1>
+        <h1 className="web-auth__title">
+          {editing ? msg('profiles.editProfile') : msg('profiles.addAProfile')}
+        </h1>
         <p className="web-muted">
-          {editing ? 'Changes apply to this profile only.' : 'Pick a name and a picture.'}
+          {editing ? msg('profiles.changesApplyToThis') : msg('profiles.pickANameAnd')}
         </p>
       </div>
       {limitReached && !editing ? (
-        <Banner tone="warning" title="You have reached 5 profiles.">
-          Delete a profile before adding another.
+        <Banner tone="warning" title={msg('profiles.youHaveReached52')}>
+          {msg('profiles.deleteAProfileBefore')}
         </Banner>
       ) : null}
       {banner ? <Banner tone="danger">{banner}</Banner> : null}
@@ -210,7 +210,7 @@ export function ProfileForm({
         name="name"
         maxLength={MAX_NAME}
         autoComplete="off"
-        placeholder="Type a name"
+        placeholder={msg('profiles.typeAName')}
         value={name}
         onChange={(event) => {
           setName(event.target.value);
@@ -218,15 +218,16 @@ export function ProfileForm({
         }}
         hint={
           <>
-            Up to 20 characters. <span className="web-counter">{`${name.length}/${MAX_NAME}`}</span>
+            {msg('profiles.upTo20Characters')}{' '}
+            <span className="web-counter">{`${name.length}/${MAX_NAME}`}</span>
           </>
         }
         error={(submitted ? nameProblem : undefined) ?? nameServerError}
       />
 
-      <div role="radiogroup" aria-label="Picture" className="web-avatars">
+      <div role="radiogroup" aria-label={msg('profiles.picture')} className="web-avatars">
         <span className="ad-field__label" aria-hidden="true">
-          Picture
+          {msg('profiles.picture')}
         </span>
         <div className="web-avatars__row">
           {AVATAR_ART_IDS.map((id) => (
@@ -269,11 +270,7 @@ export function ProfileForm({
             setRank(event.target.value);
             setPasswordServerError(undefined);
           }}
-          hint={
-            kids
-              ? 'Kids profiles only show titles for all ages.'
-              : 'Titles above this rating are hidden from this profile everywhere: Home, search, My List and playback.'
-          }
+          hint={kids ? msg('profiles.kidsProfilesOnlyShow') : msg('profiles.titlesAboveThisRating')}
         >
           {labels.map((label, index) => (
             <option key={index} value={String(index)}>
@@ -298,8 +295,8 @@ export function ProfileForm({
             onChange={(event) => setPin(event.target.value.replace(/\D/g, '').slice(0, 4))}
             hint={
               profile?.hasPin
-                ? 'This profile has a PIN. Type four digits to change it.'
-                : 'Four digits. Anyone opening this profile will need it.'
+                ? msg('profiles.thisProfileHasA')
+                : msg('profiles.fourDigitsAnyoneOpening')
             }
             error={submitted ? pinProblem : undefined}
           />
@@ -354,7 +351,7 @@ export function ProfileForm({
 
       <div className="web-form__actions">
         <Button type="submit" size="lg" loading={busy} disabled={limitReached && !editing}>
-          {editing ? 'Save changes' : 'Create profile'}
+          {editing ? msg('profiles.saveChanges') : msg('profiles.createProfile')}
         </Button>
         <ButtonLink
           href={cancelHref}
@@ -366,13 +363,13 @@ export function ProfileForm({
             setDiscardOpen(true);
           }}
         >
-          Cancel
+          {msg('profiles.cancel')}
         </ButtonLink>
       </div>
 
       <ConfirmDialog
         open={discardOpen}
-        title="Discard your changes?"
+        title={msg('profiles.discardYourChanges')}
         description="You have changes that are not saved."
         confirmLabel="Discard changes"
         cancelLabel="Keep editing"
@@ -386,7 +383,7 @@ export function ProfileForm({
       {editing && onDelete ? (
         <div className="web-danger">
           <Button variant="danger" onClick={() => setConfirmOpen(true)}>
-            Delete profile
+            {msg('profiles.deleteProfile')}
           </Button>
         </div>
       ) : null}
@@ -395,8 +392,8 @@ export function ProfileForm({
         <Modal
           open={confirmOpen}
           onClose={() => setConfirmOpen(false)}
-          title={`You cannot delete ${profile.name}`}
-          footer={<Button onClick={() => setConfirmOpen(false)}>OK</Button>}
+          title={msg('profiles.youCannotDelete', { name: profile.name })}
+          footer={<Button onClick={() => setConfirmOpen(false)}>{msg('profiles.ok')}</Button>}
         >
           <p className="web-muted">
             {`${profile.name} is the last adult profile on this account. Make another profile an adult profile first, then try again.`}
@@ -405,9 +402,9 @@ export function ProfileForm({
       ) : profile ? (
         <ConfirmDialog
           open={confirmOpen}
-          title={`Delete ${profile.name}?`}
-          description={`This permanently deletes ${profile.name}'s watch history, My List and settings. This cannot be undone.`}
-          confirmLabel={deleteError ? 'Try again' : 'Delete profile'}
+          title={msg('profiles.delete', { name: profile.name })}
+          description={msg('profiles.thisPermanentlyDeletesS', { name: profile.name })}
+          confirmLabel={deleteError ? msg('profiles.tryAgain') : msg('profiles.deleteProfile')}
           cancelLabel="Keep it"
           danger
           loading={deleting}

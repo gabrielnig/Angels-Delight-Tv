@@ -1,5 +1,6 @@
 'use client';
 
+import { useT } from '../../lib/i18n/provider';
 import { useState } from 'react';
 import { Button } from '@ad/ui';
 import { AcctIcon } from './icons';
@@ -18,6 +19,7 @@ export function DeletionNotice({
   onCancel: () => Promise<Result>;
   onSignOut: () => void | Promise<void>;
 }) {
+  const msg = useT();
   const [busy, setBusy] = useState(false);
   const [outcome, setOutcome] = useState<'restored' | 'failed' | null>(null);
 
@@ -39,28 +41,26 @@ export function DeletionNotice({
       <div className="acct-closing__icon">
         <AcctIcon name="trash" size={32} />
       </div>
-      <h1 className="acct__title">Your account is set to close</h1>
-      <p className="acct-muted">
-        {`It will be removed on ${purgeDate}, in ${days} ${days === 1 ? 'day' : 'days'}. Cancel now and everything comes back as it was.`}
-      </p>
+      <h1 className="acct__title">{msg('account.yourAccountIsSet')}</h1>
+      <p className="acct-muted">{msg('account.itWillBeRemoved', { purgeDate, count: days })}</p>
       {outcome === 'restored' ? (
         <div className="acct-notice" role="status">
           <AcctIcon name="check" size={20} />
-          <span className="acct-notice__text">Your account is back. Opening your profiles.</span>
+          <span className="acct-notice__text">{msg('account.yourAccountIsBack')}</span>
         </div>
       ) : null}
       {outcome === 'failed' ? (
         <div className="acct-notice" data-tone="error" role="alert">
           <AcctIcon name="warning" size={20} />
-          <span className="acct-notice__text">We could not cancel the deletion. Try again.</span>
+          <span className="acct-notice__text">{msg('account.weCouldNotCancel')}</span>
         </div>
       ) : null}
       <div className="acct-dialog__actions" data-center>
         <Button onClick={() => void cancel()} loading={busy}>
-          Cancel deletion
+          {msg('account.cancelDeletion')}
         </Button>
         <Button variant="secondary" onClick={() => void onSignOut()}>
-          Sign out
+          {msg('account.signOut')}
         </Button>
       </div>
     </div>

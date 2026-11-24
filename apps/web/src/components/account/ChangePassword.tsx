@@ -1,5 +1,6 @@
 'use client';
 
+import { useT } from '../../lib/i18n/provider';
 import { useRef, useState, type FormEvent } from 'react';
 import { Button, type PasswordScorer } from '@ad/ui';
 import { changePasswordAction } from '../../app/actions';
@@ -26,6 +27,7 @@ export function ChangePasswordForm({
   onChanged?: (signedOutDevices: number) => void;
   scorer?: PasswordScorer;
 }) {
+  const msg = useT();
   const [current, setCurrent] = useState('');
   const [next, setNext] = useState('');
   const [again, setAgain] = useState('');
@@ -48,9 +50,9 @@ export function ChangePasswordForm({
     event.preventDefault();
     setProblem(null);
     const found: Errors = {};
-    if (!current) found.current = 'Enter your current password.';
+    if (!current) found.current = msg('account.enterYourCurrentPassword');
     if (!next || !rulesMet(passwordRules(next))) found.nextRules = true;
-    if (next !== again) found.again = 'The passwords do not match.';
+    if (next !== again) found.again = msg('account.thePasswordsDoNot');
     if (found.current || found.nextRules || found.again) {
       setErrors(found);
       const first = found.current ? currentRef : found.nextRules ? nextRef : againRef;
@@ -65,10 +67,10 @@ export function ChangePasswordForm({
         reset();
         onChanged?.(result.signedOutDevices);
       } else if (result.reason === 'wrong_current') {
-        setErrors({ current: 'Current password is not right.' });
+        setErrors({ current: msg('account.currentPasswordIsNot') });
         currentRef.current?.focus();
       } else if (result.reason === 'weak') {
-        setErrors({ next: 'Choose a longer, less common password.' });
+        setErrors({ next: msg('account.chooseALongerLess') });
       } else {
         setProblem(NETWORK_MESSAGE);
       }
@@ -83,9 +85,9 @@ export function ChangePasswordForm({
     <section className="acct-card" aria-labelledby="acct-password">
       <div className="acct-row" data-between data-wrap>
         <h2 id="acct-password" className="acct-h2">
-          Password
+          {msg('account.password')}
         </h2>
-        <span className="acct-muted acct-small">{`Last changed ${lastChanged}`}</span>
+        <span className="acct-muted acct-small">{msg('account.lastChanged', { lastChanged })}</span>
       </div>
       <form className="acct-form" onSubmit={(e) => void onSubmit(e)} noValidate>
         {problem ? (
@@ -126,16 +128,14 @@ export function ChangePasswordForm({
         />
         <div className="acct-row" data-tight data-wrap>
           <Button type="submit" loading={busy}>
-            Update password
+            {msg('account.updatePassword')}
           </Button>
           <Button variant="secondary" onClick={reset}>
-            Cancel
+            {msg('account.cancel')}
           </Button>
         </div>
       </form>
-      <p className="acct-muted acct-small">
-        Changing your password signs you out on your other devices.
-      </p>
+      <p className="acct-muted acct-small">{msg('account.changingYourPasswordSigns')}</p>
     </section>
   );
 }

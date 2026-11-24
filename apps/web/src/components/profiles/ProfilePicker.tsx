@@ -1,5 +1,6 @@
 'use client';
 
+import { useT } from '../../lib/i18n/provider';
 import { useEffect, type ReactNode } from 'react';
 import {
   AddProfileTile,
@@ -46,6 +47,7 @@ export function ProfilePicker({
   /** Escape leaves manage mode (M03-S06). */
   onExitManage?: () => void;
 }) {
+  const msg = useT();
   useEffect(() => {
     const only = profiles[0];
     if (autoSkip && profiles.length === 1 && only) onSelect(only.id);
@@ -80,14 +82,14 @@ export function ProfilePicker({
   } else if (error) {
     body = (
       <ErrorState
-        title="We could not load profiles. Try again."
+        title={msg('profiles.weCouldNotLoad')}
         description="Check your connection and try once more."
         onRetry={onRetry}
         retryLabel="Retry"
         actions={
           onSignOut ? (
             <Button variant="secondary" onClick={onSignOut}>
-              Sign out
+              {msg('profiles.signOut')}
             </Button>
           ) : undefined
         }
@@ -96,24 +98,21 @@ export function ProfilePicker({
   } else if (profiles.length === 0) {
     body = (
       <div className="web-first">
-        <h1 className="web-picker__title">Create your first profile</h1>
-        <p className="web-muted">
-          Profiles keep watch history and My List separate. Add one for yourself, then one for each
-          child.
-        </p>
+        <h1 className="web-picker__title">{msg('profiles.createYourFirstProfile')}</h1>
+        <p className="web-muted">{msg('profiles.profilesKeepWatchHistory')}</p>
         <ButtonLink href="/profiles/new" size="lg">
-          Create profile
+          {msg('profiles.createProfile')}
         </ButtonLink>
       </div>
     );
   } else {
     body = (
       <>
-        <h1 className="web-picker__title">{managing ? 'Manage profiles' : 'Who is watching?'}</h1>
-        {managing ? (
-          <p className="web-muted">Choose a profile to change its name, picture or Kids setting.</p>
-        ) : null}
-        <ul className="web-tiles" role="list" aria-label="Profiles">
+        <h1 className="web-picker__title">
+          {managing ? msg('profiles.manageProfiles') : msg('profiles.whoIsWatching')}
+        </h1>
+        {managing ? <p className="web-muted">{msg('profiles.chooseAProfileTo')}</p> : null}
+        <ul className="web-tiles" role="list" aria-label={msg('profiles.profiles')}>
           {profiles.map((profile) => (
             <li key={profile.id}>
               {managing ? (
@@ -150,18 +149,18 @@ export function ProfilePicker({
         {full ? (
           <p className="web-muted">
             {managing
-              ? `You have ${max} profiles, the most we allow.`
-              : `You have ${max} profiles, the most we allow. Delete one to add another.`}
+              ? msg('profiles.youHaveProfilesThe', { max })
+              : msg('profiles.youHaveProfilesThe2', { max })}
           </p>
         ) : null}
         <div className="web-picker__actions">
           {managing ? (
             <ButtonLink href="/profiles" size="lg">
-              Done
+              {msg('profiles.done')}
             </ButtonLink>
           ) : (
             <ButtonLink href="/profiles/manage" variant="secondary" size="lg">
-              Manage profiles
+              {msg('profiles.manageProfiles')}
             </ButtonLink>
           )}
         </div>

@@ -1,5 +1,6 @@
 'use client';
 
+import { useT } from '../../lib/i18n/provider';
 import { useState } from 'react';
 import { Banner, Link, OtpInput, ResendCode } from '@ad/ui';
 import type { CodeResult } from '../../lib/data';
@@ -27,6 +28,7 @@ export function VerifyEmailForm({
   onDone: (next: string) => void;
   resendSeconds?: number;
 }) {
+  const msg = useT();
   const [code, setCode] = useState('');
   const [state, setState] = useState<State>({ kind: 'idle' });
   const [resendKey, setResendKey] = useState(0);
@@ -53,11 +55,11 @@ export function VerifyEmailForm({
 
   const error =
     state.kind === 'wrong'
-      ? 'That code is not right. Check it and try again.'
+      ? msg('auth.thatCodeIsNot')
       : state.kind === 'expired'
-        ? 'This code has expired. Send a new code to continue.'
+        ? msg('auth.thisCodeHasExpired')
         : state.kind === 'too_many'
-          ? `Too many wrong codes. Try again in ${state.minutes} minutes, or change your email.`
+          ? msg('auth.tooManyWrongCodes', { minutes: state.minutes })
           : state.kind === 'network'
             ? NETWORK_MESSAGE
             : undefined;
@@ -72,9 +74,9 @@ export function VerifyEmailForm({
     setResendKey((key) => key + 1);
     setResendNote(
       result.ok
-        ? 'We sent a new code.'
+        ? msg('auth.weSentANew')
         : result.reason === 'resend_limit'
-          ? 'You have asked for too many codes. Try again in an hour.'
+          ? msg('auth.youHaveAskedFor')
           : NETWORK_MESSAGE,
     );
   }
@@ -82,7 +84,8 @@ export function VerifyEmailForm({
   return (
     <div className="web-form">
       <p className="web-muted">
-        We sent a 6 digit code to <strong>{maskedEmail}</strong>. Enter it below.
+        {msg('auth.weSentA6')} <strong>{maskedEmail}</strong>
+        {msg('auth.enterItBelow')}
       </p>
       <OtpInput
         value={code}
@@ -98,7 +101,7 @@ export function VerifyEmailForm({
         autoFocus
       />
       {state.kind === 'success' ? (
-        <Banner tone="success">Email confirmed. Taking you to choose a profile.</Banner>
+        <Banner tone="success">{msg('auth.emailConfirmedTakingYou')}</Banner>
       ) : null}
       {resendNote ? <Banner tone="info">{resendNote}</Banner> : null}
       <div className="web-form__center">
@@ -108,7 +111,7 @@ export function VerifyEmailForm({
           onResend={() => void resend()}
         />
         <Link href="/sign-up" className="web-link">
-          Change email
+          {msg('auth.changeEmail')}
         </Link>
       </div>
     </div>

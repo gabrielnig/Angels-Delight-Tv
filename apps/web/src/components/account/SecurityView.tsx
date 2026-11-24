@@ -1,5 +1,6 @@
 'use client';
 
+import { useT } from '../../lib/i18n/provider';
 import { useRouter } from 'next/navigation';
 import { useCallback, useState } from 'react';
 import {
@@ -15,7 +16,6 @@ import { EmailCard } from './EmailCard';
 import { InlineToast } from './InlineToast';
 import { LoginHistoryCard } from './LoginHistoryCard';
 import { TwoFactorCard } from './TwoFactorCard';
-import { msg } from '@ad/shared/messages';
 
 /** The security screen body (S28): toast slot, Password, Email, signed in devices. */
 export function SecurityView({
@@ -45,6 +45,7 @@ export function SecurityView({
   revokeOthers?: () => Promise<unknown>;
   signOutEverywhere?: (password: string) => Promise<SignOutEverywhereResult>;
 }) {
+  const msg = useT();
   const router = useRouter();
   const [devices, setDevices] = useState(initial);
   const [toast, setToast] = useState<{ text: string; error?: boolean } | null>(
@@ -56,9 +57,9 @@ export function SecurityView({
     try {
       await revoke(id);
       setDevices((d) => d.filter((x) => x.id !== id));
-      setToast({ text: 'Device signed out.' });
+      setToast({ text: msg('account.deviceSignedOut') });
     } catch {
-      setToast({ text: 'We could not sign that device out. Try again.', error: true });
+      setToast({ text: msg('account.weCouldNotSign'), error: true });
     }
   }
 
@@ -66,9 +67,9 @@ export function SecurityView({
     try {
       await revokeOthers();
       setDevices((d) => d.filter((x) => x.current));
-      setToast({ text: 'Other devices signed out.' });
+      setToast({ text: msg('account.otherDevicesSignedOut') });
     } catch {
-      setToast({ text: 'We could not sign the other devices out. Try again.', error: true });
+      setToast({ text: msg('account.weCouldNotSign2'), error: true });
     }
   }
 
@@ -96,8 +97,8 @@ export function SecurityView({
           setToast({
             text:
               n === 0
-                ? 'Password updated.'
-                : `Password updated. We signed you out on ${n} other ${n === 1 ? 'device' : 'devices'}.`,
+                ? msg('account.passwordUpdated')
+                : msg('account.passwordUpdatedWeSigned', { count: n }),
           });
         }}
       />
@@ -121,7 +122,7 @@ export function SecurityView({
       <EmailCard
         email={email}
         verified={verified}
-        onChanged={() => setToast({ text: 'Email changed.' })}
+        onChanged={() => setToast({ text: msg('account.emailChanged') })}
       />
       <DevicesCard
         devices={devices}

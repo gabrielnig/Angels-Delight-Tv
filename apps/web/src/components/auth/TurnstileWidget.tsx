@@ -1,5 +1,6 @@
 'use client';
 
+import { useT } from '../../lib/i18n/provider';
 import { useEffect, useRef } from 'react';
 
 interface TurnstileApi {
@@ -51,6 +52,7 @@ export function TurnstileWidget({
   onToken: (token: string | null) => void;
   resetKey?: number;
 }) {
+  const msg = useT();
   const host = useRef<HTMLDivElement>(null);
   const widget = useRef<string | null>(null);
   const report = useRef(onToken);
@@ -84,7 +86,7 @@ export function TurnstileWidget({
   }, [resetKey]);
 
   return (
-    <div role="group" aria-label="Security check" className="web-turnstile">
+    <div role="group" aria-label={msg('auth.securityCheck')} className="web-turnstile">
       <div ref={host} />
     </div>
   );

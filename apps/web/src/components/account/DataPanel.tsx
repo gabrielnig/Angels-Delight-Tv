@@ -1,17 +1,14 @@
 'use client';
 
+import { useT } from '../../lib/i18n/provider';
 import { useRouter } from 'next/navigation';
 import { useState, type FormEvent } from 'react';
 import { Button, ButtonLink, Modal } from '@ad/ui';
 import { deleteAccountAction, requestExportAction } from '../../app/actions';
 import type { ExportState } from '../../lib/data';
-import { msg } from '@ad/shared/messages';
 import { NETWORK_MESSAGE } from '../auth/shared';
 import { AcctField } from './Field';
 import { AcctIcon } from './icons';
-
-const WRONG_PASSWORD = 'Password is not right.';
-const EXPORT_FAILED = 'We could not start your export. Try again.';
 
 function askedFor(label: string | undefined): string {
   if (!label) return '';
@@ -21,6 +18,7 @@ function askedFor(label: string | undefined): string {
 
 /** S30: export and delete cards, the password dialog for each, and the closing message after a delete. */
 export function DataPanel({ initial, email }: { initial: ExportState; email: string }) {
+  const msg = useT();
   const router = useRouter();
   const [exportState, setExportState] = useState(initial);
   const [dialog, setDialog] = useState<'export' | 'delete' | null>(null);
@@ -46,9 +44,14 @@ export function DataPanel({ initial, email }: { initial: ExportState; email: str
       if (result.ok) {
         setExportState(result.state);
         close();
-      } else setProblem(result.reason === 'wrong_password' ? WRONG_PASSWORD : EXPORT_FAILED);
+      } else
+        setProblem(
+          result.reason === 'wrong_password'
+            ? msg('account.passwordNotRight')
+            : msg('account.exportFailed'),
+        );
     } catch {
-      setProblem(EXPORT_FAILED);
+      setProblem(msg('account.exportFailed'));
     } finally {
       setBusy(false);
     }
@@ -64,8 +67,8 @@ export function DataPanel({ initial, email }: { initial: ExportState; email: str
       if (result.ok) {
         close();
         setClosed(result.days);
-      } else if (result.reason === 'wrong_password') setProblem(WRONG_PASSWORD);
-      else if (result.reason === 'confirm') setProblem('Type DELETE to confirm.');
+      } else if (result.reason === 'wrong_password') setProblem(msg('account.passwordNotRight'));
+      else if (result.reason === 'confirm') setProblem(msg('account.typeDeleteToConfirm'));
       else setProblem(NETWORK_MESSAGE);
     } catch {
       setProblem(NETWORK_MESSAGE);
@@ -79,15 +82,13 @@ export function DataPanel({ initial, email }: { initial: ExportState; email: str
       <section className="acct-card acct-closing" aria-live="polite">
         <h2 className="acct-h2">
           {closed === 0
-            ? 'Your account has been deleted'
-            : `Your account will close in ${closed} ${closed === 1 ? 'day' : 'days'}`}
+            ? msg('account.yourAccountHasBeen')
+            : msg('account.yourAccountWillClose', { count: closed })}
         </h2>
         <p className="acct-muted">
-          {closed === 0
-            ? 'Your account and its data have been deleted. You are now signed out.'
-            : 'You are signed out everywhere. We emailed you a link to cancel before then.'}
+          {closed === 0 ? msg('account.yourAccountAndIts') : msg('account.youAreSignedOut')}
         </p>
-        <Button onClick={() => router.push('/')}>Done</Button>
+        <Button onClick={() => router.push('/')}>{msg('account.done')}</Button>
       </section>
     );
   }
@@ -99,27 +100,25 @@ export function DataPanel({ initial, email }: { initial: ExportState; email: str
         <div className="acct-card__title">
           <AcctIcon name="download" size={24} />
           <h2 id="acct-export" className="acct-h2">
-            Export my data
+            {msg('account.exportMyData')}
           </h2>
         </div>
-        {status === 'none' ? (
-          <p className="acct-muted">
-            Get a file with your account, profiles, My List and watch progress. We email you a link
-            that works for 24 hours. It never includes your password.
-          </p>
-        ) : null}
+        {status === 'none' ? <p className="acct-muted">{msg('account.getAFileWith')}</p> : null}
         {status === 'pending' ? (
           <div className="acct-notice" role="status">
             <AcctIcon name="mail" size={20} />
-            <span className="acct-notice__text">{`Your export is being built. We will email ${email} when it is ready.${askedFor(exportState.requestedAt)}`}</span>
+            <span className="acct-notice__text">
+              {msg('account.yourExportIsBeing', {
+                email,
+                value2: askedFor(exportState.requestedAt),
+              })}
+            </span>
           </div>
         ) : null}
         {status === 'failed' ? (
           <div className="acct-notice" data-tone="error" role="alert">
             <AcctIcon name="warning" size={20} />
-            <span className="acct-notice__text">
-              We could not build your export. Nothing was lost. Try again.
-            </span>
+            <span className="acct-notice__text">{msg('account.weCouldNotBuild')}</span>
           </div>
         ) : null}
         {status === 'ready' && exportState.downloadHref ? (
@@ -130,25 +129,23 @@ export function DataPanel({ initial, email }: { initial: ExportState; email: str
             </div>
             <ButtonLink href={exportState.downloadHref}>
               <AcctIcon name="download" size={18} />
-              Download
+              {msg('account.download')}
             </ButtonLink>
           </div>
         ) : null}
         {status === 'none' || status === 'failed' ? (
           <div>
             <Button onClick={() => setDialog('export')}>
-              {status === 'failed' ? 'Try again' : 'Request export'}
+              {status === 'failed' ? msg('account.tryAgain') : msg('account.requestExport')}
             </Button>
           </div>
         ) : null}
         {status === 'pending' ? (
           <div className="acct-row" data-wrap data-tight>
             <Button variant="secondary" disabled>
-              Request export
+              {msg('account.requestExport')}
             </Button>
-            <span className="acct-muted acct-small">
-              An earlier export is still valid, so a new one is not needed.
-            </span>
+            <span className="acct-muted acct-small">{msg('account.anEarlierExportIs')}</span>
           </div>
         ) : null}
       </section>
@@ -172,16 +169,13 @@ export function DataPanel({ initial, email }: { initial: ExportState; email: str
         <div className="acct-card__title">
           <AcctIcon name="trash" size={24} />
           <h2 id="acct-delete" className="acct-h2">
-            Delete account
+            {msg('account.deleteAccount')}
           </h2>
         </div>
-        <p className="acct-muted">
-          This closes your account and removes your profiles, My List and watch progress. You have
-          14 days to change your mind. After that it cannot be undone.
-        </p>
+        <p className="acct-muted">{msg('account.thisClosesYourAccount')}</p>
         <div>
           <Button variant="danger-outline" onClick={() => setDialog('delete')}>
-            Delete account
+            {msg('account.deleteAccount')}
           </Button>
         </div>
       </section>
@@ -189,7 +183,7 @@ export function DataPanel({ initial, email }: { initial: ExportState; email: str
       <Modal
         open={dialog === 'export'}
         onClose={close}
-        title="Confirm your password"
+        title={msg('account.confirmYourPassword')}
         className="acct-dialog"
         hideClose
         dismissOnScrim={false}
@@ -205,10 +199,10 @@ export function DataPanel({ initial, email }: { initial: ExportState; email: str
           />
           <div className="acct-dialog__actions">
             <Button variant="secondary" onClick={close}>
-              Cancel
+              {msg('account.cancel')}
             </Button>
             <Button type="submit" loading={busy}>
-              Request export
+              {msg('account.requestExport')}
             </Button>
           </div>
         </form>
@@ -217,17 +211,14 @@ export function DataPanel({ initial, email }: { initial: ExportState; email: str
       <Modal
         open={dialog === 'delete'}
         onClose={close}
-        title="Delete your account?"
+        title={msg('account.deleteYourAccount')}
         className="acct-dialog"
         hideClose
         dismissOnScrim={false}
         error={dialog === 'delete' ? (problem ?? undefined) : undefined}
       >
         <form className="acct-dialog__form" onSubmit={(e) => void onDelete(e)} noValidate>
-          <p className="acct-muted">
-            We will sign you out everywhere and email you a link to cancel. You have 14 days. Then
-            everything is removed.
-          </p>
+          <p className="acct-muted">{msg('account.weWillSignYou')}</p>
           <AcctField
             label="Your password"
             type="password"
@@ -243,7 +234,7 @@ export function DataPanel({ initial, email }: { initial: ExportState; email: str
           />
           <div className="acct-dialog__actions">
             <Button variant="secondary" onClick={close}>
-              Keep my account
+              {msg('account.keepMyAccount')}
             </Button>
             <Button
               type="submit"
@@ -251,7 +242,7 @@ export function DataPanel({ initial, email }: { initial: ExportState; email: str
               loading={busy}
               aria-disabled={typed !== 'DELETE' || busy ? 'true' : undefined}
             >
-              Delete my account
+              {msg('account.deleteMyAccount')}
             </Button>
           </div>
         </form>

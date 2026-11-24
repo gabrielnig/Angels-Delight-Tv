@@ -1,5 +1,6 @@
 'use client';
 
+import { useT } from '../../lib/i18n/provider';
 import type { ReactNode } from 'react';
 import { Button, ButtonLink } from '@ad/ui';
 import { AcctIcon } from './icons';
@@ -9,9 +10,11 @@ function Skel({ s, circle }: { s: string; circle?: boolean }) {
 }
 
 /** S27 state 2. Shown by the route after 300 ms, static under reduced motion. */
-export function AccountOverviewSkeleton({ label = 'Loading your account' }: { label?: string }) {
+export function AccountOverviewSkeleton({ label }: { label?: string }) {
+  const msg = useT();
+  const text = label ?? msg('account.loadingYourAccount');
   return (
-    <div role="status" aria-label={label} aria-busy="true" className="acct-skeleton">
+    <div role="status" aria-label={text} aria-busy="true" className="acct-skeleton">
       <section className="acct-card" data-gap="5">
         <div className="acct-row">
           <Skel s="avatar" circle />
@@ -41,9 +44,11 @@ export function AccountOverviewSkeleton({ label = 'Loading your account' }: { la
 }
 
 /** S29 state 4: the settings card with a title, a hint and a control on every row. */
-export function SettingsSkeleton({ label = 'Loading your playback settings' }: { label?: string }) {
+export function SettingsSkeleton({ label }: { label?: string }) {
+  const msg = useT();
+  const text = label ?? msg('account.loadingYourPlaybackSettings');
   return (
-    <div role="status" aria-label={label} aria-busy="true" className="acct-skeleton">
+    <div role="status" aria-label={text} aria-busy="true" className="acct-skeleton">
       <section className="acct-card acct-settings">
         {[0, 1, 2, 3, 4].map((n) => (
           <div key={n} className="acct-setting">
@@ -71,6 +76,7 @@ export function AccountLoadError({
   reference?: string;
   onRetry: () => void;
 }) {
+  const msg = useT();
   return (
     <>
       <div className="acct-card" data-tone="error" data-gap="3" role="alert">
@@ -80,13 +86,13 @@ export function AccountLoadError({
           </span>
           <h2 className="acct-h3">{title}</h2>
         </div>
-        <p className="acct-muted">Something went wrong on our side. Try again in a moment.</p>
-        <Button onClick={onRetry}>Retry</Button>
+        <p className="acct-muted">{msg('account.somethingWentWrongOn')}</p>
+        <Button onClick={onRetry}>{msg('account.retry')}</Button>
       </div>
       <p className="acct-muted acct-small">
         {reference
-          ? `If this keeps happening, email ${supportEmail} and quote reference ${reference}.`
-          : `If this keeps happening, email ${supportEmail}.`}
+          ? msg('account.ifThisKeepsHappening', { supportEmail, reference })
+          : msg('account.ifThisKeepsHappening2', { supportEmail })}
       </p>
     </>
   );
@@ -94,6 +100,7 @@ export function AccountLoadError({
 
 /** S27 state 4. A Kids profile cannot open account settings, so it is sent to switch profile. */
 export function AdultsOnly({ profileName }: { profileName: string }): ReactNode {
+  const msg = useT();
   return (
     <div className="acct acct-adults">
       <section className="acct-card" data-gap="3">
@@ -102,14 +109,14 @@ export function AdultsOnly({ profileName }: { profileName: string }): ReactNode 
             <AcctIcon name="lock" size={24} />
           </span>
           <h2 className="acct-h2" data-size="lg">
-            Account is for adults
+            {msg('account.accountIsForAdults')}
           </h2>
         </div>
-        <p className="acct-muted">{`You are in ${profileName}'s Kids profile. Switch to an adult profile to open account settings.`}</p>
+        <p className="acct-muted">{msg('account.youAreInS', { profileName })}</p>
         <div className="acct-row" data-tight data-wrap>
-          <ButtonLink href="/profiles?switch=1">Switch profile</ButtonLink>
+          <ButtonLink href="/profiles?switch=1">{msg('account.switchProfile')}</ButtonLink>
           <ButtonLink href="/" variant="secondary">
-            Back to Home
+            {msg('account.backToHome')}
           </ButtonLink>
         </div>
       </section>

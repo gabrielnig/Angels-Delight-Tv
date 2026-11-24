@@ -1,8 +1,8 @@
 'use client';
 
+import { useT } from '../../lib/i18n/provider';
 import { useState } from 'react';
 import { Button, Modal } from '@ad/ui';
-import { msg } from '@ad/shared/messages';
 import type { DeviceKind, DeviceSession } from '../../lib/data';
 import { AcctField } from './Field';
 import { AcctIcon, type AcctIconName } from './icons';
@@ -45,6 +45,7 @@ export function DevicesCard({
   /** When given, the card offers Sign out everywhere, which asks for the password and includes this device. */
   onSignOutEverywhere?: (password: string) => Promise<SignOutEverywhereResult>;
 }) {
+  const msg = useT();
   const [confirming, setConfirming] = useState(false);
   const [everywhere, setEverywhere] = useState(false);
   const [password, setPassword] = useState('');
@@ -83,12 +84,12 @@ export function DevicesCard({
     <section className="acct-card" data-gap="2" aria-labelledby="acct-devices">
       <div className="acct-row acct-devices__head" data-between data-wrap data-tight>
         <h2 id="acct-devices" className="acct-h2">
-          Where you are signed in
+          {msg('account.whereYouAreSigned')}
         </h2>
         <div className="acct-row" data-wrap data-tight>
           {others.length > 0 ? (
             <Button variant="danger-outline" onClick={() => setConfirming(true)}>
-              Sign out all other devices
+              {msg('account.signOutAllOther')}
             </Button>
           ) : null}
           {onSignOutEverywhere ? (
@@ -110,15 +111,15 @@ export function DevicesCard({
             </div>
             {d.current ? (
               <span className="acct-badge" data-tone="info">
-                This device
+                {msg('account.thisDevice')}
               </span>
             ) : (
               <Button
                 variant="secondary"
-                aria-label={`Sign out ${d.label}`}
+                aria-label={msg('account.signOut2', { label: d.label })}
                 onClick={() => void onRevoke(d.id)}
               >
-                Sign out
+                {msg('account.signOut')}
               </Button>
             )}
           </li>
@@ -127,13 +128,13 @@ export function DevicesCard({
       <Modal
         open={confirming}
         onClose={() => setConfirming(false)}
-        title="Sign out all other devices?"
+        title={msg('account.signOutAllOther2')}
         className="acct-dialog"
         hideClose
         footer={
           <>
             <Button variant="secondary" onClick={() => setConfirming(false)}>
-              Cancel
+              {msg('account.cancel')}
             </Button>
             <Button
               variant="danger"
@@ -142,12 +143,14 @@ export function DevicesCard({
                 void onRevokeOthers();
               }}
             >
-              {`Sign out ${count}`}
+              {msg('account.signOut3', { count })}
             </Button>
           </>
         }
       >
-        <p className="acct-muted">{`This signs you out on ${joinNames(others.map((d) => d.label))}. You stay signed in here.`}</p>
+        <p className="acct-muted">
+          {msg('account.thisSignsYouOut', { value1: joinNames(others.map((d) => d.label)) })}
+        </p>
       </Modal>
       <Modal
         open={everywhere}
@@ -158,7 +161,7 @@ export function DevicesCard({
         footer={
           <>
             <Button variant="secondary" onClick={closeEverywhere}>
-              Cancel
+              {msg('account.cancel')}
             </Button>
             <Button
               variant="danger"

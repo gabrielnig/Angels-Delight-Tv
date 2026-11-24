@@ -1,5 +1,6 @@
 'use client';
 
+import { useT } from '../../lib/i18n/provider';
 import { useRouter } from 'next/navigation';
 import { useState, type FormEvent } from 'react';
 import { Button, Modal } from '@ad/ui';
@@ -16,6 +17,7 @@ export function EditName({
   name: string;
   save?: (input: { name: string }) => Promise<Result>;
 }) {
+  const msg = useT();
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [value, setValue] = useState(name);
@@ -38,13 +40,11 @@ export function EditName({
         router.refresh();
       } else {
         setProblem(
-          result.reason === 'invalid'
-            ? 'Enter a name of 1 to 80 characters.'
-            : 'We could not save your name. Try again.',
+          result.reason === 'invalid' ? msg('account.enterANameOf') : msg('account.weCouldNotSave'),
         );
       }
     } catch {
-      setProblem('We could not save your name. Try again.');
+      setProblem(msg('account.weCouldNotSave'));
     } finally {
       setBusy(false);
     }
@@ -59,12 +59,12 @@ export function EditName({
           setOpen(true);
         }}
       >
-        Edit name
+        {msg('account.editName')}
       </Button>
       <Modal
         open={open}
         onClose={close}
-        title="Edit your name"
+        title={msg('account.editYourName')}
         className="acct-dialog"
         hideClose
         dismissOnScrim={false}
@@ -72,7 +72,7 @@ export function EditName({
         <form className="acct-dialog__form" onSubmit={(event) => void onSubmit(event)} noValidate>
           <div>
             <label className="acct-field__label" htmlFor="acct-name">
-              Your name
+              {msg('account.yourName')}
             </label>
             <input
               id="acct-name"
@@ -93,10 +93,10 @@ export function EditName({
           </div>
           <div className="acct-dialog__actions">
             <Button variant="secondary" onClick={close}>
-              Cancel
+              {msg('account.cancel')}
             </Button>
             <Button type="submit" loading={busy}>
-              Save name
+              {msg('account.saveName')}
             </Button>
           </div>
         </form>
