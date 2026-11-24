@@ -678,6 +678,7 @@ export type BulkAction =
   | { type: 'unpublish' }
   | { type: 'trash' }
   | { type: 'category'; categoryId: string }
+  | { type: 'remove_category'; categoryId: string }
   | { type: 'suitability'; value: Suitability };
 
 /**
@@ -746,7 +747,11 @@ export async function bulkAdminVideos(
   actor: Actor,
   ids: readonly string[],
   action: BulkAction,
-): Promise<{ succeeded: string[]; failed: Array<{ id: string; reason: string }> }> {
+): Promise<{
+  succeeded: string[];
+  failed: Array<{ id: string; reason: string }>;
+  skipped?: Array<{ id: string; reason: string }>;
+}> {
   assertStaff(actor);
   if (action.type === 'trash') {
     if (!isAdminRole(actor.role))
@@ -757,12 +762,26 @@ export async function bulkAdminVideos(
     return trashVideos(ctx, actor, ids);
   }
   if (action.type === 'suitability') return setSuitabilityAll(ctx, actor, ids, action.value);
-  const result = { succeeded: [] as string[], failed: [] as Array<{ id: string; reason: string }> };
+  const result = {
+    succeeded: [] as string[],
+    failed: [] as Array<{ id: string; reason: string }>,
+    skipped: [] as Array<{ id: string; reason: string }>,
+  };
   for (const id of ids) {
     try {
       if (action.type === 'publish') await publish(ctx, actor, 'video', id);
       else if (action.type === 'unpublish') await unpublish(ctx, actor, 'video', id);
-      else {
+      else if (action.type === 'remove_category') {
+        const done = await removeFromCategory(ctx, actor, id, action.categoryId);
+        if (done === 'absent') {
+          result.skipped.push({ id, reason: 'Not in that category.' });
+          continue;
+        }
+        if (done !== 'removed') {
+          result.failed.push({ id, reason: done.error });
+          continue;
+        }
+      } else {
         const done = await addToCategory(ctx, actor, id, action.categoryId);
         if (!done.ok) {
           result.failed.push({ id, reason: done.error });
@@ -774,7 +793,41 @@ export async function bulkAdminVideos(
       result.failed.push({ id, reason: reasonOf(error) });
     }
   }
-  return result;
+  return result.skipped.length ? result : { succeeded: result.succeeded, failed: result.failed };
+}
+
+/** Removes one category from one video. Reports `absent` when the video was not in it, so bulk can skip it. */
+async function removeFromCategory(
+  ctx: AdminContext,
+  actor: Actor,
+  videoId: string,
+  categoryId: string,
+): Promise<'removed' | 'absent' | { error: string }> {
+  if (!isUuid(videoId) || !isUuid(categoryId)) return { error: 'That video no longer exists.' };
+  return withAccount(ctx.db, actor, async (tx: Tx) => {
+    const [video] = await tx
+      .select({ id: videos.id, title: videos.title })
+      .from(videos)
+      .where(and(eq(videos.id, videoId), sql`${videos.deletedAt} IS NULL`));
+    if (!video) return { error: 'That video no longer exists.' };
+    const removed = await tx
+      .delete(videoCategories)
+      .where(and(eq(videoCategories.videoId, videoId), eq(videoCategories.categoryId, categoryId)))
+      .returning({ videoId: videoCategories.videoId });
+    if (removed.length === 0) return 'absent' as const;
+    await tx.update(videos).set({ updatedAt: new Date() }).where(eq(videos.id, videoId));
+    await writeAudit(tx, {
+      action: 'video.update',
+      outcome: 'success',
+      actorAccountId: actor.accountId,
+      actorRole: actor.role,
+      targetType: 'video',
+      targetId: videoId,
+      summary: `Removed ${video.title} from a category`,
+      extra: { fields: ['categories'], bulk: true },
+    });
+    return 'removed' as const;
+  });
 }
 
 function reasonOf(error: unknown): string {

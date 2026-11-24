@@ -1,5 +1,6 @@
 import type { AccountRole } from '@ad/shared';
 import { can } from '@/lib/admin/can';
+import type { BulkUndo } from './bulk';
 import type { AdminVideoStatus, CaptionState, Page, Suitability, VideoRecord } from './types';
 import { adminStatusOf, canPublish } from './video-rules';
 import type { PublishRules } from './video-rules';
@@ -117,11 +118,16 @@ export type BulkAction =
   | { type: 'unpublish' }
   | { type: 'trash' }
   | { type: 'category'; categoryId: string }
+  | { type: 'remove_category'; categoryId: string }
   | { type: 'suitability'; value: NonNullable<VideoRecord['suitability']> };
 
 export interface BulkResult {
   succeeded: string[];
-  failed: Array<{ id: string; reason: string }>;
+  failed: Array<{ id: string; reason: string; retryable?: boolean }>;
+  /** Left out when empty. Items the action did not need to touch, with the reason. */
+  skipped?: Array<{ id: string; reason: string }>;
+  undo?: BulkUndo;
+  bulkId?: string;
 }
 
 /** Applies one action to many videos. Each id succeeds or fails alone so a bad one never blocks the rest. */
@@ -190,6 +196,12 @@ export function applyBulk(
       video.publishState = 'unpublished';
     } else if (action.type === 'trash') {
       video.deletedAt = stamp;
+    } else if (action.type === 'remove_category') {
+      if (!video.categoryIds.includes(action.categoryId)) {
+        (result.skipped ??= []).push({ id, reason: 'Not in that category.' });
+        continue;
+      }
+      video.categoryIds = video.categoryIds.filter((c) => c !== action.categoryId);
     } else if (!video.categoryIds.includes(action.categoryId)) {
       video.categoryIds = [...video.categoryIds, action.categoryId];
     }

@@ -146,6 +146,37 @@ describe('applyBulk', () => {
   });
 });
 
+describe('applyBulk remove_category (L3-04)', () => {
+  const rules = { requireApprovedCaptions: true };
+
+  it('remove_category removes only where present and reports the rest as skipped', () => {
+    const store = fresh();
+    const withIt = store.videos.find((v) => v.categoryIds.includes('cat_maths'))!;
+    const without = store.videos.find((v) => !v.categoryIds.includes('cat_maths') && v.deletedAt === null)!;
+    const result = applyBulk(
+      store.videos,
+      [withIt.id, without.id],
+      { type: 'remove_category', categoryId: 'cat_maths' },
+      'editor',
+      rules,
+      NOW,
+    );
+    expect(result.succeeded).toEqual([withIt.id]);
+    expect(result.skipped).toEqual([{ id: without.id, reason: 'Not in that category.' }]);
+    expect(withIt.categoryIds).not.toContain('cat_maths');
+  });
+
+  it('remove_category needs edit permission', () => {
+    const result = applyBulk(fresh().videos, ['vid_sky'], { type: 'remove_category', categoryId: 'cat_maths' }, 'viewer', rules, NOW);
+    expect(result.failed[0]!.reason).toBe('You do not have permission for this.');
+  });
+
+  it('publish reports Not ready with the first blocker per failed id', () => {
+    const result = applyBulk(fresh().videos, ['vid_naira'], { type: 'publish' }, 'editor', rules, NOW);
+    expect(result.failed[0]!.reason).toMatch(/^Not ready: .+ needs attention first\.$/);
+  });
+});
+
 describe('applyBulk suitability', () => {
   const rules = { requireCaptions: false } as never;
   it('changes every selected video, or none when one is missing', () => {

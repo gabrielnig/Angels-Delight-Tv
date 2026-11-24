@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { useEffect, useRef, useState, useTransition } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from 'react';
 import type { AccountRole } from '@ad/shared';
 import { can } from '@/lib/admin/can';
 import {
@@ -12,17 +12,31 @@ import {
   formatDuration,
   spokenDuration,
 } from '@/lib/admin/format';
+import {
+  MAX_BULK_CALL,
+  describeOutcome,
+  mergeOutcomes,
+  newBulkId,
+  toOutcome,
+  type BulkOutcome,
+  type BulkUndo,
+} from '@/lib/data/admin/bulk';
 import type { BulkAction, BulkResult, VideoQuery } from '@/lib/data/admin/video-queries';
 import { serializeVideoQuery } from '@/lib/data/admin/video-queries';
 import type { CategoryRecord, Page, VideoRecord } from '@/lib/data/admin/types';
 import { adminStatusOf } from '@/lib/data/admin/video-rules';
 import { CaptionBadge, StatusBadge } from './Badge';
 import { Button, LinkButton } from './Button';
-import { ConfirmDialog } from './Dialog';
+import { BulkBar, type BulkBarAction } from './bulk/BulkBar';
+import { BulkProgress } from './bulk/BulkProgress';
+import { BulkReport } from './bulk/BulkReport';
+import { useBulkRun } from './bulk/useBulkRun';
+import { useSelection } from './bulk/useSelection';
+import { ConfirmDialog, Dialog, TypedConfirmDialog } from './Dialog';
 import { Checkbox, SelectField, TextField } from './fields';
 import { Icon } from './Icon';
 import { PosterTile, seedOf } from './PosterTile';
-import { Banner, EmptyState } from './states';
+import { EmptyState } from './states';
 import { useToast } from './Toast';
 
 const STATUS_OPTIONS = [
@@ -54,37 +68,64 @@ interface Props {
   query: VideoQuery;
   categories: CategoryRecord[];
   role: AccountRole;
-  bulk: (ids: string[], action: BulkAction) => Promise<BulkResult>;
+  bulk: (ids: string[], action: BulkAction, bulkId: string) => Promise<BulkResult>;
+  /** Puts back what the last run changed. Compare and set on the server. */
+  undo?: (undo: BulkUndo) => Promise<BulkResult>;
+  /** Ids that match the current filter, for "Select all N that match". */
+  matching?: (query: VideoQuery) => Promise<string[]>;
   now: number;
 }
+
+/** Page scope only. These never run on a "select all that match" snapshot (L3-D05). */
+const PAGE_ONLY = new Set(['publish', 'unpublish', 'trash']);
+const TYPED_COUNT_AT = 5;
+const plural = (n: number) => `${n} ${n === 1 ? 'video' : 'videos'}`;
+const labelOf = (action: BulkAction): string =>
+  ({
+    publish: 'Publish',
+    unpublish: 'Unpublish',
+    trash: 'Move to Trash',
+    category: 'Add to category',
+    remove_category: 'Remove from category',
+    suitability: 'Set suitability',
+  })[action.type];
 
 const options = (list: ReadonlyArray<readonly [string, string]>) =>
   list.map(([value, label]) => ({ value, label }));
 
-export function VideosList({ page, query, categories, role, bulk }: Props) {
+export function VideosList({ page, query, categories, role, bulk, undo, matching }: Props) {
   const router = useRouter();
   const pathname = usePathname();
   const toast = useToast();
   const [pending, start] = useTransition();
-  const [selected, setSelected] = useState<Set<string>>(new Set());
   const [compact, setCompact] = useState(false);
-  const [confirmTrash, setConfirmTrash] = useState(false);
-  const [categoryPick, setCategoryPick] = useState('');
-  const [summary, setSummary] = useState<{
-    done: number;
-    failed: BulkResult['failed'];
-    label: string;
-  } | null>(null);
-  const [busy, setBusy] = useState(false);
   const [q, setQ] = useState(query.q ?? '');
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const tableRef = useRef<HTMLDivElement>(null);
+  const actionRef = useRef<BulkAction>({ type: 'publish' });
+  const ids = useMemo(() => page.items.map((v) => v.id), [page.items]);
+  const sel = useSelection(ids);
+  const [outcome, setOutcome] = useState<BulkOutcome | null>(null);
+  const [lastRun, setLastRun] = useState<{ action: BulkAction; ids: string[] } | null>(null);
+  const [confirm, setConfirm] = useState<'publish' | 'trash' | null>(null);
+  const [picker, setPicker] = useState<'category' | 'remove_category' | 'suitability' | null>(null);
+  const [pickValue, setPickValue] = useState('');
   const canPublish = can(role, 'video.publish');
   const canTrash = can(role, 'video.delete');
+  const canEdit = can(role, 'video.edit');
   const filtered = Boolean(
     query.q || query.status || query.categoryId || query.captions || query.suitability,
   );
+  const runner = useBulkRun(
+    useCallback(
+      async (chunk, bulkId) => toOutcome(await bulk(chunk, actionRef.current, bulkId), bulkId),
+      [bulk],
+    ),
+  );
+  const queryKey = serializeVideoQuery(query);
+  const clearSelection = sel.clear;
 
-  useEffect(() => setSelected(new Set()), [page]);
+  useEffect(() => clearSelection(), [queryKey, clearSelection]);
   useEffect(() => () => void (timer.current && clearTimeout(timer.current)), []);
 
   const go = (next: VideoQuery) => {
@@ -98,38 +139,121 @@ export function VideosList({ page, query, categories, role, bulk }: Props) {
     timer.current = setTimeout(() => setFilter({ q: value.trim() || undefined }), 350);
   };
 
-  const ids = page.items.map((v) => v.id);
-  const allSelected = ids.length > 0 && ids.every((id) => selected.has(id));
-  const toggle = (id: string) =>
-    setSelected((cur) => {
-      const next = new Set(cur);
-      if (!next.delete(id)) next.add(id);
-      return next;
-    });
+  const titleOf = (id: string) => page.items.find((v) => v.id === id)?.title ?? id;
+  const selectedIds = [...sel.selected];
 
-  async function run(idsToRun: string[], action: BulkAction, label: string) {
-    setBusy(true);
+  async function doUndo(payload: BulkUndo) {
+    if (!undo) return;
     try {
-      const result = await bulk(idsToRun, action);
-      setSummary({ done: result.succeeded.length, failed: result.failed, label });
-      if (result.failed.length === 0)
-        toast.show({ tone: 'success', message: `${label}: ${result.succeeded.length} done.` });
-      setSelected(new Set());
+      const r = await undo(payload);
+      toast.show({
+        tone: r.failed.length ? 'danger' : 'success',
+        message: r.failed.length
+          ? `Undo put back ${r.succeeded.length}. ${r.failed.length} could not be put back.`
+          : `Undone: ${r.succeeded.length} put back.`,
+      });
       router.refresh();
     } catch {
-      toast.show({
-        tone: 'danger',
-        message: `${label} did not work. Nothing was changed. Try again.`,
-      });
-    } finally {
-      setBusy(false);
-      setConfirmTrash(false);
+      toast.show({ tone: 'danger', message: 'Undo did not work. Nothing was changed.' });
     }
   }
 
-  const titleOf = (id: string) => page.items.find((v) => v.id === id)?.title ?? id;
-  const selectedIds = [...selected];
-  const hasSelection = selectedIds.length > 0;
+  async function run(action: BulkAction, idsToRun: string[], prior?: BulkOutcome) {
+    const label = labelOf(action);
+    actionRef.current = action;
+    setLastRun({ action, ids: prior && lastRun ? lastRun.ids : idsToRun });
+    setConfirm(null);
+    setPicker(null);
+    setPickValue('');
+    // Suitability is all or nothing (M35-S04), so it goes in one call, not in chunks.
+    const result = await runner.start(
+      idsToRun,
+      prior?.bulkId ?? newBulkId(),
+      action.type === 'suitability' ? MAX_BULK_CALL : undefined,
+    );
+    const merged = prior ? mergeOutcomes(prior, result) : result;
+    const nothingHappened =
+      merged.interrupted !== undefined &&
+      merged.succeeded.length === 0 &&
+      merged.failed.length === 0 &&
+      merged.skipped.length === 0;
+    if (nothingHappened) {
+      setOutcome(null);
+      toast.show({ tone: 'danger', message: `${label} did not work. Nothing was changed. Try again.` });
+      return;
+    }
+    setOutcome(merged);
+    sel.clear();
+    if (merged.succeeded.length > 0) {
+      const payload = merged.undo;
+      toast.show({
+        tone: 'success',
+        message: describeOutcome(label, merged),
+        ...(payload && undo
+          ? { actionLabel: 'Undo', durationMs: 10000, onAction: () => void doUndo(payload) }
+          : {}),
+      });
+    }
+    router.refresh();
+  }
+
+  const pageOnlyReason =
+    sel.scope === 'matching' ? 'Select rows on this page to use this action.' : undefined;
+  const actions: BulkBarAction[] = [
+    {
+      id: 'publish',
+      label: 'Publish',
+      variant: 'primary',
+      onClick: () => setConfirm('publish'),
+      disabledReason: !canPublish ? 'Your role cannot publish.' : pageOnlyReason,
+    },
+    {
+      id: 'unpublish',
+      label: 'Unpublish',
+      onClick: () => void run({ type: 'unpublish' }, selectedIds),
+      disabledReason: !canPublish ? 'Your role cannot publish.' : pageOnlyReason,
+    },
+    {
+      id: 'category',
+      label: 'Add to category',
+      secondary: true,
+      onClick: () => setPicker('category'),
+      disabledReason: canEdit ? undefined : 'Your role cannot edit videos.',
+    },
+    {
+      id: 'remove_category',
+      label: 'Remove from category',
+      secondary: true,
+      onClick: () => setPicker('remove_category'),
+      disabledReason: canEdit ? undefined : 'Your role cannot edit videos.',
+    },
+    {
+      id: 'suitability',
+      label: 'Set suitability',
+      secondary: true,
+      onClick: () => setPicker('suitability'),
+      disabledReason: canEdit ? undefined : 'Your role cannot edit videos.',
+    },
+    {
+      id: 'trash',
+      label: 'Move to Trash',
+      variant: 'danger',
+      onClick: () => setConfirm('trash'),
+      disabledReason: !canTrash ? 'Only an admin can move videos to Trash.' : pageOnlyReason,
+    },
+  ];
+  const pickerOptions =
+    picker === 'suitability'
+      ? SUITABILITY_OPTIONS.filter(([value]) => value).map(([value, label]) => ({ value, label }))
+      : categories.map((c) => ({ value: c.id, label: c.name }));
+  const applyPicker = () => {
+    if (!picker || !pickValue) return;
+    const action: BulkAction =
+      picker === 'suitability'
+        ? { type: 'suitability', value: pickValue as 'everyone' | 'kids' | 'older' }
+        : { type: picker, categoryId: pickValue };
+    void run(action, selectedIds);
+  };
 
   return (
     <div className="adm-stack">
@@ -189,91 +313,60 @@ export function VideosList({ page, query, categories, role, bulk }: Props) {
         />
       </form>
 
-      {summary ? (
-        <Banner
-          tone={summary.failed.length ? 'warning' : 'success'}
-          action={
-            <Button variant="ghost" onClick={() => setSummary(null)}>
-              Dismiss
-            </Button>
+      {runner.running && (runner.progress?.total ?? 0) > 25 ? (
+        <BulkProgress
+          label={labelOf(actionRef.current)}
+          done={runner.progress?.done ?? 0}
+          total={runner.progress?.total ?? 0}
+          offline={runner.offline}
+          onCancel={runner.cancel}
+        />
+      ) : null}
+
+      {outcome && lastRun ? (
+        <BulkReport
+          label={labelOf(lastRun.action)}
+          outcome={outcome}
+          itemLabel={titleOf}
+          itemHref={(id) => `/admin/videos/${id}`}
+          onDismiss={() => setOutcome(null)}
+          onRetry={(retryIds) => void run(lastRun.action, retryIds, outcome)}
+          onContinue={() =>
+            void run(
+              lastRun.action,
+              lastRun.ids.slice(outcome.interrupted?.done ?? 0),
+              { ...outcome, interrupted: undefined },
+            )
           }
-        >
-          <strong>
-            {summary.label}: {summary.done} done
-            {summary.failed.length ? `, ${summary.failed.length} could not be changed` : ''}.
-          </strong>
-          {summary.failed.length ? (
-            <ul style={{ margin: 'var(--space-1) 0 0', paddingLeft: 'var(--space-5)' }}>
-              {summary.failed.map((f) => (
-                <li key={f.id}>
-                  {titleOf(f.id)}: {f.reason}
-                </li>
-              ))}
-            </ul>
-          ) : null}
-        </Banner>
+        />
       ) : null}
 
-      {hasSelection ? (
-        <div className="adm-bulk" role="region" aria-label="Bulk actions">
-          <strong>{selectedIds.length} selected</strong>
-          <Button
-            variant="primary"
-            loading={busy}
-            disabledReason={canPublish ? undefined : 'Your role cannot publish.'}
-            onClick={() => run(selectedIds, { type: 'publish' }, 'Publish')}
-          >
-            Publish
-          </Button>
-          <Button
-            disabled={busy || !canPublish}
-            onClick={() => run(selectedIds, { type: 'unpublish' }, 'Unpublish')}
-          >
-            Unpublish
-          </Button>
-          <SelectField
-            label="Add to category"
-            value={categoryPick}
-            options={[
-              { value: '', label: 'Add to category' },
-              ...categories.map((c) => ({ value: c.id, label: c.name })),
-            ]}
-            onChange={(e) => {
-              const id = e.target.value;
-              setCategoryPick('');
-              if (id)
-                void run(selectedIds, { type: 'category', categoryId: id }, 'Add to category');
-            }}
-          />
-          <SelectField
-            label="Set suitability"
-            value=""
-            options={[
-              { value: '', label: 'Set suitability' },
-              ...SUITABILITY_OPTIONS.filter(([value]) => value).map(([value, label]) => ({
-                value,
-                label,
-              })),
-            ]}
-            onChange={(e) => {
-              const value = e.target.value as 'everyone' | 'kids' | 'older' | '';
-              if (value) void run(selectedIds, { type: 'suitability', value }, 'Set suitability');
-            }}
-          />
-          <Button
-            variant="danger"
-            disabledReason={canTrash ? undefined : 'Only an admin can move videos to Trash.'}
-            onClick={() => setConfirmTrash(true)}
-          >
-            Move to Trash
-          </Button>
-          <Button variant="ghost" onClick={() => setSelected(new Set())}>
-            Clear
-          </Button>
-        </div>
+      {sel.count > 0 ? (
+        <BulkBar
+          count={sel.count}
+          onClear={sel.clear}
+          actions={actions}
+          pageFullySelected={sel.allOnPage && sel.scope === 'page'}
+          matchTotal={page.total}
+          onSelectMatching={
+            matching
+              ? async () => {
+                  try {
+                    sel.selectMatching(await matching(query));
+                  } catch {
+                    toast.show({ tone: 'danger', message: 'Could not select the rest. Try again.' });
+                  }
+                }
+              : undefined
+          }
+          note={
+            sel.capped ? `Selected ${sel.capped.used}. The first ${sel.capped.used} are used when more match.` : undefined
+          }
+          returnFocusTo={() => tableRef.current}
+        />
       ) : null}
 
-      <div className="adm-card adm-table-card" aria-busy={pending || undefined}>
+      <div className="adm-card adm-table-card" aria-busy={pending || undefined} ref={tableRef} tabIndex={-1}>
         {page.items.length === 0 ? (
           filtered ? (
             <EmptyState
@@ -312,8 +405,8 @@ export function VideosList({ page, query, categories, role, bulk }: Props) {
                   <th scope="col" className="adm-table__check">
                     <Checkbox
                       label="Select all on this page"
-                      checked={allSelected}
-                      onChange={() => setSelected(allSelected ? new Set() : new Set(ids))}
+                      checked={sel.allOnPage}
+                      onChange={sel.togglePage}
                     />
                   </th>
                   <th scope="col">Video</th>
@@ -334,14 +427,14 @@ export function VideosList({ page, query, categories, role, bulk }: Props) {
               <tbody>
                 {page.items.map((video) => {
                   const status = adminStatusOf(video);
-                  const isSel = selected.has(video.id);
+                  const isSel = sel.isSelected(video.id);
                   return (
                     <tr key={video.id} className={isSel ? 'is-selected' : undefined}>
                       <td className="adm-table__check">
                         <Checkbox
                           label={`Select ${video.title}`}
                           checked={isSel}
-                          onChange={() => toggle(video.id)}
+                          onChange={() => sel.toggle(video.id)}
                         />
                       </td>
                       <td>
@@ -405,12 +498,12 @@ export function VideosList({ page, query, categories, role, bulk }: Props) {
               {page.items.map((video) => (
                 <li
                   key={video.id}
-                  className={`adm-vcard${selected.has(video.id) ? ' is-selected' : ''}`}
+                  className={`adm-vcard${sel.isSelected(video.id) ? ' is-selected' : ''}`}
                 >
                   <Checkbox
                     label={`Select ${video.title}`}
-                    checked={selected.has(video.id)}
-                    onChange={() => toggle(video.id)}
+                    checked={sel.isSelected(video.id)}
+                    onChange={() => sel.toggle(video.id)}
                   />
                   <PosterTile title={video.title} seed={seedOf(video.id)} />
                   <div className="adm-vcard__body">
@@ -474,15 +567,70 @@ export function VideosList({ page, query, categories, role, bulk }: Props) {
       </div>
 
       <ConfirmDialog
-        open={confirmTrash}
-        title={`Move ${selectedIds.length} ${selectedIds.length === 1 ? 'video' : 'videos'} to Trash?`}
-        consequence="They stop showing to viewers right away. You can restore them for 30 days."
-        confirmLabel="Move to Trash"
-        danger
-        busy={busy}
-        onClose={() => setConfirmTrash(false)}
-        onConfirm={() => run(selectedIds, { type: 'trash' }, 'Move to Trash')}
+        open={confirm === 'publish'}
+        title={`Publish ${plural(sel.count)}?`}
+        consequence="They show to viewers right away. Videos that are not ready are skipped and listed."
+        confirmLabel={`Publish ${sel.count}`}
+        busy={runner.running}
+        onClose={() => setConfirm(null)}
+        onConfirm={() => void run({ type: 'publish' }, selectedIds)}
       />
+      {sel.count >= TYPED_COUNT_AT ? (
+        <TypedConfirmDialog
+          open={confirm === 'trash'}
+          title={`Move ${plural(sel.count)} to Trash?`}
+          consequence="They stop showing to viewers right away. You can restore them for 30 days."
+          phrase={String(sel.count)}
+          phraseLabel={`Type ${sel.count} to confirm`}
+          confirmLabel="Move to Trash"
+          busy={runner.running}
+          onClose={() => setConfirm(null)}
+          onConfirm={() => void run({ type: 'trash' }, selectedIds)}
+        />
+      ) : (
+        <ConfirmDialog
+          open={confirm === 'trash'}
+          title={`Move ${plural(sel.count)} to Trash?`}
+          consequence="They stop showing to viewers right away. You can restore them for 30 days."
+          confirmLabel="Move to Trash"
+          danger
+          busy={runner.running}
+          onClose={() => setConfirm(null)}
+          onConfirm={() => void run({ type: 'trash' }, selectedIds)}
+        />
+      )}
+      <Dialog
+        open={picker !== null}
+        onClose={() => {
+          setPicker(null);
+          setPickValue('');
+        }}
+        title={
+          picker === 'suitability'
+            ? `Set suitability for ${plural(sel.count)}`
+            : picker === 'remove_category'
+              ? `Remove ${plural(sel.count)} from a category`
+              : `Add ${plural(sel.count)} to a category`
+        }
+        size="sm"
+        footer={
+          <>
+            <Button variant="ghost" onClick={() => setPicker(null)}>
+              Cancel
+            </Button>
+            <Button variant="primary" disabled={!pickValue} onClick={applyPicker}>
+              Apply
+            </Button>
+          </>
+        }
+      >
+        <SelectField
+          label={picker === 'suitability' ? 'Suitability' : 'Category'}
+          value={pickValue}
+          options={[{ value: '', label: 'Choose one' }, ...pickerOptions]}
+          onChange={(e) => setPickValue(e.target.value)}
+        />
+      </Dialog>
     </div>
   );
 }
