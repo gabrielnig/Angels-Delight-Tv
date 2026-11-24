@@ -24,6 +24,7 @@ import { createLogger } from '@ad/shared';
 import { getActor, getViewer } from '../auth/request-actor';
 import { authRuntime } from '../auth/runtime';
 import { activeProfileKey } from '../viewer/runtime';
+import { guestAudienceFromRequest } from '../guest/guest-audience';
 import { guestSetCookie } from '../guest/guest-cookie';
 import { resolveGuest } from '../guest/resolve-guest';
 import { themeRuntime } from '../../lib/data/admin/theme-runtime';
@@ -105,8 +106,13 @@ function build(): VideoApi {
         if (!resolved) return null;
         return {
           guestId: resolved.guestId,
-          // The Kids mode device choice arrives with the guest audience setting.
-          kids: false,
+          // The device choice, else the site default (R18). A Kids mode guest gets a Kids safe token.
+          kids:
+            guestAudienceFromRequest(
+              request,
+              auth.secureCookies,
+              await (await themeRuntime()).settings.get('features.guest_audience'),
+            ) === 'kids',
           ...(resolved.isNew
             ? { setCookie: guestSetCookie(guestSecret, auth.secureCookies, resolved.guestId) }
             : {}),

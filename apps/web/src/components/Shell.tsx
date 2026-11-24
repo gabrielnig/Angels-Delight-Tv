@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 import { ButtonLink, Link, SiteFooter } from '@ad/ui';
 import { getSite } from '../lib/data';
 import { getSession } from '../lib/session';
+import { setGuestAudienceAction } from '../app/actions';
 import { currentGuestAudience } from '../server/guest/guest-view';
 import { guestPlayEnabled } from '../server/guest/guest-settings';
 import { Brand } from './AuthLayouts';
@@ -40,6 +41,7 @@ export async function AppShell({ children, skin }: { children: ReactNode; skin?:
         year={year}
         signUpOpen={site.signUpOpen}
         kids={(await currentGuestAudience()) === 'kids'}
+        setKidsMode={setGuestAudienceAction}
       >
         {children}
       </GuestChrome>

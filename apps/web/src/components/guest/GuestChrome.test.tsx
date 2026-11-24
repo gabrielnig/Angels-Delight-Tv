@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 import { render, screen, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const nav = vi.hoisted(() => ({ pathname: '/browse' }));
@@ -81,5 +82,38 @@ describe('GuestChrome (S81)', () => {
   it('has no hero backing on other pages', () => {
     const { container } = chrome();
     expect(container.querySelector('header')).not.toHaveAttribute('data-over-hero');
+  });
+
+  describe('Kids mode (R17)', () => {
+    it('has a Menu with a Kids mode switch and the help line', async () => {
+      const setKidsMode = vi.fn().mockResolvedValue(undefined);
+      chrome({ setKidsMode });
+      await userEvent.click(screen.getByRole('button', { name: 'Menu' }));
+      const toggle = screen.getByRole('switch', { name: 'Kids mode' });
+      expect(toggle).toHaveAttribute('aria-checked', 'false');
+      expect(
+        screen.getByText(
+          'Shows videos made for children. Anyone using this device can turn it off.',
+        ),
+      ).toBeInTheDocument();
+      await userEvent.click(toggle);
+      expect(setKidsMode).toHaveBeenCalledWith(true);
+    });
+
+    it('closes the menu with Escape and returns focus to the Menu button', async () => {
+      chrome({ setKidsMode: vi.fn() });
+      const button = screen.getByRole('button', { name: 'Menu' });
+      await userEvent.click(button);
+      await userEvent.keyboard('{Escape}');
+      expect(screen.queryByRole('switch')).toBeNull();
+      expect(button).toHaveFocus();
+    });
+
+    it('offers Turn off Kids mode in the footer when it is on', async () => {
+      const setKidsMode = vi.fn().mockResolvedValue(undefined);
+      chrome({ kids: true, setKidsMode });
+      await userEvent.click(screen.getByRole('button', { name: 'Turn off Kids mode' }));
+      expect(setKidsMode).toHaveBeenCalledWith(false);
+    });
   });
 });

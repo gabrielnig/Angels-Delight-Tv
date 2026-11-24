@@ -98,4 +98,12 @@ describe('checkClientTheme', () => {
     expect(gate.blocked).toBe(true);
     expect(gate.messages.length).toBeGreaterThan(0);
   });
+
+  it('accepts guest settings and rejects an unknown audience', () => {
+    const ok = parseClientConfig({ ...valid, guestAudience: 'kids', guestPlay: false });
+    expect(ok.ok && ok.config.guestAudience).toBe('kids');
+    expect(ok.ok && ok.config.guestPlay).toBe(false);
+    expect(parseClientConfig({ ...valid, guestAudience: 'teen' }).ok).toBe(false);
+    expect(parseClientConfig({ ...valid, guestPlay: 'yes' }).ok).toBe(false);
+  });
 });

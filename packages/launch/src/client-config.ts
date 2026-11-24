@@ -82,6 +82,10 @@ export const clientConfigSchema = z
     /** Must already exist (pnpm db:seed:admin). The applier never creates passwords. */
     adminOwnerEmail: email,
     footerText: z.string().trim().max(200).optional(),
+    /** What visitors without an account see before they choose Kids mode on their device (M40). */
+    guestAudience: z.enum(['general', 'kids']).optional(),
+    /** Turns playback without an account on or off. Off sends visitors to sign in to watch. */
+    guestPlay: z.boolean().optional(),
     socialLinks: z.array(socialLink).max(6).optional(),
     theme: themeSchema.optional(),
     logo: imageRef.optional(),

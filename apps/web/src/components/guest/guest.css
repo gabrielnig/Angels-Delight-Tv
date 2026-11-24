@@ -62,3 +62,56 @@
 .web-guestbar[data-over-hero='true'] :focus-visible {
   outline-color: var(--color-focus-ring-dark);
 }
+
+.web-guestbar__menuwrap {
+  position: relative;
+}
+
+.web-guestbar__menu {
+  position: absolute;
+  top: calc(100% + var(--space-1));
+  right: 0;
+  z-index: var(--z-overlay);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  width: 16rem;
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  color: var(--color-ink);
+  box-shadow: var(--shadow-2);
+}
+
+.web-guestbar__switch {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: var(--touch-target);
+  padding: 0 var(--space-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-weight: var(--weight-semibold);
+  cursor: pointer;
+}
+
+.web-guestbar__switch[aria-checked='true'] {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: var(--color-on-primary);
+}
+
+.web-guestbar__help {
+  margin: 0;
+  font-size: var(--text-caption);
+  color: var(--color-muted);
+}
+
+.web-guestbar__kidsoff {
+  display: flex;
+  justify-content: center;
+  padding: var(--space-3) var(--page-gutter);
+}

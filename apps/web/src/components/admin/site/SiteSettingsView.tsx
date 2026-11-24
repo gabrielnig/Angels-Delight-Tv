@@ -48,6 +48,7 @@ const FLAG_KEYS: SettingKey[] = [
   'features.data_saver_default',
   'features.require_approved_captions',
   'features.captions_default_available',
+  'features.guest_play',
 ];
 
 const NUMBER_RULES: Partial<Record<SettingKey, NumberRule>> = {
@@ -56,6 +57,7 @@ const NUMBER_RULES: Partial<Record<SettingKey, NumberRule>> = {
   'limits.upload_max_bytes': { min: 0.01, max: 5, unit: GIB },
   'limits.lockout_attempts': { min: 3, max: 20 },
   'limits.lockout_minutes': { min: 1, max: 1440 },
+  'limits.guest_segment_minutes': { min: 5, max: 120 },
   'playback.finish_percent': { min: 80, max: 100 },
   'playback.start_threshold_seconds': { min: 0, max: 60 },
   'playback.rewind_seconds': { min: 0, max: 30 },

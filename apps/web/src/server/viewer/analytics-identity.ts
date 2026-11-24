@@ -5,7 +5,8 @@ import { guestCookieName, readGuest } from '../guest/guest-cookie';
 import { activeProfileCookieName, cookieValue, readActiveProfile } from './active-profile';
 import type { ViewerRuntime } from './api';
 
-type Needs = Pick<ViewerRuntime, 'ctx' | 'secureCookies' | 'profileSecret' | 'resolveActor'>;
+type Needs = Pick<ViewerRuntime, 'ctx' | 'secureCookies' | 'profileSecret' | 'resolveActor'> &
+  Partial<Pick<ViewerRuntime, 'guestAudience'>>;
 
 const anonymous = { profileId: null, audience: 'general' } as const;
 
@@ -20,6 +21,7 @@ export function createRealViewerResolver(rt: Needs): ViewerResolver {
     const actor = await rt.resolveActor(request);
     if (!actor) {
       // A guest with a valid cookie counts as one viewer per day. The id is only hashed with the day downstream.
+      if ((await rt.guestAudience?.(request))?.kids) return { profileId: null, audience: 'kids' };
       const guestId = readGuest(
         rt.profileSecret,
         cookieValue(request.headers.get('cookie'), guestCookieName(rt.secureCookies)),

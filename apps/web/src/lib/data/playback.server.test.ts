@@ -31,6 +31,7 @@ describe('getViewerContext guests (M40-S02)', () => {
     session: unknown;
     guestPlay: boolean;
     profileId?: string | null;
+    audience?: 'adult' | 'kids';
   }) {
     vi.resetModules();
     vi.doMock('server-only', () => ({}));
@@ -42,6 +43,9 @@ describe('getViewerContext guests (M40-S02)', () => {
     vi.doMock('../../server/auth/session', () => ({ getSession: async () => options.session }));
     vi.doMock('../../server/guest/guest-settings', () => ({
       guestPlayEnabled: async () => options.guestPlay,
+    }));
+    vi.doMock('../../server/guest/guest-view', () => ({
+      currentGuestAudience: async () => options.audience ?? 'adult',
     }));
     vi.doMock('../../server/data/profile-io', () => ({
       cookieProfileIo: () => ({ activeProfileId: async () => options.profileId ?? null }),
@@ -67,6 +71,15 @@ describe('getViewerContext guests (M40-S02)', () => {
       guest: true,
     });
     expect(redirect).not.toHaveBeenCalled();
+  });
+
+  it('marks a guest as kids when this device chose Kids mode', async () => {
+    const { getViewerContext } = await load({ session: null, guestPlay: true, audience: 'kids' });
+    await expect(getViewerContext(cookies, NEXT)).resolves.toEqual({
+      profileId: 'none',
+      kids: true,
+      guest: true,
+    });
   });
 
   it('keeps the sign in redirect, with next, when guest play is off', async () => {

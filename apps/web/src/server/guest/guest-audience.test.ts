@@ -3,6 +3,7 @@ import {
   GUEST_AUDIENCE_DAYS,
   guestAudienceCookieName,
   guestAudienceCookieOptions,
+  guestAudienceFromRequest,
   readGuestAudienceCookie,
   resolveGuestAudience,
 } from './guest-audience';
@@ -45,5 +46,13 @@ describe('guest audience (M40-S09, R18)', () => {
     expect(readGuestAudienceCookie(req('ad_gaud=g'), false)).toBe('g');
     expect(readGuestAudienceCookie(req('ad_gaud=k'), true)).toBeUndefined();
     expect(readGuestAudienceCookie(new Request('https://a.test/'), true)).toBeUndefined();
+  });
+
+  it('resolves the audience of a request from the cookie, then the site default', () => {
+    const req = (cookie?: string) =>
+      new Request('https://a.test/', cookie ? { headers: { cookie } } : {});
+    expect(guestAudienceFromRequest(req('__Host-ad_gaud=k'), true, 'general')).toBe('kids');
+    expect(guestAudienceFromRequest(req('__Host-ad_gaud=g'), true, 'kids')).toBe('general');
+    expect(guestAudienceFromRequest(req(), true, 'kids')).toBe('kids');
   });
 });

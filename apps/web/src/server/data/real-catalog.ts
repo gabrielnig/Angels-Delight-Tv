@@ -279,7 +279,14 @@ export class RealCatalog implements CatalogRepository {
 
   async title(ctx: ViewerContext, slug: string) {
     const detail = await this.detail(ctx, slug, 'video');
-    if (!detail) return null;
+    if (!detail) {
+      // In Kids mode a title that exists but is not in the Kids library says so, instead of looking missing.
+      if (ctx.guest && ctx.audience === 'kids') {
+        const general = await this.detail({ ...ctx, audience: 'adult' }, slug, 'video');
+        if (general && general.type === 'video') return { blocked: 'kids' as const };
+      }
+      return null;
+    }
     if (detail.type === 'redirect') return { redirect: redirectPath(detail.to) };
     if (detail.type !== 'video') return null;
     return toTitleDetail(detail);

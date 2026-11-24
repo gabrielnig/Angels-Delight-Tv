@@ -12,6 +12,7 @@ import type { PlaybackData, PlaybackTransport, ProgressTransport, ViewerContext 
 import { loadOwnedProfile } from '@ad/viewer';
 import { withAccount } from '@ad/db';
 import { viewerActor } from '../../server/data/actor';
+import { currentGuestAudience } from '../../server/guest/guest-view';
 import { guestPlayEnabled } from '../../server/guest/guest-settings';
 
 /**
@@ -77,7 +78,7 @@ export async function getViewerContext(
     const signedIn = session !== null && session.status === 'active';
     // No session at all is a guest (M40-S02). A session that exists but is not usable keeps today's redirect.
     if (session === null && (await guestPlayEnabled()))
-      return { profileId: 'none', kids: false, guest: true };
+      return { profileId: 'none', kids: (await currentGuestAudience()) === 'kids', guest: true };
     if (next && !signedIn) redirect(`/sign-in?next=${encodeURIComponent(next)}`);
     if (next && session && !session.emailVerified) redirect('/verify-email');
     const profileId = signedIn ? await cookieProfileIo().activeProfileId() : null;

@@ -489,9 +489,10 @@ describe.skipIf(!integrationEnabled())('real catalog repository', () => {
       ).toBe(true);
     });
 
-    it('does not find an adult title in Kids mode and never calls an account lookup', async () => {
+    it('says an adult title is not in Kids mode, and a missing one is still not found', async () => {
       const adultOnly = await seedVideo(h.db.setup, { title: 'Guest adult page', kidsSafe: false });
-      expect(await catalog.title(kids(), adultOnly.slug)).toBeNull();
+      expect(await catalog.title(kids(), adultOnly.slug)).toEqual({ blocked: 'kids' });
+      expect(await catalog.title(kids(), 'no-such-title')).toBeNull();
       expect(await catalog.title(general(), adultOnly.slug)).not.toBeNull();
     });
 

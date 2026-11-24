@@ -35,3 +35,12 @@ export function resolveGuestAudience(
 export function readGuestAudienceCookie(request: Request, secure: boolean): string | undefined {
   return cookieValue(request.headers.get('cookie'), guestAudienceCookieName(secure));
 }
+
+/** The audience a request is shown, from the device cookie and then the site default. */
+export function guestAudienceFromRequest(
+  request: Request,
+  secure: boolean,
+  siteDefault: GuestAudienceName,
+): GuestAudienceName {
+  return resolveGuestAudience(readGuestAudienceCookie(request, secure), siteDefault);
+}
