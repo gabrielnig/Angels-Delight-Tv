@@ -47,6 +47,8 @@ export interface VideoRecord {
   suitability: Suitability | null;
   /** 0 (G) to 4 (18), null until rated. Fixtures may leave it out and keep a legacy suitability (M44-S13). */
   maturityRank?: number | null;
+  /** Spoken language code or `auto`. Fixtures may leave it out, meaning English (M46). */
+  language?: string;
   seriesId: string | null;
   seasonNumber: number | null;
   episodeNumber: number | null;

@@ -77,6 +77,32 @@ describe('HttpWhisperClient', () => {
   });
 });
 
+describe('HttpWhisperClient language handling (M46)', () => {
+  it('passes auto through and reads the detected language and its probability', async () => {
+    let url = '';
+    const result = await client(async (u) => {
+      url = String(u);
+      return Response.json({ language: 'yo', language_probability: 0.91, duration: 2, model: 'medium', words: [] });
+    }).transcribe({ audio, language: 'auto' });
+    expect(url).toBe('http://whisper:8000/transcribe?language=auto');
+    expect(result).toMatchObject({ language: 'yo', languageProbability: 0.91 });
+  });
+
+  it('leaves languageProbability out when the service does not send it', async () => {
+    const result = await client(async () => Response.json({ language: 'en', duration: 1, model: 'm', words: [] })).transcribe({ audio, language: 'en' });
+    expect('languageProbability' in result).toBe(false);
+  });
+
+  it('a 422 is the English only message and never retried', async () => {
+    await expect(
+      client(async () => Response.json({ error: 'x' }, { status: 422 })).transcribe({ audio, language: 'yo' }),
+    ).rejects.toMatchObject({
+      permanent: true,
+      message: expect.stringMatching(/only recognises English/),
+    });
+  });
+});
+
 describe('FakeTranscriber', () => {
   it('returns scripted words and records what it was asked', async () => {
     const fake = new FakeTranscriber({ words: [{ word: 'Hi', startMs: 0, endMs: 400 }] });

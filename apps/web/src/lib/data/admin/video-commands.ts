@@ -1,5 +1,5 @@
 import type { BulkIssue } from './bulk';
-import type { AccountRole } from '@ad/shared';
+import { localeInfo, type AccountRole } from '@ad/shared';
 import { can } from '@/lib/admin/can';
 import type { Suitability, VideoRecord } from './types';
 import { canPublish } from './video-rules';
@@ -14,6 +14,8 @@ export interface VideoPatch {
   suitability?: Suitability | null;
   /** 0 (G) to 4 (18). Wins over the legacy suitability (M44-S13). */
   maturityRank?: number;
+  /** Spoken language: a locale code or `auto` (M46). */
+  language?: string;
   seriesId?: string | null;
   episodeNumber?: number | null;
 }
@@ -63,6 +65,10 @@ export function validateVideoPatch(input: VideoPatch, validCategoryIds: Set<stri
     if (Number.isInteger(input.maturityRank) && input.maturityRank >= 0 && input.maturityRank <= 4)
       value.maturityRank = input.maturityRank;
     else errors.maturityRank = 'Choose one of the five ratings.';
+  }
+  if (input.language !== undefined) {
+    if (input.language === 'auto' || localeInfo(input.language)) value.language = input.language;
+    else errors.language = 'Choose a language from the list.';
   }
   if (input.seriesId !== undefined) value.seriesId = input.seriesId;
   if (input.episodeNumber !== undefined) {

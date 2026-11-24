@@ -53,6 +53,7 @@ class FasterWhisperTranscriber:
                     )
         return {
             "language": info.language,
+            "language_probability": round(getattr(info, "language_probability", 1.0), 3),
             "duration": round(info.duration, 3),
             "model": self.model_name,
             "words": words,

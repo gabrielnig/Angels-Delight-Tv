@@ -7,6 +7,7 @@ import {
   NotFound,
   ValidationFailed,
   isUuid,
+  localeInfo,
   uuidv7,
   type Actor,
   isStaffRole,
@@ -51,6 +52,7 @@ interface Row {
   poster_recut: 'processing' | 'failed' | null;
   suitability: Suitability | null;
   maturity_rank: number | null;
+  language: string | null;
   kids_safe: boolean;
   created_by: string | null;
   created_at: Date | string;
@@ -112,6 +114,7 @@ function toVideo(row: Row): AdminVideo {
     // Older rows have no suitability: derive it from the kids flag.
     suitability: row.suitability ?? (row.kids_safe ? 'kids' : null),
     maturityRank: row.maturity_rank ?? null,
+    language: row.language ?? 'en',
     seriesId: row.series_id,
     seasonNumber: row.season_number,
     episodeNumber: row.episode_number,
@@ -148,7 +151,7 @@ const SELECT = sql`
       ELSE (SELECT CASE r.status WHEN 'failed' THEN 'failed' ELSE 'processing' END FROM assets r
         WHERE r.cut_from = coalesce(pa.cut_from, v.poster_asset_id) AND r.purpose = 'thumbnail'
           AND r.cut_focus = v.poster_focus ORDER BY r.created_at DESC LIMIT 1) END AS poster_recut,
-    v.suitability, v.maturity_rank, v.kids_safe, v.created_by, v.created_at, v.updated_at, v.deleted_at,
+    v.suitability, v.maturity_rank, v.language, v.kids_safe, v.created_by, v.created_at, v.updated_at, v.deleted_at,
     v.failure_code, v.failure_message, v.caption_override_reason, v.captions_enabled, v.captions_off_reason,
     v.preview_state, v.preview_mode, v.preview_start_ms, v.preview_note,
     coalesce((SELECT array_agg(vc.category_id::text ORDER BY c.position)
@@ -169,7 +172,7 @@ const SELECT = sql`
     FROM episodes e JOIN seasons se ON se.id = e.season_id WHERE e.video_id = v.id) ep ON true
   LEFT JOIN LATERAL (
     SELECT c.status, c.cue_count FROM caption_tracks ct JOIN captions c ON c.track_id = ct.id
-    WHERE ct.video_id = v.id AND ct.language = 'en' ORDER BY c.revision DESC LIMIT 1) cap ON true
+    WHERE ct.video_id = v.id AND ct.language = CASE WHEN v.language = 'auto' THEN 'en' ELSE v.language END ORDER BY c.revision DESC LIMIT 1) cap ON true
   LEFT JOIN LATERAL (
     SELECT j.progress, j.stage FROM jobs j WHERE j.video_id = v.id
       AND j.queue IN ('video.probe', 'video.encode', 'video.thumbnails') ORDER BY j.created_at DESC LIMIT 1) job ON true`;
@@ -421,6 +424,8 @@ export interface VideoEdit {
   suitability?: Suitability | null;
   /** 0 (G) to 4 (18). The trigger keeps kids_safe equal to rank 0. */
   maturityRank?: number;
+  /** Spoken language: a locale code or `auto` to detect it when captions are generated (M46). */
+  language?: string;
 }
 
 /** Edits the details an editor owns. The caller has validated the text, and the database constraints are the backstop. */
@@ -459,6 +464,11 @@ export async function updateAdminVideo(
       rank ??= rankOfSuitability(edit.suitability);
     }
     if (rank !== undefined) set.maturityRank = rank;
+    if (edit.language !== undefined) {
+      if (edit.language !== 'auto' && !localeInfo(edit.language))
+        throw new ValidationFailed({ language: ['Choose a language from the list.'] });
+      set.language = edit.language;
+    }
     if (edit.categoryIds !== undefined) {
       const found = edit.categoryIds.length
         ? await tx
@@ -1074,7 +1084,7 @@ export async function adminNavCounts(
       SELECT
         (SELECT count(*) FROM videos v WHERE v.deleted_at IS NULL AND v.status IN ('uploaded', 'validating', 'encoding')) AS encoding,
         (SELECT count(*) FROM videos v
-          JOIN caption_tracks ct ON ct.video_id = v.id AND ct.language = 'en'
+          JOIN caption_tracks ct ON ct.video_id = v.id AND ct.language = CASE WHEN v.language = 'auto' THEN 'en' ELSE v.language END
           JOIN captions c ON c.track_id = ct.id
           WHERE v.deleted_at IS NULL AND v.status = 'ready' AND c.status IN ('draft', 'in_review')
             AND NOT EXISTS (SELECT 1 FROM captions n WHERE n.track_id = c.track_id AND n.revision > c.revision)) AS captions`);

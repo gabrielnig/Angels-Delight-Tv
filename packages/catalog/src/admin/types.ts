@@ -38,6 +38,8 @@ export interface AdminVideo {
   suitability: Suitability | null;
   /** 0 (G) to 4 (18), null until rated. Replaces suitability (L5). */
   maturityRank: number | null;
+  /** Spoken language code, or `auto`. */
+  language: string;
   seriesId: string | null;
   seasonNumber: number | null;
   episodeNumber: number | null;

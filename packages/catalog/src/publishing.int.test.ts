@@ -170,13 +170,12 @@ describe.skipIf(!integrationEnabled())('publishing', () => {
     });
   });
 
-  it('accepts approved captions', async () => {
-    const v = await draft();
+  async function approveTrack(videoId: string, language: string) {
     const trackId = uuidv7();
     const capId = uuidv7();
     await t.setup
       .insert(captionTracks)
-      .values({ id: trackId, videoId: v.id, language: 'en', label: 'English', kind: 'captions' });
+      .values({ id: trackId, videoId, language, label: language, kind: 'captions' });
     await t.setup.insert(captions).values({
       id: capId,
       trackId,
@@ -195,7 +194,31 @@ describe.skipIf(!integrationEnabled())('publishing', () => {
       .update(captionTracks)
       .set({ approvedCaptionId: capId })
       .where(eq(captionTracks.id, trackId));
+  }
+
+  it('accepts approved captions', async () => {
+    const v = await draft();
+    await approveTrack(v.id, 'en');
     expect((await publish(ctxFor(true), editor, 'video', v.id)).publishState).toBe('published');
+  });
+
+  it('a Yoruba video needs approved Yoruba captions, a translation does not satisfy the gate (M46)', async () => {
+    const v = await draft();
+    await t.setup.update(videos).set({ language: 'yo' }).where(eq(videos.id, v.id));
+    await approveTrack(v.id, 'en');
+    await expect(publish(ctxFor(true), editor, 'video', v.id)).rejects.toMatchObject({
+      fields: { checklist: ['Approve captions'] },
+    });
+    await approveTrack(v.id, 'yo');
+    expect((await publish(ctxFor(true), editor, 'video', v.id)).publishState).toBe('published');
+  });
+
+  it('an English video still needs English even when a Yoruba track is approved (M46)', async () => {
+    const v = await draft();
+    await approveTrack(v.id, 'yo');
+    await expect(publish(ctxFor(true), editor, 'video', v.id)).rejects.toMatchObject({
+      fields: { checklist: ['Approve captions'] },
+    });
   });
 
   it('promoter publishes due items and demotes ones that no longer pass', async () => {

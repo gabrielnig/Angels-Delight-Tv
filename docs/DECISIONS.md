@@ -1796,3 +1796,9 @@ Decision: `video.preview` catches every error and records `failed` or `skipped` 
 - Options: Build it with a `device_activations` table.
 - Why: Not needed to watch, and it adds a table and a rate limited public endpoint.
 - Reversible: yes.
+
+## D-328 Spoken language drives caption generation, detection and the publish gate (lane L7)
+- Decision: videos.language holds a locale code or auto. The generator passes it to Whisper (pcm is decoded as en and stored as pcm, ig is refused with an upload hint). Auto asks Whisper to detect: at 0.6 or more it updates videos.language and notes Detected X, below that it notes Spoken language uncertain and keeps the video on English. The publish gate needs an approved track in the spoken language, so a translation never satisfies it. Non-English recognition needs WHISPER_MODEL_MULTI, otherwise the service answers 422 and the job fails permanently with a plain message.
+- Options: Detect always; detect only on request; no detection and a required choice
+- Why: A wrong guess is cheap to fix when it is flagged for review, and a required choice would block uploads for editors who do not know the label.
+- Reversible: Yes

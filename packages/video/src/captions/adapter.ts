@@ -12,6 +12,8 @@ export interface TranscribeResult {
   language: string;
   durationMs: number;
   model: string;
+  /** Present when the service reports how sure it is of the detected language. */
+  languageProbability?: number;
   words: TimedWord[];
 }
 
@@ -65,6 +67,13 @@ export class HttpWhisperClient implements Transcriber {
       );
     }
 
+    if (response.status === 422) {
+      throw new PipelineError(
+        'caption_failed',
+        'This server only recognises English. Upload a caption file or align a script.',
+        true,
+      );
+    }
     if (response.status === 400 || response.status === 415 || response.status === 413) {
       throw new PipelineError(
         'caption_failed',
@@ -76,7 +85,7 @@ export class HttpWhisperClient implements Transcriber {
       throw new PipelineError('caption_service_unavailable', `whisper answered ${response.status}`);
     }
 
-    let body: { language?: unknown; duration?: unknown; model?: unknown; words?: unknown };
+    let body: { language?: unknown; language_probability?: unknown; duration?: unknown; model?: unknown; words?: unknown };
     try {
       body = (await response.json()) as typeof body;
     } catch {
@@ -107,6 +116,9 @@ export class HttpWhisperClient implements Transcriber {
       language: typeof body.language === 'string' ? body.language : request.language,
       durationMs: Math.round(body.duration * 1000),
       model: typeof body.model === 'string' ? body.model : 'unknown',
+      ...(typeof body.language_probability === 'number'
+        ? { languageProbability: body.language_probability }
+        : {}),
       words,
     };
   }
@@ -118,7 +130,7 @@ export class FakeTranscriber implements Transcriber {
   failWith: Error | null = null;
 
   constructor(
-    private readonly script: { words: TimedWord[]; durationMs?: number; model?: string } = {
+    private readonly script: { words: TimedWord[]; durationMs?: number; model?: string; detected?: { language: string; probability: number } } = {
       words: [],
     },
   ) {}
@@ -127,8 +139,10 @@ export class FakeTranscriber implements Transcriber {
     this.requests.push(request);
     if (this.failWith) throw this.failWith;
     const last = this.script.words.at(-1);
+    const detected = request.language === 'auto' ? this.script.detected : undefined;
     return {
-      language: request.language,
+      language: detected?.language ?? request.language,
+      ...(detected ? { languageProbability: detected.probability } : {}),
       durationMs: this.script.durationMs ?? (last ? last.endMs + 500 : 1000),
       model: this.script.model ?? 'fake',
       words: this.script.words,
