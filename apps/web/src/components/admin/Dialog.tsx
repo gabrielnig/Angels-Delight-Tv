@@ -1,8 +1,9 @@
 'use client';
 
-import { useEffect, useId, useRef } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { Button } from './Button';
+import { Checkbox, TextField } from './fields';
 
 /**
  * Modal built on the native dialog element: focus is trapped, Esc closes, focus returns to the
@@ -79,7 +80,10 @@ export function Dialog({
   );
 }
 
-/** Names the object and states the consequence (SCREEN-ARCHITECTURE 4.3). */
+/**
+ * Names the object and states the consequence (SCREEN-ARCHITECTURE 4.3). `acknowledge` adds a required
+ * checkbox, and `confirmDisabled` lets a wrapper hold the button until its own condition is met.
+ */
 export function ConfirmDialog({
   open,
   title,
@@ -87,6 +91,8 @@ export function ConfirmDialog({
   confirmLabel,
   danger,
   busy,
+  acknowledge,
+  confirmDisabled,
   onConfirm,
   onClose,
   children,
@@ -97,10 +103,17 @@ export function ConfirmDialog({
   confirmLabel: string;
   danger?: boolean;
   busy?: boolean;
+  acknowledge?: string;
+  confirmDisabled?: boolean;
   onConfirm: () => void;
   onClose: () => void;
   children?: ReactNode;
 }) {
+  const [acknowledged, setAcknowledged] = useState(false);
+  useEffect(() => {
+    if (!open) setAcknowledged(false);
+  }, [open]);
+  const blocked = Boolean(confirmDisabled) || (acknowledge !== undefined && !acknowledged);
   return (
     <Dialog
       open={open}
@@ -113,13 +126,55 @@ export function ConfirmDialog({
           <Button variant="ghost" onClick={onClose}>
             Cancel
           </Button>
-          <Button variant={danger ? 'danger' : 'primary'} loading={busy} onClick={onConfirm}>
+          <Button
+            variant={danger ? 'danger' : 'primary'}
+            loading={busy}
+            disabled={blocked}
+            onClick={onConfirm}
+          >
             {confirmLabel}
           </Button>
         </>
       }
     >
       {children}
+      {acknowledge !== undefined ? (
+        <Checkbox
+          label={acknowledge}
+          checked={acknowledged}
+          onChange={(event) => setAcknowledged(event.target.checked)}
+        />
+      ) : null}
     </Dialog>
+  );
+}
+
+/**
+ * A confirm that keeps the danger button disabled until the person types the phrase (a count such as "7",
+ * or a word such as "delete"). Matching is exact after trimming surrounding spaces.
+ */
+export function TypedConfirmDialog({
+  phrase,
+  phraseLabel,
+  ...rest
+}: Omit<Parameters<typeof ConfirmDialog>[0], 'danger' | 'confirmDisabled' | 'children'> & {
+  phrase: string;
+  phraseLabel: string;
+}) {
+  const [typed, setTyped] = useState('');
+  useEffect(() => {
+    if (!rest.open) setTyped('');
+  }, [rest.open]);
+  return (
+    <ConfirmDialog {...rest} danger confirmDisabled={typed.trim() !== phrase}>
+      <TextField
+        label={phraseLabel}
+        value={typed}
+        autoComplete="off"
+        autoCapitalize="none"
+        spellCheck={false}
+        onChange={(event) => setTyped(event.target.value)}
+      />
+    </ConfirmDialog>
   );
 }

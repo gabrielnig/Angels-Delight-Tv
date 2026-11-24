@@ -33,3 +33,31 @@ describe('layout rules (L3-01)', () => {
     expect(css).toMatch(/\.adm-table--always \{[^}]*display:\s*table/);
   });
 });
+
+describe('bulk bar css (L3-03, R30, R33, R38)', () => {
+  const bulkStart = css.indexOf('/* ---- Bulk bar, report and progress');
+  const bulkEnd = css.indexOf('.adm-table-card {', bulkStart);
+  const bulk = css.slice(bulkStart, bulkEnd);
+
+  it('uses tokens only, no raw colours', () => {
+    expect(bulk.length).toBeGreaterThan(500);
+    expect(bulk).not.toMatch(/#[0-9a-fA-F]{3,8}\b/);
+  });
+
+  it('disabled actions use the sidebar tokens and the select all link is 44px high', () => {
+    expect(bulk).toMatch(/\.adm-bulk \.adm-btn\[aria-disabled='true'\] \{[^}]*var\(--color-sidebar-active\)[^}]*var\(--color-sidebar-muted\)/);
+    expect(bulk).toMatch(/\.adm-bulk__all \{[^}]*min-height:\s*var\(--touch-target\)/);
+  });
+
+  it('the locked row spacer is 20px wide', () => {
+    expect(bulk).toMatch(/\.adm-select-spacer \{[^}]*inline-size:\s*1\.25rem/);
+  });
+
+  it('the phone dock respects the safe area', () => {
+    expect(bulk).toContain('env(safe-area-inset-bottom)');
+  });
+
+  it('report rows are 44px high', () => {
+    expect(bulk).toMatch(/\.adm-bulk-report__item \{[^}]*min-height:\s*var\(--touch-target\)/);
+  });
+});
