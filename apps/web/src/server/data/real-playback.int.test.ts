@@ -1,3 +1,5 @@
+import { schema } from '@ad/db';
+import { MarkerService } from '@ad/video';
 import { saveProgress, addToMyList } from '@ad/viewer';
 import {
   categorize,
@@ -32,6 +34,7 @@ describe.skipIf(!integrationEnabled())('real playback data', () => {
           ? [{ language: 'en', label: 'English', isDefault: true, key: 'cap/p/en/abcd1234.vtt' }]
           : [],
       async (videoId) => (videoId === captioned ? 'cap/p/sprites/map-1234abcd.vtt' : null),
+      (videoId) => new MarkerService({ db: h.db.setup }).getPublished(videoId),
     );
   });
   afterAll(async () => {
@@ -285,6 +288,74 @@ describe.skipIf(!integrationEnabled())('real playback data', () => {
       expect(res.data.video.series).toMatchObject({ episodeLabel: 'S1 E1', lastEpisode: false });
       expect(res.data.next?.href).toBe(`/watch/${s.episodes[1]!.id}`);
       expect(res.data.saved).toBeNull();
+    });
+  });
+
+  describe('skip markers and chapters (M43)', () => {
+    const guest = { profileId: 'none', kids: false, guest: true as const };
+
+    async function withMarkers() {
+      const v = await seedVideo(h.db.setup, { title: 'Marked', durationMs: 300_000, kidsSafe: true });
+      await h.db.setup.insert(schema.videoMarkers).values([
+        { videoId: v.id, kind: 'intro', startMs: 12_000, endMs: 48_000 },
+        { videoId: v.id, kind: 'credits', startMs: 240_000 },
+      ]);
+      await h.db.setup.insert(schema.videoChapters).values([
+        { videoId: v.id, startMs: 0, title: 'Welcome' },
+        { videoId: v.id, startMs: 60_000, title: 'Mixing colours' },
+      ]);
+      return v;
+    }
+
+    it('returns markers and chapters in seconds for a published video', async () => {
+      const u = await h.makeUser();
+      const v = await withMarkers();
+      const res = await playback.getWatchData(v.id, adult(u));
+      if (res.status !== 'ok') throw new Error(res.status);
+      expect(res.data.markers).toEqual({
+        intro: { start: 12, end: 48 },
+        credits: { start: 240, end: null },
+      });
+      expect(res.data.chapters).toEqual([
+        { start: 0, title: 'Welcome' },
+        { start: 60, title: 'Mixing colours' },
+      ]);
+    });
+
+    it('returns the same markers for a guest viewer', async () => {
+      const u = await h.makeUser();
+      const v = await withMarkers();
+      const a = await playback.getWatchData(v.id, adult(u));
+      const g = await playback.getWatchData(v.id, guest);
+      if (a.status !== 'ok' || g.status !== 'ok') throw new Error('not ok');
+      expect(g.data.markers).toEqual(a.data.markers);
+      expect(g.data.chapters).toEqual(a.data.chapters);
+    });
+
+    it('returns empty markers for a video with none', async () => {
+      const u = await h.makeUser();
+      const v = await seedVideo(h.db.setup, { title: 'Plain', durationMs: 90_000, kidsSafe: true });
+      const res = await playback.getWatchData(v.id, adult(u));
+      if (res.status !== 'ok') throw new Error(res.status);
+      expect(res.data.markers).toEqual({});
+      expect(res.data.chapters).toEqual([]);
+    });
+
+    it('drops a marker that falls past the duration instead of failing the page', async () => {
+      const u = await h.makeUser();
+      const v = await seedVideo(h.db.setup, { title: 'Shortened', durationMs: 100_000, kidsSafe: true });
+      await h.db.setup.insert(schema.videoMarkers).values([
+        { videoId: v.id, kind: 'intro', startMs: 5_000, endMs: 20_000 },
+        { videoId: v.id, kind: 'recap', startMs: 150_000, endMs: 170_000 },
+      ]);
+      await h.db.setup.insert(schema.videoChapters).values([
+        { videoId: v.id, startMs: 0, title: 'One' },
+        { videoId: v.id, startMs: 150_000, title: 'Gone' },
+      ]);
+      const res = await playback.getWatchData(v.id, adult(u));
+      if (res.status !== 'ok') throw new Error(res.status);
+      expect(res.data.markers).toEqual({ intro: { start: 5, end: 20 } });
+      expect(res.data.chapters).toEqual([{ start: 0, title: 'One' }]);
     });
   });
 });

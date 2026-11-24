@@ -86,6 +86,27 @@ describe('WatchClient', () => {
     expect(engine.loads[0]?.startPosition).toBe(17);
   });
 
+  it('passes markers and chapters to the player', async () => {
+    const data = await dataFor('v-rain');
+    expect(data.markers?.intro).toEqual({ start: 5, end: 20 });
+    expect(data.chapters).toHaveLength(2);
+    const { engine } = mount(data);
+    await waitFor(() => expect(engine.loads).toHaveLength(1));
+    expect(screen.getByRole('button', { name: 'Chapters' })).toBeTruthy();
+  });
+
+  it('renders a Skip intro button when resume lands inside the intro', async () => {
+    const { engine } = mount(await dataFor('v-rain'));
+    await waitFor(() => expect(engine.loads).toHaveLength(1));
+    expect(screen.getByRole('button', { name: /Skip intro/ })).toBeTruthy();
+  });
+
+  it('shows no Skip button for a video with no markers', async () => {
+    const { engine } = mount(await dataFor('v-plants'));
+    await waitFor(() => expect(engine.loads).toHaveLength(1));
+    expect(screen.queryByRole('button', { name: /^Skip/ })).toBeNull();
+  });
+
   it('attaches only the approved caption track', async () => {
     const { container, engine } = mount(await dataFor('v-rain'));
     await waitFor(() => expect(engine.loads).toHaveLength(1));

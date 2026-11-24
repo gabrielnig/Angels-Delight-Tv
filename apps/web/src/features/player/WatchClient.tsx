@@ -268,6 +268,8 @@ export function WatchClient({
             progressSink={progressSink}
             captions={data.captions}
             spriteUrl={data.spriteUrl ?? null}
+            {...(data.markers ? { markers: data.markers } : {})}
+            {...(data.chapters ? { chapters: data.chapters } : {})}
             captionStyle={data.captionStyle}
             resume={resume}
             preferences={preferences}

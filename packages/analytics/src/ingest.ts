@@ -166,6 +166,9 @@ export async function ingestBatch(input: IngestInput): Promise<IngestResult> {
       case 'rebuffer':
         await bump('rebuffer_ms', 'all', event.rebufferMs);
         return;
+      case 'skip':
+        await bump('skip', event.skipKind);
+        return;
     }
   };
 

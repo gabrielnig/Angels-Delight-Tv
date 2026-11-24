@@ -64,6 +64,16 @@ export const rebufferEvent = z.strictObject({
   rebufferMs: z.number().int().min(1).max(MAX_WATCH_MS),
 });
 
+/** The viewer used Skip intro, recap, credits or Next lesson (M43). Carries no identity. */
+export const SKIP_KINDS = ['intro', 'recap', 'credits', 'next'] as const;
+export const skipEvent = z.strictObject({
+  kind: z.literal('skip'),
+  videoId: id,
+  skipKind: z.enum(SKIP_KINDS),
+  fromMs: z.number().int().min(0).max(MAX_WATCH_MS),
+  toMs: z.number().int().min(0).max(MAX_WATCH_MS),
+});
+
 export const analyticsEvent = z.discriminatedUnion('kind', [
   viewStartEvent,
   progressEvent,
@@ -73,6 +83,7 @@ export const analyticsEvent = z.discriminatedUnion('kind', [
   vitalsEvent,
   startupEvent,
   rebufferEvent,
+  skipEvent,
 ]);
 export type AnalyticsEvent = z.infer<typeof analyticsEvent>;
 export type AnalyticsEventKind = AnalyticsEvent['kind'];
