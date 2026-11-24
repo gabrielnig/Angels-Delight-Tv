@@ -17,6 +17,18 @@ Plan: `docs/plan/v2/L4-player.md` (section 11 wins), review: `docs/reviews/v2/L4
 12. Low data and errors (branch `l4/errors-lowdata`): `detectLowData` and `readNetworkHints` use `downlink` under 1.5 Mbps, controller `hint` state (locked quality after 8 s, Data saver after two stalls in 60 s on Auto, once per video), `dismissHint`, `enableDataSaver`, `retries` counter, sticky toast through `notify(message, kind, true)`, `ui/Overlays.tsx` (`HintBar`, one action per error that takes focus, `Reference: AD-7K4Q` small line on cannot play and from the third connection lost retry, Report link removed), `reference.ts` (`makeReference`), `SettingsMenu` `initialView` so Open quality lands in the quality list, `WatchClient` toast when a Data saver save fails, `apps/web/e2e/watch-3g.e2e.ts`. Decision D-243. Tests: `controller.lowdata.test.ts`, `Overlays.test.tsx`, `PlayerView.hints.test.tsx`, `reference.test.ts`, `quality.test.ts`, `player.css.test.ts`, `WatchClient.test.tsx`. Gap: `watch-3g.e2e.ts` was written but not run here (needs Chrome with H.264 and the sample streams).
 13. AirPlay behind a flag (branch `l4/airplay`): `airplay.ts` and `pip.ts` helpers, controller `openAirplay` and `switchToNative` (native engine built first, old one kept on failure), `PlayerState.wireless`, PlayerView AirPlay and PiP buttons with the away surface, site flag `features.airplay` (registry, Features tab, `airplayEnabled` read in the watch page, `airplay` prop through `WatchClient` and `Player`), D-244, spike notes in `docs/spikes/airplay.md`. Not tried on a real device.
 
+14. Audio tracks (stub, Could): no second spoken language at launch, so nothing is built beyond what exists. The Audio row in `ui/SettingsMenu.tsx` is dormant and only shows with more than one track. When a second language ships: add audio track events to `hlsEngine`, `controller.selectAudio`, and pass `audioTracks` to the menu. D-245.
+15. Verification: `packages/player` and `apps/web/src/features/player` run green as one scoped group (58 files, 647 tests). PR 277 fixed `messages-coverage.test.ts` (literal skip keys, three unused player keys removed).
+
+## Merged PRs
+Slices 1 to 7 in order: 218, 224, 225, 228, 229, 231, 233. Slice 8 (Up next): 234. Slice 9 and 10 (caption appearance): 272. Up next polish: 273. Settings menu: 274. Low data and errors: 275. AirPlay: 276. Message coverage fix: 277.
+
+## Left
+- Playwright e2e never run here: `admin-markers`, `watch-3g`, touch targets and a11y extensions.
+- AirPlay and PiP not tried on a real iPhone and Mac with Apple TV (`docs/spikes/airplay.md`). The flag stays off until then.
+- `savePlayerPrefsAction` has no server side kids lock on autoplay.
+- DESIGN-SYSTEM 11.22 and 11.23 edits belong to L8.
+- Audio tracks (slice 14) wait for a second language.
+
 ## Resume points
-Next: caption appearance, settings menu, low data and errors, AirPlay flag, chapters, theatre, standalone Up Next, autoplay default, caption appearance, settings menu, low data and errors, AirPlay behind a flag, audio (Could).
 When `.adp-skip` is added, extend the z-order test in `player.css.test.ts` (skip above the scrim, below the controls).
