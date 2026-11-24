@@ -35,6 +35,7 @@ describe.skipIf(!integrationEnabled())('publishing', () => {
       publishedAt: null,
       posterAssetId: poster,
       description: 'About it',
+      maturityRank: 0,
       ...over,
     });
     await categorize(t.setup, { videoId: v.id }, cat.id);
@@ -76,6 +77,17 @@ describe.skipIf(!integrationEnabled())('publishing', () => {
       fields: { checklist: ['Add a description', 'Choose a poster'] },
     });
     expect((await state(v.id)).publishState).toBe('draft');
+  });
+
+  it('publish is blocked until a maturity rating is chosen', async () => {
+    const v = await draft({ maturityRank: null });
+    await expect(publish(ctxFor(), editor, 'video', v.id)).rejects.toMatchObject({
+      fields: { checklist: ['Choose a maturity rating'] },
+    });
+    expect((await state(v.id)).publishState).toBe('draft');
+    await t.setup.update(videos).set({ maturityRank: 3 }).where(eq(videos.id, v.id));
+    const r = await publish(ctxFor(), editor, 'video', v.id);
+    expect(r.publishState).toBe('published');
   });
 
   it('refuses viewers and unknown ids', async () => {

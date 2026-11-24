@@ -47,6 +47,7 @@ describe.skipIf(!integrationEnabled())('profiles', () => {
           'isKids',
           'isPrimary',
           'language',
+          'maxMaturityRank',
           'name',
           'position',
           'updatedAt',
@@ -227,6 +228,58 @@ describe.skipIf(!integrationEnabled())('profiles', () => {
       const updated = await updateProfile(h.ctx, user.actor, second.id, { isKids: true });
 
       expect(updated.isKids).toBe(true);
+    });
+
+    it('raising a profile limit needs the account password, lowering does not', async () => {
+      const user = await h.makeUser();
+      const second = await createProfile(h.ctx, user.actor, { name: 'Teen', avatarId: 'sun' });
+      expect(second.maxMaturityRank).toBe(4);
+
+      const lowered = await updateProfile(h.ctx, user.actor, second.id, { maxMaturityRank: 2 });
+      expect(lowered.maxMaturityRank).toBe(2);
+      await expect(
+        updateProfile(h.ctx, user.actor, second.id, { maxMaturityRank: 3 }),
+      ).rejects.toMatchObject({ code: 'forbidden', message: 'password_required' });
+      await expect(
+        updateProfile(h.ctx, user.actor, second.id, { maxMaturityRank: 3 }, { password: 'wrong' }),
+      ).rejects.toMatchObject({ code: 'forbidden' });
+      const raised = await updateProfile(
+        h.ctx,
+        user.actor,
+        second.id,
+        { maxMaturityRank: 3 },
+        { password: TEST_PASSWORD },
+      );
+      expect(raised.maxMaturityRank).toBe(3);
+      await expect(
+        updateProfile(h.ctx, user.actor, second.id, { maxMaturityRank: 9 }),
+      ).rejects.toMatchObject({ code: 'validation_failed' });
+    });
+
+    it('a kids profile limit is always 0 and cannot be raised', async () => {
+      const user = await h.makeUser();
+      const kids = (await listProfiles(h.ctx, user.actor)).find((p) => p.id === user.kidsProfileId)!;
+      expect(kids.maxMaturityRank).toBe(0);
+      await expect(
+        updateProfile(
+          h.ctx,
+          user.actor,
+          user.kidsProfileId,
+          { maxMaturityRank: 2 },
+          { password: TEST_PASSWORD },
+        ),
+      ).rejects.toMatchObject({ code: 'validation_failed' });
+      const adult = await createProfile(h.ctx, user.actor, { name: 'Grown', avatarId: 'sun' });
+      const made = await updateProfile(h.ctx, user.actor, adult.id, { isKids: true });
+      expect(made.maxMaturityRank).toBe(0);
+      const left = await updateProfile(
+        h.ctx,
+        user.actor,
+        adult.id,
+        { isKids: false },
+        { password: TEST_PASSWORD },
+      );
+      expect(left.maxMaturityRank).toBe(2);
     });
 
     it('keeps at least one grown-up profile', async () => {

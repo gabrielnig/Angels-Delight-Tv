@@ -79,6 +79,7 @@ export function profileToView(dto: ProfileDto, activeProfileId?: string | null):
     lastUsedHere: dto.id === activeProfileId,
     hasPin: dto.hasPin,
     dataSaver: dto.dataSaver,
+    maxMaturityRank: dto.maxMaturityRank,
   };
 }
 

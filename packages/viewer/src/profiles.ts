@@ -49,6 +49,8 @@ export interface ProfileDto {
   language: string;
   autoplayNext: boolean;
   dataSaver: boolean;
+  /** Highest maturity rank this profile may watch, 0 (G) to 4 (18). Always 0 for a kids profile. */
+  maxMaturityRank: number;
   position: number;
   /** Send this back as `expectedUpdatedAt` so a stale edit is rejected (M03-S04). */
   updatedAt: string;
@@ -64,6 +66,8 @@ export interface CreateProfileInput {
 }
 
 export interface UpdateProfileInput {
+  /** 0 (G) to 4 (18). Raising it needs the account password. Kids profiles stay at 0. */
+  maxMaturityRank?: number;
   name?: string;
   avatarId?: string;
   isKids?: boolean;
@@ -121,6 +125,7 @@ async function toDto(ctx: ViewerContext, accountId: string, row: ProfileRow): Pr
     language: row.language,
     autoplayNext: row.autoplayNext,
     dataSaver: row.dataSaver,
+    maxMaturityRank: row.isKids ? 0 : clampMaturityRank(row.maxMaturityRank),
     position: row.position,
     updatedAt: row.updatedAt.toISOString(),
   };
@@ -261,6 +266,12 @@ export async function updateProfile(
   if (typeof input.pin === 'string' && !PIN_PATTERN.test(input.pin)) {
     throw new ValidationFailed({ pin: ['Use exactly four digits'] });
   }
+  if (
+    input.maxMaturityRank !== undefined &&
+    (!Number.isInteger(input.maxMaturityRank) || input.maxMaturityRank < 0 || input.maxMaturityRank > 4)
+  ) {
+    throw new ValidationFailed({ maxMaturityRank: ['Choose one of the five ratings'] });
+  }
   const sealed = name === undefined ? undefined : await ctx.nameCipher.seal(actor.accountId, name);
 
   const row = await withAccount(ctx.db, actor, async (tx) => {
@@ -274,7 +285,18 @@ export async function updateProfile(
     const leavingKids = input.isKids === false && current.isKids;
     const enteringKids = input.isKids === true && !current.isKids;
     const touchesPin = input.pin !== undefined;
-    if (leavingKids || touchesPin) {
+    const staysKids = (input.isKids ?? current.isKids) === true;
+    if (input.maxMaturityRank !== undefined && staysKids && input.maxMaturityRank !== 0) {
+      throw new ValidationFailed({
+        maxMaturityRank: ['Kids profiles only show titles for all ages'],
+      });
+    }
+    // Lowering a limit is always allowed. Raising it is the step a child must not be able to take.
+    const raisesLimit =
+      input.maxMaturityRank !== undefined &&
+      !staysKids &&
+      input.maxMaturityRank > (current.isKids ? 0 : current.maxMaturityRank);
+    if (leavingKids || touchesPin || raisesLimit) {
       if (!options.password) throw new Forbidden('password_required');
       // Shares the budget of leaving kids mode, so this route is not an unlimited password oracle.
       await spendAttempt(ctx, 'kids_exit', actor.accountId);
@@ -298,6 +320,9 @@ export async function updateProfile(
     if (input.language !== undefined) changes.language = input.language;
     if (input.autoplayNext !== undefined) changes.autoplayNext = input.autoplayNext;
     if (input.dataSaver !== undefined) changes.dataSaver = input.dataSaver;
+    if (enteringKids) changes.maxMaturityRank = 0;
+    else if (leavingKids) changes.maxMaturityRank = input.maxMaturityRank ?? 2;
+    else if (input.maxMaturityRank !== undefined) changes.maxMaturityRank = input.maxMaturityRank;
     if (input.pin !== undefined) {
       changes.pinHash = input.pin === null ? null : await hashPin(input.pin);
     }

@@ -36,6 +36,8 @@ export interface AdminVideo {
   /** State of the recut that applies the saved focus to the generated files. Null when there is none to report. */
   posterRecut?: 'processing' | 'failed' | null;
   suitability: Suitability | null;
+  /** 0 (G) to 4 (18), null until rated. Replaces suitability (L5). */
+  maturityRank: number | null;
   seriesId: string | null;
   seasonNumber: number | null;
   episodeNumber: number | null;

@@ -25,7 +25,7 @@ export interface PublishingContext {
 }
 
 export type ChecklistKey =
-  'encoding' | 'title' | 'description' | 'poster' | 'category' | 'captions';
+  'encoding' | 'title' | 'description' | 'poster' | 'category' | 'captions' | 'maturity';
 
 export interface ChecklistItem {
   key: ChecklistKey;
@@ -63,6 +63,7 @@ const LABELS: Record<ChecklistKey, string> = {
   poster: 'Choose a poster',
   category: 'Put it in at least one category',
   captions: 'Approve captions',
+  maturity: 'Choose a maturity rating',
 };
 
 function assertStaff(actor: Actor): void {
@@ -98,6 +99,7 @@ export async function evaluateChecklist(
             EXISTS (SELECT 1 FROM assets a WHERE a.id = v.poster_asset_id AND a.status = 'ready') AS poster,
             EXISTS (SELECT 1 FROM video_categories vc WHERE vc.video_id = v.id) AS category,
             EXISTS (SELECT 1 FROM caption_tracks ct WHERE ct.video_id = v.id AND ct.approved_caption_id IS NOT NULL) AS captions,
+            (v.maturity_rank IS NOT NULL) AS maturity,
             v.captions_enabled AS captions_enabled
           FROM videos v WHERE v.id = ${id}::uuid`)
       : await tx.execute(sql`
@@ -105,14 +107,15 @@ export async function evaluateChecklist(
             char_length(btrim(coalesce(s.description, ''))) > 0 AS description,
             EXISTS (SELECT 1 FROM assets a WHERE a.id = s.poster_asset_id AND a.status = 'ready') AS poster,
             EXISTS (SELECT 1 FROM series_categories sc WHERE sc.series_id = s.id) AS category,
-            true AS captions
+            true AS captions,
+            (s.maturity_rank IS NOT NULL) AS maturity
           FROM series s WHERE s.id = ${id}::uuid`);
   const row = rowsOf<Record<ChecklistKey, boolean> & { captions_enabled?: boolean | null }>(result)[0];
   if (!row) throw new NotFound('Not found');
   const keys: ChecklistKey[] =
     target === 'video'
-      ? ['encoding', 'title', 'description', 'poster', 'category', 'captions']
-      : ['title', 'description', 'poster', 'category'];
+      ? ['encoding', 'title', 'description', 'poster', 'category', 'captions', 'maturity']
+      : ['title', 'description', 'poster', 'category', 'maturity'];
   // Captions switched off (own choice, or following a site default of off) satisfy the gate (L3, D-184).
   const captionsOff =
     target === 'video' && (row.captions_enabled ?? options.captionsDefaultAvailable ?? true) === false;

@@ -19,6 +19,7 @@ export const createProfileBody = z.object({
 });
 
 export const updateProfileBody = createProfileBody.partial().extend({
+  maxMaturityRank: z.number().int().min(0).max(4).optional(),
   pin: z
     .string()
     .regex(/^\d{4}$/)
