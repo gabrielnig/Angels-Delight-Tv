@@ -12,6 +12,8 @@ import { registerExportHandlers } from './export-handlers';
 import { registerTranslateHandlers } from './translate-handlers';
 import { registerMailHandlers } from './mail';
 import { registerMaintenanceHandlers } from './maintenance';
+import { buildMonetizationDeps } from './monetization';
+import { registerMonetizationHandlers } from './monetization-handlers';
 import {
   buildExportDeps,
   buildTranslateDeps,
@@ -59,6 +61,11 @@ async function main(): Promise<void> {
         refreshTrending: () => refreshTrending(db, new Date()),
         fanoutNotices: () => fanoutNotices(db, new Date()),
         pruneNotices: () => pruneNotices(db, new Date()),
+        mirror: video.mirror,
+        logger,
+      });
+      await registerMonetizationHandlers(queueBoss, {
+        ...buildMonetizationDeps(env, db, queueBoss),
         mirror: video.mirror,
         logger,
       });

@@ -1686,3 +1686,14 @@ Decision: the `home` step of `launch:apply` publishes the six launch sections on
 - Options: leave voice out (it is a Could); start listening on the first press without asking.
 - Why: it was cheap on top of the search box, and the browser vendor may process the audio, so a short question is the honest minimum.
 - Reversible: yes, remove the button from `SearchBox`.
+
+## D-309 Donation writes go through the worker and one definer function, the web role cannot write donations (lane L9)
+- Decision: Webhook events enter through the SECURITY DEFINER `payment_event_insert()` only. The web role can read donations (admins and the donor's own rows) but has no INSERT or UPDATE on `donations`. The worker role changes donation status. Checkout rows (slice 9) get their own definer function.
+- Options: Give the web role DML on `donations` with row level policies, definer functions for the web writes and a worker policy for the rest.
+- Why: The webhook and checkout run with no signed in account, so a policy on the web role would have to allow anonymous writes to a table that holds personal data. A function that does one insert cannot be steered into anything else.
+- Reversible: Yes. Grants and policies are in one migration.
+## D-310 A webhook event for an unknown reference is retried twice, then kept as an orphan (lane L9)
+- Decision: A `charge.success` for a reference that has no donation row is retried (the job attempt is below 3) because the event can arrive before our checkout row commits. From the third attempt it is stored with outcome `orphan` and no donation changes. A reference that does not have our `ad-don-` shape is an orphan at once.
+- Options: Drop unknown references, retry forever, retry a few times then keep.
+- Why: Dropping loses a real gift that raced our commit. Retrying forever fills the queue with events for other businesses on a shared Paystack account. The orphan outcome shows in the admin for a person to look at.
+- Reversible: Yes. One constant.

@@ -21,6 +21,7 @@
     "@ad/config": "workspace:*",
     "@ad/db": "workspace:*",
     "@ad/mailer": "workspace:*",
+    "@ad/payments": "workspace:*",
     "@ad/queue": "workspace:*",
     "@ad/shared": "workspace:*",
     "@ad/storage": "workspace:*",

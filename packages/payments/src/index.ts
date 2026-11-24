@@ -7,3 +7,4 @@ export * from './process-event';
 export * from './pg-store';
 export * from './webhook';
 export * from './jobs';
+export * from './seal';
