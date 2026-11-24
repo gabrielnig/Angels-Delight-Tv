@@ -6,7 +6,7 @@ import { getSession } from '../lib/session';
 import { setGuestAudienceAction } from '../app/actions';
 import { currentGuestAudience } from '../server/guest/guest-view';
 import { guestPlayEnabled } from '../server/guest/guest-settings';
-import { currentDonateGate } from '../server/donations/page-data';
+import { currentDonateGate, currentTransparencyGate } from '../server/donations/page-data';
 import { donateLinkVisible } from '../server/donations/gate';
 import { maturityLabelsSetting } from '../server/maturity-labels';
 import { MaturityLabelsProvider } from '../lib/maturity-context';
@@ -26,9 +26,11 @@ export async function AppShell({ children, skin }: { children: ReactNode; skin?:
   const languagePicker = picker ? <LanguagePickerHost {...picker} /> : undefined;
   const labels = await maturityLabelsSetting();
   // The Donate link exists only when donations are on and the viewer is not a kid (R25).
-  const footerLinks = donateLinkVisible(await currentDonateGate())
-    ? [...site.footerLinks, { label: msg('donate.link'), href: '/donate' }]
-    : site.footerLinks;
+  const footerLinks = [
+    ...site.footerLinks,
+    ...(donateLinkVisible(await currentDonateGate()) ? [{ label: msg('donate.link'), href: '/donate' }] : []),
+    ...(donateLinkVisible(await currentTransparencyGate()) ? [{ label: msg('donate.howUsed'), href: '/transparency' }] : []),
+  ];
   const withLabels = (node: ReactNode) => (
     <MaturityLabelsProvider labels={labels}>{node}</MaturityLabelsProvider>
   );

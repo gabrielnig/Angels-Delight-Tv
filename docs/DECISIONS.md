@@ -1844,3 +1844,9 @@ Decision: `video.preview` catches every error and records `failed` or `skipped` 
 - Options: Let the web role update donations directly; a definer function with the role check inside; build monthly giving against unverified assumptions.
 - Why: A narrow function keeps the table closed to the web role. Building subscriptions blind risks charging donors wrongly, which is worse than waiting for a dashboard check.
 - Reversible: Yes.
+
+## D-336 The transparency page is driven by the existing settings, with the switch as the draft and publish step (lane L9)
+- Decision: `/transparency` reads `donate.transparency.*` settings. The enabled switch is the draft and published state: off is a 404 and nothing is linked, on publishes the page and adds the footer and Donate page links and a sitemap entry. The percent total rule (100) is already enforced by the settings schema, so an editor cannot save a list that does not total 100. Settings saves are already audited by the settings service, so no separate audit row exists. A kids audience gets the "Ask a grown-up" page, as the UI review recommended (R25). No separate admin editor page is built.
+- Options: A dedicated editor with a draft copy and publish button; the existing settings with the switch as the publish step.
+- Why: The settings screen already validates, audits and restricts these keys. A second editor and a draft copy would duplicate that for a page that changes a few times a year.
+- Reversible: Yes. A dedicated editor can be added on top of the same keys.
