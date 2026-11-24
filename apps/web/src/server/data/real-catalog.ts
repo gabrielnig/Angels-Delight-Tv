@@ -129,7 +129,13 @@ export class RealCatalog implements CatalogRepository {
     const hero = result.hero.map((slot) => {
       const item = cardToItem(slot.card);
       const wide = toThumb(slot.heroImage);
-      return { item: wide ? { ...item, thumbnail: wide } : item };
+      return {
+        item: wide ? { ...item, thumbnail: wide } : item,
+        ...(slot.text.blurb ? { blurb: slot.text.blurb } : {}),
+        ...(slot.text.headline ? { headline: slot.text.headline } : {}),
+        ...(slot.text.buttonLabel ? { buttonLabel: slot.text.buttonLabel } : {}),
+        ...(slot.previewUrl ? { previewUrl: slot.previewUrl, previewMs: slot.previewMs ?? undefined } : {}),
+      };
     });
     return {
       hero,

@@ -312,6 +312,16 @@ function trending(shown: VideoRecord[], min: number): VideoRecord[] {
   return viewed.length >= min ? viewed.slice(0, 12) : [];
 }
 
+/** What a viewer gets for the hero clip of one title, in words (M41-S11). */
+export function clipStatus(v: VideoRecord): string {
+  const p = v.preview;
+  if (p?.mode === 'off') return 'Clip off';
+  if (p?.state === 'ready') return 'Clip plays';
+  if (p?.state === 'queued') return 'Clip being made';
+  if (p?.state === 'failed' || p?.state === 'skipped') return 'No clip, photo only';
+  return 'No clip yet, photo only';
+}
+
 /** What viewers would see. Kids mode keeps only titles marked for kids or everyone. */
 export function resolvePreview(
   config: HomeConfig,

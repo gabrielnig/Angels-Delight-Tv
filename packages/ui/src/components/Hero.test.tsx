@@ -156,3 +156,33 @@ describe('Hero', () => {
     expect(screen.getByRole('heading', { name: 'Angels Delight TV' })).toBeInTheDocument();
   });
 });
+
+describe('Hero clip and button label', () => {
+  const withClip: HeroItem[] = [
+    { ...items[0]!, previewSrc: '/clip-a.mp4', playLabel: 'Start learning' },
+    { ...items[1]!, previewSrc: '/clip-b.mp4' },
+  ];
+
+  it('uses the editor button label for Play', () => {
+    render(<Hero items={withClip} label="Featured" />);
+    expect(screen.getByRole('link', { name: /Start learning/ })).toBeTruthy();
+  });
+
+  it('puts no video in the page unless previews are allowed', () => {
+    const { container } = render(<Hero items={withClip} label="Featured" />);
+    expect(container.querySelector('video')).toBeNull();
+  });
+
+  it('mounts one clip, for the active slide only, when allowed', () => {
+    const { container } = render(<Hero items={withClip} label="Featured" previewAllowed />);
+    const clips = container.querySelectorAll('video');
+    expect(clips.length).toBe(1);
+  });
+
+  it('draws no clip for a slide without one', () => {
+    const { container } = render(
+      <Hero items={[{ ...items[0]! }, { ...items[1]! }]} label="Featured" previewAllowed />,
+    );
+    expect(container.querySelector('video')).toBeNull();
+  });
+});

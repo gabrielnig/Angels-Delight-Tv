@@ -53,4 +53,53 @@ describe('HomeHero', () => {
     expect(screen.getByRole('heading', { name: 'One' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /rotation/ })).toBeNull();
   });
+
+  describe('preview clip', () => {
+    const clips = items.map((item) => ({ ...item, previewSrc: `/${item.id}.mp4` }));
+    const fastNav = (over: object = {}) =>
+      Object.defineProperty(navigator, 'connection', {
+        configurable: true,
+        value: { effectiveType: '4g', downlink: 10, saveData: false, ...over },
+      });
+    afterEach(() => Reflect.deleteProperty(navigator, 'connection'));
+
+    it('mounts a clip on a fast connection', () => {
+      fastNav();
+      const { container } = render(<HomeHero items={clips} label="Featured" profileId="p1" previews />);
+      expect(container.querySelectorAll('video').length).toBe(1);
+    });
+    it('mounts none when the site switch is off, on 3g or under Data saver', () => {
+      fastNav();
+      const off = render(<HomeHero items={clips} label="Featured" profileId="p1" previews={false} />);
+      expect(off.container.querySelector('video')).toBeNull();
+      off.unmount();
+      fastNav({ effectiveType: '3g' });
+      const slow = render(<HomeHero items={clips} label="Featured" profileId="p1" previews />);
+      expect(slow.container.querySelector('video')).toBeNull();
+      slow.unmount();
+      fastNav();
+      localStorage.setItem('ad.datasaver.p1', 'on');
+      const saver = render(<HomeHero items={clips} label="Featured" profileId="p1" previews />);
+      expect(saver.container.querySelector('video')).toBeNull();
+    });
+    it('treats an unknown connection as off unless allowed', () => {
+      const unknown = render(<HomeHero items={clips} label="Featured" profileId="p1" previews />);
+      expect(unknown.container.querySelector('video')).toBeNull();
+      unknown.unmount();
+      const allowed = render(
+        <HomeHero items={clips} label="Featured" profileId="p1" previews allowUnknownConnection />,
+      );
+      expect(allowed.container.querySelectorAll('video').length).toBe(1);
+    });
+    it('stops the clip when the connection turns slow', () => {
+      const listeners: Array<() => void> = [];
+      const conn = { effectiveType: '4g', downlink: 10, saveData: false, addEventListener: (_: string, f: () => void) => listeners.push(f), removeEventListener() {} };
+      Object.defineProperty(navigator, 'connection', { configurable: true, value: conn });
+      const { container } = render(<HomeHero items={clips} label="Featured" profileId="p1" previews />);
+      expect(container.querySelectorAll('video').length).toBe(1);
+      conn.effectiveType = '2g';
+      act(() => listeners.forEach((f) => f()));
+      expect(container.querySelector('video')).toBeNull();
+    });
+  });
 });

@@ -16,7 +16,8 @@ Plan `docs/plan/v2/L2-home.md`, review `docs/reviews/v2/L2-review.md`, rulings `
 | 7 | Admin sections editor | merged | 341 |
 | 8 | Launch default rows and the apply tool | merged | 345 |
 | 9 | Preview clip schema, queue and worker job | merged | 351 |
-| 10 | Admin hero slots: preview mode, slide text | this PR | |
+| 10 | Admin hero slots: preview mode, slide text | merged | 357 |
+| 11 | Viewer preview delivery, slide text, live admin preview | this PR | |
 
 ## Exists
 
@@ -63,3 +64,9 @@ Plan `docs/plan/v2/L2-home.md`, review `docs/reviews/v2/L2-review.md`, rulings `
 - Preview mode and retry: `packages/catalog/src/admin/preview-clip.ts` (`setAdminPreviewMode`, `recutAdminPreview`), `PreviewClipCard` in the admin video editor, fixture twins in `video-commands.ts`.
 - Hero slide text: `HomeConfig.heroText` (keyed by video id, 80 characters each) in both the catalog and web copies. Stored on the hero row items as `hero_headline`, `hero_blurb`, `hero_button_label`. `HeroSlots.tsx` edits it. The viewer does not read it yet (slice 11).
 - Text is kept as typed in the editor and trimmed on save.
+
+## Slice 11 notes
+
+- Catalog `heroSlideExtras` (rows.ts) returns editor text and `previewUrl`, `previewMs` per hero card (ready and mode not off, a series uses its first episode). Viewer `HeroItem` carries `text`, `previewUrl`, `previewMs`; web `HeroSlot` carries `headline`, `blurb`, `buttonLabel`, `previewUrl`.
+- Eligibility is `apps/web/src/lib/lowdata/hero-preview.ts` (fast link and downlink 5 Mbps or more, Data saver off, no reduced motion, tab visible, unknown connection only when `home.hero_previews_unknown_connection`). `HomeHero` re-decides on connection, motion and visibility changes. `Hero` takes `previewAllowed`; `HeroPreview` mounts one video for the active slide only, source after 1.2 s, removed on error or a 2 s stall, hidden under reduced motion.
+- Admin live preview lists every slide with headline, button and a clip badge, plus each section View all line.

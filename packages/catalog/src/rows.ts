@@ -1,6 +1,7 @@
 import { sql } from 'drizzle-orm';
 import { resolveViewAll, type RowKind, type ViewAllMode, type ViewAllTarget } from '@ad/shared';
 import { fetchHeroArtwork } from './detail';
+import { mediaUrl } from './artwork';
 import { rowsOf } from './sql';
 import { categoryTitleCounts, fetchCards, listTitles, popularTitles, type TitleCard } from './titles';
 import { mostLikedTitles, trendingTitles, type TrendingRules } from './trending';
@@ -327,4 +328,91 @@ export async function heroCards(
     0,
     count,
   );
+}
+
+/** The preview clip is cut to this length (see the video package). */
+export const HERO_PREVIEW_MS = 6000;
+
+export interface HeroSlideExtras {
+  /** The editor's own words for this slide. Null falls back to the title's text. */
+  headline: string | null;
+  blurb: string | null;
+  buttonLabel: string | null;
+  /** The muted clip, only when it is ready and the editor has not turned it off. A series uses its first episode. */
+  previewUrl: string | null;
+  previewMs: number | null;
+}
+
+/** Editor text and the optional preview clip for the hero cards, by card id (M41-S10, S11). */
+export async function heroSlideExtras(
+  tx: Tx,
+  ctx: CatalogContext,
+  rows: readonly RowDescriptor[],
+  cards: readonly { kind: 'video' | 'series'; id: string }[],
+): Promise<Map<string, HeroSlideExtras>> {
+  const out = new Map<string, HeroSlideExtras>();
+  if (cards.length === 0) return out;
+  const videoIds = cards.filter((c) => c.kind === 'video').map((c) => c.id);
+  const seriesIds = cards.filter((c) => c.kind === 'series').map((c) => c.id);
+  const heroRowIds = rows.filter((r) => r.kind === 'hero').map((r) => r.id);
+  const uuids = (ids: string[]) => sql`ARRAY[${sql.join(ids.map((id) => sql`${id}::uuid`), sql`, `)}]::uuid[]`;
+
+  const text = new Map<string, { h: string | null; b: string | null; l: string | null }>();
+  if (heroRowIds.length) {
+    const result = await tx.execute(sql`
+      SELECT video_id, series_id, hero_headline, hero_blurb, hero_button_label FROM row_items
+      WHERE row_id = ANY(${uuids(heroRowIds)})
+        AND (${videoIds.length ? sql`video_id = ANY(${uuids(videoIds)})` : sql`false`}
+          OR ${seriesIds.length ? sql`series_id = ANY(${uuids(seriesIds)})` : sql`false`})
+      ORDER BY position`);
+    for (const r of rowsOf<{
+      video_id: string | null;
+      series_id: string | null;
+      hero_headline: string | null;
+      hero_blurb: string | null;
+      hero_button_label: string | null;
+    }>(result)) {
+      const id = (r.video_id ?? r.series_id)!;
+      if (!text.has(id)) text.set(id, { h: r.hero_headline, b: r.hero_blurb, l: r.hero_button_label });
+    }
+  }
+
+  const clips = new Map<string, string>();
+  const clipVideos = async (ids: string[]) =>
+    ids.length
+      ? rowsOf<{ id: string; preview_key: string }>(
+          await tx.execute(sql`
+            SELECT id, preview_key FROM videos
+            WHERE id = ANY(${uuids(ids)}) AND preview_state = 'ready' AND preview_mode <> 'off'
+              AND preview_key IS NOT NULL`),
+        )
+      : [];
+  for (const v of await clipVideos(videoIds)) clips.set(v.id, v.preview_key);
+  if (seriesIds.length) {
+    const firsts = rowsOf<{ series_id: string; video_id: string }>(
+      await tx.execute(sql`
+        SELECT DISTINCT ON (s.series_id) s.series_id, e.video_id
+        FROM episodes e JOIN seasons s ON s.id = e.season_id
+        WHERE s.series_id = ANY(${uuids(seriesIds)})
+        ORDER BY s.series_id, s.number, e.number`),
+    );
+    const keys = new Map((await clipVideos(firsts.map((f) => f.video_id))).map((v) => [v.id, v.preview_key]));
+    for (const f of firsts) {
+      const key = keys.get(f.video_id);
+      if (key) clips.set(f.series_id, key);
+    }
+  }
+
+  for (const card of cards) {
+    const t = text.get(card.id);
+    const key = clips.get(card.id);
+    out.set(card.id, {
+      headline: t?.h ?? null,
+      blurb: t?.b ?? null,
+      buttonLabel: t?.l ?? null,
+      previewUrl: key ? mediaUrl(ctx.mediaOrigin, key) : null,
+      previewMs: key ? HERO_PREVIEW_MS : null,
+    });
+  }
+  return out;
 }

@@ -6,6 +6,8 @@ import {
   ADD_TYPE_HINTS,
   ADD_TYPE_LABELS,
   addRow,
+  clipStatus,
+  viewAllSummary,
   launchHome,
   resolvePreview,
   setHero,
@@ -96,6 +98,10 @@ export function HomeCuration({
     [config, videos, series, kids],
   );
   const sources = useMemo(() => ({ categories, series }), [categories, series]);
+  const viewAllLine = (id: string) => {
+    const row = config.rows.find((r) => r.id === id);
+    return row && row.type !== 'continue_watching' ? viewAllSummary(row, sources) : null;
+  };
   const invalid = validateConfig(config);
   const selectedRow = config.rows.find((r) => r.id === selected) ?? null;
   const byId = new Map(videos.map((v) => [v.id, v]));
@@ -315,12 +321,21 @@ export function HomeCuration({
               aria-label={`Home preview, ${device}`}
             >
               {preview.hero.length ? (
-                <div className="adm-preview__hero">
-                  <strong>{preview.hero[0]!.title}</strong>
-                  {preview.hero.length > 1 ? (
-                    <span className="adm-muted"> and {preview.hero.length - 1} more rotating</span>
-                  ) : null}
-                </div>
+                <ol className="adm-preview__hero">
+                  {preview.hero.map((v) => {
+                    const text = config.heroText?.[v.id];
+                    return (
+                      <li key={v.id} data-testid="preview-slide">
+                        <strong>{text?.headline?.trim() || v.title}</strong>
+                        {text?.blurb?.trim() ? <span className="adm-muted"> {text.blurb.trim()}</span> : null}
+                        <span className="adm-muted"> Button: {text?.buttonLabel?.trim() || 'Play'}</span>{' '}
+                        <Badge tone={clipStatus(v) === 'Clip plays' ? 'success' : 'neutral'}>
+                          {clipStatus(v)}
+                        </Badge>
+                      </li>
+                    );
+                  })}
+                </ol>
               ) : (
                 <p className="adm-muted">Nothing to preview yet.</p>
               )}
@@ -337,6 +352,11 @@ export function HomeCuration({
               {preview.rows.map((r) => (
                 <div key={r.id} className="adm-preview__row">
                   <h3 className="adm-h3">{r.name}</h3>
+                  {viewAllLine(r.id) ? (
+                    <p className="adm-muted" style={{ margin: 0 }}>
+                      {viewAllLine(r.id)}
+                    </p>
+                  ) : null}
                   {r.skipped.length ? (
                     <p className="adm-muted" style={{ margin: 0 }}>
                       <Badge tone="warning" icon="alert">

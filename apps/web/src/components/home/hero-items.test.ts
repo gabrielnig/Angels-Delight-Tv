@@ -49,4 +49,20 @@ describe('heroItems', () => {
     const [slide] = heroItems(home(video()), new Map());
     expect(slide?.image).toBeUndefined();
   });
+
+  it('uses the editor headline, description and button label, falling back to the title text', () => {
+    const slot = { item: video(), headline: 'Start here', blurb: 'Five steps', buttonLabel: 'Begin' };
+    const [slide] = heroItems({ hero: [slot], rows: [], empty: false }, new Map());
+    expect(slide).toMatchObject({ title: 'Start here', description: 'Five steps', playLabel: 'Begin' });
+    const [plain] = heroItems(home(video()), new Map());
+    expect(plain).toMatchObject({ title: 'One', description: 'About one' });
+    expect(plain?.playLabel).toBeUndefined();
+    expect(plain?.previewSrc).toBeUndefined();
+  });
+
+  it('passes the clip url through', () => {
+    const slot = { item: video(), previewUrl: 'https://m.test/cap/a/preview/c.mp4', previewMs: 6000 };
+    const [slide] = heroItems({ hero: [slot], rows: [], empty: false }, new Map());
+    expect(slide?.previewSrc).toBe('https://m.test/cap/a/preview/c.mp4');
+  });
 });

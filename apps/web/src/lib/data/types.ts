@@ -120,6 +120,13 @@ export interface HeroSlot {
   item: CatalogItem;
   /** Optional curated line, otherwise the item description is used. */
   blurb?: string;
+  /** Editor headline, otherwise the item title (M41-S10). */
+  headline?: string;
+  /** Editor Play label, otherwise Play. */
+  buttonLabel?: string;
+  /** Muted clip, present only when it is ready and not turned off (M41-S11). */
+  previewUrl?: string;
+  previewMs?: number;
 }
 
 export interface HomeRow {

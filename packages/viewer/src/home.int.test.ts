@@ -42,7 +42,7 @@ describe.skipIf(!process.env.TEST_DATABASE_ADMIN_URL)('home', () => {
 
   async function addRow(
     values: Partial<typeof rows.$inferInsert> & { title: string },
-    items: ({ videoId: string } | { seriesId: string })[] = [],
+    items: (({ videoId: string } | { seriesId: string }) & { heroHeadline?: string })[] = [],
   ) {
     const [row] = await h.db.setup
       .insert(rows)
@@ -97,6 +97,22 @@ describe.skipIf(!process.env.TEST_DATABASE_ADMIN_URL)('home', () => {
       expect(home.hero[1]?.heroImage?.id).toBe(art);
       expect(home.hero[0]?.play).toMatchObject({ videoId: second.id, label: 'play', startMs: 0 });
       expect(home.rows).toEqual([]);
+    });
+
+    it('carries editor text and a ready clip on each slide', async () => {
+      const user = await fresh();
+      const v = await seedVideo(h.db.setup, {
+        title: 'With clip',
+        previewState: 'ready',
+        previewKey: 'cap/x/preview/clip.mp4',
+      });
+      await addRow({ title: 'Banner', kind: 'hero' }, [
+        { videoId: v.id, heroHeadline: 'Start here' },
+      ]);
+      const home = await getHome(h.ctx, user.actor, { profileId: user.profileId });
+      expect(home.hero[0]?.text).toMatchObject({ headline: 'Start here', blurb: null });
+      expect(home.hero[0]?.previewUrl).toMatch(/\/cap\/x\/preview\/clip\.mp4$/);
+      expect(home.hero[0]?.previewMs).toBe(6000);
     });
 
     it('falls back to the newest titles when no hero is configured', async () => {
