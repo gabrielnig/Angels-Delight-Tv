@@ -9,6 +9,8 @@ import {
   PUBLISH_STATES,
   RENDITION_STATUSES,
   ROW_KINDS,
+  SPONSOR_SLOTS,
+  SPONSOR_STATUSES,
   THEME_STATUSES,
   TOKEN_PURPOSES,
   UPLOAD_KINDS,
@@ -34,3 +36,5 @@ export const tokenPurpose = pgEnum('token_purpose', TOKEN_PURPOSES);
 export const themeStatus = pgEnum('theme_status', THEME_STATUSES);
 export const assetPurpose = pgEnum('asset_purpose', ASSET_PURPOSES);
 export const assetStatus = pgEnum('asset_status', ASSET_STATUSES);
+export const sponsorStatus = pgEnum('sponsor_status', SPONSOR_STATUSES);
+export const sponsorSlot = pgEnum('sponsor_slot', SPONSOR_SLOTS);
