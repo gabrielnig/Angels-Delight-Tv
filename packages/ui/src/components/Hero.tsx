@@ -5,6 +5,7 @@ import { ButtonLink, IconButton } from './Button';
 import { cx } from './cx';
 import { Icon } from './Icon';
 import { Skeleton, SkeletonRegion } from './Skeleton';
+import { HeroPreview } from './HeroPreview';
 import { useHeroTimer } from './useHeroTimer';
 
 export interface HeroItem {
@@ -17,6 +18,10 @@ export interface HeroItem {
   infoHref: string;
   /** Set when the profile has progress, for example "12 min left". Turns Play into Continue. */
   resumeLabel?: string;
+  /** Editor's own Play label. Continue still wins when the profile has progress. */
+  playLabel?: string;
+  /** Muted clip for this slide. Only played when `previewAllowed` is set on the Hero. */
+  previewSrc?: string;
 }
 
 /** Seconds between slides, in milliseconds (R12). */
@@ -32,6 +37,7 @@ export function Hero({
   intervalMs,
   maxLoops = HERO_MAX_LOOPS,
   skeletonDelayMs,
+  previewAllowed = false,
   className,
 }: {
   items: HeroItem[];
@@ -43,6 +49,8 @@ export function Hero({
   /** Full rounds before rotation stops on the first slide. 0 never stops. */
   maxLoops?: number;
   skeletonDelayMs?: number;
+  /** The page has decided a clip may load (fast link, Data saver off, motion allowed). */
+  previewAllowed?: boolean;
   className?: string;
 }) {
   const [touchX, setTouchX] = useState<number | null>(null);
@@ -132,6 +140,9 @@ export function Hero({
           ) : (
             img
           )}
+          {!isLeaving && previewAllowed && item.previewSrc ? (
+            <HeroPreview src={item.previewSrc} active paused={timer.paused} />
+          ) : null}
           <div className="ad-hero__scrim" aria-hidden="true" />
         </div>
         <div className="ad-hero__content">
@@ -150,7 +161,7 @@ export function Hero({
                   Continue <span className="ad-hero__left">{resume}</span>
                 </>
               ) : (
-                'Play'
+                (item.playLabel ?? 'Play')
               )}
             </ButtonLink>
             <ButtonLink href={item.infoHref} size="lg" variant="on-dark" icon="info">

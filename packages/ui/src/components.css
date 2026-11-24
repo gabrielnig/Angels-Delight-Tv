@@ -1887,6 +1887,28 @@
   object-fit: cover;
 }
 
+/* Muted preview clip. It sits over the still and fades in only once it is playing. Text and scrim stay above it. */
+.ad-hero__clip {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0;
+  transition: opacity var(--motion-slow);
+  pointer-events: none;
+}
+
+.ad-hero__clip[data-playing='true'] {
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ad-hero__clip {
+    display: none;
+  }
+}
+
 .ad-hero__scrim {
   position: absolute;
   inset: 0;

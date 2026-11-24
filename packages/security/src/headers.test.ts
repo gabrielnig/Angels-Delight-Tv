@@ -35,6 +35,17 @@ describe('buildCsp', () => {
     expect(csp).toContain("connect-src 'self' https://media.example.org");
   });
 
+  it('lets the Home hero clip load from the media origin on viewer pages', () => {
+    // Hero preview clips are plain <video src> on the media origin (M41-S11), so media-src must keep listing it.
+    for (const admin of [false, true]) {
+      const media = buildCsp({ ...base, admin })
+        .split(';')
+        .map((part) => part.trim())
+        .find((part) => part.startsWith('media-src'));
+      expect(media).toContain('https://media.example.org');
+    }
+  });
+
   it('allows the upload origin only on admin pages', () => {
     const upload = 'https://uploads.example.org';
     expect(buildCsp({ ...base, uploadOrigin: upload, admin: false })).not.toContain(upload);

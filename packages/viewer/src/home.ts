@@ -8,6 +8,8 @@ import {
   fetchHeroArtwork,
   hasLiveTitle,
   heroCards,
+  heroSlideExtras,
+  type HeroSlideExtras,
   listPublishedRows,
   resolveRow,
   type ArtworkDto,
@@ -26,6 +28,11 @@ export interface HeroItem {
   /** Wide artwork. Null falls back to the poster, then to a solid theme colour (M05-S01). */
   heroImage: ArtworkDto | null;
   play: PlayTarget | null;
+  /** The editor's own words for the slide. Null fields fall back to the title's text. */
+  text: Pick<HeroSlideExtras, 'headline' | 'blurb' | 'buttonLabel'>;
+  /** Muted clip for the active slide on fast connections. Null when none is ready or the editor turned it off. */
+  previewUrl: string | null;
+  previewMs: number | null;
 }
 
 export interface ContinueWatchingRow {
@@ -237,10 +244,18 @@ async function buildHero(
     catalog,
     cards.map((card) => ({ kind: card.kind, id: card.id })),
   );
+  const extras = await heroSlideExtras(tx, catalog, descriptors, cards);
   return Promise.all(
     annotated.map(async (card) => ({
       card,
       heroImage: artwork.get(card.id) ?? null,
+      text: {
+        headline: extras.get(card.id)?.headline ?? null,
+        blurb: extras.get(card.id)?.blurb ?? null,
+        buttonLabel: extras.get(card.id)?.buttonLabel ?? null,
+      },
+      previewUrl: extras.get(card.id)?.previewUrl ?? null,
+      previewMs: extras.get(card.id)?.previewMs ?? null,
       play:
         card.kind === 'series'
           ? await seriesPlayTarget(tx, ctx, audience, profile?.id ?? null, card.id)

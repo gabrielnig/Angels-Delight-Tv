@@ -68,11 +68,13 @@ export async function HomeView({
   }
 
   const settings = (await themeRuntime()).settings;
-  const [rotate, intervalSeconds, maxLoops, viewAllLabel] = await Promise.all([
+  const [rotate, intervalSeconds, maxLoops, viewAllLabel, previews, previewsUnknown] = await Promise.all([
     settings.get('features.autoplay_hero'),
     settings.get('home.hero_interval_seconds'),
     settings.get('home.hero_max_loops'),
     settings.get('home.view_all_label'),
+    settings.get('home.hero_previews'),
+    settings.get('home.hero_previews_unknown_connection'),
   ]);
   const kidsAudience = ctx.audience === 'kids';
   const [sponsor, afterRow] = kidsAudience
@@ -98,6 +100,8 @@ export async function HomeView({
         rotate={rotate}
         intervalSeconds={intervalSeconds}
         maxLoops={maxLoops}
+        previews={previews}
+        allowUnknownConnection={previewsUnknown}
       />
       <div className="web-wide web-stack web-rows">
         {ctx.guest ? <GuestContinueRow /> : null}

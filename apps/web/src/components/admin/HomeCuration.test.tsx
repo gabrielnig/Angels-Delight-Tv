@@ -364,3 +364,49 @@ describe('HomeCuration hero text', () => {
     expect(screen.getByText('Unsaved changes')).toBeTruthy();
   });
 });
+
+describe('HomeCuration live preview', () => {
+  const published = () => s.videos.filter((x) => x.publishState === 'published');
+  const mount = (heroIds: string[], heroText = {}, videos = s.videos) => {
+    const state = { draft: defaultHome(), published: defaultHome(), previous: null, publishedAt: null };
+    state.draft = { ...state.draft, heroIds, heroText };
+    state.published = state.draft;
+    render(
+      <ToastProvider>
+        <HomeCuration state={state} videos={videos} series={s.series} categories={s.categories} canCurate actions={{ saveDraft: ok(), publish: ok(), restore: ok() }} />
+      </ToastProvider>,
+    );
+    return within(screen.getByLabelText(/Home preview/));
+  };
+
+  it('lists the fallback titles and the number of slides', () => {
+    const pane = mount([]);
+    expect(pane.getByText(/Newest titles are used/)).toBeTruthy();
+    expect(pane.getAllByTestId('preview-slide').length).toBeGreaterThan(1);
+  });
+
+  it('shows the editor headline and button label, and a clip badge per slide', () => {
+    const [v] = published();
+    const withClip = s.videos.map((x) =>
+      x.id === v!.id ? { ...x, preview: { state: 'ready' as const, mode: 'auto' as const, startMs: null, note: null } } : x,
+    );
+    const pane = mount([v!.id], { [v!.id]: { headline: 'Start here', buttonLabel: 'Begin' } }, withClip);
+    expect(pane.getByText('Start here')).toBeTruthy();
+    expect(pane.getByText('Button: Begin')).toBeTruthy();
+    expect(pane.getByText('Clip plays')).toBeTruthy();
+  });
+
+  it('says why a slide has no clip', () => {
+    const [v] = published();
+    const off = s.videos.map((x) =>
+      x.id === v!.id ? { ...x, preview: { state: 'ready' as const, mode: 'off' as const, startMs: null, note: null } } : x,
+    );
+    const pane = mount([v!.id], {}, off);
+    expect(pane.getByText('Clip off')).toBeTruthy();
+  });
+
+  it('shows each section View all link', () => {
+    const pane = mount([]);
+    expect(pane.getAllByText(/View all: Automatic, \/browse\//).length).toBeGreaterThan(0);
+  });
+});
