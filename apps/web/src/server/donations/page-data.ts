@@ -76,12 +76,14 @@ export interface DonatePageData {
   thankYouTitle: string;
   thankYouBody: string;
   transparencyEnabled: boolean;
+  /** Empty unless the switch is on and the owner wrote instructions. */
+  bankInstructions: string;
 }
 
 export async function readDonatePage(): Promise<DonatePageData> {
   const s = (await themeRuntime()).settings;
   const config = await readDonateConfig();
-  const [ngn, usd, orgName, introTitle, introBody, thankYouTitle, thankYouBody, transparency] = await Promise.all([
+  const [ngn, usd, orgName, introTitle, introBody, thankYouTitle, thankYouBody, transparency, bankOn, bankText] = await Promise.all([
     s.get('donate.presets_minor.ngn'),
     s.get('donate.presets_minor.usd'),
     s.get('donate.org_name'),
@@ -90,6 +92,8 @@ export async function readDonatePage(): Promise<DonatePageData> {
     s.get('donate.thank_you_title'),
     s.get('donate.thank_you_body'),
     s.get('donate.transparency.enabled'),
+    s.get('donate.bank_transfer.enabled'),
+    s.get('donate.bank_transfer.instructions'),
   ]);
   const currencies = config.currencies.filter((c) => c === 'NGN' || config.usdEnabled);
   return {
@@ -105,5 +109,6 @@ export async function readDonatePage(): Promise<DonatePageData> {
     thankYouTitle,
     thankYouBody,
     transparencyEnabled: transparency,
+    bankInstructions: bankOn ? bankText : '',
   };
 }
