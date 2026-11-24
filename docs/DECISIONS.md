@@ -887,3 +887,9 @@ Format: decision, options considered, why, reversible or not. Newest first. Deci
 - Decision: `av==13.1.0` is pinned in `apps/whisper/requirements.txt`, with a guard test.
 - Options: pin an older faster-whisper, or pin av alone.
 - Why: found on the second real caption run on the VPS. faster-whisper 1.1.1 asks for any `av>=11`, the image installed PyAV 19, and PyAV 19 removed the `metadata_errors` argument that faster-whisper passes, so decoding failed with a TypeError. Checked locally with a clean install: model load, decode and transcribe with word timestamps all run. Reversible: yes.
+
+## D-169 Hausa headings use Inter, extending R23 (lane L7 review)
+- Decision: headings in Hausa render in Inter, as R23 already does for Yoruba and Igbo.
+- Options: leave Hausa on the display font, or add the hooked letters to every family.
+- Why: five of six curated families lack ɓ ɗ ƙ ʼ, and Inter has them. Subsetting every family is larger and slower.
+- Reversible: yes, one font rule.

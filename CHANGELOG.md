@@ -82,3 +82,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 ### Lane R1: three viewer stories
 
 - Added the en-NG message catalog (`@ad/shared/messages`) with auth, account and player copy wired through it, the Always ask who is watching device setting, and a cached profile picker with a stale note.
+
+### Lane L7 review: Languages mockups
+
+- Fixed S140 to S149 for targets, switches, contrast, the 240 px header, Editor and detection states, and wrote the L7 review.
