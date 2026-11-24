@@ -4,6 +4,7 @@ import { SlowDownRefresh } from '../../../components/browse/SlowDown';
 import { NoResults } from '../../../components/browse/NoResults';
 import { AppShell } from '../../../components/Shell';
 import { SearchGrid } from '../../../components/browse/BoundGrids';
+import { SearchNotes } from '../../../components/browse/SearchNotes';
 import { SearchScreen } from '../../../components/browse/SearchScreen';
 import { getCatalog, getLibrary } from '../../../lib/data';
 import { getViewerOrGuest } from '../../../lib/session';
@@ -13,9 +14,11 @@ export const metadata = { title: 'Search', robots: { index: false, follow: true 
 export default async function SearchPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string }>;
+  searchParams: Promise<{ q?: string; exact?: string }>;
 }) {
-  const q = ((await searchParams).q ?? '').trim().slice(0, 100);
+  const params = await searchParams;
+  const q = (params.q ?? '').trim().slice(0, 100);
+  const exact = params.exact === '1';
   const { ctx } = await getViewerOrGuest('/search');
   let body;
   if (!q) {
@@ -39,7 +42,7 @@ export default async function SearchPage({
   } else {
     try {
       const [page, inList] = await Promise.all([
-        getCatalog().search(ctx, q),
+        getCatalog().search(ctx, q, undefined, { exact }),
         getLibrary().myListIds(ctx),
       ]);
       body =
@@ -47,19 +50,32 @@ export default async function SearchPage({
           <NoResults
             query={q}
             inList={inList}
+            didYouMean={page.didYouMean}
+            subjects={await getCatalog()
+              .categories(ctx)
+              .then((all) => all.slice(0, 6))
+              .catch(() => [])}
             popular={await getCatalog()
               .popular(ctx)
               .catch(() => [])}
           />
         ) : (
-          <SearchGrid
-            key={q}
-            q={q}
-            initialItems={page.items}
-            total={page.total}
-            nextCursor={page.nextCursor}
-            inList={inList}
-          />
+          <>
+            <SearchNotes
+              query={q}
+              showingFor={page.showingFor ?? null}
+              didYouMean={page.didYouMean ?? null}
+              subjects={page.subjects ?? []}
+            />
+            <SearchGrid
+              key={q}
+              q={q}
+              initialItems={page.items}
+              total={page.total}
+              nextCursor={page.nextCursor}
+              inList={inList}
+            />
+          </>
         );
     } catch (error) {
       body =

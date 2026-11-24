@@ -101,10 +101,10 @@ export async function searchWithCorrection(
   tx: Tx,
   ctx: CatalogContext,
   audience: Audience,
-  input: SearchInput,
+  input: SearchInput & { exact?: boolean },
 ): Promise<CorrectedSearch> {
   const page = await searchTitles(tx, ctx, audience, input);
-  if (input.cursor !== undefined || page.total >= FEW_RESULTS) {
+  if (input.exact || input.cursor !== undefined || page.total >= FEW_RESULTS) {
     return { page, showingFor: null, didYouMean: null };
   }
   let corrected: string | null = null;

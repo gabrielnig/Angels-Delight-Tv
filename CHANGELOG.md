@@ -116,3 +116,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 ### Lane L9: Sponsors and donations (M48)
 
 - Slice 0: docs now allow labelled sponsor cards and hosted checkout donations, both off by default and never for kids. Added 38 monetization settings (all off, client inputs empty), cross key checks, and the `PAYSTACK_SECRET_KEY`, `PAYSTACK_BASE_URL` and `DONATE_RECEIPT_TOKEN_SECRET` variables.
+
+### Lane L6: Discovery (M45)
+
+- Slice 6b: search results now show corrected spelling, did you mean, and subject matches; empty searches are logged anonymously as misses and pruned after 90 days by the nightly job.

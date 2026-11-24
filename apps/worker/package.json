@@ -16,6 +16,7 @@
   "dependencies": {
     "@ad/analytics": "workspace:*",
     "@ad/audit": "workspace:*",
+    "@ad/catalog": "workspace:*",
     "@ad/config": "workspace:*",
     "@ad/db": "workspace:*",
     "@ad/mailer": "workspace:*",

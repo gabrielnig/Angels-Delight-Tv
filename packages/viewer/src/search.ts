@@ -5,12 +5,16 @@ import {
   MAX_QUERY_LENGTH,
   MIN_QUERY_LENGTH,
   popularTitles,
-  searchTitles,
+  recordMiss,
+  searchSubjects,
+  searchWithCorrection,
   suggestTitles,
   type Audience,
   type Page,
+  type Subject,
   type Suggestion,
 } from '@ad/catalog';
+import type { Tx } from '@ad/catalog';
 import { annotateCards, type TitleCardDto } from './annotate';
 import { catalogContext, clockOf, spendAttempt, type ViewerContext } from './context';
 import { audienceOf, loadOwnedProfile } from './profiles';
@@ -26,6 +30,8 @@ export interface SearchInput {
   cursor?: string;
   /** Set when the viewer submitted the search (Enter), not while typing. Kids profiles never record. */
   record?: boolean;
+  /** Search the words exactly as typed, with no spelling correction. */
+  exact?: boolean;
 }
 
 export interface SearchResultDto extends Page<TitleCardDto> {
@@ -33,6 +39,39 @@ export interface SearchResultDto extends Page<TitleCardDto> {
   total: number;
   /** Filled on the first page of a search with no results, for the no results state (M06-S05). */
   popular: TitleCardDto[];
+  /** Categories whose name matches the query, for the Subjects row (M45-S08). */
+  subjects: Subject[];
+  /** Set when the results are for a corrected spelling: Showing results for this (M45-S07). */
+  showingFor: string | null;
+  /** A better spelling to offer as a link when a few results exist. */
+  didYouMean: string | null;
+}
+
+/** The shape both paths share: corrected search, subjects and the miss count. */
+async function qualitySearch(
+  tx: Tx,
+  ctx: ViewerContext,
+  audience: Audience,
+  input: { query: string; limit?: number; cursor?: string; exact?: boolean; recordMiss: boolean },
+) {
+  const catalog = catalogContext(ctx);
+  const found = await searchWithCorrection(tx, catalog, audience, {
+    query: input.query,
+    limit: input.limit,
+    cursor: input.cursor,
+    exact: input.exact,
+  });
+  const first = input.cursor === undefined;
+  const subjects = first ? await searchSubjects(tx, catalog, audience, input.query) : [];
+  if (input.recordMiss && first && found.page.total === 0) {
+    // Only the normalised words are kept, and a failure must not undo the search, so it runs in a savepoint.
+    try {
+      await tx.transaction((inner) => recordMiss(inner, input.query, clockOf(ctx)));
+    } catch {
+      /* a lost count is fine */
+    }
+  }
+  return { ...found, subjects };
 }
 
 function normalizeQuery(raw: string): string {
@@ -54,11 +93,14 @@ export async function search(
     await spendAttempt(ctx, 'search', actor.accountId);
     const audience = audienceOf(profile);
     const catalog = catalogContext(ctx);
-    const page = await searchTitles(tx, catalog, audience, {
+    const found = await qualitySearch(tx, ctx, audience, {
       query,
       limit: input.limit,
       cursor: input.cursor,
+      exact: input.exact,
+      recordMiss: input.record === true && !profile.isKids,
     });
+    const page = found.page;
 
     if (input.record && !profile.isKids) {
       await tx
@@ -91,27 +133,34 @@ export async function search(
       items: await annotateCards(tx, profile.id, page.items),
       nextCursor: page.nextCursor,
       popular: await annotateCards(tx, profile.id, popular),
+      subjects: found.subjects,
+      showingFor: found.showingFor,
+      didYouMean: found.didYouMean,
     };
   });
 }
 
 /**
- * Search for a guest (M40). Nothing is written: no `search_history` row, whatever the caller asks. The rate limit
+ * Search for a guest (M40). No `search_history` row is written, whatever the caller asks. A search that found
+ * nothing and was submitted adds to the anonymous misses count (M45-S09). The rate limit
  * is spent by the public guard on the address and the guest id, not here.
  */
 export async function searchFor(
   ctx: ViewerContext,
   audience: Audience,
-  input: Omit<SearchInput, 'profileId' | 'record'>,
+  input: Omit<SearchInput, 'profileId'>,
 ): Promise<SearchResultDto> {
   const query = normalizeQuery(input.query);
   const catalog = catalogContext(ctx);
   return ctx.db.transaction(async (tx) => {
-    const page = await searchTitles(tx, catalog, audience, {
+    const found = await qualitySearch(tx, ctx, audience, {
       query,
       limit: input.limit,
       cursor: input.cursor,
+      exact: input.exact,
+      recordMiss: input.record === true && !audience.kids,
     });
+    const page = found.page;
     const popular =
       page.total === 0 && input.cursor === undefined
         ? await popularTitles(tx, catalog, audience, {
@@ -125,6 +174,9 @@ export async function searchFor(
       items: await annotateCards(tx, null, page.items),
       nextCursor: page.nextCursor,
       popular: await annotateCards(tx, null, popular),
+      subjects: found.subjects,
+      showingFor: found.showingFor,
+      didYouMean: found.didYouMean,
     };
   });
 }

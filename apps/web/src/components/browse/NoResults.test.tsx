@@ -48,4 +48,33 @@ describe('NoResults', () => {
     );
     expect(screen.queryByRole('heading', { name: 'Popular right now' })).toBeNull();
   });
+
+  it('shows subject chips and one action each, never a second button (M45-S09)', () => {
+    render(
+      <ToastProvider>
+        <NoResults
+          query="xyz"
+          popular={popular}
+          inList={[]}
+          subjects={[
+            { slug: 'money', name: 'Money' },
+            { slug: 'farming', name: 'Farming' },
+          ]}
+        />
+      </ToastProvider>,
+    );
+    const chips = screen.getByRole('navigation', { name: 'Subjects' });
+    expect(chips.querySelectorAll('a')).toHaveLength(2);
+    expect(screen.getByRole('link', { name: 'Money' })).toHaveAttribute('href', '/browse/money');
+    expect(screen.queryByRole('link', { name: 'Browse categories' })).toBeNull();
+  });
+
+  it('puts a did you mean link in the empty state when one exists', () => {
+    render(
+      <ToastProvider>
+        <NoResults query="xyz" popular={[]} inList={[]} didYouMean="xylophone" />
+      </ToastProvider>,
+    );
+    expect(screen.getByRole('link', { name: 'xylophone' })).toHaveAttribute('href', '/search?q=xylophone');
+  });
 });

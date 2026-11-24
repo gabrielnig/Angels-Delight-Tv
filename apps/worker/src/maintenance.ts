@@ -12,6 +12,8 @@ import type { Logger } from '@ad/shared';
 export interface MaintenanceDeps {
   /** Rebuilds yesterday and the day before into the daily stats tables. */
   rollup(): Promise<unknown>;
+  /** Deletes missed searches older than 90 days (M45-S09). Runs after the rollup and never fails it. */
+  pruneSearchMisses?(): Promise<unknown>;
   /** Deletes raw view events past retention. Needs the ad_maintenance connection, so it can be absent. */
   pruneViewEvents?(): Promise<unknown>;
   /** Deletes audit entries past retention. Same connection, so also optional. */
@@ -41,6 +43,11 @@ export async function registerMaintenanceHandlers(
     async handle() {
       const days = await deps.rollup();
       logger.info('analytics rollup finished', { days });
+      try {
+        await deps.pruneSearchMisses?.();
+      } catch (error) {
+        logger.warn('search misses prune failed', { error: String(error) });
+      }
     },
   });
   scheduled.push(entry(QUEUES.analyticsRollup));

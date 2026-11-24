@@ -36,6 +36,7 @@ import type {
   HomeRow,
   HomeRowsPage,
   Page,
+  SearchPage,
   Progress,
   PublicPreview,
   SeriesDetail,
@@ -194,13 +195,20 @@ export class RealCatalog implements CatalogRepository {
   }
 
   /** A query shorter than the minimum is an empty page, the screen shows its own prompt for that. */
-  async search(ctx: ViewerContext, q: string, cursor?: string): Promise<Page<CatalogItem>> {
+  async search(
+    ctx: ViewerContext,
+    q: string,
+    cursor?: string,
+    options: { exact?: boolean } = {},
+  ): Promise<SearchPage> {
     try {
       const result = ctx.guest
         ? await guestSearch(this.service, this.guestAudience(ctx), {
             query: q,
             limit: PAGE_SIZE,
             cursor,
+            record: cursor === undefined,
+            exact: options.exact,
           })
         : await search(this.service, this.actor(ctx), {
             profileId: ctx.profileId,
@@ -208,11 +216,15 @@ export class RealCatalog implements CatalogRepository {
             limit: PAGE_SIZE,
             cursor,
             record: cursor === undefined,
+            exact: options.exact,
           });
       return {
         items: result.items.map(cardToItem),
         total: result.total,
         nextCursor: result.nextCursor,
+        subjects: result.subjects,
+        showingFor: result.showingFor,
+        didYouMean: result.didYouMean,
       };
     } catch (error) {
       if (error instanceof ValidationFailed) return emptyPage();
