@@ -1,4 +1,4 @@
-import type { CatalogItem, LibraryRepository, Page, Progress, VideoSummary, ViewerContext } from '../types';
+import type { ActivityPageData, CatalogItem, LibraryRepository, Page, Progress, VideoSummary, ViewerContext } from '../types';
 import { PROGRESS, SEEDED_MY_LIST, VIDEOS } from './catalog-data';
 import { listable, lookupItem } from './queries';
 
@@ -6,6 +6,7 @@ interface ProfileState {
   list: string[];
   progress: Map<string, Progress>;
   dismissed: Set<string>;
+  removed: Map<string, Progress>;
 }
 
 const globalStore = globalThis as unknown as { __adFixtureLibrary?: Map<string, ProfileState> };
@@ -18,6 +19,7 @@ function stateFor(profileId: string): ProfileState {
       list: [...SEEDED_MY_LIST],
       progress: new Map(PROGRESS.map((p) => [p.videoId, p])),
       dismissed: new Set(),
+      removed: new Map(),
     };
     store.set(profileId, state);
   }
@@ -80,7 +82,55 @@ export class FixtureLibrary implements LibraryRepository {
     stateFor(ctx.profileId).dismissed.add(videoId);
   }
 
+  async activity(ctx: ViewerContext, cursor?: string): Promise<ActivityPageData> {
+    const state = stateFor(ctx.profileId);
+    const all = [...state.progress.values()]
+      .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
+      .flatMap((progress) => {
+        const video = VIDEOS.find((v) => v.id === progress.videoId);
+        return video ? [{ progress, video }] : [];
+      });
+    const start = cursor ? Number(cursor) || 0 : 0;
+    const page = all.slice(start, start + 25);
+    return {
+      items: page.map(({ progress, video }) => ({
+        videoId: video.id,
+        title: video.title,
+        seriesTitle: video.series?.title ?? null,
+        episodeLabel: video.series ? `S${video.series.season} E${video.series.episode}` : null,
+        slug: video.slug,
+        posterUrl: null,
+        posterAlt: null,
+        watchedAt: progress.updatedAt,
+        completed: progress.positionSeconds >= progress.durationSeconds * 0.95,
+        progressPct: Math.min(100, Math.round((progress.positionSeconds / progress.durationSeconds) * 100)),
+      })),
+      nextCursor: start + 25 < all.length ? String(start + 25) : null,
+    };
+  }
+
+  async removeActivity(ctx: ViewerContext, videoId: string): Promise<void> {
+    const state = stateFor(ctx.profileId);
+    const row = state.progress.get(videoId);
+    if (row) state.removed.set(videoId, row);
+    state.progress.delete(videoId);
+  }
+
+  async clearActivity(ctx: ViewerContext): Promise<{ cleared: number }> {
+    const state = stateFor(ctx.profileId);
+    const cleared = state.progress.size;
+    state.progress.clear();
+    state.removed.clear();
+    return { cleared };
+  }
+
   async restoreContinue(ctx: ViewerContext, videoId: string): Promise<void> {
-    stateFor(ctx.profileId).dismissed.delete(videoId);
+    const state = stateFor(ctx.profileId);
+    const back = state.removed.get(videoId);
+    if (back) {
+      state.progress.set(videoId, back);
+      state.removed.delete(videoId);
+    }
+    state.dismissed.delete(videoId);
   }
 }

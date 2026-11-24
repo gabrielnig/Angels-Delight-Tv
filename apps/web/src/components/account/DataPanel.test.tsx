@@ -27,6 +27,12 @@ describe('DataPanel state 1: default', () => {
   it('shows the two cards with the mockup copy', () => {
     panel({ status: 'none' });
     expect(screen.getByRole('heading', { name: 'Export my data' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Viewing activity' })).toBeInTheDocument();
+    expect(screen.getByText(/does not delete your account/)).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Open viewing activity' })).toHaveAttribute(
+      'href',
+      '/account/activity',
+    );
     expect(
       screen.getByText(
         'Get a file with your account, profiles, My List and watch progress. We email you a link that works for 24 hours. It never includes your password.',

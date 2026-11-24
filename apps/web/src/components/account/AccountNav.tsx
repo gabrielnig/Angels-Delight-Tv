@@ -2,12 +2,14 @@
 
 import { usePathname } from 'next/navigation';
 import { SignOutButton } from '../SignOutButton';
+import { msg } from '@ad/shared/messages';
 import { AcctIcon, type AcctIconName } from './icons';
 
 export const ACCOUNT_LINKS: { href: string; label: string; icon: AcctIconName }[] = [
   { href: '/account', label: 'Overview', icon: 'user' },
   { href: '/account/security', label: 'Security', icon: 'shield' },
   { href: '/settings/playback', label: 'Playback settings', icon: 'play' },
+  { href: '/account/activity', label: msg('account.nav.activity'), icon: 'clock' },
   { href: '/account/data', label: 'Data and privacy', icon: 'download' },
 ];
 

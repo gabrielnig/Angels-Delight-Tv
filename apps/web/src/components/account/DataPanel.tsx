@@ -5,6 +5,7 @@ import { useState, type FormEvent } from 'react';
 import { Button, ButtonLink, Modal } from '@ad/ui';
 import { deleteAccountAction, requestExportAction } from '../../app/actions';
 import type { ExportState } from '../../lib/data';
+import { msg } from '@ad/shared/messages';
 import { NETWORK_MESSAGE } from '../auth/shared';
 import { AcctField } from './Field';
 import { AcctIcon } from './icons';
@@ -150,6 +151,21 @@ export function DataPanel({ initial, email }: { initial: ExportState; email: str
             </span>
           </div>
         ) : null}
+      </section>
+
+      <section className="acct-card" data-gap="3" aria-labelledby="acct-activity">
+        <div className="acct-card__title">
+          <AcctIcon name="clock" size={24} />
+          <h2 id="acct-activity" className="acct-h2">
+            {msg('account.data.activityTitle')}
+          </h2>
+        </div>
+        <p className="acct-muted">{msg('account.data.activityLead')}</p>
+        <div>
+          <a className="ad-btn" data-variant="secondary" data-size="md" href="/account/activity">
+            {msg('account.data.activityOpen')}
+          </a>
+        </div>
       </section>
 
       <section className="acct-card" data-gap="3" data-tone="danger" aria-labelledby="acct-delete">

@@ -15,6 +15,9 @@ export const guestLibrary: LibraryRepository = {
   continueWatching: async () => [],
   removeFromContinue: needsAccount,
   restoreContinue: needsAccount,
+  activity: needsAccount,
+  removeActivity: needsAccount,
+  clearActivity: needsAccount,
 };
 
 /** Routes a guest context to `guestLibrary` and every other context to the real library, so no guest call reaches the account tables. */
@@ -28,5 +31,8 @@ export function forGuests(inner: LibraryRepository): LibraryRepository {
     continueWatching: (ctx) => pick(ctx).continueWatching(ctx),
     removeFromContinue: (ctx, id) => pick(ctx).removeFromContinue(ctx, id),
     restoreContinue: (ctx, id) => pick(ctx).restoreContinue(ctx, id),
+    activity: (ctx, cursor) => pick(ctx).activity(ctx, cursor),
+    removeActivity: (ctx, id) => pick(ctx).removeActivity(ctx, id),
+    clearActivity: (ctx) => pick(ctx).clearActivity(ctx),
   };
 }

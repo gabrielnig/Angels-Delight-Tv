@@ -25,5 +25,7 @@ describe('tokens reach portaled dialogs and match the S29 skeleton', () => {
 });
 
 it('sets dialog titles in the display font', () => {
-  expect(css).toMatch(/\.acct-dialog \.ad-modal__title\s*\{[^}]*font-family:\s*var\(--font-display\)/);
+  expect(css).toMatch(
+    /\.acct-dialog \.ad-modal__title\s*\{[^}]*font-family:\s*var\(--font-display\)/,
+  );
 });

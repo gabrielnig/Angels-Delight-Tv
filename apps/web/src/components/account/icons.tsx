@@ -38,6 +38,30 @@ const SHAPES = {
       <path d="M2 20h20" />
     </>
   ),
+  tv: (
+    <>
+      <rect x="2" y="7" width="20" height="14" rx="2" />
+      <path d="M8 3l4 4 4-4" />
+    </>
+  ),
+  tablet: (
+    <>
+      <rect x="4" y="2" width="16" height="20" rx="2" />
+      <path d="M11 18h2" />
+    </>
+  ),
+  clock: (
+    <>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 7v5l3 2" />
+    </>
+  ),
+  eye: (
+    <>
+      <path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z" />
+      <circle cx="12" cy="12" r="3" />
+    </>
+  ),
   info: (
     <>
       <circle cx="12" cy="12" r="9" />
