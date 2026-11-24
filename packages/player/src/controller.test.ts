@@ -792,6 +792,29 @@ describe('PlayerController', () => {
       expect(c.getState().captions.active).toBeNull();
     });
 
+    it('the c key does nothing when there are no tracks', () => {
+      const { c, onPreferencesChange } = setup({ captions: [], preferences: { captionsOn: true } });
+      c.dispatch({ type: 'toggle-captions' });
+      expect(c.getState().captions).toMatchObject({ available: false, active: null });
+      expect(onPreferencesChange).not.toHaveBeenCalled();
+    });
+
+    it('the c key toggles when a track exists', () => {
+      const { c } = setup({ captions: [approved] });
+      c.dispatch({ type: 'toggle-captions' });
+      expect(c.getState().captions.active).toBe('en');
+      c.dispatch({ type: 'toggle-captions' });
+      expect(c.getState().captions.active).toBeNull();
+    });
+
+    it('watching a video without captions keeps the saved choice for the next one', () => {
+      const { c, onPreferencesChange } = setup({ captions: [], preferences: { captionsOn: true, captionLanguage: 'en' } });
+      c.setVolume?.(0.5);
+      for (const call of onPreferencesChange.mock.calls) {
+        expect(call[0]).toMatchObject({ captionsOn: true, captionLanguage: 'en' });
+      }
+    });
+
     it('picks the profile language when several tracks exist', () => {
       const yo = { ...review, status: 'approved' };
       const { c } = setup({

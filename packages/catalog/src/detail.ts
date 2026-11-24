@@ -85,7 +85,10 @@ async function loadCore(
     await tx.execute(
       ref.kind === 'video'
         ? sql`SELECT language, label, kind, is_default FROM caption_tracks
-            WHERE video_id = ${ref.id}::uuid AND approved_caption_id IS NOT NULL ORDER BY is_default DESC, language`
+            WHERE video_id = ${ref.id}::uuid AND approved_caption_id IS NOT NULL
+              AND coalesce((SELECT v.captions_enabled FROM videos v WHERE v.id = ${ref.id}::uuid),
+                NOT EXISTS (SELECT 1 FROM settings st WHERE st.key = 'features.captions_default_available' AND st.value = 'false'::jsonb))
+            ORDER BY is_default DESC, language`
         : sql`SELECT DISTINCT ON (ct.language) ct.language, ct.label, ct.kind, ct.is_default
             FROM caption_tracks ct JOIN episodes ep ON ep.video_id = ct.video_id JOIN seasons sn ON sn.id = ep.season_id
             WHERE sn.series_id = ${ref.id}::uuid AND ct.approved_caption_id IS NOT NULL ORDER BY ct.language`,

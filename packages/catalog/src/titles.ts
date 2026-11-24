@@ -99,7 +99,8 @@ function titlesCte(
     SELECT 'video'::text AS kind, v.id, v.slug, v.title, v.description, v.duration_ms::int AS duration_ms,
       NULL::int AS episode_count, v.kids_safe, coalesce(v.published_at, v.publish_at) AS sort_at,
       v.poster_asset_id,
-      EXISTS (SELECT 1 FROM caption_tracks ct WHERE ct.video_id = v.id AND ct.approved_caption_id IS NOT NULL) AS has_captions,
+      (EXISTS (SELECT 1 FROM caption_tracks ct WHERE ct.video_id = v.id AND ct.approved_caption_id IS NOT NULL)
+      AND coalesce(v.captions_enabled, NOT EXISTS (SELECT 1 FROM settings st WHERE st.key = 'features.captions_default_available' AND st.value = 'false'::jsonb))) AS has_captions,
       ad_unaccent(lower(v.title)) AS title_key,
       ARRAY(SELECT vc.category_id FROM video_categories vc WHERE vc.video_id = v.id) AS category_ids${videoSearch}
     FROM videos v
