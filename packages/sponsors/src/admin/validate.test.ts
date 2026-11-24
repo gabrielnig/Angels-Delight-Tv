@@ -94,8 +94,8 @@ describe('validateCreative', () => {
   });
 
   it('refuses dashes and emoji in sponsor text', () => {
-    expect(run({ headline: 'Learn — now' }).ok).toBe(false);
-    expect(run({ body: 'Fast – easy' }).ok).toBe(false);
+    expect(run({ headline: 'Learn \u2014 now' }).ok).toBe(false);
+    expect(run({ body: 'Fast \u2013 easy' }).ok).toBe(false);
     expect(run({ ctaLabel: 'Go \u{1F680}' }).ok).toBe(false);
   });
 

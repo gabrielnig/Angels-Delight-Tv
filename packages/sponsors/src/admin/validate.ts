@@ -3,7 +3,7 @@ import { lagosDayEnd, lagosDayStart } from '../status';
 export type Checked<T> = { ok: true; value: T } | { ok: false; error: string };
 export type CheckedFields<T> = { ok: true; value: T } | { ok: false; errors: Record<string, string> };
 
-const FORBIDDEN = /[–—‘’“”]|\p{Extended_Pictographic}/u;
+const FORBIDDEN = /[\u2013\u2014\u2018\u2019\u201C\u201D]|\p{Extended_Pictographic}/u;
 // eslint-disable-next-line no-control-regex
 const CONTROL = /[\u0000-\u001F\u007F]/g;
 
