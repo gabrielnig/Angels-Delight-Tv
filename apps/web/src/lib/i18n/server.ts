@@ -15,8 +15,10 @@ import {
 /** Approved database rows for a locale. The translation service registers its loader here (slice 8). */
 export type OverlayLoader = (locale: LocaleCode) => Promise<ReadonlyMap<string, DbRow>>;
 let overlay: OverlayLoader = async () => new Map();
+let overlayRegistered = false;
 export function registerCatalogOverlay(loader: OverlayLoader): void {
   overlay = loader;
+  overlayRegistered = true;
 }
 
 /** Called with each key a viewer saw in English instead of their language (slice 11). */
@@ -32,6 +34,8 @@ export async function loadCatalog(locale: LocaleCode): Promise<CatalogShape> {
   if (process.env.NODE_ENV !== 'production' && process.env.DEV_PSEUDO_LOCALE === 'true' && (locale as string) === 'xx') {
     return Object.fromEntries(Object.entries(EN_NG).map(([k, v]) => [k, pseudo(v as never)])) as CatalogShape;
   }
+  // The runtime registers the database overlay the first time it is touched.
+  if (!overlayRegistered) await import('./runtime').then((m) => m.i18nRuntime()).catch(() => undefined);
   return effectiveCatalog(BASELINES[locale], await overlay(locale));
 }
 

@@ -5,6 +5,8 @@ import {
   type CatalogShape,
   type MessageText,
 } from '@ad/shared/messages';
+import { exportCsv, exportJson } from './export';
+import { planImport, type ImportPlan } from './import';
 import { hashText, summarize, type Summary } from './status';
 import type { TranslationStore } from './store';
 
@@ -76,6 +78,42 @@ export class TranslationService {
       baseline: this.deps.baseline(locale),
       rows: await this.deps.store.list(locale),
     });
+  }
+
+  async exportCsv(actor: Actor, locale: string): Promise<string> {
+    this.need(actor, 'editor');
+    this.translatable(locale);
+    return exportCsv({ locale, english: this.deps.english, baseline: this.deps.baseline(locale), rows: await this.deps.store.list(locale) });
+  }
+
+  async exportJson(actor: Actor, locale: string): Promise<string> {
+    this.need(actor, 'editor');
+    this.translatable(locale);
+    return exportJson({ locale, english: this.deps.english, baseline: this.deps.baseline(locale), rows: await this.deps.store.list(locale) });
+  }
+
+  /** Imported rows land in review. With `dryRun` nothing is written or audited. */
+  async importCsv(actor: Actor, locale: string, csv: string, options: { dryRun?: boolean } = {}): Promise<ImportPlan> {
+    this.need(actor, 'editor');
+    this.translatable(locale);
+    const plan = planImport({
+      locale,
+      english: this.deps.english,
+      baseline: this.deps.baseline(locale),
+      existing: await this.deps.store.list(locale),
+      csv,
+    });
+    if (options.dryRun || plan.writes.length === 0) return plan;
+    await this.deps.store.upsertMany(
+      locale,
+      plan.writes.map((w) => ({ ...w, updatedBy: actor.accountId })),
+    );
+    await this.record(actor, 'i18n.translation.import', locale, `import:${plan.writes.length}`, `Imported ${plan.writes.length} ${locale} texts for review`, {
+      added: plan.added.length,
+      changed: plan.changed.length,
+      rejected: plan.rejected.length,
+    });
+    return plan;
   }
 
   async save(actor: Actor, locale: string, key: string, text: MessageText, note?: string) {

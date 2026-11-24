@@ -10,6 +10,7 @@ const config: NextConfig = {
   // Workspace packages ship TypeScript source, so Next compiles them.
   transpilePackages: [
     '@ad/auth',
+    '@ad/i18n',
     '@ad/mailer',
     '@ad/security',
     '@ad/shared',

@@ -80,6 +80,9 @@ importers:
       '@ad/db':
         specifier: workspace:*
         version: link:../../packages/db
+      '@ad/i18n':
+        specifier: workspace:*
+        version: link:../../packages/i18n
       '@ad/mailer':
         specifier: workspace:*
         version: link:../../packages/mailer

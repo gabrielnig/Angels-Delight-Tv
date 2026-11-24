@@ -57,3 +57,8 @@ Scoped tests only: `pnpm vitest run <file>`.
 - Permissions in `apps/web/src/lib/admin/can.ts`: `i18n.edit` (editor), `i18n.approve` and `i18n.publish` (admin), `i18n.override` (super admin).
 - Tests: `pnpm vitest run packages/i18n` (the DbStore test needs `TEST_DATABASE_ADMIN_URL`).
 - Not wired yet: the web runtime that builds the service and registers the cache as the catalog overlay (done with the admin screens in slice 10).
+
+## Slice 9 (export and import)
+- `packages/i18n`: `csv.ts` (BOM, quotes, NFC), `export.ts` (`exportCsv`, `exportJson` effective catalog), `import.ts` (`planImport`, 5,000 rows, 2 MB, rows land `in_review`, plural cells are JSON objects), `TranslationService.exportCsv/exportJson/importCsv({dryRun})`, `store.upsertMany` (one transaction in `DbStore`).
+- Web: `lib/i18n/language-routes.ts` (`createLanguageHandlers`), `lib/i18n/runtime.ts` (`translationServiceFor(actor)`, `i18nRuntime()` which also registers the approved rows as the catalog overlay), routes `GET /api/admin/languages/[locale]/export?format=csv|json` and `POST .../import?dryRun=1` (body is the CSV text, same origin, 2 MB cap, staff only).
+- Tests: `pnpm vitest run packages/i18n apps/web/src/lib/i18n/language-routes.test.ts`.

@@ -74,6 +74,31 @@ export class DbStore implements TranslationStore {
     });
   }
 
+  upsertMany(locale: string, inputs: readonly UpsertInput[]) {
+    return this.run(async (tx) => {
+      for (const input of inputs) {
+        const values = {
+          locale,
+          key: input.key,
+          text: input.text as string | Record<string, string>,
+          status: input.status,
+          sourceHash: input.sourceHash ? Buffer.from(input.sourceHash, 'hex') : null,
+          note: input.note ?? null,
+          updatedBy: input.updatedBy,
+          reviewedBy: null,
+          reviewedAt: null,
+        };
+        await tx
+          .insert(uiTranslations)
+          .values(values)
+          .onConflictDoUpdate({
+            target: [uiTranslations.locale, uiTranslations.key],
+            set: { ...values, updatedAt: sql`now()` },
+          });
+      }
+    });
+  }
+
   setStatus(locale: string, key: string, status: RowStatus, reviewer: string | null) {
     return this.run(async (tx) => {
       const set =
