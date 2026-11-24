@@ -40,3 +40,5 @@ Scoped tests: `TEST_DATABASE_ADMIN_URL=postgres://postgres:postgres@localhost:54
 - `packages/catalog/src/trending.ts`: `trendingTitles(tx, ctx, audience, { kind, limit })` (liveness, kids and maturity at read time, min 5 titles, min 50 site plays, 3 hour max age, Top 10 needs 10, popular needs 3 titles with 5 views), `mostLikedTitles`, `DEFAULT_TRENDING_RULES`. `resolveRow` handles `trending`, `top_ten`, `most_liked`.
 - Tests: `packages/analytics/src/trending.int.test.ts`, `packages/catalog/src/trending.int.test.ts`, `apps/worker/src/engage-handlers.test.ts`, `packages/queue/src/definitions.test.ts`.
 - NOT done: `popularTitles` still the old video only function (series in Popular, `fallbackTitle`), shared cache key by audience tier, `RankedRow` component and HomeView mapping, HomeCuration type picker, SystemView "Trending last refreshed", default launch seed rows, `trending.*` settings keys, refresh after the nightly rollup.
+
+## Slice 11 (partial): DATA-MODEL My List cap now says 500 (matches `DEFAULT_RULES.maxMyListItems`).
