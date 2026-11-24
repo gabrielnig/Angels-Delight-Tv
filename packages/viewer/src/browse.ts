@@ -5,6 +5,7 @@ import {
   findCategory,
   listCategories,
   listTitles,
+  type Audience,
   type BrowseSort,
   type CategoryDto,
   type DurationBucket,
@@ -31,6 +32,8 @@ export interface BrowsePage extends Page<TitleCardDto> {
 }
 
 /** Category chips: visible categories holding at least one live title for this profile (M06-S01). */
+type ViewerTx = Parameters<Parameters<ViewerContext['db']['transaction']>[0]>[0];
+
 export async function listBrowseCategories(
   ctx: ViewerContext,
   actor: Actor,
@@ -38,11 +41,19 @@ export async function listBrowseCategories(
 ): Promise<CategoryDto[]> {
   return withAccount(ctx.db, actor, async (tx) => {
     const profile = await loadOwnedProfile(tx, actor, input.profileId);
-    const audience = audienceOf(profile);
-    return shared(ctx, ['categories', audience.kids], () =>
-      listCategories(tx, catalogContext(ctx), audience),
-    );
+    return categoriesFor(tx, ctx, audienceOf(profile));
   });
+}
+
+/** Shared by the account and guest paths: the chips depend on the audience only. */
+export function categoriesFor(
+  tx: ViewerTx,
+  ctx: ViewerContext,
+  audience: Audience,
+): Promise<CategoryDto[]> {
+  return shared(ctx, ['categories', audience.kids], () =>
+    listCategories(tx, catalogContext(ctx), audience),
+  );
 }
 
 export async function browse(
@@ -52,7 +63,19 @@ export async function browse(
 ): Promise<BrowsePage> {
   return withAccount(ctx.db, actor, async (tx) => {
     const profile = await loadOwnedProfile(tx, actor, input.profileId);
-    const audience = audienceOf(profile);
+    return browseFor(tx, ctx, audienceOf(profile), profile.id, input);
+  });
+}
+
+/** Shared by the account and guest paths. A null profile id means no personal annotation (M40). */
+export async function browseFor(
+  tx: ViewerTx,
+  ctx: ViewerContext,
+  audience: Audience,
+  profileId: string | null,
+  input: Omit<BrowseInput, 'profileId'>,
+): Promise<BrowsePage> {
+  {
     // The titles on a page, and how many there are, are the same for everyone in this audience.
     // Progress and My List are added per profile below, outside the cache.
     const shown = await shared(
@@ -89,9 +112,9 @@ export async function browse(
     const { category, page, total } = shown;
     return {
       category,
-      items: await annotateCards(tx, profile.id, page.items),
+      items: await annotateCards(tx, profileId, page.items),
       nextCursor: page.nextCursor,
       total,
     };
-  });
+  }
 }
