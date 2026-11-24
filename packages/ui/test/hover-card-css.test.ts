@@ -72,12 +72,15 @@ describe('hover card (R10, M47-S03)', () => {
     expect(reduce?.body).toMatch(/transform:\s*none/);
   });
 
-  it('the row list has real block padding for the scale, no negative margin', () => {
-    const list = rules.find((r) => r.selector === '.ad-row__list' && /padding-block/.test(r.body));
-    expect(flat(list?.body)).toContain(
-      'padding-block: calc(var(--row-card-width) * 9 / 16 * (var(--card-scale) - 1) / 2)',
+  it('the row list has real block padding for the scale, and only the viewport takes it back', () => {
+    const pad = rules.find((r) => /--row-pad-block:\s*calc/.test(r.body));
+    expect(flat(pad?.body)).toContain(
+      '--row-pad-block: calc(var(--row-card-width) * 9 / 16 * (var(--card-scale) - 1) / 2)',
     );
-    expect(css).not.toMatch(/margin-(block|top|bottom):\s*calc\(-/);
+    const list = rules.find((r) => r.selector === '.ad-row__list' && /padding-block/.test(r.body));
+    expect(flat(list?.body)).toContain('padding-block: var(--row-pad-block');
+    const negative = rules.filter((r) => /margin-(block|top|bottom):\s*calc\(-/.test(r.body));
+    expect(negative.map((r) => r.selector)).toEqual(['.ad-row__viewport']);
   });
 
   it('growth per side fits the gutter from 600 up', () => {

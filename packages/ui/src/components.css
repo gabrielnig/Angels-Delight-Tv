@@ -611,6 +611,8 @@
   gap: var(--card-gap);
   padding: var(--space-1) var(--page-gutter);
   overflow: hidden;
+  /* Thumb plus two title lines and a meta line, so rows below do not jump when cards arrive. */
+  min-height: calc(var(--row-card-width) * 9 / 16 + 5.5rem);
 }
 
 /* ---------- Progress ---------- */
@@ -1632,6 +1634,8 @@
   align-items: baseline;
   justify-content: space-between;
   gap: var(--space-4);
+  position: relative;
+  z-index: 1;
   padding: 0 var(--page-gutter);
   margin-bottom: var(--space-3);
 }
@@ -1653,19 +1657,35 @@
   text-decoration: none;
 }
 
+/* Revealed by row hover or any focus inside the row. Touch devices always show it. */
+@media (hover: hover) and (pointer: fine) {
+  .ad-row__all {
+    opacity: 0;
+    transition: opacity var(--motion-fast) var(--ease-standard);
+  }
+  .ad-row:hover .ad-row__all,
+  .ad-row:focus-within .ad-row__all,
+  .ad-row__all:focus-visible {
+    opacity: 1;
+  }
+}
+
 .ad-row__pad {
   padding: 0 var(--page-gutter);
 }
 
 .ad-row__viewport {
   position: relative;
+  /* The list pads for the hover card scale. Take the same amount back so rows keep their spacing. */
+  margin-block: calc(-1 * var(--row-pad-block, 0px));
 }
 
 .ad-row__list {
   display: flex;
   gap: var(--card-gap);
   margin: 0;
-  padding: var(--space-1) var(--page-gutter);
+  padding: var(--row-pad-block, var(--space-1)) var(--page-gutter);
+  padding-block: var(--row-pad-block, var(--space-1));
   list-style: none;
   overflow-x: auto;
   overscroll-behavior-x: contain;
@@ -1674,10 +1694,16 @@
   scrollbar-width: none;
 }
 
+@media (pointer: coarse) {
+  .ad-row__list {
+    scroll-snap-type: x mandatory;
+  }
+}
+
 /* Room for the hover card scale. Real padding, never a negative margin. */
 @container row (min-width: 600px) {
-  .ad-row__list {
-    padding-block: calc(var(--row-card-width) * 9 / 16 * (var(--card-scale) - 1) / 2);
+  .ad-row__viewport {
+    --row-pad-block: calc(var(--row-card-width) * 9 / 16 * (var(--card-scale) - 1) / 2);
   }
 }
 
