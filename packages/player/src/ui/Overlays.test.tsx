@@ -83,7 +83,7 @@ describe('ErrorOverlay (L4-11, R39)', () => {
     expect(keys.length).toBeGreaterThan(10);
     for (const key of keys) {
       const text = String((EN_NG as Record<string, unknown>)[key] ?? '');
-      expect(text, key).not.toMatch(/[–—]/);
+      expect(text, key).not.toMatch(/[\u2013\u2014]/);
       expect(text, key).not.toMatch(/\bYou (failed|did|should have)\b/i);
     }
   });

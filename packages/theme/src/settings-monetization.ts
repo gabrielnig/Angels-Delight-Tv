@@ -6,7 +6,7 @@ import { z } from 'zod';
  * elsewhere (rulings R02, R25). Secrets (the Paystack key) are environment variables, never settings.
  */
 
-const FORBIDDEN_TEXT = /[–—<>]|\p{Extended_Pictographic}/u;
+const FORBIDDEN_TEXT = /[\u2013\u2014<>]|\p{Extended_Pictographic}/u;
 
 const text = (max: number) =>
   z

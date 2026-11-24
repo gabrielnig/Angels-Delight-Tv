@@ -22,7 +22,7 @@ const fn=()=>{
  const tw=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT);let n;
  while(n=tw.nextNode()){const t=n.textContent.trim();if(!t)continue;const el=n.parentElement;if(!el||!vis(el)||['SCRIPT','STYLE'].includes(el.tagName))continue;
   if(/[\u2013\u2014]/.test(t))out.dash.push(t.slice(0,50));
-  if(/[\u{1F300}-\u{1FAFF}☀-➿]/u.test(t))out.dash.push('EMOJI '+t.slice(0,40));
+  if(/[\u{1F300}-\u{1FAFF}\u2600-\u27BF]/u.test(t))out.dash.push('EMOJI '+t.slice(0,40));
   const cs=getComputedStyle(el);const fg=parse(cs.color);if(!fg)continue;const {base,img}=bgOf(el);
   const f=over({...fg,a:fg.a*(parseFloat(cs.opacity)||1)},base);const ratio=cr(f,base);
   const px=parseFloat(cs.fontSize),bold=parseInt(cs.fontWeight)>=700;const large=px>=24||(px>=18.66&&bold);

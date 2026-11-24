@@ -106,8 +106,8 @@ describe('monetization settings registry', () => {
   });
 
   it('refuses dashes and markup in donor facing text', () => {
-    expect(parse('donate.intro_title', 'Help — please').success).toBe(false);
-    expect(parse('donate.intro_body', 'Keep it free – give').success).toBe(false);
+    expect(parse('donate.intro_title', 'Help \u2014 please').success).toBe(false);
+    expect(parse('donate.intro_body', 'Keep it free \u2013 give').success).toBe(false);
     expect(parse('donate.org_name', 'Light <b>Org</b>').success).toBe(false);
   });
 
