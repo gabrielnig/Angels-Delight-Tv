@@ -59,5 +59,12 @@ describe('design doc quotes the values the plan settled (M47-S15)', () => {
     expect(read('docs/BUILD-PLAN.md')).toContain('Lanes added after phase 4');
   });
 
-  it.todo('ai-context decision number equals the highest DECISIONS heading (main session flips this on, R40)');
+  it('ai-context decision number equals the highest DECISIONS heading (R40)', () => {
+    const numbers = [...read('docs/DECISIONS.md').matchAll(/^## D-(\d+) /gm)].map((m) => Number(m[1]));
+    expect(numbers.length).toBeGreaterThan(0);
+    const highest = Math.max(...numbers);
+    const stated = /Decisions are logged up to D-(\d+)/.exec(read('ai-context.md'));
+    expect(stated, 'ai-context.md must say "Decisions are logged up to D-<n>"').not.toBeNull();
+    expect(Number(stated?.[1])).toBe(highest);
+  });
 });
