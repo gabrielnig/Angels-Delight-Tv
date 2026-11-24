@@ -1,5 +1,6 @@
 'use client';
 
+import { useT } from '../../lib/i18n/provider';
 import { useId, useState } from 'react';
 import { AcctIcon } from '../account/icons';
 
@@ -17,6 +18,7 @@ export function HelpFaq({
   articles: HelpArticle[];
   supportEmail: string;
 }) {
+  const msg = useT();
   const [query, setQuery] = useState('');
   const [open, setOpen] = useState<string | null>(null);
   const base = useId();
@@ -32,13 +34,13 @@ export function HelpFaq({
       <div className="acct-search">
         <AcctIcon name="search" size={20} />
         <label className="ad-sr-only" htmlFor={searchId}>
-          Search help
+          {msg('site.searchHelp')}
         </label>
         <input
           id={searchId}
           type="search"
           enterKeyHint="search"
-          placeholder="Search help, for example password"
+          placeholder={msg('site.searchHelpForExample')}
           value={query}
           onChange={(event) => setQuery(event.target.value)}
         />
@@ -49,12 +51,10 @@ export function HelpFaq({
       {shown.length === 0 ? (
         <div className="acct-card" data-gap="2" data-narrow>
           <h2 className="acct-h3">{`No help articles match "${query.trim()}"`}</h2>
-          <p className="acct-muted acct-small">
-            Check the spelling or try a shorter word. You can also email us.
-          </p>
+          <p className="acct-muted acct-small">{msg('site.checkTheSpellingOr')}</p>
           <div>
             <a className="ad-btn" data-variant="secondary" data-size="md" href={mailto}>
-              <span>Email support</span>
+              <span>{msg('site.emailSupport')}</span>
             </a>
           </div>
         </div>
@@ -92,12 +92,12 @@ export function HelpFaq({
           </ul>
           <div className="acct-card acct-row acct-stuck" data-wrap>
             <div className="acct-col">
-              <span className="acct-stuck__title">Still stuck?</span>
-              <span className="acct-muted acct-small">We reply within 2 working days.</span>
+              <span className="acct-stuck__title">{msg('site.stillStuck')}</span>
+              <span className="acct-muted acct-small">{msg('site.weReplyWithin2')}</span>
             </div>
             <a className="ad-btn" data-variant="primary" data-size="md" href={mailto}>
               <AcctIcon name="mail" size={18} />
-              <span>{`Email ${supportEmail}`}</span>
+              <span>{msg('site.email', { supportEmail })}</span>
             </a>
           </div>
         </>

@@ -1,5 +1,6 @@
 'use client';
 
+import { useT } from '../../lib/i18n/provider';
 import { useRef, useState, type FormEvent } from 'react';
 import {
   Banner,
@@ -21,6 +22,7 @@ export function ForgotPasswordForm({
     email: string;
   }) => Promise<{ ok: true } | { ok: false; reason: 'rate_limited' | 'network' }>;
 }) {
+  const msg = useT();
   const formRef = useRef<HTMLFormElement>(null);
   const requestFocus = useFocusFirstInvalid(formRef);
   const [email, setEmail] = useState('');
@@ -52,13 +54,11 @@ export function ForgotPasswordForm({
   if (sent) {
     return (
       <div className="web-form">
-        <h1 className="web-auth__title">Check your email</h1>
-        <p>If that email has an account, we sent a link. It works for 1 hour.</p>
-        <p className="web-muted">
-          Not there? Check your spam folder, or try again in a few minutes.
-        </p>
+        <h1 className="web-auth__title">{msg('auth.checkYourEmail')}</h1>
+        <p>{msg('auth.ifThatEmailHas')}</p>
+        <p className="web-muted">{msg('auth.notThereCheckYour')}</p>
         <ButtonLink href="/sign-in" variant="secondary" fullWidth>
-          Back to sign in
+          {msg('auth.backToSignIn')}
         </ButtonLink>
       </div>
     );
@@ -66,10 +66,8 @@ export function ForgotPasswordForm({
 
   return (
     <form ref={formRef} className="web-form" onSubmit={submit} noValidate>
-      <h1 className="web-auth__title">Forgot your password?</h1>
-      <p className="web-muted">
-        Enter your email. We will send you a link to choose a new password.
-      </p>
+      <h1 className="web-auth__title">{msg('auth.forgotYourPassword')}</h1>
+      <p className="web-muted">{msg('auth.enterYourEmailWe')}</p>
       {banner ? <Banner tone="danger">{banner}</Banner> : null}
       <Input
         label="Email"
@@ -78,17 +76,17 @@ export function ForgotPasswordForm({
         name="email"
         inputMode="email"
         autoComplete="email"
-        placeholder="name@example.com"
+        placeholder={msg('auth.nameExampleCom')}
         value={email}
         onChange={(event) => setEmail(event.target.value)}
         onBlur={() => setTouched(true)}
         error={touched ? emailError(email) : undefined}
       />
       <Button type="submit" size="lg" fullWidth loading={busy}>
-        {busy ? 'Sending link' : 'Send link'}
+        {busy ? msg('auth.sendingLink') : msg('auth.sendLink')}
       </Button>
       <p className="web-form__alt">
-        Remembered it? <Link href="/sign-in">Sign in</Link>
+        {msg('auth.rememberedIt')} <Link href="/sign-in">{msg('auth.signIn')}</Link>
       </p>
     </form>
   );
@@ -108,6 +106,7 @@ export function ResetPasswordForm({
   onDone: () => void;
   scorer?: PasswordScorer;
 }) {
+  const msg = useT();
   const formRef = useRef<HTMLFormElement>(null);
   const requestFocus = useFocusFirstInvalid(formRef);
   const [password, setPassword] = useState('');
@@ -118,11 +117,11 @@ export function ResetPasswordForm({
 
   const checks = evaluatePassword(password, 2);
   const problem = !password
-    ? 'Enter a new password.'
+    ? msg('auth.enterANewPassword')
     : !checks.lengthOk
-      ? 'Use at least 10 characters.'
+      ? msg('auth.useAtLeast10')
       : !checks.notCommon
-        ? 'That password is too common. Choose another.'
+        ? msg('auth.thatPasswordIsToo')
         : undefined;
 
   async function submit(event: FormEvent) {
@@ -138,8 +137,7 @@ export function ResetPasswordForm({
       const result = await onSubmit({ token, password });
       if (result.ok) onDone();
       else if (result.reason === 'expired') setExpired(true);
-      else if (result.reason === 'weak_password')
-        setBanner('That password is too short or too common. Choose another.');
+      else if (result.reason === 'weak_password') setBanner(msg('auth.thatPasswordIsToo2'));
       else setBanner(NETWORK_MESSAGE);
     } catch {
       setBanner(NETWORK_MESSAGE);
@@ -151,13 +149,13 @@ export function ResetPasswordForm({
   if (expired) {
     return (
       <div className="web-form">
-        <h1 className="web-auth__title">This link has expired</h1>
-        <p className="web-muted">Links work for 1 hour. We can send you a new one.</p>
+        <h1 className="web-auth__title">{msg('auth.thisLinkHasExpired')}</h1>
+        <p className="web-muted">{msg('auth.linksWorkFor1')}</p>
         <ButtonLink href="/forgot-password" fullWidth>
-          Send a new link
+          {msg('auth.sendANewLink')}
         </ButtonLink>
         <ButtonLink href="/sign-in" variant="secondary" fullWidth>
-          Back to sign in
+          {msg('auth.backToSignIn')}
         </ButtonLink>
       </div>
     );
@@ -165,8 +163,8 @@ export function ResetPasswordForm({
 
   return (
     <form ref={formRef} className="web-form" onSubmit={submit} noValidate>
-      <h1 className="web-auth__title">Choose a new password</h1>
-      <p className="web-muted">Pick something you will remember. Longer is better.</p>
+      <h1 className="web-auth__title">{msg('auth.chooseANewPassword')}</h1>
+      <p className="web-muted">{msg('auth.pickSomethingYouWill')}</p>
       {banner ? <Banner tone="danger">{banner}</Banner> : null}
       <PasswordField
         label="New password (required)"
@@ -174,7 +172,7 @@ export function ResetPasswordForm({
         mode="new"
         showStrength
         scorer={scorer}
-        placeholder="Choose a password"
+        placeholder={msg('auth.chooseAPassword')}
         hint="Use the eye button to check what you typed. There is no second box."
         value={password}
         onChange={(event) => setPassword(event.target.value)}
@@ -182,7 +180,7 @@ export function ResetPasswordForm({
         error={touched ? problem : undefined}
       />
       <Button type="submit" size="lg" fullWidth loading={busy}>
-        {busy ? 'Saving' : 'Save password'}
+        {busy ? msg('auth.saving') : msg('auth.savePassword')}
       </Button>
     </form>
   );

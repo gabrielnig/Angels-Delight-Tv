@@ -1,5 +1,6 @@
 'use client';
 
+import { useT } from '../../lib/i18n/provider';
 import { useRef, useState, type FormEvent } from 'react';
 import { Link, evaluatePassword, type PasswordScorer } from '@ad/ui';
 import type { SignUpResult } from '../../lib/data';
@@ -33,6 +34,7 @@ export function SignUpForm({
   /** Draws Sign up with Google under the main button. Leave out when Google is not configured or sign up is closed. */
   google?: { href: string } | null;
 }) {
+  const msg = useT();
   const turnstile = useTurnstile(turnstileSiteKey);
   const formRef = useRef<HTMLFormElement>(null);
   const requestFocus = useFocusFirstInvalid(formRef);
@@ -52,13 +54,13 @@ export function SignUpForm({
 
   const checks = evaluatePassword(password, 2);
   const passwordProblem = !password
-    ? 'Enter a password.'
+    ? msg('auth.enterAPassword')
     : !checks.lengthOk
-      ? 'Use at least 10 characters.'
+      ? msg('auth.useAtLeast10')
       : !checks.notCommon
-        ? 'That password is too common. Choose another.'
+        ? msg('auth.thatPasswordIsToo')
         : undefined;
-  const inviteProblem = inviteOnly && !invite.trim() ? 'Enter your invite code.' : undefined;
+  const inviteProblem = inviteOnly && !invite.trim() ? msg('auth.enterYourInviteCode') : undefined;
   const show = (field: 'email' | 'password' | 'invite') => touched[field] || submitted;
 
   async function submit(event: FormEvent) {
@@ -92,19 +94,19 @@ export function SignUpForm({
         return;
       }
       if (result.reason === 'check_required')
-        setBanner({ text: 'We could not confirm the security check. Try again.', tone: 'danger' });
+        setBanner({ text: msg('auth.weCouldNotConfirm'), tone: 'danger' });
       else if (result.reason === 'rate_limited')
         setBanner({ text: SIGN_UP_RATE_LIMIT_MESSAGE, tone: 'warning', icon: 'clock' });
       else if (result.reason === 'network')
         setBanner({ text: SIGN_UP_NETWORK_MESSAGE, tone: 'danger' });
       else if (result.reason === 'invite_required')
         setBanner({
-          text: 'That invite code is not valid. Check it and try again.',
+          text: msg('auth.thatInviteCodeIs'),
           tone: 'danger',
         });
       else if (result.reason === 'invalid_email')
         setServerField({ email: 'Enter your full email, for example name@example.com.' });
-      else setServerField({ password: 'Use at least 10 characters.' });
+      else setServerField({ password: msg('auth.useAtLeast10') });
       if (result.reason === 'invalid_email' || result.reason === 'weak_password') requestFocus();
     } catch {
       setBanner({ text: SIGN_UP_NETWORK_MESSAGE, tone: 'danger' });
@@ -128,7 +130,7 @@ export function SignUpForm({
         name="email"
         inputMode="email"
         autoComplete="email"
-        placeholder="name@example.com"
+        placeholder={msg('auth.nameExampleCom')}
         value={email}
         onChange={(event) => setEmail(event.target.value)}
         onBlur={() => setTouched((current) => ({ ...current, email: true }))}
@@ -154,7 +156,7 @@ export function SignUpForm({
         mode="new"
         showStrength
         scorer={scorer}
-        placeholder="Choose a password"
+        placeholder={msg('auth.chooseAPassword')}
         value={password}
         onChange={(event) => setPassword(event.target.value)}
         onBlur={() => setTouched((current) => ({ ...current, password: true }))}
@@ -171,17 +173,19 @@ export function SignUpForm({
       </div>
       {turnstile.widget}
       <p className="auth-fine">
-        By creating an account you agree to the <Link href="/terms">Terms</Link> and{' '}
-        <Link href="/privacy">Privacy Policy</Link>.
+        {msg('auth.byCreatingAnAccount')} <Link href="/terms">{msg('auth.terms')}</Link>{' '}
+        {msg('auth.and')} <Link href="/privacy">{msg('auth.privacyPolicy')}</Link>.
       </p>
       <div className="auth-sticky">
-        <AuthSubmit loading={busy}>{busy ? 'Creating account' : 'Create account'}</AuthSubmit>
+        <AuthSubmit loading={busy}>
+          {busy ? msg('auth.creatingAccount') : msg('auth.createAccount')}
+        </AuthSubmit>
         <SocialButtons google={google} variant="signUp" />
       </div>
       <p className="auth-alt">
-        Already have an account?{' '}
+        {msg('auth.alreadyHaveAnAccount')}{' '}
         <Link href="/sign-in" className="auth-link">
-          Sign in
+          {msg('auth.signIn')}
         </Link>
       </p>
     </form>

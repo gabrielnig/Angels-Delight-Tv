@@ -1,5 +1,6 @@
 'use client';
 
+import { useT } from '../../lib/i18n/provider';
 import { useRef, useState, type FormEvent } from 'react';
 import { Checkbox, Link } from '@ad/ui';
 import type { AuthResult } from '../../lib/data';
@@ -48,6 +49,7 @@ export function SignInForm({
   /** Draws Continue with Google under the main button. Leave out when Google is not configured. */
   google?: { href: string } | null;
 }) {
+  const msg = useT();
   const turnstile = useTurnstile(turnstileSiteKey);
   const formRef = useRef<HTMLFormElement>(null);
   const requestFocus = useFocusFirstInvalid(formRef);
@@ -61,7 +63,7 @@ export function SignInForm({
 
   const shownEmailError = touched.email || submitted ? emailError(email) : undefined;
   const shownPasswordError =
-    (touched.password || submitted) && !password ? 'Enter your password.' : undefined;
+    (touched.password || submitted) && !password ? msg('auth.enterYourPassword') : undefined;
   const lockedMinutes = problem?.kind === 'locked' ? problem.minutes : null;
 
   async function submit(event: FormEvent) {
@@ -117,17 +119,13 @@ export function SignInForm({
     <form ref={formRef} className="auth-form" onSubmit={submit} noValidate>
       {notice && !problem ? <AuthBanner tone={noticeTone}>{notice}</AuthBanner> : null}
       {problem?.kind === 'invalid' ? (
-        <AuthBanner tone="danger">
-          That email or password is not right. Check them and try again.
-        </AuthBanner>
+        <AuthBanner tone="danger">{msg('auth.thatEmailOrPassword')}</AuthBanner>
       ) : null}
       {problem?.kind === 'network' ? (
         <AuthBanner tone="danger">{NETWORK_MESSAGE}</AuthBanner>
       ) : null}
       {problem?.kind === 'unavailable' ? (
-        <AuthBanner tone="warning">
-          Sign in is temporarily unavailable. Try again in a moment.
-        </AuthBanner>
+        <AuthBanner tone="warning">{msg('auth.signInIsTemporarily')}</AuthBanner>
       ) : null}
       {problem?.kind === 'rate_limited' ? (
         <AuthBanner tone="warning" icon="clock">
@@ -135,17 +133,18 @@ export function SignInForm({
         </AuthBanner>
       ) : null}
       {problem?.kind === 'locked' ? (
-        <AuthBanner tone="warning" title="Sign in is paused">
-          {`Too many attempts. Try again in ${problem.minutes} minutes.`}{' '}
-          <Link href="/forgot-password">Reset your password</Link> if you cannot remember it.
+        <AuthBanner tone="warning" title={msg('auth.signInIsPaused')}>
+          {msg('auth.tooManyAttemptsTry', { minutes: problem.minutes })}{' '}
+          <Link href="/forgot-password">{msg('auth.resetYourPassword')}</Link>{' '}
+          {msg('auth.ifYouCannotRemember')}
         </AuthBanner>
       ) : null}
       {problem?.kind === 'checking' ? (
         <AuthBanner tone="info">{CHECK_RUNNING_MESSAGE}</AuthBanner>
       ) : null}
       {problem?.kind === 'check' ? (
-        <AuthBanner tone="info" title="One more step">
-          Too many attempts from this connection. Complete the check below, then try again.
+        <AuthBanner tone="info" title={msg('auth.oneMoreStep')}>
+          {msg('auth.tooManyAttemptsFrom')}
         </AuthBanner>
       ) : null}
 
@@ -156,7 +155,7 @@ export function SignInForm({
         inputMode="email"
         autoComplete="email"
         enterKeyHint="next"
-        placeholder="name@example.com"
+        placeholder={msg('auth.nameExampleCom')}
         value={email}
         onChange={(event) => setEmail(event.target.value)}
         onBlur={() => setTouched((current) => ({ ...current, email: true }))}
@@ -166,7 +165,7 @@ export function SignInForm({
         label="Password"
         name="password"
         mode="current"
-        placeholder="Your password"
+        placeholder={msg('auth.yourPassword')}
         value={password}
         onChange={(event) => setPassword(event.target.value)}
         onBlur={() => setTouched((current) => ({ ...current, password: true }))}
@@ -175,7 +174,7 @@ export function SignInForm({
       />
       <div className="auth-forgot">
         <Link href="/forgot-password" className="auth-link">
-          Forgot your password?
+          {msg('auth.forgotYourPassword')}
         </Link>
       </div>
       {turnstile.widget}
@@ -188,17 +187,17 @@ export function SignInForm({
       ) : null}
       <AuthSubmit loading={busy} disabled={lockedMinutes !== null}>
         {busy
-          ? 'Signing in'
+          ? msg('auth.signingIn')
           : lockedMinutes !== null
-            ? `Try again in ${lockedMinutes} min`
-            : 'Sign in'}
+            ? msg('auth.tryAgainInMin', { lockedMinutes })
+            : msg('auth.signIn')}
       </AuthSubmit>
       <SocialButtons google={google} next={next} />
       {signUpOpen ? (
         <p className="auth-alt">
-          New here?{' '}
+          {msg('auth.newHere')}{' '}
           <Link href="/sign-up" className="auth-link">
-            Create an account
+            {msg('auth.createAnAccount')}
           </Link>
         </p>
       ) : null}

@@ -1,5 +1,7 @@
 'use client';
 
+import { msg as sharedMsg, type Translate } from '@ad/shared/messages';
+import { useT } from '../../lib/i18n/provider';
 import {
   useEffect,
   useId,
@@ -185,19 +187,40 @@ interface MeterView {
 }
 
 /** Maps the shared password rules onto the mockup meter: Strength, Weak (2), Okay (3), Strong (4). */
-export function meterView(password: string, score: number): MeterView {
+export function meterView(password: string, score: number, msg: Translate = sharedMsg): MeterView {
   if (password.length === 0) {
-    return { word: 'Strength', segments: 0, tone: 'muted', label: 'not started' };
+    return {
+      word: msg('auth.strengthWord'),
+      segments: 0,
+      tone: 'muted',
+      label: msg('auth.strengthNotStarted'),
+    };
   }
   const result = evaluatePassword(password, score);
-  if (result.label === 'Okay') return { word: 'Okay', segments: 3, tone: 'info', label: 'Okay' };
+  if (result.label === 'Okay')
+    return {
+      word: msg('auth.strengthOkay'),
+      segments: 3,
+      tone: 'info',
+      label: msg('auth.strengthOkay'),
+    };
   if (result.label === 'Strong')
-    return { word: 'Strong', segments: 4, tone: 'success', label: 'Strong' };
+    return {
+      word: msg('auth.strengthStrong'),
+      segments: 4,
+      tone: 'success',
+      label: msg('auth.strengthStrong'),
+    };
   const segments =
     result.label === 'Too short'
       ? Math.min(2, Math.ceil(password.length / 5))
       : Math.max(1, Math.min(2, result.segments));
-  return { word: 'Weak', segments, tone: 'warning', label: 'Weak' };
+  return {
+    word: msg('auth.strengthWeak'),
+    segments,
+    tone: 'warning',
+    label: msg('auth.strengthWeak'),
+  };
 }
 
 function Rule({ met, children, hint }: { met?: boolean; children: string; hint?: boolean }) {
@@ -243,6 +266,7 @@ export function AuthPasswordField({
   onKeyDown,
   ...rest
 }: AuthPasswordFieldProps) {
+  const msg = useT();
   const [visible, setVisible] = useState(false);
   const [caps, setCaps] = useState(false);
   const [score, setScore] = useState(0);
@@ -270,7 +294,7 @@ export function AuthPasswordField({
   }
 
   const result = evaluatePassword(value, score);
-  const view = meterView(value, score);
+  const view = meterView(value, score, msg);
   const field = (
     <AuthField
       {...rest}
@@ -295,7 +319,7 @@ export function AuthPasswordField({
         <button
           type="button"
           className="auth-field__action"
-          aria-label={visible ? 'Hide password' : 'Show password'}
+          aria-label={visible ? msg('auth.hidePassword') : msg('auth.showPassword')}
           aria-pressed={visible}
           onClick={() => setVisible((current) => !current)}
         >
@@ -313,7 +337,7 @@ export function AuthPasswordField({
           <div
             className="auth-meter"
             role="group"
-            aria-label={`Password strength: ${view.label}`}
+            aria-label={msg('auth.passwordStrength', { label: view.label })}
             data-tone={view.tone}
           >
             <div className="auth-meter__bar" aria-hidden="true">
@@ -324,10 +348,12 @@ export function AuthPasswordField({
             <span className="auth-meter__word">{view.word}</span>
           </div>
           <ul className="auth-checklist">
-            <Rule met={result.lengthOk}>{`At least ${MIN_PASSWORD_LENGTH} characters`}</Rule>
-            <Rule met={result.notCommon && value.length > 0}>Not a common password</Rule>
+            <Rule met={result.lengthOk}>
+              {msg('auth.atLeastCharacters', { count: MIN_PASSWORD_LENGTH })}
+            </Rule>
+            <Rule met={result.notCommon && value.length > 0}>{msg('auth.notACommonPassword')}</Rule>
             <Rule hint met={view.label === 'Strong'}>
-              Better with a mix of words you can remember
+              {msg('auth.betterWithAMix')}
             </Rule>
           </ul>
         </div>
@@ -337,7 +363,7 @@ export function AuthPasswordField({
       {caps ? (
         <div className="auth-caps" role="status">
           <AuthIcon name="alert" size={18} />
-          <span>Caps Lock is on</span>
+          <span>{msg('auth.capsLockIsOn')}</span>
         </div>
       ) : null}
     </>

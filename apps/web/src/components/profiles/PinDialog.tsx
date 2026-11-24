@@ -1,5 +1,6 @@
 'use client';
 
+import { useT } from '../../lib/i18n/provider';
 import { useState, type FormEvent } from 'react';
 import { Button, Modal, OtpInput, PasswordField } from '@ad/ui';
 import type { SelectProfileResult } from '../../lib/data';
@@ -22,6 +23,7 @@ export function PinDialog({
   onUnlocked: () => void;
   onClose: () => void;
 }) {
+  const msg = useT();
   const [mode, setMode] = useState<'pin' | 'password'>('pin');
   const [pin, setPin] = useState('');
   const [password, setPassword] = useState('');
@@ -46,17 +48,15 @@ export function PinDialog({
         return;
       }
       if (result.reason === 'locked') {
-        setError(
-          `Too many tries. Try again in ${result.minutes ?? 5} minutes, or use your account password.`,
-        );
+        setError(msg('profiles.tooManyTriesTry', { value1: result.minutes ?? 5 }));
       } else if (result.reason === 'password_incorrect') {
-        setError('That password is not right. Check it and try again.');
+        setError(msg('profiles.thatPasswordIsNot'));
       } else {
-        setError('That PIN is not right. Try again.');
+        setError(msg('profiles.thatPinIsNot'));
       }
       setPin('');
     } catch {
-      setError('We could not check that. Check your data or Wi-Fi, then try again.');
+      setError(msg('profiles.weCouldNotCheck'));
       setPin('');
     } finally {
       setBusy(false);
@@ -66,7 +66,7 @@ export function PinDialog({
   function submitPassword(event: FormEvent) {
     event.preventDefault();
     if (!password) {
-      setError('Enter your account password.');
+      setError(msg('profiles.enterYourAccountPassword'));
       return;
     }
     void send({ password });
@@ -81,16 +81,16 @@ export function PinDialog({
     <Modal
       open={open}
       onClose={close}
-      title={`Enter PIN for ${profileName}`}
+      title={msg('profiles.enterPinFor', { profileName })}
       dismissOnScrim={false}
       footer={
         <>
           <Button variant="secondary" onClick={close}>
-            Cancel
+            {msg('profiles.cancel')}
           </Button>
           {mode === 'password' ? (
             <Button type="submit" form="pin-password-form" loading={busy}>
-              Continue
+              {msg('profiles.continue')}
             </Button>
           ) : null}
         </>
@@ -100,7 +100,7 @@ export function PinDialog({
         <div className="web-form">
           <OtpInput
             length={4}
-            label={`Enter the 4 digit PIN for ${profileName}`}
+            label={msg('profiles.enterThe4Digit', { profileName })}
             value={pin}
             onChange={setPin}
             onComplete={(value) => void send({ pin: value })}
@@ -115,12 +115,12 @@ export function PinDialog({
               setError(undefined);
             }}
           >
-            Use account password instead
+            {msg('profiles.useAccountPasswordInstead')}
           </Button>
         </div>
       ) : (
         <form id="pin-password-form" className="web-form" onSubmit={submitPassword} noValidate>
-          <p className="web-muted">Enter your account password to open this profile.</p>
+          <p className="web-muted">{msg('profiles.enterYourAccountPassword2')}</p>
           <PasswordField
             label="Account password"
             value={password}
@@ -135,7 +135,7 @@ export function PinDialog({
               setError(undefined);
             }}
           >
-            Use PIN instead
+            {msg('profiles.usePinInstead')}
           </Button>
         </form>
       )}

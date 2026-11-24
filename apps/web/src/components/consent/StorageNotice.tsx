@@ -1,5 +1,6 @@
 'use client';
 
+import { useT } from '../../lib/i18n/provider';
 import { usePathname } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import { Button } from '@ad/ui';
@@ -28,6 +29,7 @@ function deviceStore(): Storage | null {
  * shift, and it publishes its height as `--notice-h` so a toast can lift above it (DESIGN-SYSTEM 11.13).
  */
 export function StorageNotice({ enabled, text, version }: StorageNoticeProps) {
+  const msg = useT();
   const pathname = usePathname() ?? '/';
   const [open, setOpen] = useState(false);
   const box = useRef<HTMLElement>(null);
@@ -50,7 +52,8 @@ export function StorageNotice({ enabled, text, version }: StorageNoticeProps) {
       root.style.setProperty('--notice-h', '0px');
       return;
     }
-    const publish = () => root.style.setProperty('--notice-h', `${Math.ceil(node.getBoundingClientRect().height)}px`);
+    const publish = () =>
+      root.style.setProperty('--notice-h', `${Math.ceil(node.getBoundingClientRect().height)}px`);
     publish();
     const observer = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(publish);
     observer?.observe(node);
@@ -63,10 +66,15 @@ export function StorageNotice({ enabled, text, version }: StorageNoticeProps) {
   if (!shown) return null;
 
   return (
-    <section ref={box} className="ad-notice" role="region" aria-label="Storage notice">
+    <section
+      ref={box}
+      className="ad-notice"
+      role="region"
+      aria-label={msg('consent.storageNotice')}
+    >
       <p className="ad-notice__text">{text}</p>
       <a className="ad-notice__link" href="/privacy#storage">
-        How we use storage
+        {msg('consent.howWeUseStorage')}
       </a>
       <Button
         className="ad-notice__button"
@@ -75,7 +83,7 @@ export function StorageNotice({ enabled, text, version }: StorageNoticeProps) {
           setOpen(false);
         }}
       >
-        Got it
+        {msg('consent.gotIt')}
       </Button>
     </section>
   );

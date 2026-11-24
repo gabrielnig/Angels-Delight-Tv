@@ -1,9 +1,11 @@
 'use client';
 
+import { useT } from '../../lib/i18n/provider';
 import { useEffect, useState } from 'react';
 
 /** The "On this page" list. The section being read is filled, following the scroll position. */
 export function LegalToc({ sections }: { sections: Array<{ id: string; heading: string }> }) {
+  const msg = useT();
   const [active, setActive] = useState(sections[0]?.id ?? '');
   useEffect(() => {
     if (typeof IntersectionObserver === 'undefined') return;
@@ -26,8 +28,8 @@ export function LegalToc({ sections }: { sections: Array<{ id: string; heading: 
     return () => observer.disconnect();
   }, [sections]);
   return (
-    <nav aria-label="On this page" className="acct-toc">
-      <span className="acct-toc__label">On this page</span>
+    <nav aria-label={msg('site.onThisPage')} className="acct-toc">
+      <span className="acct-toc__label">{msg('site.onThisPage')}</span>
       {sections.map((s) => (
         <a
           key={s.id}

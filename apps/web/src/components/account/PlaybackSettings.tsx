@@ -1,5 +1,6 @@
 'use client';
 
+import { useT } from '../../lib/i18n/provider';
 import {
   useCallback,
   useEffect,
@@ -15,7 +16,6 @@ import {
   DEFAULT_CAPTION_STYLE,
   normalizeCaptionStyle,
 } from '@ad/player';
-import { msg } from '@ad/shared/messages';
 import { Button, Modal } from '@ad/ui';
 import { savePlaybackAction } from '../../app/actions';
 import type { PlaybackSettings } from '../../lib/data';
@@ -142,6 +142,7 @@ export function PlaybackSettingsForm({
   /** Shown in the heading so a shared device makes clear whose settings these are. */
   profileName?: string;
 }) {
+  const msg = useT();
   const base = useId();
   const [values, setValues] = useState(initial);
   const [saved, setSaved] = useState(false);
@@ -214,19 +215,15 @@ export function PlaybackSettingsForm({
       {kids ? (
         <div className="acct-notice">
           <AcctIcon name="info" size={20} />
-          <span className="acct-notice__text">
-            You are in a Kids profile. Some settings are managed by a parent account.
-          </span>
+          <span className="acct-notice__text">{msg('account.youAreInA')}</span>
         </div>
       ) : null}
       {failed ? (
         <div className="acct-notice" data-tone="error" role="alert">
           <AcctIcon name="warning" size={20} />
-          <span className="acct-notice__text">
-            We could not save that change. Your setting was put back.
-          </span>
+          <span className="acct-notice__text">{msg('account.weCouldNotSave2')}</span>
           <Button variant="secondary" onClick={() => void apply(failed)}>
-            Retry
+            {msg('account.retry')}
           </Button>
         </div>
       ) : null}
@@ -240,8 +237,8 @@ export function PlaybackSettingsForm({
           label="Autoplay next episode"
           hint={
             locked('autoplayNext')
-              ? 'Set by your parent account.'
-              : 'Start the next episode when one ends.'
+              ? msg('account.setByYourParent')
+              : msg('account.startTheNextEpisode')
           }
         >
           {(ids) => (
@@ -271,8 +268,8 @@ export function PlaybackSettingsForm({
           label="Data saver"
           hint={
             locked('dataSaver')
-              ? 'Set by your parent account.'
-              : 'Data saver keeps video at 480p or lower to use less data. About 20 MB per minute.'
+              ? msg('account.setByYourParent')
+              : msg('account.dataSaverKeepsVideo')
           }
           extra={
             <>
@@ -306,11 +303,11 @@ export function PlaybackSettingsForm({
               value={values.quality}
               onChange={(v) => void apply({ quality: v as PlaybackSettings['quality'] })}
             >
-              <option value="auto">Auto</option>
-              <option value="1080">1080p</option>
-              <option value="720">720p</option>
-              <option value="480">480p</option>
-              <option value="360">360p</option>
+              <option value="auto">{msg('account.auto')}</option>
+              <option value="1080">{msg('account.1080p')}</option>
+              <option value="720">{msg('account.720p')}</option>
+              <option value="480">{msg('account.480p')}</option>
+              <option value="360">{msg('account.360p')}</option>
             </Choice>
           )}
         </Row>
@@ -338,8 +335,8 @@ export function PlaybackSettingsForm({
           label="Captions on by default"
           hint={
             values.captionsDefault
-              ? 'Captions are on. You can turn them off in the player.'
-              : 'Captions are off. You can turn them on in the player.'
+              ? msg('account.captionsAreOnYou')
+              : msg('account.captionsAreOffYou')
           }
         >
           {(ids) => (
@@ -357,10 +354,10 @@ export function PlaybackSettingsForm({
               value={values.captionSize}
               onChange={(v) => void apply({ captionSize: v as PlaybackSettings['captionSize'] })}
             >
-              <option value="small">Small</option>
-              <option value="medium">Medium</option>
-              <option value="large">Large</option>
-              <option value="xlarge">Extra large</option>
+              <option value="small">{msg('account.small')}</option>
+              <option value="medium">{msg('account.medium')}</option>
+              <option value="large">{msg('account.large')}</option>
+              <option value="xlarge">{msg('account.extraLarge')}</option>
             </Choice>
           )}
         </Row>
@@ -373,9 +370,9 @@ export function PlaybackSettingsForm({
                 void apply({ captionBackground: v as PlaybackSettings['captionBackground'] })
               }
             >
-              <option value="none">None</option>
-              <option value="dark">Dark</option>
-              <option value="solid">Solid</option>
+              <option value="none">{msg('account.none')}</option>
+              <option value="dark">{msg('account.dark')}</option>
+              <option value="solid">{msg('account.solid')}</option>
             </Choice>
           )}
         </Row>
@@ -390,9 +387,9 @@ export function PlaybackSettingsForm({
               value={values.captionEdge}
               onChange={(v) => void apply({ captionEdge: v as PlaybackSettings['captionEdge'] })}
             >
-              <option value="none">None</option>
-              <option value="shadow">Shadow</option>
-              <option value="outline">Outline</option>
+              <option value="none">{msg('account.none')}</option>
+              <option value="shadow">{msg('account.shadow')}</option>
+              <option value="outline">{msg('account.outline')}</option>
             </Choice>
           )}
         </Row>
@@ -432,16 +429,16 @@ export function PlaybackSettingsForm({
           )}
         </Row>
         <div className="acct-setting" data-block>
-          <span className="acct-setting__label">Caption preview</span>
+          <span className="acct-setting__label">{msg('account.captionPreview')}</span>
           <div
             ref={previewRef}
             className="web-caption-preview acct-preview"
             data-testid="caption-preview"
             style={captionStyleVars(preview) as CSSProperties}
             role="img"
-            aria-label="Caption preview"
+            aria-label={msg('account.captionPreview')}
           >
-            <span className="web-caption-preview__text">Plants make food using sunlight.</span>
+            <span className="web-caption-preview__text">{msg('account.plantsMakeFoodUsing')}</span>
           </div>
         </div>
         <div className="acct-setting" data-block>
@@ -449,7 +446,7 @@ export function PlaybackSettingsForm({
             {msg('account.playback.reset')}
           </Button>
         </div>
-        <h2 className="acct-h2">This device</h2>
+        <h2 className="acct-h2">{msg('account.thisDevice')}</h2>
         <Row
           id={id('tv')}
           label="TV mode"
@@ -465,9 +462,9 @@ export function PlaybackSettingsForm({
                 setTvPreference(next);
               }}
             >
-              <option value="auto">Automatic</option>
-              <option value="on">On</option>
-              <option value="off">Off</option>
+              <option value="auto">{msg('account.automatic')}</option>
+              <option value="on">{msg('account.on')}</option>
+              <option value="off">{msg('account.off')}</option>
             </Choice>
           )}
         </Row>
