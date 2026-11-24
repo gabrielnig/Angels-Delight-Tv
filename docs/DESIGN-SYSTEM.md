@@ -107,6 +107,24 @@ All tokens are CSS custom properties on `:root`. Admin theme settings write over
 
 Status colours are fixed so a client colour change cannot make an error look like a success. Status is never conveyed by colour alone: always an icon and a word.
 
+Tokens added by M47 (layout, motion, scrim and fixed colours):
+
+| Token | Value | Use |
+|---|---|---|
+| `--card-scale` | 1.25 | Hover card scale |
+| `--hover-card-delay` | 300ms (0 under reduce) | Hover card delay on enter only |
+| `--motion-hover` / `--motion-press` | 250ms / 0ms | Hover transitions and press |
+| `--ease-out-strong` | `cubic-bezier(0.22, 1, 0.36, 1)` | Hover easing |
+| `--button-height-sm` / `-md` / `-lg` | 2rem / 2.5rem / 3rem | Visual heights, hit area stays 44 |
+| `--color-card-progress-rail` | `#3A3D46` | Card and admin progress rail |
+| `--color-bar-disabled-bg` / `-ink` | `#3A3D46` / `#C9CCD3` | Disabled action on the dark bulk bar |
+| `--color-hero-chip-bg` | `rgba(14, 15, 19, 0.6)` | Hero More info fill |
+| `--scrim-rgb`, `--scrim-hero-start` / `-mid` / `-end` | `14, 15, 19`, 0.85 / 0.45 / 0 | Hero scrim stops, with `-hold`, `-mid` and `-end` positions per desktop and mobile |
+| `--nav-scrim-hold` | 70% | Nav scrim holds 0.85 to here |
+| `--tabbar-height` | 3.5rem | Bottom tab bar |
+| `--avatar-initial-120` / `-160` | 2.5rem / 3.5rem | Large avatar initials |
+| `--prose-max` | 90rem | Text page width cap |
+
 ### 3.2 Why some tokens are fixed
 
 The dark sidebar and dark player stay fixed because a light theme edit must not break video viewing contrast or admin legibility. The mockups also use a dark ink `#12263A` for deep blue headings. Map it to `--color-ink` rather than adding a token.
@@ -233,7 +251,7 @@ Component CSS uses the tokens above. Responsive sizes are set with media queries
 
 - 4px base scale: `--space-1` 4, 2 8, 3 12, 4 16, 5 20, 6 24, 8 32, 10 40, 12 48, 16 64, 20 80. No other values.
 - Breakpoints (min width, mobile first): base 0, `sm` 600, `md` 960, `lg` 1280, `xl` 1920 (content stops growing at `--content-max` 1440).
-- Page gutter: 16 (base), 24 (sm), 40 (md), 48 (lg).
+- Page gutter: `--page-gutter` is `clamp(1rem, 4vw, 3.5rem)` at every width.
 - Grid: 4 columns base, 8 at sm, 12 at md and up, 16px gutters on mobile, 24px from md.
 - Rows: `--cards-visible` 2.3 (base, the partial card tells people to swipe), 3.3 (sm), 4.3 (md), 5.3 (lg), 6.3 (xl, 1920 and up). Gutter `--page-gutter` is `clamp(1rem, 4vw, 3.5rem)`. Breakpoints are 600 (sm), 960 (md), 1280 (lg) and 1920 (xl). Card gap 8, 12 from md. Row gap `--row-gap` 32. Section gap 64.
 - Browse grid (category page, search results): 2 columns base, 3 at sm, 4 at md, 5 at lg.

@@ -59,6 +59,23 @@
   --color-player-control-bg: rgba(14, 15, 19, 0.72);
   --color-scrim-top: rgba(14, 15, 19, 0.85);
   --color-scrim-bottom: rgba(14, 15, 19, 0.0);
+  --color-card-progress-rail: #3A3D46;   /* card and admin progress rail, accent on it 7.06:1 */
+  --color-bar-disabled-bg: #3A3D46;      /* disabled action on the dark bulk bar */
+  --color-bar-disabled-ink: #C9CCD3;     /* 6.75:1 on the disabled fill */
+  --color-hero-chip-bg: rgba(14, 15, 19, 0.6); /* hero More info fill, white text 5.03:1 over a white image */
+
+  /* ---- Fixed: scrim stops (R36). Gradients read these so a gate can test the text zone ---- */
+  --scrim-rgb: 14, 15, 19;
+  --scrim-hero-start: 0.85;
+  --scrim-hero-mid: 0.45;
+  --scrim-hero-end: 0;
+  --scrim-hero-hold-desktop: 40%;
+  --scrim-hero-mid-desktop: 60%;
+  --scrim-hero-end-desktop: 100%;
+  --scrim-hero-hold-mobile: 50%;
+  --scrim-hero-mid-mobile: 65%;
+  --scrim-hero-end-mobile: 80%;
+  --nav-scrim-hold: 70%;
 
   /* ---- Fixed: pastel up-next and category tiles (ink text, all above 12:1) ---- */
   --color-tile-sky: #E3F1FF;
@@ -100,12 +117,13 @@
   --text-caption: calc(0.8125rem * var(--type-scale));/* 13 */
   --text-small: calc(0.875rem * var(--type-scale));   /* 14 */
   --text-body: calc(1rem * var(--type-scale));        /* 16 */
-  --text-lead: calc(1.125rem * var(--type-scale));    /* 18 */
-  --text-h4: calc(1.25rem * var(--type-scale));       /* 20 */
-  --text-h3: calc(1.5rem * var(--type-scale));        /* 24 */
-  --text-h2: calc(2rem * var(--type-scale));          /* 32 */
-  --text-h1: calc(2.5rem * var(--type-scale));        /* 40 */
-  --text-hero: calc(3.5rem * var(--type-scale));      /* 56, hero only, desktop */
+  /* Mobile first. From 960px the block at the end of this file reassigns lead to h1. */
+  --text-lead: calc(1.0625rem * var(--type-scale));   /* 17 */
+  --text-h4: calc(1.125rem * var(--type-scale));      /* 18 */
+  --text-h3: calc(1.25rem * var(--type-scale));       /* 20 */
+  --text-h2: calc(1.5rem * var(--type-scale));        /* 24 */
+  --text-h1: calc(1.75rem * var(--type-scale));       /* 28 */
+  --text-hero: calc(clamp(2rem, 5vw, 3.5rem) * var(--type-scale)); /* 32 to 56, hero only */
 
   --weight-regular: 400;
   --weight-medium: 500;
@@ -131,14 +149,23 @@
   --space-20: 5rem;    /* 80 */
 
   /* ---- Layout ---- */
-  --page-gutter: var(--space-4);
-  --content-max: 90rem;      /* 1440 */
+  --page-gutter: clamp(1rem, 4vw, 3.5rem);  /* 16 at 360, 56 from 1400 */
+  --content-max: 90rem;      /* 1440, rails go to 120rem from 1920 */
+  --prose-max: 90rem;        /* text pages keep this cap at every width */
   --row-gap: var(--space-8);
   --card-gap: var(--space-2);
-  --cards-visible: 2.4;      /* mobile; raised by breakpoint rules */
+  --cards-visible: 2.3;      /* mobile; raised by breakpoint rules, the next card always peeks */
   --nav-height: 3.5rem;      /* 56 mobile, 68 from 960px */
+  --tabbar-height: 3.5rem;   /* bottom tab bar, plus the safe area inset */
   --admin-sidebar-width: 15rem;
   --touch-target: 2.75rem;   /* 44 */
+  --button-height-sm: 2rem;  /* visual heights, the hit area stays 44 */
+  --button-height-md: 2.5rem;
+  --button-height-lg: 3rem;
+  --button-pad-x: 1rem;
+  --icon-gap: 0.5rem;
+  --avatar-initial-120: 2.5rem;
+  --avatar-initial-160: 3.5rem;
 
   /* ---- Radius ---- */
   --radius-xs: 0.25rem;   /* 4, badges, tags */
@@ -165,7 +192,12 @@
   --ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
   --ease-enter: cubic-bezier(0, 0, 0.2, 1);
   --ease-exit: cubic-bezier(0.4, 0, 1, 1);
-  --hover-intent-delay: 500ms;
+  --motion-hover: 250ms;
+  --motion-press: 0ms;
+  --ease-out-strong: cubic-bezier(0.22, 1, 0.36, 1);
+  --hover-card-delay: 300ms;
+  --hover-intent-delay: var(--hover-card-delay); /* alias, removed once no rule reads it */
+  --card-scale: 1.25;
 
   /* ---- Z layers ---- */
   --z-base: 0;
@@ -184,13 +216,25 @@
 }
 
 @media (min-width: 600px) {
-  :root { --page-gutter: var(--space-6); --cards-visible: 3.4; --card-gap: var(--space-2); }
+  :root { --cards-visible: 3.3; }
 }
 @media (min-width: 960px) {
-  :root { --page-gutter: var(--space-10); --cards-visible: 4.4; --nav-height: 4.25rem; --card-gap: var(--space-3); }
+  :root {
+    --cards-visible: 4.3;
+    --nav-height: 4.25rem;
+    --card-gap: var(--space-3);
+    --text-lead: calc(1.125rem * var(--type-scale));  /* 18 */
+    --text-h4: calc(1.25rem * var(--type-scale));     /* 20 */
+    --text-h3: calc(1.5rem * var(--type-scale));      /* 24 */
+    --text-h2: calc(2rem * var(--type-scale));        /* 32 */
+    --text-h1: calc(2.5rem * var(--type-scale));      /* 40 */
+  }
 }
 @media (min-width: 1280px) {
-  :root { --page-gutter: var(--space-12); --cards-visible: 5; }
+  :root { --cards-visible: 5.3; }
+}
+@media (min-width: 1920px) {
+  :root { --cards-visible: 6.3; --content-max: 120rem; }
 }
 
 /* Reduced motion: remove movement, keep state changes instant and visible */
@@ -200,7 +244,9 @@
     --motion-fast: 0.01ms;
     --motion-base: 0.01ms;
     --motion-slow: 0.01ms;
-    --hover-intent-delay: 0ms;
+    --motion-hover: 0.01ms;
+    --motion-press: 0ms;
+    --hover-card-delay: 0ms;
   }
 }
 
