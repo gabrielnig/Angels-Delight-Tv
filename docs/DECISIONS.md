@@ -1252,3 +1252,9 @@ Per video tri state, site default (Super admin), Admin changes it with a reason 
 - Options: carry the item in the sign in URL, or keep it in the device.
 - Why: The URL is logged and shared, and a longer `next` is one more thing to validate. The device copy is private, expires, and cannot be used to add anything the visitor did not ask for, because only a validated key from this app is accepted.
 - Reversible: yes.
+
+## D-236 Guest Continue learning joins device progress to titles by id (lane L1)
+- Decision: The row is built on the device. `GuestContinueRow` reads `ad:guest:progress:v1`, keeps started and unfinished videos (5 seconds or more, newest first, at most 20), asks `GET /api/titles/batch?ids=` for the cards, and joins them in the browser. The server sees only a list of ids and never positions, and a video that is unpublished, hidden or not in the device audience simply drops out. It reuses `ContinueRow` (new `title` prop, default unchanged) with device backed `remove` and `restore`: removing deletes the entry, Undo writes it back with its old timestamp. The heading is the message key `guest.continue.title` ("Continue learning", R14). A failed lookup shows nothing. The series page uses `GuestEpisodeProgress`, which marks finished and partly watched episodes and moves Up next to the first unfinished one. `toThumb` moved to `lib/media/to-thumb.ts` so client code can use it without the server mappers (re-exported, no behaviour change).
+- Options: send positions to the server for a joined response, or ids only.
+- Why: Positions are the private part. Ids only keeps the device the owner of what was watched and keeps the batch route cacheable and simple.
+- Reversible: yes.
