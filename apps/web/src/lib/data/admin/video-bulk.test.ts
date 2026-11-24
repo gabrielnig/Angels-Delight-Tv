@@ -13,6 +13,8 @@ const snap = (over: Partial<VideoSnapshot> = {}): VideoSnapshot => ({
   publishState: 'draft',
   suitability: null,
   categoryIds: [],
+  captionsEnabled: null,
+  captionsOffReason: null,
   ...over,
 });
 
@@ -86,6 +88,29 @@ describe('undo for videos (L3-D07)', () => {
     ]);
   });
 
+  it('undo of a captions switch restores each previous tri state, only where it is still as the run left it', () => {
+    const undo = buildUndo(
+      { type: 'captions_available', value: false, reason: 'No spoken words' },
+      {
+        a: snap({ captionsEnabled: null }),
+        b: snap({ captionsEnabled: true }),
+        c: snap({ captionsEnabled: false, captionsOffReason: 'Music only video' }),
+        d: snap({ captionsEnabled: null }),
+      },
+      ['a', 'b', 'c', 'd'],
+    );
+    const steps = planUndo(undo!, {
+      a: snap({ captionsEnabled: false }),
+      b: snap({ captionsEnabled: false }),
+      c: snap({ captionsEnabled: false }),
+      d: snap({ captionsEnabled: true }),
+    });
+    expect(steps).toEqual([
+      { kind: 'bulk', action: { type: 'captions_available', value: null }, ids: ['a'], expectCaptions: false },
+      { kind: 'bulk', action: { type: 'captions_available', value: true }, ids: ['b'], expectCaptions: false },
+    ]);
+  });
+
   it('nothing to undo returns no descriptor', () => {
     expect(buildUndo({ type: 'trash' }, {}, [])).toBeUndefined();
     expect(buildUndo({ type: 'publish' }, { a: snap({ publishState: 'published' }) }, ['a'])).toBeUndefined();
@@ -94,7 +119,13 @@ describe('undo for videos (L3-D07)', () => {
   it('snapshotOf keeps only what undo needs', () => {
     expect(
       snapshotOf({ publishState: 'published', suitability: 'kids', categoryIds: ['x'], title: 'T' } as never),
-    ).toEqual({ publishState: 'published', suitability: 'kids', categoryIds: ['x'] });
+    ).toEqual({
+      publishState: 'published',
+      suitability: 'kids',
+      categoryIds: ['x'],
+      captionsEnabled: null,
+      captionsOffReason: null,
+    });
   });
 });
 

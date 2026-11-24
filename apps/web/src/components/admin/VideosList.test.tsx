@@ -67,6 +67,64 @@ describe('VideosList bulk suitability', () => {
   });
 });
 
+describe('VideosList captions for viewers', () => {
+  it('is offered to admins and disabled with a reason for editors', async () => {
+    setup({ role: 'editor' });
+    await pick(1);
+    const button = screen.getAllByRole('button', { name: 'Captions for viewers' })[0]!;
+    expect(button).toHaveAttribute('aria-disabled', 'true');
+    expect(screen.getByText('Only an admin can change captions for viewers.')).toBeInTheDocument();
+  });
+
+  it('Off in bulk needs one reason and sends it with the choice', async () => {
+    const { bulk } = setup();
+    await pick(2);
+    await userEvent.click(screen.getAllByRole('button', { name: 'Captions for viewers' })[0]!);
+    const dialog = await screen.findByRole('dialog');
+    await userEvent.selectOptions(within(dialog).getByLabelText('Captions'), 'off');
+    const apply = within(dialog).getByRole('button', { name: 'Apply' });
+    expect(apply).toBeDisabled();
+    await userEvent.type(within(dialog).getByLabelText('Reason'), 'No spoken words');
+    await userEvent.click(apply);
+    await waitFor(() => expect(bulk).toHaveBeenCalled());
+    expect(bulk).toHaveBeenCalledWith(
+      page.items.slice(0, 2).map((v) => v.id),
+      { type: 'captions_available', value: false, reason: 'No spoken words' },
+      expect.any(String),
+    );
+  });
+
+  it('On and Follow site default need no reason', async () => {
+    const { bulk } = setup();
+    await pick(1);
+    await userEvent.click(screen.getAllByRole('button', { name: 'Captions for viewers' })[0]!);
+    const dialog = await screen.findByRole('dialog');
+    await userEvent.selectOptions(within(dialog).getByLabelText('Captions'), 'default');
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Apply' }));
+    await waitFor(() =>
+      expect(bulk).toHaveBeenCalledWith(
+        [page.items[0]!.id],
+        { type: 'captions_available', value: null },
+        expect.any(String),
+      ),
+    );
+  });
+
+  it('reports a failure per video after switching off', async () => {
+    const bulk = vi.fn(async () => ({
+      succeeded: ['a'],
+      failed: [{ id: page.items[1]!.id, reason: 'That video no longer exists.' }],
+    }));
+    setup({ bulk });
+    await pick(2);
+    await userEvent.click(screen.getAllByRole('button', { name: 'Captions for viewers' })[0]!);
+    const dialog = await screen.findByRole('dialog');
+    await userEvent.selectOptions(within(dialog).getByLabelText('Captions'), 'on');
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Apply' }));
+    expect(await screen.findByText('That video no longer exists.')).toBeInTheDocument();
+  });
+});
+
 describe('VideosList', () => {
   it('shows rows and keeps the bulk bar hidden until something is selected', async () => {
     setup();

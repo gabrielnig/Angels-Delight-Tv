@@ -88,6 +88,7 @@ const labelOf = (action: BulkAction): string =>
     category: 'Add to category',
     remove_category: 'Remove from category',
     suitability: 'Set suitability',
+    captions_available: 'Captions for viewers',
   })[action.type];
 
 const options = (list: ReadonlyArray<readonly [string, string]>) =>
@@ -108,11 +109,13 @@ export function VideosList({ page, query, categories, role, bulk, undo, matching
   const [outcome, setOutcome] = useState<BulkOutcome | null>(null);
   const [lastRun, setLastRun] = useState<{ action: BulkAction; ids: string[] } | null>(null);
   const [confirm, setConfirm] = useState<'publish' | 'trash' | null>(null);
-  const [picker, setPicker] = useState<'category' | 'remove_category' | 'suitability' | null>(null);
+  const [picker, setPicker] = useState<'category' | 'remove_category' | 'suitability' | 'captions' | null>(null);
   const [pickValue, setPickValue] = useState('');
+  const [pickReason, setPickReason] = useState('');
   const canPublish = can(role, 'video.publish');
   const canTrash = can(role, 'video.delete');
   const canEdit = can(role, 'video.edit');
+  const canCaptions = can(role, 'caption.availability');
   const filtered = Boolean(
     query.q || query.status || query.categoryId || query.captions || query.suitability,
   );
@@ -165,6 +168,7 @@ export function VideosList({ page, query, categories, role, bulk, undo, matching
     setConfirm(null);
     setPicker(null);
     setPickValue('');
+    setPickReason('');
     // Suitability is all or nothing (M35-S04), so it goes in one call, not in chunks.
     const result = await runner.start(
       idsToRun,
@@ -235,6 +239,13 @@ export function VideosList({ page, query, categories, role, bulk, undo, matching
       disabledReason: canEdit ? undefined : 'Your role cannot edit videos.',
     },
     {
+      id: 'captions',
+      label: 'Captions for viewers',
+      secondary: true,
+      onClick: () => setPicker('captions'),
+      disabledReason: canCaptions ? undefined : 'Only an admin can change captions for viewers.',
+    },
+    {
       id: 'trash',
       label: 'Move to Trash',
       variant: 'danger',
@@ -248,6 +259,16 @@ export function VideosList({ page, query, categories, role, bulk, undo, matching
       : categories.map((c) => ({ value: c.id, label: c.name }));
   const applyPicker = () => {
     if (!picker || !pickValue) return;
+    if (picker === 'captions') {
+      const value = pickValue === 'on' ? true : pickValue === 'off' ? false : null;
+      void run(
+        value === false
+          ? { type: 'captions_available', value, reason: pickReason.trim() }
+          : { type: 'captions_available', value },
+        selectedIds,
+      );
+      return;
+    }
     const action: BulkAction =
       picker === 'suitability'
         ? { type: 'suitability', value: pickValue as 'everyone' | 'kids' | 'older' }
@@ -604,9 +625,12 @@ export function VideosList({ page, query, categories, role, bulk, undo, matching
         onClose={() => {
           setPicker(null);
           setPickValue('');
+          setPickReason('');
         }}
         title={
-          picker === 'suitability'
+          picker === 'captions'
+            ? `Captions for viewers on ${plural(sel.count)}`
+            : picker === 'suitability'
             ? `Set suitability for ${plural(sel.count)}`
             : picker === 'remove_category'
               ? `Remove ${plural(sel.count)} from a category`
@@ -618,18 +642,46 @@ export function VideosList({ page, query, categories, role, bulk, undo, matching
             <Button variant="ghost" onClick={() => setPicker(null)}>
               Cancel
             </Button>
-            <Button variant="primary" disabled={!pickValue} onClick={applyPicker}>
+            <Button
+              variant="primary"
+              disabled={!pickValue || (picker === 'captions' && pickValue === 'off' && pickReason.trim().length < 5)}
+              onClick={applyPicker}
+            >
               Apply
             </Button>
           </>
         }
       >
-        <SelectField
-          label={picker === 'suitability' ? 'Suitability' : 'Category'}
-          value={pickValue}
-          options={[{ value: '', label: 'Choose one' }, ...pickerOptions]}
-          onChange={(e) => setPickValue(e.target.value)}
-        />
+        {picker === 'captions' ? (
+          <>
+            <SelectField
+              label="Captions"
+              value={pickValue}
+              options={[
+                { value: '', label: 'Choose one' },
+                { value: 'on', label: 'On' },
+                { value: 'off', label: 'Off' },
+                { value: 'default', label: 'Follow site default' },
+              ]}
+              onChange={(e) => setPickValue(e.target.value)}
+            />
+            {pickValue === 'off' ? (
+              <TextField
+                label="Reason"
+                value={pickReason}
+                hint="At least 5 characters. Kept with each video and in the log."
+                onChange={(e) => setPickReason(e.target.value)}
+              />
+            ) : null}
+          </>
+        ) : (
+          <SelectField
+            label={picker === 'suitability' ? 'Suitability' : 'Category'}
+            value={pickValue}
+            options={[{ value: '', label: 'Choose one' }, ...pickerOptions]}
+            onChange={(e) => setPickValue(e.target.value)}
+          />
+        )}
       </Dialog>
     </div>
   );

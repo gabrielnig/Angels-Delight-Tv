@@ -1,6 +1,7 @@
 import type { AccountRole } from '@ad/shared';
 import { can } from '@/lib/admin/can';
 import type { BulkUndo } from './bulk';
+import { applyCaptionsAvailability } from './video-commands';
 import type { AdminVideoStatus, CaptionState, Page, Suitability, VideoRecord } from './types';
 import { adminStatusOf, canPublish } from './video-rules';
 import type { PublishRules } from './video-rules';
@@ -119,7 +120,9 @@ export type BulkAction =
   | { type: 'trash' }
   | { type: 'category'; categoryId: string }
   | { type: 'remove_category'; categoryId: string }
-  | { type: 'suitability'; value: NonNullable<VideoRecord['suitability']> };
+  | { type: 'suitability'; value: NonNullable<VideoRecord['suitability']> }
+  /** `null` follows the site default. Off needs a reason, applied to every video. Admin only. */
+  | { type: 'captions_available'; value: boolean | null; reason?: string };
 
 export interface BulkResult {
   succeeded: string[];
@@ -158,6 +161,19 @@ export function applyBulk(
       video.suitability = action.value;
       video.updatedAt = stamp;
       result.succeeded.push(id);
+    }
+    return result;
+  }
+  if (action.type === 'captions_available') {
+    for (const id of ids) {
+      const video = videos.find((v) => v.id === id && v.deletedAt === null);
+      if (!video) {
+        result.failed.push({ id, reason: 'That video no longer exists.' });
+        continue;
+      }
+      const done = applyCaptionsAvailability(video, role, action.value, action.reason);
+      if (done.ok) result.succeeded.push(id);
+      else result.failed.push({ id, reason: done.error });
     }
     return result;
   }

@@ -124,7 +124,7 @@ export interface VideoService {
   categories(actor: AdminActor): Promise<CategoryRecord[]>;
   seriesOptions(actor: AdminActor): Promise<SeriesRecord[]>;
   update(actor: AdminActor, id: string, patch: VideoPatch): Promise<VideoRecord>;
-  bulk(actor: AdminActor, ids: string[], action: BulkAction): Promise<BulkResult>;
+  bulk(actor: AdminActor, ids: string[], action: BulkAction, bulkId?: string): Promise<BulkResult>;
   publish(actor: AdminActor, id: string, request: PublishRequest): Promise<CommandResult>;
   unpublish(actor: AdminActor, id: string): Promise<CommandResult>;
   /** Captions for viewers: null follows the site default, true offers them, false offers none. Admin only. */

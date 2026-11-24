@@ -92,6 +92,29 @@ describe('applyBulk', () => {
     expect(store.videos.find((v) => v.id === 'vid_naira')!.publishState).toBe('draft');
   });
 
+  it('captions_available applies a tri state to every id and fails each id alone', () => {
+    const store = fresh();
+    const off = { type: 'captions_available', value: false, reason: 'No spoken words' } as const;
+    const ok = applyBulk(store.videos, ['vid_sky', 'vid_naira'], off, 'admin', rules, NOW);
+    expect(ok.succeeded).toEqual(['vid_sky', 'vid_naira']);
+    const sky = store.videos.find((v) => v.id === 'vid_sky')!;
+    expect(sky.captionsEnabled).toBe(false);
+    expect(sky.captionsOffReason).toBe('No spoken words');
+    const gone = applyBulk(store.videos, ['vid_sky', 'nope'], { type: 'captions_available', value: null }, 'admin', rules, NOW);
+    expect(gone.succeeded).toEqual(['vid_sky']);
+    expect(gone.failed).toEqual([{ id: 'nope', reason: 'That video no longer exists.' }]);
+    expect(sky.captionsEnabled).toBeNull();
+    expect(sky.captionsOffReason).toBeNull();
+  });
+
+  it('captions_available needs a reason for off and an admin', () => {
+    const store = fresh();
+    const noReason = applyBulk(store.videos, ['vid_sky'], { type: 'captions_available', value: false }, 'admin', rules, NOW);
+    expect(noReason.failed[0]!.reason).toMatch(/reason/);
+    const editor = applyBulk(store.videos, ['vid_sky'], { type: 'captions_available', value: true }, 'editor', rules, NOW);
+    expect(editor.failed[0]!.reason).toBe('Only an Admin can change this.');
+  });
+
   it('moves videos to trash only for admins', () => {
     const store = fresh();
     const denied = applyBulk(store.videos, ['vid_sky'], { type: 'trash' }, 'editor', rules, NOW);
