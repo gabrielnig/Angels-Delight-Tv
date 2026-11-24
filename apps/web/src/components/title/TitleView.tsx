@@ -14,11 +14,16 @@ export function TitleView({
   detail,
   inList,
   guest,
+  share,
+  kids,
 }: {
   detail: TitleDetail;
   inList: boolean;
   /** Set for a visitor without an account (M40): My List opens the Sign in to save dialog. */
   guest?: { signUpOpen: boolean };
+  share?: { channels: ('whatsapp' | 'facebook' | 'x' | 'email')[]; text: string };
+  /** A kids profile or Kids mode: Share is hidden. */
+  kids?: boolean;
 }) {
   const { video, progress, play } = detail;
   const started = play.label === 'resume' && progress;
@@ -79,6 +84,8 @@ export function TitleView({
             itemKey={itemKey(video)}
             inList={inList}
             shareTitle={video.title}
+            share={share}
+            kids={kids}
             guest={
               guest
                 ? {

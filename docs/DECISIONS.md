@@ -1542,3 +1542,9 @@ Per video tri state, site default (Super admin), Admin changes it with a reason 
 - Options: per account ratings, allow kids to rate, give the worker read access to the table.
 - Why: SECURITY.md section 12 forbids personalisation signals for kids, and the worker only needs totals.
 - Reversible: yes.
+
+## D-285 Share menu: native share on phones, WhatsApp first on desktop, tag for first party counts only (M45-S06) (lane L6)
+- Decision: Share opens the system sheet where navigator.share exists. Elsewhere a dialog lists Copy link, then the channels the admin enabled (default WhatsApp, Facebook, X, Email off per R26). Links carry ?s=wa|fb|x|em|cp|nt on the shared copy only, the canonical never has it. Kids profiles and Kids mode get no Share. External links open in a new tab and say so. Channel events for analytics wait for the analytics posture guard.
+- Options: Always a menu, native only, native with menu fallback
+- Why: People on phones expect their own share sheet, and desktop visitors in Nigeria mostly share through WhatsApp.
+- Reversible: Yes

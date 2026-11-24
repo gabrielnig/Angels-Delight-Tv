@@ -11,7 +11,7 @@ import { getCatalog, getLibrary } from '../../../../lib/data';
 import { JsonLd } from '../../../../components/seo/JsonLd';
 import { previewMetadata } from '../../../../lib/seo';
 import { seriesPageJsonLd } from '../../../../lib/seo/page-jsonld';
-import { siteOrigin, titleIndexable } from '../../../../server/seo/page-seo';
+import { shareConfig, siteOrigin, titleIndexable } from '../../../../server/seo/page-seo';
 import { getRootTheme } from '../../../../lib/theme/root';
 import { itemKey } from '../../../../lib/format';
 import { primaryAction } from '../../../../lib/title-cta';
@@ -82,7 +82,10 @@ export default async function SeriesPage({
   const guest =
     viewer.kind === 'guest' ? { signUpOpen: (await getSite().content()).signUpOpen } : null;
   const inList = guest ? false : (await getLibrary().myListIds(ctx)).includes(itemKey(series));
-  const indexable = await titleIndexable('series', series.slug);
+  const [indexable, share] = await Promise.all([
+    titleIndexable('series', series.slug),
+    shareConfig(series.title),
+  ]);
   return (
     <AppShell>
       {indexable ? (
@@ -105,6 +108,9 @@ export default async function SeriesPage({
             itemKey={itemKey(series)}
             inList={inList}
             shareTitle={series.title}
+            share={share}
+            kids={ctx.audience === 'kids'}
+            kind="series"
             guest={guest ? { signUpOpen: guest.signUpOpen, next: `/series/${slug}` } : undefined}
           />
         ) : null}

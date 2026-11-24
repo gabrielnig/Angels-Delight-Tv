@@ -9,7 +9,8 @@ Plan: `docs/plan/v2/L6-discovery.md`. Rulings: `docs/plan/v2/RULINGS.md`. Review
 | 1 | Sitemap and robots line | merged | #283 |
 | 2 | Structured data (JSON-LD), kids only noindex | merged | #292 |
 | 3 | Share images and metadata | merged | #296 |
-| 4 | Discovery tab, settings, robots and layout metadata | in review | |
+| 4 | Discovery tab, settings, robots and layout metadata | merged | #305 |
+| 5 | Share menu | in review | |
 
 ## Slice 1 (sitemap)
 
@@ -42,3 +43,9 @@ Plan: `docs/plan/v2/L6-discovery.md`. Rulings: `docs/plan/v2/RULINGS.md`. Review
 - Not built: social image upload (a link for now, D-281). The synonyms editor and misses report join this tab in the search slice.
 - Known: `apps/web/src/app/layout.test.tsx` first test fails on main since the locale work (`next/headers` mock lacks `cookies`); not caused by L6.
 - Tests: `pnpm vitest run packages/theme/src/settings-discovery.test.ts apps/web/src/components/admin/site apps/web/src/lib/site apps/web/src/lib/seo apps/web/src/app/robots.test.ts apps/web/src/app/layout.test.tsx`.
+
+## Slice 5 (share menu)
+
+- `components/share/ShareMenu.tsx` (`title`, `text`, `channels`, `kind`), `share-links.ts` (`shareHref`, `withChannelTag`, `CHANNEL_TAGS`), `share.css`. `TitleActions` takes `share`, `kids`, `kind` and renders it. `shareConfig(title)` in `server/seo/page-seo.ts` reads the admin channels and text. Title and series pages pass them; kids get no Share.
+- Not done: the analytics `share` channel event (waits for slice 12 posture guard), share from the player end card (Could).
+- Tests: `pnpm vitest run apps/web/src/components/share apps/web/src/components/title "apps/web/src/app/(viewer)"`.

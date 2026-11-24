@@ -71,10 +71,8 @@ describe('TitleActions', () => {
     Object.assign(navigator, { share: undefined });
   });
 
-  it('copies the link with a toast, and shows the URL in a selectable box when copying fails', async () => {
+  it('opens the share menu where there is no native share, and Copy link shows a toast (M45-S06)', async () => {
     Object.assign(navigator, { share: undefined });
-    const writeText = vi.fn().mockResolvedValue(undefined);
-    Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true });
     wrap(
       <TitleActions
         primary={play}
@@ -85,12 +83,42 @@ describe('TitleActions', () => {
       />,
     );
     await userEvent.click(screen.getByRole('button', { name: 'Share' }));
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true });
+    expect(screen.getByRole('link', { name: /WhatsApp/ })).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Copy link' }));
     expect(await screen.findByText('Link copied')).toBeInTheDocument();
+  });
 
-    writeText.mockRejectedValue(new Error('denied'));
+  it('has no Share button on a kids profile (M45-S06 AC4)', () => {
+    wrap(
+      <TitleActions
+        primary={play}
+        itemKey="video:a"
+        inList={false}
+        toggle={vi.fn()}
+        shareTitle="Rivers"
+        kids
+      />,
+    );
+    expect(screen.queryByRole('button', { name: 'Share' })).not.toBeInTheDocument();
+  });
+
+  it('lists the channels the admin chose and shares the configured text', async () => {
+    Object.assign(navigator, { share: undefined });
+    wrap(
+      <TitleActions
+        primary={play}
+        itemKey="video:a"
+        inList={false}
+        toggle={vi.fn()}
+        shareTitle="Rivers"
+        share={{ channels: ['x', 'email'], text: 'Rivers on ADTV' }}
+      />,
+    );
     await userEvent.click(screen.getByRole('button', { name: 'Share' }));
-    const box = await screen.findByRole('textbox', { name: 'Link to share' });
-    expect((box as HTMLInputElement).value).toContain('http');
+    expect(screen.queryByRole('link', { name: /WhatsApp/ })).not.toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /Email/ })).toBeInTheDocument();
   });
 
   it('says the change was saved on this device when it was queued offline', async () => {
