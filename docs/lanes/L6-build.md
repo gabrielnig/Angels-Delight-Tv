@@ -14,7 +14,8 @@ Plan: `docs/plan/v2/L6-discovery.md`. Rulings: `docs/plan/v2/RULINGS.md`. Review
 | 6a | Search core: migration 0043, corrections, synonyms, subjects, misses | merged | #314 |
 | 6b | Search service, API, UI notes, misses pruning in worker | merged | #320 |
 | 7 | Storage notice (S138), storage inventory, notice and toast placement | merged | #332 |
-| 8 | Error pages (S139), one action each (R39) | in review | |
+| 8 | Error pages (S139), one action each (R39) | merged | #339 |
+| 9 | Discovery tab: synonyms editor with error lines, empty search report | in review | |
 
 ## Slice 1 (sitemap)
 
@@ -75,3 +76,12 @@ Plan: `docs/plan/v2/L6-discovery.md`. Rulings: `docs/plan/v2/RULINGS.md`. Review
 - Pages: `app/not-found.tsx`, `app/(viewer)/title/[slug]/not-found.tsx` and `error.tsx`, `app/(viewer)/series/[slug]/not-found.tsx`, `app/error.tsx`, `app/global-error.tsx` (system colours, one Reload button), `app/offline/page.tsx`. `TitleNotFound` and `TitleError` were removed.
 - `error-pages.r39.test.tsx` counts links and buttons in the message block of each page. Support email reaches client error pages through `AccountSupportProvider` at the root layout.
 - Tests: `pnpm vitest run apps/web/src/app/error-pages.r39.test.tsx apps/web/src/app/error.test.tsx apps/web/src/components/errors apps/web/src/components/title`.
+
+## Slice 9 (Discovery tab, search quality)
+
+- `lib/admin/synonym-text.ts` (`checkSynonymText`: line numbered errors, repeats, server only) and `synonym-format.ts` (`groupsToText`, `dayLabel`, client safe). `lib/data/admin/search-admin.ts` (facade, fixture and real), `real/search-admin.ts` (`load`, `saveSynonyms`, audit action `search.synonyms_replace` with only the group count), types in `search-admin-types.ts`.
+- `components/admin/site/SearchQualityCards.tsx`: the synonyms editor and the Searches with no results report, rendered under the Discovery tab when the page passes `search`. `Add synonym` appends a line and focuses the field. A failed load shows an error and no editor, so a save can never wipe the list from an empty field.
+- The mockup Import from text button is not built: the textarea is the import (paste a list). Report loading skeleton is not needed because the page loads the data on the server.
+- Fixed: `replaceSynonymGroups` now stamps `clock_timestamp()` so group order is stable.
+- Already in place from slice 4 and guarded by `discovery-switches.test.tsx`: named 44 px switches, share channel switches, the Kids only never indexed line.
+- Tests: `pnpm vitest run apps/web/src/components/admin/site apps/web/src/lib/admin/synonym-text.test.ts` and, with the database, `apps/web/src/lib/data/admin/real/search-admin.int.test.ts packages/catalog/src/search-quality.int.test.ts`.
