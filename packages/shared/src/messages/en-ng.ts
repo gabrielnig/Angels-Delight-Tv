@@ -132,4 +132,5 @@ export const EN_NG = {
   'guest.myList.kidsBody':
     'Ask a grown-up to sign in so you can keep a list that follows you on every device.',
   'guest.myList.added': 'Added to My List',
+  'guest.continue.title': 'Continue learning',
 } as const satisfies CatalogShape;

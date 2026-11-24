@@ -93,10 +93,13 @@ export function ContinueRow({
   items,
   remove = removeContinueAction,
   restore = restoreContinueAction,
+  title = 'Continue watching',
 }: {
   items: RowItem[];
   remove?: (videoId: string) => Promise<void>;
   restore?: (videoId: string) => Promise<void>;
+  /** The row heading. Visitors see Continue learning. */
+  title?: string;
 }) {
   const [hidden, setHidden] = useState<Set<string>>(new Set());
   const toast = useToast();
@@ -133,7 +136,7 @@ export function ContinueRow({
   const visible = items.filter(({ video }) => !hidden.has(video.id));
 
   return (
-    <Row title="Continue watching">
+    <Row title={title}>
       {visible.map(({ video, progress }) => (
         <ContinueCard
           key={video.id}
