@@ -24,6 +24,19 @@ export interface ViewerRules {
   /** Default pages and the home row batch size (M05-S04). */
   homeRowsPerPage: number;
   personalRowItems: number;
+<<<<<<< Updated upstream
+=======
+  /** Newest titles shown as the hero when none are chosen (M41-S03). */
+  heroFallbackCount: number;
+  /** Trending needs this many titles with views, otherwise the row is hidden (M41-S05). */
+  popularMinItems: number;
+  trendingWindowDays: number;
+  /** An automatic category row needs this many live titles, and at most this many rows are made (M41-S05). */
+  autoCategoryMinItems: number;
+  autoCategoryMax: number;
+  /** The All series row is hidden under this many series. */
+  allSeriesMinItems: number;
+>>>>>>> Stashed changes
 }
 
 export const DEFAULT_RULES: ViewerRules = {
@@ -39,4 +52,13 @@ export const DEFAULT_RULES: ViewerRules = {
   maxMyListItems: 500,
   homeRowsPerPage: 3,
   personalRowItems: 20,
+<<<<<<< Updated upstream
+=======
+  heroFallbackCount: 5,
+  popularMinItems: 4,
+  trendingWindowDays: 7,
+  autoCategoryMinItems: 4,
+  autoCategoryMax: 6,
+  allSeriesMinItems: 2,
+>>>>>>> Stashed changes
 };

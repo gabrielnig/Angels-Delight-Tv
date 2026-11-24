@@ -61,7 +61,11 @@ const maintenanceBanner = z.object({
 
 export type SettingTier = 'admin' | 'super';
 export type SettingGroup =
+<<<<<<< Updated upstream
   'platform' | 'features' | 'limits' | 'content' | 'legal' | 'analytics' | 'audit' | 'maintenance' | 'monetization';
+=======
+  'platform' | 'features' | 'limits' | 'content' | 'legal' | 'analytics' | 'audit' | 'maintenance' | 'home';
+>>>>>>> Stashed changes
 
 interface Def<S extends z.ZodType> {
   schema: S;
@@ -183,12 +187,75 @@ export const SETTING_DEFS = {
   }),
   'features.autoplay_hero': def({
     schema: bool,
-    default: false,
+    default: true,
     isPublic: true,
     tier: 'super',
     group: 'features',
     label: 'Auto rotate hero',
-    description: 'The hero changes every 7 seconds',
+    description: 'Hero slides change by themselves',
+  }),
+  'home.hero_interval_seconds': def({
+    schema: int(5, 20),
+    default: 10,
+    isPublic: true,
+    tier: 'admin',
+    group: 'home',
+    label: 'Seconds per hero slide',
+    description: 'How long each hero slide stays, from 5 to 20 seconds',
+  }),
+  'home.hero_max_loops': def({
+    schema: int(0, 5),
+    default: 2,
+    isPublic: true,
+    tier: 'admin',
+    group: 'home',
+    label: 'Hero loops before it stops',
+    description: 'The hero stops after this many full rounds. 0 means it never stops.',
+  }),
+  'home.hero_previews': def({
+    schema: bool,
+    default: true,
+    isPublic: true,
+    tier: 'admin',
+    group: 'home',
+    label: 'Hero preview clips',
+    description: 'Play a short silent clip on the hero for fast connections with Data saver off',
+  }),
+  'home.hero_previews_unknown_connection': def({
+    schema: bool,
+    default: false,
+    isPublic: true,
+    tier: 'super',
+    group: 'home',
+    label: 'Preview clips on unknown connections',
+    description: 'Safari and Firefox do not report connection speed. Off keeps their data use low.',
+  }),
+  'home.hero_fallback_count': def({
+    schema: int(1, 5),
+    default: 5,
+    isPublic: false,
+    tier: 'admin',
+    group: 'home',
+    label: 'Newest titles in the hero',
+    description: 'How many of the newest titles show when no hero titles are chosen',
+  }),
+  'home.view_all_label': def({
+    schema: text(24).min(1, 'Enter a label'),
+    default: 'View all',
+    isPublic: true,
+    tier: 'admin',
+    group: 'home',
+    label: 'View all label',
+    description: 'The link beside a row title',
+  }),
+  'home.continue_title': def({
+    schema: text(40).min(1, 'Enter a title'),
+    default: 'Continue learning',
+    isPublic: true,
+    tier: 'admin',
+    group: 'home',
+    label: 'Continue row title',
+    description: 'The title of the row of titles a viewer has started',
   }),
   'features.data_saver_default': def({
     schema: bool,

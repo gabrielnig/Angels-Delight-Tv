@@ -26,7 +26,7 @@ export interface SiteActions extends Partial<InviteCodeActions> {
   restorePage(slug: PageSlug, version: number): Promise<ActionResult<PageDto>>;
 }
 
-type TabId = 'platform' | 'features' | 'invites' | 'pages' | 'maintenance';
+type TabId = 'platform' | 'features' | 'home' | 'invites' | 'pages' | 'maintenance';
 
 const GIB = 1024 ** 3;
 
@@ -67,6 +67,15 @@ const NUMBER_RULES: Partial<Record<SettingKey, NumberRule>> = {
   'audit.retention_months': { min: 6, max: 120 },
 };
 const NUMBER_KEYS = Object.keys(NUMBER_RULES) as SettingKey[];
+
+const HOME_FLAGS: SettingKey[] = ['home.hero_previews', 'home.hero_previews_unknown_connection'];
+const HOME_NUMBERS: Partial<Record<SettingKey, NumberRule>> = {
+  'home.hero_interval_seconds': { min: 5, max: 20 },
+  'home.hero_max_loops': { min: 0, max: 5 },
+  'home.hero_fallback_count': { min: 1, max: 5 },
+};
+const HOME_TEXTS: SettingKey[] = ['home.view_all_label', 'home.continue_title'];
+const HOME_KEYS = [...HOME_FLAGS, ...HOME_TEXTS, ...(Object.keys(HOME_NUMBERS) as SettingKey[])];
 const MAINTENANCE_KEYS: SettingKey[] = ['maintenance.banner', 'maintenance.mode'];
 
 const label = (key: SettingKey) => SETTING_DEFS[key].label;
@@ -102,6 +111,7 @@ export function SiteSettingsView({
             tabs={[
               { id: 'platform', label: 'Platform details' },
               { id: 'features', label: 'Features and limits' },
+              { id: 'home', label: 'Home' },
               ...(invites && actions.create && actions.revoke
                 ? [{ id: 'invites', label: 'Invite codes' }]
                 : []),
@@ -115,6 +125,7 @@ export function SiteSettingsView({
             {tab === 'features' ? (
               <FeaturesTab data={data} actions={actions} onSaved={setData} />
             ) : null}
+            {tab === 'home' ? <HomeTab data={data} actions={actions} onSaved={setData} /> : null}
             {tab === 'invites' && invites && actions.create && actions.revoke ? (
               <InviteCodesTab
                 initial={invites}
@@ -316,6 +327,92 @@ function PlatformTab({ data, actions, onSaved }: TabProps) {
           busy={form.busy}
           onSave={() => void save()}
           onDiscard={form.discard}
+          failure={form.failure}
+        />
+      </div>
+    </Card>
+  );
+}
+
+function HomeTab({ data, actions, onSaved }: TabProps) {
+  const toast = useToast();
+  const form = useSettingsForm({
+    keys: HOME_KEYS,
+    data,
+    update: actions.update,
+    onSaved,
+    rules: HOME_NUMBERS,
+  });
+  const [text, setText] = useState<Record<string, string>>({});
+  const numberText = (key: SettingKey) =>
+    key in text ? text[key]! : String(form.draft[key] ?? '');
+
+  function changeNumber(key: SettingKey, raw: string) {
+    setText((current) => ({ ...current, [key]: raw }));
+    const number = raw.trim() === '' ? Number.NaN : Number(raw);
+    form.set(key, Number.isFinite(number) ? number : Number.NaN);
+  }
+
+  async function save() {
+    if (await form.save()) {
+      setText({});
+      toast.show({ message: 'Home settings saved. They apply within a minute.', tone: 'success' });
+    }
+  }
+
+  return (
+    <Card title="Home">
+      <div className="adm-stack">
+        <div className="ads-flags">
+          {HOME_FLAGS.map((key) => {
+            const locked = SETTING_DEFS[key].tier === 'super' && !data.canChangeFlags;
+            return (
+              <div className="ads-flag" key={key}>
+                <div>
+                  <span className="adm-field__label">{label(key)}</span>
+                  <p className="adm-field__hint">{hint(key)}</p>
+                </div>
+                <Switch
+                  label={label(key)}
+                  checked={form.draft[key] === true}
+                  disabled={locked}
+                  onChange={(value) => form.set(key, value)}
+                />
+              </div>
+            );
+          })}
+        </div>
+        <div className="ads-numbers">
+          {(Object.keys(HOME_NUMBERS) as SettingKey[]).map((key) => (
+            <TextField
+              key={key}
+              label={label(key)}
+              hint={hint(key)}
+              inputMode="numeric"
+              value={numberText(key)}
+              error={form.errors[key]}
+              onChange={(event) => changeNumber(key, event.target.value)}
+            />
+          ))}
+          {HOME_TEXTS.map((key) => (
+            <TextField
+              key={key}
+              label={label(key)}
+              hint={hint(key)}
+              value={String(form.draft[key] ?? '')}
+              error={form.errors[key]}
+              onChange={(event) => form.set(key, event.target.value)}
+            />
+          ))}
+        </div>
+        <FormActions
+          dirty={form.dirty}
+          busy={form.busy}
+          onSave={() => void save()}
+          onDiscard={() => {
+            form.discard();
+            setText({});
+          }}
           failure={form.failure}
         />
       </div>
