@@ -855,3 +855,75 @@ Mobile at 360 px and desktop at 1280 px for each, with the states named. Mockups
 - Risks: 13.
 - Config keys: 38 settings keys, 5 environment variables.
 - Migrations: 2 planned files (sponsors, donations), subscriptions inside the donations file.
+
+## 16. Amendments (UI review, 24 November 2026)
+
+Added by the UI review of this lane (`docs/reviews/v2/L9-review.md`). Where this section disagrees with sections 1 to 15, this section wins. Rulings R25, R30, R31, R38 apply. Mockups in `docs/mockups/v2/L9/` carry the same tokens in their `:root` block.
+
+### 16.1 Sponsor tokens (replaces the token list in section 8)
+
+Add these in slice 5 before any component: `packages/ui/src/tokens.css`, `docs/DESIGN-SYSTEM.md` section 3.1 (new "Sponsor slot" rows) and 11.24 theme editor group, and the skill copy `reference/tokens.css`. All are **Fixed** (a client theme cannot shrink the box or weaken the label). Px values are shown for the mockups, the build writes rem.
+
+| Token | Value | Build value | Use |
+|---|---|---|---|
+| `--sponsor-slot-height-compact` | `calc(112px * var(--type-scale))` | `calc(7rem * var(--type-scale))` | Home and Title card and the phone after card, below 960 px |
+| `--sponsor-slot-height-wide` | `calc(136px * var(--type-scale))` | `calc(8.5rem * var(--type-scale))` | Home and Title card at 960 px and up |
+| `--sponsor-label-bg` | `#ECEAE3` | same | "Sponsored by" chip fill |
+| `--sponsor-label-ink` | `#1A1C22` | same | Chip text. 14.15:1 on the chip, independent of the card surface |
+| `--sponsor-label-size` | `calc(13px * var(--type-scale))` | `var(--text-caption)` | Chip text size, never below 13 px at the default factor |
+| `--sponsor-label-height` | `calc(24px * var(--type-scale))` | `calc(1.5rem * var(--type-scale))` | Chip height |
+
+Everything else on the card uses existing tokens: `--color-surface`, `--color-border-strong`, `--color-ink`, `--color-muted`, `--color-primary`, `--color-focus-ring`, `--color-surface-sunken` (pressed). The plan's "wide 3:1 image" stays, the image slot is 104 px (wide) or 72 px (compact) square.
+
+Why the heights scale: the theme editor allows a size factor up to 1.15. At 1.15 the wide card needs 112 px of content in a 104 px inner box (measured). The factor is a server known setting, so the scaled box is still decided on the server and the layout shift stays 0. Measured boxes: compact 112.0 at 1.0 and 128.8 at 1.15, wide 136.0 and 156.4. The skeleton uses the same tokens, so it is the same height at both factors.
+
+### 16.2 Phone card decision: arrow, not a text button (recorded decision D-M48-21)
+
+| Option | For | Against |
+|---|---|---|
+| Text button "Learn more" inside the compact card | Plain words | The label would take about 90 px of the 190 px text column at 360. The headline would drop to 3 lines and the label chip would truncate. Needs a taller box (about 140 px) that pushes the first row down. |
+| Chevron arrow, whole card is the link | Keeps 112 px, one line chip, 2 line headline, no nested control | The button wording is not visible. |
+
+Decision (recommended option, reversible): compact variant (below 960 px) shows a 20 px chevron, `aria-hidden`. The card is one `<a>` and its accessible name is `Sponsored by NAME: HEADLINE. CTA_LABEL`, so the sponsor's button wording is still announced and the target is the whole card (328 by 112 at 360, 358 by 112 at 390), far above 44 px. The wide variant (960 and up) shows the text button from `cta_label`. No nested interactive element in either. Review again after a trial on real low end Android phones in Lagos (audit advice): if tap through is below the wide card, test a 2 line chip plus text.
+
+Compact card geometry (measured, no clipping at 360, 390, and 1.15): padding 12, image 72, gaps 10, chevron 20, text column 190 px at 360 and 220 at 390. Content height 66 px of 86 at 1.0 and 75 of 103 at 1.15.
+
+Label rule: the chip reads `Sponsored by NAME`. Only the name may shorten with an ellipsis. The words "Sponsored by" never truncate (`.lb1` is `flex: none`). The full name stays in the accessible name. At 360 and factor 1.0 the example name fits (185 px label in 190 px). At factor 1.15 on a 360 phone the name shortens ("Slate Bo..."). The editor hint under Sponsor name says "Under 20 characters fits small phones" (S164).
+
+### 16.3 Contrast and theme (measured with a script, WCAG formula)
+
+| Pair | Ratio | Result |
+|---|---|---|
+| Label ink `#1A1C22` on chip `#ECEAE3` | 14.15 | Pass, fixed tokens, same on every theme |
+| Headline ink on card `#FFFFFF` / lemon card `#FFFEEA` | 17.03 / 16.72 | Pass |
+| Body muted `#5B606B` on `#FFFFFF` / `#FFFEEA` | 6.31 / 6.19 | Pass |
+| CTA blue `#1F6FB5` on `#FFFFFF` / `#FFFEEA` | 5.25 / 5.16 | Pass |
+| Card edge `#8A8D94` on page `#F5F5F2` / on card white | 3.04 / 3.32 | Pass |
+| Card edge `#8A8D94` on lemon page `#F7F3A6` | 2.90 | **Fail** (the theme gate in 4.3 derives a darker border) |
+| Derived edge `#80838A` on lemon page / on lemon card | 3.31 / 3.73 | Pass |
+| Focus ring `#1F6FB5` on page / on lemon page | 4.81 / 4.58 | Pass |
+| Before card text `#B4B8C2` on the 0.85 scrim over the lightest poster (about `#2B3036`) | 6.9 | Pass |
+| White on the same scrim | 13.6 | Pass |
+
+Build rule: the sponsor card edge must be `--color-border-strong` after the theme gate has derived it, never a literal `#8A8D94`. The lemon state in S160 now uses the derived value, text size 1.15, and the scaled box.
+
+### 16.4 Targets, hover, motion (R30, R31)
+
+- Viewer header links and logo: 44 px tall, 44 px wide minimum, active underline drawn inside the box. Admin sidebar links 44, bell 44, account link 44.
+- Switch: the element is 48 by 44 (donate switch 52 by 48), track and knob are drawn inside it. Each has a name (`aria-label` in the mockup, a `<label>` in the build) and `tabindex`.
+- "See how gifts are used" moved to its own line with a 44 px target.
+- Sponsor card hover is inside `@media (hover: hover) and (pointer: fine)` and only changes the edge to `--color-ink` and underlines the button text. Pressed uses `--color-surface-sunken`. Reduced motion uses `@media (prefers-reduced-motion: reduce)` and the before card shows "Continues in N s" as text with no ring.
+- Axis labels on the report chart are 12 px (were 11).
+- Warning marker in the date error is an SVG icon with the words, not a text symbol.
+
+### 16.5 Kids and client inputs (R25)
+
+- Kids never see a sponsor card, Donate button, banner or footer link. S162 now draws the kids player state. S166 keeps the "Ask a grown-up" page (M48-S34). Recommended decision (reversible): the public transparency page (S169) also answers a kids context with the same "Ask a grown-up" page, because it is a donation surface. Add that row to the kids matrix test in slice 14.
+- Every mockup now opens with a "Client input" notice. Sponsor names are marked `data-client-input="sponsor name"`. Bank details read `[Bank name]`, `[Registered account name]`, `[10 digit account number]`, `[Transfer note]`. The organisation name reads `[Organisation name]` and the support email `[support email]`. These map to `donate.org_name`, `donate.bank_transfer.instructions`, `donate.receipts.reply_to`, the sponsor records, preset amounts and the transparency items. None is hardcoded.
+
+### 16.6 Other amendments
+
+- Failed gift state (S167) shows one action, "Try again" (R39). Home is in the header.
+- S164 preview: the desktop and text only previews are drawn at their real 960 px width and shown at 45 percent so the card is not squeezed. The phone editor shows only phone previews.
+- `--font-mono` (R38) is used for references, account numbers and masked emails. Tokens as in L10 section 12.1.
+- Disabled "Publish changes" uses `--color-surface-sunken` with `--color-muted` text and gives a reason beside it (DESIGN-SYSTEM 4.2 rule 5).
