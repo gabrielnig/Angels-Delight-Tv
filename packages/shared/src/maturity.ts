@@ -16,7 +16,7 @@ export function maturityLabel(rank: number, labels?: readonly string[] | null): 
   return configured ? configured : MATURITY_DEFAULT_LABELS[slot]!;
 }
 
-const DASHES = /[‒–—―]/;
+const DASHES = /[\u2012-\u2015]/;
 
 /**
  * Parses the `maturity.labels` setting: five comma separated labels of 1 to 4 characters, all different, with no

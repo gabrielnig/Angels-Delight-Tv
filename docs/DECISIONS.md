@@ -1468,3 +1468,15 @@ Per video tri state, site default (Super admin), Admin changes it with a reason 
 - Options: SMS codes (cost, SIM swap), email codes (same inbox as the password reset), a `pending_mfa` viewer session (needs a new session column because a viewer pending session looks like a normal one), TOTP with a signed note (chosen).
 - Why: staff TOTP, replay guard and lockout already exist, a note without a session cannot be mistaken for a signed in viewer, and email is a notice only so two step never depends on mail delivery.
 - Reversible: yes (the flag, or drop the service).
+
+## D-272 Maturity is a five step rank kept in step with kids_safe by database triggers (lane L5, M44, R20)
+- Decision: `videos.maturity_rank`, `series.maturity_rank` (0 to 4, null until rated) and `profiles.max_maturity_rank` (default 4) are added in migration 0038. Triggers keep `kids_safe` equal to `rank = 0` whenever a rank is set, and force a kids profile limit to 0 whatever a writer sends. The visibility predicate gets an optional `Audience.maxRank`. A row with no rank falls back to its legacy `kids_safe` flag (rank 0) and otherwise counts as 4, so a limited audience never sees an unrated title by accident.
+- Options: replace `kids_safe` with the rank, a check constraint only for kids profiles, treat every unrated row as 4.
+- Why: every existing query, index and test keeps working because `kids_safe` stays. A trigger for the kids limit cannot be bypassed by a legacy writer, where a check would break them. The legacy fallback keeps kids safe rows visible to kids until slice 2 moves every writer to ranks.
+- Reversible: yes. Additive columns, a code revert leaves valid data.
+
+## D-273 Maturity labels are a setting and nothing compares labels (lane L5, R20)
+- Decision: default labels G, PG, 12, 15, 18 are stored in `maturity.labels` as five comma separated labels of 1 to 4 characters, validated by `parseMaturityLabels`. Guests may see up to rank 2 by default through `maturity.guestMaxRank`. Code only ever compares ranks.
+- Options: fixed labels, labels per language.
+- Why: the client may prefer plain words, and a Nigerian classification name is only a default.
+- Reversible: yes.
