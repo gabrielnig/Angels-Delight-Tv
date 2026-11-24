@@ -8,8 +8,8 @@ Plan: `docs/plan/v2/L1-guest-access.md`. Rulings: `docs/plan/v2/RULINGS.md` (the
 |---|---|---|---|
 | 1 | Guest identity and guest playback token | merged | #221 |
 | 2 | Watch page, local progress, analytics identity | merged | #227 |
-| 3 | Account free catalog path and public GETs | on PR | see below |
-| 4 | Guest chrome, title and series, Sign in to save | todo | |
+| 3 | Account free catalog path and public GETs | merged | #232 |
+| 4 | Guest chrome, title and series, Sign in to save | on PR | see below |
 | 5 | Home, Browse, Search for guests | todo | |
 | 6 | Guest audience, Kids mode, settings | todo | |
 | 7 | My List explainer, return intent | todo | |
@@ -71,3 +71,14 @@ Known gap: the admin Settings form (`SiteSettingsView.tsx`) lists keys by hand. 
 
 Scoped tests:
 `pnpm vitest run packages/viewer/src/guest.int.test.ts apps/web/src/server/viewer/public-api.test.ts apps/web/src/server/viewer/route-matrix.int.test.ts apps/web/src/server/data/real-catalog.int.test.ts apps/web/src/lib/session.test.ts apps/web/src/lib/data/guest-library.test.ts apps/web/src/server/guest/guest-audience.test.ts`
+
+## Slice 4 (guest chrome, title and series, Sign in to save)
+
+Exists:
+- `components/guest/GuestChrome.tsx`: header, Main and Primary navs, footer, skip link. Props `platformName`, `logoUrl`, `footerLinks`, `year`, `signUpOpen`, `kids`. `AppShell` renders it for a signed out visitor while `features.guest_play` is on.
+- `components/guest/SignInToSaveDialog.tsx`: `{ open, reason: 'my-list' | 'like', next, signUpOpen, onClose }`. L5 uses `reason="like"`. Links carry `?next=<encoded>`.
+- `lib/guest/resume.ts`: `guestPrimary({ watchHref, durationSeconds }, entry)`.
+- `TitleActions` and `WatchActions` take a `guest` prop. `WatchClient` takes `signUpOpen`.
+- Title and series pages use `getViewerOrGuest`. The signed out preview stays only for guest play off.
+
+Deviations: no `guest` prop on the shared `TopNav` (D-208). The sticky Play bar on a title page still shows the server label (Play) while the main button follows local progress. The `GuestResume` island of the plan is folded into `TitleActions`. The over-hero header backing is left to slice 5.
