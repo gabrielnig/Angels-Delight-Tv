@@ -31,6 +31,14 @@ export interface ResolvedDetails {
   tags: string[];
 }
 
+/** The title a new draft gets from its file name: no extension, dashes and underscores become spaces. */
+export function titleFromFileName(name: string): string {
+  return name
+    .replace(/\.[^.]+$/, '')
+    .replace(/[_-]+/g, ' ')
+    .trim();
+}
+
 export const EMPTY_DETAILS: UploadDetails = {
   categoryIds: [],
   seriesId: null,

@@ -88,15 +88,44 @@ describe('UploadScreen shared details', () => {
     await userEvent.selectOptions(screen.getByLabelText('Series'), 's1');
     await userEvent.click(screen.getByRole('checkbox', { name: 'Number episodes in file order' }));
     await addFiles('a.mp4', 'b.mp4');
+    // a and b get their drafts, so they keep the details they had.
+    lanes.forEach((l, i) => Object.assign(l, { videoId: `v${i}`, status: 'done' }));
+    rerender();
     await userEvent.click(screen.getByRole('button', { name: 'Edit details' }));
     await userEvent.click(screen.getByRole('checkbox', { name: 'Maths' }));
     await addFiles('c.mp4');
-    lanes.forEach((l, i) => Object.assign(l, { videoId: `v${i}`, status: 'done' }));
+    Object.assign(lanes[2]!, { videoId: 'v2', status: 'done' });
     rerender();
     await waitFor(() => expect(applyDetails).toHaveBeenCalledTimes(3));
     expect(applyDetails).toHaveBeenNthCalledWith(1, 'v0', expect.objectContaining({ categoryIds: ['c1'], seriesId: 's1', episodeNumber: 1 }));
     expect(applyDetails).toHaveBeenNthCalledWith(2, 'v1', expect.objectContaining({ categoryIds: ['c1'], episodeNumber: 2 }));
     expect(applyDetails).toHaveBeenNthCalledWith(3, 'v2', expect.objectContaining({ categoryIds: ['c1', 'c2'], episodeNumber: 3 }));
+  });
+
+  it('a file not yet registered follows a later change to the shared form', async () => {
+    const { applyDetails, rerender } = setup();
+    await userEvent.click(screen.getByRole('checkbox', { name: 'Science' }));
+    await addFiles('a.mp4');
+    await userEvent.click(screen.getByRole('button', { name: 'Edit details' }));
+    await userEvent.click(screen.getByRole('checkbox', { name: 'Maths' }));
+    Object.assign(lanes[0]!, { videoId: 'v0', status: 'done' });
+    rerender();
+    await waitFor(() =>
+      expect(applyDetails).toHaveBeenCalledWith('v0', expect.objectContaining({ categoryIds: ['c1', 'c2'] })),
+    );
+  });
+
+  it('a per file override wins over the shared form and is saved with the draft', async () => {
+    const { applyDetails, rerender } = setup();
+    await userEvent.selectOptions(screen.getByLabelText('Suitability'), 'everyone');
+    await addFiles('a.mp4', 'b.mp4');
+    await userEvent.selectOptions(screen.getAllByLabelText('Suitability for a.mp4')[0]!, 'kids');
+    await userEvent.type(screen.getAllByLabelText('Title for b.mp4')[0]!, 'Fractions');
+    lanes.forEach((l, i) => Object.assign(l, { videoId: `v${i}`, status: 'done' }));
+    rerender();
+    await waitFor(() => expect(applyDetails).toHaveBeenCalledTimes(2));
+    expect(applyDetails).toHaveBeenCalledWith('v0', expect.objectContaining({ suitability: 'kids' }));
+    expect(applyDetails).toHaveBeenCalledWith('v1', expect.objectContaining({ suitability: 'everyone', title: 'Fractions' }));
   });
 
   it('does not call apply when no detail was set', async () => {
