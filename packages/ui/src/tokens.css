@@ -135,6 +135,7 @@
 
   --leading-tight: 1.15;
   --leading-snug: 1.3;
+  --leading-marks: 1.3;       /* headings in yo, ig, ha, pcm: stacked marks (dot below plus tone) are not clipped */
   --leading-normal: 1.5;
 
   /* ---- Spacing (4px base) ---- */

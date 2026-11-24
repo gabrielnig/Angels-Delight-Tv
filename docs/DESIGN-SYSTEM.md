@@ -242,6 +242,7 @@ Component CSS uses the tokens above. Responsive sizes are set with media queries
 - Sentence case everywhere. No all caps except micro labels.
 - Titles on cards clamp to 2 lines, descriptions to 2 (cards) or 3 (hero) with ellipsis, and the full text sits in the accessible name or a title attribute on desktop.
 - Numerals: use tabular numerals (`font-variant-numeric: tabular-nums`) for times, sizes, percentages and table columns.
+- Marks safe type for yo, ig, ha and pcm (M46): headings use `--leading-marks` (1.3) instead of the tight heading leading, micro labels have `letter-spacing: 0`, and clamped card and hero titles get `padding-block: 0.1em` so a dot below is not cut by the clamp. Display font stacks and the caption cue stack name Inter right after the family, so a missing glyph falls back to Inter, not a system face.
 - Respect user font size: use rem, never lock text in px. The layout must survive 200 percent zoom.
 
 ### 5.4 What admin may change

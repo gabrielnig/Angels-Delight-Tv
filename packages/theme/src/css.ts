@@ -2,9 +2,9 @@ import { themeVariables, type FontKey } from '@ad/ui/theme';
 import { deriveColors } from './derive';
 import type { ThemeValues } from './model';
 
-const SERIF_STACK = '"Lora", Georgia, "Times New Roman", serif';
+const SERIF_STACK = '"Lora", Inter, Georgia, "Times New Roman", serif';
 const GROTESK_STACK =
-  '"Space Grotesk", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
+  '"Space Grotesk", Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
 
 /** Display only fonts: they set headings and the body keeps Inter (D-162, D-005). */
 const DISPLAY_ONLY: Partial<Record<FontKey, string>> = { lora: SERIF_STACK, 'space-grotesk': GROTESK_STACK };
