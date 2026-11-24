@@ -62,3 +62,9 @@ Scoped tests only: `pnpm vitest run <file>`.
 - `packages/i18n`: `csv.ts` (BOM, quotes, NFC), `export.ts` (`exportCsv`, `exportJson` effective catalog), `import.ts` (`planImport`, 5,000 rows, 2 MB, rows land `in_review`, plural cells are JSON objects), `TranslationService.exportCsv/exportJson/importCsv({dryRun})`, `store.upsertMany` (one transaction in `DbStore`).
 - Web: `lib/i18n/language-routes.ts` (`createLanguageHandlers`), `lib/i18n/runtime.ts` (`translationServiceFor(actor)`, `i18nRuntime()` which also registers the approved rows as the catalog overlay), routes `GET /api/admin/languages/[locale]/export?format=csv|json` and `POST .../import?dryRun=1` (body is the CSV text, same origin, 2 MB cap, staff only).
 - Tests: `pnpm vitest run packages/i18n apps/web/src/lib/i18n/language-routes.test.ts`.
+
+## Slice 10 (admin Languages screens)
+- Pages: `/admin/languages` (table with state, approved percent, missing, stale, in review, Live switch with the threshold reason, Super admin "Publish anyway" with a reason, export links) and `/admin/languages/[locale]` (workspace: Missing, Stale, In review, Approved, All tabs, search, area filter, per row editor with placeholder chips, plural categories of the locale, Copy English, validation under the field, Save, bulk approve for Admin with count and warning, Import CSV dialog with dry run). Nav entry "Languages" (action `i18n.edit`).
+- Code: `lib/i18n/admin-data.ts` (pure builders), `lib/i18n/admin-queries.ts`, `components/admin/languages/*`, `app/admin/(shell)/languages/actions.ts`. The "Viewer hits" tab is built in `Workspace` (prop `missingHits`) and fed in slice 11.
+- Tests: `apps/web/src/components/admin/languages/*.test.tsx`, `apps/web/src/lib/i18n/admin-data.test.ts`.
+- Not done: mockup pixel pass and mobile review (self checked: admin tokens, 44px switch and checkbox, icon plus word status); plan name `languages.fixture.ts` is replaced by the memory runtime in fixture mode.

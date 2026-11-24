@@ -2354,3 +2354,81 @@
   flex: 1 1 12rem;
   margin: 0;
 }
+
+/* Languages screens (M46). Targets stay 44px and the list never relies on colour alone. */
+.adm-lang-list,
+.adm-lang-hits {
+  display: grid;
+  gap: var(--space-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.adm-lang-row {
+  display: grid;
+  gap: var(--space-2);
+  padding: var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+}
+
+.adm-lang-row__head,
+.adm-lang-row__actions,
+.adm-lang-workspace__filters,
+.adm-lang-tools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.adm-lang-row__head input[type='checkbox'] {
+  width: var(--touch-target);
+  height: var(--touch-target);
+}
+
+.adm-lang-row__english {
+  margin: 0;
+  color: var(--color-muted);
+}
+
+.adm-lang-row__chips {
+  display: flex;
+  gap: var(--space-2);
+  margin: 0;
+}
+
+.adm-chip {
+  padding: var(--space-1) var(--space-2);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-mono);
+  font-size: var(--text-small);
+}
+
+.adm-lang-row textarea:focus-visible {
+  outline: 3px solid var(--color-focus-ring);
+  outline-offset: 2px;
+}
+
+.adm-lang-row__actions {
+  justify-content: flex-end;
+}
+
+.adm-lang-row__actions .adm-muted {
+  margin-right: auto;
+}
+
+.adm-bulkbar {
+  position: sticky;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  background: var(--color-sidebar-bg, var(--color-ink));
+  color: var(--color-sidebar-ink);
+}
