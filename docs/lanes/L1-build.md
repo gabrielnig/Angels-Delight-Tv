@@ -10,8 +10,8 @@ Plan: `docs/plan/v2/L1-guest-access.md`. Rulings: `docs/plan/v2/RULINGS.md` (the
 | 2 | Watch page, local progress, analytics identity | merged | #227 |
 | 3 | Account free catalog path and public GETs | merged | #232 |
 | 4 | Guest chrome, title and series, Sign in to save | merged | #235 |
-| 5 | Home, Browse, Search for guests | on PR | see below |
-| 6 | Guest audience, Kids mode, settings | todo | |
+| 5 | Home, Browse, Search for guests | merged | #262 |
+| 6 | Guest audience, Kids mode, settings | on PR | see below |
 | 7 | My List explainer, return intent | todo | |
 | 8 | Guest Continue learning | todo | |
 | 9 | History import | todo | |
@@ -90,3 +90,12 @@ Deviations: no `guest` prop on the shared `TopNav` (D-208). The sticky Play bar 
 - Header over the hero: `data-over-hero` on `/` with the `--color-hero-chip-bg` backing.
 - `AuthScreens.test.tsx` pins that sign in clears service worker caches before navigating.
 - e2e `viewer-real` now expects `/browse` to stay and `/account` to redirect.
+
+## Slice 6 (Kids mode, guestAudience)
+
+- `setGuestAudienceAction(kids)` in `app/actions.ts`, `server/guest/set-guest-audience.ts`, `guestAudienceFromRequest` in `server/guest/guest-audience.ts`.
+- `GuestChrome` takes `setKidsMode`: Menu with a Kids mode switch and the R17 help line; in Kids mode a Turn off Kids mode button above the footer.
+- `GuestKidsBlocked` for a kids guest on an adult title (`RealCatalog.title` returns `{ blocked: 'kids' }` for guests).
+- `getViewerContext`, the video runtime `getGuest` and the analytics resolver read the device audience.
+- `client.json`: `guestAudience`, `guestPlay`. Admin Features: guest play switch, guest segment minutes. Not built: audience select in admin (D-234).
+- Series pages have no blocked screen for kids guests yet; they still answer not found.
