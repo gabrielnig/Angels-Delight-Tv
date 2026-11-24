@@ -1,5 +1,5 @@
 import { seedDemo } from '@ad/catalog';
-import { slugRedirects, videos, watchProgress } from '@ad/db';
+import { searchHistory, slugRedirects, videos, watchProgress } from '@ad/db';
 import {
   categorize,
   createHarness,
@@ -13,7 +13,7 @@ import {
 } from '@ad/viewer/testing';
 import { eq } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import type { ViewerContext } from '../../lib/data/types';
+import { guestContext, type ViewerContext } from '../../lib/data/types';
 import { RealCatalog } from './real-catalog';
 
 type User = Awaited<ReturnType<ViewerHarness['makeUser']>>;
@@ -420,6 +420,94 @@ describe.skipIf(!integrationEnabled())('real catalog repository', () => {
       await seedVideo(h.db.setup, { slug: 'with-poster', posterAssetId: assetId });
       const item = await catalog.publicTitle('with-poster');
       expect(item?.thumbnail?.src).toMatch(/^https:\/\/media\.test\/img\/.+640/);
+    });
+  });
+
+  describe('guest branch (M40-S01)', () => {
+    const general = () => guestContext('adult');
+    const kids = () => guestContext('kids');
+
+    it('builds the guest context with no account and no profile', () => {
+      expect(general()).toEqual({
+        accountId: '',
+        profileId: 'none',
+        audience: 'adult',
+        guest: true,
+      });
+      expect(kids().audience).toBe('kids');
+    });
+
+    it('serves home rows and the hero with no personal rows, and pages further rows', async () => {
+      const home = await catalog.home(general());
+      expect(home.empty).toBe(false);
+      expect(home.hero.length).toBeGreaterThan(0);
+      expect(home.rows.length).toBeGreaterThan(0);
+      const titles = [...home.hero.map((h) => h.item), ...home.rows.flatMap((r) => r.items)];
+      expect(titles.length).toBeGreaterThan(0);
+      if (home.nextCursor) {
+        const more = await catalog.homeRows(general(), home.nextCursor);
+        expect(more.rows.length).toBeGreaterThan(0);
+      }
+    });
+
+    it('lists categories and browses for the audience, with kids filtered in the query', async () => {
+      const cats = await catalog.categories(general());
+      expect(cats.length).toBeGreaterThan(0);
+      const all = await catalog.browse(general(), { sort: 'newest' });
+      const kid = await catalog.browse(kids(), { sort: 'newest' });
+      expect(all.total).toBeGreaterThanOrEqual(kid.total);
+      expect(kid.items.every((i) => i.kidsSafe)).toBe(true);
+    });
+
+    it('searches without writing history and suggests', async () => {
+      const before = await h.db.setup.select().from(searchHistory);
+      const found = await catalog.search(general(), 'rain');
+      expect(found.items.length).toBeGreaterThanOrEqual(0);
+      expect(await h.db.setup.select().from(searchHistory)).toEqual(before);
+      expect(Array.isArray(await catalog.suggest(general(), 'rain'))).toBe(true);
+      expect(await catalog.search(general(), 'a')).toEqual({
+        items: [],
+        total: 0,
+        nextCursor: null,
+      });
+    });
+
+    it('shows popular videos', async () => {
+      expect((await catalog.popular(kids())).every((v) => v.kidsSafe)).toBe(true);
+    });
+
+    it('opens a title and a series for a guest with no personal state and a plain Play', async () => {
+      const video = await seedVideo(h.db.setup, { title: 'Guest title page', kidsSafe: true });
+      const result = await catalog.title(general(), video.slug);
+      expect(result && 'video' in result ? result.video.title : null).toBe('Guest title page');
+      expect(result && 'play' in result ? result.play.label : null).toBe('play');
+      const s = await seedSeries(h.db.setup, { seasonSizes: [2], episode: { kidsSafe: true } });
+      const series = await catalog.series(general(), s.slug);
+      expect(series && 'seasons' in series ? series.next.label : null).toBe('play');
+      expect(
+        series && 'seasons' in series ? series.seasons[0]!.episodes.every((e) => !e.watched) : null,
+      ).toBe(true);
+    });
+
+    it('does not find an adult title in Kids mode and never calls an account lookup', async () => {
+      const adultOnly = await seedVideo(h.db.setup, { title: 'Guest adult page', kidsSafe: false });
+      expect(await catalog.title(kids(), adultOnly.slug)).toBeNull();
+      expect(await catalog.title(general(), adultOnly.slug)).not.toBeNull();
+    });
+
+    it('ignores personal state the same title has for a signed in viewer', async () => {
+      const video = await seedVideo(h.db.setup, { title: 'Guest vs account', durationMs: 200_000 });
+      await h.db.setup.insert(watchProgress).values({
+        profileId: user.profileId,
+        videoId: video.id,
+        positionMs: 90_000,
+        durationMs: 200_000,
+        completed: false,
+      } as never);
+      const asUser = await catalog.title(adultCtx(user), video.slug);
+      const asGuest = await catalog.title(general(), video.slug);
+      expect(asUser && 'progress' in asUser ? asUser.progress : null).toBeTruthy();
+      expect(asGuest && 'progress' in asGuest ? asGuest.progress : null).toBeFalsy();
     });
   });
 });

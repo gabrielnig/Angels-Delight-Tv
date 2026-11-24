@@ -185,6 +185,16 @@ export interface ViewerContext {
   accountId: string;
   profileId: string;
   audience: Audience;
+  /**
+   * A visitor with no account (M40). `accountId` is empty and `profileId` is `none`, so a guest context can never
+   * name an account or a profile. The real services answer from the audience alone and read no personal table.
+   */
+  guest?: true;
+}
+
+/** The context for a guest. Only the audience is meaningful. */
+export function guestContext(audience: Audience): ViewerContext {
+  return { accountId: '', profileId: 'none', audience, guest: true };
 }
 
 export interface CatalogRepository {

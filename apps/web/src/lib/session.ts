@@ -8,6 +8,8 @@ import { cookieProfileIo } from '../server/data/profile-io';
 import { rememberedProfile } from './profiles/always-ask';
 import { can } from './admin/can';
 import { getAccount, getProfiles } from './data';
+import { guestContext } from './data/types';
+import { currentGuestAudience } from '../server/guest/guest-view';
 import type { Profile, ViewerContext, ViewerSession } from './data';
 
 /**
@@ -106,3 +108,18 @@ export async function requireProfile(next = '/'): Promise<ViewerState> {
 }
 
 export const sessionCookieNames = { profile: PROFILE_COOKIE, fixture: FIXTURE_COOKIE } as const;
+
+export type ViewerOrGuest =
+  ({ kind: 'account' } & ViewerState) | { kind: 'guest'; ctx: ViewerContext };
+
+/**
+ * For pages anyone may open (M40-S01). A missing session is a guest with the device audience and never a
+ * redirect. An account that is unverified or has no active profile keeps its redirects, and so does one waiting
+ * for deletion. Personal pages keep using `requireProfile`.
+ */
+export async function getViewerOrGuest(next = '/'): Promise<ViewerOrGuest> {
+  const session = await getSession();
+  if (!session) return { kind: 'guest', ctx: guestContext(await currentGuestAudience()) };
+  const state = await requireProfile(next);
+  return { kind: 'account', ...state };
+}
