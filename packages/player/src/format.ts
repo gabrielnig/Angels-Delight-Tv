@@ -1,3 +1,5 @@
+import { msg as defaultMsg, type Translate } from '@ad/shared/messages';
+
 function whole(seconds: number): number {
   return Number.isFinite(seconds) && seconds > 0 ? Math.floor(seconds) : 0;
 }
@@ -12,25 +14,28 @@ export function formatClock(seconds: number): string {
   return h > 0 ? `${h}:${pad(m)}:${pad(sec)}` : `${m}:${pad(sec)}`;
 }
 
-function unit(n: number, word: string): string {
-  return `${n} ${word}${n === 1 ? '' : 's'}`;
-}
-
-/** "2 minutes 14 seconds" for screen readers. */
-export function spokenTime(seconds: number): string {
+/** "2 minutes 14 seconds" for screen readers. Units come from the catalog so they follow the viewer's language. */
+export function spokenTime(seconds: number, msg: Translate = defaultMsg): string {
   const s = whole(seconds);
   const h = Math.floor(s / 3600);
   const m = Math.floor((s % 3600) / 60);
   const sec = s % 60;
   const parts: string[] = [];
-  if (h > 0) parts.push(unit(h, 'hour'));
-  if (m > 0) parts.push(unit(m, 'minute'));
-  if (sec > 0 || parts.length === 0) parts.push(unit(sec, 'second'));
+  if (h > 0) parts.push(msg('player.time.hour', { count: h }));
+  if (m > 0) parts.push(msg('player.time.minute', { count: m }));
+  if (sec > 0 || parts.length === 0) parts.push(msg('player.time.second', { count: sec }));
   return parts.join(' ');
 }
 
 /** aria-valuetext for the seek slider: "2 minutes 14 seconds of 6 minutes". */
-export function seekValueText(current: number, duration: number): string {
-  if (!Number.isFinite(duration) || duration <= 0) return spokenTime(current);
-  return `${spokenTime(current)} of ${spokenTime(duration)}`;
+export function seekValueText(
+  current: number,
+  duration: number,
+  msg: Translate = defaultMsg,
+): string {
+  if (!Number.isFinite(duration) || duration <= 0) return spokenTime(current, msg);
+  return msg('player.seek.valueOf', {
+    current: spokenTime(current, msg),
+    duration: spokenTime(duration, msg),
+  });
 }

@@ -209,7 +209,7 @@ export function SettingsMenu(props: SettingsMenuProps) {
         >
           <span>{msg('player.settings.autoplay')}</span>
           <span className="adp-menu__value" aria-hidden="true">
-            {props.autoplayNext ? 'On' : 'Off'}
+            {props.autoplayNext ? msg('player.settings.on') : msg('player.settings.off')}
             <span className="adp-switch" data-on={props.autoplayNext || undefined}>
               <span className="adp-switch__knob" />
             </span>

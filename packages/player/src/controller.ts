@@ -104,7 +104,6 @@ const END_GUARD_SECONDS = 0.5;
 const SEEK_TIMEOUT_MS = 6_000;
 const SEGMENT_SECONDS = 6;
 
-
 type Listener = () => void;
 
 /**
@@ -324,7 +323,8 @@ export class PlayerController {
       cap: this.cap(),
     });
     this.firstFrameTimer = setTimeout(() => {
-      if (!this.firstFrame && !this.state.error) this.set({ buffering: true, announce: 'Loading' });
+      if (!this.firstFrame && !this.state.error)
+        this.set({ buffering: true, announce: this.msg('player.loading') });
     }, SPINNER_AFTER_MS);
     if (this.o.autoplay ?? true) this.play();
   }
@@ -388,7 +388,7 @@ export class PlayerController {
       this.seekTimer = null;
       if (this.disposed) return;
       const { media } = this.o;
-    const engine = this.engine;
+      const engine = this.engine;
       if (attempt === 0) {
         media.currentTime = target;
         engine.recover();
@@ -507,7 +507,9 @@ export class PlayerController {
     this.toast(
       {
         kind: 'error',
-        message: fellBack ? this.msg('player.captions.fallback') : this.msg('player.captionsFailed'),
+        message: fellBack
+          ? this.msg('player.captions.fallback')
+          : this.msg('player.captionsFailed'),
       },
       6_000,
     );
@@ -723,7 +725,9 @@ export class PlayerController {
     if (marker?.kind !== current?.kind || marker?.nextLesson !== current?.nextLesson) {
       patch.marker = marker;
       if (marker)
-        patch.announce = this.msg('player.announce.skipAvailable', { label: this.skipLabel(marker) });
+        patch.announce = this.msg('player.announce.skipAvailable', {
+          label: this.skipLabel(marker),
+        });
     }
     const chapter = chapterAt(normalizeChapters(this.o.chapters, duration), time);
     if (
@@ -855,14 +859,17 @@ export class PlayerController {
     this.stallAt = this.o.media.currentTime;
     this.rebufferCount += 1;
     this.spinnerTimer = setTimeout(
-      () => this.set({ buffering: true, announce: 'Buffering' }),
+      () => this.set({ buffering: true, announce: this.msg('player.buffering') }),
       SPINNER_AFTER_MS,
     );
     this.slowTimer = setTimeout(() => {
       if (this.selected !== 'auto') {
         // A locked quality cannot drop by itself, so say what the viewer can do (one action: open Quality).
         if (!this.state.hint) {
-          this.set({ hint: { kind: 'locked-quality' }, announce: this.msg('player.hint.lockedQuality') });
+          this.set({
+            hint: { kind: 'locked-quality' },
+            announce: this.msg('player.hint.lockedQuality'),
+          });
         }
         return;
       }

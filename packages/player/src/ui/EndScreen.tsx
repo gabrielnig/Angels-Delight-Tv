@@ -1,3 +1,4 @@
+import { usePlayerT } from '../t';
 import { PlayIcon, PlusIcon, ReplayIcon } from './icons';
 import type { UpNextItem } from '../types';
 import { StillWatching } from './StillWatching';
@@ -37,10 +38,11 @@ interface Props {
 }
 
 function Related({ items }: { items: RelatedItem[] }) {
+  const msg = usePlayerT();
   if (items.length === 0) return null;
   return (
     <div className="adp-end__related">
-      <p className="adp-end__more">More like this</p>
+      <p className="adp-end__more">{msg('player.end.moreLikeThis')}</p>
       <ul className="adp-end__row">
         {items.map((r) => (
           <li key={r.id}>
@@ -94,6 +96,7 @@ export function EndScreen({
   onCancel,
   onReplay,
 }: Props) {
+  const msg = usePlayerT();
   const related = data.related ?? [];
   const addToList = data.onAddToList ? (
     <button
@@ -103,13 +106,13 @@ export function EndScreen({
       aria-pressed={data.inMyList ?? false}
     >
       <PlusIcon size={18} />
-      {data.inMyList ? 'In My List' : 'Add to My List'}
+      {data.inMyList ? msg('player.end.inList') : msg('player.end.addToList')}
     </button>
   ) : null;
   const replay = (
     <button type="button" className="adp-btn adp-btn--ghost" onClick={onReplay}>
       <ReplayIcon size={18} />
-      Replay
+      {msg('player.end.replay')}
     </button>
   );
 
@@ -126,8 +129,8 @@ export function EndScreen({
 
   if (next && countdown !== null) {
     return (
-      <section className="adp-end" aria-label="Up next">
-        <p className="adp-end__kicker">{`Up next in ${countdown} seconds`}</p>
+      <section className="adp-end" aria-label={msg('player.end.upNext')}>
+        <p className="adp-end__kicker">{msg('player.end.upNextIn', { count: countdown })}</p>
         <div className="adp-end__next">
           <div className="adp-end__poster">
             {next.posterUrl ? <img src={next.posterUrl} alt="" /> : null}
@@ -141,10 +144,10 @@ export function EndScreen({
         <div className="adp-end__actions">
           <button type="button" className="adp-btn adp-btn--primary" onClick={onPlayNext} autoFocus>
             <PlayIcon size={16} />
-            Play now
+            {msg('player.end.playNow')}
           </button>
           <button type="button" className="adp-btn adp-btn--ghost" onClick={onCancel}>
-            Cancel
+            {msg('player.end.cancel')}
           </button>
         </div>
       </section>
@@ -153,20 +156,24 @@ export function EndScreen({
 
   if (next) {
     return (
-      <section className="adp-end" aria-label="Up next">
+      <section className="adp-end" aria-label={msg('player.end.upNext')}>
         {!autoplayNext || cancelled ? (
-          <p className="adp-end__kicker">{cancelled ? 'Autoplay cancelled' : 'Autoplay is off'}</p>
+          <p className="adp-end__kicker">
+            {cancelled ? msg('player.autoplayCancelled') : msg('player.end.autoplayOff')}
+          </p>
         ) : null}
-        <h2 className="adp-end__title adp-end__title--lead">{`Next: ${next.title}`}</h2>
+        <h2 className="adp-end__title adp-end__title--lead">
+          {msg('player.end.next', { title: next.title })}
+        </h2>
         <div className="adp-end__actions">
           <button type="button" className="adp-btn adp-btn--primary" onClick={onPlayNext} autoFocus>
             <PlayIcon size={16} />
-            Play next
+            {msg('player.end.playNext')}
           </button>
           {replay}
           {cancelled && data.backHref ? (
             <a className="adp-btn adp-btn--ghost" href={data.backHref}>
-              {data.backLabel ?? 'Back to series'}
+              {data.backLabel ?? msg('player.end.backToSeries')}
             </a>
           ) : (
             addToList
@@ -179,19 +186,21 @@ export function EndScreen({
 
   if (data.lastInSeries && data.seriesTitle) {
     return (
-      <section className="adp-end" aria-label="Finished">
-        <h2 className="adp-end__title adp-end__title--lead">{`You finished ${data.seriesTitle}`}</h2>
-        <p className="adp-end__meta">Well done. Try another series or watch an episode again.</p>
+      <section className="adp-end" aria-label={msg('player.end.finished')}>
+        <h2 className="adp-end__title adp-end__title--lead">
+          {msg('player.end.youFinished', { title: data.seriesTitle })}
+        </h2>
+        <p className="adp-end__meta">{msg('player.end.wellDone')}</p>
         <div className="adp-end__actions">
           {data.backHref ? (
             <a className="adp-btn adp-btn--primary" href={data.backHref}>
-              {data.backLabel ?? 'Back to the series'}
+              {data.backLabel ?? msg('player.end.backToTheSeries')}
             </a>
           ) : null}
           {replay}
           {data.browseHref ? (
             <a className="adp-btn adp-btn--ghost" href={data.browseHref}>
-              Browse more
+              {msg('player.end.browseMore')}
             </a>
           ) : null}
         </div>
@@ -201,17 +210,17 @@ export function EndScreen({
   }
 
   return (
-    <section className="adp-end" aria-label="Finished">
-      <h2 className="adp-end__title adp-end__title--lead">Thanks for watching</h2>
+    <section className="adp-end" aria-label={msg('player.end.finished')}>
+      <h2 className="adp-end__title adp-end__title--lead">{msg('player.end.thanks')}</h2>
       <div className="adp-end__actions">
         <button type="button" className="adp-btn adp-btn--primary" onClick={onReplay} autoFocus>
           <ReplayIcon size={18} />
-          Replay
+          {msg('player.end.replay')}
         </button>
         {addToList}
         {data.homeHref ? (
           <a className="adp-btn adp-btn--ghost" href={data.homeHref}>
-            Back to Home
+            {msg('player.end.backHome')}
           </a>
         ) : null}
       </div>

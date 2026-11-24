@@ -19,27 +19,6 @@ interface Option<T extends string> {
   label: string;
 }
 
-const SIZES: Option<CaptionSize>[] = [
-  { value: 'small', label: 'Small' },
-  { value: 'medium', label: 'Medium' },
-  { value: 'large', label: 'Large' },
-  { value: 'xlarge', label: 'Extra large' },
-];
-const BACKGROUNDS: Option<CaptionBackground>[] = [
-  { value: 'none', label: 'None' },
-  { value: 'dark', label: 'Dark' },
-  { value: 'solid', label: 'Solid' },
-];
-const CONTRASTS: Option<CaptionContrast>[] = [
-  { value: 'standard', label: 'Standard' },
-  { value: 'high', label: 'High' },
-];
-const EDGES: Option<CaptionEdge>[] = [
-  { value: 'none', label: 'None' },
-  { value: 'shadow', label: 'Shadow' },
-  { value: 'outline', label: 'Outline' },
-];
-
 interface GroupProps<T extends string> {
   name: string;
   options: Option<T>[];
@@ -98,6 +77,26 @@ export function CaptionAppearance({
   const backgroundName = msg('player.captionStyle.background');
   const contrastName = msg('player.captionStyle.contrast');
   const edgeName = msg('player.captionStyle.edge');
+  const sizes: Option<CaptionSize>[] = [
+    { value: 'small', label: msg('player.captionStyle.opt.size.small') },
+    { value: 'medium', label: msg('player.captionStyle.opt.size.medium') },
+    { value: 'large', label: msg('player.captionStyle.opt.size.large') },
+    { value: 'xlarge', label: msg('player.captionStyle.opt.size.xlarge') },
+  ];
+  const backgrounds: Option<CaptionBackground>[] = [
+    { value: 'none', label: msg('player.captionStyle.opt.background.none') },
+    { value: 'dark', label: msg('player.captionStyle.opt.background.dark') },
+    { value: 'solid', label: msg('player.captionStyle.opt.background.solid') },
+  ];
+  const contrasts: Option<CaptionContrast>[] = [
+    { value: 'standard', label: msg('player.captionStyle.opt.contrast.standard') },
+    { value: 'high', label: msg('player.captionStyle.opt.contrast.high') },
+  ];
+  const edges: Option<CaptionEdge>[] = [
+    { value: 'none', label: msg('player.captionStyle.opt.edge.none') },
+    { value: 'shadow', label: msg('player.captionStyle.opt.edge.shadow') },
+    { value: 'outline', label: msg('player.captionStyle.opt.edge.outline') },
+  ];
   const corrected = style.background === 'none' && style.edge === 'none';
   return (
     <MenuShell
@@ -114,25 +113,25 @@ export function CaptionAppearance({
       </div>
       <Group
         name={sizeName}
-        options={SIZES}
+        options={sizes}
         value={style.size}
         onPick={(o) => change(sizeName, o.label, { ...style, size: o.value })}
       />
       <Group
         name={backgroundName}
-        options={BACKGROUNDS}
+        options={backgrounds}
         value={style.background}
         onPick={(o) => change(backgroundName, o.label, { ...style, background: o.value })}
       />
       <Group
         name={contrastName}
-        options={CONTRASTS}
+        options={contrasts}
         value={style.contrast}
         onPick={(o) => change(contrastName, o.label, { ...style, contrast: o.value })}
       />
       <Group
         name={edgeName}
-        options={EDGES}
+        options={edges}
         value={style.edge}
         note={corrected ? msg('player.captionStyle.edgeAuto') : undefined}
         onPick={(o) => change(edgeName, o.label, { ...style, edge: o.value })}

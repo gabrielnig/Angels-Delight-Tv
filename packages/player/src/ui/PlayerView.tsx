@@ -1,6 +1,5 @@
 'use client';
 
-
 import { msg, type Translate } from '@ad/shared/messages';
 import { PlayerTProvider, usePlayerT } from '../t';
 import {
@@ -611,7 +610,7 @@ function PlayerViewInner(props: PlayerViewProps) {
           type="button"
           ref={playRef}
           className="adp-ctl adp-ctl--primary"
-          aria-label={state.playing ? 'Pause' : 'Play'}
+          aria-label={state.playing ? msg('player.pause') : msg('player.play')}
           onClick={() => controller?.toggle()}
         >
           {state.playing ? <PauseIcon size={32} /> : <PlayIcon size={32} />}
@@ -645,7 +644,7 @@ function PlayerViewInner(props: PlayerViewProps) {
             <button
               type="button"
               className="adp-ctl"
-              aria-label={state.muted ? 'Unmute' : 'Mute'}
+              aria-label={state.muted ? msg('player.unmute') : msg('player.mute')}
               aria-pressed={state.muted}
               onClick={() => controller?.toggleMute()}
             >

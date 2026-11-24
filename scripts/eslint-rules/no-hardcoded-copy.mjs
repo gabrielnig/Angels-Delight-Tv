@@ -8,6 +8,8 @@
  * The rule is switched on per file in eslint.config.js, so files not yet moved over stay quiet.
  */
 const READ_ATTRS = new Set(['aria-label', 'title', 'placeholder', 'alt', 'aria-description']);
+/** Object keys that hold words a person reads, so a single capitalised word there is copy as well. */
+const LABEL_KEYS = new Set(['label', 'title', 'hint', 'description', 'text', 'heading']);
 const SENTENCE = /^[A-Z][A-Za-z0-9'’,.:;?!%(){}\-/ ]*\s[A-Za-z0-9'’,.:;?!%(){}\-/ ]+$/;
 
 export default {
@@ -33,6 +35,27 @@ export default {
       node.parent?.type === 'CallExpression' &&
       node.parent.callee.type === 'Identifier' &&
       node.parent.callee.name === 'msg';
+    /** One word literals: the branches of a ternary inside aria-label and friends, or a label like property. */
+    const readByPerson = (node) => {
+      let cursor = node;
+      while (
+        cursor.parent &&
+        (cursor.parent.type === 'ConditionalExpression' ||
+          cursor.parent.type === 'LogicalExpression') &&
+        cursor.parent.test !== cursor
+      )
+        cursor = cursor.parent;
+      const holder = cursor.parent;
+      if (holder?.type === 'JSXExpressionContainer' && holder.parent?.type === 'JSXAttribute')
+        return READ_ATTRS.has(holder.parent.name.name) && /[A-Za-z]/.test(node.value);
+      return (
+        holder?.type === 'Property' &&
+        holder.value === cursor &&
+        holder.key.type === 'Identifier' &&
+        LABEL_KEYS.has(holder.key.name) &&
+        /^[A-Z]/.test(node.value)
+      );
+    };
     return {
       JSXText(node) {
         if (/[A-Za-z]/.test(node.value)) report(node, node.value);
@@ -55,6 +78,7 @@ export default {
             report(node, node.value);
           return;
         }
+        if (readByPerson(node)) return report(node, node.value);
         if (SENTENCE.test(node.value)) report(node, node.value);
       },
       TemplateLiteral(node) {
