@@ -20,7 +20,7 @@ Plan `docs/plan/v2/L2-home.md`, review `docs/reviews/v2/L2-review.md`, rulings `
 | 11 | Viewer preview delivery, slide text, live admin preview | merged | 367 |
 | 12 | Hover card (portal, 300 ms, mouse only) | merged | 370 |
 | 13 | Home skeleton ratio, kids 2.3, state tests | merged | 371 |
-| 14 | Docs, stories, decisions, lane note | this PR | |
+| 14 | Docs, stories, decisions, lane note | merged | 375 |
 
 ## Exists
 
