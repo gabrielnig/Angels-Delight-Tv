@@ -41,14 +41,18 @@ export function useBulkRun(runChunk: RunChunk, options: { chunkSize?: number } =
   }, []);
 
   const start = useCallback(
-    async (ids: string[], bulkId: string = newBulkId()): Promise<BulkOutcome> => {
+    async (
+      ids: string[],
+      bulkId: string = newBulkId(),
+      chunkSizeOverride?: number,
+    ): Promise<BulkOutcome> => {
       cancelled.current = false;
       setRunning(true);
       setProgress({ done: 0, total: ids.length });
       let outcome = emptyOutcome(bulkId);
       let done = 0;
       try {
-        for (const chunk of chunkIds(ids, size)) {
+        for (const chunk of chunkIds(ids, chunkSizeOverride ?? size)) {
           if (cancelled.current) break;
           await waitOnline();
           try {

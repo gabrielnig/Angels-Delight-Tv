@@ -12,28 +12,41 @@ vi.mock('next/navigation', () => ({
 }));
 
 const { VideosList } = await import('./VideosList');
+const { ToastProvider } = await import('./Toast');
 const NOW = Date.parse('2026-11-17T09:00:00Z');
 const store = seedStore(NOW);
 const page = queryVideos(store.videos, { limit: 5 });
 
 function setup(over: Partial<Parameters<typeof VideosList>[0]> = {}) {
-  const bulk = vi.fn(async () => ({
+  const bulk = vi.fn(async (_ids: string[], _action: unknown, _bulkId: string) => ({
     succeeded: ['a'],
     failed: [{ id: page.items[1]!.id, reason: 'Not ready: Poster needs attention first.' }],
   }));
+  const undo = vi.fn(async () => ({ succeeded: ['a'], failed: [] }));
+  const matching = vi.fn(async () => Array.from({ length: 48 }, (_, i) => `m-${i}`));
   render(
-    <VideosList
-      page={page}
-      query={{}}
-      categories={store.categories}
-      role="admin"
-      bulk={bulk}
-      now={NOW}
-      {...over}
-    />,
+    <ToastProvider>
+      <VideosList
+        page={page}
+        query={{}}
+        categories={store.categories}
+        role="admin"
+        bulk={bulk}
+        undo={undo}
+        matching={matching}
+        now={NOW}
+        {...over}
+      />
+    </ToastProvider>,
   );
-  return { bulk };
+  return { bulk, undo, matching };
 }
+
+const pick = async (count: number) => {
+  for (const item of page.items.slice(0, count)) {
+    await userEvent.click(screen.getAllByRole('checkbox', { name: `Select ${item.title}` })[0]!);
+  }
+};
 
 describe('VideosList bulk suitability', () => {
   it('sets suitability for the selection', async () => {
@@ -41,15 +54,15 @@ describe('VideosList bulk suitability', () => {
     for (const item of page.items.slice(0, 2)) {
       await userEvent.click(screen.getAllByRole('checkbox', { name: `Select ${item.title}` })[0]!);
     }
-    await userEvent.selectOptions(
-      within(screen.getByRole('region', { name: 'Bulk actions' })).getByLabelText(
-        'Set suitability',
-      ),
-      'kids',
-    );
+    await userEvent.click(screen.getByRole('button', { name: 'Set suitability' }));
+    const dialog = await screen.findByRole('dialog');
+    await userEvent.selectOptions(within(dialog).getByLabelText('Suitability'), 'kids');
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Apply' }));
+    await waitFor(() => expect(bulk).toHaveBeenCalled());
     expect(bulk).toHaveBeenCalledWith(
       page.items.slice(0, 2).map((v) => v.id),
       { type: 'suitability', value: 'kids' },
+      expect.any(String),
     );
   });
 });
@@ -69,12 +82,88 @@ describe('VideosList', () => {
       await userEvent.click(screen.getAllByRole('checkbox', { name: `Select ${item.title}` })[0]!);
     }
     await userEvent.click(screen.getByRole('button', { name: 'Publish' }));
+    const dialog = await screen.findByRole('dialog');
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Publish 2' }));
+    await waitFor(() => expect(bulk).toHaveBeenCalled());
     expect(bulk).toHaveBeenCalledWith(
       page.items.slice(0, 2).map((v) => v.id),
       { type: 'publish' },
+      expect.any(String),
     );
-    await waitFor(() => expect(screen.getByText(/1 could not be changed/)).toBeInTheDocument());
+    await waitFor(() => expect(screen.getAllByText(/1 could not be changed/).length).toBeGreaterThan(0));
     expect(screen.getByText(/Poster needs attention first/)).toBeInTheDocument();
+  });
+
+  it('partial failure shows the report with Retry on retryable ones', async () => {
+    const bulk = vi.fn(async (_ids: string[], _action: unknown, _bulkId: string) => ({
+      succeeded: ['a'],
+      failed: [
+        { id: page.items[1]!.id, reason: 'Not ready: Poster needs attention first.', retryable: false },
+        { id: page.items[2]!.id, reason: 'Something went wrong.', retryable: true },
+      ],
+    }));
+    setup({ bulk });
+    await pick(3);
+    await userEvent.click(screen.getByRole('button', { name: 'Publish' }));
+    await userEvent.click(within(await screen.findByRole('dialog')).getByRole('button', { name: 'Publish 3' }));
+    expect(await screen.findByRole('button', { name: 'Retry the 1 that failed' })).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Retry the 1 that failed' }));
+    await waitFor(() => expect(bulk).toHaveBeenCalledTimes(2));
+    expect(bulk.mock.calls[1]![0]).toEqual([page.items[2]!.id]);
+    expect(bulk.mock.calls[1]![2]).toBe(bulk.mock.calls[0]![2]);
+  });
+
+  it('Publish asks for confirmation that states the count', async () => {
+    const { bulk } = setup();
+    await pick(3);
+    await userEvent.click(screen.getByRole('button', { name: 'Publish' }));
+    const dialog = await screen.findByRole('dialog');
+    expect(within(dialog).getByRole('heading', { name: 'Publish 3 videos?' })).toBeInTheDocument();
+    expect(bulk).not.toHaveBeenCalled();
+  });
+
+  it('Move to Trash needs typing the count when 5 or more are selected', async () => {
+    const { bulk } = setup();
+    await pick(5);
+    await userEvent.click(screen.getByRole('button', { name: 'Move to Trash' }));
+    const dialog = await screen.findByRole('dialog');
+    const go = within(dialog).getByRole('button', { name: 'Move to Trash' });
+    expect(go).toHaveAttribute('aria-disabled', 'true');
+    await userEvent.type(within(dialog).getByLabelText('Type 5 to confirm'), '5');
+    await userEvent.click(go);
+    await waitFor(() => expect(bulk).toHaveBeenCalledWith(page.items.map((v) => v.id), { type: 'trash' }, expect.any(String)));
+  });
+
+  it('undo after trash restores the same ids', async () => {
+    const undoPayload = { label: 'Move to Trash', payload: [{ kind: 'restore', ids: ['a'] }] };
+    const bulk = vi.fn(async (_ids: string[], _action: unknown, _bulkId: string) => ({
+      succeeded: ['a'],
+      failed: [],
+      undo: undoPayload,
+    }));
+    const { undo } = setup({ bulk });
+    await pick(1);
+    await userEvent.click(screen.getByRole('button', { name: 'Move to Trash' }));
+    await userEvent.click(within(await screen.findByRole('dialog')).getByRole('button', { name: 'Move to Trash' }));
+    await userEvent.click(await screen.findByRole('button', { name: 'Undo' }));
+    await waitFor(() => expect(undo).toHaveBeenCalledWith(undoPayload));
+  });
+
+  it('selecting a full page offers select all that match for Add to category but not for Publish', async () => {
+    const { matching } = setup({ page: { ...page, total: 48 } });
+    await userEvent.click(screen.getByRole('checkbox', { name: 'Select all on this page' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Select all 48 that match' }));
+    await waitFor(() => expect(matching).toHaveBeenCalled());
+    expect(await screen.findByText('48 selected')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Publish/ })).toHaveAttribute('aria-disabled', 'true');
+    expect(screen.getByRole('button', { name: /Move to Trash/ })).toHaveAttribute('aria-disabled', 'true');
+    expect(screen.getByRole('button', { name: 'Add to category' })).not.toHaveAttribute('aria-disabled', 'true');
+  });
+
+  it('the count is announced', async () => {
+    setup();
+    await pick(2);
+    expect(screen.getByText('2 selected')).toHaveAttribute('aria-live', 'polite');
   });
 
   it('confirms before moving to Trash and names the consequence', async () => {
@@ -95,7 +184,7 @@ describe('VideosList', () => {
     );
     const button = screen.getByRole('button', { name: /Move to Trash/ });
     expect(button).toHaveAttribute('aria-disabled', 'true');
-    expect(button).toHaveTextContent('Only an admin can move videos to Trash.');
+    expect(screen.getByText('Only an admin can move videos to Trash.')).toBeInTheDocument();
   });
 
   it('shows the empty state and the no match state', () => {

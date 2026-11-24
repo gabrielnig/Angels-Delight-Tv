@@ -182,6 +182,31 @@ describe.skipIf(!integrationEnabled())('admin videos', () => {
     expect((await getAdminVideo(ctx, editor, a.id)).suitability).toBe(before);
   });
 
+  it('bulk remove category removes only where present, skips the rest and audits each removal', async () => {
+    const cat = await seedCategory(t.setup, 'Remove me');
+    const withCat = await seedVideo(t.setup, { title: 'Has category' });
+    const without = await seedVideo(t.setup, { title: 'No category' });
+    await categorize(t.setup, { videoId: withCat.id }, cat.id);
+    const result = await bulkAdminVideos(ctx, editor, [withCat.id, without.id], {
+      type: 'remove_category',
+      categoryId: cat.id,
+    });
+    expect(result.succeeded).toEqual([withCat.id]);
+    expect(result.skipped).toEqual([{ id: without.id, reason: 'Not in that category.' }]);
+    expect((await getAdminVideo(ctx, editor, withCat.id)).categoryIds).not.toContain(cat.id);
+    const audit = await t.setup.execute(
+      sql`select action from audit_log where target_id = ${withCat.id}`,
+    );
+    expect(audit.rows.map((r) => r.action)).toContain('video.update');
+  });
+
+  it('an editor forging a trash call gets denied and the video stays', async () => {
+    const video = await seedVideo(t.setup, { title: 'Forged trash' });
+    const denied = await bulkAdminVideos(ctx, editor, [video.id], { type: 'trash' });
+    expect(denied.succeeded).toEqual([]);
+    expect(await getAdminVideo(ctx, editor, video.id)).toMatchObject({ id: video.id });
+  });
+
   it('bulk suitability refuses viewers', async () => {
     const a = await seedVideo(t.setup, { title: 'Viewer cannot' });
     await expect(

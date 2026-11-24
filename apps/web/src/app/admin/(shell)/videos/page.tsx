@@ -5,7 +5,7 @@ import { VideosList } from '@/components/admin/VideosList';
 import { videoService } from '@/lib/data/admin/services';
 import { requireActor } from '@/lib/data/admin/session-next';
 import { parseVideoQuery } from '@/lib/data/admin/video-queries';
-import { bulkVideosAction } from './actions';
+import { bulkVideosAction, matchingVideoIdsAction, undoBulkVideosAction } from './actions';
 
 export const metadata: Metadata = { title: 'Videos' };
 
@@ -37,6 +37,8 @@ export default async function VideosPage({
         categories={categories}
         role={actor.role}
         bulk={bulkVideosAction}
+        undo={undoBulkVideosAction}
+        matching={matchingVideoIdsAction}
         now={Date.now()}
       />
     </>

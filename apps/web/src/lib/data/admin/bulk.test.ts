@@ -10,6 +10,7 @@ import {
   mergeOutcomes,
   newBulkId,
   retryableFailures,
+  toOutcome,
 } from './bulk';
 
 const ids = (n: number) => Array.from({ length: n }, (_, i) => `id-${i}`);
@@ -79,6 +80,12 @@ describe('bulk helpers', () => {
     ]);
   });
 
+  it('mergeOutcomes joins undo steps from several chunks', () => {
+    const a = { ...emptyOutcome('b'), succeeded: ['a'], undo: { label: 'Trash', payload: [{ n: 1 }] } };
+    const b = { ...emptyOutcome('b'), succeeded: ['b'], undo: { label: 'Trash', payload: [{ n: 2 }] } };
+    expect(mergeOutcomes(a, b).undo?.payload).toEqual([{ n: 1 }, { n: 2 }]);
+  });
+
   it('newBulkId is unique per run', () => {
     const seen = new Set(Array.from({ length: 50 }, () => newBulkId()));
     expect(seen.size).toBe(50);
@@ -90,6 +97,16 @@ describe('bulk helpers', () => {
     expect(cut.capped).toBe(true);
     expect(cut.total).toBe(620);
     expect(capSelection(ids(10)).capped).toBe(false);
+  });
+
+  it('toOutcome fills in a missing skipped list and bulk id', () => {
+    expect(toOutcome({ succeeded: ['a'], failed: [] }, 'run-1')).toEqual({
+      bulkId: 'run-1',
+      succeeded: ['a'],
+      failed: [],
+      skipped: [],
+      undo: undefined,
+    });
   });
 
   it('retryableFailures keeps only failures marked retryable', () => {

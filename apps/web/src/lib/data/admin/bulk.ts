@@ -44,6 +44,16 @@ export function chunkIds<T>(ids: readonly T[], size: number = BULK_CHUNK): T[][]
   return out;
 }
 
+/** Undo steps from several chunks are joined when both payloads are lists, otherwise the later one wins. */
+function mergeUndo(a: BulkUndo | undefined, b: BulkUndo | undefined): BulkUndo | undefined {
+  if (!a) return b;
+  if (!b) return a;
+  if (Array.isArray(a.payload) && Array.isArray(b.payload)) {
+    return { label: b.label, payload: [...a.payload, ...b.payload] };
+  }
+  return b;
+}
+
 /** Adds two outcomes. A failure in `a` that `b` later succeeded on (a retry) is removed. */
 export function mergeOutcomes(a: BulkOutcome, b: BulkOutcome): BulkOutcome {
   const fixed = new Set(b.succeeded);
@@ -53,7 +63,7 @@ export function mergeOutcomes(a: BulkOutcome, b: BulkOutcome): BulkOutcome {
     succeeded: [...a.succeeded, ...b.succeeded.filter((id) => !a.succeeded.includes(id))],
     failed: [...a.failed.filter((f) => !fixed.has(f.id) && !retried.has(f.id)), ...b.failed],
     skipped: [...a.skipped, ...b.skipped],
-    undo: b.undo ?? a.undo,
+    undo: mergeUndo(a.undo, b.undo),
     interrupted: b.interrupted,
   };
 }
@@ -88,4 +98,24 @@ export function capSelection(ids: readonly string[]): { ids: string[]; capped: b
 /** Only failures marked retryable can be retried. Skipped items never are. */
 export function retryableFailures(outcome: BulkOutcome): BulkIssue[] {
   return outcome.failed.filter((f) => f.retryable === true);
+}
+
+/** Fills in what a server result leaves out (no skipped list, no bulk id) so it can be merged. */
+export function toOutcome(
+  result: {
+    succeeded: string[];
+    failed: BulkIssue[];
+    skipped?: BulkIssue[];
+    undo?: BulkUndo;
+    bulkId?: string;
+  },
+  bulkId: string,
+): BulkOutcome {
+  return {
+    bulkId: result.bulkId ?? bulkId,
+    succeeded: result.succeeded,
+    failed: result.failed,
+    skipped: result.skipped ?? [],
+    undo: result.undo,
+  };
 }
