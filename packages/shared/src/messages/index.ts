@@ -3,6 +3,7 @@ export {
   createMessages,
   msg,
   type CatalogShape,
+  type MessageText,
   type MessageKey,
   type MessageParams,
   type Translate,
