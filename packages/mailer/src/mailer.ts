@@ -2,6 +2,7 @@ import nodemailer, { type Transporter } from 'nodemailer';
 import {
   renderTemplate,
   type BrandContext,
+  type RenderOptions,
   type RenderedMail,
   type TemplateName,
 } from './templates';
@@ -81,10 +82,18 @@ export interface MailerSettings extends BrandContext {
    * resets and security notices always go. A failed lookup sends anyway.
    */
   isSuppressed?: (address: string) => Promise<boolean>;
+  /**
+   * The recipient's language and its effective catalog (accounts.locale), for viewer facing templates. No answer
+   * or a failed lookup means English (M46-S18).
+   */
+  localization?: (address: string) => Promise<RenderOptions | undefined>;
 }
 
 /** Mail the person can live without. Everything else is a code, a link or a security notice. */
-const NON_ESSENTIAL: ReadonlySet<TemplateName> = new Set<TemplateName>(['welcome', 'viewer_digest']);
+const NON_ESSENTIAL: ReadonlySet<TemplateName> = new Set<TemplateName>([
+  'welcome',
+  'viewer_digest',
+]);
 
 /**
  * Typed transactional emails (M21). Sends directly from the calling process, one attempt. Callers decide how
@@ -135,7 +144,13 @@ export class Mailer {
       primaryColor: this.settings.primaryColor,
       ...Object.fromEntries(Object.entries(live).filter(([, v]) => v !== undefined && v !== '')),
     };
-    const rendered: RenderedMail = renderTemplate(name, vars, brand);
+    let options: RenderOptions | undefined;
+    try {
+      options = await this.settings.localization?.(to);
+    } catch {
+      // English is better than no mail
+    }
+    const rendered: RenderedMail = renderTemplate(name, vars, brand, options);
     try {
       return await this.transport.send({ from: this.settings.from, to, ...rendered });
     } catch (error) {
@@ -303,7 +318,12 @@ export class Mailer {
   }
 
   /** The viewer digest (M44-S15). Titles and links only, with one click unsubscribe in the footer and headers. */
-  sendViewerDigest(input: { to: string; period: 'day' | 'week'; lines: string[]; unsubscribeToken: string }) {
+  sendViewerDigest(input: {
+    to: string;
+    period: 'day' | 'week';
+    lines: string[];
+    unsubscribeToken: string;
+  }) {
     return this.deliverWithId(input.to, 'viewer_digest', {
       period: input.period,
       count: input.lines.length,

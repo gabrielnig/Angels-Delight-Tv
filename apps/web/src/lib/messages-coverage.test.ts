@@ -3,7 +3,11 @@ import { join, resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { BASELINES, EN_NG, validateTranslation } from '@ad/shared/messages';
 
-const ROOTS = [resolve(__dirname, '..'), resolve(__dirname, '../../../../packages/player/src')];
+const ROOTS = [
+  resolve(__dirname, '..'),
+  resolve(__dirname, '../../../../packages/player/src'),
+  resolve(__dirname, '../../../../packages/mailer/src'),
+];
 
 function sources(dir: string): string[] {
   return readdirSync(dir).flatMap((name) => {
@@ -17,7 +21,7 @@ function usedKeys(): Map<string, string> {
   const used = new Map<string, string>();
   for (const file of ROOTS.flatMap(sources)) {
     const text = readFileSync(file, 'utf8');
-    for (const match of text.matchAll(/\bmsg\(\s*'([a-zA-Z0-9.]+)'/g)) used.set(match[1]!, file);
+    for (const match of text.matchAll(/\bmsg\(\s*'([a-zA-Z0-9._]+)'/g)) used.set(match[1]!, file);
   }
   return used;
 }

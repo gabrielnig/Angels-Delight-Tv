@@ -1,3 +1,11 @@
+import {
+  EN_NG,
+  createMessages,
+  localeInfo,
+  type CatalogShape,
+  type Translate,
+} from '@ad/shared/messages';
+
 export interface BrandContext {
   appName: string;
   supportEmail: string;
@@ -87,7 +95,8 @@ interface Definition {
   /** Read when given, left out when empty. */
   optional?: string[];
   links?: string[];
-  build(v: Record<string, string>, brand: BrandContext): Content;
+  /** Viewer facing templates read their text through `msg` (keys `mail.*`). Staff templates ignore it. */
+  build(v: Record<string, string>, brand: BrandContext, msg: Translate): Content;
   headers?(v: Record<string, string>): Record<string, string>;
 }
 
@@ -95,80 +104,71 @@ const DEFINITIONS: Record<TemplateName, Definition> = {
   welcome: {
     required: ['homeUrl'],
     links: ['homeUrl'],
-    build: (v, b) => ({
-      subject: `Welcome to ${b.appName}`,
-      intro: [
-        `Your email is confirmed and your account on ${b.appName} is ready.`,
-        'Pick a profile and start watching.',
-      ],
-      action: { label: 'Start watching', url: v.homeUrl! },
-      outro: ['You can change your playback and caption settings any time from your account.'],
+    build: (v, b, msg) => ({
+      subject: msg('mail.welcome.subject', { appName: b.appName }),
+      intro: [msg('mail.welcome.intro1', { appName: b.appName }), msg('mail.welcome.intro2')],
+      action: { label: msg('mail.welcome.action'), url: v.homeUrl! },
+      outro: [msg('mail.welcome.outro1')],
     }),
   },
   verify_email: {
     required: ['code', 'linkUrl'],
     links: ['linkUrl'],
-    build: (v, b) => ({
-      subject: `Confirm your email for ${b.appName}`,
-      intro: ['Enter this code on the verification screen, or use the button below.'],
+    build: (v, b, msg) => ({
+      subject: msg('mail.verify_email.subject', { appName: b.appName }),
+      intro: [msg('mail.verify_email.intro1')],
       code: v.code,
-      action: { label: 'Confirm my email', url: v.linkUrl! },
-      outro: [
-        'The code works for 15 minutes and the button for 24 hours. If you did not create an account, you can ignore this email.',
-      ],
+      action: { label: msg('mail.verify_email.action'), url: v.linkUrl! },
+      outro: [msg('mail.verify_email.outro1')],
     }),
   },
   already_registered: {
     required: ['signInUrl', 'resetUrl'],
     links: ['signInUrl', 'resetUrl'],
-    build: (v, b) => ({
-      subject: `Someone tried to sign up to ${b.appName} with your email`,
+    build: (v, b, msg) => ({
+      subject: msg('mail.already_registered.subject', { appName: b.appName }),
       intro: [
-        `Someone tried to create an account on ${b.appName} with this address, but you already have one.`,
-        'If it was you, sign in instead. If you forgot your password, you can reset it.',
+        msg('mail.already_registered.intro1', { appName: b.appName }),
+        msg('mail.already_registered.intro2'),
       ],
-      action: { label: 'Sign in', url: v.signInUrl! },
+      action: { label: msg('mail.already_registered.action'), url: v.signInUrl! },
       outro: [
-        `Forgot your password? Reset it here: ${v.resetUrl}`,
-        'If it was not you, no action is needed.',
+        msg('mail.already_registered.outro1', { resetUrl: v.resetUrl! }),
+        msg('mail.already_registered.outro2'),
       ],
     }),
   },
   reset_password: {
     required: ['linkUrl', 'minutes'],
     links: ['linkUrl'],
-    build: (v, b) => ({
-      subject: `Reset your ${b.appName} password`,
-      intro: [
-        'We received a request to reset your password. Use the button below to choose a new one.',
-      ],
-      action: { label: 'Choose a new password', url: v.linkUrl! },
-      outro: [
-        `This link works once and expires in ${v.minutes} minutes. If you did not ask for it, you can ignore this email and your password stays the same.`,
-      ],
+    build: (v, b, msg) => ({
+      subject: msg('mail.reset_password.subject', { appName: b.appName }),
+      intro: [msg('mail.reset_password.intro1')],
+      action: { label: msg('mail.reset_password.action'), url: v.linkUrl! },
+      outro: [msg('mail.reset_password.outro1', { minutes: v.minutes! })],
     }),
   },
   password_changed: {
     required: ['signInUrl', 'resetUrl'],
     links: ['signInUrl', 'resetUrl'],
-    build: (v, b) => ({
-      subject: `Your ${b.appName} password was changed`,
-      intro: ['The password for your account was just changed. Other devices were signed out.'],
-      action: { label: 'Sign in', url: v.signInUrl! },
-      outro: [`If you did not do this, reset your password now: ${v.resetUrl}`],
+    build: (v, b, msg) => ({
+      subject: msg('mail.password_changed.subject', { appName: b.appName }),
+      intro: [msg('mail.password_changed.intro1')],
+      action: { label: msg('mail.password_changed.action'), url: v.signInUrl! },
+      outro: [msg('mail.password_changed.outro1', { resetUrl: v.resetUrl! })],
     }),
   },
   lockout_notice: {
     required: ['resetUrl', 'minutes'],
     links: ['resetUrl'],
-    build: (v, b) => ({
-      subject: `There were several failed sign-in attempts on ${b.appName}`,
+    build: (v, b, msg) => ({
+      subject: msg('mail.lockout_notice.subject', { appName: b.appName }),
       intro: [
-        `We saw several failed sign-in attempts on your account, so sign-in is paused for ${v.minutes} minutes.`,
-        'If this was you, wait and try again. If it was not, choose a new password.',
+        msg('mail.lockout_notice.intro1', { minutes: v.minutes! }),
+        msg('mail.lockout_notice.intro2'),
       ],
-      action: { label: 'Reset my password', url: v.resetUrl! },
-      outro: ['Your current sessions were not signed out.'],
+      action: { label: msg('mail.lockout_notice.action'), url: v.resetUrl! },
+      outro: [msg('mail.lockout_notice.outro1')],
     }),
   },
   admin_invite: {
@@ -188,28 +188,22 @@ const DEFINITIONS: Record<TemplateName, Definition> = {
   email_change_verify: {
     required: ['code', 'linkUrl'],
     links: ['linkUrl'],
-    build: (v, b) => ({
-      subject: `Confirm your new email for ${b.appName}`,
-      intro: [
-        'Enter this code in your account settings, or use the button below, to confirm this address.',
-      ],
+    build: (v, b, msg) => ({
+      subject: msg('mail.email_change_verify.subject', { appName: b.appName }),
+      intro: [msg('mail.email_change_verify.intro1')],
       code: v.code,
-      action: { label: 'Confirm this email', url: v.linkUrl! },
-      outro: [
-        'The change applies only after you confirm. If you did not ask for it, ignore this email.',
-      ],
+      action: { label: msg('mail.email_change_verify.action'), url: v.linkUrl! },
+      outro: [msg('mail.email_change_verify.outro1')],
     }),
   },
   email_change_notice: {
     required: ['resetUrl'],
     links: ['resetUrl'],
-    build: (v, b) => ({
-      subject: `Someone asked to change the email on your ${b.appName} account`,
-      intro: [
-        'A request was made to move your account to a different email address. Nothing changes until the new address is confirmed.',
-      ],
-      action: { label: 'Reset my password', url: v.resetUrl! },
-      outro: ['If this was you, no action is needed. If not, reset your password now.'],
+    build: (v, b, msg) => ({
+      subject: msg('mail.email_change_notice.subject', { appName: b.appName }),
+      intro: [msg('mail.email_change_notice.intro1')],
+      action: { label: msg('mail.email_change_notice.action'), url: v.resetUrl! },
+      outro: [msg('mail.email_change_notice.outro1')],
     }),
   },
   two_factor_reset: {
@@ -227,97 +221,91 @@ const DEFINITIONS: Record<TemplateName, Definition> = {
   two_factor_reset_viewer: {
     required: ['signInUrl'],
     links: ['signInUrl'],
-    build: (v, b) => ({
-      subject: `Two step verification was reset on your ${b.appName} account`,
+    build: (v, b, msg) => ({
+      subject: msg('mail.two_factor_reset_viewer.subject', { appName: b.appName }),
       intro: [
-        'An administrator reset two step verification on your account after you asked for help, and signed you out everywhere.',
-        'You can sign in with your password and turn it on again from Security.',
+        msg('mail.two_factor_reset_viewer.intro1'),
+        msg('mail.two_factor_reset_viewer.intro2'),
       ],
-      action: { label: 'Sign in', url: v.signInUrl! },
-      outro: ['If you did not ask for this, change your password and contact support.'],
+      action: { label: msg('mail.two_factor_reset_viewer.action'), url: v.signInUrl! },
+      outro: [msg('mail.two_factor_reset_viewer.outro1')],
     }),
   },
   mfa_enabled: {
     required: ['securityUrl'],
     links: ['securityUrl'],
-    build: (v, b) => ({
-      subject: `Two step verification is on for your ${b.appName} account`,
-      intro: [
-        'From now on we will ask for a code from your authenticator app when you sign in.',
-        'Keep your backup codes somewhere safe. Each one works once if you lose your phone.',
-      ],
-      action: { label: 'Open Security', url: v.securityUrl! },
-      outro: ['If you did not do this, change your password right away and contact support.'],
+    build: (v, b, msg) => ({
+      subject: msg('mail.mfa_enabled.subject', { appName: b.appName }),
+      intro: [msg('mail.mfa_enabled.intro1'), msg('mail.mfa_enabled.intro2')],
+      action: { label: msg('mail.mfa_enabled.action'), url: v.securityUrl! },
+      outro: [msg('mail.mfa_enabled.outro1')],
     }),
   },
   mfa_disabled: {
     required: ['securityUrl'],
     links: ['securityUrl'],
-    build: (v, b) => ({
-      subject: `Two step verification was turned off on your ${b.appName} account`,
-      intro: [
-        'Two step verification is now off and your other devices were signed out.',
-        'You can turn it on again any time from Security.',
-      ],
-      action: { label: 'Open Security', url: v.securityUrl! },
-      outro: ['If you did not do this, change your password right away and contact support.'],
+    build: (v, b, msg) => ({
+      subject: msg('mail.mfa_disabled.subject', { appName: b.appName }),
+      intro: [msg('mail.mfa_disabled.intro1'), msg('mail.mfa_disabled.intro2')],
+      action: { label: msg('mail.mfa_disabled.action'), url: v.securityUrl! },
+      outro: [msg('mail.mfa_disabled.outro1')],
     }),
   },
   recovery_codes_low: {
     required: ['remaining', 'securityUrl'],
     links: ['securityUrl'],
-    build: (v, b) => ({
-      subject: `You are running low on ${b.appName} backup codes`,
-      intro: [
-        `You have ${v.remaining} backup codes left. Get a new set before you run out so a lost phone does not lock you out.`,
-      ],
-      action: { label: 'Get new codes', url: v.securityUrl! },
-      outro: ['Getting new codes makes every old code stop working.'],
+    build: (v, b, msg) => ({
+      subject: msg('mail.recovery_codes_low.subject', { appName: b.appName }),
+      intro: [msg('mail.recovery_codes_low.intro1', { remaining: v.remaining! })],
+      action: { label: msg('mail.recovery_codes_low.action'), url: v.securityUrl! },
+      outro: [msg('mail.recovery_codes_low.outro1')],
     }),
   },
   recovery_code_used: {
     required: ['remaining', 'securityUrl'],
     links: ['securityUrl'],
-    build: (v, b) => ({
-      subject: `A backup code was used to sign in to ${b.appName}`,
-      intro: [
-        `A backup code was just used to sign in to your account. You have ${v.remaining} left.`,
-      ],
-      action: { label: 'Open Security', url: v.securityUrl! },
-      outro: ['If this was not you, change your password right away and contact support.'],
+    build: (v, b, msg) => ({
+      subject: msg('mail.recovery_code_used.subject', { appName: b.appName }),
+      intro: [msg('mail.recovery_code_used.intro1', { remaining: v.remaining! })],
+      action: { label: msg('mail.recovery_code_used.action'), url: v.securityUrl! },
+      outro: [msg('mail.recovery_code_used.outro1')],
     }),
   },
   new_device_sign_in: {
     required: ['device', 'country', 'time', 'passwordUrl', 'signOutUrl'],
     links: ['passwordUrl', 'signOutUrl'],
-    build: (v, b) => ({
-      subject: `New sign in to your ${b.appName} account`,
+    build: (v, b, msg) => ({
+      subject: msg('mail.new_device_sign_in.subject', { appName: b.appName }),
       intro: [
-        `We saw a sign in from a device we have not seen before: ${v.device}, ${v.country}, ${v.time}.`,
-        'If this was you, no action is needed.',
+        msg('mail.new_device_sign_in.intro1', {
+          device: v.device!,
+          country: v.country!,
+          time: v.time!,
+        }),
+        msg('mail.new_device_sign_in.intro2'),
       ],
-      action: { label: 'Not you? Change your password', url: v.passwordUrl! },
-      outro: [`Sign out everywhere from Security: ${v.signOutUrl}`],
+      action: { label: msg('mail.new_device_sign_in.action'), url: v.passwordUrl! },
+      outro: [msg('mail.new_device_sign_in.outro1', { signOutUrl: v.signOutUrl! })],
     }),
   },
   google_linked: {
     required: ['securityUrl'],
     links: ['securityUrl'],
-    build: (v, b) => ({
-      subject: `Google was linked to your ${b.appName} account`,
-      intro: ['You can now sign in with Google as well as your usual method.'],
-      action: { label: 'Open Security', url: v.securityUrl! },
-      outro: ['If you did not do this, change your password right away and contact support.'],
+    build: (v, b, msg) => ({
+      subject: msg('mail.google_linked.subject', { appName: b.appName }),
+      intro: [msg('mail.google_linked.intro1')],
+      action: { label: msg('mail.google_linked.action'), url: v.securityUrl! },
+      outro: [msg('mail.google_linked.outro1')],
     }),
   },
   google_unlinked: {
     required: ['securityUrl'],
     links: ['securityUrl'],
-    build: (v, b) => ({
-      subject: `Google was removed from your ${b.appName} account`,
-      intro: ['Google can no longer be used to sign in to your account.'],
-      action: { label: 'Open Security', url: v.securityUrl! },
-      outro: ['If you did not do this, change your password right away and contact support.'],
+    build: (v, b, msg) => ({
+      subject: msg('mail.google_unlinked.subject', { appName: b.appName }),
+      intro: [msg('mail.google_unlinked.intro1')],
+      action: { label: msg('mail.google_unlinked.action'), url: v.securityUrl! },
+      outro: [msg('mail.google_unlinked.outro1')],
     }),
   },
   staff_lockout_alert: {
@@ -333,37 +321,30 @@ const DEFINITIONS: Record<TemplateName, Definition> = {
   },
   account_deleted: {
     required: [],
-    build: (_v, b) => ({
-      subject: `Your ${b.appName} account was deleted`,
-      intro: [
-        'Your account, profiles, watch history and list were deleted and cannot be restored.',
-        'Backups are cleared within 14 days.',
-      ],
-      outro: ['Thank you for learning with us.'],
+    build: (_v, b, msg) => ({
+      subject: msg('mail.account_deleted.subject', { appName: b.appName }),
+      intro: [msg('mail.account_deleted.intro1'), msg('mail.account_deleted.intro2')],
+      outro: [msg('mail.account_deleted.outro1')],
     }),
   },
   export_ready: {
     required: ['linkUrl', 'hours'],
     links: ['linkUrl'],
-    build: (v, b) => ({
-      subject: `Your ${b.appName} data export is ready`,
-      intro: [
-        'Your file has your account, profiles, My List and watch progress. It never includes your password.',
-      ],
-      action: { label: 'Download my data', url: v.linkUrl! },
-      outro: [
-        `The link works for ${v.hours} hours and needs you to be signed in. If you did not ask for this, change your password.`,
-      ],
+    build: (v, b, msg) => ({
+      subject: msg('mail.export_ready.subject', { appName: b.appName }),
+      intro: [msg('mail.export_ready.intro1')],
+      action: { label: msg('mail.export_ready.action'), url: v.linkUrl! },
+      outro: [msg('mail.export_ready.outro1', { hours: v.hours! })],
     }),
   },
   export_failed: {
     required: ['retryUrl'],
     links: ['retryUrl'],
-    build: (v, b) => ({
-      subject: `We could not build your export on ${b.appName}`,
-      intro: ['Something went wrong while building your file. Nothing was lost.'],
-      action: { label: 'Try again', url: v.retryUrl! },
-      outro: ['If it keeps failing, write to us and we will help.'],
+    build: (v, b, msg) => ({
+      subject: msg('mail.export_failed.subject', { appName: b.appName }),
+      intro: [msg('mail.export_failed.intro1')],
+      action: { label: msg('mail.export_failed.action'), url: v.retryUrl! },
+      outro: [msg('mail.export_failed.outro1')],
     }),
   },
   staff_notice: {
@@ -380,13 +361,24 @@ const DEFINITIONS: Record<TemplateName, Definition> = {
   viewer_digest: {
     required: ['period', 'count', 'lines', 'linkUrl', 'unsubscribeUrl'],
     links: ['linkUrl', 'unsubscribeUrl'],
-    build: (v, b) => ({
-      subject: `${v.count === '1' ? 'One new thing' : 'New things'} on ${b.appName} this ${v.period === 'week' ? 'week' : 'day'}`,
+    build: (v, b, msg) => ({
+      subject: msg('mail.viewer_digest.subject', {
+        appName: b.appName,
+        count: v.count === '1' ? 1 : 2,
+        period:
+          v.period === 'week' ? msg('mail.viewer_digest.week') : msg('mail.viewer_digest.day'),
+      }),
       intro: v.lines!.split('\n').filter((line) => line.trim() !== ''),
-      action: { label: 'See what is new', url: v.linkUrl! },
+      action: { label: msg('mail.viewer_digest.action'), url: v.linkUrl! },
       outro: [
-        `You get this because you chose a ${v.period === 'week' ? 'weekly' : 'daily'} email in your notification settings on ${b.appName}.`,
-        `Stop these emails: ${v.unsubscribeUrl}`,
+        msg('mail.viewer_digest.outro1', {
+          frequency:
+            v.period === 'week'
+              ? msg('mail.viewer_digest.weekly')
+              : msg('mail.viewer_digest.daily'),
+          appName: b.appName,
+        }),
+        msg('mail.viewer_digest.outro2', { unsubscribeUrl: v.unsubscribeUrl! }),
       ],
     }),
     headers: (v) => ({
@@ -435,22 +427,27 @@ const DEFINITIONS: Record<TemplateName, Definition> = {
         v.donorName ? `Thank you, ${v.donorName}.` : 'Thank you for your gift.',
         `We received ${v.amount} on ${v.date}. Reference: ${v.reference}.`,
       ],
-      outro: [v.taxNote ? String(v.taxNote) : `Keep this email as your record. Questions? Write to ${b.supportEmail}.`],
+      outro: [
+        v.taxNote
+          ? String(v.taxNote)
+          : `Keep this email as your record. Questions? Write to ${b.supportEmail}.`,
+      ],
     }),
   },
   deletion_scheduled: {
     required: ['cancelUrl', 'purgeDate', 'days'],
     links: ['cancelUrl'],
-    build: (v, b) => ({
-      subject: `Your ${b.appName} account will be deleted on ${v.purgeDate}`,
+    build: (v, b, msg) => ({
+      subject: msg('mail.deletion_scheduled.subject', {
+        appName: b.appName,
+        purgeDate: v.purgeDate!,
+      }),
       intro: [
-        `We got your request to delete your account. You were signed out everywhere, and your account will be removed on ${v.purgeDate}, in ${v.days} days.`,
-        'To keep it, sign in before then and choose Cancel deletion. Everything comes back as it was.',
+        msg('mail.deletion_scheduled.intro1', { purgeDate: v.purgeDate!, days: v.days! }),
+        msg('mail.deletion_scheduled.intro2'),
       ],
-      action: { label: 'Sign in to cancel', url: v.cancelUrl! },
-      outro: [
-        `After ${v.purgeDate} your profiles, list and watch progress are removed and cannot be restored. If you did not ask for this, sign in and cancel, then change your password.`,
-      ],
+      action: { label: msg('mail.deletion_scheduled.action'), url: v.cancelUrl! },
+      outro: [msg('mail.deletion_scheduled.outro1', { purgeDate: v.purgeDate! })],
     }),
   },
 };
@@ -465,8 +462,43 @@ const escapeHtml = (value: string): string =>
 
 const stripLineBreaks = (value: string): string => value.replace(/[\r\n]+/g, ' ').trim();
 
-/** Renders one template to a subject, plain text and HTML. Throws TemplateError instead of sending a blank value. */
-export function renderTemplate(name: TemplateName, vars: Vars, brand: BrandContext): RenderedMail {
+/** Staff mail stays English: admin screens and staff mail are outside the translation scope (L7-D5). */
+const ENGLISH_ONLY = new Set<TemplateName>([
+  'admin_invite',
+  'two_factor_reset',
+  'staff_lockout_alert',
+  'staff_notice',
+  'staff_summary',
+  'staff_export_ready',
+  'staff_export_failed',
+]);
+
+export interface RenderOptions {
+  /** The recipient's locale, for example accounts.locale. Missing or unknown means English. */
+  locale?: string;
+  /** The effective catalog for that locale. Keys it lacks fall back to English one by one. */
+  catalog?: CatalogShape;
+}
+
+/**
+ * Renders one template to a subject, plain text and HTML. Throws TemplateError instead of sending a blank value.
+ * With `options` the viewer facing templates read their text from the locale's catalog and fall back to English
+ * per key (M46-S18).
+ */
+export function renderTemplate(
+  name: TemplateName,
+  vars: Vars,
+  brand: BrandContext,
+  options: RenderOptions = {},
+): RenderedMail {
+  const info = ENGLISH_ONLY.has(name) ? undefined : localeInfo(options.locale ?? 'en');
+  const locale = info?.code ?? 'en';
+  const msg = createMessages(
+    locale,
+    { 'en-NG': EN_NG as unknown as CatalogShape, [locale]: options.catalog ?? {} },
+    () => undefined,
+  );
+  const htmlLang = locale === 'en' ? 'en' : (info?.htmlLang ?? locale);
   const definition = DEFINITIONS[name];
   const values: Record<string, string> = {};
   for (const key of definition.required) {
@@ -486,26 +518,42 @@ export function renderTemplate(name: TemplateName, vars: Vars, brand: BrandConte
       throw new TemplateError(`Template ${name} got a non web link for ${key}`);
     }
   }
-  const content = definition.build(values, brand);
+  const content = definition.build(values, brand, msg);
   const subject = stripLineBreaks(content.subject);
   const headers = definition.headers?.(values);
   return {
     subject,
-    text: toText(content, brand),
-    html: toHtml(content, brand, subject),
+    text: toText(content, brand, msg),
+    html: toHtml(content, brand, subject, msg, htmlLang),
     ...(headers ? { headers } : {}),
   };
 }
 
-function toText(content: Content, brand: BrandContext): string {
+function toText(content: Content, brand: BrandContext, msg: Translate): string {
   const lines: string[] = [...content.intro, ''];
-  if (content.code) lines.push(`Your code: ${content.code}`, '');
+  if (content.code) lines.push(msg('mail.common.code', { code: content.code }), '');
   if (content.action) lines.push(`${content.action.label}: ${content.action.url}`, '');
-  lines.push(...content.outro, '', `Need help? Write to ${brand.supportEmail}.`, brand.appName);
+  lines.push(
+    ...content.outro,
+    '',
+    msg('mail.common.help', { email: brand.supportEmail }),
+    brand.appName,
+  );
   return lines.join('\n');
 }
 
-function toHtml(content: Content, brand: BrandContext, subject: string): string {
+/** Escapes a translated sentence and puts a link where its `{token}` stands. */
+function withLink(text: string, token: string, link: string): string {
+  return escapeHtml(text).replace(token, link);
+}
+
+function toHtml(
+  content: Content,
+  brand: BrandContext,
+  subject: string,
+  msg: Translate,
+  htmlLang: string,
+): string {
   const colour = hex(brand.primaryColor, '#1F6FB5');
   const page = hex(brand.backgroundColor, '#F5F5F2');
   const card = hex(brand.surfaceColor, '#FFFFFF');
@@ -524,13 +572,13 @@ function toHtml(content: Content, brand: BrandContext, subject: string): string 
     const url = escapeHtml(content.action.url);
     parts.push(
       `<table role="presentation" cellspacing="0" cellpadding="0" style="margin:8px 0 16px"><tr><td style="background:${colour};border-radius:8px"><a href="${url}" style="display:inline-block;padding:14px 24px;font-size:16px;font-weight:600;color:#FFFFFF;text-decoration:none">${escapeHtml(content.action.label)}</a></td></tr></table>`,
-      `<p style="margin:0 0 16px;font-size:14px;line-height:1.5;color:${muted}">Or open this link: <a href="${url}" style="color:${colour}">${url}</a></p>`,
+      `<p style="margin:0 0 16px;font-size:14px;line-height:1.5;color:${muted}">${withLink(msg('mail.common.orOpen', { url: '@@' }), '@@', `<a href="${url}" style="color:${colour}">${url}</a>`)}</p>`,
     );
   }
   parts.push(...content.outro.map(paragraph));
   const support = escapeHtml(brand.supportEmail);
   return `<!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${escapeHtml(subject)}</title></head>
+<html lang="${htmlLang}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${escapeHtml(subject)}</title></head>
 <body style="margin:0;padding:24px;background:${page};font-family:Arial,Helvetica,sans-serif">
 <table role="presentation" width="100%" cellspacing="0" cellpadding="0"><tr><td align="center">
 <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:560px;background:${card};border-radius:12px"><tr><td style="padding:32px">
@@ -540,7 +588,7 @@ ${
     : `<p style="margin:0 0 24px;font-size:18px;font-weight:700;color:${colour}">${escapeHtml(brand.appName)}</p>`
 }
 ${parts.join('\n')}
-<p style="margin:24px 0 0;font-size:14px;line-height:1.5;color:${muted}">Need help? Write to <a href="mailto:${support}" style="color:${colour}">${support}</a>.</p>
+<p style="margin:24px 0 0;font-size:14px;line-height:1.5;color:${muted}">${withLink(msg('mail.common.help', { email: '@@' }), '@@', `<a href="mailto:${support}" style="color:${colour}">${support}</a>`)}</p>
 </td></tr></table>
 </td></tr></table>
 </body></html>`;

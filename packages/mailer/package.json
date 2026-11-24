@@ -12,6 +12,7 @@
     "test:file": "vitest run"
   },
   "dependencies": {
+    "@ad/shared": "workspace:*",
     "nodemailer": "^10.6.0"
   },
   "devDependencies": {

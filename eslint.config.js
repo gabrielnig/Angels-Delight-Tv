@@ -95,6 +95,7 @@ export default tseslint.config(
       'apps/web/src/components/Shell.tsx',
       'apps/web/src/components/guest/GuestChrome.tsx',
       'apps/web/src/components/KidsExitDialog.tsx',
+      'apps/web/src/components/pwa/OfflineCopy.tsx',
       'apps/web/src/components/account/pages.ts',
       'apps/web/src/components/account/AlwaysAskSetting.tsx',
       'apps/web/src/components/profiles/CachedPicker.tsx',

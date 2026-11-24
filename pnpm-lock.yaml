@@ -434,6 +434,9 @@ importers:
 
   packages/mailer:
     dependencies:
+      '@ad/shared':
+        specifier: workspace:*
+        version: link:../shared
       nodemailer:
         specifier: ^10.6.0
         version: 10.6.0
