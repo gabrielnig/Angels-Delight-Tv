@@ -16,6 +16,7 @@ export class DrizzlePlaybackStore implements PlaybackStore {
         publishState: videos.publishState,
         publishAt: videos.publishAt,
         kidsSafe: videos.kidsSafe,
+        maturityRank: videos.maturityRank,
         deletedAt: videos.deletedAt,
       })
       .from(videos)
@@ -28,7 +29,11 @@ export class DrizzlePlaybackStore implements PlaybackStore {
     // profiles are row level secured by account, so the read must run as that account or it sees nothing.
     const [row] = await withAccount(this.db, { accountId, role: 'viewer' }, (tx) =>
       tx
-        .select({ id: profiles.id, isKids: profiles.isKids })
+        .select({
+          id: profiles.id,
+          isKids: profiles.isKids,
+          maxMaturityRank: profiles.maxMaturityRank,
+        })
         .from(profiles)
         .where(and(eq(profiles.id, profileId), eq(profiles.accountId, accountId)))
         .limit(1),

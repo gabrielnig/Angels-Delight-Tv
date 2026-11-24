@@ -87,9 +87,11 @@ function build(): ViewerRuntime {
       clear: (sessionId, accountId) => auth.sessions.clearKidsLock(sessionId, accountId),
     },
     async guestAudience(request) {
-      const siteDefault = await (await themeRuntime()).settings.get('features.guest_audience');
+      const settings = (await themeRuntime()).settings;
+      const siteDefault = await settings.get('features.guest_audience');
       const choice = readGuestAudienceCookie(request, auth.secureCookies);
-      return { kids: resolveGuestAudience(choice, siteDefault) === 'kids' };
+      const kids = resolveGuestAudience(choice, siteDefault) === 'kids';
+      return { kids, maxRank: kids ? 0 : await settings.get('maturity.guest_max_rank') };
     },
     // Without a trusted proxy there is no reliable address, so everyone shares one bucket. Production sets
     // TRUSTED_PROXY_MODE=cloudflare.

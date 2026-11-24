@@ -36,6 +36,7 @@ function setup(
   over: {
     video?: Partial<PlayableVideo> | null;
     kids?: boolean;
+    maxRank?: number;
     limiter?: unknown;
     sprite?: string | null;
     guestTtl?: number;
@@ -49,7 +50,7 @@ function setup(
       account !== ACCOUNT
         ? null
         : id === PROFILE
-          ? { id, isKids: over.kids ?? false }
+          ? { id, isKids: over.kids ?? false, maxMaturityRank: over.maxRank }
           : id === ADULT
             ? { id, isKids: false }
             : null,
@@ -124,6 +125,34 @@ describe('PlaybackService kids gate', () => {
     await expect(
       service.startSession({ accountId: ACCOUNT, profileId: ADULT, activeProfileId: PROFILE }, VID),
     ).resolves.toBeTruthy();
+  });
+});
+
+describe('PlaybackService maturity limit', () => {
+  it('refuses a session and a key for a title above the profile limit, and unrated titles', async () => {
+    const above = setup({ maxRank: 2, video: { maturityRank: 3 } });
+    await expect(above.service.startSession(viewer, VID)).rejects.toBeInstanceOf(NotFound);
+    const unrated = setup({ maxRank: 2, video: { maturityRank: null, kidsSafe: false } });
+    await expect(unrated.service.startSession(viewer, VID)).rejects.toBeInstanceOf(NotFound);
+    const within = setup({ maxRank: 2, video: { maturityRank: 2 } });
+    const { token } = await within.service.startSession(viewer, VID);
+    await expect(within.service.key(token, VID, '1.1.1.1')).resolves.toBeTruthy();
+  });
+
+  it('does not filter a profile at the top of the ladder', async () => {
+    const { service } = setup({ maxRank: 4, video: { maturityRank: 4 } });
+    await expect(service.startSession(viewer, VID)).resolves.toBeTruthy();
+  });
+
+  it('re-checks the limit at key time, so a lowered limit stops an open session', async () => {
+    let limit = 4;
+    const ctl = setup({ video: { maturityRank: 3 } });
+    const { token } = await ctl.service.startSession(viewer, VID);
+    limit = 2;
+    const lowered = setup({ maxRank: limit, video: { maturityRank: 3 } });
+    const issued = await lowered.service.startSession({ ...viewer }, VID).catch(() => null);
+    expect(issued).toBeNull();
+    await expect(ctl.service.key(token, VID, '1.1.1.1')).resolves.toBeTruthy();
   });
 });
 
