@@ -7,6 +7,7 @@ import { getServices } from '../../lib/runtime/services';
 import { donateAvailable } from './availability';
 import { decideDonateGate, type DonateGate } from './gate';
 import { readDonateConfig } from './runtime';
+import type { TransparencyItem } from '../../components/donate/TransparencyList';
 
 /** Whether this visitor is on a kids profile or a kids guest device. Signed in with no profile counts as general. */
 async function isKids(): Promise<boolean> {
@@ -24,6 +25,43 @@ export async function currentDonateGate(): Promise<DonateGate> {
     // Any doubt about the audience means the kids answer.
     return 'kids';
   }
+}
+
+export interface TransparencyData {
+  title: string;
+  intro: string;
+  items: TransparencyItem[];
+  updatedAt: string | null;
+}
+
+async function transparencyOn(): Promise<boolean> {
+  try {
+    return await (await themeRuntime()).settings.get('donate.transparency.enabled');
+  } catch {
+    return false;
+  }
+}
+
+/** The transparency page follows the donate rules for kids (R25): off is a 404, a kids audience is asked to find a grown-up. */
+export async function currentTransparencyGate(): Promise<DonateGate> {
+  const enabled = await transparencyOn();
+  if (!enabled) return 'off';
+  try {
+    return decideDonateGate({ available: true, kids: await isKids() });
+  } catch {
+    return 'kids';
+  }
+}
+
+export async function readTransparency(): Promise<TransparencyData> {
+  const s = (await themeRuntime()).settings;
+  const [title, intro, items, updatedAt] = await Promise.all([
+    s.get('donate.transparency.title'),
+    s.get('donate.transparency.intro'),
+    s.get('donate.transparency.items'),
+    s.get('donate.transparency.updated_at'),
+  ]);
+  return { title, intro, items, updatedAt };
 }
 
 export interface DonatePageData {

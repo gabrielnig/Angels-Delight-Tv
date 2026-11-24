@@ -7,6 +7,7 @@ const mocks = vi.hoisted(() => ({
   guestPlay: true,
   audience: 'adult' as 'adult' | 'kids',
   gate: 'off' as 'off' | 'kids' | 'ok',
+  transparency: 'off' as 'off' | 'kids' | 'ok',
 }));
 vi.mock('next/navigation', () => ({
   usePathname: () => '/browse',
@@ -26,7 +27,10 @@ vi.mock('../server/guest/guest-settings', () => ({
   guestPlayEnabled: async () => mocks.guestPlay,
 }));
 vi.mock('../server/guest/guest-view', () => ({ currentGuestAudience: async () => mocks.audience }));
-vi.mock('../server/donations/page-data', () => ({ currentDonateGate: async () => mocks.gate }));
+vi.mock('../server/donations/page-data', () => ({
+  currentDonateGate: async () => mocks.gate,
+  currentTransparencyGate: async () => mocks.transparency,
+}));
 vi.mock('../lib/i18n/picker-data', () => ({ pickerData: async () => null }));
 vi.mock('../lib/i18n/server', async () => {
   const { msg } = await import('@ad/shared/messages');
@@ -44,6 +48,7 @@ describe('AppShell', () => {
     mocks.guestPlay = true;
     mocks.audience = 'adult';
     mocks.gate = 'off';
+    mocks.transparency = 'off';
   });
 
   it('gives a visitor without an account the guest chrome', async () => {
@@ -82,5 +87,18 @@ describe('AppShell', () => {
     document.body.innerHTML = '';
     await shell();
     expect(screen.getByRole('link', { name: 'Donate' })).toHaveAttribute('href', '/donate');
+  });
+
+  it('adds a How gifts are used footer link only when the transparency page is on and the viewer is not a kid', async () => {
+    await shell();
+    expect(screen.queryByRole('link', { name: 'See how gifts are used' })).not.toBeInTheDocument();
+    mocks.transparency = 'kids';
+    document.body.innerHTML = '';
+    await shell();
+    expect(screen.queryByRole('link', { name: 'See how gifts are used' })).not.toBeInTheDocument();
+    mocks.transparency = 'ok';
+    document.body.innerHTML = '';
+    await shell();
+    expect(screen.getByRole('link', { name: 'See how gifts are used' })).toHaveAttribute('href', '/transparency');
   });
 });
