@@ -9,6 +9,7 @@ import {
   getLibrary,
   getProfiles,
   type AuthResult,
+  type ListKind,
   type CodeResult,
   type PlaybackSettings,
   type ProfileInput,
@@ -287,6 +288,13 @@ export async function loadMoreBrowseAction(query: {
 }) {
   const { ctx } = await context();
   return getCatalog().browse(ctx, query);
+}
+
+export async function loadMoreListAction(query: { list: ListKind; slug?: string; cursor: string }) {
+  const { ctx } = await context();
+  const page = await getCatalog().browseList(ctx, query);
+  if (!page) throw new Error('List not found');
+  return page;
 }
 
 export async function loadMoreSearchAction(q: string, cursor: string) {

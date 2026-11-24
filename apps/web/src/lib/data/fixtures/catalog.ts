@@ -1,5 +1,7 @@
 import type {
   BrowseQuery,
+  ListPage,
+  ListQuery,
   CatalogItem,
   CatalogRepository,
   Category,
@@ -103,6 +105,20 @@ export class FixtureCatalog implements CatalogRepository {
     else if (query.sort === 'longest') items = [...items].sort((a, b) => seconds(b) - seconds(a));
     else if (query.sort === 'az') items = [...items].sort((a, b) => a.title.localeCompare(b.title));
     return pageOf(items, query.cursor, query.limit ?? 10);
+  }
+
+  async browseList(ctx: ViewerContext, query: ListQuery): Promise<ListPage | null> {
+    const all = listable(ctx);
+    if (query.list === 'row') return null;
+    const titles = { new: 'New this week', trending: 'Trending', series: 'Series' } as const;
+    const items =
+      query.list === 'series'
+        ? all.filter((i) => i.kind === 'series')
+        : query.list === 'trending'
+          ? all.slice(0, 50)
+          : all;
+    const page = pageOf(items, query.cursor, query.list === 'new' ? 10 : 50);
+    return { ...page, title: titles[query.list] };
   }
 
   async search(ctx: ViewerContext, q: string, cursor?: string): Promise<Page<CatalogItem>> {

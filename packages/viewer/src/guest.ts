@@ -10,7 +10,15 @@ import {
   type Suggestion,
 } from '@ad/catalog';
 import { annotateCards, type TitleCardDto } from './annotate';
-import { browseFor, categoriesFor, type BrowseInput, type BrowsePage } from './browse';
+import {
+  browseFor,
+  browseListFor,
+  categoriesFor,
+  type BrowseInput,
+  type BrowsePage,
+  type ListInput,
+  type ListPageDto,
+} from './browse';
 import { catalogContext, type ViewerContext } from './context';
 import { searchFor, type SearchInput, type SearchResultDto } from './search';
 import { seriesPlayTarget, videoPlayTarget } from './play-target';
@@ -88,6 +96,16 @@ export function guestBrowse(
   input: Omit<BrowseInput, 'profileId'>,
 ): Promise<BrowsePage> {
   return ctx.db.transaction((tx) => browseFor(tx, ctx, { kids: audience.kids, maxRank: audience.maxRank }, null, input));
+}
+
+export function guestBrowseList(
+  ctx: ViewerContext,
+  audience: GuestAudience,
+  input: ListInput,
+): Promise<ListPageDto | null> {
+  return ctx.db.transaction((tx) =>
+    browseListFor(tx, ctx, { kids: audience.kids, maxRank: audience.maxRank }, null, input),
+  );
 }
 
 export function guestCategories(
