@@ -1,5 +1,6 @@
 'use client';
 
+import { useT } from '../../lib/i18n/provider';
 import { useState } from 'react';
 import { useEffect } from 'react';
 import { Button, ButtonLink, useToast } from '@ad/ui';
@@ -46,6 +47,7 @@ export function TitleActions({
   layout = 'default',
   guest,
 }: TitleActionsProps) {
+  const msg = useT();
   const [primary, setPrimary] = useState(serverPrimary);
   const [saveOpen, setSaveOpen] = useState(false);
   const guestVideo = guest?.videoId;
@@ -74,15 +76,15 @@ export function TitleActions({
       toast.show({
         message:
           outcome === 'queued'
-            ? 'Saved on this device. It will sync when you are back online.'
+            ? msg('title.savedOffline')
             : next
-              ? 'Added to My List'
-              : 'Removed from My List',
+              ? msg('title.addedToList')
+              : msg('title.removedFromList'),
         variant: 'success',
       });
     } catch {
       setInList(!next);
-      toast.show({ message: 'We could not update My List. Try again.', variant: 'error' });
+      toast.show({ message: msg('title.updateFailed'), variant: 'error' });
     }
   }
 
@@ -119,7 +121,7 @@ export function TitleActions({
           </ButtonLink>
           {primary.startOverHref ? (
             <ButtonLink href={primary.startOverHref} variant="secondary" size="lg" icon="retry">
-              Start over
+              {msg('title.startOver')}
             </ButtonLink>
           ) : null}
         </div>
@@ -131,7 +133,7 @@ export function TitleActions({
             className="tv-actions__list"
             onClick={() => void onToggle()}
           >
-            {inList && !guest ? 'In My List' : 'My List'}
+            {inList && !guest ? msg('title.inMyList') : msg('title.myList')}
           </Button>
           {shareMenu}
         </div>
@@ -147,7 +149,7 @@ export function TitleActions({
       </ButtonLink>
       {primary.startOverHref ? (
         <ButtonLink href={primary.startOverHref} variant="secondary">
-          Start over
+          {msg('title.startOver')}
         </ButtonLink>
       ) : null}
       <Button
@@ -156,7 +158,7 @@ export function TitleActions({
         {...listA11y}
         onClick={() => void onToggle()}
       >
-        My List
+        {msg('title.myList')}
       </Button>
       {shareMenu}
       {dialog}

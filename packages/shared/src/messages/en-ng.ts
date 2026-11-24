@@ -1,6 +1,7 @@
 import { L10_MESSAGES } from './l10-messages';
 import { L5_MESSAGES } from './l5-messages';
 import { L7_MESSAGES } from './l7-messages';
+import { L7_DISCOVERY_MESSAGES } from './l7-discovery-messages';
 import { L9_MESSAGES } from './l9-messages';
 import { MAIL_MESSAGES } from './mail-messages';
 import type { CatalogShape } from './messages';
@@ -249,4 +250,5 @@ export const EN_NG = {
   ...L9_MESSAGES,
   ...MAIL_MESSAGES,
   ...L7_MESSAGES,
+  ...L7_DISCOVERY_MESSAGES,
 } as const satisfies CatalogShape;

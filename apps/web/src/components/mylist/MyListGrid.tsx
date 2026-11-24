@@ -1,10 +1,10 @@
 'use client';
 
+import { useT } from '../../lib/i18n/provider';
 import { useState } from 'react';
 import { Button, EmptyState, SeriesCard, VideoCard, useToast } from '@ad/ui';
 import { addToListAction, removeFromListAction } from '../../app/actions';
 import type { CatalogItem, Page } from '../../lib/data';
-import { msg } from '@ad/shared/messages';
 import { itemHref, itemKey, metaLine } from '../../lib/format';
 
 export interface MyListGridProps {
@@ -31,6 +31,7 @@ export function MyListGrid({
   remove = removeFromListAction,
   add = addToListAction,
 }: MyListGridProps) {
+  const msg = useT();
   const [items, setItems] = useState(initialItems);
   const [cursor, setCursor] = useState(nextCursor);
   const [loading, setLoading] = useState(false);
@@ -44,10 +45,10 @@ export function MyListGrid({
     try {
       await remove(key);
       toast.show({
-        message: 'Removed from My List.',
+        message: msg('mylist.removed'),
         variant: 'success',
         action: {
-          label: 'Undo',
+          label: msg('mylist.undo'),
           onClick: () => {
             setItems((current) => {
               const next = [...current];
@@ -56,7 +57,7 @@ export function MyListGrid({
             });
             void add(key).catch(() => {
               setItems((current) => current.filter((i) => itemKey(i) !== key));
-              toast.show({ message: 'We could not update My List. Try again.', variant: 'error' });
+              toast.show({ message: msg('mylist.updateFailed'), variant: 'error' });
             });
           },
         },
@@ -67,7 +68,7 @@ export function MyListGrid({
         next.splice(Math.min(index, next.length), 0, item);
         return next;
       });
-      toast.show({ message: 'We could not update My List. Try again.', variant: 'error' });
+      toast.show({ message: msg('mylist.updateFailed'), variant: 'error' });
     }
   }
 
@@ -102,9 +103,7 @@ export function MyListGrid({
             : msg('engage.mylist.emptyNotStartedTitle')
         }
         description={
-          started
-            ? msg('engage.mylist.emptyStartedBody')
-            : msg('engage.mylist.emptyNotStartedBody')
+          started ? msg('engage.mylist.emptyStartedBody') : msg('engage.mylist.emptyNotStartedBody')
         }
         action={{ label: msg('engage.mylist.showAll'), href: '/my-list' }}
       />
@@ -115,9 +114,9 @@ export function MyListGrid({
     return (
       <>
         <EmptyState
-          title="Your list is empty"
+          title={msg('mylist.yourListIsEmpty')}
           description="Tap the plus on any video to save it here."
-          action={{ label: 'Browse videos', href: '/browse' }}
+          action={{ label: msg('mylist.browseVideos'), href: '/browse' }}
         />
         {hidden}
       </>
@@ -158,13 +157,13 @@ export function MyListGrid({
       {hidden}
       {failed ? (
         <p role="alert" className="web-grid-error">
-          Could not load more.
+          {msg('mylist.couldNotLoadMore')}
         </p>
       ) : null}
       {cursor ? (
         <div className="web-grid-more">
           <Button variant="secondary" loading={loading} onClick={() => void more()}>
-            {loading ? 'Loading' : 'Show more'}
+            {loading ? msg('mylist.loading') : msg('mylist.showMore')}
           </Button>
         </div>
       ) : null}

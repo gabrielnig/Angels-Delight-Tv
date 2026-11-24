@@ -15,4 +15,4 @@ export function pickNamespaces<T>(
 }
 
 /** Namespaces the root layout sends to every client component. Grows with each extraction wave. */
-export const CLIENT_NAMESPACES = ['nav', 'kidsExit', 'guest', 'language', 'player'] as const;
+export const CLIENT_NAMESPACES = ['nav', 'kidsExit', 'guest', 'language', 'player', 'browse', 'title', 'mylist', 'home'] as const;
