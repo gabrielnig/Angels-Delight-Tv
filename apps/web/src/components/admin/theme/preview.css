@@ -14,7 +14,7 @@
   --text-h3: calc(1.5rem * var(--type-scale));
   --text-h2: calc(2rem * var(--type-scale));
   --text-h1: calc(2.5rem * var(--type-scale));
-  --text-hero: calc(3.5rem * var(--type-scale));
+  --text-hero: calc(clamp(2rem, 5vw, 3.5rem) * var(--type-scale));
   container-type: inline-size;
   background: var(--color-bg);
   color: var(--color-ink);

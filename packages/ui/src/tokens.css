@@ -196,7 +196,6 @@
   --motion-press: 0ms;
   --ease-out-strong: cubic-bezier(0.22, 1, 0.36, 1);
   --hover-card-delay: 300ms;
-  --hover-intent-delay: var(--hover-card-delay); /* alias, removed once no rule reads it */
   --card-scale: 1.25;
 
   /* ---- Z layers ---- */

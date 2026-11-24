@@ -294,7 +294,7 @@ Z order: base 0, sticky 10, nav 20, overlay 30, modal 40, toast 50.
 | `--ease-standard` | cubic-bezier(0.4, 0, 0.2, 1) | Default |
 | `--ease-enter` | cubic-bezier(0, 0, 0.2, 1) | Things arriving |
 | `--ease-exit` | cubic-bezier(0.4, 0, 1, 1) | Things leaving |
-| `--hover-card-delay` | 300ms | Card hover on enter only, so passing the cursor does not trigger it. `--hover-intent-delay` stays as an alias for one release |
+| `--hover-card-delay` | 300ms | Card hover on enter only, so passing the cursor does not trigger it. the old name `--hover-intent-delay` is removed |
 
 Rules:
 - Animate `transform` and `opacity` only. Never animate width, height, top or left (exception: progress bar width, 300ms ease-out, per UI standard).
