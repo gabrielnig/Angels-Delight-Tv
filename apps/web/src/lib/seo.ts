@@ -42,9 +42,13 @@ export function previewMetadata(input: {
   durationSeconds?: number;
   /** False for a kids only title: search engines are asked to skip it (R26). Default true. */
   indexable?: boolean;
+  /** Path of the generated 1200 by 630 share picture (/og/title/<slug>?v=<hash>). Wins over the poster. */
+  shareImagePath?: string;
 }): Metadata {
   const description = short(input.description);
-  const image = largestImage(input.thumbnail);
+  const image: ShareImage | null = input.shareImagePath
+    ? { url: input.shareImagePath, width: 1200, height: 630 }
+    : largestImage(input.thumbnail);
   const images = image ? [{ ...image, alt: input.title }] : undefined;
   return {
     title: input.title,
@@ -56,6 +60,7 @@ export function previewMetadata(input: {
       description,
       url: input.path,
       siteName: input.siteName,
+      locale: 'en_NG',
       type: input.kind === 'video' ? 'video.other' : 'website',
       ...(images ? { images } : {}),
     },

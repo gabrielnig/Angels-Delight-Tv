@@ -1512,3 +1512,9 @@ Per video tri state, site default (Super admin), Admin changes it with a reason 
 - Options: Read accounts.locale in the session now.
 - Why: Keeps the session type unchanged for other lanes. The picker writes the profile for signed in viewers and the cookie for everyone.
 - Reversible: yes
+
+## D-280 Share images are generated from the poster as a 300 KB jpeg with a configurable default (lane L6)
+- Decision: A route handler at /og/title/<slug> and /og/series/<slug> draws the poster cropped to 1200 by 630 with the four stop scrim, the title (80 characters at most) and the site name, then writes a jpeg stepped down in quality until it is under 300 KB. The share url carries ?v=<published date> so changed images get a new address. Unpublished titles answer 404. No poster or a failed render redirects to the site default image, then to the bundled placeholder.
+- Options: Hand made image per title, generate from the poster, metadata file convention
+- Why: WhatsApp drops previews over about 300 KB, and a handler lets us 404 drafts and fall back. Signed urls are never used so old shares keep working.
+- Reversible: Yes

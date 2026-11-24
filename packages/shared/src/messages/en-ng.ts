@@ -177,6 +177,8 @@ export const EN_NG = {
     other: 'Added {count} videos to your history',
   },
   'guest.import.failed': 'We could not add your history. It is still on this device.',
+  // Discovery (L6)
+  'og.freeToWatch': 'Free to watch',
   'format.duration.min': '{count} min',
   'format.duration.hr': '{count} hr',
   'format.duration.hrMin': '{hours} hr {minutes} min',
