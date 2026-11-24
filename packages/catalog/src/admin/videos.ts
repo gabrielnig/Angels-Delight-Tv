@@ -61,6 +61,10 @@ interface Row {
   caption_override_reason: string | null;
   captions_enabled: boolean | null;
   captions_off_reason: string | null;
+  preview_state: AdminVideo['preview']['state'];
+  preview_mode: AdminVideo['preview']['mode'];
+  preview_start_ms: number | null;
+  preview_note: string | null;
   category_ids: string[];
   series_id: string | null;
   season_number: number | null;
@@ -127,6 +131,12 @@ function toVideo(row: Row): AdminVideo {
     captionOverrideReason: row.caption_override_reason,
     captionsEnabled: row.captions_enabled,
     captionsOffReason: row.captions_off_reason,
+    preview: {
+      state: row.preview_state,
+      mode: row.preview_mode,
+      startMs: row.preview_start_ms,
+      note: row.preview_note,
+    },
   };
 }
 
@@ -140,6 +150,7 @@ const SELECT = sql`
           AND r.cut_focus = v.poster_focus ORDER BY r.created_at DESC LIMIT 1) END AS poster_recut,
     v.suitability, v.maturity_rank, v.kids_safe, v.created_by, v.created_at, v.updated_at, v.deleted_at,
     v.failure_code, v.failure_message, v.caption_override_reason, v.captions_enabled, v.captions_off_reason,
+    v.preview_state, v.preview_mode, v.preview_start_ms, v.preview_note,
     coalesce((SELECT array_agg(vc.category_id::text ORDER BY c.position)
       FROM video_categories vc JOIN categories c ON c.id = vc.category_id WHERE vc.video_id = v.id), '{}') AS category_ids,
     ep.series_id, ep.season_number, ep.episode_number,
