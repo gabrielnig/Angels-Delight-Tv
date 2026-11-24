@@ -47,9 +47,10 @@ Related documents: `docs/PRD.md` (why), `docs/USER-STORIES.md` (what, per module
 | M34 | Accessibility and internationalisation | Cross cutting | [READY] |
 | M35 | Kids mode and content suitability | Viewer | [READY] |
 | M36 | Artwork and thumbnails | Admin and backend | [READY] |
+| M40 | Guest access | Viewer and backend | [READY] |
 | M47 | Design system tuning and guards | Cross cutting | [READY] |
 
-36 modules in total. M01 to M26 follow the planned set. M27 to M36 are modules found while breaking the brief down: they own behaviour that would otherwise be spread across several modules with nobody responsible.
+37 modules in total. M01 to M26 follow the planned set. M27 to M36 are modules found while breaking the brief down: they own behaviour that would otherwise be spread across several modules with nobody responsible.
 
 ## 2. Dependency overview
 
@@ -743,9 +744,28 @@ Each module lists: purpose, responsibilities, data owned, dependencies, client i
 
 ---
 
+### M40 Guest access [READY]
+
+**Purpose.** Let anyone browse, search and watch without an account, and give them a clear, optional way to sign in to save things.
+
+**Responsibilities.**
+- A signed out visitor sees Home, Browse, Search, title and series pages and the player, from an account free catalog path that reads no personal table.
+- A guest identity cookie (set only when a video starts), guest playback tokens and short guest segment links.
+- Progress, Continue learning and Kids mode on the device, with an import into an account after sign in.
+- Sign in to save dialog, My List explainer and a remembered save that finishes after sign in.
+- Limits, a Turnstile escalation, robots rules, and owner settings for the default audience and the on or off switch.
+
+**Data owned.** None. Device storage only (`ad:guest:progress:v1`, `ad:guest:intent:v1`) and the cookies `__Host-ad_guest` and `__Host-ad_gaud`.
+
+**Dependencies.** M04, M05, M06, M07, M08, M10, M19, M23, M31, M35.
+
+**Client input.** Default audience for visitors and whether guests may watch [CLIENT, optional, `guestAudience` and `guestPlay` in `client.json`].
+
+---
+
 ## 4. Readiness summary
 
-**Counts.** [READY] modules (27): M01, M02, M03, M04, M06, M07, M08, M09, M10, M11, M12, M13, M14, M16, M17, M19, M20, M23, M24, M25, M27, M28, M30, M31, M34, M35, M36. [CLIENT] modules (9): M05, M15, M18, M21, M22, M26, M29, M32, M33. Total 36.
+**Counts.** [READY] modules (28): M01, M02, M03, M04, M06, M07, M08, M09, M10, M11, M12, M13, M14, M16, M17, M19, M20, M23, M24, M25, M27, M28, M30, M31, M34, M35, M36, M40. [CLIENT] modules (9): M05, M15, M18, M21, M22, M26, M29, M32, M33. Total 37.
 
 **What the [CLIENT] modules wait on:**
 

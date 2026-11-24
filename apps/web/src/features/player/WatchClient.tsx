@@ -46,7 +46,7 @@ import {
   watchPath,
 } from './routes';
 import { useOnline } from './useOnline';
-import { useGuestChallenge } from './useGuestChallenge';
+import { challengeKeyFor, useGuestChallenge } from './useGuestChallenge';
 import { WatchActions } from './WatchActions';
 
 export interface WatchClientProps {
@@ -118,7 +118,7 @@ export function WatchClient({
   signUpOpen,
   challengeSiteKey,
 }: WatchClientProps) {
-  const challenge = useGuestChallenge(viewer.guest ? challengeSiteKey : undefined);
+  const challenge = useGuestChallenge(challengeKeyFor(viewer, challengeSiteKey));
   const router = useRouter();
   const playerBox = useRef<HTMLDivElement>(null);
   const [theatre, setTheatre] = useState(false);

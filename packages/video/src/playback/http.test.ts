@@ -191,6 +191,7 @@ describe('playback handlers', () => {
           recordDenial: (ip: string) => Promise<void>;
         };
         startGuest?: () => Promise<unknown>;
+        guestSubject?: (ip: string) => string;
       } = {},
     ) {
       const calls: unknown[][] = [];
@@ -222,6 +223,7 @@ describe('playback handlers', () => {
         clientIp: () => '9.9.9.9',
         guestPlayEnabled: async () => over.play ?? true,
         ...(over.challenge ? { guestChallenge: over.challenge } : {}),
+        ...(over.guestSubject ? { guestSubject: over.guestSubject } : {}),
         getGuest: async (_r, o) => {
           mints.push(o.mint);
           return over.guest === undefined ? { guestId: 'gid', kids: false } : over.guest;
@@ -272,6 +274,12 @@ describe('playback handlers', () => {
       expect(res.status).toBe(403);
       expect(calls).toEqual([]);
       expect(mints).toEqual([]);
+    });
+
+    it('gives the service a pseudonymous subject instead of the raw address when one is configured', async () => {
+      const { handlers, calls } = guestSetup({ guestSubject: (ip) => `h(${ip})` });
+      await handlers.session(post(), VID);
+      expect(calls[0]).toEqual(['guest', { guestId: 'gid', kids: false, ip: 'h(9.9.9.9)' }, VID]);
     });
 
     describe('challenge escalation (M40-S11)', () => {

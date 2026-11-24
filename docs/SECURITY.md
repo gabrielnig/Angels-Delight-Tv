@@ -99,8 +99,8 @@ Roles:
 | Capability | Anonymous | viewer | editor | admin | super_admin |
 |---|---|---|---|---|---|
 | Landing page, sign up, sign in | yes | yes | yes | yes | yes |
-| Browse, watch, search (own visible catalog) | no | yes | yes | yes | yes |
-| Manage own profiles, list, progress | no | yes | yes | yes | yes |
+| Browse, watch, search (own visible catalog) | yes, published titles only, Kids safe only in Kids mode, and only while `features.guest_play` is on (M40, D-194) | yes | yes | yes | yes |
+| Manage own profiles, list, progress, import device history | no (progress stays on the device) | yes | yes | yes | yes |
 | `/admin` access | no | no | yes | yes | yes |
 | Upload, edit videos, series, categories, home rows | no | no | yes | yes | yes |
 | Review and approve captions | no | no | yes | yes | yes |
@@ -121,7 +121,10 @@ Rules:
 - Only a Super admin can invite staff, change roles, reset another admin's 2FA, read security entries in the audit log, export it, change features and limits, retry failed jobs and delete a viewer account (D-128). The database refuses to lose the last active Super admin (trigger) and `staff_set_role` re-checks the caller in SQL. Nobody can change their own role.
 - The worker role has no grants on identity tables. A compromised worker cannot read accounts.
 
-Every route has an authorization test with at least: anonymous, wrong role, other account's resource.
+- Guest rule (M40): a visitor with no account is a guest with an audience and nothing else. The catalog functions they reach take an audience and no actor, run in a plain transaction, and read no row level security table. Personal routes (`/api/progress`, `/api/progress/import`, `/api/my-list`, `/api/profiles`, `/api/search/recent`, `/api/watch/progress`) stay 401 for a guest, even one with a valid guest cookie. A guest cookie is never read as a session and a forged one is ignored. Kids mode for a guest is a device cookie and a convenience, not a lock (D-234).
+- The guest id is minted only by `POST /api/play/{id}/session`, after the same origin check, and only while guest play is on. Staff routes do not read it.
+
+Every route has an authorization test with at least: anonymous, wrong role, other account's resource. The matrix for guests and accounts is `apps/web/src/server/viewer/route-matrix.int.test.ts`: public GET routes answer a guest and refuse writes with 405, personal routes answer 401 to an anonymous request and to a request that carries a guest cookie.
 
 ## 6. API and input pipeline
 
@@ -157,6 +160,10 @@ Postgres token buckets (`rate_limit_buckets`). Keys combine route policy and sub
 | MFA code entry | account | 5 per 10 minutes |
 | Kids PIN entry | profile | 5 per 15 minutes |
 | Playback session mint | profile | 60 per minute |
+| Playback session mint, guest | guest id, network (keyed hash of IPv4 /24 or IPv6 /48) | 20 per minute, 120 per minute (D-197) |
+| Playback challenge, guest | network (keyed hash) | 3 refusals (403 or 429) per 10 minutes, then the next guest session needs a Turnstile check. Off when Turnstile is not configured (D-238) |
+| Public catalog reads (home, browse, search, titles) | IP and guest id | `api` bucket per address and per verified guest id, search on the `search` bucket (D-204) |
+| History import | profile | `progress` bucket, at most 100 videos per call (D-237) |
 | HLS key endpoint | profile, IP | 20 per 10 minutes, 300 per minute |
 | Search | IP or account | 60 per minute |
 | Progress write | profile | 30 per minute |
@@ -186,8 +193,8 @@ Captions (manual edit or upload): 1 MiB cap, strict WebVTT parse, cue text limit
 
 Details in ARCHITECTURE.md sections 10 and 11. Security requirements:
 - AES-128 key per video, random, wrapped at rest, served only after token check, published check and rate limit, with `Cache-Control: no-store` and `Referrer-Policy: no-referrer`.
-- Playback token HMAC-SHA256, 30 minute life, `kid` for rotation, constant-time comparison, binds video and profile.
-- Signed segment URLs HMAC over path and expiry, 6 hour life (D-089), verified at the edge, query ignored for caching.
+- Playback token HMAC-SHA256, 30 minute life, `kid` for rotation, constant-time comparison, binds video and profile. A guest token carries `gst` (guest) and `kd` (Kids mode) instead of a profile, is never combined with a staff preview (`pv`), and the key route checks `kd` against the video's Kids safety (D-196).
+- Signed segment URLs HMAC over path and expiry, 2 hour life for accounts (D-120, which replaced the 6 hours of D-089) and 20 minutes for guests (`limits.guest_segment_minutes`, 5 to 120, D-197), verified at the edge, query ignored for caching. The edge Worker is unchanged for guests: it checks only signature and expiry.
 - Secrets `PLAYBACK_TOKEN_SECRET` and `MEDIA_URL_SECRET` are different and independent of `HLS_KEK`.
 - Key and playlist routes never log query strings. The `?pt=` fallback exists only for native HLS clients.
 - Honest limit: this is deterrence, not DRM. Do not describe it as copy protection in user-facing text.
@@ -236,6 +243,7 @@ Product rules:
 - Kids profile: content limited to `kids_safe`, no search outside kids-safe content, no external links, no profile management or leaving the profile without the PIN, no per-profile analytics (`view_events.profile_id` null, `audience = kids`), no personalised recommendations beyond Continue Watching stored for that profile.
 - No advertising, no third-party trackers, no social features. The player and site load no third-party scripts except optional Cloudflare Turnstile on forms and Sentry if enabled (neither loads on kids playback pages).
 - Child-friendly privacy and terms text is a client content item and stays configurable (`legal.*_version`).
+- Guests (M40): a visitor without an account gets one cookie, `__Host-ad_guest` (signed, HTTP only, 180 days), set only when they start a video. It carries a random 128 bit id used for rate limits and playback tokens, nothing about the person. Analytics store a hash of that id and the Lagos day, so the stored viewer changes every day and the id itself is never stored; in Kids mode no viewer id is stored at all. Where a guest stopped in each video (up to 100 videos), the Kids mode choice (`__Host-ad_gaud`) and a pending save stay on the device, never on the server, until the visitor signs in and chooses to import. The Privacy page names the guest cookie, its purpose and its life.
 
 Nigeria Data Protection Act 2023 (NDPA), regulator the Nigeria Data Protection Commission (NDPC). Items to confirm with counsel before launch (the previous term NDPR refers to the earlier 2019 regulation, now superseded in practice by the Act and its implementation directive):
 - Registration as a data controller or processor of major importance, if the thresholds apply.

@@ -8,7 +8,7 @@ import { SearchScreen } from '../../../components/browse/SearchScreen';
 import { getCatalog, getLibrary } from '../../../lib/data';
 import { getViewerOrGuest } from '../../../lib/session';
 
-export const metadata = { title: 'Search' };
+export const metadata = { title: 'Search', robots: { index: false, follow: true } };
 
 export default async function SearchPage({
   searchParams,

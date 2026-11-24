@@ -94,3 +94,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - Added upload shared details and a per-file override table, one breadcrumb component, and table alignment and stacked mobile cards.
 - Series delete is now admin only. Restore from Trash returns a video as a draft.
 - Publish later on upload (L3-16) is not built yet.
+
+### Lane L1: Guest access (M40)
+
+- Anyone can now browse, search and watch without an account. A visitor gets a guest header, tab bar and footer, the full title and series pages, and the player, from an account free catalog path that reads no personal table. Personal routes stay 401 for a guest.
+- Added the guest identity cookie, guest playback tokens (`gst`, `kd`) and 20 minute guest segment links (setting `limits.guest_segment_minutes`), with the Edge Worker unchanged.
+- Added a Sign in to save dialog, a My List explainer, a remembered save that finishes after sign in, Continue learning and episode progress from the device, and an import of device history into a profile after sign in.
+- Added Kids mode for visitors (a device switch, kids safe tokens and analytics, a blocked screen, and the kids profile hint), and the settings `features.guest_play` and `features.guest_audience` with `client.json` fields `guestPlay` and `guestAudience`.
+- Added limits for guest sessions and a Turnstile check after 3 refusals from one network in 10 minutes, and `robots.txt` with `noindex` on search and My List.
+- Fixed documents: segment URLs live 2 hours for accounts (SECURITY.md said 6), a kids profile on a non-kid video gets 404 (M31-S01), and the key limits in M31-S02.
+- Not built: Clear history on this device (M40-S18), the audience select on the admin Features screen, and the Playwright journey specs.
+

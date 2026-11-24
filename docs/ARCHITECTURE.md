@@ -308,7 +308,7 @@ Playlists are served by the app, not the CDN:
 - `GET /api/play/{videoId}/master.m3u8` returns the master playlist with variant URIs pointing to `/api/play/{videoId}/{height}.m3u8`.
 - The variant endpoint reads the stored template from `originals`, rewrites each segment URI to `https://{MEDIA_HOST}/v/{prefix}/{height}/seg_N.ts?exp={unix}&sig={hmac}` and the key URI to `https://{APP_HOST}/api/hls/keys/{videoId}`.
 - Playlists are `Cache-Control: private, no-store`. They are a few KB, so serving them from the VPS is cheap and does not proxy video.
-- Segment signature: `sig = base64url(HMAC_SHA256(MEDIA_URL_SECRET, path + "\n" + exp))`, `exp` equals now plus 2 hours. Clock skew allowance 30 seconds.
+- Segment signature: `sig = base64url(HMAC_SHA256(MEDIA_URL_SECRET, path + "\n" + exp))`, `exp` equals now plus 2 hours for an account and 20 minutes for a guest (`limits.guest_segment_minutes`, 5 to 120). Clock skew allowance 30 seconds. The Edge Worker does not know which kind of viewer asked: it checks signature and expiry only.
 
 Edge Worker behaviour: verify signature and expiry, else 403. Strip `exp` and `sig` for the cache key. Serve from the Worker cache or R2 binding (honour `Range`), with `Cache-Control: public, max-age=31536000, immutable`, `X-Content-Type-Options: nosniff`, and CORS for the app origin only. Free plan Workers allow 100,000 requests per day, roughly 1,200 plays per day at 80 segments each, so budget for the 5 USD paid plan before that volume. `EDGE_TOKEN_MODE=off` is for dev and temporary rollback only.
 
@@ -332,11 +332,12 @@ sequenceDiagram
   E-->>P: encrypted segments (cached at edge)
 ```
 
-- Token format: `v1.{kid}.{payload}.{mac}`, payload is base64url JSON `{vid, pid, aid, iat, exp, n}`, MAC is HMAC-SHA256 with `PLAYBACK_TOKEN_SECRET`. `kid` allows rotation with two active secrets.
+- Token format: `v1.{kid}.{payload}.{mac}`, payload is base64url JSON `{vid, pid, aid, iat, exp, n}` plus, for a visitor with no account, `gst` (true) and `kd` (Kids mode, true or absent). For a guest `aid` holds the random guest id and `pid` is empty. A token never carries both `gst` and `pv` (staff preview), and the verifier refuses one that does. The key route reads `kd` and answers 404 for a video that is not Kids safe, without a profile lookup, MAC is HMAC-SHA256 with `PLAYBACK_TOKEN_SECRET`. `kid` allows rotation with two active secrets.
 - Stateless verification, plus one primary key lookup that the video is still published. Logout does not revoke a token already issued. The 30 minute lifetime bounds that, and videos are at most 8 minutes. The client refreshes on a 401.
 - The player adds `Authorization` only for requests to the app origin (hls.js `xhrSetup`). Requests to the media domain carry no custom headers, so the CDN sees no CORS preflight.
 - Fallback for native HLS (cannot set headers): token in `?pt=` on playlist and key routes only. Caddy and the app redact that parameter from logs and the routes send `Referrer-Policy: no-referrer`. Documented risk R-3 in SECURITY.md.
-- Rate limits: session mint 60 per minute per profile, key route 20 per 10 minutes per profile plus 300 per minute per IP.
+- Rate limits: session mint 60 per minute per profile, key route 20 per 10 minutes per profile plus 300 per minute per IP. Guest session mint 20 per minute per guest id and 120 per minute per network. After 3 refusals from one network in 10 minutes a new guest session answers 403 `challenge_required` until a Turnstile token arrives in `x-turnstile-token` (only when Turnstile is configured).
+- Guest sessions (M40): with no account session and `features.guest_play` on, `POST /api/play/{videoId}/session` checks the same origin first, then reads or mints the guest cookie `__Host-ad_guest` (the only place it is set), applies the Kids mode choice of the device and returns the same response shape. The guest cookie is never a session: personal routes stay 401 with it. The edge, the key route and the playlists work as for accounts.
 
 Player tuning for the audience: `preload="metadata"`, start on 360p or 480p, conservative initial bandwidth estimate (about 500 kbps), `capLevelToPlayerSize`, a data saver toggle capping at 480p, progress saved every 15 seconds, on pause, on `visibilitychange` and with `sendBeacon` on page hide.
 
@@ -347,7 +348,7 @@ Player tuning for the audience: `preload="metadata"`, start on 360p or 480p, con
 | `v/*/*.ts` segments | `public, max-age=31536000, immutable` | 1 year, cache key ignores query | 1 year | Content never changes at a path. Re-encode writes a new `mediaPrefix`. |
 | `img/*` (hash named) | same | 1 year | 1 year | New upload equals new key. |
 | `cap/*` (hash named) | same | 1 year | 1 year | New revision equals new key. |
-| App HTML and API (app domain) | `private, no-store` for authenticated pages | Bypass | none | Landing page may use short public caching. |
+| App HTML and API (app domain) | `private, no-store` for authenticated pages | Bypass | none | Landing page may use short public caching. Pages a guest sees are rendered per request from the device Kids mode cookie and are not edge cached: the same URL differs by that cookie. |
 | `/_next/static/*` | `public, max-age=31536000, immutable` | 1 year | 1 year | Cloudflare proxied. |
 | Playlists, key route | `private, no-store` | Bypass | none | Dynamic and per viewer. |
 

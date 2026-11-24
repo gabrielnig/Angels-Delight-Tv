@@ -1,5 +1,10 @@
 import { describe, expect, it, vi } from 'vitest';
-import { createGuestChallenge, GUEST_CHALLENGE_POLICY, TURNSTILE_HEADER } from './challenge';
+import {
+  createGuestChallenge,
+  GUEST_CHALLENGE_POLICY,
+  networkSubject,
+  TURNSTILE_HEADER,
+} from './challenge';
 
 const secret = new Uint8Array(32).fill(7);
 
@@ -88,5 +93,12 @@ describe('guest challenge (M40-S11)', () => {
     expect(verify).toHaveBeenCalledWith('good', '203.0.113.5');
     expect(await challenge.verify(req({ [TURNSTILE_HEADER]: 'bad' }), '203.0.113.5')).toBe(false);
     expect(await challenge.verify(req(), '203.0.113.5')).toBe(false);
+  });
+
+  it('gives each purpose its own subject for the same network, and the same /24 the same subject', () => {
+    const a = networkSubject(secret, '203.0.113.5', 'guest-session');
+    expect(a).toBe(networkSubject(secret, '203.0.113.200', 'guest-session'));
+    expect(a).not.toBe(networkSubject(secret, '203.0.113.5', 'guest-challenge'));
+    expect(a).not.toBe(networkSubject(new Uint8Array(32).fill(8), '203.0.113.5', 'guest-session'));
   });
 });

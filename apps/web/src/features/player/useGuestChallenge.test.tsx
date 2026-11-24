@@ -9,7 +9,7 @@ vi.mock('../../components/auth/TurnstileWidget', () => ({
   ),
 }));
 
-import { useGuestChallenge } from './useGuestChallenge';
+import { challengeKeyFor, useGuestChallenge } from './useGuestChallenge';
 
 function Harness({ siteKey, onResult }: { siteKey?: string; onResult: (v: unknown) => void }) {
   const { solve, element } = useGuestChallenge(siteKey);
@@ -45,5 +45,14 @@ describe('useGuestChallenge', () => {
     await userEvent.click(await screen.findByRole('button', { name: 'Cancel' }));
     await act(async () => undefined);
     expect(onResult).toHaveBeenCalledWith(null);
+  });
+});
+
+describe('challengeKeyFor', () => {
+  it('offers the check to a visitor and never loads the widget on a Kids playback page', () => {
+    expect(challengeKeyFor({ guest: true, kids: false }, 'k')).toBe('k');
+    expect(challengeKeyFor({ guest: true, kids: true }, 'k')).toBeUndefined();
+    expect(challengeKeyFor({ guest: undefined, kids: false }, 'k')).toBeUndefined();
+    expect(challengeKeyFor({ guest: true, kids: false }, undefined)).toBeUndefined();
   });
 });

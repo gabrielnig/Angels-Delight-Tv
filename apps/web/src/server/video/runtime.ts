@@ -25,7 +25,7 @@ import { getActor, getViewer } from '../auth/request-actor';
 import { authRuntime } from '../auth/runtime';
 import { activeProfileKey } from '../viewer/runtime';
 import { turnstileFromEnv, verifyTurnstile } from '../auth/turnstile';
-import { createGuestChallenge } from '../guest/challenge';
+import { createGuestChallenge, networkSubject } from '../guest/challenge';
 import { guestAudienceFromRequest } from '../guest/guest-audience';
 import { guestSetCookie } from '../guest/guest-cookie';
 import { resolveGuest } from '../guest/resolve-guest';
@@ -99,6 +99,7 @@ function build(): VideoApi {
       mediaOrigin: env.MEDIA_ORIGIN,
     }),
     guest: {
+      subject: (ip) => networkSubject(guestSecret, ip, 'guest-session'),
       ...(turnstileKeys
         ? {
             challenge: createGuestChallenge({

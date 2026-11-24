@@ -67,7 +67,7 @@ export default async function WatchPage({ params, searchParams }: PageProps) {
         <WatchClient
           data={data}
           viewer={viewer}
-          challengeSiteKey={viewer.guest ? turnstileSiteKey() : undefined}
+          challengeSiteKey={viewer.guest && !viewer.kids ? turnstileSiteKey() : undefined}
           signUpOpen={viewer.guest ? (await getSite().content()).signUpOpen : undefined}
           transport={getTransport()}
           progressTransport={getProgressTransport(viewer)}

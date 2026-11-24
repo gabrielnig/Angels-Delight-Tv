@@ -4,7 +4,7 @@ import { MyListScreen } from '../../../components/mylist/MyListScreen';
 import { getLibrary, getSite } from '../../../lib/data';
 import { getViewerOrGuest } from '../../../lib/session';
 
-export const metadata = { title: 'My List' };
+export const metadata = { title: 'My List', robots: { index: false, follow: true } };
 
 export default async function MyListPage() {
   const viewer = await getViewerOrGuest('/my-list');

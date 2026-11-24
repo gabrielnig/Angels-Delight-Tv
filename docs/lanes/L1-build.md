@@ -15,8 +15,8 @@ Plan: `docs/plan/v2/L1-guest-access.md`. Rulings: `docs/plan/v2/RULINGS.md` (the
 | 7 | My List explainer, return intent | merged | #264 |
 | 8 | Guest Continue learning | merged | #265 |
 | 9 | History import | merged | #266 |
-| 10 | Abuse protection, Turnstile escalation | on PR | see below |
-| 11 | Robots, journeys, documents | todo | |
+| 10 | Abuse protection, Turnstile escalation | merged | #267 |
+| 11 | Robots, journeys, documents | on PR | see below |
 
 ## Slice 1 (guest identity and playback)
 
@@ -126,3 +126,29 @@ Deviations: no `guest` prop on the shared `TopNav` (D-208). The sticky Play bar 
 - DEPLOYMENT.md: guest session rate rule, Workers free plan note, Turnstile note.
 - Not tested end to end with a real limiter store; the pieces are covered by unit tests with fakes.
 - The older `guest.ip` playback buckets (`play-session-guest-ip`, `play-key-ip`) still use the address as subject, as `keyIp` did before. Hashing them is a follow up.
+
+## Slice 11 (Robots, journeys, documents)
+
+- `app/robots.ts` (Sitemap line appears when `app/sitemap.ts` exists; L6 should add it), `noindex` metadata on Search and My List.
+- Guest session limits now key on `networkSubject(secret, ip, 'guest-session')`, a keyed hash of the truncated network (`PlaybackHttpDeps.guestSubject`). Slice 10's note about raw addresses is closed for guest sessions; the key route's `play-key-ip` bucket still keys on the address as before.
+- The Turnstile check is never offered on a Kids playback page (`challengeKeyFor`), per SECURITY.md section 12.
+- `apps/web/e2e/guest-journey.e2e.ts` and `guest-kids.e2e.ts`: written, type checked and linted, not run here (no browser or real services in this session). They skip without `E2E_REAL`.
+- Documents: SECURITY.md (capability table, guest rule, limits, token claims, TTL fix, guest privacy), ARCHITECTURE.md (sections 10 to 12), USER-STORIES.md (module M40 and the 3.2 edits), MODULES.md, SCREEN-ARCHITECTURE.md (S80 to S89 and a guest flow), CLIENT-INPUTS.md, DEPLOYMENT.md (slice 10), CHANGELOG.md.
+- The three doc mismatches are fixed: 2 hour segment URLs (SECURITY.md), 404 for a kids profile on a non-kid video (M31-S01), key limits (M31-S02).
+
+## What exists (summary for other lanes)
+
+- Guest principal: `ViewerContext.guest`, `guestContext(audience)`, `getViewerOrGuest(next)`. Account free catalog: `guest*` functions in `@ad/viewer` (`guest.ts`). Public GETs: `/api/home`, `/api/browse`, `/api/browse/categories`, `/api/search`, `/api/search/suggest`, `/api/titles/[id]`, `/api/titles/batch`.
+- Playback: `POST /api/play/{id}/session` mints the guest cookie and token. Device storage keys: `ad:guest:progress:v1`, `ad:guest:intent:v1`. Cookies: `__Host-ad_guest`, `__Host-ad_gaud`.
+- UI: `GuestChrome`, `SignInToSaveDialog` (L5: `reason="like"` and `intent`), `MyListExplainer`, `GuestContinueRow`, `GuestEpisodeProgress`, `GuestKidsBlocked`, `GuestChallenge`, `ImportPrompt`, `GuestIntentApplier`.
+- Settings: `features.guest_play`, `features.guest_audience`, `limits.guest_segment_minutes`. `client.json`: `guestPlay`, `guestAudience`.
+- Scoped test commands: `pnpm vitest run apps/web/src/components/guest apps/web/src/lib/guest apps/web/src/server/guest packages/video/src/playback/http.test.ts packages/viewer/src/progress-import.int.test.ts apps/web/src/server/viewer/route-matrix.int.test.ts` (integration files need `TEST_DATABASE_ADMIN_URL`).
+
+## Gaps
+
+- M40-S18 Clear history on this device is not built.
+- Admin Features screen has the guest play switch and the segment minutes, but no audience select (use `client.json` or the settings API).
+- Series pages have no Kids blocked screen for a guest (they answer not found). The title page does.
+- The sticky Play bar and series main button do not follow device progress.
+- `messages-coverage.test.ts` fails on `main` for three `player.skip.*` keys that belong to L4.
+- Journey specs are not run.
