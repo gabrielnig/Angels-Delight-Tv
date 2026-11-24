@@ -48,6 +48,8 @@ export interface WatchClientProps {
   data: WatchData;
   /** A guest has no profile: the session carries no profile id, progress and preferences stay on this device. */
   viewer: { profileId: string; kids: boolean; guest?: true };
+  /** Whether the Sign in to save dialog offers Create account. Only read for guests. */
+  signUpOpen?: boolean;
   transport: PlaybackTransport;
   /** Where progress goes when it differs from the session transport. Real viewer data always posts to /api/progress. */
   progressTransport?: ProgressTransport;
@@ -106,6 +108,7 @@ export function WatchClient({
   children,
   prefsSync: prefsSyncProp,
   testing,
+  signUpOpen,
 }: WatchClientProps) {
   const router = useRouter();
   const playerBox = useRef<HTMLDivElement>(null);
@@ -318,7 +321,12 @@ export function WatchClient({
         )}
       </div>
       {children}
-      <WatchActions videoId={video.id} title={video.title} initialInMyList={data.inMyList} />
+      <WatchActions
+        videoId={video.id}
+        title={video.title}
+        initialInMyList={data.inMyList}
+        guest={viewer.guest ? { signUpOpen: signUpOpen ?? false } : undefined}
+      />
     </>
   );
 }

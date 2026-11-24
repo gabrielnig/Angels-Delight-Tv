@@ -11,7 +11,9 @@ import { previewMetadata } from '../../../../lib/seo';
 import { getRootTheme } from '../../../../lib/theme/root';
 import { itemKey } from '../../../../lib/format';
 import { primaryAction } from '../../../../lib/title-cta';
-import { getSession, requireProfile } from '../../../../lib/session';
+import { getSite } from '../../../../lib/data';
+import { getViewerOrGuest } from '../../../../lib/session';
+import { guestPlayEnabled } from '../../../../server/guest/guest-settings';
 
 type Params = { params: Promise<{ slug: string }> };
 
@@ -39,7 +41,8 @@ export default async function SeriesPage({
   searchParams: Promise<Record<string, string | undefined>>;
 }) {
   const [{ slug }, query] = await Promise.all([params, searchParams]);
-  if (!(await getSession())) {
+  const viewer = await getViewerOrGuest(`/series/${slug}`);
+  if (viewer.kind === 'guest' && !(await guestPlayEnabled())) {
     const preview = await getCatalog().publicPreview(slug, 'series');
     if (!preview) notFound();
     if (preview.type === 'redirect') permanentRedirect(preview.to);
@@ -58,14 +61,16 @@ export default async function SeriesPage({
       </AppShell>
     );
   }
-  const { ctx } = await requireProfile(`/series/${slug}`);
+  const { ctx } = viewer;
   const detail = await getCatalog().series(ctx, slug);
   if (!detail) notFound();
   if ('redirect' in detail) permanentRedirect(detail.redirect);
   const { series, seasons, next } = detail;
   const nextVideo = seasons.flatMap((s) => s.episodes).find((e) => e.video.id === next.videoId);
   const rows = seasonRows(seasons);
-  const inList = (await getLibrary().myListIds(ctx)).includes(itemKey(series));
+  const guest =
+    viewer.kind === 'guest' ? { signUpOpen: (await getSite().content()).signUpOpen } : null;
+  const inList = guest ? false : (await getLibrary().myListIds(ctx)).includes(itemKey(series));
   return (
     <AppShell>
       <div className="web-page web-title">
@@ -85,6 +90,7 @@ export default async function SeriesPage({
             itemKey={itemKey(series)}
             inList={inList}
             shareTitle={series.title}
+            guest={guest ? { signUpOpen: guest.signUpOpen, next: `/series/${slug}` } : undefined}
           />
         ) : null}
         <p className="web-title__desc">{series.description}</p>

@@ -107,4 +107,15 @@ export const EN_NG = {
 
   // Guest access (M40)
   'guest.progress.notSaved': 'Your place is not being saved on this device.',
+  'guest.save.myList.title': 'Save this to My List',
+  'guest.save.myList.body':
+    'Sign in or create a free account to keep a list that follows you on every device. You can keep watching without one.',
+  'guest.save.like.title': 'Save your like',
+  'guest.save.like.body':
+    'Sign in or create a free account to like videos and get better picks. You can keep watching without one.',
+  'guest.save.notNow': 'Not now',
+  'guest.save.signIn': 'Sign in',
+  'guest.save.createAccount': 'Create account',
+  'guest.nav.main': 'Main',
+  'guest.nav.skip': 'Skip to main content',
 } as const satisfies CatalogShape;

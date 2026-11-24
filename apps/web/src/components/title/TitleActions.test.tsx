@@ -105,11 +105,22 @@ describe('TitleActions', () => {
 });
 
 describe('TitleActions in the title layout (S18)', () => {
-  const resume = { text: 'Resume, 3 min 38 sec left', href: '/watch/a', startOverHref: '/watch/a?t=0' };
+  const resume = {
+    text: 'Resume, 3 min 38 sec left',
+    href: '/watch/a',
+    startOverHref: '/watch/a?t=0',
+  };
 
   it('puts Play and Start over on one row and My List and Share on the next', () => {
     const { container } = wrap(
-      <TitleActions layout="title" primary={resume} itemKey="video:a" inList shareTitle="T" toggle={vi.fn()} />,
+      <TitleActions
+        layout="title"
+        primary={resume}
+        itemKey="video:a"
+        inList
+        shareTitle="T"
+        toggle={vi.fn()}
+      />,
     );
     const rows = container.querySelectorAll('.tv-actions__row');
     expect(rows).toHaveLength(2);
@@ -118,20 +129,72 @@ describe('TitleActions in the title layout (S18)', () => {
   });
 
   it('says In My List when the title is saved and keeps the pressed state', () => {
-    wrap(<TitleActions layout="title" primary={resume} itemKey="video:a" inList toggle={vi.fn()} />);
-    expect(screen.getByRole('button', { name: 'In My List' })).toHaveAttribute('aria-pressed', 'true');
+    wrap(
+      <TitleActions layout="title" primary={resume} itemKey="video:a" inList toggle={vi.fn()} />,
+    );
+    expect(screen.getByRole('button', { name: 'In My List' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
   });
 
   it('says My List when it is not saved', () => {
-    wrap(<TitleActions layout="title" primary={resume} itemKey="video:a" inList={false} toggle={vi.fn()} />);
-    expect(screen.getByRole('button', { name: 'My List' })).toHaveAttribute('aria-pressed', 'false');
+    wrap(
+      <TitleActions
+        layout="title"
+        primary={resume}
+        itemKey="video:a"
+        inList={false}
+        toggle={vi.fn()}
+      />,
+    );
+    expect(screen.getByRole('button', { name: 'My List' })).toHaveAttribute(
+      'aria-pressed',
+      'false',
+    );
   });
 
   it('marks the first row so phones can hide it behind the sticky Play bar', () => {
     const { container } = wrap(
-      <TitleActions layout="title" primary={resume} itemKey="video:a" inList={false} toggle={vi.fn()} />,
+      <TitleActions
+        layout="title"
+        primary={resume}
+        itemKey="video:a"
+        inList={false}
+        toggle={vi.fn()}
+      />,
     );
     expect(container.querySelector('.tv-actions__row--play')).not.toBeNull();
   });
-});
 
+  describe('guest', () => {
+    const guest = { signUpOpen: true, next: '/title/a' };
+
+    it('opens the Sign in to save dialog instead of toggling, with no pressed state', async () => {
+      const toggle = vi.fn();
+      wrap(
+        <TitleActions
+          primary={play}
+          itemKey="video:a"
+          inList={false}
+          toggle={toggle}
+          guest={guest}
+        />,
+      );
+      const button = screen.getByRole('button', { name: /My List/ });
+      expect(button).not.toHaveAttribute('aria-pressed');
+      expect(button).toHaveAttribute('aria-haspopup', 'dialog');
+      await userEvent.click(button);
+      expect(screen.getByRole('dialog', { name: 'Save this to My List' })).toBeInTheDocument();
+      expect(toggle).not.toHaveBeenCalled();
+    });
+
+    it('returns focus to the button when the dialog closes', async () => {
+      wrap(<TitleActions primary={play} itemKey="video:a" inList={false} guest={guest} />);
+      const button = screen.getByRole('button', { name: /My List/ });
+      await userEvent.click(button);
+      await userEvent.click(screen.getByRole('button', { name: 'Not now' }));
+      expect(button).toHaveFocus();
+    });
+  });
+});

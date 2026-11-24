@@ -15,6 +15,7 @@ import { UpNextList } from '@/features/player/UpNextList';
 import { WatchClient } from '@/features/player/WatchClient';
 import { WatchDetails } from '@/features/player/WatchDetails';
 import '@/features/player/watch.css';
+import { getSite } from '@/lib/data';
 
 interface PageProps {
   params: Promise<{ videoId: string }>;
@@ -65,6 +66,7 @@ export default async function WatchPage({ params, searchParams }: PageProps) {
         <WatchClient
           data={data}
           viewer={viewer}
+          signUpOpen={viewer.guest ? (await getSite().content()).signUpOpen : undefined}
           transport={getTransport()}
           progressTransport={getProgressTransport(viewer)}
           startAt={parseStartAt(query.t)}

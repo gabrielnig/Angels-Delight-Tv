@@ -1,8 +1,12 @@
 'use client';
 
 import { useState } from 'react';
+import { useEffect } from 'react';
 import { Button, ButtonLink, useToast } from '@ad/ui';
+import { readGuestProgress } from '../../lib/guest/progress-store';
+import { guestPrimary } from '../../lib/guest/resume';
 import { useListToggle } from '../../lib/pwa/useListToggle';
+import { SignInToSaveDialog } from '../guest/SignInToSaveDialog';
 import type { PrimaryAction } from '../../lib/title-cta';
 
 export interface TitleActionsProps {
@@ -14,17 +18,34 @@ export interface TitleActionsProps {
   toggle?: (itemKey: string, add: boolean) => Promise<void | 'sent' | 'queued'>;
   /** `title` is the two row layout of the title page (S18). The default is one wrapping row. */
   layout?: 'default' | 'title';
+  /**
+   * A visitor without an account (M40). My List opens the Sign in to save dialog and nothing is stored.
+   * With `videoId` the main button follows the place saved on this device.
+   */
+  guest?: { signUpOpen: boolean; next: string; videoId?: string; durationSeconds?: number };
 }
 
 /** Play, Resume or Watch again, Start over, an optimistic My List toggle and Share (M07, M10-S01). */
 export function TitleActions({
-  primary,
+  primary: serverPrimary,
   itemKey,
   inList: initial,
   shareTitle,
   toggle: toggleProp,
   layout = 'default',
+  guest,
 }: TitleActionsProps) {
+  const [primary, setPrimary] = useState(serverPrimary);
+  const [saveOpen, setSaveOpen] = useState(false);
+  const guestVideo = guest?.videoId;
+  const guestDuration = guest?.durationSeconds ?? 0;
+  useEffect(() => {
+    if (!guestVideo) return;
+    const entry = readGuestProgress(window.localStorage, guestVideo);
+    setPrimary(
+      guestPrimary({ watchHref: serverPrimary.href, durationSeconds: guestDuration }, entry),
+    );
+  }, [guestVideo, guestDuration, serverPrimary.href]);
   const queued = useListToggle();
   const toggle = toggleProp ?? queued;
   const [inList, setInList] = useState(initial);
@@ -32,6 +53,10 @@ export function TitleActions({
   const toast = useToast();
 
   async function onToggle() {
+    if (guest) {
+      setSaveOpen(true);
+      return;
+    }
     const next = !inList;
     setInList(next);
     try {
@@ -67,6 +92,19 @@ export function TitleActions({
     }
   }
 
+  const listA11y = guest
+    ? ({ 'aria-haspopup': 'dialog' } as const)
+    : ({ 'aria-pressed': inList } as const);
+  const dialog = guest ? (
+    <SignInToSaveDialog
+      open={saveOpen}
+      reason="my-list"
+      next={guest.next}
+      signUpOpen={guest.signUpOpen}
+      onClose={() => setSaveOpen(false)}
+    />
+  ) : null;
+
   const manual = manualUrl ? (
     <input
       className="web-title-actions__url"
@@ -93,12 +131,12 @@ export function TitleActions({
         <div className="tv-actions__row">
           <Button
             variant="secondary"
-            icon={inList ? 'check' : 'plus'}
-            aria-pressed={inList}
+            icon={inList && !guest ? 'check' : 'plus'}
+            {...listA11y}
             className="tv-actions__list"
             onClick={() => void onToggle()}
           >
-            {inList ? 'In My List' : 'My List'}
+            {inList && !guest ? 'In My List' : 'My List'}
           </Button>
           {shareTitle ? (
             <Button variant="secondary" icon="share" onClick={() => void onShare()}>
@@ -107,6 +145,7 @@ export function TitleActions({
           ) : null}
         </div>
         {manual}
+        {dialog}
       </div>
     );
   }
@@ -123,8 +162,8 @@ export function TitleActions({
       ) : null}
       <Button
         variant="secondary"
-        icon={inList ? 'check' : 'plus'}
-        aria-pressed={inList}
+        icon={inList && !guest ? 'check' : 'plus'}
+        {...listA11y}
         onClick={() => void onToggle()}
       >
         My List
@@ -135,6 +174,7 @@ export function TitleActions({
         </Button>
       ) : null}
       {manual}
+      {dialog}
     </div>
   );
 }

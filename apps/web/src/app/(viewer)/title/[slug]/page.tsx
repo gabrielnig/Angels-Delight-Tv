@@ -7,7 +7,9 @@ import { getCatalog, getLibrary } from '../../../../lib/data';
 import { previewMetadata } from '../../../../lib/seo';
 import { getRootTheme } from '../../../../lib/theme/root';
 import { itemKey } from '../../../../lib/format';
-import { getSession, requireProfile } from '../../../../lib/session';
+import { getSite } from '../../../../lib/data';
+import { getViewerOrGuest } from '../../../../lib/session';
+import { guestPlayEnabled } from '../../../../server/guest/guest-settings';
 
 type Params = { params: Promise<{ slug: string }> };
 
@@ -30,8 +32,9 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
 
 export default async function TitlePage({ params }: Params) {
   const { slug } = await params;
-  const session = await getSession();
-  if (!session) {
+  const viewer = await getViewerOrGuest(`/title/${slug}`);
+  // With guest play switched off a visitor sees the preview and a way in (M07-S06).
+  if (viewer.kind === 'guest' && !(await guestPlayEnabled())) {
     const preview = await getCatalog().publicPreview(slug, 'video');
     if (!preview) notFound();
     if (preview.type === 'redirect') permanentRedirect(preview.to);
@@ -48,12 +51,16 @@ export default async function TitlePage({ params }: Params) {
       />
     );
   }
-  const { ctx } = await requireProfile(`/title/${slug}`);
+  const { ctx } = viewer;
   const detail = await getCatalog().title(ctx, slug);
   if (!detail) notFound();
   if ('redirect' in detail) permanentRedirect(detail.redirect);
   if ('blocked' in detail) {
     return <TitleBlocked />;
+  }
+  if (viewer.kind === 'guest') {
+    const { signUpOpen } = await getSite().content();
+    return <TitleView detail={detail} inList={false} guest={{ signUpOpen }} />;
   }
   const ids = await getLibrary().myListIds(ctx);
   return <TitleView detail={detail} inList={ids.includes(itemKey(detail.video))} />;
