@@ -72,8 +72,9 @@ export function SkeletonCard() {
   return (
     <div className="ad-skelcard" aria-hidden="true">
       <Skeleton className="ad-skelcard__thumb" />
-      <Skeleton height="0.875rem" width="90%" />
-      <Skeleton height="0.875rem" width="55%" />
+      <Skeleton className="ad-skelcard__title" width="90%" />
+      <Skeleton className="ad-skelcard__title" width="55%" />
+      <Skeleton className="ad-skelcard__meta" width="40%" />
     </div>
   );
 }
