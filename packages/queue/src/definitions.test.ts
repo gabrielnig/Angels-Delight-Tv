@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   CRON_SCHEDULES,
+  ENGAGE_CRON_SCHEDULES,
   EXPORT_CRON_SCHEDULES,
   MAIL_CRON_SCHEDULES,
   MAINTENANCE_CRON_SCHEDULES,
@@ -147,5 +148,23 @@ describe('parsePayload', () => {
 
   it('allows an empty payload for cron queues', () => {
     expect(parsePayload('uploads.cleanup', {})).toEqual({});
+  });
+});
+
+describe('engagement queues (L5, M44)', () => {
+  it('queue definitions include ratings.rollup with concurrency 1, retry 3 and a 15 minute Lagos cron', () => {
+    expect(QUEUE_DEFINITIONS['ratings.rollup']).toMatchObject({
+      concurrency: 1,
+      retryLimit: 3,
+      retryDelaySeconds: 30,
+      retryBackoff: true,
+      expireInSeconds: 300,
+    });
+    expect(parsePayload('ratings.rollup', {})).toEqual({});
+    expect(ENGAGE_CRON_SCHEDULES).toContainEqual({
+      queue: 'ratings.rollup',
+      cron: '*/15 * * * *',
+      timezone: 'Africa/Lagos',
+    });
   });
 });

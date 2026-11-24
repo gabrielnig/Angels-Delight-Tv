@@ -27,3 +27,9 @@ Scoped tests: `TEST_DATABASE_ADMIN_URL=postgres://postgres:postgres@localhost:54
 - Icons `thumbUp`, `thumbDown`, `heart`, `bell`, `sort`, `filter` (`packages/ui/src/components/Icon.test.tsx`). Message keys `engage.rating.*`.
 - `apps/web/src/components/engage/RatingControl.tsx` (labelled group, aria-pressed, optimistic, Undo, rollback, guest ask, unavailable). Test: `RatingControl.test.tsx`. CSS block at the end of `packages/ui/src/components.css`.
 - NOT done: mounting RatingControl in TitleView and TitleActions (needs profile id and rating from the title DTO), guest replay of the like intent (L1 `GuestIntentApplier` only replays my-list, the intent has no value), card hover actions cluster and rating chip, MostLikedLabel, `Cards.test.tsx` focus-within peek.
+
+## Slice 5 (rating rollup, Most liked)
+- Queue `ratings.rollup` (concurrency 1, retry 3, delay 30 s, expire 5 min), `ENGAGE_CRON_SCHEDULES` (`*/15 * * * *` Africa/Lagos) in `packages/queue/src/definitions.ts`. Later engagement queues append to the same schedule list.
+- `apps/worker/src/engage.ts`: `rollupRatings(db, rules)`, `pickMostLiked`, `wilsonLowerBound`, `DEFAULT_RATING_RULES` (10 raters, 85 percent, cap 10, top quarter). One transaction, idempotent. Registered by `apps/worker/src/engage-handlers.ts` from `main.ts`.
+- Tests: `apps/worker/src/engage.test.ts`, `engage.int.test.ts`, `engage-handlers.test.ts`, `packages/queue/src/definitions.test.ts`.
+- NOT done: `ratingTotals` analytics and the admin Top titles columns, CSV columns, settings keys for the rules (constants for now), Most liked row kind (slice 6).

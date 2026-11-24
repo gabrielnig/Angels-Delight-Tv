@@ -4,6 +4,8 @@ import { DrizzleHeartbeatStore, startHeartbeat } from '@ad/queue';
 import type { PgBoss } from 'pg-boss';
 import { bootWorker } from './boot';
 import { registerVideoHandlers } from './handlers';
+import { rollupRatings } from './engage';
+import { registerEngageHandlers } from './engage-handlers';
 import { registerExportHandlers } from './export-handlers';
 import { registerMailHandlers } from './mail';
 import { registerMaintenanceHandlers } from './maintenance';
@@ -44,6 +46,11 @@ async function main(): Promise<void> {
       });
       await registerExportHandlers(queueBoss, {
         ...buildExportDeps(env, db, logger),
+        mirror: video.mirror,
+        logger,
+      });
+      await registerEngageHandlers(queueBoss, {
+        rollupRatings: () => rollupRatings(db),
         mirror: video.mirror,
         logger,
       });

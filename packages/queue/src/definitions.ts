@@ -17,6 +17,7 @@ export const QUEUES = {
   emailDigest: 'email.digest',
   exportsGenerate: 'exports.generate',
   exportsCleanup: 'exports.cleanup',
+  ratingsRollup: 'ratings.rollup',
 } as const;
 
 export type QueueName = (typeof QUEUES)[keyof typeof QUEUES];
@@ -107,6 +108,14 @@ export const QUEUE_DEFINITIONS: Record<QueueName, QueueDefinition> = {
     retryBackoff: true,
     expireInSeconds: 30 * 60,
   },
+  // Engagement (L5): recomputes rating totals and the Most liked label every 15 minutes.
+  'ratings.rollup': {
+    concurrency: 1,
+    retryLimit: 3,
+    retryDelaySeconds: 30,
+    retryBackoff: true,
+    expireInSeconds: 5 * 60,
+  },
   'analytics.prune': {
     concurrency: 1,
     retryLimit: 2,
@@ -193,6 +202,7 @@ const PAYLOADS = {
   'email.digest': z.strictObject({}),
   'exports.generate': z.strictObject({ exportId: uuid, ...tracking }),
   'exports.cleanup': z.strictObject({}),
+  'ratings.rollup': z.strictObject({}),
 } satisfies Record<QueueName, z.ZodType>;
 
 export type PayloadOf<Q extends QueueName> = z.output<(typeof PAYLOADS)[Q]>;
@@ -233,4 +243,9 @@ export const MAIL_CRON_SCHEDULES: CronEntry[] = [
 /** Deletes expired export files and rows (M19-S05, M20-S03). */
 export const EXPORT_CRON_SCHEDULES: CronEntry[] = [
   { queue: 'exports.cleanup', cron: '45 3 * * *', timezone: 'Africa/Lagos' },
+];
+
+/** Engagement jobs (L5, M44). Later slices append trending, notices and digest entries here. */
+export const ENGAGE_CRON_SCHEDULES: CronEntry[] = [
+  { queue: 'ratings.rollup', cron: '*/15 * * * *', timezone: 'Africa/Lagos' },
 ];
