@@ -44,6 +44,9 @@ const MATRIX = {
   'i18n.override': 'super_admin',
   'system.view': 'admin',
   'system.jobs': 'super_admin',
+  'sponsor.manage': 'editor',
+  'sponsor.activate': 'admin',
+  'sponsor.report.export': 'admin',
 } as const satisfies Record<string, Exclude<AccountRole, 'viewer'>>;
 
 export type AdminAction = keyof typeof MATRIX;

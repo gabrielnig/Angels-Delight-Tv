@@ -1,10 +1,11 @@
 import { createHash } from 'node:crypto';
+import sharp from 'sharp';
 import { schema, type Database } from '@ad/db';
 import { NotFound, createLogger, type Logger } from '@ad/shared';
 import type { StorageAdapter } from '@ad/storage';
 import { and, eq, inArray, ne, sql } from 'drizzle-orm';
 import { PipelineError } from '../failure';
-import { ImageRejected, processImage, type ImagePreset } from './process';
+import { ImageRejected, processImage, sponsorPresetFor, type ImagePreset } from './process';
 
 const { assets, videos } = schema;
 
@@ -52,7 +53,12 @@ export class ImageService {
 
     let result;
     try {
-      result = await processImage(source, presetFor(asset.purpose), {
+      let preset = presetFor(asset.purpose);
+      if (asset.purpose === 'sponsor') {
+        const meta = await sharp(source).metadata();
+        preset = sponsorPresetFor(meta.width ?? 0, meta.height ?? 0);
+      }
+      result = await processImage(source, preset, {
         ...(asset.cutFocus ? { focus: asset.cutFocus } : {}),
       });
     } catch (error) {
