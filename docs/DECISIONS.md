@@ -1240,3 +1240,9 @@ Per video tri state, site default (Super admin), Admin changes it with a reason 
 - Options: branch inside every page, or one dispatch at the data layer.
 - Why: One place to fail closed, and pages stay the same for both kinds of viewer.
 - Reversible: yes.
+
+## D-234 Kids mode for visitors is a device cookie that reaches every guest path (lane L1)
+- Decision: The Kids mode switch of a visitor sets the unsigned cookie `__Host-ad_gaud` (`k` or `g`) through `setGuestAudienceAction`, which takes a boolean and needs no session. The device choice, else `features.guest_audience`, now decides: the page render audience, the guest playback session (`kids` claim on the token and Kids safe keys), the guest watch lookup, and analytics (a Kids mode guest stores no identity, same as a kids profile). Selecting a kids profile sets the hint to kids and leaving it with the password sets it to general, so a device left on a kids profile stays safe after sign out. A kids guest opening an adult video sees "This video is not in Kids mode" with Browse and Turn off Kids mode (two actions, because turning it off is the way forward and Browse the safe way out; R39 normally allows one). The Kids header shows only the logo mark, so the way to turn Kids mode off in a kids session is a quiet button above the footer. `client.json` gains `guestAudience` and `guestPlay`, and the admin Features screen gets the guest play switch and the guest segment minutes. The admin audience select is not built: the setting is reachable through `client.json` and the settings API.
+- Options: sign the cookie (it would stop a child changing it no more than the toggle does), or keep it plain as a convenience.
+- Why: R17 says anyone using the device can turn it off, so a lock would promise something the design does not give. Unsigned keeps the page cacheable per cookie value and removes a secret from the page render path.
+- Reversible: yes.
