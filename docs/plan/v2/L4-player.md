@@ -646,3 +646,48 @@ Slices: 17 (L4-00 to L4-16; 13 build slices at Must or Should, 4 Could). Stories
 
 1. Will any lesson have a second spoken language (for example Yoruba narration over English) at launch? If yes, L4-13 and L4-14 move from Could to Should and need sample files; if no, they stay parked.
 2. Is Chromecast needed at launch? The recommendation is AirPlay now and Chromecast later because Cast needs a Google Cast developer account (a client input) and a third party script; say yes only if the client will provide the account.
+
+## 11. Review amendments (24 November 2026)
+
+Added by the L4 UI review (`docs/reviews/v2/L4-review.md`). Rulings applied: R15, R16, R30, R31, R34, R39. Where this section and an earlier section disagree, this section wins.
+
+### 11.1 Tokens (add to `tokens.css`, DESIGN-SYSTEM 3.1 and 4.1 together, L4-04 builds them)
+
+| Token | Default | Why |
+| --- | --- | --- |
+| `--color-player-rail` | `#6A6E78` (was `#3A3D46`) | R34. 3.75:1 on the player surface, 3.14 to 3.23:1 on the control scrim over the lightest frame. Played yellow on it is 3.32:1, the white thumb 5.1:1. |
+| `--color-player-buffer` | `#9CA0AA` (was `#5B606B`) | Buffered must stay lighter than the unfilled rail or the bar reads backwards. 7.32:1 on the surface. |
+| `--color-player-border` (new) | `#3A3D46` | `player.css` uses the rail token for menu borders, the countdown ring track and sheet dividers (lines 361, 417, 758, 815). Those must keep the old value, so they move to this token. |
+| `--color-player-surface-raised` (new) | `#1B1D24` | Menus, tooltips and the popover surface were a raw hex in every mockup. |
+| `--color-player-switch-off` (new) | `#6E7179` | Off track, 3.45:1 on the menu surface and 4.88:1 on white. |
+
+### 11.2 Player rules the build must follow
+
+1. Control scrim holds `rgba(14,15,19,.9)` from the bottom to above the seek rail (about 58 percent of its height) and eases out above that. Time text then measures 7.9:1 or better on the lightest frame. The top bar (full screen and phone landscape) has its own top scrim, white title at least 13:1.
+2. Stacking order from the bottom: video, captions, control scrim and bar, then Skip button, Up next tile, menus, toasts. Captions rise above the scrim while the controls show. The scrim must never paint over a Skip button, tile, menu or caption.
+3. Focus on anything that sits on the picture (Skip button, Up next tile) is a 3 px dark inner ring plus the 3 px yellow ring, because yellow alone is 1.06 to 1.24:1 on a bright frame. Inside a pastel tile the dismiss button uses `--color-focus-ring` (4.73:1 on the tile).
+4. Skip button sits at least 8 px above the seek hit area (button bottom: portrait phone 102 px, phone landscape 117 px with the 21 px safe inset, desktop 118 px which leaves 16 px).
+5. A row with a switch is the control: `role="switch"` (sheet) or `role="menuitemcheckbox"` (menu), `aria-checked`, 44 px tall, the track is `aria-hidden`.
+6. Toasts use `max-width: calc(100% - 16px)`, never a fixed width (a 374 px toast overflowed a 360 px player).
+7. Every error overlay: one title, one sentence, one action that takes focus when the overlay opens. The reference line (`Reference: AD-7K4Q`) is small text, never a button.
+
+### 11.3 Story edits added to section 4.2
+
+- M43-S11 AC2: add "Autoplay next starts On for adult profiles and Off for kids profiles (R15)". AC4: the kids sheet shows Autoplay next as Off.
+- M08-S13: default per profile type as above; countdown default 5, site setting 5 to 10.
+- M43-S09: add "The AirPlay button stays hidden until the device spike passes (R16)". Chromecast stays a Could and is not built.
+- M43-S01 AC6: live region says "Skip intro available" once, no key hint (touch screens have none). The button has `aria-keyshortcuts="S"` on desktop.
+- M43-S12 edge: choosing Clear background while Edge is None switches Edge to Shadow and says so, so captions never sit on a bare bright frame.
+
+### 11.4 DESIGN-SYSTEM edits for L8 (the doc is the source of truth)
+
+3.1 and 4.1 rows from 11.1. 11.22: control bar is Play, Back 10, Forward 10, Volume, time, Chapters (when present), Captions, Settings (speed, quality, autoplay, caption appearance, shortcuts), Picture in picture, Theatre, Full screen; rail 5 px growing to 8 px with a 44 px hit area; Speed and Quality are no longer bar buttons. 11.23 and section 8: countdown default 5 (5 to 10), Autoplay next On by default for adult profiles and Off for kids profiles (R15). 14: reference code format `Reference: AD-7K4Q`. Add a rule to 4.2: focus rings on video use the two ring form in 11.2 item 3.
+
+### 11.5 Decisions to log (recommended option)
+
+| Id | Decision | Options | Why | Reversible |
+| --- | --- | --- | --- | --- |
+| L4-D16 | Two ring focus (dark inner, yellow outer) for controls on the picture | Yellow only; two ring; move the Skip button onto a dark chip | Yellow alone fails 3:1 on bright frames and a dark chip changes the approved look | Yes |
+| L4-D17 | Control scrim holds 0.9 up to the rail | Keep 0.95 to 0 fade; hold to the rail | The old fade left the time label at 4.19:1 and the rail at 1.1 to 1.6:1 on a bright frame | Yes |
+| L4-D18 | New tokens in 11.1, rail and buffer lifted together | Rail only; both | Lifting only the rail would make the buffered fill darker than the empty rail | Yes |
+| L4-D19 | Clear background with Edge None is corrected, not just warned | Warn only; correct | A warning still leaves unreadable captions on a bright frame | Yes |
