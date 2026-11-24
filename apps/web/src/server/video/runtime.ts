@@ -95,6 +95,7 @@ function build(): VideoApi {
       limiter: auth.limiter,
       guestSegmentTtlSeconds: async () =>
         (await (await themeRuntime()).settings.get('limits.guest_segment_minutes')) * 60,
+      guestMaxRank: async () => (await themeRuntime()).settings.get('maturity.guest_max_rank'),
       appOrigin: env.APP_ORIGIN,
       mediaOrigin: env.MEDIA_ORIGIN,
     }),
