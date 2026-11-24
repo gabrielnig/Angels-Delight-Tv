@@ -56,6 +56,12 @@ Mapped to the 2021 list used by the shared baseline. Re-map when the baseline mo
 
 Custom database-backed sessions (rationale in ARCHITECTURE.md 3.1).
 
+Viewer sign in options (M49):
+- Two step verification is optional TOTP for viewers (staff stay required). Recovery codes are single use and shown once. Sign in with the right password returns a signed 10 minute note, not a session, until the code is accepted. There is no self service bypass, an admin reset is audited and emailed.
+- Continue with Google is optional and hidden unless `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` are both set. Authorization code with PKCE (S256), state and nonce in a signed one shot cookie. The ID token is checked for RS256 signature, issuer, audience, expiry, nonce and `email_verified === true`. Link rules: verified email only, password confirmation to link to an existing verified account, never auto link by email, staff excluded. Our two step verification still applies after Google. A Google only account has no password hash.
+- Login events record country, time and outcome only (never IP), kept 90 days (`LOGIN_EVENT_RETENTION_DAYS`), pruned daily. New device email keys off a first party device cookie hash.
+- Sign out everywhere needs the password and ends this session too.
+
 Passwords:
 - argon2id via `@node-rs/argon2`, starting parameters m = 19456 KiB, t = 2, p = 1, tuned on the production VPS to roughly 100 to 250 ms. Parameters stored in the PHC string. Rehash on login when parameters are stale.
 - Minimum 10 characters, maximum 128, no composition rules, paste allowed, zxcvbn feedback in the UI.
@@ -238,6 +244,7 @@ Data minimisation: no date of birth, phone number, address or national id is col
 - Least privilege credentials: web has originals-bucket access only, worker has originals and media, backups use a separate token. Each database role is separate (DATA-MODEL.md section 2).
 - Logs redact `authorization`, `cookie`, `set-cookie`, `password`, `token`, `secret`, `email` (pino redact paths). Sentry has `sendDefaultPii: false` and a `beforeSend` scrubber.
 - Rotation runbook for each secret is in DEPLOYMENT.md section 12. Dual-secret support exists for playback tokens, `HLS_KEK` and `FIELD_KEK`.
+- `GOOGLE_CLIENT_SECRET` is a secret like the others: VPS env file only, never logged, rotate in the Google console and restart.
 - Never paste real keys, internal IPs or production data into any AI session. Redact first. Treat any AI session as a public channel (baseline section 2).
 - Pasted text inside code comments or dependencies that tries to instruct a reviewer or scanner is untrusted data (prompt injection).
 
@@ -250,6 +257,7 @@ Product rules:
 - Storage inventory (M45-S11): every cookie, storage key and cache is a row in `STORAGE_INVENTORY`, and a source scan fails the build on any undeclared one. The Privacy page renders the same list. Only necessary and functional storage is used, so the notice is informational and there is no consent wall.
 - Analytics posture (M45-S12): analytics is first party and anonymous. Search and share events are dropped when Global Privacy Control or Do Not Track is on. A test fails if a script loads from an origin other than the allowed list (today only Cloudflare Turnstile) or if analytics code touches cookies or device storage. Adding a tracker needs a logged decision.
 - Kids-only titles are never indexed: no sitemap entry, `noindex` on the page and on the share image (R26).
+- Login events (M49): country, time and outcome only, no IP, deleted after 90 days and with the account. Viewing activity is the watch progress data and follows the same deletion.
 - Child-friendly privacy and terms text is a client content item and stays configurable (`legal.*_version`).
 - Guests (M40): a visitor without an account gets one cookie, `__Host-ad_guest` (signed, HTTP only, 180 days), set only when they start a video. It carries a random 128 bit id used for rate limits and playback tokens, nothing about the person. Analytics store a hash of that id and the Lagos day, so the stored viewer changes every day and the id itself is never stored; in Kids mode no viewer id is stored at all. Where a guest stopped in each video (up to 100 videos), the Kids mode choice (`__Host-ad_gaud`) and a pending save stay on the device, never on the server, until the visitor signs in and chooses to import. The Privacy page names the guest cookie, its purpose and its life.
 

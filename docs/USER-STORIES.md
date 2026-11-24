@@ -3463,3 +3463,184 @@ As a donor, I want to know what is stored and for how long, so that I can trust 
 - Edge: guests are covered by the same notice.
 - Error: not applicable.
 - Empty: not applicable.
+
+## M49 Account security, activity and reach
+
+### M49-S01 Turn on two step verification (Should)
+As a viewer, I want to protect my account with an authenticator app, so that a stolen password is not enough.
+- AC1: Given I am an adult on `/account/security`, When I choose Turn on, Then I see a QR code and a manual key, and nothing is enabled until I enter a valid 6 digit code.
+- AC2: Given the code is valid, When I confirm, Then ten single-use recovery codes are shown once with Copy and Download, I must tick "I saved these codes" to finish, and I get a "Two step verification is on" email.
+- AC3: Given I leave before confirming, When I return, Then two step verification is still off and the old pending secret is discarded.
+- AC4: Given I am in a Kids profile, When I try to open the screen, Then I see the password gate (M35).
+- Edge: starting again replaces the unconfirmed secret; the secret is stored encrypted with my user key.
+- Error: an invalid code shows "That code is not right. Check the time on your phone and try again." and counts toward the code lockout.
+- Empty: not applicable.
+
+### M49-S02 Verify at sign in (Should)
+As a viewer with two step verification, I want to be asked for a code at sign in, so that only I can enter.
+- AC1: Given 2FA is on and my password is right, When I sign in, Then I am sent to `/sign-in/verify` and no session with account access exists until the code is accepted.
+- AC2: Given a valid code, When I submit, Then I continue to `next` or `/profiles` as usual.
+- AC3: Given a code already used in its 30 second window, When I submit it again, Then it is refused (replay guard).
+- AC4: Given the pending sign in is older than 10 minutes, When I submit, Then I am told to start again.
+- AC5: Given I signed in with Google, When 2FA is on, Then the same step applies.
+- Edge: codes one step either side are accepted for clock drift.
+- Error: repeated wrong codes lock the step with the shared lockout copy; the lock does not reveal whether the password was right elsewhere.
+- Empty: not applicable.
+
+### M49-S03 Recovery codes (Should)
+As a viewer, I want backup codes, so that losing my phone does not lock me out.
+- AC1: Given I enter a valid recovery code at the challenge, When I submit, Then I am signed in and that code can never be used again.
+- AC2: Given two or fewer codes remain, When I open Security, Then a warning offers Get new codes and an email is sent once.
+- AC3: Given I choose Get new codes and confirm my password, When it completes, Then ten new codes are shown once and every old code stops working.
+- Edge: codes accept any case and with or without the dash.
+- Error: a wrong password on regenerate counts toward lockout.
+- Empty: with no unused codes the card says "No backup codes left" and offers new ones.
+
+### M49-S04 Turn off or reset two step verification (Should)
+As a viewer, I want to turn it off, and as an admin, I want to help someone who lost their phone and codes, so that nobody is locked out forever.
+- AC1: Given I enter my password and a current code (or recovery code), When I choose Turn off, Then the factor and codes are deleted, my other sessions are revoked and I get an email.
+- AC2: Given I am an admin on a viewer's user page, When I choose Reset two step verification and give a reason, Then the factor and codes are removed, the person is emailed, and an audit entry records who and why.
+- AC3: Given I am not an admin, When I call the reset route, Then it is refused.
+- Edge: staff accounts cannot turn 2FA off (it is required).
+- Error: wrong password or code shows the generic message and counts toward lockout.
+- Empty: not applicable.
+
+### M49-S05 Sign in with Google (Should)
+As a viewer, I want to continue with my Google account, so that I do not have to make another password.
+- AC1: Given Google sign in is configured and enabled, When I open Sign in or Sign up, Then I see "Continue with Google" under the main button; when it is not configured the button is absent and the Google routes return 404.
+- AC2: Given I choose it and Google returns a verified email that matches no account, When I return, Then an account is created (verified, no password), a first profile step follows, and I land on `next` or `/profiles`.
+- AC3: Given Google returns an unverified email or the request fails, When I return, Then I see "We could not sign you in with Google" and a button back to Sign in, and no account is touched.
+- AC4: Given the state, nonce or PKCE check fails, When I return, Then the same generic message shows and the event is logged.
+- AC5: Given an account is a staff role, When Google returns its email, Then sign in is refused with the generic message and the attempt is audited.
+- Edge: a Google email change does not move the identity; the Google subject is the key.
+- Error: suspended or pending deletion accounts follow M02-S08.
+- Empty: not applicable.
+
+### M49-S06 Link and unlink Google (Should)
+As a viewer with a password account, I want to connect Google safely, so that I can use either.
+- AC1: Given Google returns an email that matches my verified password account, When I come back, Then I am asked for my password (or an emailed code if I have none) once before linking, and nothing is linked until I pass.
+- AC2: Given an unverified password account exists for that email, When Google returns it verified, Then the account is adopted, its old password is cleared, and it is marked verified.
+- AC3: Given I am signed in, When I choose Connect Google in Security, Then the same flow runs and the connected address shows masked.
+- AC4: Given Google is my only way in, When I choose Unlink, Then I am told to set a password first.
+- AC5: Given I link or unlink, When it completes, Then I get an email and an audit entry is written.
+- Edge: one Google identity can belong to only one account.
+- Error: wrong password on link counts toward lockout.
+- Empty: not connected shows the Connect button.
+
+### M49-S07 Guest progress after Google sign in (Should)
+As a guest who watched before signing in, I want my progress kept, so that I do not lose my place.
+- AC1: Given I have progress on this device and I sign in with Google, When I land, Then the same one time import prompt as after a password sign in appears (M01-S13 guest rules) and only fills missing or older entries, up to 100.
+- AC2: Given I decline, When I continue, Then nothing is uploaded and the device keeps its local progress.
+- Edge: the guest cookie is never merged on the server and no guest data goes to Google.
+- Error: an import failure shows a retry and leaves local data intact.
+- Empty: with no local progress there is no prompt.
+
+### M49-S08 Passkeys (Could)
+As a viewer, I want to sign in with my fingerprint or screen lock, so that I need no code.
+- AC1: Given my device supports passkeys, When I choose Add a passkey and approve, Then it is saved with a label and listed in Security.
+- AC2: Given I have a passkey, When I sign in, Then I can use it as my second step (and later in place of the password).
+- AC3: Given I remove a passkey, When I confirm, Then it stops working and I get an email.
+- Edge: unsupported browsers hide the control.
+- Error: a cancelled prompt returns quietly to the form.
+- Empty: no passkeys shows the Add button only.
+
+### M49-S09 Viewing activity (Should)
+As a viewer, I want to see what a profile watched, so that I can remove things I do not want on a shared device.
+- AC1: Given I open `/account/activity`, When it loads, Then I see the active profile's titles newest first, grouped by day, with poster, title, episode, time and progress, loaded in pages of 25.
+- AC2: Given I choose Remove on an entry, When it completes, Then it leaves the list and Continue Watching, an Undo toast shows for the undo window, and the title starts from the beginning next time.
+- AC3: Given I have several profiles, When I choose another profile tab, Then I see that profile's list only.
+- AC4: Given I am in a Kids profile, When I open the page, Then I see the password gate (M35).
+- AC5: Given a title was unpublished, When the list loads, Then it is not shown.
+- Edge: a series shows each episode watched with the series name.
+- Error: load failure shows an inline retry card; a failed remove restores the row and shows an error toast.
+- Empty: "Nothing here yet. Titles you watch will show up here." with a Browse button.
+
+### M49-S10 Clear viewing activity (Should)
+As a viewer, I want to clear a profile's whole history, so that I can start fresh.
+- AC1: Given I choose Clear all and confirm in the dialog, When it completes, Then every entry for that profile is deleted, Continue Watching is empty, and an audit entry records only the count.
+- AC2: Given I cancel or press Escape, When the dialog closes, Then nothing changes and focus returns to the button.
+- AC3: Given I want a copy first, When I look at the page, Then a link to Download my data (M02-S05) is shown.
+- Edge: other profiles are untouched.
+- Error: a failure leaves the list as it was and offers retry.
+- Empty: the Clear all button is hidden when the list is empty.
+
+### M49-S11 Caption appearance and defaults (Should)
+As a viewer, I want to set how captions look, so that I can read them on my screen.
+- AC1: Given I open `/settings/playback`, When I change size, background, edge or colour, Then the preview updates at once, the choice saves for this profile only, and the player uses it on the next caption cue.
+- AC2: Given the save fails, When the server rejects, Then the control rolls back and an error toast stays.
+- AC3: Given I choose Reset to defaults, When I confirm, Then the caption choices return to defaults.
+- AC4: Given the device is on Data saver, When I open the page, Then a note says so and the profile default is still editable.
+- Edge: a yellow colour with no background is refused when it would fail contrast.
+- Error: offline changes queue and show "Saved on this device".
+- Empty: not applicable.
+
+### M49-S12 Sign out everywhere (Should)
+As a viewer, I want one button to end every session including this one, so that a lost phone is dealt with in one step.
+- AC1: Given I choose Sign out everywhere and enter my password, When it completes, Then all sessions including this one end and I land on Sign in with a notice.
+- AC2: Given a device is playing, When its session ends, Then playback stops at the next token refresh (5 minutes at most).
+- Edge: "Sign out all other devices" stays as the milder option.
+- Error: wrong password counts toward lockout.
+- Empty: not applicable.
+
+### M49-S13 New device sign in email (Should)
+As a viewer, I want an email when someone signs in from a new device, so that I notice a stranger.
+- AC1: Given I sign in from a device not seen before on an account that has signed in before, When it succeeds, Then I get an email with device, country and time and links to change password and sign out everywhere.
+- AC2: Given a known device, When I sign in, Then no email is sent.
+- AC3: Given several new devices within an hour, When they sign in, Then at most one email is sent per hour.
+- Edge: the first ever sign in sends nothing.
+- Error: an email failure never blocks sign in and is logged.
+- Empty: not applicable.
+
+### M49-S14 Login history (Could)
+As a viewer, I want to see recent sign ins, so that I can spot anything odd.
+- AC1: Given I open Security, When it loads, Then I see my last 20 sign in attempts with outcome, country, device label and time, never an IP address.
+- AC2: Given entries are older than 90 days, When the job runs, Then they are deleted.
+- Edge: unknown country shows "Unknown place".
+- Error: load failure shows an inline retry.
+- Empty: "No sign ins to show yet."
+
+### M49-S15 TV mode (Should)
+As a viewer on a smart TV browser, I want to move around with the remote, so that I can pick and play without a mouse.
+- AC1: Given my browser is a known TV browser, or I open `/tv`, or I turn TV mode on, When Home loads, Then text is larger, focus is a thick visible ring on tiles and controls, and hover only effects and previews are off.
+- AC2: Given TV mode is on, When I press Up, Down, Left or Right, Then focus moves to the nearest visible control in that direction and rows scroll to keep it in view.
+- AC3: Given focus is on a tile, When I press Enter, Then the title opens; Back (or Escape) returns to the previous page.
+- AC4: Given I am typing in a field, When I press Left or Right, Then the keys move the caret and not the focus.
+- AC5: Given TV mode is off, When I use the site, Then nothing changes.
+- Edge: content stays inside a 5 percent safe area.
+- Error: if focus has nowhere to go, it stays and nothing is lost.
+- Empty: not applicable.
+
+### M49-S16 Sign in on a TV with a code (Could)
+As a viewer, I want to approve a TV from my phone, so that I do not type a password with a remote.
+- AC1: Given I open `/activate` on the TV, When it loads, Then I see a 6 character code and a short web address.
+- AC2: Given I sign in on my phone and enter the code, When I approve, Then the TV signs in within 10 seconds.
+- AC3: Given 10 minutes pass or 5 wrong codes are entered, When I try, Then the code is dead.
+- Edge: watching never needs this; guests can play.
+- Error: a failed approval shows a retry.
+- Empty: not applicable.
+
+### M49-S17 Cast and AirPlay (Could, owned by lane L4)
+As a viewer, I want to send a video to my TV, so that I can watch on a big screen.
+- AC1: Given my browser supports AirPlay, When I open the player, Then an AirPlay button shows and sends the stream.
+- AC2: Given Chromecast is supported by a later build, When I choose Cast, Then playback moves to the TV and the phone becomes a remote.
+- Edge: kids profiles keep their kids rules on the receiver.
+- Error: no device found shows a one line hint.
+- Empty: the button is hidden when nothing is supported.
+
+### M49-S18 Save a title for offline (Could, not now)
+As a viewer with little data, I want to save a lesson on my phone on Wi-Fi, so that I can watch it later.
+- AC1: Given I use the installed app on a supported browser, When I choose Save offline on a title, Then I see the size and a storage check before it starts, and it downloads at 360p or 480p only.
+- AC2: Given storage is short, When I start, Then I am told how much space is needed and what I can remove.
+- AC3: Given the download completes, When I am offline, Then it plays from the device.
+- Edge: at most 3 titles and 500 MB by default, both configurable.
+- Error: an interrupted download resumes; a failed one shows retry.
+- Empty: "No saved lessons yet."
+
+### M49-S19 Offline licence, expiry and cleanup (Could, not now)
+As the owner, I want saved lessons to expire and be removed, so that the offline copies stay controlled.
+- AC1: Given a title is saved, When 14 days pass (configurable) or the viewer signs out, Then the copy and its key are deleted from the device.
+- AC2: Given the title is unpublished, When the device next connects, Then the copy is removed.
+- AC3: Given I open Saved lessons, When it loads, Then each shows size and days left with a Remove button.
+- Edge: a Kids profile only sees kids titles.
+- Error: if the licence cannot be renewed, the title says "Reconnect to keep this".
+- Empty: not applicable.

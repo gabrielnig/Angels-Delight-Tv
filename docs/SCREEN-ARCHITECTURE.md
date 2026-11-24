@@ -607,6 +607,18 @@ A visitor without an account uses the same screens as a viewer, with the differe
 - **S88 Import device history prompt.** After sign in, a dialog "Add what you watched here?" with Not now and Add to my history, then a toast with the count. Never for a kids profile. Story M40-S13.
 - **S89 Device storage and privacy.** The note "Your place is not being saved on this device", and the Privacy page text for the guest cookie and the anonymous daily id. Clear history on this device (M40-S18) is not built yet. Stories M40-S16, M40-S18.
 
+### Screens 170 to 179. Account security, activity and reach (M49)
+- **S170 Security overview.** Two step verification card, connected sign in card (Google), devices with Sign out everywhere, and sign in history. Route `/account/security`. Stories M49-S01 to S03, S05, S12, S13.
+- **S171 Turn on two step verification.** QR code with manual key, code confirm, recovery codes with the "I saved these codes" gate.
+- **S172 Sign in challenge.** `/sign-in/verify` with the code, recovery code entry and lost phone help.
+- **S173 Google sign in.** The Google button on Sign in and Sign up, `/sign-in/link-google` (password confirmation), `/sign-in/google-failed`, `/sign-up/google` (finish sign up). Absent without keys.
+- **S174 Viewing activity.** `/account/activity`, grouped list, Remove with Undo, Clear all dialog, empty, profile tabs, Kids password gate. Story M49-S09.
+- **S175 Playback settings.** Caption size, background, edge, colour, contrast, live preview, Reset to defaults, This device TV mode, Data saver device note.
+- **S176 Sign out everywhere.** Dialog with password, device rows with icons, This device badge.
+- **S177 TV mode.** `/tv` and `html[data-tv]`: large type, thick focus ring, row scrolling. The player keys are owned by L4.
+- **S178 Offline downloads.** Not now.
+- **S179 Passkeys.** Not now.
+
 ## 7. Key flows (for navigation checking)
 
 1. **New viewer.** Landing, Sign up, Verify email, Profile picker (create first profile), Home, Title detail, Watch.

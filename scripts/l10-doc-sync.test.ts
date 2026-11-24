@@ -70,3 +70,57 @@ describe('design system documents the Google button exception (plan 12.2, R38)',
     );
   });
 });
+
+describe('M49 docs are in step with the build (L10 slice 11)', () => {
+  it('has the M49 stories, including the not now ones', () => {
+    const us = read('docs/USER-STORIES.md');
+    expect(us).toContain('## M49 Account security, activity and reach');
+    for (const id of ['M49-S01', 'M49-S05', 'M49-S09', 'M49-S15', 'M49-S18', 'M49-S19'])
+      expect(us).toContain(`### ${id} `);
+  });
+
+  it('lists M49 as a module with its needs from the client', () => {
+    const modules = read('docs/MODULES.md');
+    expect(modules).toMatch(/\| M49 \| Account security, activity and reach \|/);
+    expect(modules).toContain('### M49 Account security, activity and reach [READY]');
+    expect(read('docs/BUILD-PLAN.md')).toMatch(/L10 Account and reach \(M49\)/);
+  });
+
+  it('documents the Google keys for the client and the secret for security', () => {
+    const client = read('docs/CLIENT-INPUTS.md');
+    expect(client).toContain('GOOGLE_CLIENT_ID');
+    expect(client).toContain('GOOGLE_CLIENT_SECRET');
+    expect(client).toContain('/api/auth/google/callback');
+    const sec = read('docs/SECURITY.md');
+    expect(sec).toContain('GOOGLE_CLIENT_SECRET');
+    expect(sec).toMatch(/optional TOTP/);
+    expect(sec).toMatch(/login events/i);
+  });
+
+  it('adds the M49 screens and records offline downloads and passkeys as not now', () => {
+    const screens = read('docs/SCREEN-ARCHITECTURE.md');
+    expect(screens).toContain('### Screens 170 to 179. Account security, activity and reach (M49)');
+    expect(screens).toContain('/account/activity');
+    expect(screens).toContain('/sign-in/link-google');
+    expect(read('docs/MODULES.md')).toMatch(/Not now: offline downloads/);
+    expect(read('docs/MODULES.md')).toMatch(/Not now: passkeys/);
+  });
+
+  it('logs the lane decisions', () => {
+    const d = read('docs/DECISIONS.md');
+    for (const t of [
+      'Account activity and security use server actions',
+      'Passkeys are not now',
+      'Viewing activity is the watch progress table',
+      'Offline downloads are not now',
+      'TV sign in by code is not built',
+    ])
+      expect(d).toContain(t);
+  });
+
+  it('replaces the no social login line in ARCHITECTURE', () => {
+    const a = read('docs/ARCHITECTURE.md');
+    expect(a).not.toContain('no social login is needed at launch');
+    expect(a).toContain('Google sign in is optional');
+  });
+});

@@ -59,6 +59,7 @@ Accepted video types, the size limits and the quota are enforced by the same upl
 | VPS provider | The server | Owner, region, IP |
 | GitHub | Code and image registry | Owner, who can push |
 | Email sending provider | Verification and notice emails | SMTP url, sender domain DNS records |
+| Optional: Google Cloud OAuth client (M49) | Continue with Google on Sign in and Sign up | Client id and secret, set as `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` (both or neither). Create a Web application client with the redirect URI `<APP_ORIGIN>/api/auth/google/callback` and fill in the consent screen with the platform name and logo. Without the keys the Google button is hidden |
 | Optional: Cloudflare Turnstile | Bot protection on sign up | Site key and secret |
 | Optional: error reporting (Sentry or GlitchTip) | Error alerts | DSN. Hosted outside Nigeria is a cross border transfer, list it in the privacy notice |
 | Optional: uptime monitor and dead man's switch | Alerts and missed backup alerts | Check urls |
