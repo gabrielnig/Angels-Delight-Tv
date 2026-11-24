@@ -59,12 +59,23 @@ export function TopNav({
   const triggerRef = useRef<HTMLButtonElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
 
+  const sentinelRef = useRef<HTMLSpanElement>(null);
+
+  // The nav turns solid once a 40px sentinel at the page top leaves the viewport (M47-S04).
+  // Without IntersectionObserver the nav is solid, the safe default.
   useEffect(() => {
     if (!overHero) return;
-    const onScroll = () => setScrolled(window.scrollY > 48);
-    onScroll();
-    window.addEventListener('scroll', onScroll, { passive: true });
-    return () => window.removeEventListener('scroll', onScroll);
+    const sentinel = sentinelRef.current;
+    if (typeof IntersectionObserver === 'undefined' || !sentinel) {
+      setScrolled(true);
+      return;
+    }
+    const observer = new IntersectionObserver((entries) => {
+      const last = entries[entries.length - 1];
+      if (last) setScrolled(!last.isIntersecting);
+    });
+    observer.observe(sentinel);
+    return () => observer.disconnect();
   }, [overHero]);
 
   useEffect(() => {
@@ -117,9 +128,13 @@ export function TopNav({
       <a className="ad-skip" href="#main">
         Skip to main content
       </a>
+      {overHero ? (
+        <span ref={sentinelRef} className="ad-nav__sentinel" data-nav-sentinel aria-hidden="true" />
+      ) : null}
       <header
         className="ad-nav"
         data-surface={solid ? 'solid' : 'clear'}
+        data-hero={overHero ? 'true' : undefined}
         data-back={onBack ? 'true' : undefined}
         data-skin={skin === 'soft' ? 'soft' : undefined}
       >

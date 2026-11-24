@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react';
+import { act, cleanup, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import { BottomTabBar, SiteFooter, TopNav } from './TopNav';
@@ -132,7 +132,50 @@ describe('TopNav', () => {
     expect(onExit).toHaveBeenCalled();
   });
 
-  it('is solid on pages without a hero and transparent over a hero', () => {
+  const heroNav = (
+    <TopNav
+      brand={{ name: 'Angels Delight TV', href: '/' }}
+      links={links}
+      currentPath="/"
+      profileName="Ada"
+      menu={menu}
+      overHero
+    />
+  );
+
+  function mockObserver() {
+    const instances: {
+      callback: IntersectionObserverCallback;
+      target?: Element;
+      disconnect: ReturnType<typeof vi.fn>;
+    }[] = [];
+    class FakeObserver {
+      disconnect = vi.fn();
+      constructor(public callback: IntersectionObserverCallback) {
+        instances.push(this);
+      }
+      observe(target: Element) {
+        (this as { target?: Element }).target = target;
+      }
+      unobserve() {}
+      takeRecords() {
+        return [];
+      }
+    }
+    vi.stubGlobal('IntersectionObserver', FakeObserver);
+    const fire = (isIntersecting: boolean) =>
+      act(() => {
+        for (const i of instances)
+          i.callback(
+            [{ isIntersecting } as IntersectionObserverEntry],
+            i as unknown as IntersectionObserver,
+          );
+      });
+    return { instances, fire };
+  }
+
+  it('is solid on pages without a hero and clear over a hero at the top', () => {
+    const { fire } = mockObserver();
     const { rerender, container } = render(
       <TopNav
         brand={{ name: 'Angels Delight TV', href: '/' }}
@@ -143,17 +186,61 @@ describe('TopNav', () => {
       />,
     );
     expect(container.querySelector('header')).toHaveAttribute('data-surface', 'solid');
-    rerender(
+    rerender(heroNav);
+    fire(true);
+    expect(container.querySelector('header')).toHaveAttribute('data-surface', 'clear');
+    vi.unstubAllGlobals();
+  });
+
+  it('turns solid when the 40px sentinel leaves the viewport, with no scroll listener', () => {
+    const { instances, fire } = mockObserver();
+    const add = vi.spyOn(window, 'addEventListener');
+    const { container } = render(heroNav);
+    expect(add.mock.calls.filter(([type]) => type === 'scroll')).toHaveLength(0);
+    const sentinel = container.querySelector('[data-nav-sentinel]');
+    expect(sentinel).not.toBeNull();
+    expect(instances[0]?.target).toBe(sentinel);
+    fire(true);
+    expect(container.querySelector('header')).toHaveAttribute('data-surface', 'clear');
+    fire(false);
+    expect(container.querySelector('header')).toHaveAttribute('data-surface', 'solid');
+    add.mockRestore();
+    vi.unstubAllGlobals();
+  });
+
+  it('is solid at load when the page is restored scrolled', () => {
+    const { fire } = mockObserver();
+    const { container } = render(heroNav);
+    fire(false);
+    expect(container.querySelector('header')).toHaveAttribute('data-surface', 'solid');
+    vi.unstubAllGlobals();
+  });
+
+  it('disconnects the observer on unmount and has none when not over a hero', () => {
+    const { instances } = mockObserver();
+    const { unmount } = render(heroNav);
+    expect(instances).toHaveLength(1);
+    unmount();
+    expect(instances[0]?.disconnect).toHaveBeenCalled();
+    cleanup();
+    render(
       <TopNav
         brand={{ name: 'Angels Delight TV', href: '/' }}
         links={links}
         currentPath="/"
         profileName="Ada"
         menu={menu}
-        overHero
       />,
     );
-    expect(container.querySelector('header')).toHaveAttribute('data-surface', 'clear');
+    expect(instances).toHaveLength(1);
+    vi.unstubAllGlobals();
+  });
+
+  it('falls back to solid when IntersectionObserver is missing', () => {
+    vi.stubGlobal('IntersectionObserver', undefined);
+    const { container } = render(heroNav);
+    expect(container.querySelector('header')).toHaveAttribute('data-surface', 'solid');
+    vi.unstubAllGlobals();
   });
 });
 

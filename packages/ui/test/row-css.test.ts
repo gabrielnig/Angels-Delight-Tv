@@ -5,7 +5,8 @@ import { repoRoot, scanCss } from './css-scan';
 
 const read = (p: string) => readFileSync(resolve(repoRoot, p), 'utf8');
 const rules = scanCss(read('packages/ui/src/components.css'));
-const flat = (body?: string) => (body ?? '').replace(/\s+/g, ' ').replace(/\( /g, '(').replace(/ \)/g, ')');
+const flat = (body?: string) =>
+  (body ?? '').replace(/\s+/g, ' ').replace(/\( /g, '(').replace(/ \)/g, ')');
 const sel = (s: string) => (r: { selector: string }) => r.selector.replace(/\s+/g, ' ') === s;
 
 function containerCv(min: number): number | undefined {
@@ -44,7 +45,8 @@ describe('row geometry (R11, M47-S01)', () => {
   });
 
   it('the next card peeks 30 to 55 percent at every width from 360 to 2560', () => {
-    const cv = (w: number) => (w >= 1920 ? 6.3 : w >= 1280 ? 5.3 : w >= 960 ? 4.3 : w >= 600 ? 3.3 : 2.3);
+    const cv = (w: number) =>
+      w >= 1920 ? 6.3 : w >= 1280 ? 5.3 : w >= 960 ? 4.3 : w >= 600 ? 3.3 : 2.3;
     for (const w of [360, 390, 600, 960, 1280, 1440, 1920, 2560]) {
       const container = Math.min(w, w >= 1920 ? 1920 : 1440);
       const gutter = Math.min(56, Math.max(16, 0.04 * w));

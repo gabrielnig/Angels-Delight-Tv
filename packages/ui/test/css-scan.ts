@@ -16,8 +16,13 @@ export type CssRule = {
 export function scanCss(css: string, file = 'inline.css'): CssRule[] {
   const text = css.replace(/\/\*[\s\S]*?\*\//g, (m) => m.replace(/[^\n]/g, ' '));
   const rules: CssRule[] = [];
-  const stack: { prelude: string; isAt: boolean; start: number; bodyStart: number; line: number }[] =
-    [];
+  const stack: {
+    prelude: string;
+    isAt: boolean;
+    start: number;
+    bodyStart: number;
+    line: number;
+  }[] = [];
   let last = 0;
   let line = 1;
   let preludeLine = 1;
@@ -26,8 +31,15 @@ export function scanCss(css: string, file = 'inline.css'): CssRule[] {
     if (c === '\n') line += 1;
     if (c === '{') {
       const prelude = text.slice(last, i).trim();
-      const startLine = preludeLine + (text.slice(last, i).match(/^\s*/)?.[0].split('\n').length ?? 1) - 1;
-      stack.push({ prelude, isAt: prelude.startsWith('@'), start: last, bodyStart: i + 1, line: startLine });
+      const startLine =
+        preludeLine + (text.slice(last, i).match(/^\s*/)?.[0].split('\n').length ?? 1) - 1;
+      stack.push({
+        prelude,
+        isAt: prelude.startsWith('@'),
+        start: last,
+        bodyStart: i + 1,
+        line: startLine,
+      });
       last = i + 1;
       preludeLine = line;
     } else if (c === '}') {
@@ -69,11 +81,10 @@ export function cssFiles(dirs: string[]): string[] {
 }
 
 export function allRules(dirs = ['packages', 'apps/web/src']): CssRule[] {
-  return cssFiles(dirs).flatMap((f) =>
-    scanCss(readFileSync(f, 'utf8'), relative(repoRoot, f)),
-  );
+  return cssFiles(dirs).flatMap((f) => scanCss(readFileSync(f, 'utf8'), relative(repoRoot, f)));
 }
 
-export const mediaIncludesHover = (at: string[]) => at.some((a) => /\(\s*hover:\s*hover\s*\)/.test(a));
+export const mediaIncludesHover = (at: string[]) =>
+  at.some((a) => /\(\s*hover:\s*hover\s*\)/.test(a));
 export const mediaIncludesFine = (at: string[]) =>
   at.some((a) => /\(\s*hover:\s*hover\s*\)/.test(a) && /\(\s*pointer:\s*fine\s*\)/.test(a));

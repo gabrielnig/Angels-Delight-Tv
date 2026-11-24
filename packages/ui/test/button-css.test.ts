@@ -17,17 +17,23 @@ describe('button size tokens (M47-S08, DEC-L8-02)', () => {
   it('every button keeps a 44px hit area through the before element', () => {
     const before = one('.ad-btn::before');
     expect(before?.body).toMatch(/position:\s*absolute/);
-    expect(before?.body).toMatch(/inset:\s*min\(0px, calc\(\(var\(--touch-target\) - 100%\) \/ -2\)\) 0/);
+    expect(before?.body).toMatch(
+      /inset:\s*min\(0px, calc\(\(var\(--touch-target\) - 100%\) \/ -2\)\) 0/,
+    );
     expect(one('.ad-btn')?.body).toMatch(/position:\s*relative/);
   });
 
   it('coarse pointers get at least 44px tall buttons', () => {
-    const coarse = one(".ad-btn, .ad-btn[data-size='sm']", (a) => a.some((x) => /pointer:\s*coarse/.test(x)));
+    const coarse = one(".ad-btn, .ad-btn[data-size='sm']", (a) =>
+      a.some((x) => /pointer:\s*coarse/.test(x)),
+    );
     expect(coarse?.body).toMatch(/min-height:\s*var\(--touch-target\)/);
   });
 
   it('press uses the press duration and hover uses the hover tokens', () => {
-    expect(one('.ad-btn:active:not(:disabled)')?.body).toMatch(/transition-duration:\s*var\(--motion-press\)/);
+    expect(one('.ad-btn:active:not(:disabled)')?.body).toMatch(
+      /transition-duration:\s*var\(--motion-press\)/,
+    );
     expect(one('.ad-btn')?.body).toMatch(/var\(--motion-hover\) var\(--ease-out-strong\)/);
   });
 

@@ -13,7 +13,9 @@ describe('reduced motion (M47-S07, R31)', () => {
   });
 
   it('no hover scale stays active under reduce', () => {
-    const reduce = rules.filter((r) => r.at.some((a) => /prefers-reduced-motion:\s*reduce/.test(a)));
+    const reduce = rules.filter((r) =>
+      r.at.some((a) => /prefers-reduced-motion:\s*reduce/.test(a)),
+    );
     const scaling = rules.filter(
       (r) => /:hover/.test(r.selector) && /transform:\s*(?!none)/.test(r.body),
     );
@@ -27,7 +29,9 @@ describe('reduced motion (M47-S07, R31)', () => {
   });
 
   it('skeleton shimmer is replaced by a static fill', () => {
-    const reduce = rules.filter((r) => r.at.some((a) => /prefers-reduced-motion:\s*reduce/.test(a)));
+    const reduce = rules.filter((r) =>
+      r.at.some((a) => /prefers-reduced-motion:\s*reduce/.test(a)),
+    );
     const shimmer = reduce.find((r) => r.selector.includes('.ad-skeleton::after'));
     expect(shimmer?.body).toMatch(/animation:\s*none/);
     expect(shimmer?.body).toMatch(/display:\s*none/);
