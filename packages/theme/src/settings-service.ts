@@ -23,6 +23,7 @@ import {
   type SettingKey,
   type SettingTier,
 } from './settings-registry';
+import { crossCheckMonetization, type MonetizationContext } from './settings-monetization';
 import type { SettingsStore, SettingsTx } from './settings-store';
 
 export const SETTINGS_ACTIONS = {
@@ -108,6 +109,8 @@ export interface SettingsServiceOptions {
   now?: () => number;
   /** Who may change `super` tier keys. Defaults to the Super admin role (D-128). */
   isSuper?: (actor: Actor) => boolean;
+  /** Server facts the monetization rules need. Defaults to reading PAYSTACK_SECRET_KEY from the environment. */
+  monetizationContext?: () => MonetizationContext;
 }
 
 function assertAdmin(actor: Actor): void {
@@ -125,6 +128,7 @@ export class SettingsService {
   private readonly store: SettingsStore;
   private readonly logger: Logger;
   private readonly isSuper: (actor: Actor) => boolean;
+  private readonly monetizationContext: () => MonetizationContext;
   private readonly cache: TtlCache<ResolvedSettings>;
   private readonly pageCache = new Map<PageSlug, TtlCache<PublishedPage | null>>();
   private readonly now: () => number;
@@ -134,6 +138,9 @@ export class SettingsService {
     this.logger = options.logger;
     this.now = options.now ?? Date.now;
     this.isSuper = options.isSuper ?? ((actor) => isSuperAdminRole(actor.role));
+    this.monetizationContext =
+      options.monetizationContext ??
+      (() => ({ paystackKeyPresent: Boolean(process.env.PAYSTACK_SECRET_KEY) }));
     this.cache = new TtlCache(THEME_CACHE_TTL_MS, this.now);
   }
 
@@ -211,6 +218,17 @@ export class SettingsService {
     }
     if (Object.keys(errors).length > 0)
       throw new ValidationFailed(errors, 'Some settings are not valid');
+
+    if (valid.some(([key]) => key.startsWith('donate.') || key.startsWith('sponsors.'))) {
+      const merged = { ...(await this.getAll()), ...Object.fromEntries(valid) } as ResolvedSettings;
+      const cross = crossCheckMonetization(merged, this.monetizationContext());
+      const touched = new Set<string>(valid.map(([key]) => key));
+      const relevant = Object.fromEntries(
+        Object.entries(cross).filter(([key]) => touched.has(key)),
+      );
+      if (Object.keys(relevant).length > 0)
+        throw new ValidationFailed(relevant, 'Some settings are not valid');
+    }
 
     await this.store.transaction(async (tx) => {
       const diffs: { key: string; old: unknown; new: unknown }[] = [];

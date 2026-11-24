@@ -348,3 +348,58 @@ describe('SMTP_URL disabled mode (no email credentials yet)', () => {
     }
   });
 });
+
+describe('Paystack variables (M48)', () => {
+  it('accepts a missing Paystack key, donations stay off', () => {
+    const env = loadWebEnv(devWeb);
+    expect(env.PAYSTACK_SECRET_KEY).toBeUndefined();
+    expect(env.PAYSTACK_BASE_URL).toBe('https://api.paystack.co');
+  });
+
+  it('accepts a test key in development and in production', () => {
+    expect(loadWebEnv({ ...devWeb, PAYSTACK_SECRET_KEY: 'sk_test_abc123' }).PAYSTACK_SECRET_KEY).toBe(
+      'sk_test_abc123',
+    );
+    expect(() => loadWebEnv({ ...prodWeb, PAYSTACK_SECRET_KEY: 'sk_test_abc123' })).not.toThrow();
+  });
+
+  it('refuses an sk_live key outside production', () => {
+    expect(failureNames(() => loadWebEnv({ ...devWeb, PAYSTACK_SECRET_KEY: 'sk_live_abc123' }))).toEqual([
+      'PAYSTACK_SECRET_KEY',
+    ]);
+    expect(
+      failureNames(() => loadWorkerEnv({ ...devWorker, PAYSTACK_SECRET_KEY: 'sk_live_abc123' })),
+    ).toEqual(['PAYSTACK_SECRET_KEY']);
+    expect(() => loadWebEnv({ ...prodWeb, PAYSTACK_SECRET_KEY: 'sk_live_abc123' })).not.toThrow();
+  });
+
+  it('refuses a key that is neither a test nor a live secret key, without echoing it', () => {
+    let message = '';
+    try {
+      loadWebEnv({ ...devWeb, PAYSTACK_SECRET_KEY: 'pk_test_publickey' });
+    } catch (error) {
+      message = (error as Error).message;
+    }
+    expect(message).toContain('PAYSTACK_SECRET_KEY');
+    expect(message).not.toContain('pk_test_publickey');
+  });
+
+  it('refuses a non https base url in production', () => {
+    expect(
+      failureNames(() => loadWebEnv({ ...prodWeb, PAYSTACK_BASE_URL: 'http://api.example.com' })),
+    ).toEqual(['PAYSTACK_BASE_URL']);
+    expect(loadWebEnv({ ...devWeb, PAYSTACK_BASE_URL: 'http://127.0.0.1:4010' }).PAYSTACK_BASE_URL).toBe(
+      'http://127.0.0.1:4010',
+    );
+  });
+
+  it('takes an optional receipt token secret of 32 bytes', () => {
+    expect(loadWebEnv(devWeb).DONATE_RECEIPT_TOKEN_SECRET).toBeUndefined();
+    expect(loadWebEnv({ ...devWeb, DONATE_RECEIPT_TOKEN_SECRET: key(9) }).DONATE_RECEIPT_TOKEN_SECRET).toBeInstanceOf(
+      Uint8Array,
+    );
+    expect(failureNames(() => loadWebEnv({ ...devWeb, DONATE_RECEIPT_TOKEN_SECRET: 'short' }))).toEqual([
+      'DONATE_RECEIPT_TOKEN_SECRET',
+    ]);
+  });
+});

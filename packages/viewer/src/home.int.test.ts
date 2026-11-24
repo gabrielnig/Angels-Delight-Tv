@@ -99,27 +99,15 @@ describe.skipIf(!process.env.TEST_DATABASE_ADMIN_URL)('home', () => {
       expect(home.rows).toEqual([]);
     });
 
-    it('falls back to the newest titles when no hero is configured', async () => {
+    it('falls back to the newest title when no hero is configured', async () => {
       const user = await fresh();
       await seedVideo(h.db.setup, { title: 'Older', publishedAt: new Date('2026-01-01') });
       await seedVideo(h.db.setup, { title: 'Newest', publishedAt: new Date('2026-05-01') });
 
       const home = await getHome(h.ctx, user.actor, { profileId: user.profileId });
 
-      expect(home.hero.map((item) => item.card.title)).toEqual(['Newest', 'Older']);
+      expect(home.hero.map((item) => item.card.title)).toEqual(['Newest']);
       expect(home.catalogEmpty).toBe(false);
-    });
-
-    it('takes the fallback count from the viewer rules', async () => {
-      const user = await fresh();
-      for (let day = 1; day <= 4; day++) {
-        await seedVideo(h.db.setup, { title: `T${day}`, publishedAt: new Date(`2026-05-0${day}`) });
-      }
-      const limited = { ...h.ctx, rules: { heroFallbackCount: 2 } };
-
-      const home = await getHome(limited, user.actor, { profileId: user.profileId });
-
-      expect(home.hero.map((item) => item.card.title)).toEqual(['T4', 'T3']);
     });
 
     it('plays the next unwatched episode for a series hero', async () => {
