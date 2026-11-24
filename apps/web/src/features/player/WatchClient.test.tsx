@@ -338,6 +338,48 @@ describe('WatchClient', () => {
     });
   });
 
+  describe('Data saver hint (L4-11)', () => {
+    it('says so when Turn on cannot be saved, and keeps the toast until dismissed', async () => {
+      const save = vi.fn(async () => {
+        throw new Error('offline');
+      });
+      const settings = {
+        autoplayNext: true,
+        dataSaver: false,
+        speed: 1,
+        captionsDefault: false,
+        captionLanguage: 'en',
+      };
+      const { engine } = mount(await dataFor('v-sky'), {
+        prefsSync: { save, migrate: vi.fn(async () => settings) },
+      });
+      await waitFor(() => expect(engine.loads).toHaveLength(1));
+      const video = document.querySelector('video')!;
+      const fire = (name: string) => act(() => void video.dispatchEvent(new Event(name)));
+      vi.useFakeTimers({ shouldAdvanceTime: true });
+      try {
+        fire('playing');
+        fire('waiting');
+        await act(async () => void (await vi.advanceTimersByTimeAsync(1_000)));
+        fire('playing');
+        await act(async () => void (await vi.advanceTimersByTimeAsync(5_000)));
+        fire('waiting');
+        fireEvent.click(screen.getByRole('button', { name: 'Turn on' }));
+        await act(async () => void (await vi.advanceTimersByTimeAsync(0)));
+        expect(save).toHaveBeenCalledWith('p1', { dataSaver: true });
+        expect(
+          screen.getByText('Could not save Data saver. It still applies to this video.'),
+        ).toBeTruthy();
+        await act(async () => void (await vi.advanceTimersByTimeAsync(60_000)));
+        expect(
+          screen.getByText('Could not save Data saver. It still applies to this video.'),
+        ).toBeTruthy();
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+  });
+
   describe('up next polish (L4-08)', () => {
     function nearEnd(video: HTMLVideoElement) {
       Object.defineProperty(video, 'duration', { value: 100, configurable: true });

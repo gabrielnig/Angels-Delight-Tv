@@ -6,6 +6,7 @@ import {
   Player,
   type CaptionStyle,
   type EndScreenData,
+  type PlayerController,
   type PlayerPreferences,
   type PlayerProps,
   type UpNextItem,
@@ -212,13 +213,18 @@ export function WatchClient({
     [viewer.profileId, viewer.kids, serverPrefs],
   );
   const lastSynced = useRef<PlayerPreferences | null>(null);
+  const controllerRef = useRef<PlayerController | null>(null);
   const onPreferencesChange = useCallback(
     (prefs: PlayerPreferences) => {
       savePreferences(storage(), viewer.profileId, prefs);
       const patch = serverChanges(lastSynced.current ?? preferences, prefs);
       if (Object.keys(patch).length === 0) return;
       lastSynced.current = prefs;
-      void prefsSync?.save(viewer.profileId, patch)?.catch(() => undefined);
+      void prefsSync?.save(viewer.profileId, patch)?.catch(() => {
+        // Data saver is the one choice that changes what the viewer is spending right now, so say it did not save.
+        if ('dataSaver' in patch)
+          controllerRef.current?.notify(msg('player.dataSaver.saveFailed'), 'error', true);
+      });
     },
     [viewer.profileId, preferences, prefsSync],
   );
@@ -363,6 +369,9 @@ export function WatchClient({
             {...(data.chapters ? { chapters: data.chapters } : {})}
             captionStyle={captionStyle}
             lockAutoplay={viewer.kids}
+            onController={(c) => {
+              controllerRef.current = c;
+            }}
             onCaptionStyleChange={onCaptionStyleChange}
             resume={resume}
             preferences={preferences}

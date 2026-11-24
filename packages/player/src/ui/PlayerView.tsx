@@ -39,7 +39,7 @@ import {
 import { CaptionAppearance } from './CaptionAppearance';
 import { CaptionRows, ChapterRows, MenuShell, type MenuId } from './Menus';
 import { SettingsMenu } from './SettingsMenu';
-import { ErrorOverlay, Spinner, Toast, UpNextTile, type OverlayLinks } from './Overlays';
+import { ErrorOverlay, HintBar, Spinner, Toast, UpNextTile, type OverlayLinks } from './Overlays';
 import { SeekBar } from './SeekBar';
 import { SkipButton } from './SkipButton';
 import { ShortcutsDialog } from './ShortcutsDialog';
@@ -92,6 +92,7 @@ export function PlayerView(props: PlayerViewProps) {
   playingRef.current = state.playing;
 
   const [menu, setMenu] = useState<MenuId | null>(null);
+  const [settingsStart, setSettingsStart] = useState<'quality' | undefined>(undefined);
   const [capStyle, setCapStyle] = useState<CaptionStyle>(
     props.captionStyle ?? DEFAULT_CAPTION_STYLE,
   );
@@ -253,6 +254,7 @@ export function PlayerView(props: PlayerViewProps) {
 
   const toggleMenu = (id: MenuId) => (e: { currentTarget: HTMLElement }) => {
     openerRef.current = e.currentTarget;
+    setSettingsStart(undefined);
     setMenu((m) => (m === id ? null : id));
   };
 
@@ -465,6 +467,7 @@ export function PlayerView(props: PlayerViewProps) {
           kind={state.error}
           position={state.currentTime}
           reference={reference}
+          retries={state.retries}
           links={links}
           onRetry={() => controller?.retry()}
           onSignIn={props.onSignIn}
@@ -506,6 +509,23 @@ export function PlayerView(props: PlayerViewProps) {
           item={next}
           onPlay={() => controller?.playNext()}
           onDismiss={() => controller?.dismissUpNextTile()}
+        />
+      ) : null}
+
+      {state.hint && !state.error ? (
+        <HintBar
+          kind={state.hint.kind}
+          onAction={() => {
+            if (state.hint?.kind === 'data-saver') {
+              controller?.enableDataSaver();
+              return;
+            }
+            controller?.dismissHint();
+            openerRef.current = containerRef.current;
+            setSettingsStart('quality');
+            setMenu('settings');
+          }}
+          onDismiss={() => controller?.dismissHint()}
         />
       ) : null}
 
@@ -701,6 +721,7 @@ export function PlayerView(props: PlayerViewProps) {
           </button>
           {menu === 'settings' ? (
             <SettingsMenu
+              initialView={settingsStart}
               rate={state.rate}
               onRate={(r) => controller?.setRate(r)}
               quality={showQuality ? qualityMenu : null}

@@ -1294,3 +1294,9 @@ Per video tri state, site default (Super admin), Admin changes it with a reason 
 - Options: keep the loose buttons and add a gear, or one panel for everything.
 - Why: one predictable place, the same on phone and desktop, and the shortcuts dialog gets a visible entry point instead of only the question mark key.
 - Reversible: yes.
+
+## D-243 Slow connection help is one sentence and one action, and every player error shows one action that takes focus (lane L4, R39)
+- Decision: on a locked quality a stall of 8 seconds shows "Slow connection. Try Auto or a lower quality" with Open quality. Two stalls within 60 seconds on Auto with Data saver off show, once per video, "Videos load slowly right now. Turn on Data saver to use less data" with Turn on and Dismiss. Each player error shows one title, one sentence and one action, and the action takes focus. Cannot play loses its Report link and shows `Reference: AD-7K4Q` as small text, connection lost shows it from the third retry. A Downlink under 1.5 Mbps counts as low data like Save-Data and 2g or 3g. A Data saver choice that cannot be saved shows a toast that stays until dismissed.
+- Options: keep the Report link beside Try again, show the reference inside the sentence, hint on every stall.
+- Why: R39 allows one action per error, the reference is for support and should not read as part of the message, and a hint on every stall would become noise.
+- Reversible: yes.

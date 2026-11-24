@@ -1,6 +1,7 @@
 import { msg } from '@ad/shared/messages';
+import { useEffect, useRef } from 'react';
 import { formatClock } from '../format';
-import type { PlayerErrorKind, PlayerToast } from '../types';
+import type { PlayerErrorKind, PlayerHint, PlayerToast } from '../types';
 import { CloseIcon, PlayIcon } from './icons';
 
 export interface OverlayLinks {
@@ -13,6 +14,8 @@ interface ErrorOverlayProps {
   kind: PlayerErrorKind;
   position: number;
   reference: string;
+  /** Retries in a row. The reference line shows on connection lost from the third. */
+  retries?: number;
   links: OverlayLinks;
   onRetry(): void;
   onSignIn?: (() => void) | undefined;
@@ -37,7 +40,7 @@ const COPY: Record<PlayerErrorKind, { title: string; body: (p: number, ref: stri
   },
   'cannot-play': {
     title: msg('player.error.cannotPlay.title'),
-    body: (_p, ref) => msg('player.error.cannotPlay.body', { reference: ref }),
+    body: () => msg('player.error.cannotPlay.body'),
   },
   'unsupported-browser': {
     title: msg('player.error.unsupportedBrowser.title'),
@@ -49,17 +52,24 @@ export function ErrorOverlay({
   kind,
   position,
   reference,
+  retries = 0,
   links,
   onRetry,
   onSignIn,
 }: ErrorOverlayProps) {
   const copy = COPY[kind];
+  const actions = useRef<HTMLDivElement>(null);
+  // One action per error (R39), and it takes focus so a keyboard or screen reader viewer lands on it.
+  useEffect(() => {
+    actions.current?.querySelector<HTMLElement>('button, a[href]')?.focus();
+  }, [kind]);
+  const showReference = kind === 'cannot-play' || (kind === 'connection-lost' && retries >= 3);
   return (
     <div className="adp-overlay adp-overlay--error" role="alert" data-kind={kind}>
       <div className="adp-overlay__card">
         <h2 className="adp-overlay__title">{copy.title}</h2>
         <p className="adp-overlay__body">{copy.body(position, reference)}</p>
-        <div className="adp-overlay__actions">
+        <div className="adp-overlay__actions" ref={actions}>
           {kind === 'connection-lost' ? (
             <button type="button" className="adp-btn adp-btn--primary" onClick={onRetry}>
               {msg('player.action.retry')}
@@ -86,13 +96,45 @@ export function ErrorOverlay({
               {msg('player.action.browse')}
             </a>
           ) : null}
-          {kind === 'cannot-play' && links.help ? (
-            <a className="adp-btn adp-btn--ghost" href={links.help}>
-              {msg('player.action.report')}
+          {kind === 'unsupported-browser' && links.help ? (
+            <a className="adp-btn adp-btn--primary" href={links.help}>
+              {msg('player.action.help')}
             </a>
           ) : null}
         </div>
+        {showReference ? (
+          <p className="adp-overlay__ref">{msg('player.error.reference', { reference })}</p>
+        ) : null}
       </div>
+    </div>
+  );
+}
+
+/** A slow connection hint: one sentence, one action, and a way to dismiss it (L4-11). */
+export function HintBar({
+  kind,
+  onAction,
+  onDismiss,
+}: {
+  kind: PlayerHint['kind'];
+  onAction(): void;
+  onDismiss(): void;
+}) {
+  const data = kind === 'data-saver';
+  return (
+    <div className="adp-hint" role="status">
+      <span>{data ? msg('player.hint.dataSaver') : msg('player.hint.lockedQuality')}</span>
+      <button type="button" className="adp-toast__action" onClick={onAction}>
+        {data ? msg('player.hint.dataSaver.action') : msg('player.hint.lockedQuality.action')}
+      </button>
+      <button
+        type="button"
+        className="adp-toast__close"
+        aria-label={msg('player.hint.dismiss')}
+        onClick={onDismiss}
+      >
+        <CloseIcon size={16} />
+      </button>
     </div>
   );
 }

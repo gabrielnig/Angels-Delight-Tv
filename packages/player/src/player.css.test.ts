@@ -182,3 +182,21 @@ describe('settings menu (L4-07)', () => {
     expect(rule('.adp-toast')).toMatch(/max-width:\s*calc\(100% - /);
   });
 });
+
+describe('slow connection hint and reference line (L4-11)', () => {
+  const rule = (selector: string) =>
+    new RegExp(`${selector.replace(/[.[\]()]/g, '\\$&')}\\s*\\{([^}]*)\\}`).exec(css)?.[1] ?? '';
+
+  it('keeps the hint inside a narrow player, above the scrim and level with the toasts', () => {
+    const hint = rule('.adp-hint');
+    expect(hint).toMatch(/max-width:\s*calc\(100% - /);
+    expect(hint).toMatch(/z-index:\s*4/);
+    expect(hint).not.toMatch(/#[0-9a-fA-F]{3,8}\b/);
+  });
+
+  it('draws the reference line small and muted from tokens', () => {
+    const ref = rule('.adp-overlay__ref');
+    expect(ref).toContain('var(--color-player-muted)');
+    expect(ref).toContain('var(--text-caption)');
+  });
+});

@@ -80,6 +80,7 @@ export interface PlayerControllerOptions {
 const SPINNER_AFTER_MS = 500;
 const SLOW_AFTER_MS = 8_000;
 const STALL_RECOVERY_MS = 20_000;
+const DATA_SAVER_WINDOW_MS = 60_000;
 const AUTH_RETRY_WINDOW_MS = 15_000;
 const UP_NEXT_TILE_SECONDS = 15;
 const COUNTDOWN_MIN = 5;
@@ -194,6 +195,8 @@ export class PlayerController {
       chapter: null,
       backOnline: false,
       autoplayNext: this.prefs.autoplayNext,
+      hint: null,
+      retries: 0,
       announce: '',
     };
   }
@@ -503,6 +506,7 @@ export class PlayerController {
     if (!kind || kind === 'unsupported-browser') return;
     const { engine, media } = this.o;
     this.set({
+      retries: this.state.retries + 1,
       error: null,
       backOnline: false,
       phase: this.firstFrame ? 'ready' : 'loading',
@@ -519,8 +523,8 @@ export class PlayerController {
   }
 
   /** Show a short message in the toast slot, for example when full screen is refused. */
-  notify(message: string, kind: PlayerToast['kind'] = 'info'): void {
-    this.toast({ kind, message }, 6_000);
+  notify(message: string, kind: PlayerToast['kind'] = 'info', sticky = false): void {
+    this.toast({ kind, message }, sticky ? null : 6_000);
   }
 
   dismissToast(): void {
@@ -620,6 +624,7 @@ export class PlayerController {
       case 'playing': {
         if (type === 'playing') this.onFirstFrame();
         this.clearStall();
+        if (type === 'playing' && this.state.retries !== 0) this.set({ retries: 0 });
         this.reporter.setPlaying(!media.paused);
         this.set({
           playing: !media.paused,
@@ -832,11 +837,47 @@ export class PlayerController {
       SPINNER_AFTER_MS,
     );
     this.slowTimer = setTimeout(() => {
-      if (this.selected !== 'auto') return;
+      if (this.selected !== 'auto') {
+        // A locked quality cannot drop by itself, so say what the viewer can do (one action: open Quality).
+        if (!this.state.hint) {
+          this.set({ hint: { kind: 'locked-quality' }, announce: msg('player.hint.lockedQuality') });
+        }
+        return;
+      }
       this.o.engine.dropQuality();
       this.set({ slowNotice: true, announce: msg('player.slowConnection') });
     }, SLOW_AFTER_MS);
+    this.noteStallForDataSaver();
     this.armStallRecovery();
+  }
+
+  private stallTimes: number[] = [];
+  private dataSaverHinted = false;
+
+  /** Two stalls within a minute on Auto with Data saver off: offer Data saver once per video (L4-11). */
+  private noteStallForDataSaver(): void {
+    const now = Date.now();
+    this.stallTimes = [...this.stallTimes.filter((t) => now - t <= DATA_SAVER_WINDOW_MS), now];
+    if (
+      this.stallTimes.length < 2 ||
+      this.dataSaverHinted ||
+      this.prefs.dataSaver ||
+      this.selected !== 'auto' ||
+      this.state.hint
+    )
+      return;
+    this.dataSaverHinted = true;
+    this.set({ hint: { kind: 'data-saver' }, announce: msg('player.hint.dataSaver') });
+  }
+
+  dismissHint(): void {
+    if (this.state.hint) this.set({ hint: null });
+  }
+
+  /** "Turn on" on the Data saver hint: same as the setting, so it follows the profile. */
+  enableDataSaver(): void {
+    this.setDataSaver(true);
+    this.dismissHint();
   }
 
   private armStallRecovery(): void {
@@ -854,6 +895,7 @@ export class PlayerController {
     }
     for (const t of [this.spinnerTimer, this.slowTimer, this.recoverTimer]) if (t) clearTimeout(t);
     this.spinnerTimer = this.slowTimer = this.recoverTimer = null;
+    if (!this.disposed && this.state.hint?.kind === 'locked-quality') this.set({ hint: null });
   }
 
   private onEnded(): void {
@@ -1078,11 +1120,11 @@ export class PlayerController {
     }
   }
 
-  private toast(t: Omit<PlayerToast, 'id'>, ms: number): void {
+  private toast(t: Omit<PlayerToast, 'id'>, ms: number | null): void {
     if (this.toastTimer) clearTimeout(this.toastTimer);
     this.toastSeq += 1;
     this.set({ toast: { ...t, id: this.toastSeq } });
-    this.toastTimer = setTimeout(() => this.set({ toast: null }), ms);
+    this.toastTimer = ms === null ? null : setTimeout(() => this.set({ toast: null }), ms);
   }
 
   private persist(): void {

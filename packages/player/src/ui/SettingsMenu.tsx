@@ -32,6 +32,8 @@ export interface SettingsMenuProps {
   onShortcuts?: (() => void) | undefined;
   /** Chapter rows, first in the bottom sheet. */
   chapters?: ReactNode;
+  /** Opens straight on a submenu, for the slow connection hint. */
+  initialView?: 'quality' | undefined;
   onClose(): void;
 }
 
@@ -77,8 +79,10 @@ function NavRow({
  * the bottom sheet on compact screens.
  */
 export function SettingsMenu(props: SettingsMenuProps) {
-  const [view, setView] = useState<View>('root');
-  const returnTo = useRef<View | null>(null);
+  const [view, setView] = useState<View>(
+    props.initialView === 'quality' && props.quality ? 'quality' : 'root',
+  );
+  const returnTo = useRef<View | null>(props.initialView === 'quality' ? 'quality' : null);
   const rootRef = useRef<HTMLDivElement>(null);
 
   // Back at the root, focus lands on the row that opened the submenu.
