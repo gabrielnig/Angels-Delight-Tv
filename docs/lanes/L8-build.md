@@ -16,7 +16,18 @@ Scoped tests: `pnpm vitest run <file>`. CSS scanner helper: `packages/ui/test/cs
 - S11 skeleton: skeleton card shares the row item basis, two title bars and a meta bar at the real line heights, skeleton row has the gutter padding (PR 257). Tests: packages/ui/test/skeleton-css.test.ts, Skeleton.test.tsx. Not done: row min-height reservation.
 - S12 fonts: vietnamese subsets for Inter, Lora, Nunito and Space Grotesk, Inter ext and vietnamese fallback for DM Sans and Poppins, selectFonts(key, lang) uses Inter headings for yo, ig and ha, coverage manifest (scripts/font-coverage.py) with a hash check (PR 258). Test: apps/web/src/lib/fonts.test.ts. Not done: layout passes no lang yet (languages lane), theme editor sample line.
 - S13 copy rules: DS 14 rule 2a, copy guard over @ad/ui sources, States tests for one headline, one sentence, one action and the reference in small text (PR 259). Tests: packages/ui/src/copy-rules.test.ts, States.test.tsx
-- S14 tab bar: height and footer clearance use --tabbar-height plus the safe area, items keep 44px and the 3px marker (PR pending). Test: packages/ui/test/tabbar-css.test.ts
+- S14 tab bar: height and footer clearance use --tabbar-height plus the safe area, items keep 44px and the 3px marker (PR 260). Test: packages/ui/test/tabbar-css.test.ts
+- S15 wiring: contrast gate pairs for the rail, disabled bar and translucent layers, decisions D-225 to D-232, CHANGELOG, lane note (PR 260). Test: packages/theme/src/token-pairs.test.ts
 
 ## Remaining
-S15 wiring. Owner follow up: mirror packages/ui/src/tokens.css into .claude/skills/angels-delight-design-system/reference/tokens.css (shell may not write inside .claude/), then re-enable the skipped mirror check in packages/ui/src/theme.test.ts. Seek rail and buffer follow L4 on main (#6A6E78 and #9CA0AA), not the plan note values.
+Done in this lane: every slice S01 to S15 except the items below.
+Owner follow ups:
+- Mirror `packages/ui/src/tokens.css` into `.claude/skills/angels-delight-design-system/reference/tokens.css` (the shell may not write inside `.claude/`), then change `it.skip` back to `it` for the mirror check in `packages/ui/src/theme.test.ts`.
+- ai-context.md (main session): replace the decision count sentence with "decisions up to the highest D-number on main", then turn the `it.todo` in `scripts/design-doc-sync.test.ts` into a real check (R40). Mention M47 and the L8 guard tests.
+Not built, with reason:
+- S09 as a separate slice: the tile and card ring work landed in S02 (`packages/ui/test/focus-ring.test.ts`).
+- Row height reservation for skeletons and the row gap compensation for the hover card padding (the card width token lives on the row viewport, so the plan formula cannot be written on the row).
+- Hero arrows beside Pause layout, the Playwright text zone measurement at 360 and 390, the theme editor sample line for Yoruba and Hausa, and the Night preset (Could).
+- Layout still passes no lang to `selectFonts`, so the yo, ig and ha heading rule waits for the languages lane.
+- Motion property allowlist test (motion-props) and the touch target list test beyond the seek bar and buttons.
+Manual checks (no test can prove them): throttled Android scroll with nav fade, Windows high contrast focus rings, screen reader pass on the hover card, Yoruba, Igbo and Hausa samples in each font at 360px, real lightest hero images against the scrim.
