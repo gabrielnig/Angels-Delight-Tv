@@ -22,6 +22,11 @@ function usedKeys(): Map<string, string> {
   for (const file of ROOTS.flatMap(sources)) {
     const text = readFileSync(file, 'utf8');
     for (const match of text.matchAll(/\bmsg\(\s*'([a-zA-Z0-9._]+)'/g)) used.set(match[1]!, file);
+    // msg(cond ? 'a.b' : 'c.d', params): both branches count as used.
+    for (const match of text.matchAll(/\bmsg\(\s*[^()`]*?\?\s*'([a-zA-Z0-9._]+)'\s*:\s*'([a-zA-Z0-9._]+)'/g)) {
+      used.set(match[1]!, file);
+      used.set(match[2]!, file);
+    }
   }
   return used;
 }
