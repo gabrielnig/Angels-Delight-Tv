@@ -7,6 +7,7 @@ import {
   popularTitles,
   searchTitles,
   suggestTitles,
+  type Audience,
   type Page,
   type Suggestion,
 } from '@ad/catalog';
@@ -90,6 +91,40 @@ export async function search(
       items: await annotateCards(tx, profile.id, page.items),
       nextCursor: page.nextCursor,
       popular: await annotateCards(tx, profile.id, popular),
+    };
+  });
+}
+
+/**
+ * Search for a guest (M40). Nothing is written: no `search_history` row, whatever the caller asks. The rate limit
+ * is spent by the public guard on the address and the guest id, not here.
+ */
+export async function searchFor(
+  ctx: ViewerContext,
+  audience: Audience,
+  input: Omit<SearchInput, 'profileId' | 'record'>,
+): Promise<SearchResultDto> {
+  const query = normalizeQuery(input.query);
+  const catalog = catalogContext(ctx);
+  return ctx.db.transaction(async (tx) => {
+    const page = await searchTitles(tx, catalog, audience, {
+      query,
+      limit: input.limit,
+      cursor: input.cursor,
+    });
+    const popular =
+      page.total === 0 && input.cursor === undefined
+        ? await popularTitles(tx, catalog, audience, {
+            limit: NO_RESULTS_POPULAR,
+            fallbackToNewest: true,
+          })
+        : [];
+    return {
+      query,
+      total: page.total,
+      items: await annotateCards(tx, null, page.items),
+      nextCursor: page.nextCursor,
+      popular: await annotateCards(tx, null, popular),
     };
   });
 }

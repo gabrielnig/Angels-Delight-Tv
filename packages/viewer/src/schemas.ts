@@ -83,3 +83,20 @@ export const myListAddBody = z.object({
   restoreAddedAt: z.string().max(40).optional(),
 });
 export const myListRemoveBody = z.object({ profileId: id, target: titleRef });
+
+/**
+ * Guest (account free) query shapes for the public GETs (M40). They have no `profileId` and zod drops unknown
+ * keys, so a `profileId` or `record` value a caller sends on the guest path is ignored, never read.
+ */
+export const guestHomeQuery = z.object({ cursor: cursor.optional() });
+export const guestBrowseQuery = browseQuery.omit({ profileId: true });
+export const guestSearchQuery = searchQuery.omit({ profileId: true, record: true });
+export const guestSuggestQuery = z.object({ q: z.string().max(400) });
+export const guestTitleQuery = titleDetailQuery.omit({ profileId: true });
+/** Comma separated ids, at most 20 (the service refuses more). */
+export const titlesBatchQuery = z.object({
+  ids: z
+    .string()
+    .min(1)
+    .max(20 * 37 + 40),
+});

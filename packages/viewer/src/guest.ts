@@ -1,7 +1,18 @@
-import { isUuid, NotFound } from '@ad/shared';
-import { findTitle, relatedTitles, type Audience } from '@ad/catalog';
-import { annotateCards } from './annotate';
+import { isUuid, NotFound, ValidationFailed } from '@ad/shared';
+import {
+  fetchCards,
+  findTitle,
+  popularTitles,
+  relatedTitles,
+  suggestTitles,
+  type Audience,
+  type CategoryDto,
+  type Suggestion,
+} from '@ad/catalog';
+import { annotateCards, type TitleCardDto } from './annotate';
+import { browseFor, categoriesFor, type BrowseInput, type BrowsePage } from './browse';
 import { catalogContext, type ViewerContext } from './context';
+import { searchFor, type SearchInput, type SearchResultDto } from './search';
 import { seriesPlayTarget, videoPlayTarget } from './play-target';
 import { buildSeasons, type TitleDetailDto, type TitleDetailInput } from './title-detail';
 
@@ -63,5 +74,97 @@ export async function guestTitleDetail(
       seasons: await buildSeasons(tx, ctx, filter, null, title.card.id, play),
       play,
     };
+  });
+}
+
+/** Most ids one batch lookup takes (the guest Continue learning row, M40-S14). */
+export const GUEST_BATCH_MAX = 20;
+
+export { getGuestHome as guestHome } from './home';
+
+export function guestBrowse(
+  ctx: ViewerContext,
+  audience: GuestAudience,
+  input: Omit<BrowseInput, 'profileId'>,
+): Promise<BrowsePage> {
+  return ctx.db.transaction((tx) => browseFor(tx, ctx, { kids: audience.kids }, null, input));
+}
+
+export function guestCategories(
+  ctx: ViewerContext,
+  audience: GuestAudience,
+): Promise<CategoryDto[]> {
+  return ctx.db.transaction((tx) => categoriesFor(tx, ctx, { kids: audience.kids }));
+}
+
+/** Writes nothing, whatever the caller passes: there is no `record` option on this path. */
+export function guestSearch(
+  ctx: ViewerContext,
+  audience: GuestAudience,
+  input: Omit<SearchInput, 'profileId' | 'record'>,
+): Promise<SearchResultDto> {
+  return searchFor(ctx, { kids: audience.kids }, input);
+}
+
+export function guestSuggest(
+  ctx: ViewerContext,
+  audience: GuestAudience,
+  query: string,
+): Promise<Suggestion[]> {
+  return ctx.db.transaction((tx) =>
+    suggestTitles(tx, catalogContext(ctx), { kids: audience.kids }, query),
+  );
+}
+
+export async function guestPopular(
+  ctx: ViewerContext,
+  audience: GuestAudience,
+  options: { limit: number },
+): Promise<TitleCardDto[]> {
+  return ctx.db.transaction(async (tx) =>
+    annotateCards(
+      tx,
+      null,
+      await popularTitles(
+        tx,
+        catalogContext(ctx),
+        { kids: audience.kids },
+        {
+          limit: options.limit,
+          fallbackToNewest: true,
+        },
+      ),
+    ),
+  );
+}
+
+/**
+ * Cards for ids a device remembers (guest Continue learning). Anything that is not a UUID, not published, hidden
+ * or not allowed in this audience is dropped without a trace. More than 20 ids is refused.
+ */
+export async function guestTitlesByIds(
+  ctx: ViewerContext,
+  audience: GuestAudience,
+  ids: readonly string[],
+): Promise<TitleCardDto[]> {
+  if (ids.length > GUEST_BATCH_MAX)
+    throw new ValidationFailed({ ids: [`Send at most ${GUEST_BATCH_MAX} ids`] });
+  const unique = [...new Set(ids.filter((id) => isUuid(id)))];
+  if (unique.length === 0) return [];
+  return ctx.db.transaction(async (tx) => {
+    // The same id can be a video here. A series is never a device progress entry.
+    const cards = await fetchCards(
+      tx,
+      catalogContext(ctx),
+      { kids: audience.kids },
+      unique.map((id) => ({ kind: 'video' as const, id })),
+      { includeEpisodes: true },
+    );
+    const byId = new Map(cards.map((card) => [card.id, card]));
+    const ordered = ids.flatMap((id) => {
+      const card = byId.get(id);
+      return card ? [card] : [];
+    });
+    return annotateCards(tx, null, ordered);
   });
 }

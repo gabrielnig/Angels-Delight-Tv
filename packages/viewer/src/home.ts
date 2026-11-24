@@ -10,6 +10,7 @@ import {
   listPublishedRows,
   resolveRow,
   type ArtworkDto,
+  type Audience,
   type RowDescriptor,
   type SeeAll,
 } from '@ad/catalog';
@@ -83,62 +84,88 @@ export async function getHome(
   actor: Actor,
   input: HomeInput,
 ): Promise<HomeDto> {
-  const rules = rulesOf(ctx);
-  const offset = input.cursor === undefined ? 0 : decodeCursor(input.cursor, isOffsetCursor).o;
-  const catalog = catalogContext(ctx);
-
   return withAccount(ctx.db, actor, async (tx) => {
     const profile = await loadOwnedProfile(tx, actor, input.profileId);
-    const audience = audienceOf(profile);
-    const descriptors = await shared(ctx, ['home-rows', audience.kids], () =>
-      listPublishedRows(tx, audience),
-    );
-    const configured = await configuredRowKinds(tx);
-
-    const plan: PlanEntry[] = [];
-    if (!configured.has('continue_watching')) plan.push({ personal: 'continue_watching' });
-    if (!configured.has('my_list')) plan.push({ personal: 'my_list' });
-    plan.push(
-      ...descriptors.filter((row) => row.kind !== 'hero').map((descriptor) => ({ descriptor })),
-    );
-
-    const rows: HomeRowDto[] = [];
-    let index = offset;
-    for (; index < plan.length && rows.length < rules.homeRowsPerPage; index++) {
-      const entry = plan[index]!;
-      if ('personal' in entry) {
-        const personalRow = await resolvePersonalRow(tx, ctx, profile, entry.personal);
-        if (personalRow) rows.push(personalRow);
-        continue;
-      }
-      const { descriptor } = entry;
-      if (descriptor.kind === 'continue_watching' || descriptor.kind === 'my_list') {
-        const personalRow = await resolvePersonalRow(tx, ctx, profile, descriptor.kind, descriptor);
-        if (personalRow) rows.push(personalRow);
-        continue;
-      }
-      const resolved = await shared(ctx, ['home-row', audience.kids, descriptor.id], () =>
-        resolveRow(tx, catalog, audience, descriptor),
-      );
-      if (resolved.cards.length === 0) continue;
-      rows.push({
-        id: descriptor.id,
-        kind: descriptor.kind as TitleRow['kind'],
-        title: descriptor.title,
-        items: await annotateCards(tx, profile.id, resolved.cards),
-        seeAll: resolved.seeAll,
-      });
-    }
-
-    const hero = offset === 0 ? await buildHero(tx, ctx, profile, descriptors) : [];
-    const catalogEmpty = !(await hasLiveTitle(tx, catalog, audience));
-    return {
-      hero,
-      rows,
-      nextCursor: index < plan.length ? encodeCursor({ o: index }) : null,
-      catalogEmpty,
-    };
+    return buildHome(tx, ctx, audienceOf(profile), profile, input.cursor);
   });
+}
+
+/**
+ * Home for a guest (M40): the same hero and rows for an audience, with no personal rows and no personal state.
+ * It runs in a plain transaction with no profile, so it cannot read a personal table.
+ */
+export async function getGuestHome(
+  ctx: ViewerContext,
+  audience: Audience,
+  input: { cursor?: string } = {},
+): Promise<HomeDto> {
+  return ctx.db.transaction((tx) =>
+    buildHome(tx, ctx, { kids: audience.kids }, null, input.cursor),
+  );
+}
+
+async function buildHome(
+  tx: ViewerTx,
+  ctx: ViewerContext,
+  audience: Audience,
+  profile: ProfileRow | null,
+  cursor: string | undefined,
+): Promise<HomeDto> {
+  const rules = rulesOf(ctx);
+  const offset = cursor === undefined ? 0 : decodeCursor(cursor, isOffsetCursor).o;
+  const catalog = catalogContext(ctx);
+  const descriptors = await shared(ctx, ['home-rows', audience.kids], () =>
+    listPublishedRows(tx, audience),
+  );
+  const configured = profile ? await configuredRowKinds(tx) : new Set<string>();
+
+  const plan: PlanEntry[] = [];
+  if (profile && !configured.has('continue_watching')) plan.push({ personal: 'continue_watching' });
+  if (profile && !configured.has('my_list')) plan.push({ personal: 'my_list' });
+  plan.push(
+    ...descriptors
+      .filter((row) => row.kind !== 'hero')
+      // A guest has no personal rows. A configured Continue Watching or My List row is simply left out.
+      .filter((row) => profile || (row.kind !== 'continue_watching' && row.kind !== 'my_list'))
+      .map((descriptor) => ({ descriptor })),
+  );
+
+  const rows: HomeRowDto[] = [];
+  let index = offset;
+  for (; index < plan.length && rows.length < rules.homeRowsPerPage; index++) {
+    const entry = plan[index]!;
+    if ('personal' in entry) {
+      const personalRow = await resolvePersonalRow(tx, ctx, profile!, entry.personal);
+      if (personalRow) rows.push(personalRow);
+      continue;
+    }
+    const { descriptor } = entry;
+    if (descriptor.kind === 'continue_watching' || descriptor.kind === 'my_list') {
+      const personalRow = await resolvePersonalRow(tx, ctx, profile!, descriptor.kind, descriptor);
+      if (personalRow) rows.push(personalRow);
+      continue;
+    }
+    const resolved = await shared(ctx, ['home-row', audience.kids, descriptor.id], () =>
+      resolveRow(tx, catalog, audience, descriptor),
+    );
+    if (resolved.cards.length === 0) continue;
+    rows.push({
+      id: descriptor.id,
+      kind: descriptor.kind as TitleRow['kind'],
+      title: descriptor.title,
+      items: await annotateCards(tx, profile?.id ?? null, resolved.cards),
+      seeAll: resolved.seeAll,
+    });
+  }
+
+  const hero = offset === 0 ? await buildHero(tx, ctx, profile, audience, descriptors) : [];
+  const catalogEmpty = !(await hasLiveTitle(tx, catalog, audience));
+  return {
+    hero,
+    rows,
+    nextCursor: index < plan.length ? encodeCursor({ o: index }) : null,
+    catalogEmpty,
+  };
 }
 
 type ViewerTx = Parameters<Parameters<ViewerContext['db']['transaction']>[0]>[0];
@@ -177,14 +204,14 @@ async function resolvePersonalRow(
 async function buildHero(
   tx: ViewerTx,
   ctx: ViewerContext,
-  profile: ProfileRow,
+  profile: ProfileRow | null,
+  audience: Audience,
   descriptors: readonly RowDescriptor[],
 ): Promise<HeroItem[]> {
-  const audience = audienceOf(profile);
   const catalog = catalogContext(ctx);
   const cards = await heroCards(tx, catalog, audience, descriptors);
   if (cards.length === 0) return [];
-  const annotated = await annotateCards(tx, profile.id, cards);
+  const annotated = await annotateCards(tx, profile?.id ?? null, cards);
   const artwork = await fetchHeroArtwork(
     tx,
     catalog,
@@ -196,7 +223,7 @@ async function buildHero(
       heroImage: artwork.get(card.id) ?? null,
       play:
         card.kind === 'series'
-          ? await seriesPlayTarget(tx, ctx, audience, profile.id, card.id)
+          ? await seriesPlayTarget(tx, ctx, audience, profile?.id ?? null, card.id)
           : videoPlayTarget(ctx, card, card.progress),
     })),
   );
