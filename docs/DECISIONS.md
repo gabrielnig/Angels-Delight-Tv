@@ -1011,3 +1011,27 @@ Four ids were used twice by parallel lanes. They are never renumbered because la
 - Options: 2:3 posters for series, an 8 s countdown.
 - Why: all source art is 16:9 and hero art has its own cut (D-160). The code and ruling R15 give 5 to 10 s.
 - Reversible: yes.
+
+## D-190 Seek rail rests at 5 px, grows to 8 px, hit area 44 px (lane L4)
+- Decision: the seek rail rests at 5 px and grows to 8 px on hover, drag and focus, animated with transform only. The hit area is the 44 px touch target token.
+- Options: keep 4 px and 32 px, or follow the audit and R30.
+- Why: the old values contradicted the design system and the touch target rule. A fixed 8 px rail scaled in Y keeps the animation off layout.
+- Reversible: yes, CSS only.
+
+## D-191 Player rail and buffer lifted together, three new player tokens (lane L4)
+- Decision: `--color-player-rail` becomes `#6A6E78` (3:1 on the player surface, R34) and `--color-player-buffer` becomes `#9CA0AA`. New tokens `--color-player-border` (`#3A3D46`), `--color-player-surface-raised` (`#1B1D24`) and `--color-player-switch-off` (`#6E7179`). Menu borders, the ring track and dividers move to the border token.
+- Options: lift the rail only, or lift both and add tokens.
+- Why: lifting only the rail would make the buffered fill darker than the empty rail. Borders must keep their old value.
+- Reversible: yes, token values.
+
+## D-192 Control scrim holds 0.9 up to the rail and sits below the skip button, tile, menus and toasts (lane L4)
+- Decision: the scrim is a pseudo element of the player, 0.9 from the bottom to 58 percent of its height then easing out, z-index 1. The tile is 2, the controls (with their menus) 3, toasts 4. Captions rise 6.5 rem while the controls show.
+- Options: keep the 0.95 fade on the control bar, or hold to the rail.
+- Why: the old fade left the time label at 4.19:1 on a bright frame, and a scrim on the bar itself paints over anything above it.
+- Reversible: yes.
+
+## D-193 Two ring focus on controls that sit on the picture (lane L4)
+- Decision: focus is a 3 px yellow outline with a 3 px dark inner ring (box shadow). Forced colours use a Highlight outline and no shadow.
+- Options: yellow only, two rings, or a dark chip behind the Skip button.
+- Why: yellow alone is 1.06 to 1.24:1 on a bright frame. A chip would change the approved look.
+- Reversible: yes.

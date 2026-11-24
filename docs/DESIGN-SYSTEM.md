@@ -96,7 +96,10 @@ All tokens are CSS custom properties on `:root`. Admin theme settings write over
 | `--color-sidebar-accent` | `#FFC93C` | Fixed | Active item marker |
 | `--color-player-bg` | `#0E0F13` | Fixed | Player and letterbox |
 | `--color-player-ink` / `-muted` | `#FFFFFF` / `#B4B8C2` | Fixed | Player text and icons |
-| `--color-player-rail` / `-buffer` | `#3A3D46` / `#5B606B` | Fixed | Seek bar rail and buffered |
+| `--color-player-rail` / `-buffer` | `#6A6E78` / `#9CA0AA` | Fixed | Seek bar rail (3:1 on the player surface, R34) and buffered |
+| `--color-player-border` | `#3A3D46` | Fixed | Player menu borders, dividers and the countdown ring track |
+| `--color-player-surface-raised` | `#1B1D24` | Fixed | Player menus, tooltips and popovers |
+| `--color-player-switch-off` | `#6E7179` | Fixed | Off track of a player switch row |
 | `--color-tile-*` | sky, mint, lemon, peach, lavender | Fixed | Pastel up-next and category tiles (ink text only) |
 
 Status colours are fixed so a client colour change cannot make an error look like a success. Status is never conveyed by colour alone: always an icon and a word.
@@ -579,7 +582,7 @@ Types: inline field error (11.2), banner (page level, danger tint, icon, message
 
 - Player container `--color-player-bg`, 16:9, full width on mobile (edge to edge), max 1100px on desktop above the title, with the page remaining off white around it. Controls overlay on a bottom scrim, and a top bar with title and Back (only in fullscreen and mobile landscape).
 - Control bar (left to right): Play or Pause (32px icon, 52px target), Back 10 and Forward 10 (desktop and mobile), Volume (desktop only, slider on hover and focus), time "1:42 / 4:30" (tabular, `--color-player-muted`), spacer, Captions, Speed, Quality, Fullscreen. Mobile shows Play, seek bar, time, Captions, Settings (speed and quality inside), Fullscreen.
-- Seek bar: 4px rail growing to 8px on hover or touch, buffered `--color-player-buffer`, played `--color-accent`, thumb 16px circle `--color-player-ink`. Hit area 44px high. Time tooltip on hover or drag.
+- Seek bar: 5px rail growing to 8px on hover, drag and focus (transform only), buffered `--color-player-buffer`, played `--color-accent`, thumb 16px circle `--color-player-ink`. Hit area 44px high. Time tooltip on hover or drag.
 - Behaviour: controls show on tap or mouse move and hide after 3s of play (not while paused, focused or the menu is open). Double tap left or right skips 10s with a brief ripple label. Tap toggles controls, play from the big centre button. Space or K play pause, Left and Right 5s seek (J and L 10s), Up and Down volume, M mute, C captions, F fullscreen, Esc exits, number keys jump, `,` and `.` frame when paused is not needed. Shortcuts work when the player has focus.
 - Settings menu: one overlay panel with Captions (Off, English, later others) and caption appearance (size Small, Medium, Large, Extra large, background Solid or Clear), Speed (0.5, 0.75, 1, 1.25, 1.5, 2), Quality (Auto, 1080p, 720p, 480p, 360p) with data estimates ("About 20 MB per minute"), and "Data saver" switch (caps at 480p). Menus are radio lists with a tick.
 - Resume: starts at saved position with a toast "Continuing from 3:41" and a "Start over" action. Position saves every 10s and on pause, hide and exit.
