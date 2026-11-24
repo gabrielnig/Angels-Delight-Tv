@@ -121,3 +121,15 @@ export const sponsorDailyStats = pgTable(
     index('sponsor_daily_stats_sponsor_idx').on(t.sponsorId, t.day),
   ],
 );
+
+/** Daily rotating viewer hashes behind the reach figure. Closed to the web role, pruned after two days. */
+export const sponsorReachSeen = pgTable(
+  'sponsor_reach_seen',
+  {
+    day: date('day', { mode: 'string' }).notNull(),
+    creativeId: uuid('creative_id').notNull(),
+    slot: sponsorSlot('slot').notNull(),
+    viewerHash: text('viewer_hash').notNull(),
+  },
+  (t) => [primaryKey({ columns: [t.day, t.creativeId, t.slot, t.viewerHash] })],
+);

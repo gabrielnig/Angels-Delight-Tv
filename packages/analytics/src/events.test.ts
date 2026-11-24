@@ -117,3 +117,33 @@ describe('skip event (M43)', () => {
   });
 });
 
+
+describe('sponsor_impression event (M48)', () => {
+  const ok = {
+    kind: 'sponsor_impression',
+    creativeId: '0198c000-0000-7000-8000-000000000001',
+    slot: 'home_banner',
+    impressionId: '0198c000-0000-7000-8000-000000000002',
+  };
+  const batch = (e: unknown) => parseBatch({ v: 1, events: [e] });
+  it('accepts a valid sponsor_impression', () => {
+    const r = batch(ok);
+    expect(r.ok && r.events).toHaveLength(1);
+  });
+  it('rejects unknown slot', () => {
+    const r = batch({ ...ok, slot: 'footer' });
+    expect(r.ok && r.rejected).toBe(1);
+  });
+  it('rejects extra keys', () => {
+    const r = batch({ ...ok, destination: 'https://evil.example' });
+    expect(r.ok && r.rejected).toBe(1);
+  });
+  it('rejects non uuid creative id', () => {
+    const r = batch({ ...ok, creativeId: 'abc' });
+    expect(r.ok && r.rejected).toBe(1);
+  });
+  it('there is no client side sponsor_click event', () => {
+    const r = batch({ kind: 'sponsor_click', creativeId: ok.creativeId, slot: 'home_banner' });
+    expect(r.ok && r.rejected).toBe(1);
+  });
+});

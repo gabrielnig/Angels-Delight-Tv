@@ -197,6 +197,13 @@ describe('service worker policy', () => {
     );
   });
 
+  it('never touches sponsor redirects or donation endpoints (M48)', async () => {
+    const sw = boot();
+    for (const path of ['/s/0198c000-0000-7000-8000-000000000001', '/api/donate/checkout', '/api/donate/status']) {
+      expect((await sw.fetchEvent(path, { mode: 'navigate' })).handled, path).toBe(false);
+    }
+  });
+
   it('never caches API responses, admin pages or authenticated requests', async () => {
     const sw = boot();
     expect((await sw.fetchEvent('/api/me')).handled).toBe(false);

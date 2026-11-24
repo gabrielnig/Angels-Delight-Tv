@@ -1,3 +1,4 @@
+import { SPONSOR_SLOTS } from '@ad/shared';
 import { z } from 'zod';
 import { DEVICE_CLASSES, EVENT_SCHEMA_VERSION, VITAL_NAMES, type DeviceClass } from './constants';
 
@@ -74,6 +75,18 @@ export const skipEvent = z.strictObject({
   toMs: z.number().int().min(0).max(MAX_WATCH_MS),
 });
 
+/**
+ * A sponsor card was in view (M48-S15). Clicks are never an event: only the redirect route at /s/{id} records them,
+ * so the client cannot inflate them.
+ */
+export const sponsorImpressionEvent = z.strictObject({
+  kind: z.literal('sponsor_impression'),
+  creativeId: id,
+  slot: z.enum(SPONSOR_SLOTS),
+  /** One per card per page view. Repeats in a batch count once. */
+  impressionId: id,
+});
+
 export const analyticsEvent = z.discriminatedUnion('kind', [
   viewStartEvent,
   progressEvent,
@@ -84,6 +97,7 @@ export const analyticsEvent = z.discriminatedUnion('kind', [
   startupEvent,
   rebufferEvent,
   skipEvent,
+  sponsorImpressionEvent,
 ]);
 export type AnalyticsEvent = z.infer<typeof analyticsEvent>;
 export type AnalyticsEventKind = AnalyticsEvent['kind'];

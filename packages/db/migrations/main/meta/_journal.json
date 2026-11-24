@@ -288,6 +288,13 @@
       "when": 1795800000000,
       "tag": "0040_i18n_and_caption_languages",
       "breakpoints": true
+    },
+    {
+      "idx": 41,
+      "version": "7",
+      "when": 1795800001000,
+      "tag": "0041_sponsor_tracking",
+      "breakpoints": true
     }
   ]
 }

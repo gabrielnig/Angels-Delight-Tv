@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ingestBatch, type CounterBump, type EventStore, type ViewUpsert } from './ingest';
+import { ingestBatch, type CounterBump, type EventStore, type SponsorTrack, type ViewUpsert } from './ingest';
 import { deriveAnalyticsSecret } from './identity';
 import { createMemoryRateLimiter } from './rate-limit';
 
@@ -14,6 +14,7 @@ function fakeStore() {
   const views: ViewUpsert[] = [];
   const bumps: CounterBump[] = [];
   const seen = new Set<string>();
+  const sponsorTracks: SponsorTrack[] = [];
   const store: EventStore = {
     async upsertView(row) {
       views.push(row);
@@ -24,8 +25,12 @@ function fakeStore() {
     async bump(entry) {
       bumps.push(entry);
     },
+    async trackSponsor(entry) {
+      sponsorTracks.push(entry);
+      return true;
+    },
   };
-  return { store, views, bumps };
+  return { store, views, bumps, sponsorTracks };
 }
 
 const base = () => ({
@@ -299,5 +304,63 @@ describe('ingestBatch', () => {
       const withBoth = await run({ subjectId: guestId });
       expect(withBoth.viewerHash).toBe(withProfile.viewerHash);
     });
+  });
+});
+
+describe('sponsor impressions (M48)', () => {
+  const creativeId = '0198c000-0000-7000-8000-000000000001';
+  const imp = (n: number) => ({
+    kind: 'sponsor_impression',
+    creativeId,
+    slot: 'home_banner',
+    impressionId: `0198c000-0000-7000-8000-00000000010${n}`,
+  });
+  const run = async (events: unknown[], over: { audience?: 'general' | 'kids'; ua?: string; preview?: boolean; subjectId?: string | null; profileId?: string | null } = {}, limiter = createMemoryRateLimiter()) => {
+    const f = fakeStore();
+    const result = await ingestBatch({
+      body: { v: 1, preview: over.preview, events },
+      context: { userAgent: over.ua ?? UA, country: null, ipKey: '1.2.3.0', profileId: over.profileId ?? null, audience: over.audience ?? 'general', subjectId: 'subjectId' in over ? over.subjectId : 'guest-1' },
+      store: f.store,
+      limiter,
+      secret,
+      now: () => new Date('2026-12-10T10:00:00Z'),
+    });
+    return { ...f, result };
+  };
+
+  it('counts one impression per impressionId', async () => {
+    const { sponsorTracks } = await run([imp(1), imp(1), imp(2)]);
+    expect(sponsorTracks).toHaveLength(2);
+    expect(sponsorTracks[0]).toMatchObject({ day: '2026-12-10', creativeId, slot: 'home_banner', kind: 'imp' });
+  });
+  it('sends a daily hash for reach, never the guest id', async () => {
+    const { sponsorTracks } = await run([imp(1)], { subjectId: 'guest-1' });
+    expect(sponsorTracks[0]?.viewerHash).toMatch(/^[0-9a-f]{24}$/);
+    expect(JSON.stringify(sponsorTracks)).not.toContain('guest-1');
+  });
+  it('drops sponsor events for kids audience', async () => {
+    const { sponsorTracks, result } = await run([imp(1)], { audience: 'kids' });
+    expect(sponsorTracks).toHaveLength(0);
+    expect(result.status).toBe(202);
+  });
+  it('drops sponsor events from bots', async () => {
+    expect((await run([imp(1)], { ua: 'Googlebot/2.1 (+http://www.google.com/bot.html)' })).sponsorTracks).toHaveLength(0);
+  });
+  it('drops sponsor events in admin preview batches', async () => {
+    expect((await run([imp(1)], { preview: true })).sponsorTracks).toHaveLength(0);
+  });
+  it('keeps no reach hash when there is no identity', async () => {
+    const { sponsorTracks } = await run([imp(1)], { subjectId: null });
+    expect(sponsorTracks[0]?.viewerHash).toBeNull();
+  });
+  it('rate limits sponsor events per ip', async () => {
+    const limiter = createMemoryRateLimiter();
+    let tracks = 0;
+    for (let i = 0; i < 80; i += 1) {
+      const r = await run([imp(1)], {}, limiter);
+      tracks += r.sponsorTracks.length;
+    }
+    expect(tracks).toBeLessThan(80);
+    expect(tracks).toBeGreaterThan(0);
   });
 });

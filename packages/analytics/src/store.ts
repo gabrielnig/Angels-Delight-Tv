@@ -1,5 +1,5 @@
 import { sql } from 'drizzle-orm';
-import type { CounterBump, EventStore, ViewUpsert } from './ingest';
+import type { CounterBump, EventStore, SponsorTrack, ViewUpsert } from './ingest';
 import { rowsOf, type SqlExecutor } from './sql';
 
 /** Postgres implementation of the ingest store. Runs as ad_app in the web process. */
@@ -25,6 +25,15 @@ export function createPgEventStore(db: SqlExecutor): EventStore {
           RETURNING (xmax = 0) AS created`),
       );
       return { created: rows[0]?.created === true };
+    },
+
+    async trackSponsor(entry: SponsorTrack) {
+      const rows = rowsOf<{ ok: boolean }>(
+        await db.execute(sql`
+          SELECT sponsor_track(${entry.day}::date, ${entry.creativeId}::uuid, ${entry.slot}::sponsor_slot,
+                               ${entry.viewerHash}, ${entry.kind}) AS ok`),
+      );
+      return rows[0]?.ok === true;
     },
 
     async bump(entry: CounterBump) {

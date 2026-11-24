@@ -95,6 +95,9 @@ importers:
       '@ad/shared':
         specifier: workspace:*
         version: link:../../packages/shared
+      '@ad/sponsors':
+        specifier: workspace:*
+        version: link:../../packages/sponsors
       '@ad/storage':
         specifier: workspace:*
         version: link:../../packages/storage
