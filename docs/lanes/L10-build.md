@@ -17,13 +17,15 @@ Plan: `docs/plan/v2/L10-account-and-reach.md` (section 12 wins), rulings R24, R3
 
 - S8 (PR below in history): DESIGN-SYSTEM 3.3 Type family tokens, Mono family editor row, theme editor Fixed list. Test `scripts/l10-doc-sync.test.ts` (L10 doc checks live here, slice 11 extends it).
 
+- S9 (Google sign in, L10b): migration `0052_account_identities.sql` (table, RLS, `auth_find_identity`, `auth_find_account_for_link`, credentials check relaxed), `packages/auth/src/oauth/` (`google.ts` OIDC client with PKCE and ID token checks, `link-rules.ts`, `note.ts` signed notes, `service.ts` `GoogleAuthService` extending `ViewerMfaService`: `begin`, `complete`, `confirmLink`, `finishSignUp`, `identityStatus`, `unlink`, `peekNote`; `fake-google.ts` test provider), env `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` (both or neither), site setting `features.signin_with_google`, `RATE_POLICIES.googleStartIp` and `googleCallbackIp`, web `server/auth/google-flow.ts` (cookies and redirects), `google-runtime.ts`, `google-enabled.ts`, routes `/api/auth/google/start` and `/callback` (404 without keys), pages `/sign-in/link-google`, `/sign-in/google-failed`, `/sign-up/google`, `GoogleButton`, `GoogleMark`, `SocialButtons`, `LinkGoogleForm`, `FinishGoogleSignUp`, `ConnectedSignInCard` on Security, actions in `app/actions-google.ts`. Decisions D-314 to D-316. DESIGN-SYSTEM 11.26 and the skill grep carry the colour exception. Guest import after Google needs nothing extra: `ImportPrompt` runs from `ViewerChrome` on any viewer page. Tests: `oauth/*.test.ts`, `oauth/service.int.test.ts`, `google-flow.test.ts`, `google-enabled.test.ts`, `google-routes.test.ts`, `GoogleButton.test.tsx`, `LinkGoogleForm.test.tsx`, `FinishGoogleSignUp.test.tsx`, `ConnectedSignInCard.test.tsx`. Manual step for launch: create a Google Cloud OAuth client with redirect URI `<APP_ORIGIN>/api/auth/google/callback` and set the two env keys.
+
 ## Was in PR (slice 3, challenge half)
 - Env `VIEWER_MFA_ENABLED`, `RealAuthGateway.verifyTwoStep, verifyRecovery, hasTwoStepPending`, cookie `ad_mv` (`__Host-ad_mv`), `/sign-in/verify` page, `TwoStepForm`, actions `verifyTwoStepAction`, `verifyRecoveryAction`, copy in `packages/shared/src/messages/l10-messages.ts` (spread into `EN_NG`, add all later L10 keys there).
 
 ## Not built yet (resume here, in this order)
 1. (done, S7)
 2. (done, S8)
-3. Google sign in (see plan slice 5 and 6).
+3. (done, S9)
 4. TV mode.
 5. Docs: M49 stories, MODULES, BUILD-PLAN, SCREEN-ARCHITECTURE, SECURITY, CLIENT-INPUTS, not now notes (offline downloads, passkeys), decisions D-L10-03 to D-L10-15.
 Owner follow up: the `.claude` skill grep edit for the Google mark (plan 12.2) is not done because the shell must not write there.

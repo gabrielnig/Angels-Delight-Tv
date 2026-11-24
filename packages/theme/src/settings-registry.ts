@@ -314,6 +314,16 @@ export const SETTING_DEFS = {
     description:
       'Show an AirPlay button on Safari. Turn on only after it has been tried on a real iPhone and Apple TV.',
   }),
+  'features.signin_with_google': def({
+    schema: bool,
+    default: true,
+    isPublic: false,
+    tier: 'super',
+    group: 'features',
+    label: 'Sign in with Google',
+    description:
+      'Show Continue with Google on Sign in and Sign up. It appears only when the Google keys are also set on the server.',
+  }),
   'limits.max_profiles': def({
     schema: int(1, 10),
     default: 5,

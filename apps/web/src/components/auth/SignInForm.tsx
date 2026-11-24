@@ -3,6 +3,7 @@
 import { useRef, useState, type FormEvent } from 'react';
 import { Checkbox, Link } from '@ad/ui';
 import type { AuthResult } from '../../lib/data';
+import { SocialButtons } from './SocialButtons';
 import { AuthBanner, AuthField, AuthPasswordField, AuthSubmit } from './AuthParts';
 import { NETWORK_MESSAGE, RATE_LIMIT_MESSAGE, emailError } from './shared';
 import { useFocusFirstInvalid } from './useFocusFirstInvalid';
@@ -32,6 +33,7 @@ export function SignInForm({
   notice,
   noticeTone = 'success',
   turnstileSiteKey,
+  google,
 }: {
   onSubmit: (values: SignInValues) => Promise<AuthResult>;
   onDone: (next: string) => void;
@@ -43,6 +45,8 @@ export function SignInForm({
   noticeTone?: 'success' | 'info';
   /** Turns on the Cloudflare Turnstile check. Leave out when no keys are configured. */
   turnstileSiteKey?: string;
+  /** Draws Continue with Google under the main button. Leave out when Google is not configured. */
+  google?: { href: string } | null;
 }) {
   const turnstile = useTurnstile(turnstileSiteKey);
   const formRef = useRef<HTMLFormElement>(null);
@@ -189,6 +193,7 @@ export function SignInForm({
             ? `Try again in ${lockedMinutes} min`
             : 'Sign in'}
       </AuthSubmit>
+      <SocialButtons google={google} next={next} />
       {signUpOpen ? (
         <p className="auth-alt">
           New here?{' '}

@@ -1,0 +1,81 @@
+/*
+ * Continue with Google (DESIGN-SYSTEM 11.26). The only raw colours outside tokens.css and GoogleMark.tsx:
+ * button fill #FFFFFF, stroke #747775 (4.53:1 on white) and label #1F1F1F (16.5:1). Light theme only.
+ */
+.google-social {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.google-divider {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  color: var(--color-muted);
+  font-size: calc(14px * var(--type-scale));
+}
+
+.google-divider::before,
+.google-divider::after {
+  content: '';
+  flex: 1;
+  border-top: 1px solid var(--color-border);
+}
+
+.google-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  inline-size: 100%;
+  min-height: 48px;
+  box-sizing: border-box;
+  padding: 0 var(--space-4);
+  border: 1px solid #747775;
+  border-radius: var(--radius-md);
+  background: #ffffff;
+  color: #1f1f1f;
+  font-family: var(--font-sans);
+  font-size: 1rem;
+  font-weight: 500;
+  line-height: 1.25;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.google-btn:focus-visible {
+  outline: 3px solid var(--color-focus-ring);
+  outline-offset: 2px;
+}
+
+.google-btn[aria-disabled='true'] {
+  cursor: progress;
+}
+
+.google-btn__mark,
+.google-btn__spinner {
+  flex: none;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .google-btn:hover {
+    background: var(--color-surface-sunken);
+  }
+}
+
+.google-btn__spinner {
+  animation: google-spin var(--motion-spin) linear infinite;
+  transform-origin: 50% 50%;
+}
+
+@keyframes google-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .google-btn__spinner {
+    animation: none;
+  }
+}

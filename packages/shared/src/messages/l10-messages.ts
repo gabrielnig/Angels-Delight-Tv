@@ -131,4 +131,57 @@ export const L10_MESSAGES = {
     'Size, background, edge, colour and contrast go back to the defaults. Your other settings stay as they are.',
   'account.playback.resetConfirm': 'Reset captions',
   'account.playback.resetCancel': 'Cancel',
+
+  // Google sign in (M49-S05 to S07)
+  'auth.google.continue': 'Continue with Google',
+  'auth.google.signUp': 'Sign up with Google',
+  'auth.google.redirecting': 'Opening Google',
+  'auth.google.or': 'or',
+  'auth.google.failedTitle': 'We could not sign you in with Google',
+  'auth.google.failedLead':
+    'Nothing changed on your account. You can try again, or sign in with your email and password.',
+  'auth.google.failedAction': 'Back to sign in',
+  'auth.google.linkTitle': 'Link Google to your account',
+  'auth.google.linkLeadBefore': 'We found an account for',
+  'auth.google.linkLeadAfter':
+    'Enter its password once to link Google. After that you can use either.',
+  'auth.google.linkPassword': 'Account password',
+  'auth.google.linkSubmit': 'Link Google',
+  'auth.google.linkWrong': 'That password is not right. Try again.',
+  'auth.google.linkLocked': 'Too many attempts. Try again in {wait}.',
+  'auth.google.linkExpired': 'This took too long. Start again from Sign in.',
+  'auth.google.linkNetwork': 'We could not reach the server. Check your connection and try again.',
+  'auth.google.linkForgot': 'Forgot your password?',
+  'auth.google.cancel': 'Cancel',
+  'auth.google.finishTitle': 'Finish setting up',
+  'auth.google.finishLeadBefore': 'Google confirmed',
+  'auth.google.finishLeadAfter': 'One more step and your account is ready.',
+  'auth.google.finishTerms':
+    'By continuing you agree to the Terms and Privacy Policy and confirm you are an adult or a guardian. You will not need a password. You can set one later in Security.',
+  'auth.google.finishSubmit': 'Create my account',
+  'auth.google.finishExpired': 'This took too long. Start again from Sign in.',
+
+  // Connected sign in methods on the Security screen (M49-S06)
+  'account.google.title': 'Connected sign in',
+  'account.google.lead': 'Use your Google account to sign in without typing a password.',
+  'account.google.rowName': 'Google',
+  'account.google.connected': 'Connected as {hint}',
+  'account.google.notConnected': 'Not connected',
+  'account.google.connect': 'Connect Google',
+  'account.google.unlink': 'Remove Google',
+  'account.google.unlinkTitle': 'Remove Google?',
+  'account.google.unlinkLead':
+    'You will sign in with your email and password instead. We will email you to confirm.',
+  'account.google.unlinkPassword': 'Your password',
+  'account.google.unlinkWrong': 'That password is not right.',
+  'account.google.unlinkConfirm': 'Remove Google',
+  'account.google.unlinkCancel': 'Cancel',
+  'account.google.unlinkDone': 'Google removed.',
+  'account.google.connectedDone': 'Google connected.',
+  'account.google.setPasswordTitle': 'Set a password first',
+  'account.google.setPasswordLead':
+    'Google is the only way you sign in right now. Set a password, then you can remove Google.',
+  'account.google.setPasswordAction': 'Set a password',
+  'account.google.locked': 'Too many tries. Try again in {wait}.',
+  'account.google.failed': 'We could not do that. Try again.',
 } as const;

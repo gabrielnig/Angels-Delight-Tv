@@ -6,6 +6,8 @@ import {
   sessionCookieOptions,
   deviceCookieName,
   twoStepCookieName,
+  googleStateCookieName,
+  googleNoteCookieName,
 } from './cookies';
 
 describe('session cookie', () => {
@@ -63,6 +65,15 @@ describe('two step pending cookie', () => {
   it('uses the host prefix when cookies are secure', () => {
     expect(twoStepCookieName(true)).toBe('__Host-ad_mv');
     expect(twoStepCookieName(false)).toBe('ad_mv');
+  });
+});
+
+describe('google sign in cookies', () => {
+  it('use the host prefix when cookies are secure and differ from each other', () => {
+    expect(googleStateCookieName(true)).toBe('__Host-ad_oauth');
+    expect(googleStateCookieName(false)).toBe('ad_oauth');
+    expect(googleNoteCookieName(true)).toBe('__Host-ad_goog');
+    expect(googleNoteCookieName(false)).toBe('ad_goog');
   });
 });
 

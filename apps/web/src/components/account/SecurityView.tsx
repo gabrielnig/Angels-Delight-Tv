@@ -9,6 +9,7 @@ import {
 } from '../../app/actions';
 import type { DeviceSession, LoginHistoryEntry, TwoFactorState } from '../../lib/data';
 import { ChangePasswordForm } from './ChangePassword';
+import { ConnectedSignInCard, type GoogleCardState } from './ConnectedSignInCard';
 import { DevicesCard, type SignOutEverywhereResult } from './DevicesPanel';
 import { EmailCard } from './EmailCard';
 import { InlineToast } from './InlineToast';
@@ -24,6 +25,8 @@ export function SecurityView({
   devices: initial,
   twoFactor,
   history,
+  google,
+  notice,
   revoke = revokeDeviceAction,
   revokeOthers = revokeOtherDevicesAction,
   signOutEverywhere = signOutEverywhereAction,
@@ -34,13 +37,19 @@ export function SecurityView({
   devices: DeviceSession[];
   twoFactor?: TwoFactorState;
   history?: LoginHistoryEntry[];
+  /** Null or missing when Google sign in is not configured, so the card is absent. */
+  google?: GoogleCardState | null;
+  /** A notice carried back from another screen, such as `google` after connecting. */
+  notice?: string;
   revoke?: (id: string) => Promise<unknown>;
   revokeOthers?: () => Promise<unknown>;
   signOutEverywhere?: (password: string) => Promise<SignOutEverywhereResult>;
 }) {
   const router = useRouter();
   const [devices, setDevices] = useState(initial);
-  const [toast, setToast] = useState<{ text: string; error?: boolean } | null>(null);
+  const [toast, setToast] = useState<{ text: string; error?: boolean } | null>(
+    notice === 'google' ? { text: msg('account.google.connectedDone') } : null,
+  );
   const dismiss = useCallback(() => setToast(null), []);
 
   async function onRevoke(id: string) {
@@ -101,6 +110,12 @@ export function SecurityView({
                 change === 'on' ? msg('account.twoStep.onDone') : msg('account.twoStep.offDone'),
             })
           }
+        />
+      ) : null}
+      {google ? (
+        <ConnectedSignInCard
+          initial={google}
+          onChanged={() => setToast({ text: msg('account.google.unlinkDone') })}
         />
       ) : null}
       <EmailCard

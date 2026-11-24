@@ -26,6 +26,7 @@ import {
 
 const MAIN_TABLES = [
   'account_deletions',
+  'account_identities',
   'accounts',
   'admin_invites',
   'admin_notices',

@@ -88,6 +88,15 @@ describe('registry shape', () => {
     expect(parse('features.airplay', 'yes').success).toBe(false);
   });
 
+  it('has a Sign in with Google flag that is on, super admin only and never public (M49-S05)', () => {
+    const def = SETTING_DEFS['features.signin_with_google'];
+    expect(def.default).toBe(true);
+    expect(def.tier).toBe('super');
+    expect(def.isPublic).toBe(false);
+    expect(parse('features.signin_with_google', false).success).toBe(true);
+    expect(parse('features.signin_with_google', 'yes').success).toBe(false);
+  });
+
   it('rejects unknown keys', () => {
     expect(isSettingKey('__proto__')).toBe(false);
     expect(isSettingKey('constructor')).toBe(false);

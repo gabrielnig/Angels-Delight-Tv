@@ -37,3 +37,36 @@ describe('design doc documents --font-mono (L10 plan 12.1, R38)', () => {
     expect(block).toContain('user-select: all');
   });
 });
+
+describe('design system documents the Google button exception (plan 12.2, R38)', () => {
+  const ds = read('docs/DESIGN-SYSTEM.md');
+
+  it('lists the four mark colours and the three button values', () => {
+    for (const hex of [
+      '#EA4335',
+      '#4285F4',
+      '#FBBC05',
+      '#34A853',
+      '#FFFFFF',
+      '#747775',
+      '#1F1F1F',
+    ]) {
+      expect(ds).toContain(hex);
+    }
+    expect(ds).toContain('Continue with Google');
+    expect(ds).toContain('Sign up with Google');
+  });
+
+  it('the skill greps ignore only the Google files', () => {
+    const skill = read('.claude/skills/angels-delight-design-system/SKILL.md');
+    expect(skill).toContain("grep -v -e 'components/auth/GoogleMark.tsx'");
+    expect(skill).toContain('Any other Google brand colour in a component is a Blocker.');
+  });
+
+  it('the mark file holds exactly the four brand colours', () => {
+    const mark = read('apps/web/src/components/auth/GoogleMark.tsx');
+    expect((mark.match(/#[0-9A-Fa-f]{6}/g) ?? []).sort()).toEqual(
+      ['#34A853', '#4285F4', '#EA4335', '#FBBC05'].sort(),
+    );
+  });
+});

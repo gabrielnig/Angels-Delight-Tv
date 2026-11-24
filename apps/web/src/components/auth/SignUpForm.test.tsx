@@ -172,3 +172,24 @@ describe('SignUpForm', () => {
     expect(screen.getByLabelText(/^Email/)).toHaveValue('chioma@example.com');
   });
 });
+
+describe('SignUpForm Sign up with Google (M49-S05 AC1)', () => {
+  it('shows the sign up label when configured', () => {
+    render(
+      <SignUpForm
+        onSubmit={vi.fn()}
+        onDone={vi.fn()}
+        google={{ href: '/api/auth/google/start' }}
+      />,
+    );
+    expect(screen.getByRole('link', { name: 'Sign up with Google' })).toHaveAttribute(
+      'href',
+      '/api/auth/google/start',
+    );
+  });
+
+  it('shows nothing about Google when it is not configured', () => {
+    render(<SignUpForm onSubmit={vi.fn()} onDone={vi.fn()} />);
+    expect(screen.queryByText(/Google/)).not.toBeInTheDocument();
+  });
+});

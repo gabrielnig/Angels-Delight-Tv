@@ -1712,3 +1712,21 @@ Decision: `video.preview` catches every error and records `failed` or `skipped` 
 - Options: a stored token table, sign in to unsubscribe, one email per profile.
 - Why: one click unsubscribe works without a session as mail apps expect, households never learn what another profile follows, and no extra table holds secrets.
 - Reversible: yes.
+
+## D-314 Google sign in is optional, built on a small OIDC client with PKCE, state and nonce, and links by verified email only (lane L10, M49-S05 to S07, D-L10-03)
+- Decision: `Continue with Google` exists only when `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` are both set on the server (never in git) and the site setting `features.signin_with_google` is on. Otherwise no button renders and `/api/auth/google/start` and `/callback` answer 404. The flow is the authorization code flow with PKCE (S256), a signed ten minute `ad_oauth` cookie holding state, nonce and verifier, and a full ID token check (RS256 signature against Google's published keys, issuer, audience, expiry, nonce, `sub`, and `email_verified` exactly `true`). Every failure ends on one generic page and writes an audit entry with the reason. Link rules, in `packages/auth/src/oauth/link-rules.ts`: unverified email refused; an existing `(google, sub)` identity signs in whatever the address now is; no account creates a verified account with no password after a "Finish setting up" screen (terms and age consent, same wording as email sign up); a verified password account is never linked silently and must give its password once (wrong tries count toward the sign in lockout); an unverified password account is adopted and its password cleared; staff accounts are refused and audited; suspended is refused, pending deletion opens the cancel session. Viewer two step still applies after Google. A closed sign up (invite only) refuses new Google accounts because Google cannot carry an invite code. The label stays `var(--font-sans)` (one family), not Roboto Medium, as plan 12.2 recommends.
+- Options: `arctic` (named in ARCHITECTURE 3.1; rejected here because the flow is about 150 lines on `fetch` and a fake provider makes it fully testable with no new dependency); Auth.js (rejected earlier); link by email automatically (rejected, takeover risk).
+- Why: an optional feature that adds no dependency, cannot take over an account, and disappears when the client does not want it.
+- Reversible: yes. Remove the keys, or switch the site setting off. The `account_identities` table is additive.
+
+## D-315 Apple sign in is not built (lane L10, D-L10-04)
+- Decision: no Sign in with Apple. Apple's rule that requires it applies to native App Store apps that offer other social logins. This is a website and a PWA. Revisit if a native wrapper is ever shipped.
+- Options: build it beside Google; leave it out.
+- Why: it costs a paid developer account and key handling for no current requirement.
+- Reversible: yes.
+
+## D-316 Google only accounts have a null password hash, and password gated actions say "Set a password" (lane L10, D-L10-05)
+- Decision: migration `0051_account_identities.sql` drops `password_hash IS NOT NULL` from `accounts_live_has_credentials`. A null hash means "no password": `AccountService.signIn` already runs the dummy verify and returns the generic failure. A Google only account sets a password through Forgot password, and until then actions that ask for the password (Sign out everywhere, turn off two step, new recovery codes, Remove Google) say "Set a password first". The identity row keeps the address only as the lookup hash plus a masked hint (`email_hint`, such as `j***@gmail.com`) for the Security screen. A verified account with no password and no identity cannot happen today, so rule 4 answers it with a refusal that points to Forgot password instead of an emailed code (no new token purpose).
+- Options: store a random unusable hash (rejected, hides a real state); an emailed one time code to link (rejected for now, needs a new token purpose).
+- Why: the honest state in the database is the safe one, and the unreachable edge stays closed.
+- Reversible: yes, with a migration.

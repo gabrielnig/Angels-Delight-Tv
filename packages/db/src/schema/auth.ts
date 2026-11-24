@@ -116,3 +116,31 @@ export const loginEvents = pgTable(
     check('login_events_country_code', sql`${t.country} IS NULL OR char_length(${t.country}) = 2`),
   ],
 );
+
+/**
+ * A sign in method linked to an account (M49-S05, S06). Only Google for now. The address is held as the keyed
+ * lookup hash plus a masked hint, never in clear. `(provider, subject)` is the key: a change of address at Google
+ * does not move the identity, and one identity belongs to one account.
+ */
+export const accountIdentities = pgTable(
+  'account_identities',
+  {
+    id: pk(),
+    accountId: uuid('account_id')
+      .notNull()
+      .references(() => accounts.id, { onDelete: 'cascade' }),
+    provider: text('provider').notNull(),
+    subject: text('subject').notNull(),
+    emailHash: bytea('email_hash').notNull(),
+    /** A masked address such as j***@gmail.com, for the Security screen. */
+    emailHint: text('email_hint').notNull(),
+    linkedAt: timestamptz('linked_at').notNull().defaultNow(),
+    lastUsedAt: timestamptz('last_used_at'),
+  },
+  (t) => [
+    check('account_identities_provider_known', sql`${t.provider} IN ('google')`),
+    uniqueIndex('account_identities_provider_subject_uniq').on(t.provider, t.subject),
+    uniqueIndex('account_identities_account_provider_uniq').on(t.accountId, t.provider),
+  ],
+);
+

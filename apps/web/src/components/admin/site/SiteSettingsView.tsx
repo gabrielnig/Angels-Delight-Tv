@@ -56,6 +56,7 @@ const FLAG_KEYS: SettingKey[] = [
   'features.captions_default_available',
   'features.guest_play',
   'features.airplay',
+  'features.signin_with_google',
 ];
 
 const NUMBER_RULES: Partial<Record<SettingKey, NumberRule>> = {

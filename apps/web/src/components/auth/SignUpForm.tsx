@@ -3,6 +3,7 @@
 import { useRef, useState, type FormEvent } from 'react';
 import { Link, evaluatePassword, type PasswordScorer } from '@ad/ui';
 import type { SignUpResult } from '../../lib/data';
+import { SocialButtons } from './SocialButtons';
 import { AuthBanner, AuthField, AuthPasswordField, AuthSubmit } from './AuthParts';
 import { SIGN_UP_NETWORK_MESSAGE, SIGN_UP_RATE_LIMIT_MESSAGE, emailError } from './shared';
 import { useFocusFirstInvalid } from './useFocusFirstInvalid';
@@ -21,6 +22,7 @@ export function SignUpForm({
   inviteOnly = false,
   scorer,
   turnstileSiteKey,
+  google,
 }: {
   onSubmit: (values: SignUpValues) => Promise<SignUpResult>;
   onDone: (next: string) => void;
@@ -28,6 +30,8 @@ export function SignUpForm({
   scorer?: PasswordScorer;
   /** Turns on the Cloudflare Turnstile check. Leave out when no keys are configured. */
   turnstileSiteKey?: string;
+  /** Draws Sign up with Google under the main button. Leave out when Google is not configured or sign up is closed. */
+  google?: { href: string } | null;
 }) {
   const turnstile = useTurnstile(turnstileSiteKey);
   const formRef = useRef<HTMLFormElement>(null);
@@ -172,6 +176,7 @@ export function SignUpForm({
       </p>
       <div className="auth-sticky">
         <AuthSubmit loading={busy}>{busy ? 'Creating account' : 'Create account'}</AuthSubmit>
+        <SocialButtons google={google} variant="signUp" />
       </div>
       <p className="auth-alt">
         Already have an account?{' '}

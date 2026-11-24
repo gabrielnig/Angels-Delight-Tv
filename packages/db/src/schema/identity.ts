@@ -44,7 +44,8 @@ export const accounts = pgTable(
     ),
     check(
       'accounts_live_has_credentials',
-      sql`${t.status} = 'deleted' OR (${t.emailHash} IS NOT NULL AND ${t.emailEnc} IS NOT NULL AND ${t.passwordHash} IS NOT NULL)`,
+      // A null password hash means "no password" (a Google only account, M49-D-L10-05).
+      sql`${t.status} = 'deleted' OR (${t.emailHash} IS NOT NULL AND ${t.emailEnc} IS NOT NULL)`,
     ),
     check('accounts_locale_length', sql`char_length(${t.locale}) BETWEEN 2 AND 35`),
     uniqueIndex('accounts_email_hash_uniq')
