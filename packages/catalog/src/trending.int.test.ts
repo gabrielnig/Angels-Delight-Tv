@@ -136,6 +136,11 @@ describe.skipIf(!integrationEnabled())('trending read path (M44-S07 to S09)', ()
       kind,
       categorySlug: null,
       seriesId: null,
+      seriesSlug: null,
+      slug: null,
+      viewAllMode: 'auto',
+      viewAllUrl: null,
+      minItems: 1,
       maxItems: 20,
     });
     const trending = await run((tx) => resolveRow(tx, ctx, { kids: false }, row('trending')));
