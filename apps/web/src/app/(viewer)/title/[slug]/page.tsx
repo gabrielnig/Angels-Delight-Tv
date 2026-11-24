@@ -110,6 +110,7 @@ export default async function TitlePage({ params }: Params) {
       <TitleView
         detail={detail}
         inList={ids.includes(itemKey(detail.video))}
+        rating={{ profileId: ctx.profileId, kind: 'video', id: detail.video.id }}
         share={share}
         kids={kids}
       />

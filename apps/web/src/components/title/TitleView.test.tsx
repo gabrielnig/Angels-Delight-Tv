@@ -259,4 +259,23 @@ describe('PublicSeries', () => {
       '/sign-up',
     );
   });
+
+  it('shows the rating group for a signed in adult and for a guest, never for kids or an episode', () => {
+    vi.stubGlobal('fetch', vi.fn(() => new Promise(() => undefined)));
+    const withUi = (ui: React.ReactElement) => render(<ToastProvider>{ui}</ToastProvider>);
+    const guestView = withUi(<TitleView detail={detail({})} inList={false} guest={{ signUpOpen: true }} />);
+    expect(screen.getByRole('group', { name: 'Rate this title' })).toBeInTheDocument();
+    guestView.unmount();
+    const kidsView = withUi(
+      <TitleView detail={detail({})} inList={false} guest={{ signUpOpen: true }} kids />,
+    );
+    expect(screen.queryByRole('group', { name: 'Rate this title' })).toBeNull();
+    kidsView.unmount();
+    const episode = detail({
+      video: { ...video, series: { slug: 's', title: 'S', season: 1, episode: 1 } },
+    });
+    withUi(<TitleView detail={episode} inList={false} guest={{ signUpOpen: true }} />);
+    expect(screen.queryByRole('group', { name: 'Rate this title' })).toBeNull();
+    vi.unstubAllGlobals();
+  });
 });
