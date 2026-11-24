@@ -69,6 +69,7 @@ export function WatchActions({ videoId, title, initialInMyList, onToggleMyList, 
         <SignInToSaveDialog
           open={saveOpen}
           reason="my-list"
+          intent={{ kind: 'my-list', itemKey: `video:${videoId}` }}
           next={`/watch/${videoId}`}
           signUpOpen={guest.signUpOpen}
           onClose={() => setSaveOpen(false)}

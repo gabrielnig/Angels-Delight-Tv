@@ -11,6 +11,7 @@ vi.mock('next/navigation', () => ({
 vi.mock('../app/actions', () => ({ signOutAction: vi.fn() }));
 vi.mock('./pwa/QueueSync', () => ({ QueueSync: () => null }));
 vi.mock('./KidsExitDialog', () => ({ KidsExitDialog: () => null }));
+vi.mock('./guest/GuestIntentApplier', () => ({ GuestIntentApplier: () => null }));
 
 import { ViewerChrome } from './ViewerChrome';
 
