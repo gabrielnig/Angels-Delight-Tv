@@ -48,6 +48,10 @@ export interface PlayerProps {
   onPreferencesChange?: (preferences: PlayerPreferences) => void;
   next?: UpNextItem | null;
   onNext?: (item: UpNextItem) => void;
+  /** Warms the next page once the Next tile shows. Never called with Data saver on. */
+  prefetchNext?: (item: UpNextItem) => void;
+  /** Autoplays in a row with no input, kept by the host for the session. */
+  autoplayStreak?: { get(): number; set(value: number): void };
   end?: EndScreenData;
   links?: OverlayLinks & { playbackSettings?: string };
   onSignIn?: () => void;
@@ -181,6 +185,8 @@ export function Player(props: PlayerProps) {
         ...(p.dataSaverMaxHeight ? { dataSaverMaxHeight: p.dataSaverMaxHeight } : {}),
         onPreferencesChange: (prefs) => latest.current.onPreferencesChange?.(prefs),
         onNext: (item) => latest.current.onNext?.(item),
+        prefetchNext: (item) => latest.current.prefetchNext?.(item),
+        ...(p.autoplayStreak ? { autoplayStreak: p.autoplayStreak } : {}),
         onUnauthorized: () => latest.current.onSignIn?.(),
         onForbidden: () => latest.current.onForbidden?.(),
       });

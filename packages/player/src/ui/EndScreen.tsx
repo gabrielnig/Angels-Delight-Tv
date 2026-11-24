@@ -1,5 +1,6 @@
 import { PlayIcon, PlusIcon, ReplayIcon } from './icons';
 import type { UpNextItem } from '../types';
+import { StillWatching } from './StillWatching';
 
 export interface RelatedItem extends UpNextItem {
   href: string;
@@ -26,6 +27,10 @@ interface Props {
   countdownTotal: number;
   cancelled: boolean;
   autoplayNext: boolean;
+  /** Three autoplays ran with no input, so ask before going on. */
+  stillWatching?: boolean;
+  onKeepWatching?(): void;
+  onStopAutoplay?(): void;
   onPlayNext(): void;
   onCancel(): void;
   onReplay(): void;
@@ -82,6 +87,9 @@ export function EndScreen({
   countdownTotal,
   cancelled,
   autoplayNext,
+  stillWatching,
+  onKeepWatching,
+  onStopAutoplay,
   onPlayNext,
   onCancel,
   onReplay,
@@ -104,6 +112,17 @@ export function EndScreen({
       Replay
     </button>
   );
+
+  if (next && stillWatching) {
+    return (
+      <StillWatching
+        title={next.title}
+        stopHref={data.backHref}
+        onKeep={() => onKeepWatching?.()}
+        onStop={() => onStopAutoplay?.()}
+      />
+    );
+  }
 
   if (next && countdown !== null) {
     return (

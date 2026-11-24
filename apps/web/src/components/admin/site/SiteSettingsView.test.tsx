@@ -255,6 +255,26 @@ describe('features and limits', () => {
     expect(await screen.findByText('Enter a number from 1 to 10')).toBeInTheDocument();
   });
 
+  it('saves a countdown between 5 and 10 and rejects 4 and 11', async () => {
+    const { actions, user } = setup();
+    await open(user);
+    const input = screen.getByLabelText('Next video countdown seconds');
+    expect(input).toHaveValue('5');
+    for (const bad of ['4', '11']) {
+      await user.clear(input);
+      await user.type(input, bad);
+      await user.click(screen.getByRole('button', { name: /save changes/i }));
+      expect(await screen.findByText('Enter a number from 5 to 10')).toBeInTheDocument();
+    }
+    expect(actions.update).not.toHaveBeenCalled();
+    await user.clear(input);
+    await user.type(input, '8');
+    await user.click(screen.getByRole('button', { name: /save changes/i }));
+    await waitFor(() =>
+      expect(actions.update).toHaveBeenCalledWith({ 'playback.countdown_seconds': 8 }),
+    );
+  });
+
   it('shows the upload limit in GB and saves bytes', async () => {
     const { actions, user } = setup();
     await open(user);

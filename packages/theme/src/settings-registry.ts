@@ -297,6 +297,15 @@ export const SETTING_DEFS = {
     label: 'Rewind on resume seconds',
     description: 'Resume this many seconds earlier',
   }),
+  'playback.countdown_seconds': def({
+    schema: int(5, 10),
+    default: 5,
+    isPublic: false,
+    tier: 'super',
+    group: 'limits',
+    label: 'Next video countdown seconds',
+    description: 'How long the next video waits before it starts by itself. Between 5 and 10',
+  }),
   'content.default_language': def({
     schema: language,
     default: 'en',

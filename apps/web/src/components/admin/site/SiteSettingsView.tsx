@@ -61,6 +61,7 @@ const NUMBER_RULES: Partial<Record<SettingKey, NumberRule>> = {
   'playback.finish_percent': { min: 80, max: 100 },
   'playback.start_threshold_seconds': { min: 0, max: 60 },
   'playback.rewind_seconds': { min: 0, max: 30 },
+  'playback.countdown_seconds': { min: 5, max: 10 },
   'analytics.raw_retention_days': { min: 7, max: 730 },
   'audit.retention_months': { min: 6, max: 120 },
 };
