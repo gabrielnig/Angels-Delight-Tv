@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Angels Delight TV Confirm dialogs, phone</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#F5F5F2;font-family:'Inter',system-ui,sans-serif;color:#1A1C22;font-size:15px;line-height:1.4}
+a{color:inherit;text-decoration:none}
+h1,h2,h3{font-family:'Space Grotesk','Inter',sans-serif;margin:0}
+button,input,select,textarea{font-family:inherit;font-size:15px;color:#1A1C22}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:44px;padding:0 18px;border-radius:8px;border:1px solid #8A8D94;background:#fff;font-weight:600;cursor:pointer;white-space:nowrap}
+.btn.p{background:#1F6FB5;border-color:#1F6FB5;color:#fff}
+.btn.a{background:#FFC93C;border-color:#FFC93C;color:#1A1C22}
+.btn.d{border-color:#B42318;color:#B42318}
+.btn.dd{background:#B42318;border-color:#B42318;color:#fff}
+.btn.g{border-color:transparent;background:transparent;color:#1F6FB5;padding:0 10px}
+.btn.dis{background:#ECEAE3;border-color:#DEDDD6;color:#5B606B;cursor:not-allowed}
+.btn.sm{height:44px;padding:0 12px;font-size:14px}
+.focus{outline:3px solid #1F6FB5;outline-offset:2px}
+.focusd{outline:3px solid #FFC93C;outline-offset:2px}
+.badge{display:inline-flex;align-items:center;gap:5px;height:24px;padding:0 8px;border-radius:4px;font-size:13px;font-weight:600;white-space:nowrap}
+.b-n{background:#ECEAE3;color:#1A1C22}.b-i{background:#E3F1FF;color:#14568F}.b-s{background:#E4F4EA;color:#1E7A46}.b-w{background:#FFF3D6;color:#8A5A00}.b-d{background:#FDECEA;color:#B42318}
+.card{background:#fff;border:1px solid #DEDDD6;border-radius:12px}
+.inp{height:44px;border:1px solid #8A8D94;border-radius:8px;background:#fff;padding:0 12px;display:flex;align-items:center;gap:8px;width:100%}
+.inp.err{border:2px solid #B42318}
+.lbl{font-size:14px;font-weight:600;margin-bottom:6px;display:block}
+.mut{color:#5B606B}
+.bar{height:8px;border-radius:999px;background:#ECEAE3;overflow:hidden}
+.bar>i{display:block;height:8px;border-radius:999px;background:#1F6FB5}
+.bar.dg>i{background:#B42318}.bar.ok>i{background:#1E7A46}.bar.pz>i{background:#8A8D94}
+.tbl{width:100%;border-collapse:collapse;font-size:14px}
+.tbl th{background:#ECEAE3;text-align:left;font-size:13px;font-weight:600;padding:0 14px;height:44px;white-space:nowrap}
+.tbl td{padding:0 14px;height:56px;border-top:1px solid #DEDDD6;vertical-align:middle}
+.tbl tr.sel td{background:#E3F1FF}
+.cbw{display:flex;align-items:center;justify-content:center;width:44px;height:44px;margin:0 -12px}
+.cb{width:20px;height:20px;border:2px solid #8A8D94;border-radius:4px;background:#fff;display:flex;align-items:center;justify-content:center}
+.cb.on{background:#1F6FB5;border-color:#1F6FB5}
+.sec{font-size:13px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:#5B606B}
+.chip{display:inline-flex;align-items:center;gap:6px;height:32px;padding:0 10px;border-radius:16px;background:#E3F1FF;color:#14568F;font-size:14px;font-weight:500}
+.pill{display:inline-flex;align-items:center;gap:6px;height:44px;padding:0 16px;border-radius:22px;border:1px solid #8A8D94;background:#fff;font-weight:500;font-size:14px}
+.pill.on{background:#1F6FB5;border-color:#1F6FB5;color:#fff;font-weight:600}
+.sw{width:44px;height:26px;border-radius:13px;background:#8A8D94;position:relative;flex:none}
+.sw::after{content:"";position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff}
+.sw.on{background:#1F6FB5}.sw.on::after{left:21px}
+.sk{background:#ECEAE3;border-radius:6px}
+.nv{display:flex;align-items:center;gap:12px;height:44px;padding:0 14px;border-radius:8px;color:#A9AEB9;font-size:15px;position:relative}
+.nv.on{background:#2E3138;color:#fff;font-weight:600}
+.nv.on::before{content:"";position:absolute;left:0;top:8px;bottom:8px;width:3px;border-radius:2px;background:#FFC93C}
+.nv .ct{margin-left:auto;background:#FFC93C;color:#1A1C22;font-size:12px;font-weight:700;border-radius:10px;padding:1px 7px}
+.ib{width:44px;height:44px;display:inline-flex;align-items:center;justify-content:center;border-radius:8px;border:1px solid #8A8D94;background:#fff}
+.ibn{border-color:transparent;background:transparent}
+.tip{font-size:13px;color:#5B606B}
+.crumbs ol{display:flex;flex-wrap:wrap;align-items:center;margin:0;padding:0;list-style:none;color:#5B606B;font-size:13px}
+.crumbs li{display:inline-flex;align-items:center;min-width:0;min-height:44px}
+.crumbs li+li::before{content:"/";flex:none;padding:0 8px}
+.crumbs a,.crumbs [aria-current]{display:inline-flex;align-items:center;min-height:44px;line-height:1.5}
+.crumbs a{color:#5B606B;min-width:44px;justify-content:center}
+.crumbs [aria-current]{display:inline-block;line-height:44px;color:#1A1C22;min-width:0;max-width:40ch;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.crumbs.viewer a{color:#1F6FB5;text-decoration:underline}
+.crumbs a.hov{color:#1A1C22;text-decoration:underline}
+.crumbs.bug li{display:block;min-height:0}
+.crumbs.bug li+li{display:block}
+.crumbs.bug a{display:inline-flex;align-items:center;min-height:44px}
+.crumbs.bug [aria-current]{display:inline;min-height:0}
+.crumbs.bug ol{align-items:stretch}
+.crumbs.back li{display:none}
+.crumbs.back li.par{display:inline-flex}
+.crumbs.back li.par::before{content:none}
+.crumbs.back li.par a{gap:4px;font-size:14px;font-weight:600;color:#1F6FB5}
+.crumbs.back li.only{display:inline-flex}
+.crumbs.back li.only::before{content:none}
+.num{text-align:right;font-variant-numeric:tabular-nums}
+.tbl th.num,.tbl td.num{text-align:right;font-variant-numeric:tabular-nums}
+.tbl th.ctr,.tbl td.ctr{text-align:center}
+.tbl th.act,.tbl td.act{text-align:right}
+.tbl th:first-child,.tbl td:first-child{padding-inline-start:16px}
+.tbl th:last-child,.tbl td:last-child{padding-inline-end:16px}
+.tbl tr.hov td{background:#E3F1FF}
+.tbl.bug th{text-align:left}
+.bulk{background:#17181C;color:#fff;border-radius:12px;padding:8px 16px;min-height:60px;display:flex;align-items:center;gap:12px;box-shadow:0 8px 24px rgba(0,0,0,.25);flex-wrap:wrap}
+.bulk .cnt{font-weight:700;font-size:15px;white-space:nowrap}
+.bulk .w{background:#fff;color:#1A1C22;border-color:#fff}
+.bulk .w.dng{color:#B42318}
+.bulk .w.off{background:#3A3D46;border-color:#3A3D46;color:#C9CCD3;cursor:not-allowed}
+.bulk .clr{background:transparent;color:#fff;border-color:#A9AEB9}
+.bulk .lnk{display:inline-flex;align-items:center;min-height:44px;color:#FFC93C;font-weight:600;text-decoration:underline;white-space:nowrap}
+.bulk .mt{color:#C9CCD3;font-size:14px}
+.bulk .focusd{outline:3px solid #FFC93C;outline-offset:2px}
+.tt{background:#1A1C22;color:#fff;font-size:13px;padding:8px 12px;border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.3);display:inline-block;max-width:280px;line-height:1.4}
+.scrim{background:rgba(26,28,34,.6);padding:32px;display:flex;justify-content:center;border-radius:12px}
+.dlg{width:480px;max-width:100%;background:#fff;border-radius:16px;box-shadow:0 16px 48px rgba(0,0,0,.3);display:flex;flex-direction:column}
+.dlg.md{width:560px}
+.dlg .hd{display:flex;align-items:flex-start;gap:8px;padding:20px 20px 0 24px}
+.dlg .hd h3{font-size:20px;flex:1;padding-top:8px}
+.dlg .bd2{padding:12px 24px 8px;display:flex;flex-direction:column;gap:14px}
+.dlg .ft{display:flex;justify-content:flex-end;gap:10px;padding:16px 24px 24px;flex-wrap:wrap}
+.sheet{background:#fff;border-radius:16px 16px 0 0;box-shadow:0 -8px 32px rgba(0,0,0,.3);display:flex;flex-direction:column;padding-bottom:max(16px,env(safe-area-inset-bottom))}
+.sheet .grab{width:40px;height:4px;border-radius:2px;background:#8A8D94;margin:10px auto 0}
+.sheet .hd{padding:8px 16px 0 20px;display:flex;align-items:flex-start;gap:8px}
+.sheet .hd h3{font-size:19px;flex:1;padding-top:8px}
+.sheet .bd2{padding:10px 20px;display:flex;flex-direction:column;gap:12px}
+.sheet .ft{display:flex;flex-direction:column;gap:8px;padding:6px 20px 8px}
+.sheet .ft .btn{width:100%}
+.toast{width:360px;max-width:100%;border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.2);padding:4px 4px 4px 14px;display:flex;align-items:center;gap:10px;min-height:56px;border:1px solid}
+.toast.s{background:#E4F4EA;border-color:#1E7A46;color:#14532D}
+.toast.i{background:#E3F1FF;border-color:#1F6FB5;color:#14568F}
+.toast.e{background:#FDECEA;border-color:#B42318;color:#8E1B12}
+.toast .t{flex:1;font-size:14px;font-weight:500;line-height:1.35;padding:6px 0}
+.toast .t small{display:block;font-weight:400;font-size:13px}
+.toast .ac{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:0 10px;font-weight:700;font-size:14px;text-decoration:underline}
+.cd{height:3px;background:#1E7A46;border-radius:2px}
+.rep{border:1px solid;border-radius:12px;padding:16px 20px;display:flex;flex-direction:column;gap:12px}
+.rep.w{background:#FFF3D6;border-color:#8A5A00;color:#5E3D00}
+.rep.d{background:#FDECEA;border-color:#B42318;color:#8E1B12}
+.rep.s{background:#E4F4EA;border-color:#1E7A46;color:#14532D}
+.rep.n{background:#fff;border-color:#8A8D94;color:#1A1C22}
+.rep h3{font-size:16px}
+.rep ul{list-style:none;margin:0;padding:0;background:#fff;border-radius:8px;color:#1A1C22;border:1px solid #DEDDD6}
+.rep li{display:flex;gap:12px;padding:10px 14px;align-items:baseline;font-size:14px}
+.rep li+li{border-top:1px solid #DEDDD6}
+.rep li a{font-weight:600;text-decoration:underline}
+.rep li .why{color:#5B606B}
+.rep .acts{display:flex;gap:10px;flex-wrap:wrap}
+.lbx{display:flex;gap:12px;align-items:flex-start;min-height:44px}
+.warnp{background:#FFF3D6;border:1px solid #8A5A00;border-radius:8px;padding:12px 14px;color:#5E3D00;display:flex;gap:10px;font-size:14px}
+.erp{background:#FDECEA;border:1px solid #B42318;border-radius:8px;padding:12px 14px;color:#8E1B12;display:flex;gap:10px;font-size:14px}
+.infp{background:#E3F1FF;border:1px solid #1F6FB5;border-radius:8px;padding:12px 14px;color:#14568F;display:flex;gap:10px;font-size:14px}
+.pbar{height:8px;border-radius:999px;background:#ECEAE3;overflow:hidden}
+.pbar i{display:block;height:8px;border-radius:999px;background:#1F6FB5}
+.menu{background:#fff;border:1px solid #DEDDD6;border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.18);padding:4px;display:flex;flex-direction:column;min-width:240px}
+.menu .mi{display:flex;align-items:center;gap:10px;min-height:44px;padding:0 12px;border-radius:6px;font-size:14px;font-weight:500}
+.menu .mi.on{background:#E3F1FF}
+.menu .mi.off{color:#5B606B}
+.frm{border:1px dashed #8A8D94;border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:12px;background:#FAFAF7}
+.ttl{display:flex;align-items:center;gap:12px;margin:0}
+.vp{position:relative;width:390px;background:#F5F5F2;overflow:hidden}
+.dock{position:absolute;left:0;right:0;bottom:0;background:#17181C;color:#fff;padding:10px 12px max(10px,env(safe-area-inset-bottom));box-shadow:0 -4px 16px rgba(0,0,0,.25);display:flex;align-items:center;gap:8px}
+.dock .w{background:#fff;color:#1A1C22;border-color:#fff}
+.dock .clr{background:transparent;color:#fff;border-color:#A9AEB9}
+.sectl{font-size:13px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:#5B606B}
+.rad{width:22px;height:22px;border-radius:50%;border:2px solid #8A8D94;background:#fff;display:flex;align-items:center;justify-content:center;flex:none}
+.rad.on{border-color:#1F6FB5}.rad.on i{width:10px;height:10px;border-radius:50%;background:#1F6FB5;display:block}
+.opt{display:flex;gap:12px;align-items:flex-start;padding:12px 14px;border:1px solid #DEDDD6;border-radius:8px;background:#fff;min-height:44px}
+.opt.on{border:2px solid #1F6FB5;background:#E3F1FF;padding:11px 13px}
+.opt.dis{background:#ECEAE3;color:#5B606B}
+.cmenu{display:flex;gap:6px;flex-wrap:wrap}
+.crd{background:#fff;border:1px solid #DEDDD6;border-radius:12px}
+.crd.sel{background:#E3F1FF;border-color:#1F6FB5}
+.lst{list-style:none;margin:0;padding:4px 16px}
+.lst li{display:flex;align-items:center;gap:12px;padding:12px 0;border-top:1px solid #DEDDD6}
+.lst li:first-child{border-top:0}
+.lst.bug{padding:0}
+.lst.bug li{padding:12px 0}
+.mark{outline:2px dashed #B42318;outline-offset:2px}
+.okmark{outline:2px dashed #1E7A46;outline-offset:2px}
+.spin{width:18px;height:18px;border-radius:50%;border:3px solid currentColor;border-right-color:transparent;display:inline-block;flex:none}
+</style>
+</helmet>
+<div style="width:390px;background:#F5F5F2;min-height:700px"><div style="height:60px;background:#17181C;color:#fff;display:flex;align-items:center;gap:10px;padding:0 8px 0 8px"><span class="ib" style="border-color:#3A3D46;background:transparent;color:#fff"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none"><path d="M4 6h16M4 12h16M4 18h16"/></svg></span><span style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:18px;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Videos</span><span class="ib" style="border-color:#3A3D46;background:transparent;color:#fff"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none"><path d="M6 16V11a6 6 0 0112 0v5l2 2H4zM10 20h4"/></svg></span></div><div style="display:flex;flex-direction:column;gap:20px;padding-bottom:40px"><section><div style="padding:0 16px"><div class="sectl">Typed confirmation, empty</div><div class="tip" style="margin:4px 0 10px">Bottom sheet, actions stacked full width, primary first.</div></div><div style="background:rgba(26,28,34,.6);padding-top:40px"><div class="sheet" role="dialog" aria-modal="true" aria-label="Delete 7 videos forever?"><span class="grab"></span><div class="hd"><h3>Delete 7 videos forever?</h3><span class="ib ibn" role="button" aria-label="Close" style="" ><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none"><path d="M6 6l12 12M18 6L6 18"/></svg></span></div><div class="bd2"><div>This removes the videos and their files for everyone. This cannot be undone.</div><div><label class="lbl">Type 7 to confirm</label><div class="inp" style="color:#5B606B;"></div></div></div><div class="ft"><span class="btn dis"  style="">Delete 7 videos forever</span><span class="btn "  style="">Keep them</span></div></div></div></section><section><div style="padding:0 16px"><div class="sectl">Typed confirmation, matches</div><div class="tip" style="margin:4px 0 10px">Button enabled.</div></div><div style="background:rgba(26,28,34,.6);padding-top:40px"><div class="sheet" role="dialog" aria-modal="true" aria-label="Delete 7 videos forever?"><span class="grab"></span><div class="hd"><h3>Delete 7 videos forever?</h3><span class="ib ibn" role="button" aria-label="Close" style="" ><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none"><path d="M6 6l12 12M18 6L6 18"/></svg></span></div><div class="bd2"><div>This removes the videos and their files for everyone. This cannot be undone.</div><div><label class="lbl">Type 7 to confirm</label><div class="inp" style=";">7</div></div></div><div class="ft"><span class="btn dd"  style="">Delete 7 videos forever</span><span class="btn "  style="">Keep them</span></div></div></div></section><section><div style="padding:0 16px"><div class="sectl">Acknowledgement tick</div><div class="tip" style="margin:4px 0 10px">The warning, the Show those first link and the tick.</div></div><div style="background:rgba(26,28,34,.6);padding-top:40px"><div class="sheet" role="dialog" aria-modal="true" aria-label="Approve 9 captions?"><span class="grab"></span><div class="hd"><h3>Approve 9 captions?</h3><span class="ib ibn" role="button" aria-label="Close" style="" ><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none"><path d="M6 6l12 12M18 6L6 18"/></svg></span></div><div class="bd2"><div>Approved captions are published to viewers. This cannot be undone from here.</div><div class="warnp"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none"><path d="M12 4l9 16H3z"/><path d="M12 10v4M12 17v.5"/></svg><div>4 of these were made by the computer and nobody has opened or edited them. Auto captions can get names, places and numbers wrong.<div style="margin-top:6px"><a style="font-weight:700;text-decoration:underline;display:inline-flex;min-height:44px;align-items:center" href="#">Show those 4 first</a></div></div></div><div class="lbx"><span class="cbw"><span class="cb" style=""></span></span><div style="padding-top:10px;flex:1"><div style="font-weight:600">I understand and approve them anyway</div></div></div></div><div class="ft"><span class="btn dis"  style="">Approve 9 captions</span><span class="btn "  style="">Not now</span></div></div></div></section><section><div style="padding:0 16px"><div class="sectl">Shared reason with an error</div><div class="tip" style="margin:4px 0 10px">One reason for every account.</div></div><div style="background:rgba(26,28,34,.6);padding-top:40px"><div class="sheet" role="dialog" aria-modal="true" aria-label="Suspend 3 accounts?"><span class="grab"></span><div class="hd"><h3>Suspend 3 accounts?</h3><span class="ib ibn" role="button" aria-label="Close" style="" ><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none"><path d="M6 6l12 12M18 6L6 18"/></svg></span></div><div class="bd2"><div><label class="lbl">Reason for all 3 accounts</label><div style="min-height:84px;border:2px solid #B42318;border-radius:8px;padding:10px 12px;background:#fff">Do</div><div style="color:#B42318;font-size:13px;margin-top:6px;display:flex;gap:6px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none"><path d="M12 4l9 16H3z"/><path d="M12 10v4M12 17v.5"/></svg> Add a reason of at least 3 characters.</div></div></div><div class="ft"><span class="btn dis"  style="">Suspend 3 accounts</span><span class="btn "  style="">Not now</span></div></div></div></section><section><div style="padding:0 16px"><div class="sectl">Busy</div><div class="tip" style="margin:4px 0 10px">Dialog stays open, buttons locked.</div></div><div style="background:rgba(26,28,34,.6);padding-top:40px"><div class="sheet" role="dialog" aria-modal="true" aria-label="Move 7 videos to Trash?"><span class="grab"></span><div class="hd"><h3>Move 7 videos to Trash?</h3><span class="ib ibn" role="button" aria-label="Close" style="" ><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none"><path d="M6 6l12 12M18 6L6 18"/></svg></span></div><div class="bd2"><div>Working. Keep this window open.</div><div class="pbar" role="progressbar" aria-valuenow="50" aria-valuemin="0" aria-valuemax="100" aria-label="Moving to Trash"><i style="width:50%"></i></div></div><div class="ft"><span class="btn dd" aria-busy="true"><span class="spin"></span>Moving 7 videos</span><span class="btn dis"  style="">Cancel</span></div></div></div></section><section><div style="padding:0 16px"><div class="sectl">Focus ring</div><div class="tip" style="margin:4px 0 10px">The primary button with the 3px ring.</div></div><div style="background:rgba(26,28,34,.6);padding-top:40px"><div class="sheet" role="dialog" aria-modal="true" aria-label="Publish 12 videos?"><span class="grab"></span><div class="hd"><h3>Publish 12 videos?</h3><span class="ib ibn" role="button" aria-label="Close" style="" ><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none"><path d="M6 6l12 12M18 6L6 18"/></svg></span></div><div class="bd2"><div>9 are ready and will be published. 3 will be skipped.</div></div><div class="ft"><span class="btn p"  style="outline:3px solid #1F6FB5;outline-offset:2px">Publish 9 videos</span><span class="btn "  style="">Not now</span></div></div></div></section></div></div>
+</x-dc>
+</body>
+</html>
