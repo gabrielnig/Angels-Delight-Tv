@@ -39,7 +39,7 @@ export function CatalogCard({
   const maturityLabels = useMaturityLabels();
   // G is the norm on this site, so it draws no chip. Any other rank shows its label (S122).
   const maturity =
-    item.maturityRank != null && item.maturityRank > 0
+    typeof item.maturityRank === 'number' && item.maturityRank > 0
       ? maturityLabels[item.maturityRank]
       : undefined;
   const profileId = useProfileId();
