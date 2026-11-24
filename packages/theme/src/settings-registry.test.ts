@@ -178,3 +178,17 @@ describe('guest playback settings (M40-S10, G5, G9)', () => {
     expect(parse('limits.guest_segment_minutes', 20.5).success).toBe(false);
   });
 });
+
+describe('guest audience setting (M40-S10, R18)', () => {
+  it('defaults to general, is public, admin tier and accepts only general or kids', () => {
+    const def = SETTING_DEFS['features.guest_audience'];
+    expect(def.default).toBe('general');
+    expect(def.isPublic).toBe(true);
+    expect(def.tier).toBe('admin');
+    expect(def.label).toBe('Default for visitors without an account');
+    expect(parse('features.guest_audience', 'kids').success).toBe(true);
+    expect(parse('features.guest_audience', 'general').success).toBe(true);
+    expect(parse('features.guest_audience', 'adult').success).toBe(false);
+    expect(parse('features.guest_audience', true).success).toBe(false);
+  });
+});

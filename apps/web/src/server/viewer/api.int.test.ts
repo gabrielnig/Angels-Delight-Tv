@@ -50,9 +50,10 @@ describe.skipIf(!integrationEnabled())('viewer api', () => {
     await h?.drop();
   });
 
-  it('answers 401 with no session and sets no-store', async () => {
+  it('answers 401 with no session on a personal route and sets no-store', async () => {
     signedIn = null;
-    const res = await api.home(req(`/api/home?profileId=${me.profileId}`));
+    // Home, browse and search are public GETs since M40. Progress stays personal.
+    const res = await api.progress.get(req(`/api/progress?profileId=${me.profileId}`));
     expect(res.status).toBe(401);
     expect(res.headers.get('cache-control')).toBe('private, no-store');
     expect((await res.json()).error.code).toBe('unauthorized');

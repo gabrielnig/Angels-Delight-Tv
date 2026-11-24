@@ -142,7 +142,12 @@ test('another account cannot read this profile through the API', async ({ browse
   const profiles = await (await page.request.get('/api/profiles')).json();
   const profileId = profiles.profiles[0].id as string;
   const stranger = await browser.newPage();
-  const res = await stranger.request.get(`/api/home?profileId=${profileId}`);
-  expect(res.status()).toBe(401);
+  // Personal routes stay 401 without a session. Home is a public GET for guests since M40, and a guest never
+  // receives the profile's own progress or list, whatever profileId the request names.
+  const personal = await stranger.request.get(`/api/progress?profileId=${profileId}`);
+  expect(personal.status()).toBe(401);
+  const home = await stranger.request.get(`/api/home?profileId=${profileId}`);
+  expect(home.status()).toBe(200);
+  expect(JSON.stringify(await home.json())).not.toContain('"inMyList":true');
   await stranger.close();
 });
