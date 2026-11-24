@@ -3,20 +3,15 @@
 import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 import {
-  ROW_TYPE_LABELS,
+  ADD_TYPE_HINTS,
+  ADD_TYPE_LABELS,
   addRow,
-  addTitle,
-  isFixed,
-  moveRow,
-  moveTitle,
-  removeRow,
-  removeTitle,
-  renameRow,
   resolvePreview,
   setHero,
-  toggleRow,
+  validateConfig,
   MAX_HERO,
   MAX_ROWS,
+  MAX_ROW_NAME,
 } from '@/lib/data/admin/home-rules';
 import type { HomeConfig, HomeRowType, HomeState } from '@/lib/data/admin/home-rules';
 import type { CategoryRecord, SeriesRecord, VideoRecord } from '@/lib/data/admin/types';
@@ -26,6 +21,8 @@ import { Button } from './Button';
 import { ConfirmDialog, Dialog } from './Dialog';
 import { PosterTile, seedOf } from './PosterTile';
 import { SelectField, Switch, TextField } from './fields';
+import { HomeSections } from './HomeSections';
+import { SectionEditor } from './SectionEditor';
 import { Banner } from './states';
 import { Tabs } from './Tabs';
 import { useCommand } from './useCommand';
@@ -38,6 +35,14 @@ export interface HomeActions {
 
 let counter = 0;
 const newId = () => `row_${Date.now().toString(36)}${++counter}`;
+const ADDABLE = ['manual', 'category', 'newest', 'smart', 'series', 'each_category', 'all_series'] as const;
+const DEFAULT_NAMES: Partial<Record<HomeRowType, string>> = {
+  manual: 'New list',
+  newest: 'New',
+  smart: 'Trending',
+  each_category: 'Browse by subject',
+  all_series: 'Series',
+};
 const same = (a: HomeConfig, b: HomeConfig) => JSON.stringify(a) === JSON.stringify(b);
 
 export function HomeCuration({
@@ -67,14 +72,25 @@ export function HomeCuration({
   const [newType, setNewType] = useState<HomeRowType>('manual');
   const [newName, setNewName] = useState('');
   const [newSource, setNewSource] = useState('');
-  const [pick, setPick] = useState('');
+  const [nameTouched, setNameTouched] = useState(false);
+  const [addError, setAddError] = useState<string>();
+  const [retry, setRetry] = useState<(() => Promise<unknown>) | null>(null);
 
+  const sourceName =
+    newType === 'category'
+      ? categories.find((c) => c.id === newSource)?.name
+      : newType === 'series'
+        ? series.find((x) => x.id === newSource)?.title
+        : undefined;
+  const effectiveName = nameTouched ? newName : (sourceName ?? DEFAULT_NAMES[newType] ?? '');
   const dirty = !same(config, state.draft);
   const unpublished = !same(config, state.published);
   const preview = useMemo(
     () => resolvePreview(config, videos, series, kids),
     [config, videos, series, kids],
   );
+  const sources = useMemo(() => ({ categories, series }), [categories, series]);
+  const invalid = validateConfig(config);
   const selectedRow = config.rows.find((r) => r.id === selected) ?? null;
   const byId = new Map(videos.map((v) => [v.id, v]));
   const eligible = videos.filter((v) => v.publishState === 'published');
@@ -94,6 +110,16 @@ export function HomeCuration({
     return result.ok;
   };
 
+  /** Runs a save. A failure keeps every edit on screen and offers Retry (M17-S02 Error). */
+  const attempt = async (work: () => Promise<CommandResult>, done: string) => {
+    const go = async () => {
+      const result = await run(work, done);
+      setRetry(result.ok ? null : () => go);
+      return result;
+    };
+    await go();
+  };
+
   return (
     <div className="adm-stack">
       <div className="adm-toolbar" role="toolbar" aria-label="Home curation">
@@ -111,19 +137,33 @@ export function HomeCuration({
         <Button
           disabled={!canCurate || !dirty || busy}
           loading={busy}
-          onClick={() => run(() => actions.saveDraft(config), 'Draft saved.')}
+          onClick={() => attempt(() => actions.saveDraft(config), 'Draft saved.')}
         >
           Save draft
         </Button>
         <Button
           variant="primary"
-          disabled={!canCurate || (!dirty && !unpublished) || busy}
-          onClick={() => run(() => actions.publish(config), 'Home page published.')}
+          disabled={!canCurate || (!dirty && !unpublished) || busy || invalid !== null}
+          onClick={() => attempt(() => actions.publish(config), 'Home page published.')}
         >
           Publish changes
         </Button>
       </div>
       {message ? <Banner tone="danger">{message}</Banner> : null}
+      {retry ? (
+        <Banner
+          tone="danger"
+          action={
+            <Button disabled={busy} onClick={() => void retry()}>
+              Retry
+            </Button>
+          }
+        >
+          <strong>We could not save your changes.</strong>
+          <p style={{ margin: 0 }}>Your edits are still here. Check your connection and try again.</p>
+        </Banner>
+      ) : null}
+      {invalid ? <Banner tone="warning">{invalid}. Fix this before you publish.</Banner> : null}
 
       <div className="adm-review">
         <div className="adm-stack">
@@ -210,181 +250,36 @@ export function HomeCuration({
             </div>
           </section>
 
-          <section className="adm-card adm-stack" aria-labelledby="home-rows">
-            <div className="adm-row" style={{ justifyContent: 'space-between' }}>
-              <h2 className="adm-h3" id="home-rows">
-                Rows
-              </h2>
-              <Button
-                icon="plus"
-                disabled={!canCurate || config.rows.length >= MAX_ROWS}
-                onClick={() => {
-                  setMessage(undefined);
-                  setAdding(true);
-                }}
-              >
-                Add row
-              </Button>
-            </div>
-            {config.rows.length >= MAX_ROWS ? (
-              <Banner tone="info">
-                Row limit reached ({MAX_ROWS}). Remove a row to add another.
-              </Banner>
-            ) : null}
-            <ol className="adm-list" aria-label="Rows in the order viewers see them">
-              {config.rows.map((r, i) => (
-                <li key={r.id}>
-                  <button
-                    type="button"
-                    className="adm-linkbtn"
-                    aria-pressed={selected === r.id}
-                    onClick={() => setSelected(selected === r.id ? null : r.id)}
-                  >
-                    <strong>{r.name}</strong>{' '}
-                    <span className="adm-muted">
-                      {ROW_TYPE_LABELS[r.type]}
-                      {r.type === 'manual' ? `, ${r.videoIds.length} titles` : ''}
-                    </span>
-                  </button>
-                  <span className="adm-row">
-                    <Button
-                      variant="ghost"
-                      icon="up"
-                      aria-label={`Move ${r.name} up`}
-                      disabled={!canCurate || i === 0}
-                      onClick={() => setConfig(moveRow(config, r.id, -1))}
-                    />
-                    <Button
-                      variant="ghost"
-                      icon="down"
-                      aria-label={`Move ${r.name} down`}
-                      disabled={!canCurate || i === config.rows.length - 1}
-                      onClick={() => setConfig(moveRow(config, r.id, 1))}
-                    />
-                    <Switch
-                      label={`Show ${r.name}`}
-                      checked={r.visible}
-                      disabled={!canCurate}
-                      onChange={() => setConfig(toggleRow(config, r.id))}
-                    />
-                  </span>
-                </li>
-              ))}
-            </ol>
-          </section>
+          <HomeSections
+            config={config}
+            selectedId={selected}
+            sources={sources}
+            canCurate={canCurate}
+            onSelect={setSelected}
+            onChange={setConfig}
+            onAdd={() => {
+              if (config.rows.length >= MAX_ROWS) {
+                setMessage(
+                  `Home can hold ${MAX_ROWS} sections. Hide or remove one to add another. Each category (automatic) counts as one.`,
+                );
+                return;
+              }
+              setMessage(undefined);
+              setAdding(true);
+            }}
+          />
 
           {selectedRow ? (
-            <section className="adm-card adm-stack" aria-labelledby="row-editor">
-              <h2 className="adm-h3" id="row-editor">
-                Edit row: {selectedRow.name}
-              </h2>
-              <TextField
-                label="Row name"
-                value={selectedRow.name}
-                disabled={!canCurate}
-                onChange={(e) =>
-                  setConfig({
-                    ...config,
-                    rows: config.rows.map((r) =>
-                      r.id === selectedRow.id ? { ...r, name: e.target.value } : r,
-                    ),
-                  })
-                }
-                onBlur={(e) => {
-                  if (!e.target.value.trim())
-                    apply(renameRow(config, selectedRow.id, e.target.value));
-                }}
-              />
-              {selectedRow.type === 'manual' ? (
-                <>
-                  <ol className="adm-list">
-                    {selectedRow.videoIds.map((id, i) => {
-                      const v = byId.get(id);
-                      return (
-                        <li key={id}>
-                          <span>
-                            {v?.title ?? 'Removed video'}
-                            {v && v.publishState !== 'published' ? (
-                              <>
-                                {' '}
-                                <Badge tone="warning" icon="alert">
-                                  Not published, skipped
-                                </Badge>
-                              </>
-                            ) : null}
-                          </span>
-                          <span className="adm-row">
-                            <Button
-                              variant="ghost"
-                              icon="up"
-                              aria-label={`Move ${v?.title ?? 'title'} up`}
-                              disabled={!canCurate || i === 0}
-                              onClick={() => setConfig(moveTitle(config, selectedRow.id, id, -1))}
-                            />
-                            <Button
-                              variant="ghost"
-                              icon="down"
-                              aria-label={`Move ${v?.title ?? 'title'} down`}
-                              disabled={!canCurate || i === selectedRow.videoIds.length - 1}
-                              onClick={() => setConfig(moveTitle(config, selectedRow.id, id, 1))}
-                            />
-                            <Button
-                              variant="ghost"
-                              aria-label={`Remove ${v?.title ?? 'title'} from row`}
-                              disabled={!canCurate}
-                              onClick={() => setConfig(removeTitle(config, selectedRow.id, id))}
-                            >
-                              Remove
-                            </Button>
-                          </span>
-                        </li>
-                      );
-                    })}
-                  </ol>
-                  <div className="adm-row">
-                    <SelectField
-                      label="Add title"
-                      value={pick}
-                      disabled={!canCurate}
-                      onChange={(e) => setPick(e.target.value)}
-                      options={[
-                        { value: '', label: 'Choose a title' },
-                        ...eligible
-                          .filter((v) => !selectedRow.videoIds.includes(v.id))
-                          .map((v) => ({ value: v.id, label: v.title })),
-                      ]}
-                    />
-                    <Button
-                      disabled={!pick || !canCurate}
-                      onClick={() => {
-                        if (apply(addTitle(config, selectedRow.id, pick))) setPick('');
-                      }}
-                    >
-                      Add to row
-                    </Button>
-                  </div>
-                </>
-              ) : (
-                <p className="adm-muted" style={{ margin: 0 }}>
-                  {isFixed(selectedRow)
-                    ? 'This row is built in. You can move it or hide it.'
-                    : 'This row fills itself from your library.'}
-                </p>
-              )}
-              {!isFixed(selectedRow) ? (
-                <div>
-                  <Button
-                    variant="danger"
-                    disabled={!canCurate}
-                    onClick={() => {
-                      if (apply(removeRow(config, selectedRow.id))) setSelected(null);
-                    }}
-                  >
-                    Remove row
-                  </Button>
-                </div>
-              ) : null}
-            </section>
+            <SectionEditor
+              config={config}
+              row={selectedRow}
+              sources={sources}
+              titles={{ byId, eligible }}
+              canCurate={canCurate}
+              onChange={setConfig}
+              onError={setMessage}
+              onRemoved={() => setSelected(null)}
+            />
           ) : null}
         </div>
 
@@ -467,7 +362,7 @@ export function HomeCuration({
       <Dialog
         open={adding}
         onClose={() => setAdding(false)}
-        title="Add a row"
+        title="Add a section"
         size="sm"
         footer={
           <>
@@ -477,39 +372,52 @@ export function HomeCuration({
             <Button
               variant="primary"
               onClick={() => {
-                const r = addRow(config, newType, newName, newSource || null, newId);
-                if (apply(r)) {
-                  setAdding(false);
-                  setNewName('');
-                  if (r.ok) setSelected(r.config.rows.at(-1)!.id);
-                }
+                if ((newType === 'category' || newType === 'series') && !newSource)
+                  return setAddError(newType === 'category' ? 'Choose a category.' : 'Choose a series.');
+                const r = addRow(config, newType, effectiveName, newSource || null, newId);
+                if (!r.ok) return setAddError(r.error);
+                setConfig(r.config);
+                setMessage(undefined);
+                setAdding(false);
+                setNameTouched(false);
+                setNewSource('');
+                setSelected(r.config.rows.at(-1)!.id);
               }}
             >
-              Add row
+              Add section
             </Button>
           </>
         }
       >
-        <SelectField
-          label="Type"
-          value={newType}
-          onChange={(e) => setNewType(e.target.value as HomeRowType)}
-          options={(['manual', 'category', 'newest', 'series', 'smart'] as const).map((t) => ({
-            value: t,
-            label: ROW_TYPE_LABELS[t],
-          }))}
-        />
-        <TextField
-          label="Row name"
-          value={newName}
-          maxLength={60}
-          onChange={(e) => setNewName(e.target.value)}
-        />
+        <fieldset className="adm-viewall" aria-label="What kind of section?">
+          <legend className="adm-field__label">What kind of section?</legend>
+          {ADDABLE.map((t) => (
+            <label key={t} className={`adm-viewall__opt${newType === t ? ' is-on' : ''}`}>
+              <input
+                type="radio"
+                name="section-type"
+                checked={newType === t}
+                onChange={() => {
+                  setNewType(t);
+                  setNewSource('');
+                  setAddError(undefined);
+                }}
+              />
+              <span>
+                <strong>{ADD_TYPE_LABELS[t]}</strong>
+                <span className="adm-muted">{ADD_TYPE_HINTS[t]}</span>
+              </span>
+            </label>
+          ))}
+        </fieldset>
         {newType === 'category' ? (
           <SelectField
             label="Category"
             value={newSource}
-            onChange={(e) => setNewSource(e.target.value)}
+            onChange={(e) => {
+              setNewSource(e.target.value);
+              setAddError(undefined);
+            }}
             options={[
               { value: '', label: 'Choose a category' },
               ...categories.map((c) => ({ value: c.id, label: c.name })),
@@ -520,12 +428,31 @@ export function HomeCuration({
           <SelectField
             label="Series"
             value={newSource}
-            onChange={(e) => setNewSource(e.target.value)}
+            onChange={(e) => {
+              setNewSource(e.target.value);
+              setAddError(undefined);
+            }}
             options={[
               { value: '', label: 'Choose a series' },
               ...series.map((s) => ({ value: s.id, label: s.title })),
             ]}
           />
+        ) : null}
+        <TextField
+          label="Section name"
+          value={effectiveName}
+          maxLength={MAX_ROW_NAME + 20}
+          aside={`${effectiveName.trim().length} of ${MAX_ROW_NAME}`}
+          onChange={(e) => {
+            setNewName(e.target.value);
+            setNameTouched(true);
+            setAddError(undefined);
+          }}
+        />
+        {addError ? (
+          <p className="adm-field__error" role="alert">
+            {addError}
+          </p>
         ) : null}
       </Dialog>
       <ConfirmDialog
