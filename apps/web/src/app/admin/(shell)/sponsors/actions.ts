@@ -34,38 +34,38 @@ async function guarded<T extends object>(
   }
 }
 
-export const createSponsorAction = (form: SponsorForm) =>
+export const createSponsorAction = async (form: SponsorForm) =>
   guarded((a) => sponsorAdmin(a).create(a, form));
 
-export const updateSponsorAction = (id: string, form: SponsorForm) =>
+export const updateSponsorAction = async (id: string, form: SponsorForm) =>
   guarded(async (a) => {
     await sponsorAdmin(a).update(a, String(id), form);
     return {};
   });
 
-export const setSponsorStatusAction = (id: string, status: SponsorStoredStatus) =>
+export const setSponsorStatusAction = async (id: string, status: SponsorStoredStatus) =>
   guarded(async (a) => {
     await sponsorAdmin(a).setStatus(a, String(id), status);
     return {};
   });
 
 // The service returns its own { ok } result, which overrides the wrapper's ok when it is false.
-export const deleteSponsorAction = (id: string) =>
+export const deleteSponsorAction = async (id: string) =>
   guarded((a) => sponsorAdmin(a).remove(a, String(id)));
 
-export const addCreativeAction = (sponsorId: string, input: CreativeBody, slots: string[]) =>
+export const addCreativeAction = async (sponsorId: string, input: CreativeBody, slots: string[]) =>
   guarded((a) => sponsorAdmin(a).addCreative(a, String(sponsorId), input, slots));
 
-export const updateCreativeAction = (creativeId: string, input: CreativeBody, slots: string[]) =>
+export const updateCreativeAction = async (creativeId: string, input: CreativeBody, slots: string[]) =>
   guarded((a) => sponsorAdmin(a).updateCreative(a, String(creativeId), input, slots));
 
-export const removeCreativeAction = (creativeId: string) =>
+export const removeCreativeAction = async (creativeId: string) =>
   guarded(async (a) => {
     await sponsorAdmin(a).removeCreative(a, String(creativeId));
     return {};
   });
 
-export const setMasterSwitchAction = (on: boolean, password: string) =>
+export const setMasterSwitchAction = async (on: boolean, password: string) =>
   guarded((a) => sponsorAdmin(a).setMasterSwitch(a, Boolean(on), password));
 
 export async function uploadSponsorImageAction(

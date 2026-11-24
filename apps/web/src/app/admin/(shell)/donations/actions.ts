@@ -21,10 +21,10 @@ async function guarded<T extends object>(fn: (actor: Awaited<ReturnType<typeof r
 }
 
 /** Shows one full address. The service writes the audit row, which never holds the address. */
-export const revealDonorEmailAction = (id: string) =>
+export const revealDonorEmailAction = async (id: string) =>
   guarded(async (a) => ({ email: await donationAdmin(a).revealEmail(a, String(id)) }));
 
-export const resolveReviewAction = (id: string, accept: boolean, note: string) =>
+export const resolveReviewAction = async (id: string, accept: boolean, note: string) =>
   guarded(async (a) => {
     await donationAdmin(a).resolveReview(a, String(id), Boolean(accept), String(note));
     revalidatePath('/admin/donations', 'layout');

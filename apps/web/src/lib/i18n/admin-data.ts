@@ -1,4 +1,4 @@
-import { hashText, summarize, type TranslationRow } from '@ad/i18n';
+import { hashText, summarize, type TranslationRow } from '@ad/i18n/status';
 import {
   LOCALES,
   pluralCategoriesFor,
