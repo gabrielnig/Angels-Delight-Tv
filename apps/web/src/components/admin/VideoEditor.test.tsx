@@ -17,6 +17,7 @@ function setup(
   id: string,
   role: 'admin' | 'editor' = 'admin',
   update = vi.fn(async () => ({ ok: true as const })),
+  markersSummary: string | null = null,
 ) {
   const actions = {
     update,
@@ -33,6 +34,7 @@ function setup(
       role={role}
       actions={actions as never}
       viewerHref={`/watch/${id}`}
+      markersSummary={markersSummary}
     />,
   );
   return actions;
@@ -115,5 +117,20 @@ describe('VideoEditor', () => {
   it('shows Unpublish for a live video', () => {
     setup('vid_sky');
     expect(screen.getByRole('button', { name: 'Unpublish' })).toBeInTheDocument();
+  });
+
+  it('shows the Skip and chapters card with a one line summary and an Edit link for editors', () => {
+    setup('vid_safe_online', 'editor', undefined, 'Intro 0:12 to 0:48, credits from 5:10, 6 chapters');
+    expect(screen.getByText('Intro 0:12 to 0:48, credits from 5:10, 6 chapters')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Edit skip and chapters' })).toHaveAttribute(
+      'href',
+      '/admin/videos/vid_safe_online/markers',
+    );
+  });
+
+  it('says when nothing is set and offers to set it up', () => {
+    setup('vid_safe_online');
+    expect(screen.getByText('Not set. Viewers cannot skip anything yet.')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Set up skip and chapters' })).toBeInTheDocument();
   });
 });

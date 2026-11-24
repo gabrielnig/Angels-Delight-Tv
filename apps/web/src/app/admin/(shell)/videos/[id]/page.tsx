@@ -3,6 +3,8 @@ import { notFound } from 'next/navigation';
 import { PageHeader } from '@/components/admin/PageHeader';
 import { VideoEditor } from '@/components/admin/VideoEditor';
 import { adminDataMode, videoService } from '@/lib/data/admin/services';
+import { markersAdmin } from '@/lib/data/admin/markers';
+import { markersSummary } from '@/lib/admin/markers-summary';
 import { requireActor } from '@/lib/data/admin/session-next';
 import { NotFound } from '@ad/shared';
 import {
@@ -26,9 +28,10 @@ export default async function VideoEditPage({ params }: { params: Promise<{ id: 
     if (error instanceof NotFound) notFound();
     throw error;
   });
-  const [categories, series] = await Promise.all([
+  const [categories, series, extras] = await Promise.all([
     videoService.categories(actor),
     videoService.seriesOptions(actor),
+    markersAdmin.get(actor, id).catch(() => null),
   ]);
   return (
     <>
@@ -47,6 +50,7 @@ export default async function VideoEditPage({ params }: { params: Promise<{ id: 
         series={series}
         role={actor.role}
         viewerHref={viewerHref(id)}
+        markersSummary={extras ? markersSummary(extras.markers, extras.chapters) : null}
         actions={{
           update: updateVideoAction.bind(null, id),
           publish: publishVideoAction.bind(null, id),

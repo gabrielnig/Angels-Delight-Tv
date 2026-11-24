@@ -2256,3 +2256,86 @@
   margin: 0;
   padding: 0;
 }
+
+/* ---- skip and chapters editor (M43, screen S119) ---- */
+.adm-markers__help {
+  margin: 0;
+  color: var(--color-muted);
+}
+.adm-markers__copy {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: var(--space-3);
+}
+.adm-markers__row,
+.adm-markers__chapters {
+  display: grid;
+  gap: var(--space-3);
+}
+.adm-markers__title {
+  margin: 0;
+  font-size: var(--text-lead);
+}
+.adm-markers__fields {
+  display: grid;
+  gap: var(--space-4);
+}
+@media (min-width: 640px) {
+  .adm-markers__fields {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+.adm-markers__buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+.adm-markers__warning {
+  margin: 0;
+  color: var(--color-warning-ink);
+}
+.adm-markers__ok {
+  margin: 0;
+  color: var(--color-success-ink);
+}
+.adm-markers__empty {
+  margin: 0;
+  color: var(--color-muted);
+}
+.adm-markers__list {
+  display: grid;
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.adm-markers__chapter {
+  display: grid;
+  gap: var(--space-2);
+  align-items: end;
+}
+@media (min-width: 640px) {
+  .adm-markers__chapter {
+    grid-template-columns: 8rem 1fr auto;
+  }
+}
+.adm-markers__preview {
+  margin: var(--space-3) 0 0;
+  padding: 0;
+  list-style: none;
+}
+.adm-markers__bar {
+  position: sticky;
+  bottom: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) 0;
+  background: var(--color-bg);
+}
+.adm-markers__state {
+  flex: 1 1 12rem;
+  margin: 0;
+}
