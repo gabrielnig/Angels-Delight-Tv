@@ -11,3 +11,13 @@ export async function playerCountdownSeconds(): Promise<number> {
     return clampCountdown(undefined);
   }
 }
+
+/** `features.airplay` (R16): the AirPlay button stays hidden until a device spike passes. Off on any failed read. */
+export async function airplayEnabled(): Promise<boolean> {
+  try {
+    const { settings } = await themeRuntime();
+    return (await settings.get('features.airplay')) === true;
+  } catch {
+    return false;
+  }
+}

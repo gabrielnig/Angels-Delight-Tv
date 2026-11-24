@@ -49,6 +49,7 @@ const FLAG_KEYS: SettingKey[] = [
   'features.require_approved_captions',
   'features.captions_default_available',
   'features.guest_play',
+  'features.airplay',
 ];
 
 const NUMBER_RULES: Partial<Record<SettingKey, NumberRule>> = {

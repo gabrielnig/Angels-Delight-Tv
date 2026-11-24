@@ -255,6 +255,16 @@ describe('features and limits', () => {
     expect(await screen.findByText('Enter a number from 1 to 10')).toBeInTheDocument();
   });
 
+  it('has an AirPlay switch that starts off and saves when turned on', async () => {
+    const { actions, user } = setup();
+    await open(user);
+    const sw = screen.getByRole('switch', { name: 'AirPlay button' });
+    expect(sw).toHaveAttribute('aria-checked', 'false');
+    await user.click(sw);
+    await user.click(screen.getByRole('button', { name: /save changes/i }));
+    await waitFor(() => expect(actions.update).toHaveBeenCalledWith({ 'features.airplay': true }));
+  });
+
   it('saves a countdown between 5 and 10 and rejects 4 and 11', async () => {
     const { actions, user } = setup();
     await open(user);

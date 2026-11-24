@@ -79,6 +79,15 @@ describe('registry shape', () => {
     expect(PUBLIC_SETTING_KEYS).not.toContain('audit.retention_months');
   });
 
+  it('has an AirPlay flag that is off by default, super admin only and never public (R16)', () => {
+    const def = SETTING_DEFS['features.airplay'];
+    expect(def.default).toBe(false);
+    expect(def.tier).toBe('super');
+    expect(def.isPublic).toBe(false);
+    expect(parse('features.airplay', true).success).toBe(true);
+    expect(parse('features.airplay', 'yes').success).toBe(false);
+  });
+
   it('rejects unknown keys', () => {
     expect(isSettingKey('__proto__')).toBe(false);
     expect(isSettingKey('constructor')).toBe(false);
