@@ -2,6 +2,21 @@
 
 Format: decision, options considered, why, reversible or not. Newest first. Decisions that need the owner are decided here with the recommended option, then flagged for confirmation.
 
+## Duplicate id register
+
+Four ids were used twice by parallel lanes. They are never renumbered because lane notes, code comments and PRs cite them. Cite as `D-108 (M2)` when the id is ambiguous. The next free number is always the highest heading plus one, taken on origin/main at merge time. `scripts/decisions-ids.test.ts` fails on any new duplicate.
+
+| Id | Lane | Heading |
+|---|---|---|
+| D-108 | M2 | Player preferences live on the profile, volume and mute stay on the device |
+| D-108 | M3 | Theme presets are colour sets in the theme package, picking one fills colours only |
+| D-109 | M2 | Site pages come from the editor table, seeded with marked placeholders |
+| D-109 | M3 | Emails read the name, logo and theme colours from settings on every send |
+| D-123 | M2 | Catalog reads are cached for 60 seconds in memory and revalidated with ETag |
+| D-123 | a3 | Progress and key rate limits stay as built, with the reasons on record |
+| D-124 | M2 | Old addresses redirect permanently, and Remove from row can be undone from the database |
+| D-124 | a3 | Worker heartbeat in a table, read by a monitor endpoint |
+
 ## D-001 Commit identity and merge style
 - Decision: all commits authored and committed as ARKDEV, PRs merged with rebase merge so each commit keeps its author.
 - Options: squash merge, merge commit, rebase merge.
@@ -893,3 +908,21 @@ Format: decision, options considered, why, reversible or not. Newest first. Deci
 - Options: leave Hausa on the display font, or add the hooked letters to every family.
 - Why: five of six curated families lack ɓ ɗ ƙ ʼ, and Inter has them. Subsetting every family is larger and slower.
 - Reversible: yes, one font rule.
+
+## D-170 Duplicate decision ids are registered, not renumbered (lane L8, DEC-L8-10)
+- Decision: D-108, D-109, D-123 and D-124 keep both entries. A register at the top of this file disambiguates them and `scripts/decisions-ids.test.ts` blocks new duplicates.
+- Options: renumber the later entries, or register them.
+- Why: lane notes, code comments and PRs cite these numbers, so renumbering breaks them.
+- Reversible: yes.
+
+## D-171 Hero rotates every 10 seconds by default, with Pause (lane L8, DEC-L8-09)
+- Decision: auto rotate is on, 10 s per slide, paused by hover, focus, touch and the Pause control, off under reduced motion and Data saver. The doc and M05-S01 now say 10 s.
+- Options: off by default (old design system), 8 s (old stories and code).
+- Why: owner punch list item 6 and ruling R12.
+- Reversible: yes.
+
+## D-172 Cards stay 16:9 and the up next countdown default stays 5 s (lane L8, DEC-L8-03 and DEC-L8-12)
+- Decision: video and series cards are 16:9 and the 2:3 poster is reserved, not used in v1. The up next countdown default is 5 s with a site setting of 5 to 10 s. The design system text was corrected to match the code.
+- Options: 2:3 posters for series, an 8 s countdown.
+- Why: all source art is 16:9 and hero art has its own cut (D-160). The code and ruling R15 give 5 to 10 s.
+- Reversible: yes.
