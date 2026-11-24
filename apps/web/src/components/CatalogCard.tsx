@@ -19,12 +19,15 @@ export function CatalogCard({
   priority,
   toggle: toggleProp,
   showMeta = false,
+  rank,
 }: {
   item: CatalogItem;
   inList: boolean;
   priority?: boolean;
   toggle?: ToggleList;
   showMeta?: boolean;
+  /** Position in a Top 10 row (M44-S09). */
+  rank?: number;
 }) {
   const [inList, setInList] = useState(initialInList);
   const queued = useListToggle();
@@ -123,6 +126,7 @@ export function CatalogCard({
         onToggleList={onToggle}
         mostLiked={item.mostLiked}
         maturity={maturity}
+        rank={rank}
         {...ratingProps}
       />
     );
@@ -141,6 +145,7 @@ export function CatalogCard({
       onToggleList={onToggle}
       mostLiked={item.mostLiked}
       maturity={maturity}
+      rank={rank}
       {...ratingProps}
     />
   );

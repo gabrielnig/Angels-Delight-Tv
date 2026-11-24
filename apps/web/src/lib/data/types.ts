@@ -124,6 +124,8 @@ export interface HeroSlot {
 
 export interface HomeRow {
   id: string;
+  /** The row kind when it matters to the drawing: trending, top_ten and most_liked (M44-S07, S09, S10). */
+  kind?: string;
   title: string;
   /** Where View all goes. Absent means no link (M41-S08). */
   viewAll?: { href: string; external: boolean };

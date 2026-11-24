@@ -23,6 +23,7 @@ import { HomeEmpty } from './HomeEmpty';
 import { HomeHero } from './HomeHero';
 import { heroItems } from './hero-items';
 import { HomeRowsLoader } from './HomeRowsLoader';
+import { RANKED_KINDS, RankedRow } from './RankedRow';
 
 function cards(items: CatalogItem[], inList: Set<string>) {
   return items.map((item) => (
@@ -126,14 +127,18 @@ export async function HomeView({
         {home.rows.map((row, index) => (
           <Fragment key={row.id}>
             {sponsor && index === at ? <SponsorBanner sponsor={sponsor} /> : null}
-            <Row
-              title={row.title}
-              viewAllHref={row.viewAll?.href}
-              viewAllExternal={row.viewAll?.external}
-              viewAllLabel={viewAllLabel}
-            >
-              {cards(row.items, inList)}
-            </Row>
+            {row.kind && RANKED_KINDS.has(row.kind) ? (
+              <RankedRow row={row} inList={inList} viewAllLabel={viewAllLabel} />
+            ) : (
+              <Row
+                title={row.title}
+                viewAllHref={row.viewAll?.href}
+                viewAllExternal={row.viewAll?.external}
+                viewAllLabel={viewAllLabel}
+              >
+                {cards(row.items, inList)}
+              </Row>
+            )}
           </Fragment>
         ))}
         {sponsor && at === home.rows.length ? <SponsorBanner sponsor={sponsor} /> : null}

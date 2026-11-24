@@ -159,3 +159,22 @@ describe('LazyHomeRows', () => {
     expect(await screen.findByRole('heading', { name: 'Row z' })).toBeInTheDocument();
   });
 });
+
+describe('LazyHomeRows ranked rows', () => {
+  it('draws a Top 10 page row as a numbered list', async () => {
+    const load = vi.fn(async () => ({
+      rows: [{ ...row('t'), kind: 'top_ten' as const }],
+      nextCursor: null,
+    }));
+    const { container } = render(
+      <ToastProvider>
+        <LazyHomeRows initialCursor="c1" inList={[]} profileId="p1" load={load} />
+      </ToastProvider>,
+    );
+    await act(async () => {
+      for (const o of observed)
+        o.cb([{ isIntersecting: true } as IntersectionObserverEntry], {} as never);
+    });
+    await waitFor(() => expect(container.querySelector('ol.ad-row__list')).not.toBeNull());
+  });
+});

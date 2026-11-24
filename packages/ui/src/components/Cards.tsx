@@ -259,6 +259,8 @@ export interface VideoCardProps {
   mostLiked?: boolean;
   /** The maturity label to show in the peek, for example 12. Leave out for G and for unrated titles (M44-S13). */
   maturity?: string;
+  /** Position in a Top 10 row. Spoken first, as Number 3, (M44-S09). */
+  rank?: number;
   className?: string;
 }
 
@@ -277,11 +279,13 @@ export function VideoCard({
   rating,
   mostLiked,
   maturity,
+  rank,
   className,
 }: VideoCardProps) {
   return (
     <article className={cx('ad-card', className)}>
       <Link href={href} className="ad-card__link">
+        <RankSpoken rank={rank} />
         <Thumb thumbnail={thumbnail} title={title} priority={priority}>
           <span className="ad-card__badge" aria-hidden="true">
             <Badge variant="duration">{formatClock(durationSeconds)}</Badge>
@@ -415,6 +419,7 @@ export function SeriesCard({
   rating,
   mostLiked,
   maturity,
+  rank,
   className,
 }: {
   title: string;
@@ -431,6 +436,7 @@ export function SeriesCard({
   mostLiked?: boolean;
   /** Spoken as Rated 12. A series card has no peek, so the label is not drawn on it. */
   maturity?: string;
+  rank?: number;
   className?: string;
 }) {
   const episodesText = `${episodeCount} episode${episodeCount === 1 ? '' : 's'}`;
@@ -440,6 +446,7 @@ export function SeriesCard({
   return (
     <article className={cx('ad-card ad-card--series', className)}>
       <Link href={href} className="ad-card__link">
+        <RankSpoken rank={rank} />
         <span className="ad-card__stack">
           <Thumb thumbnail={thumbnail} title={title} priority={priority}>
             <span className="ad-card__badge" aria-hidden="true">
@@ -460,6 +467,10 @@ export function SeriesCard({
       <CardActions title={title} inList={inList} onToggleList={onToggleList} rating={rating} />
     </article>
   );
+}
+
+function RankSpoken({ rank }: { rank?: number }) {
+  return rank === undefined ? null : <span className="ad-sr-only">{`Number ${rank}, `}</span>;
 }
 
 function CaptionMark() {
