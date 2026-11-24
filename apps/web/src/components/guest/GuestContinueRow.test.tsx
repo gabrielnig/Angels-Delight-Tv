@@ -69,8 +69,9 @@ describe('GuestContinueRow (R14)', () => {
     );
     mount();
     await screen.findByRole('heading', { name: 'Continue learning' });
-    await userEvent.click(screen.getByRole('button', { name: /Remove/ }));
-    expect(readGuestProgress(localStorage, A)).toBeNull();
+    await userEvent.click(screen.getByRole('button', { name: 'More for How rain is made' }));
+    await userEvent.click(screen.getByRole('menuitem', { name: 'Remove from row' }));
+    await waitFor(() => expect(readGuestProgress(localStorage, A)).toBeNull());
     await userEvent.click(await screen.findByRole('button', { name: 'Undo' }));
     expect(readGuestProgress(localStorage, A)).toMatchObject({ p: 134, d: 600, f: false });
     await waitFor(() =>
