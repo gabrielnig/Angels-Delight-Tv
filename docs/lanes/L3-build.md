@@ -22,3 +22,7 @@ Plan: `docs/plan/v2/L3-admin-polish.md` (section 14 wins), review `docs/reviews/
 ## Slice 15: per-file override table
 - UploadOverrides table (cards on mobile) with title, category, series, episode and suitability per file, Custom badges, Reset, read-only once the draft exists.
 - Details now resolve when the draft is registered, so files not yet registered follow later edits to the shared form; per-file overrides win.
+
+## Slice 17: docs (partial)
+- Decisions D-209 to D-224 logged (L3-D01 to L3-D16). CHANGELOG entry added.
+- Not done: SECURITY.md matrix rows, M16-S06 correction, M42 stories and MODULES.md, DESIGN-SYSTEM entries, stories audit, plan edits E6 to E17. Slice 16 not built.
