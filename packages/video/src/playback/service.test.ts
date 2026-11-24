@@ -8,6 +8,7 @@ import { verifyMediaSignature } from '../signing';
 import {
   PLAY_POLICIES,
   PlaybackService,
+  GUEST_SEGMENT_URL_SECONDS,
   SEGMENT_URL_SECONDS,
   type PlayableVideo,
   type PlaybackStore,
@@ -37,6 +38,7 @@ function setup(
     kids?: boolean;
     limiter?: unknown;
     sprite?: string | null;
+    guestTtl?: number;
   } = {},
 ) {
   let clock = 1_800_000_000;
@@ -88,6 +90,7 @@ function setup(
     limiter: over.limiter as never,
     appOrigin: 'https://app.example',
     mediaOrigin: 'https://media.example',
+    ...(over.guestTtl ? { guestSegmentTtlSeconds: over.guestTtl } : {}),
     now: () => clock,
   });
   return { service, advance: (s: number) => (clock += s), clock: () => clock };
@@ -275,5 +278,133 @@ describe('PlaybackService playlists and key', () => {
     const { token } = await live.service.startSession(viewer, VID);
     const dead = setup({ video: { publishState: 'unpublished' } });
     await expect(dead.service.key(token, VID, '1.1.1.1')).rejects.toBeInstanceOf(NotFound);
+  });
+});
+
+const GUEST = 'Zm9vYmFyYmF6cXV4MTIzNA';
+const guestViewer = { guestId: GUEST, kids: false };
+
+describe('PlaybackService guest sessions (M40-S02)', () => {
+  it('issues a guest token for a published video with no account', async () => {
+    const { service } = setup();
+    const s = await service.startGuestSession(guestViewer, VID);
+    expect(s.preview).toBe(false);
+    expect(s.masterUrl).toBe(`https://app.example/api/play/${VID}/master.m3u8`);
+    const claims = await service.authorize(s.token, VID);
+    expect(claims).toMatchObject({ aid: GUEST, pid: null, gst: true });
+    expect(claims.kd).toBeUndefined();
+  });
+
+  it.each([
+    ['draft', { publishState: 'draft' }],
+    ['deleted', { deletedAt: new Date() }],
+    ['processing', { status: 'processing' }],
+  ])('treats a %s video as not found for a guest', async (_n, patch) => {
+    const { service } = setup({ video: patch });
+    await expect(service.startGuestSession(guestViewer, VID)).rejects.toBeInstanceOf(NotFound);
+  });
+
+  it('treats an unknown video as not found', async () => {
+    const { service } = setup({ video: null });
+    await expect(service.startGuestSession(guestViewer, VID)).rejects.toBeInstanceOf(NotFound);
+  });
+
+  it('hides a non kids video from a Kids mode guest and issues no token', async () => {
+    const { service } = setup({ video: { kidsSafe: false } });
+    await expect(
+      service.startGuestSession({ guestId: GUEST, kids: true }, VID),
+    ).rejects.toBeInstanceOf(NotFound);
+    await expect(service.startGuestSession(guestViewer, VID)).resolves.toBeTruthy();
+  });
+
+  it('marks Kids mode guest tokens with kd', async () => {
+    const { service } = setup({ video: { kidsSafe: true } });
+    const s = await service.startGuestSession({ guestId: GUEST, kids: true }, VID);
+    expect((await service.authorize(s.token, VID)).kd).toBe(true);
+  });
+
+  it('limits sessions per guest id and per ip', async () => {
+    const seen: string[] = [];
+    const limiter = {
+      enforce: async (p: { name: string }, s: string) => void seen.push(`${p.name}:${s}`),
+    };
+    const { service } = setup({ limiter });
+    await service.startGuestSession({ ...guestViewer, ip: '203.0.113.5' }, VID);
+    expect(seen).toContain(`${PLAY_POLICIES.sessionGuest.name}:${GUEST}`);
+    expect(seen).toContain(`${PLAY_POLICIES.sessionGuestIp.name}:203.0.113.5`);
+  });
+
+  it('pins the guest limiter numbers (M40-S11)', () => {
+    expect(PLAY_POLICIES.sessionGuest.capacity).toBe(20);
+    expect(PLAY_POLICIES.sessionGuest.refillPerSecond).toBeCloseTo(20 / 60);
+    expect(PLAY_POLICIES.sessionGuestIp.capacity).toBe(120);
+    expect(PLAY_POLICIES.sessionGuestIp.refillPerSecond).toBeCloseTo(120 / 60);
+    expect(GUEST_SEGMENT_URL_SECONDS).toBe(20 * 60);
+  });
+
+  it('rate limits when the guest limiter refuses', async () => {
+    const limiter = {
+      enforce: async () => {
+        throw new RateLimited(10);
+      },
+    };
+    const { service } = setup({ limiter });
+    await expect(service.startGuestSession(guestViewer, VID)).rejects.toBeInstanceOf(RateLimited);
+  });
+
+  it('signs guest segment urls for 20 minutes and account ones for 2 hours', async () => {
+    const { service, clock } = setup();
+    const guest = await service.startGuestSession(guestViewer, VID);
+    const acct = await service.startSession(viewer, VID);
+    const expOf = async (token: string) => {
+      const variant = await service.variant(token, VID, '720');
+      const line = variant.split('\n').find((l) => l.includes('seg_00001.ts'))!;
+      return Number(new URL(line).searchParams.get('exp'));
+    };
+    expect(await expOf(guest.token)).toBe(Math.floor(clock()) + 20 * 60);
+    expect(await expOf(acct.token)).toBe(Math.floor(clock()) + 2 * 3600);
+  });
+
+  it('honours a configured guest segment lifetime', async () => {
+    const { service, clock } = setup({ guestTtl: 5 * 60 });
+    const guest = await service.startGuestSession(guestViewer, VID);
+    const variant = await service.variant(guest.token, VID, '720');
+    const line = variant.split('\n').find((l) => l.includes('seg_00001.ts'))!;
+    expect(Number(new URL(line).searchParams.get('exp'))).toBe(Math.floor(clock()) + 300);
+  });
+
+  it('serves the key to a guest, limited by guest id and ip, with no profile lookup', async () => {
+    const seen: string[] = [];
+    const limiter = {
+      enforce: async (p: { name: string }, s: string) => void seen.push(`${p.name}:${s}`),
+    };
+    const { service } = setup({ limiter });
+    const { token } = await service.startGuestSession(guestViewer, VID);
+    const key = await service.key(token, VID, '203.0.113.9');
+    expect(Buffer.from(key).equals(Buffer.from(hlsKey))).toBe(true);
+    expect(seen).toContain(`${PLAY_POLICIES.keyProfile.name}:${GUEST}`);
+    expect(seen).toContain(`${PLAY_POLICIES.keyIp.name}:203.0.113.9`);
+  });
+
+  it('refuses the key for a kd token on a video that is not kids safe', async () => {
+    const live = setup({ video: { kidsSafe: true } });
+    const { token } = await live.service.startGuestSession({ guestId: GUEST, kids: true }, VID);
+    const changed = setup({ video: { kidsSafe: false } });
+    await expect(changed.service.key(token, VID, '1.1.1.1')).rejects.toBeInstanceOf(NotFound);
+  });
+
+  it('rejects a forged guest token', async () => {
+    const { service } = setup();
+    const { token } = await service.startGuestSession(guestViewer, VID);
+    const forged = token.slice(0, -3) + 'abc';
+    await expect(service.master(forged, VID)).rejects.toBeInstanceOf(Unauthorized);
+    await expect(service.key(forged, VID, '1.1.1.1')).rejects.toBeInstanceOf(Unauthorized);
+  });
+
+  it('stops serving a guest once the video is unpublished', async () => {
+    const live = setup();
+    const { token } = await live.service.startGuestSession(guestViewer, VID);
+    const dead = setup({ video: { publishState: 'unpublished' } });
+    await expect(dead.service.master(token, VID)).rejects.toBeInstanceOf(NotFound);
   });
 });

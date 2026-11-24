@@ -58,7 +58,14 @@ const perMinutes = (name: string, capacity: number, minutes: number) => ({
 /** How long signed segment urls last. Past it the player fetches a fresh playlist on its own (D-120). */
 export const SEGMENT_URL_SECONDS = 2 * 3600;
 
+/** Guest segment urls are short lived (D-G5): a shared guest url stops working within 20 minutes by default. */
+export const GUEST_SEGMENT_URL_SECONDS = 20 * 60;
+
 export const PLAY_POLICIES = {
+  /** 20 sessions a minute per guest id (M40-S11 AC1). */
+  sessionGuest: perMinutes('play-session-guest', 20, 1),
+  /** 120 a minute per address, generous because mobile networks share addresses (M40-S11 AC2). */
+  sessionGuestIp: perMinutes('play-session-guest-ip', 120, 1),
   sessionProfile: perMinutes('play-session-profile', 60, 1),
   keyProfile: perMinutes('play-key-profile', 20, 10),
   keyIp: perMinutes('play-key-ip', 300, 1),
@@ -77,6 +84,8 @@ export interface PlaybackDeps {
   mediaOrigin: string;
   /** How long signed segment urls last. Defaults to 2 hours. An expired url is refreshed by the player (D-120). */
   segmentTtlSeconds?: number;
+  /** How long signed segment urls last for guest tokens. Defaults to 20 minutes (`limits.guest_segment_minutes`). */
+  guestSegmentTtlSeconds?: number | (() => number | Promise<number>);
   now?: () => number;
 }
 
@@ -180,6 +189,30 @@ export class PlaybackService {
     return this.session(videoId, token, PLAYBACK_TOKEN_SECONDS, false);
   }
 
+  /**
+   * A guest session: no account, a published and ready video only. `kids` is the device Kids mode, a convenience
+   * and not a lock, but the query rule is the same as for a kids profile. The guest id is the limiter subject and
+   * the address is a second one, so shared mobile networks are not punished by one noisy guest.
+   */
+  async startGuestSession(
+    guest: { guestId: string; kids: boolean; ip?: string },
+    videoId: string,
+  ): Promise<SessionInfo> {
+    await this.deps.limiter?.enforce(PLAY_POLICIES.sessionGuest, guest.guestId);
+    if (guest.ip) await this.deps.limiter?.enforce(PLAY_POLICIES.sessionGuestIp, guest.ip);
+    const video = await this.deps.store.video(videoId);
+    if (!video || !this.isLive(video) || (guest.kids && !video.kidsSafe))
+      throw new NotFound('This video is not available.');
+    const token = issuePlaybackToken(this.deps.tokens, {
+      videoId,
+      accountId: guest.guestId,
+      guest: true,
+      kids: guest.kids,
+      now: this.now,
+    });
+    return this.session(videoId, token, PLAYBACK_TOKEN_SECONDS, false);
+  }
+
   /** Admin preview: any non deleted video that finished encoding, no profile, no analytics. */
   async startPreview(actor: Actor, videoId: string): Promise<SessionInfo> {
     if (!isStaffRole(actor.role)) throw new Forbidden('Previews are for staff.');
@@ -240,10 +273,15 @@ export class PlaybackService {
     viaQuery = false,
   ): Promise<string> {
     if (!HEIGHT.test(height)) throw new NotFound('Playlist not found.');
-    await this.authorize(token, videoId);
+    const claims = await this.authorize(token, videoId);
     const video = (await this.deps.store.video(videoId)) as PlayableVideo;
     const template = await this.template(videoId, `${height}.m3u8`);
-    const exp = Math.floor(this.now()) + (this.deps.segmentTtlSeconds ?? SEGMENT_URL_SECONDS);
+    const guestTtl = this.deps.guestSegmentTtlSeconds;
+    const ttl = claims.gst
+      ? ((typeof guestTtl === 'function' ? await guestTtl() : guestTtl) ??
+        GUEST_SEGMENT_URL_SECONDS)
+      : (this.deps.segmentTtlSeconds ?? SEGMENT_URL_SECONDS);
+    const exp = Math.floor(this.now()) + ttl;
     return rewriteVariant(template, {
       videoId,
       appOrigin: this.deps.appOrigin,
@@ -263,7 +301,11 @@ export class PlaybackService {
     const claims = await this.authorize(token, videoId);
     await this.deps.limiter?.enforce(PLAY_POLICIES.keyIp, ip);
     await this.deps.limiter?.enforce(PLAY_POLICIES.keyProfile, claims.pid ?? claims.aid);
-    if (claims.pid) {
+    if (claims.gst) {
+      // Guests have no profile row. The Kids mode claim is re-checked against the video as it is now.
+      const video = (await this.deps.store.video(videoId)) as PlayableVideo;
+      if (claims.kd && !video.kidsSafe) throw new NotFound('This video is not available.');
+    } else if (claims.pid) {
       const profile = await this.deps.store.profile(claims.pid, claims.aid);
       const video = (await this.deps.store.video(videoId)) as PlayableVideo;
       if (!profile || (profile.isKids && !video.kidsSafe))

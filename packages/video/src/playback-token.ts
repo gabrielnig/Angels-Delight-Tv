@@ -24,6 +24,10 @@ export interface PlaybackClaims {
   n: string;
   /** True for admin preview tokens: no analytics, no progress. */
   pv?: true;
+  /** True for a guest token: `aid` is the guest id (not an account), `pid` is null (D-G4). */
+  gst?: true;
+  /** Kids mode guest: the key route requires a kids safe video. */
+  kd?: true;
 }
 
 /** A short key id derived from the secret, so rotation needs no extra configuration. */
@@ -39,11 +43,16 @@ export interface IssueInput {
   accountId: string;
   profileId?: string;
   preview?: boolean;
+  /** A guest token. `accountId` carries the guest id. Never combined with `preview`. */
+  guest?: boolean;
+  /** Kids mode for a guest token. */
+  kids?: boolean;
   now?: () => number;
 }
 
 /** `v1.{kid}.{payload}.{mac}` per ARCHITECTURE section 11. */
 export function issuePlaybackToken(ring: SecretRing, input: IssueInput): string {
+  if (input.guest && input.preview) throw new Error('A guest token can never be a preview');
   const iat = Math.floor((input.now ?? (() => Date.now() / 1000))());
   const claims: PlaybackClaims = {
     vid: input.videoId,
@@ -53,6 +62,8 @@ export function issuePlaybackToken(ring: SecretRing, input: IssueInput): string 
     exp: iat + (input.preview ? PREVIEW_TOKEN_SECONDS : PLAYBACK_TOKEN_SECONDS),
     n: randomToken(6),
     ...(input.preview ? { pv: true as const } : {}),
+    ...(input.guest ? { gst: true as const } : {}),
+    ...(input.guest && input.kids ? { kd: true as const } : {}),
   };
   const payload = Buffer.from(JSON.stringify(claims)).toString('base64url');
   const head = `v1.${kidOf(ring.current)}.${payload}`;
@@ -77,6 +88,8 @@ function parseClaims(payload: string): PlaybackClaims | null {
       (value.pid === null || typeof value.pid === 'string') &&
       Number.isFinite(value.exp) &&
       Number.isFinite(value.iat);
+    // A guest token is never a staff preview. Both claims together can only be a forgery attempt.
+    if (value.gst && value.pv) return null;
     return valid ? value : null;
   } catch {
     return null;
