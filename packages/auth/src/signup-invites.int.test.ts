@@ -97,9 +97,9 @@ describe.skipIf(!integrationEnabled())('sign up invite codes (M29-S03)', () => {
   it('validates the use limit, expiry and label', async () => {
     await expect(create({ maxUses: 0 })).rejects.toBeInstanceOf(FieldErrors);
     await expect(create({ maxUses: 1001 })).rejects.toBeInstanceOf(FieldErrors);
-    await expect(create({ expiresAt: new Date(h.deps.clock!().getTime() - 1000) })).rejects.toBeInstanceOf(
-      FieldErrors,
-    );
+    await expect(
+      create({ expiresAt: new Date(h.deps.clock!().getTime() - 1000) }),
+    ).rejects.toBeInstanceOf(FieldErrors);
     await expect(create({ label: 'x'.repeat(61) })).rejects.toBeInstanceOf(FieldErrors);
   });
 
@@ -133,9 +133,9 @@ describe.skipIf(!integrationEnabled())('sign up invite codes (M29-S03)', () => {
 
   it('does not reveal whether an address has an account when the code is wrong', async () => {
     const existing = await existingMember();
-    await expect(staff.signUp(input(existing.email, 'ZZZZ-ZZZZ-ZZ'), h.meta)).rejects.toBeInstanceOf(
-      InviteRequired,
-    );
+    await expect(
+      staff.signUp(input(existing.email, 'ZZZZ-ZZZZ-ZZ'), h.meta),
+    ).rejects.toBeInstanceOf(InviteRequired);
   });
 
   it('does not use up a code on an address that already has an account', async () => {

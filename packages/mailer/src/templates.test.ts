@@ -64,6 +64,23 @@ const cases: Array<[TemplateName, Record<string, string | number>]> = [
     { name: 'Audit log', rows: 52000, hours: 24, linkUrl: 'https://tv.example.org/admin/exports' },
   ],
   ['staff_export_failed', { name: 'Audit log', linkUrl: 'https://tv.example.org/admin/exports' }],
+  ['mfa_enabled', { securityUrl: 'https://tv.example.org/account/security' }],
+  ['mfa_disabled', { securityUrl: 'https://tv.example.org/account/security' }],
+  ['recovery_codes_low', { remaining: 2, securityUrl: 'https://tv.example.org/account/security' }],
+  ['recovery_code_used', { remaining: 8, securityUrl: 'https://tv.example.org/account/security' }],
+  ['two_factor_reset_viewer', { signInUrl: 'https://tv.example.org/sign-in' }],
+  [
+    'new_device_sign_in',
+    {
+      device: 'Chrome on Android',
+      country: 'Nigeria',
+      time: '1 Dec 2026, 10:30 UTC',
+      passwordUrl: 'https://tv.example.org/forgot-password',
+      signOutUrl: 'https://tv.example.org/account/security',
+    },
+  ],
+  ['google_linked', { securityUrl: 'https://tv.example.org/account/security' }],
+  ['google_unlinked', { securityUrl: 'https://tv.example.org/account/security' }],
   [
     'deletion_scheduled',
     { cancelUrl: 'https://tv.example.org/account/deletion', purgeDate: '1 Dec 2026', days: 14 },

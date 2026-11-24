@@ -29,7 +29,10 @@ describe.skipIf(!integrationEnabled())('staff password and recovery flows', () =
       .update(schema.accounts)
       .set({ role })
       .where(eq(schema.accounts.id, member.id));
-    const login = await staff.adminSignIn({ email: member.email, password: member.password }, h.meta);
+    const login = await staff.adminSignIn(
+      { email: member.email, password: member.password },
+      h.meta,
+    );
     const pending = { accountId: member.id, role, sessionId: login.session.id };
     const enrolment = await staff.beginEnrolment(pending, h.meta);
     h.advance(31);
@@ -51,7 +54,11 @@ describe.skipIf(!integrationEnabled())('staff password and recovery flows', () =
       await expect(
         staff.changeStaffPassword(
           s.actor,
-          { currentPassword: 'not-the-password-1', newPassword: 'another-staff-secret-9', code: codeNow(s.secret) },
+          {
+            currentPassword: 'not-the-password-1',
+            newPassword: 'another-staff-secret-9',
+            code: codeNow(s.secret),
+          },
           h.meta,
         ),
       ).rejects.toBeInstanceOf(FieldErrors);
@@ -89,7 +96,10 @@ describe.skipIf(!integrationEnabled())('staff password and recovery flows', () =
 
     await staff.requestPasswordReset({ email: s.member.email }, h.meta);
     await h.settle();
-    await staff.resetPassword({ token: h.tokenFor(s.member.email), password: 'a-new-staff-secret-42' }, h.meta);
+    await staff.resetPassword(
+      { token: h.tokenFor(s.member.email), password: 'a-new-staff-secret-42' },
+      h.meta,
+    );
 
     expect(await h.deps.sessions.validate(s.token)).toBeNull();
     const login = await staff.adminSignIn(
@@ -103,12 +113,19 @@ describe.skipIf(!integrationEnabled())('staff password and recovery flows', () =
     const s = await staffMember('editor');
     await staff.requestPasswordReset({ email: s.member.email }, h.meta);
     await h.settle();
-    await staff.resetPassword({ token: h.tokenFor(s.member.email), password: 'recover-staff-secret-8' }, h.meta);
+    await staff.resetPassword(
+      { token: h.tokenFor(s.member.email), password: 'recover-staff-secret-8' },
+      h.meta,
+    );
     const login = await staff.adminSignIn(
       { email: s.member.email, password: 'recover-staff-secret-8' },
       h.meta,
     );
-    const pending = { accountId: s.member.id, role: 'editor' as const, sessionId: login.session.id };
+    const pending = {
+      accountId: s.member.id,
+      role: 'editor' as const,
+      sessionId: login.session.id,
+    };
     const code = s.recoveryCodes[0]!;
     const done = await staff.verifyRecoveryCode(pending, { code }, h.meta);
     expect((await h.deps.sessions.validate(done.session.token))?.mfaVerified).toBe(true);

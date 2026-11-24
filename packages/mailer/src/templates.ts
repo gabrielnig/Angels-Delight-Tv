@@ -36,6 +36,14 @@ export type TemplateName =
   | 'email_change_verify'
   | 'email_change_notice'
   | 'two_factor_reset'
+  | 'two_factor_reset_viewer'
+  | 'mfa_enabled'
+  | 'mfa_disabled'
+  | 'recovery_codes_low'
+  | 'recovery_code_used'
+  | 'new_device_sign_in'
+  | 'google_linked'
+  | 'google_unlinked'
   | 'staff_lockout_alert'
   | 'welcome'
   | 'account_deleted'
@@ -209,6 +217,102 @@ const DEFINITIONS: Record<TemplateName, Definition> = {
       ],
       action: { label: 'Sign in', url: v.signInUrl! },
       outro: ['If you did not expect this, contact the person who manages your team.'],
+    }),
+  },
+  two_factor_reset_viewer: {
+    required: ['signInUrl'],
+    links: ['signInUrl'],
+    build: (v, b) => ({
+      subject: `Two step verification was reset on your ${b.appName} account`,
+      intro: [
+        'An administrator reset two step verification on your account after you asked for help, and signed you out everywhere.',
+        'You can sign in with your password and turn it on again from Security.',
+      ],
+      action: { label: 'Sign in', url: v.signInUrl! },
+      outro: ['If you did not ask for this, change your password and contact support.'],
+    }),
+  },
+  mfa_enabled: {
+    required: ['securityUrl'],
+    links: ['securityUrl'],
+    build: (v, b) => ({
+      subject: `Two step verification is on for your ${b.appName} account`,
+      intro: [
+        'From now on we will ask for a code from your authenticator app when you sign in.',
+        'Keep your backup codes somewhere safe. Each one works once if you lose your phone.',
+      ],
+      action: { label: 'Open Security', url: v.securityUrl! },
+      outro: ['If you did not do this, change your password right away and contact support.'],
+    }),
+  },
+  mfa_disabled: {
+    required: ['securityUrl'],
+    links: ['securityUrl'],
+    build: (v, b) => ({
+      subject: `Two step verification was turned off on your ${b.appName} account`,
+      intro: [
+        'Two step verification is now off and your other devices were signed out.',
+        'You can turn it on again any time from Security.',
+      ],
+      action: { label: 'Open Security', url: v.securityUrl! },
+      outro: ['If you did not do this, change your password right away and contact support.'],
+    }),
+  },
+  recovery_codes_low: {
+    required: ['remaining', 'securityUrl'],
+    links: ['securityUrl'],
+    build: (v, b) => ({
+      subject: `You are running low on ${b.appName} backup codes`,
+      intro: [
+        `You have ${v.remaining} backup codes left. Get a new set before you run out so a lost phone does not lock you out.`,
+      ],
+      action: { label: 'Get new codes', url: v.securityUrl! },
+      outro: ['Getting new codes makes every old code stop working.'],
+    }),
+  },
+  recovery_code_used: {
+    required: ['remaining', 'securityUrl'],
+    links: ['securityUrl'],
+    build: (v, b) => ({
+      subject: `A backup code was used to sign in to ${b.appName}`,
+      intro: [
+        `A backup code was just used to sign in to your account. You have ${v.remaining} left.`,
+      ],
+      action: { label: 'Open Security', url: v.securityUrl! },
+      outro: ['If this was not you, change your password right away and contact support.'],
+    }),
+  },
+  new_device_sign_in: {
+    required: ['device', 'country', 'time', 'passwordUrl', 'signOutUrl'],
+    links: ['passwordUrl', 'signOutUrl'],
+    build: (v, b) => ({
+      subject: `New sign in to your ${b.appName} account`,
+      intro: [
+        `We saw a sign in from a device we have not seen before: ${v.device}, ${v.country}, ${v.time}.`,
+        'If this was you, no action is needed.',
+      ],
+      action: { label: 'Not you? Change your password', url: v.passwordUrl! },
+      outro: [`Sign out everywhere from Security: ${v.signOutUrl}`],
+    }),
+  },
+  google_linked: {
+    required: ['securityUrl'],
+    links: ['securityUrl'],
+    build: (v, b) => ({
+      subject: `Google was linked to your ${b.appName} account`,
+      intro: ['You can now sign in with Google as well as your usual method.'],
+      action: { label: 'Open Security', url: v.securityUrl! },
+      outro: ['If you did not do this, change your password right away and contact support.'],
+    }),
+  },
+  google_unlinked: {
+    required: ['securityUrl'],
+    links: ['securityUrl'],
+    build: (v, b) => ({
+      subject: `Google was removed from your ${b.appName} account`,
+      intro: ['Google can no longer be used to sign in to your account.'],
+      action: { label: 'Open Security', url: v.securityUrl! },
+      outro: ['If you did not do this, change your password right away and contact support.'],
     }),
   },
   staff_lockout_alert: {

@@ -13,17 +13,19 @@ describe('branded email layout', () => {
   });
 
   it('shows the logo with the site name as alt text', () => {
-    const { html } = renderTemplate(
-      'reset_password',
-      vars,
-      { ...base, logoUrl: 'https://media.example.org/img/a/400-abc.webp' },
-    );
+    const { html } = renderTemplate('reset_password', vars, {
+      ...base,
+      logoUrl: 'https://media.example.org/img/a/400-abc.webp',
+    });
     expect(html).toContain('<img src="https://media.example.org/img/a/400-abc.webp"');
     expect(html).toContain('alt="Sunrise TV"');
   });
 
   it('ignores a logo that is not an https or http web link', () => {
-    const { html } = renderTemplate('reset_password', vars, { ...base, logoUrl: 'javascript:alert(1)' });
+    const { html } = renderTemplate('reset_password', vars, {
+      ...base,
+      logoUrl: 'javascript:alert(1)',
+    });
     expect(html).not.toContain('<img');
     expect(html).not.toContain('javascript:');
   });
