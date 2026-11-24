@@ -10,12 +10,14 @@ import { Brand } from './AuthLayouts';
 import { GuestChrome } from './guest/GuestChrome';
 import { ViewerChrome } from './ViewerChrome';
 import { LanguagePickerHost } from './i18n/LanguagePickerHost';
+import { getLocale, getTranslator } from '../lib/i18n/server';
 import { pickerData } from '../lib/i18n/picker-data';
 
 /** Signed in with a profile: the full viewer chrome. Otherwise a light public header and footer. */
 export async function AppShell({ children, skin }: { children: ReactNode; skin?: 'soft' }) {
   const [site, session] = await Promise.all([getSite().content(), getSession()]);
   const year = new Date().getUTCFullYear();
+  const msg = await getTranslator(await getLocale());
   const picker = await pickerData();
   const languagePicker = picker ? <LanguagePickerHost {...picker} /> : undefined;
   if (session?.profile) {
@@ -56,17 +58,17 @@ export async function AppShell({ children, skin }: { children: ReactNode; skin?:
   return (
     <div className="web-shell">
       <a className="ad-skip" href="#main">
-        Skip to main content
+        {msg('nav.skip')}
       </a>
       <header className="web-publicbar">
         <Brand site={site} />
-        <nav aria-label="Account" className="web-publicbar__links">
+        <nav aria-label={msg('nav.account')} className="web-publicbar__links">
           <Link href="/sign-in" className="web-publicbar__link">
-            Sign in
+            {msg('nav.signIn')}
           </Link>
           {site.signUpOpen ? (
             <ButtonLink href="/sign-up" size="sm">
-              Create account
+              {msg('nav.createAccount')}
             </ButtonLink>
           ) : null}
         </nav>

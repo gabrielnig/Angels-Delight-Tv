@@ -2,7 +2,7 @@
 
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useRef, useState, useTransition, type ReactNode } from 'react';
-import { msg } from '@ad/shared/messages';
+import { useT } from '../../lib/i18n/provider';
 import { BottomTabBar, Button, ButtonLink, Icon, Link, SiteFooter } from '@ad/ui';
 import './guest.css';
 
@@ -20,17 +20,19 @@ export interface GuestChromeProps {
   children: ReactNode;
 }
 
-const LINKS = [
-  { label: 'Home', href: '/' },
-  { label: 'Browse', href: '/browse' },
-  { label: 'My List', href: '/my-list' },
+type Msg = ReturnType<typeof useT>;
+
+const links = (msg: Msg) => [
+  { label: msg('nav.home'), href: '/' },
+  { label: msg('nav.browse'), href: '/browse' },
+  { label: msg('nav.myList'), href: '/my-list' },
 ];
 
-const TABS = [
-  { label: 'Home', href: '/', icon: 'home' as const },
-  { label: 'Browse', href: '/browse', icon: 'grid' as const },
-  { label: 'Search', href: '/search', icon: 'search' as const },
-  { label: 'My List', href: '/my-list', icon: 'list' as const },
+const tabs = (msg: Msg) => [
+  { label: msg('nav.home'), href: '/', icon: 'home' as const },
+  { label: msg('nav.browse'), href: '/browse', icon: 'grid' as const },
+  { label: msg('nav.search'), href: '/search', icon: 'search' as const },
+  { label: msg('nav.myList'), href: '/my-list', icon: 'list' as const },
 ];
 
 function isCurrent(path: string, href: string): boolean {
@@ -49,6 +51,7 @@ export function GuestChrome({
   languagePicker,
   children,
 }: GuestChromeProps) {
+  const msg = useT();
   const pathname = usePathname();
   const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
@@ -105,7 +108,7 @@ export function GuestChrome({
         {kids ? null : (
           <>
             <nav aria-label={msg('guest.nav.main')} className="web-guestbar__links">
-              {LINKS.map((link) => (
+              {links(msg).map((link) => (
                 <Link
                   key={link.href}
                   href={link.href}
@@ -118,7 +121,7 @@ export function GuestChrome({
               <Link
                 href="/search"
                 className="web-guestbar__link web-guestbar__search"
-                aria-label="Search"
+                aria-label={msg('nav.search')}
               >
                 <Icon name="search" size={22} />
               </Link>
@@ -177,7 +180,7 @@ export function GuestChrome({
         </div>
       ) : null}
       <SiteFooter platformName={platformName} year={year} links={footerLinks} />
-      {detail || kids ? null : <BottomTabBar tabs={TABS} currentPath={pathname} />}
+      {detail || kids ? null : <BottomTabBar tabs={tabs(msg)} currentPath={pathname} />}
     </div>
   );
 }

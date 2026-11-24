@@ -91,6 +91,10 @@ export default tseslint.config(
     // M34-S04 AC2: files already moved to the message catalog may not gain literal user facing text.
     // Add a file here when it is wired. Allowlist exact strings that are not copy (docs/lanes/R1-stories.md).
     files: [
+      'apps/web/src/components/ViewerChrome.tsx',
+      'apps/web/src/components/Shell.tsx',
+      'apps/web/src/components/guest/GuestChrome.tsx',
+      'apps/web/src/components/KidsExitDialog.tsx',
       'apps/web/src/components/account/pages.ts',
       'apps/web/src/components/account/AlwaysAskSetting.tsx',
       'apps/web/src/components/profiles/CachedPicker.tsx',

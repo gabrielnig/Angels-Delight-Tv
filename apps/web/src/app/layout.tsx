@@ -7,7 +7,9 @@ import './globals.css';
 import { WebVitals } from '../components/observability/WebVitals';
 import { PwaClient } from '../components/pwa/PwaClient';
 import { selectFonts } from '../lib/fonts';
-import { getLocale } from '../lib/i18n/server';
+import { CLIENT_NAMESPACES, pickNamespaces } from '../lib/i18n/namespaces';
+import { I18nProvider } from '../lib/i18n/provider';
+import { getLocale, loadCatalog } from '../lib/i18n/server';
 import { getRootTheme } from '../lib/theme/root';
 import { getSeoSettings } from '../server/seo/seo-settings';
 import { localeInfo } from '@ad/shared/messages';
@@ -43,6 +45,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
   const nonce = (await headers()).get('x-nonce') ?? undefined;
   const theme = await getRootTheme(nonce);
   const locale = await getLocale();
+  const catalog = pickNamespaces(await loadCatalog(locale), CLIENT_NAMESPACES, { production: true });
   const fonts = selectFonts(theme.injection.fontKey, locale);
   return (
     <html
@@ -54,7 +57,9 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
         <style {...theme.styleProps} />
       </head>
       <body>
-        <Providers>{children}</Providers>
+        <I18nProvider locale={locale} catalog={catalog}>
+          <Providers>{children}</Providers>
+        </I18nProvider>
         <PwaClient platformName={theme.platformName} />
         <WebVitals />
       </body>
