@@ -283,4 +283,34 @@ describe.skipIf(!integrationEnabled())('admin home curation', () => {
       await fresh.drop();
     }
   });
+
+  it('writes hero slide text to the hero row and reads it back', async () => {
+    const v = await seedVideo(t.setup);
+    const config: HomeConfig = {
+      heroIds: [v.id],
+      heroText: { [v.id]: { headline: 'Start here', buttonLabel: 'Play now' } },
+      rows: [],
+    };
+    expect(await publishAdminHome(ctx, editor, config)).toEqual({ ok: true });
+    const [item] = await t.setup
+      .select()
+      .from(schema.rowItems)
+      .where(eq(schema.rowItems.videoId, v.id));
+    expect(item?.heroHeadline).toBe('Start here');
+    expect(item?.heroBlurb).toBeNull();
+    expect(item?.heroButtonLabel).toBe('Play now');
+    const home = await getAdminHome(ctx, editor);
+    expect(home.state.published.heroText).toEqual({
+      [v.id]: { headline: 'Start here', buttonLabel: 'Play now' },
+    });
+  });
+
+  it('refuses hero text over 80 characters', async () => {
+    const r = await publishAdminHome(ctx, editor, {
+      heroIds: [],
+      heroText: { x: { headline: 'x'.repeat(81) } },
+      rows: [],
+    });
+    expect(r.ok).toBe(false);
+  });
 });

@@ -48,4 +48,15 @@ describe('cleanHomeConfig', () => {
     expect(row.viewAllMode).toBeUndefined();
     expect(row.minItems).toBeUndefined();
   });
+
+  it('keeps hero text for the chosen titles, trimmed to 80 characters, and nothing else', () => {
+    const out = cleanHomeConfig({
+      ...config,
+      heroText: {
+        v1: { headline: 'H'.repeat(120), blurb: 'b', extra: 'x' } as never,
+        other: { headline: 'gone' },
+      },
+    });
+    expect(out.heroText).toEqual({ v1: { headline: 'H'.repeat(80), blurb: 'b' } });
+  });
 });
