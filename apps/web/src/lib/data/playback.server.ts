@@ -8,10 +8,11 @@ import { RealPlaybackData } from '../../server/data/real-playback';
 import { getSession } from '../../server/auth/session';
 import { viewerRuntime } from '../../server/viewer/runtime';
 import { createFixturePlaybackData } from './playback.fixture';
-import type { PlaybackData, PlaybackTransport, ViewerContext } from './playback';
+import type { PlaybackData, PlaybackTransport, ProgressTransport, ViewerContext } from './playback';
 import { loadOwnedProfile } from '@ad/viewer';
 import { withAccount } from '@ad/db';
 import { viewerActor } from '../../server/data/actor';
+import { guestPlayEnabled } from '../../server/guest/guest-settings';
 
 /**
  * Server side wiring for the Watch page. Real viewer data when `realDataEnabled()`, the fixture otherwise.
@@ -51,7 +52,8 @@ export function getTransport(
 }
 
 /** Progress is stored by the server whenever viewer data is real, whatever the session transport is. */
-export function getProgressTransport(): PlaybackTransport {
+export function getProgressTransport(viewer?: Pick<ViewerContext, 'guest'>): ProgressTransport {
+  if (viewer?.guest) return 'local';
   return realDataEnabled() ? 'http' : getTransport();
 }
 
@@ -72,6 +74,9 @@ export async function getViewerContext(
   if (realDataEnabled()) {
     const session = await getSession();
     const signedIn = session !== null && session.status === 'active';
+    // No session at all is a guest (M40-S02). A session that exists but is not usable keeps today's redirect.
+    if (session === null && (await guestPlayEnabled()))
+      return { profileId: 'none', kids: false, guest: true };
     if (next && !signedIn) redirect(`/sign-in?next=${encodeURIComponent(next)}`);
     if (next && session && !session.emailVerified) redirect('/verify-email');
     const profileId = signedIn ? await cookieProfileIo().activeProfileId() : null;

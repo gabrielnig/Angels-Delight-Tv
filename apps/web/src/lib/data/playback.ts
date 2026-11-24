@@ -16,8 +16,10 @@ export interface ViewerContext {
   /** Set by the real viewer wiring. Fixtures have no account. */
   accountId?: string;
   profileId: string;
-  /** True on a kids profile. */
+  /** True on a kids profile, or when a guest has Kids mode on. */
   kids: boolean;
+  /** A visitor with no account (M40). Never combined with an account id. Progress and preferences stay on the device. */
+  guest?: true;
 }
 
 export interface WatchSeries {
@@ -82,3 +84,10 @@ export interface PlaybackData {
 
 /** How the browser talks to the playback API. `fixture` needs no server routes. */
 export type PlaybackTransport = 'fixture' | 'http';
+
+/**
+ * Where watched places go. `http` is the account route, `fixture` the dev only per profile device key, and `local`
+ * is the guest store on this device (M40-S04). The session transport and the progress transport are separate
+ * because a guest needs the session over http and the place on the device.
+ */
+export type ProgressTransport = PlaybackTransport | 'local';

@@ -101,4 +101,7 @@ export const EN_NG = {
   'player.error.unsupportedBrowser.title': 'This browser cannot play this video',
   'player.error.unsupportedBrowser.body':
     'Use a recent version of Chrome, Edge, Firefox or Safari.',
+
+  // Guest access (M40)
+  'guest.progress.notSaved': 'Your place is not being saved on this device.',
 } as const satisfies CatalogShape;

@@ -36,6 +36,19 @@ describe('createHttpSessionProvider', () => {
     });
   });
 
+  it('omits profileId from the body when there is none (guest, M40-S02)', async () => {
+    const fetchFn = vi
+      .fn()
+      .mockResolvedValue(
+        res(200, { token: 't', expiresAt: 1_800_000_000, masterUrl: '/api/play/v1/master.m3u8' }),
+      );
+    const provider = createHttpSessionProvider({ appOrigin: 'https://app.test', fetchFn });
+    await provider.createSession('v1');
+    const init = fetchFn.mock.calls[0]![1] as RequestInit;
+    expect(JSON.parse(init.body as string)).toEqual({});
+    expect(init.credentials).toBe('include');
+  });
+
   it('accepts a numeric expiry in milliseconds or seconds', async () => {
     const mk = (n: number) =>
       createHttpSessionProvider({
