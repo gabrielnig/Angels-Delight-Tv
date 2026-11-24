@@ -102,24 +102,26 @@ export function resolveShortcut(input: KeyInput, ctx: ShortcutContext): Shortcut
 }
 
 export interface ShortcutHelpRow {
+  /** Stable id the help dialog maps to its translated text. */
+  id: string;
   keys: string[];
   action: string;
 }
 
 /** Rows for the S26 help dialog. */
 export const SHORTCUT_HELP: readonly ShortcutHelpRow[] = [
-  { keys: ['Space', 'K'], action: 'Play or pause' },
-  { keys: ['Left', 'Right'], action: 'Back or forward 5 seconds' },
-  { keys: ['J', 'L'], action: 'Back or forward 10 seconds' },
-  { keys: ['Up', 'Down'], action: 'Volume up or down' },
-  { keys: ['M'], action: 'Mute or unmute' },
-  { keys: ['C'], action: 'Captions on or off' },
-  { keys: ['F'], action: 'Full screen' },
-  { keys: ['0 to 9'], action: 'Jump to 0 to 90 percent' },
-  { keys: ['Shift ,', 'Shift .'], action: 'Slower or faster' },
-  { keys: ['N'], action: 'Next episode' },
-  { keys: ['S'], action: 'Skip intro, recap or credits' },
-  { keys: ['T'], action: 'Theatre mode' },
-  { keys: ['Esc'], action: 'Close menus or leave full screen' },
-  { keys: ['?'], action: 'Open this list' },
+  { id: 'playPause', keys: ['Space', 'K'], action: 'Play or pause' },
+  { id: 'back5', keys: ['Left', 'Right'], action: 'Back or forward 5 seconds' },
+  { id: 'back10', keys: ['J', 'L'], action: 'Back or forward 10 seconds' },
+  { id: 'volume', keys: ['Up', 'Down'], action: 'Volume up or down' },
+  { id: 'mute', keys: ['M'], action: 'Mute or unmute' },
+  { id: 'captions', keys: ['C'], action: 'Captions on or off' },
+  { id: 'fullscreen', keys: ['F'], action: 'Full screen' },
+  { id: 'jump', keys: ['0 to 9'], action: 'Jump to 0 to 90 percent' },
+  { id: 'speed', keys: ['Shift ,', 'Shift .'], action: 'Slower or faster' },
+  { id: 'next', keys: ['N'], action: 'Next episode' },
+  { id: 'skip', keys: ['S'], action: 'Skip intro, recap or credits' },
+  { id: 'theatre', keys: ['T'], action: 'Theatre mode' },
+  { id: 'escape', keys: ['Esc'], action: 'Close menus or leave full screen' },
+  { id: 'help', keys: ['?'], action: 'Open this list' },
 ];

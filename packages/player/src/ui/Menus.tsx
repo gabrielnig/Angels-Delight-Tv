@@ -8,13 +8,7 @@ import { formatClock } from '../format';
 import { usePlayerT } from '../t';
 import { CheckIcon } from './icons';
 
-export type MenuId =
-  | 'speed'
-  | 'quality'
-  | 'captions'
-  | 'settings'
-  | 'chapters'
-  | 'captionStyle';
+export type MenuId = 'speed' | 'quality' | 'captions' | 'settings' | 'chapters' | 'captionStyle';
 
 interface MenuShellProps {
   id: string;
@@ -148,12 +142,13 @@ export function ChapterRows({
 }
 
 export function SpeedRows({ rate, onSelect }: { rate: number; onSelect(rate: number): void }) {
+  const msg = usePlayerT();
   return (
     <>
       {PLAYBACK_RATES.map((r) => (
         <MenuRow
           key={r}
-          label={r === 1 ? 'Normal' : `${r}x`}
+          label={r === 1 ? msg('player.settings.normal') : `${r}x`}
           checked={rate === r}
           onSelect={() => onSelect(r)}
         />

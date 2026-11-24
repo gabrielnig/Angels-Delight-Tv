@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState, type KeyboardEvent, type PointerEvent } from 'react';
+import { usePlayerT } from '../t';
 import { chapterAt, chapterTicks, normalizeChapters, type PlayerChapter } from '../chapters';
 import { formatClock, seekValueText } from '../format';
 import { SpriteLoader, findTile, type SpriteTile } from '../sprite';
@@ -31,6 +32,7 @@ export function SeekBar({
   chapters,
   fetcher,
 }: SeekBarProps) {
+  const msg = usePlayerT();
   const ref = useRef<HTMLDivElement>(null);
   const [hover, setHover] = useState<{ x: number; t: number } | null>(null);
   const [dragging, setDragging] = useState(false);
@@ -111,15 +113,18 @@ export function SeekBar({
       className="adp-seek"
       role="slider"
       tabIndex={0}
-      aria-label="Seek"
+      aria-label={msg('player.seek.label')}
       aria-orientation="horizontal"
       aria-valuemin={0}
       aria-valuemax={known ? Math.round(duration) : 0}
       aria-valuenow={Math.round(currentTime)}
       aria-valuetext={
         currentChapter
-          ? `${seekValueText(currentTime, duration)}, chapter ${currentChapter.title}`
-          : seekValueText(currentTime, duration)
+          ? msg('player.seek.chapterValue', {
+              value: seekValueText(currentTime, duration, msg),
+              title: currentChapter.title,
+            })
+          : seekValueText(currentTime, duration, msg)
       }
       data-dragging={dragging || undefined}
       onPointerDown={onPointerDown}
@@ -163,7 +168,9 @@ export function SeekBar({
               />
             </div>
           ) : null}
-          {hoverChapter ? <span className="adp-seek__tip-chapter">{hoverChapter.title}</span> : null}
+          {hoverChapter ? (
+            <span className="adp-seek__tip-chapter">{hoverChapter.title}</span>
+          ) : null}
           {formatClock(hover.t)}
         </div>
       ) : null}

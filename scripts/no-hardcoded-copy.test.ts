@@ -27,6 +27,28 @@ describe('ad/no-hardcoded-copy (M34-S04 AC2)', () => {
     ).toBe(1);
   });
 
+  it('flags one word labels in read attributes and label like properties (M46 wave D)', async () => {
+    expect(
+      await copyHits(
+        "export const A = (p: { on: boolean }) => <button aria-label={p.on ? 'Pause' : 'Play'} />;\n",
+        WIRED,
+      ),
+    ).toBe(2);
+    expect(await copyHits("export const o = [{ value: 'small', label: 'Small' }];\n", WIRED)).toBe(
+      1,
+    );
+    expect(await copyHits("export const o = { title: 'Captions' };\n", WIRED)).toBe(1);
+  });
+
+  it('leaves identifiers and keyboard names alone', async () => {
+    const code = [
+      "export const a = (e: { key: string }) => e.key === 'Escape' || e.key === 'ArrowDown';",
+      "export const b = { value: 'small', kind: 'Info' };",
+      "export const c = <p className={on ? 'is-on' : 'is-off'} />;",
+    ].join('\n');
+    expect(await copyHits(code, WIRED)).toBe(0);
+  });
+
   it('accepts catalog reads, ids, class names, imports and type literals', async () => {
     const code = [
       "import { msg } from '@ad/shared/messages';",
