@@ -68,9 +68,19 @@ describe('limits (M41-S06 AC4)', () => {
 
 describe('default minimums per type', () => {
   it('Trending and Each category need 4, All series needs 2, the rest 1', () => {
-    expect(defaultMinItems('smart')).toBe(4);
+    expect(defaultMinItems('smart')).toBe(3);
+    for (const t of ['trending', 'top_ten', 'most_liked'] as const) expect(defaultMinItems(t)).toBe(5);
     expect(defaultMinItems('each_category')).toBe(4);
     expect(defaultMinItems('all_series')).toBe(2);
     expect(defaultMinItems('manual')).toBe(1);
+  });
+});
+
+describe('Popular fallback validation (L5 slice 4)', () => {
+  it('accepts a fallback title up to 80 characters and refuses longer', () => {
+    expect(validateHomeConfig(config(row({ type: 'smart', fallbackToNewest: true, fallbackTitle: 'x'.repeat(80) })))).toBeNull();
+    expect(validateHomeConfig(config(row({ type: 'smart', fallbackToNewest: true, fallbackTitle: 'x'.repeat(81) })))).toBe(
+      'Keep the fallback title to 80 characters',
+    );
   });
 });
