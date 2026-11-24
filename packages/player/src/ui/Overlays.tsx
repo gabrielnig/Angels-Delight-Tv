@@ -1,5 +1,6 @@
-import { msg } from '@ad/shared/messages';
 import { useEffect, useRef } from 'react';
+import type { Translate } from '@ad/shared/messages';
+import { usePlayerT } from '../t';
 import { formatClock } from '../format';
 import type { PlayerErrorKind, PlayerHint, PlayerToast } from '../types';
 import { CloseIcon, PlayIcon } from './icons';
@@ -21,7 +22,7 @@ interface ErrorOverlayProps {
   onSignIn?: (() => void) | undefined;
 }
 
-const COPY: Record<PlayerErrorKind, { title: string; body: (p: number, ref: string) => string }> = {
+const copyFor = (msg: Translate): Record<PlayerErrorKind, { title: string; body: (p: number, ref: string) => string }> => ({
   'connection-lost': {
     title: msg('player.error.connectionLost.title'),
     body: (p) => msg('player.error.connectionLost.body', { time: formatClock(p) }),
@@ -46,7 +47,7 @@ const COPY: Record<PlayerErrorKind, { title: string; body: (p: number, ref: stri
     title: msg('player.error.unsupportedBrowser.title'),
     body: () => msg('player.error.unsupportedBrowser.body'),
   },
-};
+});
 
 export function ErrorOverlay({
   kind,
@@ -57,7 +58,8 @@ export function ErrorOverlay({
   onRetry,
   onSignIn,
 }: ErrorOverlayProps) {
-  const copy = COPY[kind];
+  const msg = usePlayerT();
+  const copy = copyFor(msg)[kind];
   const actions = useRef<HTMLDivElement>(null);
   // One action per error (R39), and it takes focus so a keyboard or screen reader viewer lands on it.
   useEffect(() => {
@@ -120,6 +122,7 @@ export function HintBar({
   onAction(): void;
   onDismiss(): void;
 }) {
+  const msg = usePlayerT();
   const data = kind === 'data-saver';
   return (
     <div className="adp-hint" role="status">
@@ -157,6 +160,7 @@ export function Toast({
   onDismiss(): void;
   onAction(): void;
 }) {
+  const msg = usePlayerT();
   return (
     <div
       className="adp-toast"
@@ -196,6 +200,7 @@ export function UpNextTile({
   onPlay(): void;
   onDismiss(): void;
 }) {
+  const msg = usePlayerT();
   return (
     <div className="adp-tile">
       <button type="button" className="adp-tile__main" onClick={onPlay}>

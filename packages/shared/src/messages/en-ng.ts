@@ -47,6 +47,8 @@ export const EN_NG = {
   // Player
   'player.resumed': 'Resumed from {time}',
   'player.captionsFailed': 'Captions could not load',
+  'player.captions.fallback': 'That language could not load. Showing English.',
+  'player.captions.off': 'Off',
   'player.fullscreenUnavailable': 'Full screen is not available on this device',
   'player.pipUnavailable': 'Picture in picture is not available right now',
   'player.seekFallback': 'Could not jump there, so we jumped to the nearest point',

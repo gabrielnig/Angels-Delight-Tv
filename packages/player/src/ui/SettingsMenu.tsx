@@ -1,7 +1,8 @@
 'use client';
 
+import type { Translate } from '@ad/shared/messages';
+import { usePlayerT } from '../t';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
-import { msg } from '@ad/shared/messages';
 import type { QualityMenu } from '../quality';
 import { ChevronRightIcon } from './icons';
 import { MenuRow, MenuShell, QualityRows, SpeedRows } from './Menus';
@@ -39,7 +40,7 @@ export interface SettingsMenuProps {
 
 type View = 'root' | 'speed' | 'quality' | 'audio';
 
-function speedValue(rate: number): string {
+function speedValue(rate: number, msg: Translate): string {
   return rate === 1 ? msg('player.settings.normal') : `${rate}x`;
 }
 
@@ -79,6 +80,7 @@ function NavRow({
  * the bottom sheet on compact screens.
  */
 export function SettingsMenu(props: SettingsMenuProps) {
+  const msg = usePlayerT();
   const [view, setView] = useState<View>(
     props.initialView === 'quality' && props.quality ? 'quality' : 'root',
   );
@@ -175,7 +177,7 @@ export function SettingsMenu(props: SettingsMenuProps) {
         <NavRow
           id="speed"
           label={msg('player.menu.speed')}
-          value={speedValue(props.rate)}
+          value={speedValue(props.rate, msg)}
           onOpen={() => open('speed')}
         />
         {props.quality ? (

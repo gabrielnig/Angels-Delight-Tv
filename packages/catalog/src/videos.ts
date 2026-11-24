@@ -1,3 +1,4 @@
+import { viewerTrackSql } from './caption-visibility';
 import { sql } from 'drizzle-orm';
 import { artworkFromRow, type ArtworkDto, type ArtworkRow } from './artwork';
 import { rowsOf, uuidList } from './sql';
@@ -41,7 +42,7 @@ interface VideoRow extends ArtworkRow {
 }
 
 const VIDEO_SELECT = sql.raw(`v.id, v.slug, v.title, v.description, v.duration_ms, v.kids_safe,
-  (EXISTS (SELECT 1 FROM caption_tracks ct WHERE ct.video_id = v.id AND ct.approved_caption_id IS NOT NULL)
+  (EXISTS (SELECT 1 FROM caption_tracks ct WHERE ct.video_id = v.id AND ${viewerTrackSql('ct')})
       AND coalesce(v.captions_enabled, NOT EXISTS (SELECT 1 FROM settings st WHERE st.key = 'features.captions_default_available' AND st.value = 'false'::jsonb))) AS has_captions,
   se.id AS series_id, se.slug AS series_slug, se.title AS series_title, sn.number AS season_number, ep.number AS episode_number,
   pa.id AS poster_id, pa.alt_text AS poster_alt, pa.placeholder_color AS poster_color, pa.placeholder_blur AS poster_blur,

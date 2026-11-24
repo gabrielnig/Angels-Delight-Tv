@@ -1,3 +1,4 @@
+import { viewerTrackSql } from './caption-visibility';
 import { sql, type SQL } from 'drizzle-orm';
 import { artworkFromRow, type ArtworkDto, type ArtworkRow } from './artwork';
 import { clampLimit, decodeCursor, encodeCursor } from './cursor';
@@ -103,7 +104,7 @@ function titlesCte(
     SELECT 'video'::text AS kind, v.id, v.slug, v.title, v.description, v.duration_ms::int AS duration_ms,
       NULL::int AS episode_count, v.kids_safe, v.maturity_rank, coalesce(v.published_at, v.publish_at) AS sort_at,
       v.poster_asset_id,
-      (EXISTS (SELECT 1 FROM caption_tracks ct WHERE ct.video_id = v.id AND ct.approved_caption_id IS NOT NULL)
+      (EXISTS (SELECT 1 FROM caption_tracks ct WHERE ct.video_id = v.id AND ${sql.raw(viewerTrackSql('ct'))})
       AND coalesce(v.captions_enabled, NOT EXISTS (SELECT 1 FROM settings st WHERE st.key = 'features.captions_default_available' AND st.value = 'false'::jsonb))) AS has_captions,
       ad_unaccent(lower(v.title)) AS title_key,
       ARRAY(SELECT vc.category_id FROM video_categories vc WHERE vc.video_id = v.id) AS category_ids${videoSearch}
@@ -115,7 +116,7 @@ function titlesCte(
         WHERE esn.series_id = s.id AND ${liveVideoSql('ev', audience, now)})::int,
       s.kids_safe, s.maturity_rank, coalesce(s.published_at, s.publish_at), s.poster_asset_id,
       EXISTS (SELECT 1 FROM seasons csn JOIN episodes cep ON cep.season_id = csn.id
-        JOIN caption_tracks ct ON ct.video_id = cep.video_id AND ct.approved_caption_id IS NOT NULL
+        JOIN caption_tracks ct ON ct.video_id = cep.video_id AND ${sql.raw(viewerTrackSql('ct'))}
         WHERE csn.series_id = s.id),
       ad_unaccent(lower(s.title)),
       ARRAY(SELECT sc.category_id FROM series_categories sc WHERE sc.series_id = s.id)${seriesSearch}

@@ -1,7 +1,7 @@
 'use client';
 
+import { usePlayerT } from '../t';
 import { useEffect, useRef, type KeyboardEvent } from 'react';
-import { msg } from '@ad/shared/messages';
 
 /**
  * Shown instead of the countdown after three autoplays with no input, so an unattended device stops spending
@@ -19,6 +19,7 @@ export function StillWatching({
   onKeep(): void;
   onStop(): void;
 }) {
+  const msg = usePlayerT();
   const ref = useRef<HTMLElement>(null);
 
   useEffect(() => {

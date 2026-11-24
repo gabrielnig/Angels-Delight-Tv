@@ -13,7 +13,7 @@ import {
 } from '@ad/player';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import { msg } from '@ad/shared/messages';
+import { useLocale, useT } from '@/lib/i18n/provider';
 import type { ProgressTransport, PlaybackTransport, WatchData } from '@/lib/data/playback';
 import {
   createGuestProgressSink,
@@ -140,6 +140,8 @@ export function WatchClient({
   challengeSiteKey,
   sponsors,
 }: WatchClientProps) {
+  const msg = useT();
+  const locale = useLocale();
   const challenge = useGuestChallenge(challengeKeyFor(viewer, challengeSiteKey));
   const router = useRouter();
   const playerBox = useRef<HTMLDivElement>(null);
@@ -380,6 +382,8 @@ export function WatchClient({
               sessionProvider={sessionProvider}
               progressSink={progressSink}
               captions={data.captions}
+              t={msg}
+              uiLanguage={locale}
               spriteUrl={data.spriteUrl ?? null}
               theatre={theatre}
               onTheatreToggle={toggleTheatre}

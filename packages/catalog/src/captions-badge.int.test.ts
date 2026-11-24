@@ -1,7 +1,7 @@
 import { eq } from 'drizzle-orm';
 import { captions, captionTracks, settings, videos } from '@ad/db';
 import { uuidv7 } from '@ad/shared';
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import {
   createViewerTestDb,
   integrationEnabled,
@@ -89,5 +89,73 @@ describe.skipIf(!integrationEnabled())('the CC badge follows the captions switch
     await t.setup.insert(settings).values({ key: 'features.captions_default_available', value: false });
     expect(await badge(following.id)).toBe(false);
     expect(await badge(explicit.id)).toBe(true);
+  });
+
+  describe('translation tracks (M46)', () => {
+    async function withTranslation(opts: { published: boolean; language?: string }) {
+      const video = await seedVideo(t.setup);
+      const trackId = uuidv7();
+      const capId = uuidv7();
+      await t.setup.insert(captionTracks).values({
+        id: trackId,
+        videoId: video.id,
+        language: opts.language ?? 'yo',
+        label: 'Yorùbá',
+        kind: 'subtitles',
+        published: opts.published,
+      });
+      await t.setup.insert(captions).values({
+        id: capId,
+        trackId,
+        revision: 1,
+        source: 'translation',
+        status: 'approved',
+        storageKey: `c/${capId}.vtt`,
+        sha256: Buffer.alloc(32),
+        bytes: 10,
+        cueCount: 1,
+        publicKey: `cap/${capId}.vtt`,
+        reviewedBy: reviewer,
+        reviewedAt: NOW,
+      });
+      await t.setup.update(captionTracks).set({ approvedCaptionId: capId }).where(eq(captionTracks.id, trackId));
+      return video;
+    }
+    const detail = async (id: string) => {
+      const found = await run((tx) => findTitle(tx, ctx, { kids: false }, { id, kind: 'video' }));
+      return found?.type === 'title' ? found.title.captionTracks.map((x) => x.language) : null;
+    };
+    beforeEach(async () => {
+      await t.setup
+        .insert(settings)
+        .values({ key: 'features.captions_default_available', value: true })
+        .onConflictDoUpdate({ target: settings.key, set: { value: true } });
+    });
+    const setLanguages = (value: string[]) =>
+      t.setup
+        .insert(settings)
+        .values({ key: 'content.languages', value })
+        .onConflictDoUpdate({ target: settings.key, set: { value } });
+
+    it('CC badge ignores unpublished translation tracks', async () => {
+      await setLanguages(['en', 'yo']);
+      const video = await withTranslation({ published: false });
+      expect(await badge(video.id)).toBe(false);
+      expect(await detail(video.id)).toEqual([]);
+    });
+
+    it('a published translation in an enabled language shows the badge and is listed', async () => {
+      await setLanguages(['en', 'yo']);
+      const video = await withTranslation({ published: true });
+      expect(await badge(video.id)).toBe(true);
+      expect(await detail(video.id)).toEqual(['yo']);
+    });
+
+    it('a language removed from content.languages no longer counts', async () => {
+      await setLanguages(['en']);
+      const video = await withTranslation({ published: true });
+      expect(await badge(video.id)).toBe(false);
+      expect(await detail(video.id)).toEqual([]);
+    });
   });
 });

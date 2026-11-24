@@ -1,7 +1,8 @@
 'use client';
 
-import { msg } from '@ad/shared/messages';
 
+import { msg, type Translate } from '@ad/shared/messages';
+import { PlayerTProvider, usePlayerT } from '../t';
 import {
   useCallback,
   useEffect,
@@ -51,6 +52,8 @@ import { useMediaQuery } from './useMediaQuery';
 
 export interface PlayerViewProps {
   controller: PlayerController | null;
+  /** Translates player strings. Pass the same function to the controller. */
+  t?: Translate | undefined;
   title: string;
   posterUrl?: string | undefined;
   /** Caption size, background and contrast for this profile (M11-S03). */
@@ -83,7 +86,17 @@ const HIDE_AFTER_MS = 3_000;
 
 type FsVideo = HTMLVideoElement & { webkitEnterFullscreen?: () => void };
 
+/** The player screen. Strings come from the `t` prop (the viewer's language), English when it is not given. */
 export function PlayerView(props: PlayerViewProps) {
+  return (
+    <PlayerTProvider t={props.t ?? msg}>
+      <PlayerViewInner {...props} />
+    </PlayerTProvider>
+  );
+}
+
+function PlayerViewInner(props: PlayerViewProps) {
+  const msg = usePlayerT();
   const { controller, title, posterUrl, next = null, links = {}, reference = 'UNKNOWN' } = props;
   const state = useControllerState(controller);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -726,7 +739,7 @@ export function PlayerView(props: PlayerViewProps) {
             {menu === 'captions' ? (
               <MenuShell
                 id="adp-menu-captions"
-                label="Captions"
+                label={msg('player.captions')}
                 onClose={closeMenu}
                 footer={
                   props.onCaptionStyleChange ? (
