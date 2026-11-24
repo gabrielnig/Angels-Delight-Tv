@@ -25,7 +25,11 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const { videoId } = await params;
   const viewer = await getViewerContext(await cookies());
   const lookup = await getPlaybackData().getWatchData(videoId, viewer);
-  return { title: lookup.status === 'ok' ? lookup.data.video.title : 'Watch' };
+  // The title page is the canonical page. A watch page is never indexed (M40-S17).
+  return {
+    title: lookup.status === 'ok' ? lookup.data.video.title : 'Watch',
+    robots: { index: false, follow: false },
+  };
 }
 
 export default async function WatchPage({ params, searchParams }: PageProps) {
@@ -62,9 +66,11 @@ export default async function WatchPage({ params, searchParams }: PageProps) {
           data={data}
           viewer={viewer}
           transport={getTransport()}
-          progressTransport={getProgressTransport()}
+          progressTransport={getProgressTransport(viewer)}
           startAt={parseStartAt(query.t)}
-          prefsSync={{ save: savePlayerPrefsAction, migrate: migrateDevicePrefsAction }}
+          {...(viewer.guest
+            ? {}
+            : { prefsSync: { save: savePlayerPrefsAction, migrate: migrateDevicePrefsAction } })}
         >
           <WatchDetails data={data} />
         </WatchClient>

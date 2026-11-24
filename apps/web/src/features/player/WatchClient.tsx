@@ -11,7 +11,9 @@ import {
 } from '@ad/player';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import type { PlaybackTransport, WatchData } from '@/lib/data/playback';
+import { msg } from '@ad/shared/messages';
+import type { ProgressTransport, PlaybackTransport, WatchData } from '@/lib/data/playback';
+import { createGuestProgressSink, readGuestProgress } from '@/lib/guest/progress-store';
 import {
   createFixtureSessionProvider,
   createLocalProgressSink,
@@ -42,10 +44,11 @@ import { WatchActions } from './WatchActions';
 
 export interface WatchClientProps {
   data: WatchData;
-  viewer: { profileId: string; kids: boolean };
+  /** A guest has no profile: the session carries no profile id, progress and preferences stay on this device. */
+  viewer: { profileId: string; kids: boolean; guest?: true };
   transport: PlaybackTransport;
   /** Where progress goes when it differs from the session transport. Real viewer data always posts to /api/progress. */
-  progressTransport?: PlaybackTransport;
+  progressTransport?: ProgressTransport;
   /** Value of ?t= in seconds, overrides the saved position for this load. */
   startAt: number | null;
   /** Details rendered between the player and the action buttons. */
@@ -99,7 +102,7 @@ export function WatchClient({
   progressTransport = transport,
   startAt,
   children,
-  prefsSync,
+  prefsSync: prefsSyncProp,
   testing,
 }: WatchClientProps) {
   const router = useRouter();
@@ -108,19 +111,28 @@ export function WatchClient({
   useEffect(() => setOrigin(window.location.origin), []);
 
   const { video } = data;
+  const isGuest = viewer.guest === true;
+  // A guest never writes to the server and never syncs preferences, whatever the page passed in (M40-S04).
+  const progressMode: ProgressTransport = isGuest ? 'local' : progressTransport;
+  const prefsSync = isGuest ? undefined : prefsSyncProp;
+  const [unsaved, setUnsaved] = useState(false);
   const sessionProvider = useMemo(() => {
     if (!origin) return null;
-    return transport === 'http'
-      ? createHttpSessionProvider({ appOrigin: origin, profileId: viewer.profileId })
-      : createFixtureSessionProvider(origin);
-  }, [origin, transport, viewer.profileId]);
+    if (transport !== 'http') return createFixtureSessionProvider(origin);
+    return createHttpSessionProvider({
+      appOrigin: origin,
+      ...(isGuest ? {} : { profileId: viewer.profileId }),
+    });
+  }, [origin, transport, viewer.profileId, isGuest]);
 
   const progressSink = useMemo(
     () =>
-      progressTransport === 'http'
-        ? createHttpProgressSink({ endpoint: PROGRESS_ENDPOINT, toBody: toViewerProgressBody })
-        : createLocalProgressSink(storage()),
-    [progressTransport],
+      progressMode === 'local'
+        ? createGuestProgressSink(storage(), { onUnavailable: () => setUnsaved(true) })
+        : progressMode === 'http'
+          ? createHttpProgressSink({ endpoint: PROGRESS_ENDPOINT, toBody: toViewerProgressBody })
+          : createLocalProgressSink(storage()),
+    [progressMode],
   );
 
   // Choices an older version kept in this browser move to the profile before the player starts (M03-S09).
@@ -175,10 +187,13 @@ export function WatchClient({
   );
 
   const resume = useMemo(() => {
+    const guestPlace = isGuest ? readGuestProgress(storage(), video.id) : null;
     const local =
-      progressTransport === 'fixture'
-        ? readLocalProgress(storage(), viewer.profileId, video.id)
-        : null;
+      guestPlace !== null
+        ? { positionSeconds: guestPlace.p, finished: guestPlace.f }
+        : progressMode === 'fixture'
+          ? readLocalProgress(storage(), viewer.profileId, video.id)
+          : null;
     const saved = local ?? data.saved;
     return {
       urlT: startAt,
@@ -236,6 +251,11 @@ export function WatchClient({
 
   return (
     <>
+      {unsaved ? (
+        <p className="watch__note" role="status">
+          {msg('guest.progress.notSaved')}
+        </p>
+      ) : null}
       <div className="watch__player">
         {origin && sessionProvider && prefsReady ? (
           <Player
