@@ -61,4 +61,11 @@ describe('HomeCuration', () => {
       true,
     );
   });
+  it('says Home shows the five newest titles when no hero is chosen and lists them in the preview', () => {
+    view();
+    expect(
+      screen.getByText('No hero titles chosen. Home shows your 5 newest titles.'),
+    ).toBeTruthy();
+    expect(screen.getByText(/Newest titles are used until you choose hero titles/)).toBeTruthy();
+  });
 });
