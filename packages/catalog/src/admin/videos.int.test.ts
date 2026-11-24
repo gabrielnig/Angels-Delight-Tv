@@ -115,6 +115,53 @@ describe.skipIf(!integrationEnabled())('admin videos', () => {
     expect(after?.kidsSafe).toBe(false);
   });
 
+  it('setting a rank updates kids_safe and writes an audit entry with old and new', async () => {
+    const video = await seedVideo(t.setup, { publishState: 'draft', maturityRank: 2 });
+    const updated = await updateAdminVideo(ctx, editor, video.id, { maturityRank: 0 });
+    expect(updated.maturityRank).toBe(0);
+    const [row] = await t.setup.select().from(videos).where(eq(videos.id, video.id));
+    expect(row?.kidsSafe).toBe(true);
+    expect(row?.maturityRank).toBe(0);
+    const back = await updateAdminVideo(ctx, editor, video.id, { maturityRank: 3 });
+    expect(back.maturityRank).toBe(3);
+    const [after] = await t.setup.select().from(videos).where(eq(videos.id, video.id));
+    expect(after?.kidsSafe).toBe(false);
+    const audit = await t.setup.execute(
+      sql`select metadata from audit_log where target_id = ${video.id} and action = 'video.maturity' order by id`,
+    );
+    expect(audit.rows.map((r) => JSON.stringify(r.metadata))).toEqual([
+      expect.stringContaining('"from":2'),
+      expect.stringContaining('"from":0'),
+    ]);
+    expect(JSON.stringify(audit.rows[1]!.metadata)).toContain('"to":3');
+    await expect(updateAdminVideo(ctx, editor, video.id, { maturityRank: 7 })).rejects.toMatchObject({
+      status: 422,
+    });
+  });
+
+  it('the legacy suitability value maps onto a rank so old callers keep working', async () => {
+    const video = await seedVideo(t.setup, { publishState: 'draft' });
+    expect((await updateAdminVideo(ctx, editor, video.id, { suitability: 'kids' })).maturityRank).toBe(0);
+    expect((await updateAdminVideo(ctx, editor, video.id, { suitability: 'older' })).maturityRank).toBe(3);
+  });
+
+  it('bulk rank change is all or nothing and reports failed ids', async () => {
+    const a = await seedVideo(t.setup, { title: 'Rank a', maturityRank: 2 });
+    const b = await seedVideo(t.setup, { title: 'Rank b', maturityRank: 2 });
+    const done = await bulkAdminVideos(ctx, editor, [a.id, b.id], { type: 'maturity', value: 1 });
+    expect(done).toEqual({ succeeded: [a.id, b.id], failed: [] });
+    expect((await getAdminVideo(ctx, editor, a.id)).maturityRank).toBe(1);
+    const ghost = uuidv7();
+    const result = await bulkAdminVideos(ctx, editor, [a.id, b.id, ghost], { type: 'maturity', value: 4 });
+    expect(result.succeeded).toEqual([]);
+    expect(result.failed.map((f) => f.id)).toContain(ghost);
+    expect((await getAdminVideo(ctx, editor, a.id)).maturityRank).toBe(1);
+    expect((await getAdminVideo(ctx, editor, b.id)).maturityRank).toBe(1);
+    await expect(
+      bulkAdminVideos(ctx, viewer, [a.id], { type: 'maturity', value: 0 }),
+    ).rejects.toMatchObject({ status: 403 });
+  });
+
   it('rejects an unknown category and leaves the video unchanged', async () => {
     const video = await seedVideo(t.setup, { title: 'Keep me' });
     await expect(
@@ -265,7 +312,11 @@ describe.skipIf(!integrationEnabled())('admin videos', () => {
   });
 
   it('bulk publish reports each video alone and stores the caption override reason', async () => {
-    const ready = await seedVideo(t.setup, { publishState: 'draft', description: 'A lesson.' });
+    const ready = await seedVideo(t.setup, {
+      publishState: 'draft',
+      description: 'A lesson.',
+      maturityRank: 0,
+    });
     const cat = await seedCategory(t.setup, 'Bulk');
     const poster = await seedAsset(t.setup);
     await t.setup.update(videos).set({ posterAssetId: poster }).where(eq(videos.id, ready.id));

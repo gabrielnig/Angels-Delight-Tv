@@ -132,6 +132,7 @@ describe('profiles', () => {
     language: 'en',
     autoplayNext: true,
     dataSaver: false,
+    maxMaturityRank: 4,
     position: 0,
     updatedAt: '2026-01-01T00:00:00.000Z',
   };
@@ -148,6 +149,7 @@ describe('profiles', () => {
       language: 'en',
       autoplayNext: true,
       lastUsedHere: true,
+      maxMaturityRank: 4,
     });
   });
   it('round trips tone and avatar', () => {

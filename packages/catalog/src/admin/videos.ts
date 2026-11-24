@@ -50,6 +50,7 @@ interface Row {
   poster_focus: { x: number; y: number; zoom: number } | null;
   poster_recut: 'processing' | 'failed' | null;
   suitability: Suitability | null;
+  maturity_rank: number | null;
   kids_safe: boolean;
   created_by: string | null;
   created_at: Date | string;
@@ -106,6 +107,7 @@ function toVideo(row: Row): AdminVideo {
     posterRecut: row.poster_recut ?? null,
     // Older rows have no suitability: derive it from the kids flag.
     suitability: row.suitability ?? (row.kids_safe ? 'kids' : null),
+    maturityRank: row.maturity_rank ?? null,
     seriesId: row.series_id,
     seasonNumber: row.season_number,
     episodeNumber: row.episode_number,
@@ -136,7 +138,7 @@ const SELECT = sql`
       ELSE (SELECT CASE r.status WHEN 'failed' THEN 'failed' ELSE 'processing' END FROM assets r
         WHERE r.cut_from = coalesce(pa.cut_from, v.poster_asset_id) AND r.purpose = 'thumbnail'
           AND r.cut_focus = v.poster_focus ORDER BY r.created_at DESC LIMIT 1) END AS poster_recut,
-    v.suitability, v.kids_safe, v.created_by, v.created_at, v.updated_at, v.deleted_at,
+    v.suitability, v.maturity_rank, v.kids_safe, v.created_by, v.created_at, v.updated_at, v.deleted_at,
     v.failure_code, v.failure_message, v.caption_override_reason, v.captions_enabled, v.captions_off_reason,
     coalesce((SELECT array_agg(vc.category_id::text ORDER BY c.position)
       FROM video_categories vc JOIN categories c ON c.id = vc.category_id WHERE vc.video_id = v.id), '{}') AS category_ids,
@@ -386,6 +388,17 @@ export async function getAdminVideos(
   });
 }
 
+function isMaturityRank(value: unknown): value is number {
+  return typeof value === 'number' && Number.isInteger(value) && value >= 0 && value <= 4;
+}
+
+/** The legacy suitability values map onto the ladder: kids and everyone were kids safe (rank 0), older was 3. */
+function rankOfSuitability(value: Suitability | null): number | undefined {
+  if (value === 'kids' || value === 'everyone') return 0;
+  if (value === 'older') return 3;
+  return undefined;
+}
+
 export interface VideoEdit {
   title?: string;
   /** The address in /title/<slug>. The old address keeps working as a redirect. */
@@ -393,7 +406,10 @@ export interface VideoEdit {
   description?: string;
   tags?: string[];
   categoryIds?: string[];
+  /** Legacy input, mapped onto a rank (kids and everyone are 0, older is 3). `maturityRank` wins when both are sent. */
   suitability?: Suitability | null;
+  /** 0 (G) to 4 (18). The trigger keeps kids_safe equal to rank 0. */
+  maturityRank?: number;
 }
 
 /** Edits the details an editor owns. The caller has validated the text, and the database constraints are the backstop. */
@@ -420,10 +436,18 @@ export async function updateAdminVideo(
     }
     if (edit.description !== undefined) set.description = edit.description || null;
     if (edit.tags !== undefined) set.tags = edit.tags;
+    let rank: number | undefined;
+    if (edit.maturityRank !== undefined) {
+      if (!isMaturityRank(edit.maturityRank))
+        throw new ValidationFailed({ maturityRank: ['Choose one of the five ratings.'] });
+      rank = edit.maturityRank;
+    }
     if (edit.suitability !== undefined) {
       set.suitability = edit.suitability;
       set.kidsSafe = edit.suitability === 'kids' || edit.suitability === 'everyone';
+      rank ??= rankOfSuitability(edit.suitability);
     }
+    if (rank !== undefined) set.maturityRank = rank;
     if (edit.categoryIds !== undefined) {
       const found = edit.categoryIds.length
         ? await tx
@@ -458,6 +482,18 @@ export async function updateAdminVideo(
       summary: `Edited ${set.title ?? current.title}${edit.slug !== undefined && edit.slug !== current.slug ? `, address now ${edit.slug}` : ''}`,
       extra: { fields: Object.keys(edit) },
     });
+    if (rank !== undefined && rank !== current.maturityRank) {
+      await writeAudit(tx, {
+        action: 'video.maturity',
+        outcome: 'success',
+        actorAccountId: actor.accountId,
+        actorRole: actor.role,
+        targetType: 'video',
+        targetId: id,
+        summary: `Maturity rating of ${set.title ?? current.title} changed from ${current.maturityRank ?? 'none'} to ${rank}`,
+        extra: { from: current.maturityRank, to: rank },
+      });
+    }
   });
   return getAdminVideo(ctx, actor, id);
 }
@@ -686,6 +722,7 @@ export type BulkAction =
   | { type: 'category'; categoryId: string }
   | { type: 'remove_category'; categoryId: string }
   | { type: 'suitability'; value: Suitability }
+  | { type: 'maturity'; value: number }
   | { type: 'captions_available'; value: boolean | null; reason?: string };
 
 /**
@@ -696,7 +733,7 @@ async function setSuitabilityAll(
   ctx: AdminContext,
   actor: Actor,
   ids: readonly string[],
-  value: Suitability,
+  value: Suitability | { rank: number },
 ): Promise<{ succeeded: string[]; failed: Array<{ id: string; reason: string }> }> {
   const unique = [...new Set(ids)];
   const gone = unique.filter((id) => !isUuid(id));
@@ -728,10 +765,16 @@ async function setSuitabilityAll(
         succeeded: [],
         failed: missing.map((id) => ({ id, reason: 'That video no longer exists.' })),
       };
+    const rank = typeof value === 'string' ? rankOfSuitability(value) : value.rank;
+    const label = typeof value === 'string' ? `suitability ${value}` : `maturity rating ${rank}`;
     for (const row of rows) {
       await tx
         .update(videos)
-        .set({ suitability: value, kidsSafe: value === 'kids' || value === 'everyone' })
+        .set(
+          typeof value === 'string'
+            ? { suitability: value, kidsSafe: value === 'kids' || value === 'everyone', maturityRank: rank }
+            : { maturityRank: rank },
+        )
         .where(eq(videos.id, row.id));
       await writeAudit(tx, {
         action: 'video.update',
@@ -740,8 +783,8 @@ async function setSuitabilityAll(
         actorRole: actor.role,
         targetType: 'video',
         targetId: row.id,
-        summary: `Set suitability of ${row.title} to ${value}`,
-        extra: { fields: ['suitability'], bulk: true },
+        summary: `Set ${label} of ${row.title}`,
+        extra: { fields: [typeof value === 'string' ? 'suitability' : 'maturityRank'], bulk: true, to: rank },
       });
     }
     return { succeeded: unique, failed: [] };
@@ -770,6 +813,11 @@ export async function bulkAdminVideos(
     return trashVideos(ctx, actor, ids);
   }
   if (action.type === 'suitability') return setSuitabilityAll(ctx, actor, ids, action.value);
+  if (action.type === 'maturity') {
+    if (!isMaturityRank(action.value))
+      throw new ValidationFailed({ maturityRank: ['Choose one of the five ratings.'] });
+    return setSuitabilityAll(ctx, actor, ids, { rank: action.value });
+  }
   if (action.type === 'captions_available') {
     if (!isAdminRole(actor.role))
       return { succeeded: [], failed: ids.map((id) => ({ id, reason: 'Only an Admin can change this.' })) };

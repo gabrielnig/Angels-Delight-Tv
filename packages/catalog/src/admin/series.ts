@@ -33,6 +33,8 @@ export interface AdminSeries {
   posterId: string | null;
   published: boolean;
   episodeCount: number;
+  /** 0 (G) to 4 (18), null until rated. */
+  maturityRank: number | null;
 }
 
 export interface AdminSeriesDetail {
@@ -53,6 +55,7 @@ interface Row {
   description: string | null;
   poster_asset_id: string | null;
   publish_state: string;
+  maturity_rank: number | null;
   episode_count: string | number;
 }
 
@@ -63,10 +66,11 @@ const toSeries = (row: Row): AdminSeries => ({
   posterId: row.poster_asset_id,
   published: row.publish_state === 'published',
   episodeCount: Number(row.episode_count),
+  maturityRank: row.maturity_rank ?? null,
 });
 
 const SELECT = sql`
-  SELECT s.id, s.title, s.description, s.poster_asset_id, s.publish_state,
+  SELECT s.id, s.title, s.description, s.poster_asset_id, s.publish_state, s.maturity_rank,
     (SELECT count(*) FROM seasons sn JOIN episodes e ON e.season_id = sn.id JOIN videos v ON v.id = e.video_id
       WHERE sn.series_id = s.id AND v.deleted_at IS NULL) AS episode_count
   FROM series s`;
@@ -167,6 +171,10 @@ export interface SeriesEdit {
   slug?: string;
   description?: string;
   published?: boolean;
+  /** 0 (G) to 4 (18). The trigger keeps kids_safe equal to rank 0. */
+  maturityRank?: number;
+  /** With maturityRank: give every episode the same rating. The editor confirms this in the UI. */
+  applyToEpisodes?: boolean;
 }
 
 export async function updateAdminSeries(
@@ -185,6 +193,11 @@ export async function updateAdminSeries(
   }
   if (edit.description !== undefined)
     set.description = edit.description.trim().slice(0, 500) || null;
+  if (edit.maturityRank !== undefined) {
+    if (!Number.isInteger(edit.maturityRank) || edit.maturityRank < 0 || edit.maturityRank > 4)
+      return fail('Choose one of the five ratings.');
+    set.maturityRank = edit.maturityRank;
+  }
 
   let slugText: string | null = null;
   const found = await withAccount(ctx.db, actor, async (tx) => {
@@ -210,6 +223,22 @@ export async function updateAdminSeries(
     if (Object.keys(set).length) {
       await tx.update(series).set(set).where(eq(series.id, id));
       await audit(tx, actor, 'series.update', id, `Edited series ${set.title ?? current.title}`);
+    }
+    if (set.maturityRank !== undefined && set.maturityRank !== current.maturityRank) {
+      await audit(
+        tx,
+        actor,
+        'series.maturity',
+        id,
+        `Maturity rating of ${current.title} changed from ${current.maturityRank ?? 'none'} to ${set.maturityRank}`,
+      );
+    }
+    if (set.maturityRank !== undefined && edit.applyToEpisodes) {
+      await tx.execute(sql`
+        UPDATE videos SET maturity_rank = ${set.maturityRank}
+        WHERE deleted_at IS NULL AND id IN (
+          SELECT e.video_id FROM episodes e JOIN seasons sn ON sn.id = e.season_id WHERE sn.series_id = ${id}::uuid)`);
+      await audit(tx, actor, 'series.maturity', id, `Gave every episode of ${current.title} rating ${set.maturityRank}`);
     }
     const publishedEpisodes = Number(
       rowsOf<{ count: string }>(

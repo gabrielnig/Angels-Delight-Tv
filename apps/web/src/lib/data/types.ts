@@ -37,6 +37,8 @@ export interface Profile {
   hasPin?: boolean;
   /** The profile's saved Data saver choice (M03-S09). */
   dataSaver?: boolean;
+  /** Highest maturity rank this profile may watch, 0 (G) to 4 (18). Kids profiles are 0 (M44-S19). */
+  maxMaturityRank?: number;
 }
 
 export interface ViewerSession {
