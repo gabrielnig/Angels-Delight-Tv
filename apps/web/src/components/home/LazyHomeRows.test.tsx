@@ -38,7 +38,7 @@ afterEach(() => {
 const row = (id: string): HomeRow => ({
   id,
   title: `Row ${id}`,
-  seeAllHref: '/browse',
+  viewAll: { href: '/browse/new', external: false },
   items: [
     {
       kind: 'video',

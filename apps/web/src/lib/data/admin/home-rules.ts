@@ -1,7 +1,21 @@
+import {
+  VIEW_ALL_URL_MESSAGE,
+  slugifyRowName,
+  viewAllUrlProblem,
+  type ViewAllMode,
+} from '@ad/shared/view-all';
 import type { SeriesRecord, VideoRecord } from './types';
 
 export type HomeRowType =
-  'manual' | 'category' | 'newest' | 'series' | 'smart' | 'continue_watching' | 'my_list';
+  | 'manual'
+  | 'category'
+  | 'newest'
+  | 'series'
+  | 'smart'
+  | 'each_category'
+  | 'all_series'
+  | 'continue_watching'
+  | 'my_list';
 
 export interface HomeRow {
   id: string;
@@ -11,6 +25,12 @@ export interface HomeRow {
   /** manual: video ids in order. category and series: the id of the source. */
   videoIds: string[];
   sourceId: string | null;
+  /** Address of a manual section, /browse/row/{slug}. Kept on rename. */
+  slug?: string | null;
+  viewAllMode?: ViewAllMode;
+  viewAllUrl?: string | null;
+  minItems?: number;
+  kidsVisible?: boolean;
 }
 
 export interface HomeConfig {
@@ -30,16 +50,25 @@ export const MAX_ROWS = 12;
 /** Titles Home shows as the hero when none are chosen (M41-S03). */
 export const HERO_FALLBACK_COUNT = 5;
 export const MAX_ROW_TITLES = 20;
+export const MAX_ROW_NAME = 60;
 export const FIXED_TYPES: HomeRowType[] = ['continue_watching', 'my_list'];
 export const ROW_TYPE_LABELS: Record<HomeRowType, string> = {
   manual: 'Manual list',
   category: 'Category',
-  newest: 'Newest',
+  newest: 'New',
   series: 'Series',
-  smart: 'Most watched this week',
-  continue_watching: 'Continue Watching',
+  smart: 'Trending',
+  each_category: 'Each category (automatic)',
+  all_series: 'All series (automatic)',
+  continue_watching: 'Continue learning',
   my_list: 'My List',
 };
+
+/** Titles a section needs before it shows. Same numbers as the real service (M41-S05). */
+export const defaultMinItems = (type: HomeRowType): number =>
+  type === 'smart' || type === 'each_category' ? 4 : type === 'all_series' ? 2 : 1;
+
+const cleanName = (name: string) => name.trim().replace(/\s+/g, ' ');
 
 export type HomeResult = { ok: true; config: HomeConfig } | { ok: false; error: string };
 const fail = (error: string): HomeResult => ({ ok: false, error });
@@ -73,13 +102,21 @@ export function addRow(
   newId: () => string,
 ): HomeResult {
   if (isFixed({ type } as HomeRow))
-    return fail('Continue Watching and My List are already on the page.');
-  const clean = name.trim().replace(/\s+/g, ' ');
-  if (!clean) return fail('Give the row a name.');
+    return fail('Continue learning and My List are already on the page.');
+  const clean = cleanName(name);
+  if (!clean) return fail('Give the section a name');
+  if (clean.length > MAX_ROW_NAME) return fail(`Keep the name to ${MAX_ROW_NAME} characters`);
   if (config.rows.length >= MAX_ROWS)
-    return fail(`Home can have up to ${MAX_ROWS} rows. Remove one first.`);
+    return fail(`Home can have up to ${MAX_ROWS} sections. Remove one first.`);
   if ((type === 'category' || type === 'series') && !sourceId)
     return fail(type === 'category' ? 'Choose a category.' : 'Choose a series.');
+  const taken = new Set(config.rows.flatMap((r) => (r.slug ? [r.slug] : [])));
+  let slug: string | null = null;
+  if (type === 'manual') {
+    const base = slugifyRowName(clean);
+    slug = base;
+    for (let n = 2; taken.has(slug); n++) slug = `${base}-${n}`;
+  }
   return ok({
     ...config,
     rows: [
@@ -87,22 +124,65 @@ export function addRow(
       {
         id: newId(),
         type,
-        name: clean.slice(0, 60),
+        name: clean,
         visible: true,
         videoIds: [],
         sourceId: type === 'category' || type === 'series' ? sourceId : null,
+        slug,
+        viewAllMode: 'auto',
+        viewAllUrl: null,
+        minItems: defaultMinItems(type),
+        kidsVisible: true,
       },
     ],
   });
 }
 
 export function renameRow(config: HomeConfig, id: string, name: string): HomeResult {
-  const clean = name.trim().replace(/\s+/g, ' ');
-  if (!clean) return fail('Give the row a name.');
+  const clean = cleanName(name);
+  if (!clean) return fail('Give the section a name');
+  if (clean.length > MAX_ROW_NAME) return fail(`Keep the name to ${MAX_ROW_NAME} characters`);
+  // The slug stays, so a link to /browse/row/{slug} keeps working after a rename.
   return ok({
     ...config,
-    rows: config.rows.map((r) => (r.id === id ? { ...r, name: clean.slice(0, 60) } : r)),
+    rows: config.rows.map((r) => (r.id === id ? { ...r, name: clean } : r)),
   });
+}
+
+/** Sets how a section's View all link behaves (M41-S08). A custom link must be a path or an https link. */
+export function setViewAll(
+  config: HomeConfig,
+  id: string,
+  mode: ViewAllMode,
+  url: string | null,
+): HomeResult {
+  if (mode === 'custom' && viewAllUrlProblem(url ?? '')) return fail(VIEW_ALL_URL_MESSAGE);
+  return ok({
+    ...config,
+    rows: config.rows.map((r) =>
+      r.id === id ? { ...r, viewAllMode: mode, viewAllUrl: mode === 'custom' ? url : null } : r,
+    ),
+  });
+}
+
+export function setMinItems(config: HomeConfig, id: string, minItems: number): HomeResult {
+  if (!Number.isInteger(minItems) || minItems < 1 || minItems > 20)
+    return fail('Use a minimum from 1 to 20 titles');
+  return ok({ ...config, rows: config.rows.map((r) => (r.id === id ? { ...r, minItems } : r)) });
+}
+
+export function setKidsVisible(config: HomeConfig, id: string, kidsVisible: boolean): HomeConfig {
+  return { ...config, rows: config.rows.map((r) => (r.id === id ? { ...r, kidsVisible } : r)) };
+}
+
+/** Moves a section to a place in the list (drag and drop). Out of range places clamp. */
+export function reorderRows(config: HomeConfig, id: string, toIndex: number): HomeConfig {
+  const from = config.rows.findIndex((r) => r.id === id);
+  if (from < 0) return config;
+  const rows = [...config.rows];
+  const [moved] = rows.splice(from, 1);
+  rows.splice(Math.max(0, Math.min(rows.length, toIndex)), 0, moved!);
+  return { ...config, rows };
 }
 
 export function removeRow(config: HomeConfig, id: string): HomeResult {
@@ -179,6 +259,12 @@ export interface Preview {
   rows: ResolvedPreviewRow[];
 }
 
+/** Trending shows only titles with views and hides under its minimum, it never borrows from New (M41-S05 AC2). */
+function trending(shown: VideoRecord[], min: number): VideoRecord[] {
+  const viewed = shown.filter((v) => v.views > 0).sort((a, b) => b.views - a.views);
+  return viewed.length >= min ? viewed.slice(0, 12) : [];
+}
+
 /** What viewers would see. Kids mode keeps only titles marked for kids or everyone. */
 export function resolvePreview(
   config: HomeConfig,
@@ -209,7 +295,7 @@ export function resolvePreview(
                     .sort((a, b) => (b.publishedAt ?? '').localeCompare(a.publishedAt ?? ''))
                     .slice(0, 12)
                 : r.type === 'smart'
-                  ? [...shown].sort((a, b) => b.views - a.views).slice(0, 12)
+                  ? trending(shown, r.minItems ?? defaultMinItems('smart'))
                   : [];
       return {
         id: r.id,
@@ -233,9 +319,17 @@ export function resolvePreview(
 }
 
 export function validateConfig(config: HomeConfig): string | null {
-  if (config.rows.length > MAX_ROWS) return `Home can have up to ${MAX_ROWS} rows.`;
+  if (config.rows.length > MAX_ROWS) return `Home can have up to ${MAX_ROWS} sections.`;
   if (config.heroIds.length > MAX_HERO) return `Choose up to ${MAX_HERO} hero titles.`;
-  if (config.rows.some((r) => !r.name.trim())) return 'Every row needs a name.';
+  for (const row of config.rows) {
+    const name = cleanName(row.name);
+    if (!name) return 'Give the section a name';
+    if (name.length > MAX_ROW_NAME) return `Keep the name to ${MAX_ROW_NAME} characters`;
+    if (row.viewAllMode === 'custom' && viewAllUrlProblem(row.viewAllUrl ?? ''))
+      return VIEW_ALL_URL_MESSAGE;
+    if (row.minItems !== undefined && (!Number.isInteger(row.minItems) || row.minItems < 1 || row.minItems > 20))
+      return 'Use a minimum from 1 to 20 titles';
+  }
   return null;
 }
 

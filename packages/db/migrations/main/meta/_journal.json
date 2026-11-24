@@ -316,6 +316,20 @@
       "when": 1795800003000,
       "tag": "0044_trending_rows",
       "breakpoints": true
+    },
+    {
+      "idx": 45,
+      "version": "7",
+      "when": 1795800004000,
+      "tag": "0045_row_kinds",
+      "breakpoints": true
+    },
+    {
+      "idx": 46,
+      "version": "7",
+      "when": 1795800005000,
+      "tag": "0046_row_links",
+      "breakpoints": true
     }
   ]
 }

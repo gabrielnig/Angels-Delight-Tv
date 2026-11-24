@@ -62,10 +62,11 @@ export async function HomeView({
   }
 
   const settings = (await themeRuntime()).settings;
-  const [rotate, intervalSeconds, maxLoops] = await Promise.all([
+  const [rotate, intervalSeconds, maxLoops, viewAllLabel] = await Promise.all([
     settings.get('features.autoplay_hero'),
     settings.get('home.hero_interval_seconds'),
     settings.get('home.hero_max_loops'),
+    settings.get('home.view_all_label'),
   ]);
   const inList = new Set(idsResult);
   const progress = new Map(
@@ -95,7 +96,7 @@ export async function HomeView({
         )}
         {listResult.ok ? (
           listResult.value.items.length > 0 ? (
-            <Row title="My List" seeAllHref="/my-list">
+            <Row title="My List" viewAllHref="/my-list" viewAllLabel={viewAllLabel}>
               {cards(listResult.value.items.slice(0, 20), inList)}
             </Row>
           ) : null
@@ -103,13 +104,20 @@ export async function HomeView({
           <RowError
             title="My List"
             kind="list"
-            seeAllHref="/my-list"
+            viewAllHref="/my-list"
+            viewAllLabel={viewAllLabel}
             inList={idsResult}
             load={reloadMyListRowAction}
           />
         )}
         {home.rows.map((row) => (
-          <Row key={row.id} title={row.title} seeAllHref={row.seeAllHref}>
+          <Row
+            key={row.id}
+            title={row.title}
+            viewAllHref={row.viewAll?.href}
+            viewAllExternal={row.viewAll?.external}
+            viewAllLabel={viewAllLabel}
+          >
             {cards(row.items, inList)}
           </Row>
         ))}
@@ -118,6 +126,7 @@ export async function HomeView({
             initialCursor={home.nextCursor}
             inList={idsResult}
             profileId={ctx.profileId}
+            viewAllLabel={viewAllLabel}
           />
         ) : null}
       </div>

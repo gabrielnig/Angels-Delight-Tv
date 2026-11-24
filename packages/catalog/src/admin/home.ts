@@ -2,13 +2,31 @@ import { createHash } from 'node:crypto';
 import { eq, notInArray, sql } from 'drizzle-orm';
 import { categories, rowItems, rows, series, settings, withAccount } from '@ad/db';
 import { writeAudit } from '../audit';
-import { Forbidden, isUuid, type Actor, type RowKind, isStaffRole } from '@ad/shared';
+import {
+  Forbidden,
+  VIEW_ALL_URL_MESSAGE,
+  isUuid,
+  isStaffRole,
+  slugifyRowName,
+  viewAllUrlProblem,
+  type Actor,
+  type RowKind,
+  type ViewAllMode,
+} from '@ad/shared';
 import { rowsOf } from '../sql';
 import type { Tx } from '../types';
 import { OK, fail, type AdminContext, type CommandResult } from './types';
 
 export type HomeRowType =
-  'manual' | 'category' | 'newest' | 'series' | 'smart' | 'continue_watching' | 'my_list';
+  | 'manual'
+  | 'category'
+  | 'newest'
+  | 'series'
+  | 'smart'
+  | 'each_category'
+  | 'all_series'
+  | 'continue_watching'
+  | 'my_list';
 
 export interface HomeRowConfig {
   id: string;
@@ -19,6 +37,13 @@ export interface HomeRowConfig {
   videoIds: string[];
   /** category and series: the id of the source. */
   sourceId: string | null;
+  /** Address of a manual section, /browse/row/{slug}. Kept when the section is renamed so links keep working. */
+  slug?: string | null;
+  /** Older saved layouts have none of these, and read as automatic, the type default and kids visible. */
+  viewAllMode?: ViewAllMode;
+  viewAllUrl?: string | null;
+  minItems?: number;
+  kidsVisible?: boolean;
 }
 
 export interface HomeConfig {
@@ -36,6 +61,8 @@ export interface HomeState {
 export const MAX_HERO = 5;
 export const MAX_ROWS = 12;
 export const MAX_ROW_TITLES = 20;
+export const MAX_ROW_NAME = 60;
+export const MIN_ITEMS_RANGE = [1, 20] as const;
 const SERIES_ROW_MAX = 50;
 
 const KEYS = {
@@ -68,10 +95,31 @@ export const defaultHomeConfig = (): HomeConfig => ({
   ],
 });
 
+/** Titles a section needs before it shows. Trending and Each category need 4, All series 2 (M41-S05). */
+export function defaultMinItems(type: HomeRowType): number {
+  return type === 'smart' || type === 'each_category' ? 4 : type === 'all_series' ? 2 : 1;
+}
+
+/** Names are trimmed and double spaces collapse (M41-S06 Edge). */
+export const cleanRowName = (name: string): string => name.trim().replace(/\s+/g, ' ');
+
 export function validateHomeConfig(config: HomeConfig): string | null {
-  if (config.rows.length > MAX_ROWS) return `Home can have up to ${MAX_ROWS} rows.`;
+  if (config.rows.length > MAX_ROWS) return `Home can have up to ${MAX_ROWS} sections.`;
   if (config.heroIds.length > MAX_HERO) return `Choose up to ${MAX_HERO} hero titles.`;
-  if (config.rows.some((r) => !r.name.trim())) return 'Every row needs a name.';
+  for (const row of config.rows) {
+    const name = cleanRowName(row.name);
+    if (!name) return 'Give the section a name';
+    if (name.length > MAX_ROW_NAME) return `Keep the name to ${MAX_ROW_NAME} characters`;
+    if (row.viewAllMode === 'custom' && viewAllUrlProblem(row.viewAllUrl ?? ''))
+      return VIEW_ALL_URL_MESSAGE;
+    if (
+      row.minItems !== undefined &&
+      (!Number.isInteger(row.minItems) ||
+        row.minItems < MIN_ITEMS_RANGE[0] ||
+        row.minItems > MIN_ITEMS_RANGE[1])
+    )
+      return `Use a minimum from ${MIN_ITEMS_RANGE[0]} to ${MIN_ITEMS_RANGE[1]} titles`;
+  }
   return null;
 }
 
@@ -92,6 +140,8 @@ const KIND_OF: Record<HomeRowType, RowKind> = {
   newest: 'recently_added',
   series: 'curated',
   smart: 'popular',
+  each_category: 'each_category',
+  all_series: 'all_series',
   continue_watching: 'continue_watching',
   my_list: 'my_list',
 };
@@ -100,6 +150,8 @@ const TYPE_OF: Partial<Record<RowKind, HomeRowType>> = {
   category: 'category',
   recently_added: 'newest',
   popular: 'smart',
+  each_category: 'each_category',
+  all_series: 'all_series',
   continue_watching: 'continue_watching',
   my_list: 'my_list',
 };
@@ -145,6 +197,11 @@ async function configFromRows(tx: Tx): Promise<HomeConfig | null> {
       visible: row.isPublished,
       videoIds: type === 'manual' ? ids : [],
       sourceId: type === 'category' ? row.categoryId : type === 'series' ? row.seriesId : null,
+      slug: row.slug,
+      viewAllMode: row.viewAllMode as ViewAllMode,
+      viewAllUrl: row.viewAllUrl,
+      minItems: row.minItems,
+      kidsVisible: row.kidsVisible,
     });
   }
   return config;
@@ -188,6 +245,20 @@ async function syncRows(tx: Tx, config: HomeConfig): Promise<void> {
     seriesId?: string | null;
     published: boolean;
     videoIds: string[];
+    slug: string | null;
+    viewAllMode: ViewAllMode;
+    viewAllUrl: string | null;
+    minItems: number;
+    kidsVisible: boolean;
+  };
+  const usedSlugs = new Set<string>();
+  const slugFor = (row: HomeRowConfig): string | null => {
+    if (row.type !== 'manual') return null;
+    const base = row.slug && /^[a-z0-9]+(-[a-z0-9]+)*$/.test(row.slug) ? row.slug : slugifyRowName(row.name);
+    let slug = base;
+    for (let n = 2; usedSlugs.has(slug); n++) slug = `${base}-${n}`;
+    usedSlugs.add(slug);
+    return slug;
   };
   const existingVideos = async (ids: string[]) => {
     if (!ids.length) return [];
@@ -213,6 +284,11 @@ async function syncRows(tx: Tx, config: HomeConfig): Promise<void> {
       categoryId: null,
       published: true,
       videoIds: heroIds,
+      slug: null,
+      viewAllMode: 'none',
+      viewAllUrl: null,
+      minItems: 1,
+      kidsVisible: true,
     });
 
   for (const row of config.rows) {
@@ -242,11 +318,17 @@ async function syncRows(tx: Tx, config: HomeConfig): Promise<void> {
     targets.push({
       seriesId,
       id: rowUuid(row.id),
-      title: row.name.trim().slice(0, 80),
+      title: cleanRowName(row.name).slice(0, 80),
       kind: KIND_OF[row.type],
       categoryId,
       published: row.visible,
       videoIds,
+      slug: slugFor(row),
+      viewAllMode: row.viewAllMode ?? 'auto',
+      viewAllUrl: row.viewAllMode === 'custom' ? (row.viewAllUrl ?? null) : null,
+      minItems: row.minItems ?? defaultMinItems(row.type),
+      // Every row is filtered for the audience when it is read. The editor can still keep one from kids profiles.
+      kidsVisible: row.kidsVisible ?? true,
     });
   }
 
@@ -262,8 +344,11 @@ async function syncRows(tx: Tx, config: HomeConfig): Promise<void> {
       seriesId: target.seriesId ?? null,
       position,
       isPublished: target.published,
-      // Every row is filtered for the audience when it is read, so kids profiles can see them all.
-      kidsVisible: true,
+      slug: target.slug,
+      viewAllMode: target.viewAllMode,
+      viewAllUrl: target.viewAllUrl,
+      minItems: target.minItems,
+      kidsVisible: target.kidsVisible,
       maxItems:
         target.kind === 'hero' ? MAX_HERO : target.seriesId ? SERIES_ROW_MAX : MAX_ROW_TITLES,
     };

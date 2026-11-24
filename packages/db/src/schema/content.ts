@@ -384,6 +384,12 @@ export const rows = pgTable(
     isPublished: boolean('is_published').notNull().default(false),
     kidsVisible: boolean('kids_visible').notNull().default(false),
     maxItems: smallint('max_items').notNull().default(20),
+    /** Address of the list page for a manual row, /browse/row/{slug} (M41-S08). */
+    slug: text('slug'),
+    viewAllMode: text('view_all_mode').notNull().default('auto'),
+    viewAllUrl: text('view_all_url'),
+    /** Fewer live titles than this hides the row. */
+    minItems: smallint('min_items').notNull().default(1),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
   },
@@ -394,6 +400,8 @@ export const rows = pgTable(
       sql`${t.kind} <> 'category' OR ${t.categoryId} IS NOT NULL`,
     ),
     check('rows_max_items_range', sql`${t.maxItems} BETWEEN 1 AND 50`),
+    check('rows_view_all_mode', sql`${t.viewAllMode} IN ('auto', 'custom', 'none')`),
+    check('rows_min_items_range', sql`${t.minItems} BETWEEN 1 AND 20`),
     // Made DEFERRABLE INITIALLY DEFERRED by a hand-written migration so a reorder is one transaction.
     unique('rows_position_uniq').on(t.position),
   ],
@@ -409,6 +417,10 @@ export const rowItems = pgTable(
     position: integer('position').notNull(),
     videoId: uuid('video_id').references(() => videos.id, { onDelete: 'cascade' }),
     seriesId: uuid('series_id').references(() => series.id, { onDelete: 'cascade' }),
+    /** Hero slide text overrides, 80 characters each (M41-S16). */
+    heroHeadline: text('hero_headline'),
+    heroBlurb: text('hero_blurb'),
+    heroButtonLabel: text('hero_button_label'),
   },
   (t) => [
     check('row_items_exactly_one_target', sql`num_nonnulls(${t.videoId}, ${t.seriesId}) = 1`),

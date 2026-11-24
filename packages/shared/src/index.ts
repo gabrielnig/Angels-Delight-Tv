@@ -8,3 +8,4 @@ export * from './maturity';
 export * from './roles';
 export * from './messages';
 export * from './sponsors';
+export * from './view-all';

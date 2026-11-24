@@ -55,14 +55,6 @@ const POPULAR_COUNT = 4;
 const emptyPage = (): Page<CatalogItem> => ({ items: [], total: 0, nextCursor: null });
 const isPersonal = (row: HomeRowDto) => row.kind === 'continue_watching' || row.kind === 'my_list';
 
-function seeAllHref(row: Exclude<HomeRowDto, { kind: 'continue_watching' }>): string | undefined {
-  const target = row.seeAll;
-  if (!target) return undefined;
-  if (target.type === 'category') return `/browse/${target.slug}`;
-  if (target.type === 'my_list') return '/my-list';
-  return '/browse';
-}
-
 const asVideo = (item: CatalogItem): VideoSummary | null => (item.kind === 'video' ? item : null);
 
 /** A video card from an episode or related list, with its place in a series when it has one. */
@@ -159,7 +151,7 @@ export class RealCatalog implements CatalogRepository {
         id: titleRow.id,
         title: titleRow.title,
         items: titleRow.items.map(cardToItem),
-        seeAllHref: seeAllHref(titleRow),
+        viewAll: titleRow.viewAll ?? undefined,
       });
     }
     return rows;

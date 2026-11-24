@@ -70,11 +70,11 @@ describe.skipIf(!integrationEnabled())('admin home curation', () => {
     };
     expect(await saveAdminHomeDraft(ctx, editor, tooMany)).toEqual({
       ok: false,
-      error: 'Home can have up to 12 rows.',
+      error: 'Home can have up to 12 sections.',
     });
     expect(
       await saveAdminHomeDraft(ctx, editor, { heroIds: [], rows: [row('a', 'newest', ' ')] }),
-    ).toEqual({ ok: false, error: 'Every row needs a name.' });
+    ).toEqual({ ok: false, error: 'Give the section a name' });
     expect(
       await saveAdminHomeDraft(ctx, editor, { heroIds: ['1', '2', '3', '4', '5', '6'], rows: [] }),
     ).toEqual({ ok: false, error: 'Choose up to 5 hero titles.' });
