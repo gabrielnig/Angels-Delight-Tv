@@ -139,6 +139,16 @@ Tokens added by M47 (layout, motion, scrim and fixed colours):
 
 The dark sidebar and dark player stay fixed because a light theme edit must not break video viewing contrast or admin legibility. The mockups also use a dark ink `#12263A` for deep blue headings. Map it to `--color-ink` rather than adding a token.
 
+### 3.3 Type family tokens
+
+| Token | Default | Group | Use |
+|---|---|---|---|
+| `--font-sans` | `"Inter", system-ui, ...` | Themeable (curated list) | Body and UI |
+| `--font-display` | `"Space Grotesk", var(--font-sans)` | Themeable (curated list) | Headings |
+| `--font-mono` | `ui-monospace, SFMono-Regular, Menlo, Consolas, monospace` | Fixed | Recovery codes, the manual two step setup key, the TV pairing code. Nothing else. |
+
+`--font-mono` is a fixed system stack, never loaded from the network and not themeable, so it does not count as a second font family. Recovery code and setup key elements use `font-family: var(--font-mono)`, weight 600, `letter-spacing: .08em`, 17px or larger, and `user-select: all` so one tap selects a code. The code generator never issues characters that look alike (0 and O, 1 and I); the monospace face is a second guard.
+
 ## 4. Contrast rules
 
 Target: WCAG 2.2 AA. Normal text 4.5:1. Large text (24px, or 19px bold) 3:1. UI components, focus rings and meaningful icons 3:1 against adjacent colours. Ratios use the WCAG relative luminance formula and were computed for the defaults.
@@ -250,7 +260,7 @@ Component CSS uses the tokens above. Responsive sizes are set with media queries
 | Setting | Range | Token |
 |---|---|---|
 | Font family | Curated list only | `--font-sans`, `--font-display` |
-| Mono font | System stack, no web font, recovery codes only (R38) | `--font-mono` |
+| Mono family | Not editable | `--font-mono` |
 | Base size factor | 0.9 to 1.15, step 0.05 | `--type-scale` |
 | Weight | Not editable | fixed |
 | Line height | Not editable | fixed |
@@ -649,6 +659,7 @@ Types: inline field error (11.2), banner (page level, danger tint, icon, message
 
 - Location `/admin/settings/theme`. Two columns on desktop (controls left 360px, live preview right), single column on mobile with a "Preview" tab.
 - Controls grouped: Brand (platform name, logo upload with alt text, favicon), Colours (the 7 themeable colours with swatch, hex input, a colour picker), Fonts (curated list dropdown with a sample line in each font, size factor slider 0.9 to 1.15), Preview mode toggle (Home, Watch, Auth, Admin).
+- Fixed, not editable: the player and sidebar surfaces (3.2) and `--font-mono` (3.3). They are not shown as controls.
 - Live preview: an iframe or scoped container that applies draft tokens as CSS variables immediately. Draft is not saved until "Save theme". Preview never changes the admin's own appearance unless the admin turns on "Apply to admin".
 - Contrast: each colour field shows the live ratio and a Pass or Fail chip with icon and text, per 4.3. Fail messages say what to change: "Text and background are too close. Make one darker."
 - Buttons: Save theme (primary, disabled with reason when blocked), Reset to default (secondary, confirm dialog "Reset all colours and fonts to the Angels Delight defaults?"), Revert changes (ghost). Last saved time and who saved it are shown. Every save writes an audit log entry. Keep the last 5 versions for rollback.
