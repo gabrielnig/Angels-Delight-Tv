@@ -386,7 +386,7 @@ export async function continueWatching(
 export async function loadContinueWatching(
   tx: ViewerTx,
   ctx: ViewerContext,
-  profile: Pick<typeof profiles.$inferSelect, 'id' | 'isKids'>,
+  profile: Pick<typeof profiles.$inferSelect, 'id' | 'isKids' | 'maxMaturityRank'>,
 ): Promise<ContinueWatchingItem[]> {
   const rules = rulesOf(ctx);
   const now = clockOf(ctx);

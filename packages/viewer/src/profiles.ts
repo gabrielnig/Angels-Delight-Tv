@@ -1,6 +1,6 @@
 import { and, asc, eq, sql } from 'drizzle-orm';
 import { profiles, withAccount } from '@ad/db';
-import { Conflict, Forbidden, isUuid, NotFound, ValidationFailed, type Actor } from '@ad/shared';
+import { clampMaturityRank, Conflict, Forbidden, isUuid, NotFound, ValidationFailed, type Actor } from '@ad/shared';
 import type { Audience } from '@ad/catalog';
 import { spendAttempt, type ViewerContext } from './context';
 import { dbErrorInfo } from './db-errors';
@@ -74,8 +74,12 @@ export interface ManageOptions {
   expectedUpdatedAt?: string;
 }
 
-export function audienceOf(profile: Pick<ProfileRow, 'isKids'>): Audience {
-  return { kids: profile.isKids };
+/** What a profile may see. A kids profile maps to the lowest rank whatever its stored limit says (M44-S19). */
+export function audienceOf(profile: Pick<ProfileRow, 'isKids' | 'maxMaturityRank'>): Audience {
+  return {
+    kids: profile.isKids,
+    maxRank: profile.isKids ? 0 : clampMaturityRank(profile.maxMaturityRank),
+  };
 }
 
 /**

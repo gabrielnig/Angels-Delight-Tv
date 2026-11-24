@@ -136,7 +136,7 @@ export async function listMyList(
 export async function loadMyList(
   tx: ViewerTx,
   ctx: ViewerContext,
-  profile: Pick<typeof profiles.$inferSelect, 'id' | 'isKids'>,
+  profile: Pick<typeof profiles.$inferSelect, 'id' | 'isKids' | 'maxMaturityRank'>,
   input: { limit?: number; cursor?: string },
 ): Promise<Page<MyListItem>> {
   const limit = clampLimit(input.limit, PAGE_SIZE, MAX_PAGE_SIZE);

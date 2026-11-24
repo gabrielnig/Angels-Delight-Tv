@@ -267,6 +267,13 @@
       "when": 1795529334419,
       "tag": "0037_video_captions_switch",
       "breakpoints": true
+    },
+    {
+      "idx": 38,
+      "version": "7",
+      "when": 1795537159787,
+      "tag": "0038_maturity_ranks",
+      "breakpoints": true
     }
   ]
 }

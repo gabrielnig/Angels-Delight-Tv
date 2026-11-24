@@ -117,4 +117,64 @@ describe.skipIf(!integrationEnabled())('visibility predicates', () => {
       expect(playable.has(shownSeries.episodes[0]!.id)).toBe(true);
     });
   });
+  describe('maturity limit (L5)', () => {
+    it('liveVideoSql without maxRank behaves exactly as before', async () => {
+      const unrated = await seedVideo(t.setup);
+      const rank4 = await seedVideo(t.setup, { maturityRank: 4 });
+      const visible = await idsWhere('videos', liveVideoSql('x', { kids: false }, NOW));
+      expect(visible.has(unrated.id)).toBe(true);
+      expect(visible.has(rank4.id)).toBe(true);
+      const withFour = await idsWhere('videos', liveVideoSql('x', { kids: false, maxRank: 4 }, NOW));
+      expect(withFour.has(unrated.id)).toBe(true);
+    });
+
+    it('liveVideoSql hides rank above maxRank and treats null rank as 4', async () => {
+      const g = await seedVideo(t.setup, { maturityRank: 0 });
+      const twelve = await seedVideo(t.setup, { maturityRank: 2 });
+      const fifteen = await seedVideo(t.setup, { maturityRank: 3 });
+      const unrated = await seedVideo(t.setup);
+
+      const visible = await idsWhere('videos', liveVideoSql('x', { kids: false, maxRank: 2 }, NOW));
+      expect(visible.has(g.id)).toBe(true);
+      expect(visible.has(twelve.id)).toBe(true);
+      expect(visible.has(fifteen.id)).toBe(false);
+      expect(visible.has(unrated.id)).toBe(false);
+
+      const onlyG = await idsWhere('videos', liveVideoSql('x', { kids: false, maxRank: 0 }, NOW));
+      expect(onlyG.has(g.id)).toBe(true);
+      expect(onlyG.has(twelve.id)).toBe(false);
+    });
+
+    it('liveSeriesSql hides a series when its rank or all live episodes exceed the limit', async () => {
+      const fine = await seedSeries(t.setup, {
+        series: { maturityRank: 2 },
+        episode: { maturityRank: 2 },
+      });
+      const seriesTooHigh = await seedSeries(t.setup, {
+        series: { maturityRank: 3 },
+        episode: { maturityRank: 2 },
+      });
+      const episodesTooHigh = await seedSeries(t.setup, {
+        series: { maturityRank: 2 },
+        episode: { maturityRank: 3 },
+      });
+      const unratedSeries = await seedSeries(t.setup, { episode: { maturityRank: 0 } });
+
+      const visible = await idsWhere('series', liveSeriesSql('x', { kids: false, maxRank: 2 }, NOW));
+      expect(visible.has(fine.id)).toBe(true);
+      expect(visible.has(seriesTooHigh.id)).toBe(false);
+      expect(visible.has(episodesTooHigh.id)).toBe(false);
+      expect(visible.has(unratedSeries.id)).toBe(false);
+    });
+
+    it('hides one over-limit episode while the rest of the series stays playable', async () => {
+      const mixed = await seedSeries(t.setup, { series: { maturityRank: 2 }, seasonSizes: [2], episode: { maturityRank: 2 } });
+      await t.setup.execute(sql`UPDATE videos SET maturity_rank = 3 WHERE id = ${mixed.episodes[1]!.id}`);
+      const playable = await idsWhere('videos', playableVideoSql('x', { kids: false, maxRank: 2 }, NOW));
+      expect(playable.has(mixed.episodes[0]!.id)).toBe(true);
+      expect(playable.has(mixed.episodes[1]!.id)).toBe(false);
+      const shown = await idsWhere('series', liveSeriesSql('x', { kids: false, maxRank: 2 }, NOW));
+      expect(shown.has(mixed.id)).toBe(true);
+    });
+  });
 });

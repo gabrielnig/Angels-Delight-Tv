@@ -6,6 +6,11 @@ export type Tx = Parameters<Parameters<Database['transaction']>[0]>[0];
 /** Who the catalog is being read for. Derived from the profile on the server, never from client input. */
 export interface Audience {
   kids: boolean;
+  /**
+   * Highest maturity rank the audience may see, 0 (G) to 4 (18). Absent means no rank filter. Unrated titles count
+   * as rank 4, so any limit below 4 hides them (L5, M44-S20).
+   */
+  maxRank?: number;
 }
 
 export interface CatalogContext {
