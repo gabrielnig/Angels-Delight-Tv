@@ -18,7 +18,8 @@ Plan: `docs/plan/v2/L6-discovery.md`. Rulings: `docs/plan/v2/RULINGS.md`. Review
 | 9 | Discovery tab: synonyms editor with error lines, empty search report | merged | #342 |
 | 10 | Kids only titles: share image noindex header, sitemap category fix; social image contrast already tested | merged | #344 |
 | 11 | Voice search (S134, Could) | merged | #347 (dash fix #349) |
-| 12 | Analytics posture guard and performance budget checks | in review | |
+| 12 | Analytics posture guard and performance budget checks | merged | #350 |
+| 13 | Canonical and hreflang readiness | in review | |
 
 ## Slice 1 (sitemap)
 
@@ -110,3 +111,9 @@ Plan: `docs/plan/v2/L6-discovery.md`. Rulings: `docs/plan/v2/RULINGS.md`. Review
 - `lib/perf/budget.ts` (budgets, `jsViolations`, `routeSizesFromManifest`, `parseImages`, `imageViolations`, `fontViolations`, `fontPreloadsFromHtml`) and `scripts/perf-budget.ts` (`pnpm perf:budget`, optional `--base URL /path ...` to check page HTML). The font test proves at most four preloaded font files for every theme font and language.
 - Known gaps for the script against live HTML: several images are sized only by CSS (title poster, hero), so the HTML check reports them. LCP, CLS and INP are measured in the browser, not here.
 - Tests: `pnpm vitest run apps/web/src/lib/consent apps/web/src/lib/analytics apps/web/src/lib/perf`.
+
+## Slice 13 (canonical and hreflang readiness)
+
+- `lib/seo/alternates.ts`: `canonicalPath(path, query)` drops tracking and sort params and sorts the rest, `hreflangAlternates(path, locales, origin, prefix?)` returns nothing under two locales, otherwise every locale plus `x-default`, `listingRobots` gives `noindex,follow` for search and for pages after the first.
+- Title pages already set a canonical path; search and my list already carry `noindex,follow` (M40-S18). Wiring `hreflangAlternates` into page metadata waits for L7 to fix the locale URL prefix (the helper takes the prefix as a parameter).
+- Tests: `pnpm vitest run apps/web/src/lib/seo/alternates.test.ts`.
