@@ -310,6 +310,21 @@ describe('worker maintenance and fake whisper', () => {
       'WHISPER_FAKE',
     ]);
   });
+
+  it('is off by default with no API use allowed', () => {
+    const e = loadWorkerEnv(devWorker);
+    expect(e.TRANSLATE_PROVIDER).toBe('none');
+    expect(e.TRANSLATE_MONTHLY_CHAR_CAP).toBe(0);
+    expect(e.TRANSLATE_MAX_CHARS_PER_JOB).toBe(60000);
+  });
+  it('google needs an API key', () => {
+    expect(failureNames(() => loadWorkerEnv({ ...devWorker, TRANSLATE_PROVIDER: 'google' }))).toEqual(['TRANSLATE_API_KEY']);
+    expect(loadWorkerEnv({ ...devWorker, TRANSLATE_PROVIDER: 'google', TRANSLATE_API_KEY: 'k' }).TRANSLATE_PROVIDER).toBe('google');
+  });
+  it('fake is rejected in production', () => {
+    expect(loadWorkerEnv({ ...devWorker, TRANSLATE_PROVIDER: 'fake' }).TRANSLATE_PROVIDER).toBe('fake');
+    expect(failureNames(() => loadWorkerEnv({ ...prodWorker, TRANSLATE_PROVIDER: 'fake' }))).toEqual(['TRANSLATE_PROVIDER']);
+  });
 });
 
 describe('DEV_PSEUDO_LOCALE', () => {

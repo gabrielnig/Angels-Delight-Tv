@@ -152,6 +152,12 @@ const workerShape = {
   WHISPER_URL: z.url().optional(),
   /** Development and tests only: captions come from a scripted fake instead of the whisper service. Rejected in production. */
   WHISPER_FAKE: bool.default(false),
+  /** Caption translation engine. Off by default (ruling R23). `fake` is for development and tests. */
+  TRANSLATE_PROVIDER: z.enum(['none', 'google', 'fake']).default('none'),
+  TRANSLATE_API_KEY: z.string().min(1).optional(),
+  TRANSLATE_MAX_CHARS_PER_JOB: int(60000, 1),
+  /** Characters per month the API may translate. 0 means no API use. */
+  TRANSLATE_MONTHLY_CHAR_CAP: int(0, 0),
   FFMPEG_PRESET: z.enum(FFMPEG_PRESETS).default('medium'),
   FFMPEG_THREADS: int(0, 0),
   WORKER_SCRATCH_DIR: z.string().min(1).default('/tmp/ad-work'),
@@ -285,6 +291,10 @@ const webSchema = withRules({ ...commonShape, ...webShape }, (env, add) => {
 const workerSchema = withRules({ ...commonShape, ...workerShape }, (env, add) => {
   if (env.NODE_ENV === 'production' && env.WHISPER_FAKE)
     add('WHISPER_FAKE', 'must not be enabled in production');
+  if (env.NODE_ENV === 'production' && env.TRANSLATE_PROVIDER === 'fake')
+    add('TRANSLATE_PROVIDER', 'fake must not be used in production');
+  if (env.TRANSLATE_PROVIDER === 'google' && !env.TRANSLATE_API_KEY)
+    add('TRANSLATE_API_KEY', 'is required when TRANSLATE_PROVIDER is google');
 });
 const migrateSchema = z.object(migrateShape);
 

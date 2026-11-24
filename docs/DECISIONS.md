@@ -1588,3 +1588,9 @@ Per video tri state, site default (Super admin), Admin changes it with a reason 
 - Options: A separate pg-boss queue; a database cron.
 - Why: No new queue or schedule to operate, and rollup success matters more than a prune.
 - Reversible: Yes, move to its own queue later.
+
+## D-289 Translation engine ships OFF; no NLLB sidecar (lane L7)
+- Decision: Ship only the Translator adapter interface, a Google API key adapter and a test fake. TRANSLATE_PROVIDER defaults to none, API use needs a non zero TRANSLATE_MONTHLY_CHAR_CAP. No NLLB sidecar or apps/translate.
+- Options: Self hosted NLLB; Google API only; adapter only
+- Why: Ruling R23: NLLB weights are non commercial, so enabling them is not allowed for this product. The adapter keeps the door open.
+- Reversible: Yes, a new adapter can be added without schema change
