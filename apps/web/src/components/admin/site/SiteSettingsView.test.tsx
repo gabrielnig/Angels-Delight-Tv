@@ -313,7 +313,9 @@ describe('features and limits', () => {
   it('the captions default is locked for roles below Super admin', async () => {
     const { user } = setup(dto({ canChangeFlags: false }));
     await open(user);
-    expect(screen.getByRole('switch', { name: 'Captions are available to viewers by default' })).toBeDisabled();
+    expect(
+      screen.getByRole('switch', { name: 'Captions are available to viewers by default' }),
+    ).toBeDisabled();
   });
 
   it('is read only when the role cannot change flags', async () => {
@@ -507,7 +509,74 @@ describe('home settings tab', () => {
   it('keeps the unknown connection switch read only without super rights', async () => {
     const { user } = setup(dto({ canChangeFlags: false }));
     await open(user);
-    expect(screen.getByRole('switch', { name: 'Preview clips on unknown connections' })).toBeDisabled();
+    expect(
+      screen.getByRole('switch', { name: 'Preview clips on unknown connections' }),
+    ).toBeDisabled();
     expect(screen.getByRole('switch', { name: 'Hero preview clips' })).toBeEnabled();
+  });
+});
+
+describe('discovery tab (M45-S05)', () => {
+  const open = async (initial = dto()) => {
+    const ctx = setup(initial);
+    await ctx.user.click(screen.getByRole('tab', { name: 'Discovery' }));
+    return ctx;
+  };
+
+  it('shows a live search result and share card preview that follow the description', async () => {
+    const { user } = await open(dto({}, { 'platform.tagline': 'Learn anything' }));
+    expect(screen.getByText('Using the tagline')).toBeInTheDocument();
+    await user.type(screen.getByLabelText('Site description'), 'Free lessons for everyone');
+    expect(screen.queryByText('Using the tagline')).not.toBeInTheDocument();
+    expect(screen.getAllByText('Free lessons for everyone').length).toBeGreaterThan(1);
+  });
+
+  it('counts characters and blocks Save past 160', async () => {
+    const { user, actions } = await open();
+    const field = screen.getByLabelText('Site description');
+    await user.click(field);
+    await user.paste('x'.repeat(161));
+    expect(screen.getByText('161 of 160')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Save changes/ })).toBeDisabled();
+    expect(actions.update).not.toHaveBeenCalled();
+  });
+
+  it('saves the description, social image and share text', async () => {
+    const { user, actions } = await open();
+    await user.type(screen.getByLabelText('Site description'), 'Free lessons');
+    await user.type(screen.getByLabelText('Social image link'), 'https://cdn.example.com/og.jpg');
+    await user.click(screen.getByRole('button', { name: 'Save changes' }));
+    await waitFor(() =>
+      expect(actions.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          'seo.site_description': 'Free lessons',
+          'seo.default_social_image_url': 'https://cdn.example.com/og.jpg',
+        }),
+      ),
+    );
+  });
+
+  it('lists share channels with Copy link always on and Email off', () => {
+    return open().then(() => {
+      expect(screen.getByRole('switch', { name: 'WhatsApp' })).toBeChecked();
+      expect(screen.getByRole('switch', { name: 'Email' })).not.toBeChecked();
+      expect(screen.getByText('Copy link is always on')).toBeInTheDocument();
+    });
+  });
+
+  it('says kids only titles are never listed by search engines', async () => {
+    await open();
+    expect(screen.getByText(/Kids only titles are never listed/)).toBeInTheDocument();
+  });
+
+  it('bumps the notice version so everyone sees the notice again', async () => {
+    const { user, actions } = await open();
+    await user.click(screen.getByRole('button', { name: 'Show notice again to everyone' }));
+    await user.click(screen.getByRole('button', { name: 'Save changes' }));
+    await waitFor(() =>
+      expect(actions.update).toHaveBeenCalledWith(
+        expect.objectContaining({ 'consent.notice_version': 2 }),
+      ),
+    );
   });
 });

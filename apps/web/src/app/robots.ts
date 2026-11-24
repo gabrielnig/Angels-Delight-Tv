@@ -1,30 +1,15 @@
 import type { MetadataRoute } from 'next';
+import { buildRobots } from '../lib/seo/robots-rules';
+import { getSeoSettings } from '../server/seo/seo-settings';
 
-/**
- * What crawlers may read. The public catalog (Home, Browse, title and series pages) is open because visitors can
- * watch without an account (M40). Everything personal, every API route and every sign in page is closed, and so is
- * search, whose result pages have no value to an index. The sitemap line names `/sitemap.xml` on the configured origin (M45-S01).
- */
-export default function robots(): MetadataRoute.Robots {
-  const origin = process.env.APP_ORIGIN?.replace(/\/+$/, '');
-  return {
-    rules: {
-      userAgent: '*',
-      allow: '/',
-      disallow: [
-        '/api/',
-        '/admin',
-        '/account',
-        '/profiles',
-        '/settings',
-        '/my-list',
-        '/watch/',
-        '/search',
-        '/sign-in',
-        '/sign-up',
-        '/verify-email',
-      ],
-    },
-    ...(origin ? { sitemap: `${origin}/sitemap.xml` } : {}),
-  };
+export const dynamic = 'force-dynamic';
+
+/** Crawler rules (M45-S01). The Discovery tab can switch indexing off, and staging is always closed. */
+export default async function robots(): Promise<MetadataRoute.Robots> {
+  const { indexing } = await getSeoSettings();
+  return buildRobots({
+    origin: process.env.APP_ORIGIN,
+    indexing,
+    production: process.env.NODE_ENV === 'production',
+  });
 }

@@ -1,5 +1,6 @@
 import { parseMaturityLabels } from '@ad/shared';
 import { z } from 'zod';
+import { DISCOVERY_DEFS } from './settings-discovery';
 import { MONETIZATION_DEFS } from './settings-monetization';
 
 /**
@@ -62,7 +63,7 @@ const maintenanceBanner = z.object({
 
 export type SettingTier = 'admin' | 'super';
 export type SettingGroup =
-  'platform' | 'features' | 'limits' | 'content' | 'legal' | 'analytics' | 'audit' | 'maintenance' | 'monetization' | 'home';
+  'platform' | 'features' | 'limits' | 'content' | 'legal' | 'analytics' | 'audit' | 'maintenance' | 'monetization' | 'home' | 'discovery';
 
 interface Def<S extends z.ZodType> {
   schema: S;
@@ -496,6 +497,7 @@ export const SETTING_DEFS = {
     description: 'Viewers see a maintenance page, admins can still sign in',
   }),
   ...MONETIZATION_DEFS,
+  ...DISCOVERY_DEFS,
 } as const;
 
 export type SettingKey = keyof typeof SETTING_DEFS;

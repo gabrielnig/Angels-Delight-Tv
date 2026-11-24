@@ -14,6 +14,8 @@ import { Card, PageHeader } from '../PageHeader';
 import { Banner } from '../states';
 import { Tabs } from '../Tabs';
 import { useToast } from '../Toast';
+import { FormActions } from './FormActions';
+import { DiscoveryTab } from './DiscoveryTab';
 import { InviteCodesTab, type InviteCodeActions } from './InviteCodesTab';
 import { PagesEditor } from './PagesEditor';
 import { useSettingsForm, type NumberRule } from './useSettingsForm';
@@ -26,7 +28,7 @@ export interface SiteActions extends Partial<InviteCodeActions> {
   restorePage(slug: PageSlug, version: number): Promise<ActionResult<PageDto>>;
 }
 
-type TabId = 'platform' | 'features' | 'home' | 'invites' | 'pages' | 'maintenance';
+type TabId = 'platform' | 'features' | 'home' | 'discovery' | 'invites' | 'pages' | 'maintenance';
 
 const GIB = 1024 ** 3;
 
@@ -112,6 +114,7 @@ export function SiteSettingsView({
               { id: 'platform', label: 'Platform details' },
               { id: 'features', label: 'Features and limits' },
               { id: 'home', label: 'Home' },
+              { id: 'discovery', label: 'Discovery' },
               ...(invites && actions.create && actions.revoke
                 ? [{ id: 'invites', label: 'Invite codes' }]
                 : []),
@@ -126,6 +129,9 @@ export function SiteSettingsView({
               <FeaturesTab data={data} actions={actions} onSaved={setData} />
             ) : null}
             {tab === 'home' ? <HomeTab data={data} actions={actions} onSaved={setData} /> : null}
+            {tab === 'discovery' ? (
+              <DiscoveryTab data={data} actions={actions} onSaved={setData} />
+            ) : null}
             {tab === 'invites' && invites && actions.create && actions.revoke ? (
               <InviteCodesTab
                 initial={invites}
@@ -177,51 +183,6 @@ interface TabProps {
   data: SiteSettingsDto;
   actions: SiteActions;
   onSaved: (data: SiteSettingsDto) => void;
-}
-
-function FormActions({
-  dirty,
-  busy,
-  onSave,
-  onDiscard,
-  failure,
-  children,
-}: {
-  dirty: boolean;
-  busy: boolean;
-  onSave: () => void;
-  onDiscard: () => void;
-  failure: string | null;
-  children?: React.ReactNode;
-}) {
-  return (
-    <>
-      {failure ? (
-        <Banner tone="danger">
-          <strong>Your changes are still here.</strong> {failure}
-        </Banner>
-      ) : null}
-      <div className="adm-form-actions">
-        {dirty ? (
-          <Badge tone="warning" icon="alert">
-            Unsaved changes
-          </Badge>
-        ) : null}
-        {children}
-        <Button variant="ghost" disabled={!dirty || busy} onClick={onDiscard}>
-          Discard
-        </Button>
-        <Button
-          variant="primary"
-          loading={busy}
-          disabledReason={dirty ? undefined : 'No changes to save.'}
-          onClick={onSave}
-        >
-          Save changes
-        </Button>
-      </div>
-    </>
-  );
 }
 
 function PlatformTab({ data, actions, onSaved }: TabProps) {
