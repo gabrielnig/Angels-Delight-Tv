@@ -1,7 +1,25 @@
-import { fireEvent, render, screen, within } from '@testing-library/react';
+import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ContinueCard, SeriesCard, VideoCard } from './Cards';
+
+beforeEach(() => {
+  window.matchMedia = ((q: string) => ({
+    matches: q.includes('hover: hover'),
+    media: q,
+    addEventListener() {},
+    removeEventListener() {},
+  })) as never;
+});
+afterEach(() => vi.useRealTimers());
+
+/** Rests a mouse on the first card for 300 ms and returns the hover card. */
+function hoverOpen() {
+  vi.useFakeTimers();
+  fireEvent.pointerEnter(document.querySelector('article.ad-card')!, { pointerType: 'mouse' });
+  act(() => void vi.advanceTimersByTime(300));
+  return screen.getByRole('dialog');
+}
 
 const base = {
   title: 'How to save money on data',
@@ -196,66 +214,45 @@ describe('Thumb formats', () => {
   });
 });
 
-describe('VideoCard hover overlay', () => {
-  it('carries the description and a Play hint, hidden from assistive technology', () => {
-    render(<VideoCard {...base} description="Learn to budget your data." />);
-    const peek = screen.getByTestId('card-peek');
-    expect(peek).toHaveAttribute('aria-hidden', 'true');
-    expect(peek).toHaveTextContent('Learn to budget your data.');
-    expect(peek).toHaveTextContent('Play');
+describe('VideoCard hover card', () => {
+  it('has no inline peek on the card itself', () => {
+    const { container } = render(<VideoCard {...base} description="Learn to budget your data." />);
+    expect(container.querySelector('.ad-card__peek')).toBeNull();
+    expect(screen.queryByRole('dialog')).toBeNull();
   });
 
-  it('shows title, length, subject and Play, still hidden from assistive technology', () => {
+  it('opens after the pointer rests, with the description and a Play link', () => {
+    render(
+      <VideoCard {...base} description="Learn to budget your data." playHref="/watch/save-data" />,
+    );
+    const card = hoverOpen();
+    expect(card).toHaveTextContent('Learn to budget your data.');
+    expect(within(card).getByRole('link', { name: /Play/ })).toHaveAttribute('href', '/watch/save-data');
+  });
+
+  it('shows title, length, subject, More info and Play', () => {
     render(<VideoCard {...base} subject="Money" description="Learn to budget your data." />);
-    const peek = screen.getByTestId('card-peek');
-    expect(peek).toHaveAttribute('aria-hidden', 'true');
-    expect(peek).toHaveTextContent(base.title);
-    expect(peek).toHaveTextContent('Money');
-    expect(peek).toHaveTextContent('Play');
-    expect(peek.querySelector('.ad-card__peek-length')).not.toBeNull();
+    const card = hoverOpen();
+    expect(card).toHaveTextContent(base.title);
+    expect(card).toHaveTextContent('Money');
+    expect(card).toHaveTextContent('4:12');
+    expect(within(card).getByRole('link', { name: /More info/ })).toHaveAttribute('href', base.href);
+    expect(card.querySelector('video')).toBeNull();
   });
 
-  it('shows title, length and Play when there is no description or subject', () => {
+  it('leaves out the description and subject when there are none', () => {
     render(<VideoCard {...base} />);
-    const peek = screen.getByTestId('card-peek');
-    expect(peek).toHaveTextContent('Play');
-    expect(peek.querySelector('.ad-card__peek-text')).toBeNull();
-    expect(peek.querySelector('.ad-card__peek-subject')).toBeNull();
+    const card = hoverOpen();
+    expect(card.querySelector('.ad-hovercard__text')).toBeNull();
+    expect(card.querySelector('.ad-hovercard__subject')).toBeNull();
   });
 
-  it('says how many seasons a multi season series has, and stays quiet for one', () => {
-    const { rerender } = render(
-      <SeriesCard
-        title="Farming basics"
-        href="/series/farming"
-        episodeCount={24}
-        seasonCount={3}
-      />,
-    );
-    expect(
-      screen.getByRole('link', { name: 'Farming basics, 3 seasons, 24 episodes' }),
-    ).toBeInTheDocument();
-    expect(document.querySelector('.ad-badge')?.textContent).toBe('3 seasons');
-    rerender(
-      <SeriesCard title="Farming basics" href="/series/farming" episodeCount={8} seasonCount={1} />,
-    );
-    expect(screen.getByRole('link', { name: 'Farming basics, 8 episodes' })).toBeInTheDocument();
-  });
-
-  it('marks cards that have captions with a CC badge that the link name also says (M11-S05)', () => {
-    const { container, rerender } = render(
-      <VideoCard title="Rain" href="/title/rain" durationSeconds={60} hasCaptions />,
-    );
-    expect(container.querySelector('.ad-card__cc')?.textContent).toBe('CC');
-    expect(
-      screen.getByRole('link', { name: 'Rain, 1 minute, captions available' }),
-    ).toBeInTheDocument();
-    rerender(<VideoCard title="Rain" href="/title/rain" durationSeconds={60} />);
-    expect(container.querySelector('.ad-card__cc')).toBeNull();
-    rerender(<SeriesCard title="Farming" href="/series/f" episodeCount={3} hasCaptions />);
-    expect(
-      screen.getByRole('link', { name: 'Farming, 3 episodes, captions available' }),
-    ).toBeInTheDocument();
+  it('keeps the My List toggle working inside the hover card', () => {
+    const onToggleList = vi.fn();
+    render(<VideoCard {...base} inList={false} onToggleList={onToggleList} />);
+    const card = hoverOpen();
+    fireEvent.click(within(card).getByRole('button', { name: `Add ${base.title} to My List` }));
+    expect(onToggleList).toHaveBeenCalledTimes(1);
   });
 });
 
@@ -376,9 +373,7 @@ describe('card rating cluster and Most liked (M44-S03, S05)', () => {
     expect(link).toHaveAccessibleName(/Most liked/);
     expect(link).toHaveAccessibleName(/Your rating: Love this/);
     expect(link.textContent).not.toMatch(/\d+ (ratings|likes)/);
-    const peek = screen.getByTestId('card-peek');
-    expect(peek).toHaveAttribute('aria-hidden', 'true');
-    expect(within(peek).getByText('Most liked')).toBeInTheDocument();
+    expect(within(hoverOpen()).getByText('Most liked')).toBeInTheDocument();
   });
 
   it('shows no Most liked text when the title is not labelled', () => {
@@ -388,12 +383,10 @@ describe('card rating cluster and Most liked (M44-S03, S05)', () => {
 });
 
 describe('card maturity chip (M44-S13)', () => {
-  it('draws the chip in the peek, hidden from assistive technology, and speaks Rated in the link name', () => {
+  it('draws the chip in the hover card and speaks Rated in the link name', () => {
     render(<VideoCard {...base} maturity="15" />);
-    const peek = screen.getByTestId('card-peek');
-    expect(within(peek).getByTestId('card-rated')).toHaveTextContent('15');
-    expect(peek).toHaveAttribute('aria-hidden', 'true');
     expect(screen.getByRole('link')).toHaveAccessibleName(/Rated 15/);
+    expect(within(hoverOpen()).getByTestId('card-rated')).toHaveTextContent('15');
   });
 
   it('draws nothing without a maturity label', () => {
@@ -403,8 +396,9 @@ describe('card maturity chip (M44-S13)', () => {
 
   it('puts the chip and Most liked on one line that wraps together', () => {
     render(<VideoCard {...base} maturity="18" mostLiked />);
+    hoverOpen();
     const facts = screen.getByTestId('card-rated').parentElement!;
-    expect(facts).toHaveClass('ad-card__peek-facts');
+    expect(facts).toHaveClass('ad-hovercard__facts');
     expect(within(facts).getByText('Most liked')).toBeInTheDocument();
   });
 

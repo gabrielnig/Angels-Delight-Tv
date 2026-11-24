@@ -3,9 +3,10 @@
 import { useState, type ReactNode } from 'react';
 import { Badge } from './Badge';
 import { ContinueMenu, type ContinueMenuLabels } from './ContinueMenu';
-import { IconButton } from './Button';
+import { ButtonLink, IconButton } from './Button';
 import { cx } from './cx';
 import { formatClock, spokenLength } from './format';
+import { HoverCard, useHoverCard } from './HoverCard';
 import { Icon, type IconName } from './Icon';
 import { Link } from './Link';
 import { ProgressBar } from './ProgressBar';
@@ -243,8 +244,10 @@ export interface VideoCardProps {
   durationSeconds: number;
   thumbnail?: Thumbnail;
   meta?: string;
-  /** Shown in a light overlay after the hover delay on desktop. No video preview (M05-S03). */
+  /** Shown in the hover card on mouse devices. No video preview (M05-S03). */
   description?: string;
+  /** Where Play goes from the hover card. Defaults to `href`. */
+  playHref?: string;
   /** Subject (category) name shown in the hover card. */
   subject?: string;
   priority?: boolean;
@@ -271,6 +274,7 @@ export function VideoCard({
   thumbnail,
   meta,
   description,
+  playHref,
   subject,
   priority,
   hasCaptions,
@@ -282,8 +286,15 @@ export function VideoCard({
   rank,
   className,
 }: VideoCardProps) {
+  const hover = useHoverCard();
   return (
-    <article className={cx('ad-card', className)}>
+    <article
+      className={cx('ad-card', className)}
+      ref={(el) => {
+        hover.anchorRef.current = el;
+      }}
+      {...hover.anchorProps}
+    >
       <Link href={href} className="ad-card__link">
         <RankSpoken rank={rank} />
         <Thumb thumbnail={thumbnail} title={title} priority={priority}>
@@ -291,23 +302,6 @@ export function VideoCard({
             <Badge variant="duration">{formatClock(durationSeconds)}</Badge>
           </span>
           {hasCaptions ? <CaptionMark /> : null}
-          <span className="ad-card__peek" data-testid="card-peek" aria-hidden="true">
-            <span className="ad-card__peek-title">{title}</span>
-            <span className="ad-card__peek-facts">
-              {maturity ? (
-                <span className="ad-card__rated" data-testid="card-rated">
-                  {maturity}
-                </span>
-              ) : null}
-              <span className="ad-card__peek-length">{formatClock(durationSeconds)}</span>
-              {subject ? <span className="ad-card__peek-subject">{subject}</span> : null}
-              {mostLiked ? <MostLikedLabel /> : null}
-            </span>
-            {description ? <span className="ad-card__peek-text">{description}</span> : null}
-            <span className="ad-card__peek-play">
-              <Icon name="play" size={16} filled /> Play
-            </span>
-          </span>
         </Thumb>
         <span className="ad-card__title">{title}</span>
         <span className="ad-sr-only">
@@ -324,6 +318,57 @@ export function VideoCard({
         ) : null}
       </Link>
       <CardActions title={title} inList={inList} onToggleList={onToggleList} rating={rating} />
+      {hover.open ? (
+        <HoverCard {...hover.cardProps} label={`${title}, details`}>
+          <div className="ad-hovercard__thumb">
+            {thumbnail ? (
+              <img
+                src={thumbnail.fallbackSrc ?? thumbnail.src}
+                srcSet={thumbnail.fallbackSrcSet ?? thumbnail.srcSet}
+                sizes={thumbnail.sizes ?? THUMB_SIZES}
+                alt=""
+              />
+            ) : (
+              <span className="ad-card__fallback" aria-hidden="true">
+                <Icon name="play" size={24} filled />
+              </span>
+            )}
+          </div>
+          <div className="ad-hovercard__body">
+            <div className="ad-hovercard__actions">
+              <ButtonLink href={playHref ?? href} size="sm" icon="play">
+                Play
+              </ButtonLink>
+              {onToggleList ? (
+                <IconButton
+                  variant="on-dark"
+                  icon={inList ? 'check' : 'plus'}
+                  label={inList ? `Remove ${title} from My List` : `Add ${title} to My List`}
+                  pressed={Boolean(inList)}
+                  onClick={onToggleList}
+                />
+              ) : null}
+              {rating ? <CardRatingChip title={title} rating={rating} /> : null}
+              <Link href={href} className="ad-hovercard__info">
+                <Icon name="info" size={16} /> More info
+                <span className="ad-sr-only">: {title}</span>
+              </Link>
+            </div>
+            <p className="ad-hovercard__title">{title}</p>
+            <p className="ad-hovercard__facts">
+              {maturity ? (
+                <span className="ad-card__rated" data-testid="card-rated">
+                  {maturity}
+                </span>
+              ) : null}
+              <span className="ad-hovercard__length">{formatClock(durationSeconds)}</span>
+              {subject ? <span className="ad-hovercard__subject">{subject}</span> : null}
+              {mostLiked ? <MostLikedLabel /> : null}
+            </p>
+            {description ? <p className="ad-hovercard__text">{description}</p> : null}
+          </div>
+        </HoverCard>
+      ) : null}
     </article>
   );
 }

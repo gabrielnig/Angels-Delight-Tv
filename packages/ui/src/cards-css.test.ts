@@ -16,31 +16,19 @@ function block(opener: string): string {
   return '';
 }
 
-describe('card hover and focus css (R10, R31)', () => {
-  const hover = block('@container row (min-width: 600px)');
-
-  it('scales on hover after the delay and on keyboard focus at once', () => {
-    expect(hover).toMatch(
-      /\.ad-card:hover \.ad-card__thumb \{[^}]*scale\(var\(--card-scale\)\)[^}]*transition-delay: var\(--hover-card-delay\)/,
-    );
-    const focus =
-      hover.match(/\.ad-card:has\(:focus-visible\) \.ad-card__thumb \{[^}]*\}/)?.[0] ?? '';
-    expect(focus).toMatch(/scale\(var\(--card-scale\)\)/);
-    expect(focus).not.toMatch(/transition-delay/);
-    expect(hover).toMatch(/\.ad-card:has\(:focus-visible\) \.ad-card__peek \{[^}]*opacity: 1/);
+describe('card hover css (R10, R31, M41-S12)', () => {
+  it('no longer scales the thumbnail or draws an inline peek', () => {
+    expect(css).not.toMatch(/ad-card__peek/);
+    expect(css).not.toMatch(/\.ad-card:hover \.ad-card__thumb/);
+    expect(css).not.toMatch(/\.ad-card__thumb \{[^}]*transform-origin/);
   });
 
-  it('lifts the focused card above its neighbours', () => {
-    expect(hover).toMatch(/\.ad-row__item:focus-within \{[^}]*z-index: var\(--z-sticky\)/);
-  });
-
-  it('keeps first and last card origins', () => {
-    expect(css).toMatch(
-      /\.ad-row__item:first-child \.ad-card__thumb \{\s*transform-origin: left center/,
-    );
-    expect(css).toMatch(
-      /\.ad-row__item:last-child \.ad-card__thumb \{\s*transform-origin: right center/,
-    );
+  it('draws the hover card above the row with tokens, and keeps controls visible inside it', () => {
+    const card = css.match(/\.ad-hovercard \{[^}]*\}/)?.[0] ?? '';
+    expect(card).toMatch(/position: fixed/);
+    expect(card).toMatch(/z-index: var\(--z-overlay\)/);
+    expect(css).toMatch(/\.ad-hovercard \.ad-card__action \{[^}]*opacity: 1/);
+    expect(css).toMatch(/\.ad-hovercard\[data-motion='reduced'\] \{[^}]*animation: none/);
   });
 
   it('shows the rating chip only for a fine pointer and expands it on hover or focus', () => {

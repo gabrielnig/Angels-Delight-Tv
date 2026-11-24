@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { ToastProvider } from '@ad/ui';
@@ -99,7 +99,48 @@ describe('CatalogCard rating cluster', () => {
   });
 });
 
-describe('CatalogCard maturity chip in the peek (M44-S13)', () => {
+function hoverOpen() {
+  vi.useFakeTimers();
+  window.matchMedia = ((q: string) => ({
+    matches: q.includes('hover: hover'),
+    media: q,
+    addEventListener() {},
+    removeEventListener() {},
+  })) as never;
+  fireEvent.pointerEnter(document.querySelector('article.ad-card')!, { pointerType: 'mouse' });
+  act(() => void vi.advanceTimersByTime(300));
+  vi.useRealTimers();
+  return screen.getByRole('dialog');
+}
+
+describe('CatalogCard hover card (M41-S12)', () => {
+  it('passes the subject and description, and Play goes to the watch page', () => {
+    render(
+      <ToastProvider>
+        <CatalogCard item={video} inList={false} toggle={async () => 'sent'} />
+      </ToastProvider>,
+    );
+    const card = hoverOpen();
+    expect(card).toHaveTextContent('Science');
+    expect(card).toHaveTextContent('Light');
+    expect(within(card).getByRole('link', { name: /Play/ })).toHaveAttribute('href', '/watch/v1');
+    expect(within(card).getByRole('link', { name: /More info/ })).toHaveAttribute('href', '/title/sky');
+  });
+
+  it('keeps the My List toggle working inside the hover card', async () => {
+    const toggle = vi.fn(async () => 'sent' as const);
+    render(
+      <ToastProvider>
+        <CatalogCard item={video} inList={false} toggle={toggle} />
+      </ToastProvider>,
+    );
+    const card = hoverOpen();
+    fireEvent.click(within(card).getByRole('button', { name: /to My List/ }));
+    await waitFor(() => expect(toggle).toHaveBeenCalledTimes(1));
+  });
+});
+
+describe('CatalogCard maturity chip in the hover card (M44-S13)', () => {
   const withRank = (maturityRank: number | null, labels: string[] | null = null) =>
     render(
       <ToastProvider>
@@ -115,23 +156,27 @@ describe('CatalogCard maturity chip in the peek (M44-S13)', () => {
 
   it('shows no chip for G, the norm on this site', () => {
     withRank(0);
-    expect(screen.queryByTestId('card-rated')).toBeNull();
     expect(screen.getByRole('link')).not.toHaveAccessibleName(/Rated/);
+    hoverOpen();
+    expect(screen.queryByTestId('card-rated')).toBeNull();
   });
 
-  it('shows the label in the peek and says Rated 15 to screen readers', () => {
+  it('shows the label in the hover card and says Rated 15 to screen readers', () => {
     withRank(3);
-    expect(screen.getByTestId('card-rated')).toHaveTextContent('15');
     expect(screen.getByRole('link')).toHaveAccessibleName(/Rated 15/);
+    hoverOpen();
+    expect(screen.getByTestId('card-rated')).toHaveTextContent('15');
   });
 
   it('uses the configured labels', () => {
     withRank(3, ['All', '7+', '13+', '16+', '18+']);
+    hoverOpen();
     expect(screen.getByTestId('card-rated')).toHaveTextContent('16+');
   });
 
   it('shows no chip for an unrated card', () => {
     withRank(null);
+    hoverOpen();
     expect(screen.queryByTestId('card-rated')).toBeNull();
   });
 });
