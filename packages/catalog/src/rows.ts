@@ -1,6 +1,5 @@
 import { sql } from 'drizzle-orm';
 import type { RowKind } from '@ad/shared';
-import { fetchHeroArtwork } from './detail';
 import { rowsOf } from './sql';
 import { fetchCards, listTitles, popularTitles, type TitleCard } from './titles';
 import type { Audience, CatalogContext, Tx } from './types';
@@ -90,10 +89,7 @@ export async function resolveRow(
       if (row.seriesId) {
         // Episodes are not standalone titles, so their cards come from the episode aware query.
         const refs = await seriesRefs(tx, row.seriesId, row.maxItems);
-        return {
-          cards: await fetchCards(tx, ctx, audience, refs, { includeEpisodes: true }),
-          seeAll: null,
-        };
+        return { cards: await fetchCards(tx, ctx, audience, refs, { includeEpisodes: true }), seeAll: null };
       }
       const refs = await curatedRefs(tx, row.id, row.maxItems);
       return { cards: await fetchCards(tx, ctx, audience, refs), seeAll: null };
@@ -124,35 +120,21 @@ export async function resolveRow(
   }
 }
 
-export const HERO_FALLBACK_COUNT = 5;
-
 /**
- * Hero banner titles: the first published hero row that has live items (up to five, the editor's intent). Without
- * one, or when every chosen title is hidden, the newest live titles for this audience, those with artwork first
- * (M41-S03). For a kids audience this is always kids safe.
+ * Hero banner titles: the first published hero row that has live items (up to five). Without one, the newest live
+ * title for this audience (M05-S01), which for a kids audience is always kids safe.
  */
 export async function heroCards(
   tx: Tx,
   ctx: CatalogContext,
   audience: Audience,
   rows: readonly RowDescriptor[],
-  fallbackCount: number = HERO_FALLBACK_COUNT,
 ): Promise<TitleCard[]> {
   for (const row of rows.filter((candidate) => candidate.kind === 'hero')) {
     const refs = await curatedRefs(tx, row.id, HERO_MAX_ITEMS);
     const cards = await fetchCards(tx, ctx, audience, refs);
     if (cards.length > 0) return cards;
   }
-  const count = Math.min(Math.max(1, Math.trunc(fallbackCount)), HERO_MAX_ITEMS);
-  const newest = await listTitles(tx, ctx, audience, { sort: 'newest', limit: count * 4 });
-  const art = await fetchHeroArtwork(
-    tx,
-    ctx,
-    newest.items.map((card) => ({ kind: card.kind, id: card.id })),
-  );
-  const hasArt = (card: TitleCard) => card.poster !== null || art.has(card.id);
-  return [...newest.items.filter(hasArt), ...newest.items.filter((card) => !hasArt(card))].slice(
-    0,
-    count,
-  );
+  const newest = await listTitles(tx, ctx, audience, { sort: 'newest', limit: 1 });
+  return newest.items;
 }

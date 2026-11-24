@@ -209,7 +209,7 @@ async function buildHero(
   descriptors: readonly RowDescriptor[],
 ): Promise<HeroItem[]> {
   const catalog = catalogContext(ctx);
-  const cards = await heroCards(tx, catalog, audience, descriptors, rulesOf(ctx).heroFallbackCount);
+  const cards = await heroCards(tx, catalog, audience, descriptors);
   if (cards.length === 0) return [];
   const annotated = await annotateCards(tx, profile?.id ?? null, cards);
   const artwork = await fetchHeroArtwork(

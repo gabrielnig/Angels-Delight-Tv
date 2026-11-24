@@ -44,3 +44,16 @@ describe('.env.example', () => {
     expect(filled).toEqual([]);
   });
 });
+
+describe('.env.example Paystack variables (M48)', () => {
+  const documented = namesIn(example);
+  it('lists every PAYSTACK variable and the receipt token secret', () => {
+    for (const name of ['PAYSTACK_SECRET_KEY', 'PAYSTACK_BASE_URL', 'DONATE_RECEIPT_TOKEN_SECRET']) {
+      expect(documented.has(name), name).toBe(true);
+    }
+  });
+  it('carries no Paystack key value', () => {
+    expect(example).not.toMatch(/^PAYSTACK_SECRET_KEY=\S/m);
+    expect(example).not.toMatch(/sk_(test|live)_/);
+  });
+});

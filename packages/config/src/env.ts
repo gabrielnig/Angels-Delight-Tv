@@ -65,6 +65,14 @@ const commonShape = {
   S3_SECRET_ACCESS_KEY: z.string().min(1).optional(),
   BUCKET_ORIGINALS: z.string().min(3).default('ad-originals'),
   BUCKET_MEDIA: z.string().min(3).default('ad-media'),
+
+  /** Paystack secret key (M48). Optional until donations are switched on. Test or live mode comes from the prefix. */
+  PAYSTACK_SECRET_KEY: z
+    .string()
+    .regex(/^sk_(test|live)_[A-Za-z0-9]+$/, 'must be a Paystack secret key (sk_test_ or sk_live_)')
+    .optional(),
+  /** Overridable so tests can point at a fake Paystack server. */
+  PAYSTACK_BASE_URL: z.url().default('https://api.paystack.co'),
 };
 
 /**
@@ -100,6 +108,8 @@ const webShape = {
   PLAYBACK_TOKEN_SECRET: key32,
   PLAYBACK_TOKEN_SECRET_PREVIOUS: key32.optional(),
   MEDIA_URL_SECRET: key32,
+  /** Signs donation receipt links. Optional: a domain separated key is derived from an existing secret when unset. */
+  DONATE_RECEIPT_TOKEN_SECRET: key32.optional(),
 
   MAX_UPLOAD_BYTES: int(5 * GIB, 1),
   UPLOAD_PART_BYTES: int(8 * MIB, 5 * MIB),
@@ -202,6 +212,15 @@ const productionRule: Rule = (env, add) => {
   if (!env.MEDIA_ORIGIN.startsWith('https://')) add('MEDIA_ORIGIN', 'must be https in production');
 };
 
+const paystackRule: Rule = (env, add) => {
+  if (env.PAYSTACK_SECRET_KEY?.startsWith('sk_live_') && env.NODE_ENV !== 'production') {
+    add('PAYSTACK_SECRET_KEY', 'a live key is only allowed in production, use a test key here');
+  }
+  if (env.NODE_ENV === 'production' && !env.PAYSTACK_BASE_URL.startsWith('https://')) {
+    add('PAYSTACK_BASE_URL', 'must be https in production');
+  }
+};
+
 function withRules<T extends z.ZodRawShape>(
   shape: T,
   extra?: (env: z.infer<z.ZodObject<T>>, add: (name: string, message: string) => void) => void,
@@ -212,6 +231,7 @@ function withRules<T extends z.ZodRawShape>(
     const common = env as unknown as z.infer<z.ZodObject<typeof commonShape>>;
     storageRule(common, add);
     productionRule(common, add);
+    paystackRule(common, add);
     extra?.(env, add);
   });
 }

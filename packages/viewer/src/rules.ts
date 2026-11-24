@@ -24,8 +24,6 @@ export interface ViewerRules {
   /** Default pages and the home row batch size (M05-S04). */
   homeRowsPerPage: number;
   personalRowItems: number;
-  /** Newest titles shown as the hero when none are chosen (M41-S03). */
-  heroFallbackCount: number;
 }
 
 export const DEFAULT_RULES: ViewerRules = {
@@ -41,5 +39,4 @@ export const DEFAULT_RULES: ViewerRules = {
   maxMyListItems: 500,
   homeRowsPerPage: 3,
   personalRowItems: 20,
-  heroFallbackCount: 5,
 };

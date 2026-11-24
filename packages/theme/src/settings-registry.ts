@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { MONETIZATION_DEFS } from './settings-monetization';
 
 /**
  * Typed registry of every key in the `settings` table (docs/DATA-MODEL.md 8.2, M29).
@@ -60,7 +61,7 @@ const maintenanceBanner = z.object({
 
 export type SettingTier = 'admin' | 'super';
 export type SettingGroup =
-  'platform' | 'features' | 'limits' | 'content' | 'legal' | 'analytics' | 'audit' | 'maintenance';
+  'platform' | 'features' | 'limits' | 'content' | 'legal' | 'analytics' | 'audit' | 'maintenance' | 'monetization';
 
 interface Def<S extends z.ZodType> {
   schema: S;
@@ -390,6 +391,7 @@ export const SETTING_DEFS = {
     label: 'Maintenance mode',
     description: 'Viewers see a maintenance page, admins can still sign in',
   }),
+  ...MONETIZATION_DEFS,
 } as const;
 
 export type SettingKey = keyof typeof SETTING_DEFS;
