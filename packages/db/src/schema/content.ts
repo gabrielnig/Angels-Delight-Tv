@@ -132,6 +132,8 @@ export const videos = pgTable(
       .default(sql`'{}'::text[]`),
     /** Who the editor says this is for. kidsSafe is true for 'kids' and 'everyone'. */
     suitability: text('suitability'),
+    /** Maturity rank 0 (G) to 4 (18). Null only for rows not yet rated. kidsSafe is kept equal to rank 0 by trigger (L5). */
+    maturityRank: smallint('maturity_rank'),
     /** Set when an admin published without approved captions. Audited at the same time. */
     captionOverrideReason: text('caption_override_reason'),
     /** Captions for viewers: null follows the site default, true offers them, false offers none (L3, D-184). */
@@ -150,6 +152,7 @@ export const videos = pgTable(
   },
   (t) => [
     check('videos_slug_format', slugCheck('slug')),
+    check('videos_maturity_rank_range', sql`${t.maturityRank} IS NULL OR ${t.maturityRank} BETWEEN 0 AND 4`),
     check(
       'videos_suitability_known',
       sql`${t.suitability} IS NULL OR ${t.suitability} IN ('everyone', 'kids', 'older')`,
@@ -241,6 +244,8 @@ export const series = pgTable(
     title: text('title').notNull(),
     description: text('description'),
     kidsSafe: boolean('kids_safe').notNull().default(false),
+    /** Maturity rank 0 (G) to 4 (18). Null only for rows not yet rated. kidsSafe follows rank 0 by trigger (L5). */
+    maturityRank: smallint('maturity_rank'),
     posterAssetId: uuid('poster_asset_id').references(() => assets.id, { onDelete: 'set null' }),
     heroAssetId: uuid('hero_asset_id').references(() => assets.id, { onDelete: 'set null' }),
     publishState: publishState('publish_state').notNull().default('draft'),
@@ -256,6 +261,7 @@ export const series = pgTable(
   },
   (t) => [
     check('series_slug_format', slugCheck('slug')),
+    check('series_maturity_rank_range', sql`${t.maturityRank} IS NULL OR ${t.maturityRank} BETWEEN 0 AND 4`),
     check('series_title_length', sql`char_length(${t.title}) BETWEEN 1 AND 200`),
     check(
       'series_description_length',

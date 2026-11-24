@@ -47,6 +47,9 @@ export const ROW_KINDS = [
   'my_list',
   'popular',
 ] as const;
+/** Maturity ladder, lowest to highest. Rank 0 is all ages and equals the legacy kids safe flag (L5, M44). */
+export const MATURITY_RANKS = [0, 1, 2, 3, 4] as const;
+export const MATURITY_DEFAULT_LABELS = ['G', 'PG', '12', '15', '18'] as const;
 export const TOKEN_PURPOSES = ['verify_email', 'reset_password', 'change_email'] as const;
 export const THEME_STATUSES = ['draft', 'published', 'archived'] as const;
 export const ASSET_PURPOSES = ['logo', 'favicon', 'thumbnail', 'hero', 'series_art'] as const;
@@ -63,6 +66,7 @@ export type CaptionStatus = (typeof CAPTION_STATUSES)[number];
 export type UploadKind = (typeof UPLOAD_KINDS)[number];
 export type UploadStatus = (typeof UPLOAD_STATUSES)[number];
 export type JobStatus = (typeof JOB_STATUSES)[number];
+export type MaturityRank = (typeof MATURITY_RANKS)[number];
 export type RowKind = (typeof ROW_KINDS)[number];
 export type TokenPurpose = (typeof TOKEN_PURPOSES)[number];
 export type ThemeStatus = (typeof THEME_STATUSES)[number];

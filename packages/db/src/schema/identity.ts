@@ -112,6 +112,8 @@ export const profiles = pgTable(
     avatarId: text('avatar_id').notNull(),
     isKids: boolean('is_kids').notNull().default(false),
     isPrimary: boolean('is_primary').notNull().default(false),
+    /** Highest maturity rank this profile may watch, 0 (G) to 4 (18). Kids profiles are always 0 (L5, M44-S19). */
+    maxMaturityRank: smallint('max_maturity_rank').notNull().default(4),
     pinHash: text('pin_hash'),
     language: text('language').notNull().default('en'),
     autoplayNext: boolean('autoplay_next').notNull().default(true),
@@ -124,6 +126,8 @@ export const profiles = pgTable(
   },
   (t) => [
     check('profiles_primary_not_kids', sql`NOT (${t.isPrimary} AND ${t.isKids})`),
+    check('profiles_max_maturity_range', sql`${t.maxMaturityRank} BETWEEN 0 AND 4`),
+    check('profiles_kids_lowest_maturity', sql`NOT ${t.isKids} OR ${t.maxMaturityRank} = 0`),
     check('profiles_position_range', sql`${t.position} BETWEEN 0 AND 9`),
     index('profiles_account_position_idx').on(t.accountId, t.position),
     uniqueIndex('profiles_one_primary_uniq')

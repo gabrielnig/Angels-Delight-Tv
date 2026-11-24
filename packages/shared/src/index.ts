@@ -4,5 +4,6 @@ export * from './errors';
 export * from './frame-score';
 export * from './ids';
 export * from './logger';
+export * from './maturity';
 export * from './roles';
 export * from './messages';
