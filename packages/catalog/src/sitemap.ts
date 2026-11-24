@@ -89,3 +89,32 @@ export async function listSitemapRows(db: Database, now: Date): Promise<SitemapR
     categories: categoryRows.map(map),
   };
 }
+
+/**
+ * True when a title exists and search engines must not index it: a kids only video, or a series without a single
+ * live episode that is for everyone (R26, D-269). Unknown slugs answer false, the page is a 404 anyway.
+ */
+export async function isKidsOnlyTitle(
+  db: Database,
+  kind: 'video' | 'series',
+  slug: string,
+): Promise<boolean> {
+  if (kind === 'video') {
+    const rows = rowsOf<{ kids_only: boolean }>(
+      await db.execute(sql`
+        SELECT ${KIDS_ONLY_VIDEO} AS kids_only FROM videos v
+        WHERE v.slug = ${slug} AND v.deleted_at IS NULL LIMIT 1`),
+    );
+    return rows[0]?.kids_only === true;
+  }
+  const rows = rowsOf<{ kids_only: boolean }>(
+    await db.execute(sql`
+      SELECT NOT EXISTS (
+        SELECT 1 FROM seasons sn
+          JOIN episodes ep ON ep.season_id = sn.id
+          JOIN videos v ON v.id = ep.video_id
+        WHERE sn.series_id = s.id AND v.deleted_at IS NULL AND NOT ${KIDS_ONLY_VIDEO}) AS kids_only
+      FROM series s WHERE s.slug = ${slug} AND s.deleted_at IS NULL LIMIT 1`),
+  );
+  return rows[0]?.kids_only === true;
+}

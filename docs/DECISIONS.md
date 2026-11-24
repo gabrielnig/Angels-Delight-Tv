@@ -1500,3 +1500,9 @@ Per video tri state, site default (Super admin), Admin changes it with a reason 
 - Options: Open insert grant on ui_missing_keys, a worker only writer.
 - Why: A viewer with no account must be able to record a hit, and must never read drafts or the report.
 - Reversible: yes
+
+## D-278 Structured data never carries a rating and drops itself when it cannot be built (lane L6)
+- Decision: Title pages emit VideoObject (no contentUrl, embedUrl is the title page) and a breadcrumb, series pages emit TVSeries with at most 50 episodes, Home emits WebSite with a search action plus Organization, category pages emit a breadcrumb. No aggregateRating or review markup is ever written. A block that lacks name, thumbnail or upload date is skipped and the page renders without it. Kids only titles carry no structured data and ask not to be indexed.
+- Options: Emit ratings from likes, omit structured data, current choice
+- Why: No ratings exist and invented ones break search engine policy. The media url is signed and short lived, so it is never published.
+- Reversible: Ratings: no, it would risk a policy penalty. The rest: yes

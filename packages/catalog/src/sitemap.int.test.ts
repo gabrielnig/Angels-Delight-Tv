@@ -2,7 +2,7 @@ import { eq } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { slugRedirects, videos } from '@ad/db';
 import { uuidv7 } from '@ad/shared';
-import { listSitemapRows } from './sitemap';
+import { isKidsOnlyTitle, listSitemapRows } from './sitemap';
 import {
   FUTURE,
   NOW,
@@ -104,5 +104,46 @@ describe.skipIf(!integrationEnabled())('sitemap rows (M45-S01)', () => {
       .insert(slugRedirects)
       .values({ id: uuidv7(), oldSlug: 'old-name-for-it', videoId: video.id });
     expect(await slugs()).not.toContain('old-name-for-it');
+  });
+});
+
+describe.skipIf(!integrationEnabled())('isKidsOnlyTitle (R26)', () => {
+  let t: ViewerTestDb;
+  beforeAll(async () => {
+    t = await createViewerTestDb();
+  });
+  afterAll(async () => {
+    await t?.drop();
+  });
+
+  it('is true for a kids only video and false for one that is for everyone', async () => {
+    const kidsOnly = await seedVideo(t.setup, { suitability: 'kids', kidsSafe: true });
+    const everyone = await seedVideo(t.setup, { suitability: 'everyone', kidsSafe: true });
+    const adults = await seedVideo(t.setup);
+    expect(await isKidsOnlyTitle(t.app, 'video', kidsOnly.slug)).toBe(true);
+    expect(await isKidsOnlyTitle(t.app, 'video', everyone.slug)).toBe(false);
+    expect(await isKidsOnlyTitle(t.app, 'video', adults.slug)).toBe(false);
+  });
+
+  it('treats an older row with the kids flag and no suitability as kids only', async () => {
+    const legacy = await seedVideo(t.setup, { suitability: null, kidsSafe: true });
+    expect(await isKidsOnlyTitle(t.app, 'video', legacy.slug)).toBe(true);
+  });
+
+  it('is true for a series whose live episodes are all kids only, false when one is not', async () => {
+    const kidsSeries = await seedSeries(t.setup, {
+      episode: { suitability: 'kids', kidsSafe: true },
+    });
+    const mixed = await seedSeries(t.setup, { seasonSizes: [2] });
+    await t.setup
+      .update(videos)
+      .set({ suitability: 'kids', kidsSafe: true })
+      .where(eq(videos.id, mixed.episodes[0]!.id));
+    expect(await isKidsOnlyTitle(t.app, 'series', kidsSeries.slug)).toBe(true);
+    expect(await isKidsOnlyTitle(t.app, 'series', mixed.slug)).toBe(false);
+  });
+
+  it('is false for a slug that does not exist', async () => {
+    expect(await isKidsOnlyTitle(t.app, 'video', 'no-such-thing')).toBe(false);
   });
 });

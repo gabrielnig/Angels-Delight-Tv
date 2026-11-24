@@ -40,6 +40,8 @@ export function previewMetadata(input: {
   siteName?: string;
   thumbnail?: Thumb;
   durationSeconds?: number;
+  /** False for a kids only title: search engines are asked to skip it (R26). Default true. */
+  indexable?: boolean;
 }): Metadata {
   const description = short(input.description);
   const image = largestImage(input.thumbnail);
@@ -48,6 +50,7 @@ export function previewMetadata(input: {
     title: input.title,
     description,
     alternates: { canonical: input.path },
+    ...(input.indexable === false ? { robots: { index: false, follow: false } } : {}),
     openGraph: {
       title: input.title,
       description,

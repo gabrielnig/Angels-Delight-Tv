@@ -6,7 +6,10 @@ import { GuestKidsBlocked } from '../../../../components/guest/GuestKidsBlocked'
 import { TitleBlocked } from '../../../../components/title/TitleStates';
 import { PublicTitle, TitleView } from '../../../../components/title/TitleView';
 import { getCatalog, getLibrary } from '../../../../lib/data';
+import { JsonLd } from '../../../../components/seo/JsonLd';
 import { previewMetadata } from '../../../../lib/seo';
+import { titlePageJsonLd } from '../../../../lib/seo/page-jsonld';
+import { siteOrigin, titleIndexable } from '../../../../server/seo/page-seo';
 import { getRootTheme } from '../../../../lib/theme/root';
 import { itemKey } from '../../../../lib/format';
 import { getSite } from '../../../../lib/data';
@@ -15,12 +18,20 @@ import { guestPlayEnabled } from '../../../../server/guest/guest-settings';
 
 type Params = { params: Promise<{ slug: string }> };
 
+/** An unpublished, removed or unknown title is never indexed (M45-S02, M45-S14). */
+const NOT_INDEXED = { index: false, follow: false } as const;
+
 export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const { slug } = await params;
   const preview = await getCatalog().publicPreview(slug, 'video');
-  if (!preview || preview.type !== 'video') return { title: 'Video not found' };
+  if (!preview || preview.type !== 'video') {
+    return { title: 'Video not found', robots: NOT_INDEXED };
+  }
   const { item } = preview;
-  const { platformName } = await getRootTheme();
+  const [{ platformName }, indexable] = await Promise.all([
+    getRootTheme(),
+    titleIndexable('video', item.slug),
+  ]);
   return previewMetadata({
     kind: 'video',
     title: item.title,
@@ -29,6 +40,7 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
     siteName: platformName,
     thumbnail: item.thumbnail,
     durationSeconds: item.durationSeconds,
+    indexable,
   });
 }
 
@@ -64,10 +76,29 @@ export default async function TitlePage({ params }: Params) {
       <TitleBlocked />
     );
   }
+  const [{ platformName }, indexable] = await Promise.all([
+    getRootTheme(),
+    titleIndexable('video', detail.video.slug),
+  ]);
+  const structured = indexable ? (
+    <JsonLd
+      data={titlePageJsonLd({ origin: siteOrigin(), siteName: platformName, video: detail.video })}
+    />
+  ) : null;
   if (viewer.kind === 'guest') {
     const { signUpOpen } = await getSite().content();
-    return <TitleView detail={detail} inList={false} guest={{ signUpOpen }} />;
+    return (
+      <>
+        {structured}
+        <TitleView detail={detail} inList={false} guest={{ signUpOpen }} />
+      </>
+    );
   }
   const ids = await getLibrary().myListIds(ctx);
-  return <TitleView detail={detail} inList={ids.includes(itemKey(detail.video))} />;
+  return (
+    <>
+      {structured}
+      <TitleView detail={detail} inList={ids.includes(itemKey(detail.video))} />
+    </>
+  );
 }

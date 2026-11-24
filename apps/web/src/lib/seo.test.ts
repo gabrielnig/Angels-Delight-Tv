@@ -67,4 +67,16 @@ describe('previewMetadata (open graph for shared links)', () => {
     expect(String(m.description).length).toBeLessThanOrEqual(200);
     expect(String(m.description)).toMatch(/…$|\.\.\.$/);
   });
+
+  it('asks search engines to skip a title that is not indexable (R26)', () => {
+    expect(previewMetadata({ ...base, indexable: false }).robots).toEqual({
+      index: false,
+      follow: false,
+    });
+  });
+
+  it('leaves robots alone for an indexable title', () => {
+    expect(previewMetadata(base).robots).toBeUndefined();
+    expect(previewMetadata({ ...base, indexable: true }).robots).toBeUndefined();
+  });
 });
