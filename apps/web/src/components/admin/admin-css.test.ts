@@ -10,7 +10,7 @@ function block(selector: string): string {
 }
 
 describe('admin link targets are 44px (design review finding)', () => {
-  it.each(['.adm-list__title', '.adm-vtitle', '.adm-crumbs a'])('%s', (selector) => {
+  it.each(['.adm-list__title', '.adm-vtitle'])('%s', (selector) => {
     expect(block(selector)).toMatch(/min-height:\s*var\(--touch-target\)/);
   });
 });

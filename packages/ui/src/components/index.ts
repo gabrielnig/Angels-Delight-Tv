@@ -30,3 +30,4 @@ export * from './Hero';
 export * from './Row';
 export * from './TopNav';
 export * from './Banner';
+export * from './Breadcrumbs';

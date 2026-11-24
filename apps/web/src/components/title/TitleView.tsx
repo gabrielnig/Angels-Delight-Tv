@@ -1,4 +1,4 @@
-import { Badge, ButtonLink, ProgressBar } from '@ad/ui';
+import { Badge, Breadcrumbs, ButtonLink, ProgressBar } from '@ad/ui';
 import type { Thumb, TitleDetail } from '../../lib/data';
 import { itemKey, percent } from '../../lib/format';
 import { primaryAction } from '../../lib/title-cta';
@@ -23,19 +23,16 @@ export function TitleView({ detail, inList }: { detail: TitleDetail; inList: boo
   const series = video.series ? seriesLine(video.series) : null;
   return (
     <div className="web-page tv">
-      <nav aria-label="Breadcrumb" className="tv-crumbs">
-        <ol>
-          <li>
-            <a href="/browse">Browse</a>
-          </li>
-          <li>
-            <a href={`/browse/${video.categorySlug}`}>{video.categoryName}</a>
-          </li>
-          <li>
-            <span aria-current="page">{video.title}</span>
-          </li>
-        </ol>
-      </nav>
+      <div className="tv-crumbs">
+        <Breadcrumbs
+          tone="viewer"
+          items={[
+            { label: 'Browse', href: '/browse' },
+            { label: video.categoryName, href: `/browse/${video.categorySlug}` },
+            { label: video.title },
+          ]}
+        />
+      </div>
       <div className="tv-layout">
         <TitlePoster
           title={video.title}

@@ -2161,3 +2161,71 @@
     transform: none;
   }
 }
+
+/* ---- Breadcrumbs (shared by admin and the viewer title page, R30 and R32) ---- */
+.ad-crumbs ol {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  color: var(--color-muted);
+  font-size: var(--text-caption);
+}
+.ad-crumbs li {
+  display: inline-flex;
+  align-items: center;
+  min-width: 0;
+  min-height: var(--touch-target);
+}
+.ad-crumbs li + li::before {
+  content: '/';
+  flex: none;
+  padding: 0 var(--space-2);
+}
+.ad-crumbs a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: var(--touch-target);
+  min-height: var(--touch-target);
+  line-height: var(--leading-normal, 1.5);
+  color: var(--color-muted);
+}
+.ad-crumbs [aria-current='page'] {
+  display: inline-block;
+  min-width: 0;
+  max-width: 40ch;
+  line-height: var(--touch-target);
+  color: var(--color-ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ad-crumbs--viewer a {
+  color: var(--color-primary);
+  text-decoration: underline;
+}
+/* Phones: only the parent shows, as a back link. The rest stay in the accessibility tree. */
+@media (max-width: 47.99rem) {
+  .ad-crumbs li:not(:nth-last-child(2)):not(:only-child) {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+  .ad-crumbs li:nth-last-child(2)::before {
+    content: '\2039' / '';
+    padding: 0 var(--space-2) 0 0;
+  }
+  .ad-crumbs li:nth-last-child(2) + li::before {
+    content: none;
+  }
+}
+@media (hover: hover) and (pointer: fine) {
+  .ad-crumbs a:hover {
+    color: var(--color-ink);
+  }
+}
