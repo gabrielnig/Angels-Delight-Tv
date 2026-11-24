@@ -9,7 +9,7 @@ export interface NameCipher {
   open(accountId: string, sealed: Uint8Array): Promise<string>;
 }
 
-export type ViewerBucket = 'api' | 'progress' | 'search' | 'profile_pin' | 'kids_exit';
+export type ViewerBucket = 'api' | 'progress' | 'search' | 'profile_pin' | 'kids_exit' | 'engage';
 
 export interface RateLimitDecision {
   allowed: boolean;
@@ -29,6 +29,8 @@ export const VIEWER_RATE_POLICIES: Record<
   search: { capacity: 60, windowSeconds: 60 },
   profile_pin: { capacity: 5, windowSeconds: 900 },
   kids_exit: { capacity: 5, windowSeconds: 900 },
+  /** Rating writes, per account (M44, SECURITY.md section 7). */
+  engage: { capacity: 60, windowSeconds: 60 },
 };
 
 /** Everything the viewer services need besides the actor. Built once at startup, passed to every service call. */

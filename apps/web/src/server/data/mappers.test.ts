@@ -38,6 +38,8 @@ const videoCard = (over: Partial<TitleCardDto> = {}): TitleCardDto => ({
   publishedAt: '2026-05-01T09:00:00.000Z',
   progress: null,
   inMyList: false,
+  rating: null,
+  mostLiked: false,
   ...over,
 });
 
