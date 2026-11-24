@@ -8,7 +8,7 @@ import { clearServiceWorkerCaches } from '../lib/pwa/purge';
 import { requestSignOut } from '../lib/pwa/sign-out';
 import { useSearchShortcut } from './browse/useSearchShortcut';
 import { useT } from '../lib/i18n/provider';
-import { ProfileIdProvider } from '../lib/profile-context';
+import { ProfileIdProvider, ProfileKidsProvider } from '../lib/profile-context';
 import { KidsExitDialog } from './KidsExitDialog';
 import { GuestIntentApplier } from './guest/GuestIntentApplier';
 import { ImportPrompt } from './guest/ImportPrompt';
@@ -100,50 +100,52 @@ export function ViewerChrome({
 
   return (
     <ProfileIdProvider id={profileId}>
-      <QueueSync profileId={profileId} />
-      <GuestIntentApplier />
-      <ImportPrompt profileId={profileId} kids={kids} />
-      <div
-        className="web-shell"
-        data-kids={kids ? 'true' : undefined}
-        data-skin={skin === 'soft' ? 'soft' : undefined}
-      >
-        <TopNav
-          brand={{ name: platformName, href: '/', logoUrl }}
-          links={skin === 'soft' ? softLinks(msg) : links(msg)}
-          currentPath={pathname}
-          profileName={profileName}
-          profileAvatarId={profileAvatarId}
-          menu={menu}
-          overHero={pathname === '/'}
-          kids={kids}
-          skin={skin}
-          trailing={languagePicker}
-          onExitKids={() => setExitOpen(true)}
-          onBack={detail ? () => router.back() : undefined}
-        />
-        <main id="main" className="web-main" tabIndex={-1}>
-          {children}
-        </main>
-        <SiteFooter
-          platformName={platformName}
-          year={year}
-          links={footerLinks}
-          supportEmail={skin === 'soft' ? supportEmail : undefined}
-        />
-        {detail ? null : <BottomTabBar tabs={tabs(msg)} currentPath={pathname} />}
-        {kids ? (
-          <KidsExitDialog
-            open={exitOpen}
-            onClose={() => setExitOpen(false)}
-            onUnlocked={() => {
-              setExitOpen(false);
-              router.push('/profiles');
-              router.refresh();
-            }}
+      <ProfileKidsProvider kids={kids}>
+        <QueueSync profileId={profileId} />
+        <GuestIntentApplier />
+        <ImportPrompt profileId={profileId} kids={kids} />
+        <div
+          className="web-shell"
+          data-kids={kids ? 'true' : undefined}
+          data-skin={skin === 'soft' ? 'soft' : undefined}
+        >
+          <TopNav
+            brand={{ name: platformName, href: '/', logoUrl }}
+            links={skin === 'soft' ? softLinks(msg) : links(msg)}
+            currentPath={pathname}
+            profileName={profileName}
+            profileAvatarId={profileAvatarId}
+            menu={menu}
+            overHero={pathname === '/'}
+            kids={kids}
+            skin={skin}
+            trailing={languagePicker}
+            onExitKids={() => setExitOpen(true)}
+            onBack={detail ? () => router.back() : undefined}
           />
-        ) : null}
-      </div>
+          <main id="main" className="web-main" tabIndex={-1}>
+            {children}
+          </main>
+          <SiteFooter
+            platformName={platformName}
+            year={year}
+            links={footerLinks}
+            supportEmail={skin === 'soft' ? supportEmail : undefined}
+          />
+          {detail ? null : <BottomTabBar tabs={tabs(msg)} currentPath={pathname} />}
+          {kids ? (
+            <KidsExitDialog
+              open={exitOpen}
+              onClose={() => setExitOpen(false)}
+              onUnlocked={() => {
+                setExitOpen(false);
+                router.push('/profiles');
+                router.refresh();
+              }}
+            />
+          ) : null}
+        </div>
+      </ProfileKidsProvider>
     </ProfileIdProvider>
   );
 }

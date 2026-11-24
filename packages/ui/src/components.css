@@ -1435,6 +1435,39 @@
   right: 0;
 }
 
+/* The cluster holds the rating chip and My List side by side, 4px apart. */
+.ad-card__actions {
+  position: absolute;
+  top: 0;
+  right: 0;
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-1);
+}
+.ad-card__actions .ad-card__action {
+  position: static;
+}
+
+/* Controls on imagery (R37): a white inner ring and an ink outer ring read on every thumbnail colour. */
+.ad-card__actions .ad-iconbtn:focus-visible {
+  outline: 3px solid var(--color-ink);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 2px var(--color-player-ink);
+}
+
+/* The rating chip is for a fine pointer only. Touch rates on the title page (M44-S03 AC2). */
+.ad-card__rate {
+  display: none;
+}
+
+.ad-most-liked {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-size: var(--text-caption);
+  font-weight: var(--weight-semibold);
+}
+
 .ad-card__play {
   position: absolute;
   left: var(--space-2);
@@ -1506,6 +1539,13 @@
     opacity: 1;
     transition-delay: var(--hover-card-delay);
   }
+  .ad-card__rate {
+    display: flex;
+    gap: var(--space-1);
+  }
+  .ad-card__rate:not(:hover):not(:focus-within) .ad-card__rate-extra {
+    display: none;
+  }
   .ad-card__peek {
     position: absolute;
     inset: auto 0 0 0;
@@ -1568,6 +1608,21 @@
     .ad-card:hover .ad-card__meta {
       opacity: 0;
       transition-delay: var(--hover-card-delay);
+    }
+    /* Keyboard focus shows the same state at once, with no delay. */
+    .ad-card:has(:focus-visible) .ad-card__thumb {
+      transform: scale(var(--card-scale));
+    }
+    .ad-card:has(:focus-visible) .ad-card__peek {
+      opacity: 1;
+    }
+    .ad-card:has(:focus-visible) .ad-card__title,
+    .ad-card:has(:focus-visible) .ad-card__meta {
+      opacity: 0;
+    }
+    .ad-row__item:focus-within {
+      position: relative;
+      z-index: var(--z-sticky);
     }
     .ad-row__item:hover {
       position: relative;

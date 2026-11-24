@@ -93,6 +93,27 @@ describe('toThumb formats', () => {
   });
 });
 
+describe('cardToItem rating fields (M44)', () => {
+  it('carries the profile rating and the Most liked label for videos and series', () => {
+    expect(cardToItem(videoCard({ rating: 2, mostLiked: true }))).toMatchObject({
+      rating: 2,
+      mostLiked: true,
+    });
+    expect(
+      cardToItem(videoCard({ kind: 'series', episodeCount: 3, rating: null, mostLiked: false })),
+    ).toMatchObject({
+      rating: null,
+      mostLiked: false,
+    });
+  });
+
+  it('leaves the fields out when the card has none', () => {
+    const { rating: _r, mostLiked: _m, ...bare } = videoCard();
+    const item = cardToItem(bare);
+    expect('rating' in item).toBe(false);
+  });
+});
+
 describe('cardToItem', () => {
   it('maps a video card', () => {
     const item = cardToItem(videoCard());

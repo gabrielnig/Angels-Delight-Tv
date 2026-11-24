@@ -10,3 +10,12 @@ export function ProfileIdProvider({ id, children }: { id: string | null; childre
 }
 
 export const useProfileId = () => useContext(ProfileIdContext);
+
+const ProfileKidsContext = createContext(false);
+
+/** Whether the active profile is a kids profile, so client code can leave out controls kids never get (M44-S19). */
+export function ProfileKidsProvider({ kids, children }: { kids: boolean; children: ReactNode }) {
+  return <ProfileKidsContext.Provider value={kids}>{children}</ProfileKidsContext.Provider>;
+}
+
+export const useProfileKids = () => useContext(ProfileKidsContext);

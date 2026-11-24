@@ -74,6 +74,10 @@ export interface VideoSummary {
   /** ISO date. */
   publishedAt: string;
   series?: { slug: string; title: string; season: number; episode: number };
+  /** This profile's rating (-1 Not for me, 1 Like, 2 Love), null when unrated, absent when the source has none (M44). */
+  rating?: -1 | 1 | 2 | null;
+  /** The computed Most liked label (M44-S05). */
+  mostLiked?: boolean;
 }
 
 export interface SeriesSummary {
@@ -92,6 +96,8 @@ export interface SeriesSummary {
   ageLabel?: string;
   hasCaptions: boolean;
   publishedAt: string;
+  rating?: -1 | 1 | 2 | null;
+  mostLiked?: boolean;
 }
 
 export type CatalogItem = VideoSummary | SeriesSummary;

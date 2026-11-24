@@ -5,7 +5,7 @@ import { Badge } from './Badge';
 import { IconButton } from './Button';
 import { cx } from './cx';
 import { formatClock, spokenLength } from './format';
-import { Icon } from './Icon';
+import { Icon, type IconName } from './Icon';
 import { Link } from './Link';
 import { ProgressBar } from './ProgressBar';
 import { safePlaceholderBlur, safePlaceholderColor } from './placeholder-safe';
@@ -115,6 +115,127 @@ function Thumb({
   );
 }
 
+export type CardRatingValue = -1 | 1 | 2;
+
+export interface CardRating {
+  /** This profile's rating of the title, or null when never rated. */
+  value: CardRatingValue | null;
+  /** Sets a level, or null to clear it. The caller keeps the optimistic state. */
+  onChange: (value: CardRatingValue | null) => void;
+  /** Spoken and tooltip text. Defaults are English, pass the catalog text for other languages. */
+  labels?: { group: string; notForMe: string; like: string; love: string; yourRating?: string };
+}
+
+const DEFAULT_RATING_LABELS = {
+  group: 'Rate',
+  notForMe: 'Not for me',
+  like: 'I like this',
+  love: 'Love this',
+  yourRating: 'Your rating',
+};
+
+const RATING_LEVELS: ReadonlyArray<{
+  value: CardRatingValue;
+  icon: IconName;
+  key: 'notForMe' | 'like' | 'love';
+}> = [
+  { value: -1, icon: 'thumbDown', key: 'notForMe' },
+  { value: 1, icon: 'thumbUp', key: 'like' },
+  { value: 2, icon: 'heart', key: 'love' },
+];
+
+/**
+ * The rating chip of the card actions (M44-S03). One button at rest (the current level, or Like), all three on
+ * hover or focus. The chip is first in the DOM so Tab meets it first, and `order` keeps the visual order. Shown
+ * for a fine pointer only, touch rates on the title page.
+ */
+function CardRatingChip({ title, rating }: { title: string; rating: CardRating }) {
+  const labels = { ...DEFAULT_RATING_LABELS, ...rating.labels };
+  const chipValue = rating.value ?? 1;
+  const levels = [
+    ...RATING_LEVELS.filter((level) => level.value === chipValue),
+    ...RATING_LEVELS.filter((level) => level.value !== chipValue),
+  ];
+  return (
+    <div
+      role="group"
+      aria-label={`${labels.group} ${title}`}
+      className="ad-card__rate ad-card__action"
+    >
+      {levels.map((level) => {
+        const pressed = rating.value === level.value;
+        const chip = level.value === chipValue;
+        return (
+          <IconButton
+            key={level.value}
+            className={cx('ad-card__rate-btn', chip ? undefined : 'ad-card__rate-extra')}
+            variant="on-dark"
+            icon={level.icon}
+            iconSize={20}
+            label={labels[level.key]}
+            pressed={pressed}
+            data-chip={chip ? 'true' : undefined}
+            style={{ order: RATING_LEVELS.findIndex((item) => item.value === level.value) }}
+            onClick={() => rating.onChange(pressed ? null : level.value)}
+          />
+        );
+      })}
+    </div>
+  );
+}
+
+/** The Most liked mark, a thumb and text. Never a count (M44-S05). */
+export function MostLikedLabel({
+  label = 'Most liked',
+  className,
+}: {
+  label?: string;
+  className?: string;
+}) {
+  return (
+    <span className={cx('ad-most-liked', className)}>
+      <Icon name="thumbUp" size={14} filled />
+      {label}
+    </span>
+  );
+}
+
+function spokenRating(rating: CardRating | undefined): string {
+  if (!rating || rating.value === null) return '';
+  const labels = { ...DEFAULT_RATING_LABELS, ...rating.labels };
+  const level = RATING_LEVELS.find((item) => item.value === rating.value);
+  return level ? `, ${labels.yourRating}: ${labels[level.key]}` : '';
+}
+
+function CardActions({
+  title,
+  inList,
+  onToggleList,
+  rating,
+}: {
+  title: string;
+  inList?: boolean;
+  onToggleList?: () => void;
+  rating?: CardRating;
+}) {
+  if (!onToggleList && !rating) return null;
+  return (
+    <div className="ad-card__actions">
+      {rating ? <CardRatingChip title={title} rating={rating} /> : null}
+      {onToggleList ? (
+        <IconButton
+          className="ad-card__action"
+          variant="on-dark"
+          icon={inList ? 'check' : 'plus'}
+          label={inList ? `Remove ${title} from My List` : `Add ${title} to My List`}
+          pressed={Boolean(inList)}
+          onClick={onToggleList}
+        />
+      ) : null}
+    </div>
+  );
+}
+
 export interface VideoCardProps {
   title: string;
   href: string;
@@ -131,6 +252,10 @@ export interface VideoCardProps {
   /** When defined the My List button shows. */
   inList?: boolean;
   onToggleList?: () => void;
+  /** Rating chip in the actions cluster, for profiles that can rate (M44-S03). */
+  rating?: CardRating;
+  /** The computed Most liked label, shown in the peek and spoken (M44-S05). */
+  mostLiked?: boolean;
   className?: string;
 }
 
@@ -146,6 +271,8 @@ export function VideoCard({
   hasCaptions,
   inList,
   onToggleList,
+  rating,
+  mostLiked,
   className,
 }: VideoCardProps) {
   return (
@@ -161,6 +288,7 @@ export function VideoCard({
             <span className="ad-card__peek-facts">
               <span className="ad-card__peek-length">{formatClock(durationSeconds)}</span>
               {subject ? <span className="ad-card__peek-subject">{subject}</span> : null}
+              {mostLiked ? <MostLikedLabel /> : null}
             </span>
             {description ? <span className="ad-card__peek-text">{description}</span> : null}
             <span className="ad-card__peek-play">
@@ -172,6 +300,8 @@ export function VideoCard({
         <span className="ad-sr-only">
           , {spokenLength(durationSeconds)}
           {hasCaptions ? ', captions available' : ''}
+          {mostLiked ? ', Most liked' : ''}
+          {spokenRating(rating)}
         </span>
         {meta ? (
           <span className="ad-card__meta" aria-hidden="true">
@@ -179,16 +309,7 @@ export function VideoCard({
           </span>
         ) : null}
       </Link>
-      {onToggleList ? (
-        <IconButton
-          className="ad-card__action"
-          variant="on-dark"
-          icon={inList ? 'check' : 'plus'}
-          label={inList ? `Remove ${title} from My List` : `Add ${title} to My List`}
-          pressed={Boolean(inList)}
-          onClick={onToggleList}
-        />
-      ) : null}
+      <CardActions title={title} inList={inList} onToggleList={onToggleList} rating={rating} />
     </article>
   );
 }
@@ -265,6 +386,8 @@ export function SeriesCard({
   priority,
   inList,
   onToggleList,
+  rating,
+  mostLiked,
   className,
 }: {
   title: string;
@@ -277,6 +400,8 @@ export function SeriesCard({
   priority?: boolean;
   inList?: boolean;
   onToggleList?: () => void;
+  rating?: CardRating;
+  mostLiked?: boolean;
   className?: string;
 }) {
   const episodesText = `${episodeCount} episode${episodeCount === 1 ? '' : 's'}`;
@@ -298,18 +423,11 @@ export function SeriesCard({
         <span className="ad-sr-only">
           , {countText}
           {hasCaptions ? ', captions available' : ''}
+          {mostLiked ? ', Most liked' : ''}
+          {spokenRating(rating)}
         </span>
       </Link>
-      {onToggleList ? (
-        <IconButton
-          className="ad-card__action"
-          variant="on-dark"
-          icon={inList ? 'check' : 'plus'}
-          label={inList ? `Remove ${title} from My List` : `Add ${title} to My List`}
-          pressed={Boolean(inList)}
-          onClick={onToggleList}
-        />
-      ) : null}
+      <CardActions title={title} inList={inList} onToggleList={onToggleList} rating={rating} />
     </article>
   );
 }

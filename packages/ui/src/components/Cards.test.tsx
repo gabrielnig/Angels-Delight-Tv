@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import { ContinueCard, SeriesCard, VideoCard } from './Cards';
@@ -294,5 +294,95 @@ describe('card artwork placeholder and fade in (M36-S02, M08-S27)', () => {
     fireEvent.error(container.querySelector('img')!);
     expect(container.querySelector('img')).toBeNull();
     expect(container.querySelector('.ad-card__fallback')).not.toBeNull();
+  });
+});
+
+describe('card rating cluster and Most liked (M44-S03, S05)', () => {
+  const labels = { group: 'Rate', notForMe: 'Not for me', like: 'I like this', love: 'Love this' };
+
+  it('has no rating group without a handler', () => {
+    render(<VideoCard {...base} />);
+    expect(screen.queryByRole('group')).toBeNull();
+  });
+
+  it('names the group after the title and keeps every level a named toggle button', () => {
+    render(<VideoCard {...base} rating={{ value: 2, onChange: () => {}, labels }} />);
+    const group = screen.getByRole('group', { name: `Rate ${base.title}` });
+    const buttons = within(group).getAllByRole('button');
+    expect(buttons.map((b) => b.getAttribute('aria-label'))).toEqual([
+      'Love this',
+      'Not for me',
+      'I like this',
+    ]);
+    expect(within(group).getByRole('button', { name: 'Love this' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+    expect(within(group).getByRole('button', { name: 'I like this' })).toHaveAttribute(
+      'aria-pressed',
+      'false',
+    );
+  });
+
+  it('puts the chip first in tab order: the current level, or Like when unrated', () => {
+    render(<VideoCard {...base} rating={{ value: null, onChange: () => {}, labels }} />);
+    const first = within(screen.getByRole('group')).getAllByRole('button')[0]!;
+    expect(first).toHaveAttribute('aria-label', 'I like this');
+    expect(first).toHaveAttribute('data-chip', 'true');
+  });
+
+  it('sets a level, and clears it when the pressed level is chosen again', async () => {
+    const onChange = vi.fn();
+    const user = userEvent.setup();
+    const { rerender } = render(<VideoCard {...base} rating={{ value: null, onChange, labels }} />);
+    await user.click(screen.getByRole('button', { name: 'Love this' }));
+    expect(onChange).toHaveBeenLastCalledWith(2);
+    rerender(<VideoCard {...base} rating={{ value: 2, onChange, labels }} />);
+    await user.click(screen.getByRole('button', { name: 'Love this' }));
+    expect(onChange).toHaveBeenLastCalledWith(null);
+  });
+
+  it('keeps My List a sibling of the group in the same cluster', () => {
+    render(
+      <VideoCard
+        {...base}
+        inList={false}
+        onToggleList={() => {}}
+        rating={{ value: null, onChange: () => {}, labels }}
+      />,
+    );
+    const cluster = screen.getByRole('group').closest('.ad-card__actions')!;
+    expect(within(cluster as HTMLElement).getByRole('button', { name: /to My List/ })).toBeTruthy();
+  });
+
+  it('puts the rating cluster on a series card too', () => {
+    render(
+      <SeriesCard
+        title="Money 101"
+        href="/series/m"
+        episodeCount={4}
+        rating={{ value: 1, onChange: () => {}, labels }}
+      />,
+    );
+    expect(screen.getByRole('button', { name: 'I like this' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+  });
+
+  it('says Most liked and the profile rating to screen readers, never a count', () => {
+    render(<VideoCard {...base} mostLiked rating={{ value: 2, onChange: () => {}, labels }} />);
+    const link = screen.getByRole('link');
+    expect(link).toHaveAccessibleName(/Most liked/);
+    expect(link).toHaveAccessibleName(/Your rating: Love this/);
+    expect(link.textContent).not.toMatch(/\d+ (ratings|likes)/);
+    const peek = screen.getByTestId('card-peek');
+    expect(peek).toHaveAttribute('aria-hidden', 'true');
+    expect(within(peek).getByText('Most liked')).toBeInTheDocument();
+  });
+
+  it('shows no Most liked text when the title is not labelled', () => {
+    render(<VideoCard {...base} />);
+    expect(screen.queryByText(/Most liked/)).toBeNull();
   });
 });
