@@ -2665,3 +2665,24 @@
 :lang(pcm) :is(.ad-card__title, .ad-hero__title) {
   padding-block: 0.1em;
 }
+
+/* Rating control (L5, M44-S01): three toggle buttons, text shown from 960px, spoken name always. */
+.ad-rating__group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+.ad-rating__note {
+  margin: var(--space-2) 0 0;
+  font-size: var(--text-small);
+}
+@media (max-width: 959px) {
+  .ad-rating__label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+}
