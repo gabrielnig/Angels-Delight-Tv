@@ -79,4 +79,25 @@ describe('previewMetadata (open graph for shared links)', () => {
     expect(previewMetadata(base).robots).toBeUndefined();
     expect(previewMetadata({ ...base, indexable: true }).robots).toBeUndefined();
   });
+
+  it('prefers the generated share image at 1200 by 630 and uses the large twitter card', () => {
+    const m = previewMetadata({
+      ...base,
+      thumbnail: undefined,
+      shareImagePath: '/og/title/rivers?v=abc',
+    });
+    expect(m.openGraph).toMatchObject({
+      images: [
+        { url: '/og/title/rivers?v=abc', width: 1200, height: 630, alt: 'Rivers of Nigeria' },
+      ],
+    });
+    expect(m.twitter).toMatchObject({
+      card: 'summary_large_image',
+      images: ['/og/title/rivers?v=abc'],
+    });
+  });
+
+  it('declares the og locale', () => {
+    expect(previewMetadata(base).openGraph).toMatchObject({ locale: 'en_NG' });
+  });
 });

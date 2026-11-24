@@ -7,7 +7,8 @@ Plan: `docs/plan/v2/L6-discovery.md`. Rulings: `docs/plan/v2/RULINGS.md`. Review
 | # | Slice | State | PR |
 |---|---|---|---|
 | 1 | Sitemap and robots line | merged | #283 |
-| 2 | Structured data (JSON-LD), kids only noindex | in review | |
+| 2 | Structured data (JSON-LD), kids only noindex | merged | #292 |
+| 3 | Share images and metadata | in review | |
 
 ## Slice 1 (sitemap)
 
@@ -25,3 +26,9 @@ Plan: `docs/plan/v2/L6-discovery.md`. Rulings: `docs/plan/v2/RULINGS.md`. Review
 - `apps/web/src/server/seo/page-seo.ts`: `siteOrigin()` (APP_ORIGIN), `titleIndexable(kind, slug)` over `isKidsOnlyTitle` in `@ad/catalog`.
 - `previewMetadata` takes `indexable`; false gives `robots: { index: false, follow: false }`. Missing titles get the same.
 - Decision D-278. Tests: `pnpm vitest run apps/web/src/lib/seo apps/web/src/components/seo apps/web/src/app/page.test.tsx "apps/web/src/app/(viewer)/title/[slug]/page.test.tsx" "apps/web/src/app/(viewer)/series/[slug]/page.test.tsx"` and `packages/catalog/src/sitemap.int.test.ts` (DB).
+
+## Slice 3 (share images)
+
+- `apps/web/src/lib/seo/og-image.ts`: geometry, `SCRIM_STOPS`, `scrimAlphaAt`, `scrimCss`, `TITLE_ZONE`, `truncateTitle`, `pickPosterUrl`, `chooseOgImage`.
+- `apps/web/src/server/seo/og-render.tsx` (`renderOgJpeg`, ImageResponse then sharp jpeg under 300 KB), `og-handler.ts` (`createOgHandler`), `og-data.tsx` wiring, route `app/og/[kind]/[slug]/route.ts` (D-280). The default image is `/brand-icons/placeholder-og.png` until the admin Discovery slice wires `seo.defaultSocialAssetId` into `defaultImageUrl`.
+- Message key `og.freeToWatch`. Tests: `pnpm vitest run apps/web/src/lib/seo apps/web/src/server/seo`.

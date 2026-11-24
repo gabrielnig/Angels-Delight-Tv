@@ -41,6 +41,7 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
     thumbnail: item.thumbnail,
     durationSeconds: item.durationSeconds,
     indexable,
+    shareImagePath: `/og/title/${encodeURIComponent(item.slug)}?v=${encodeURIComponent(item.publishedAt ?? '')}`,
   });
 }
 
