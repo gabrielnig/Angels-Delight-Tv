@@ -32,6 +32,19 @@ describe('resolveSeoSettings (M45-S05)', () => {
     ).toBe('https://cdn.test/o.jpg');
   });
 
+  it('carries the storage notice switch, text and version (M45-S11)', () => {
+    const s = resolveSeoSettings({
+      ...base(),
+      'consent.notice_enabled': false,
+      'consent.notice_text': 'We keep a few files.',
+      'consent.notice_version': 3,
+    });
+    expect(s.noticeEnabled).toBe(false);
+    expect(s.noticeText).toBe('We keep a few files.');
+    expect(s.noticeVersion).toBe(3);
+    expect(resolveSeoSettings(base()).noticeEnabled).toBe(true);
+  });
+
   it('carries indexing, channels and the template', () => {
     const s = resolveSeoSettings({ ...base(), 'seo.indexing': false });
     expect(s.indexing).toBe(false);

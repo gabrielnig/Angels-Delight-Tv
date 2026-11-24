@@ -12,6 +12,9 @@ export interface SeoSettings {
   shareChannels: ShareChannel[];
   indexing: boolean;
   platformName: string;
+  noticeEnabled: boolean;
+  noticeText: string;
+  noticeVersion: number;
 }
 
 /** Description: the Discovery tab text, then the tagline, then a neutral line. Image: the setting, then the placeholder. */
@@ -26,6 +29,9 @@ export function resolveSeoSettings(values: ResolvedSettings): SeoSettings {
     shareChannels: [...values['seo.share_channels']],
     indexing: values['seo.indexing'],
     platformName: values['platform.name'],
+    noticeEnabled: values['consent.notice_enabled'],
+    noticeText: values['consent.notice_text'],
+    noticeVersion: values['consent.notice_version'],
   };
 }
 

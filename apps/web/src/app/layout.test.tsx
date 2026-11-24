@@ -7,12 +7,28 @@ const seo = vi.hoisted(() => ({
     description: 'Free learning videos for everyone.',
     socialImageUrl: '/brand-icons/placeholder-og.png',
     indexing: true,
+    noticeEnabled: true,
+    noticeText: 'We keep a few small files on your device.',
+    noticeVersion: 2,
   },
 }));
 vi.mock('../server/seo/seo-settings', () => ({ getSeoSettings: async () => seo.value }));
 vi.mock('../lib/theme/root', () => ({ getRootTheme: (nonce?: string) => getRootTheme(nonce) }));
 vi.mock('next/headers', () => ({
   headers: async () => new Headers({ 'x-nonce': 'abc123' }),
+  cookies: async () => ({ get: () => undefined }),
+}));
+// The language lookup reads the theme runtime and the session, which need a database. The layout test pins markup.
+vi.mock('../lib/i18n/server', () => ({
+  getLocale: async () => 'en',
+  loadCatalog: async () => ({ nav: {} }),
+}));
+vi.mock('../components/consent/StorageNotice', () => ({
+  StorageNotice: (props: { enabled: boolean; text: string; version: number }) => (
+    <i data-testid="notice" data-enabled={String(props.enabled)} data-version={props.version}>
+      {props.text}
+    </i>
+  ),
 }));
 vi.mock('../lib/fonts', () => ({
   selectFonts: (key: string) => ({ classNames: `font-${key}`, variables: {} }),
@@ -52,6 +68,9 @@ describe('root layout', () => {
       description: 'Free learning videos for everyone.',
       socialImageUrl: '/brand-icons/placeholder-og.png',
       indexing: true,
+      noticeEnabled: true,
+      noticeText: 'We keep a few small files on your device.',
+      noticeVersion: 2,
     };
   });
 
@@ -67,6 +86,13 @@ describe('root layout', () => {
     expect(html).toContain('data-testid="vitals"');
   });
 
+  it('mounts the storage notice once with the configured text and version (M45-S11)', async () => {
+    const html = renderToStaticMarkup(await RootLayout({ children: <main>Page</main> }));
+    expect(html.match(/data-testid="notice"/g)).toHaveLength(1);
+    expect(html).toContain('We keep a few small files on your device.');
+    expect(html).toContain('data-version="2"');
+  });
+
   it('takes the viewport colour and the site name from the theme runtime', async () => {
     expect((await generateViewport()).themeColor).toBe('#123456');
     const metadata = await generateMetadata();
@@ -80,6 +106,9 @@ describe('root layout', () => {
       description: 'Lessons for every family',
       socialImageUrl: 'https://cdn.test/og.jpg',
       indexing: true,
+      noticeEnabled: true,
+      noticeText: '',
+      noticeVersion: 1,
     };
     const metadata = await generateMetadata();
     expect(metadata.description).toBe('Lessons for every family');

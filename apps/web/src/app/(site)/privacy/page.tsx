@@ -1,5 +1,6 @@
 import { notFound } from 'next/navigation';
 import { AppShell } from '../../../components/Shell';
+import { StorageList } from '../../../components/consent/StorageList';
 import { SiteTabs } from '../../../components/site/SiteTabs';
 import { LegalView } from '../../../components/site/LegalView';
 import { getSite } from '../../../lib/data';
@@ -17,6 +18,7 @@ export default async function Page() {
       <div className="acct-site">
         <SiteTabs current="privacy" />
         <LegalView page={page} />
+        <StorageList />
       </div>
     </AppShell>
   );
