@@ -36,7 +36,7 @@ describe('numeric columns share one class in header and cells', () => {
   const cases: Array<[string, string, string]> = [
     ['CaptionTable.tsx', 'Cues', 'adm-num'],
     ['TrashList.tsx', 'Days left', 'adm-num'],
-    ['UsersTable.tsx', 'Profiles', 'adm-num'],
+    ['UsersTableClient.tsx', 'Profiles', 'adm-num'],
     ['ExportsView.tsx', 'Rows', 'adm-num'],
     ['ExportsView.tsx', 'Size', 'adm-num'],
     ['site/InviteCodesTab.tsx', 'Uses', 'adm-num'],
