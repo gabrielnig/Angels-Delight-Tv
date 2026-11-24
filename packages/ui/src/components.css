@@ -1512,10 +1512,54 @@
 /* ---------- Row ---------- */
 
 .ad-row {
-  --row-card-width: calc(
-    (100% - (var(--cards-visible) - 1) * var(--card-gap)) / var(--cards-visible)
-  );
+  container-type: inline-size;
+  container-name: row;
   min-width: 0;
+}
+
+/*
+  Column count follows the row container, not the viewport (R11). A container
+  cannot restyle itself, so the values sit on the viewport and skeleton row.
+  Browsers without container queries keep the :root values from tokens.css.
+*/
+@container row (min-width: 0px) {
+  .ad-row__viewport,
+  .ad-skelrow {
+    --cards-visible: 2.3;
+    --card-gap: var(--space-2);
+    --row-card-width: calc(
+      (100cqw - 2 * var(--page-gutter) - (var(--cards-visible) - 1) * var(--card-gap)) /
+        var(--cards-visible)
+    );
+    --row-arrow-top: calc(
+      var(--space-1) + var(--row-card-width) * 9 / 32 - var(--touch-target) / 2
+    );
+  }
+}
+@container row (min-width: 600px) {
+  .ad-row__viewport,
+  .ad-skelrow {
+    --cards-visible: 3.3;
+  }
+}
+@container row (min-width: 960px) {
+  .ad-row__viewport,
+  .ad-skelrow {
+    --cards-visible: 4.3;
+    --card-gap: var(--space-3);
+  }
+}
+@container row (min-width: 1280px) {
+  .ad-row__viewport,
+  .ad-skelrow {
+    --cards-visible: 5.3;
+  }
+}
+@container row (min-width: 1920px) {
+  .ad-row__viewport,
+  .ad-skelrow {
+    --cards-visible: 6.3;
+  }
 }
 
 .ad-row__head {
@@ -1571,9 +1615,9 @@
 
 .ad-row__item {
   flex: 0 0
-    calc(
-      (100% - 2 * var(--page-gutter) - (var(--cards-visible) - 1) * var(--card-gap)) /
-        var(--cards-visible)
+    var(
+      --row-card-width,
+      calc((100% - (var(--cards-visible) - 1) * var(--card-gap)) / var(--cards-visible))
     );
   min-width: 0;
   scroll-snap-align: start;
@@ -1581,7 +1625,7 @@
 
 .ad-row__arrow {
   position: absolute;
-  top: 25%;
+  top: var(--row-arrow-top, 25%);
   z-index: var(--z-sticky);
   display: none;
 }

@@ -8,7 +8,8 @@ Scoped tests: `pnpm vitest run <file>`. CSS scanner helper: `packages/ui/test/cs
 - S02 guards and fixes: hover guard (stray hovers wrapped in player, watch, pwa, globals), focus ring guard (tile and card forced colours, tile outline offset), seek bar 44px. Tests: `packages/ui/test/hover-guard.test.ts`, `focus-ring.test.ts`, `touch-targets.test.ts`.
 - S03 tokens: columns, gutter clamp, mobile first type, hero clamp, button, motion, scrim and fixed tokens, 1920 block, prose max (PR 249). Tests: packages/ui/src/design-tokens.test.ts
 - S04 buttons: size tokens with a 44px before hit area, coarse pointer minimum, hover and press tokens (PR 251). Test: packages/ui/test/button-css.test.ts
-- S05 reduced motion: Row paging uses auto scroll under reduce, reduced motion guard (PR pending). Tests: packages/ui/test/reduced-motion.test.ts, Row.test.tsx
+- S05 reduced motion: Row paging uses auto scroll under reduce, reduced motion guard (PR 252). Tests: packages/ui/test/reduced-motion.test.ts, Row.test.tsx
+- S06 rows: row is a named size container, columns 2.3 to 6.3 follow the container, arrows centred from the card width, paging by whole cards (PR pending). Tests: packages/ui/test/row-css.test.ts, Row.test.tsx
 
 ## Remaining
-S06 rows, S07 hover card, S08 nav, S10 hero, S11 skeleton, S12 fonts, S13 copy, S14 tab bar, S15 wiring. Owner follow up: mirror packages/ui/src/tokens.css into .claude/skills/angels-delight-design-system/reference/tokens.css (shell may not write inside .claude/), then re-enable the skipped mirror check in packages/ui/src/theme.test.ts. Seek rail and buffer follow L4 on main (#6A6E78 and #9CA0AA), not the plan note values.
+S07 hover card, S08 nav, S10 hero, S11 skeleton, S12 fonts, S13 copy, S14 tab bar, S15 wiring. Owner follow up: mirror packages/ui/src/tokens.css into .claude/skills/angels-delight-design-system/reference/tokens.css (shell may not write inside .claude/), then re-enable the skipped mirror check in packages/ui/src/theme.test.ts. Seek rail and buffer follow L4 on main (#6A6E78 and #9CA0AA), not the plan note values.

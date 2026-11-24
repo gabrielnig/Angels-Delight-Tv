@@ -57,7 +57,13 @@ export function Row({
     const list = listRef.current;
     if (!list) return;
     const card = (list.firstElementChild as HTMLElement | null)?.offsetWidth ?? 0;
-    const distance = Math.max(card, list.clientWidth - card);
+    const style = window.getComputedStyle(list);
+    const visible = parseFloat(style.getPropertyValue('--cards-visible'));
+    const gap = parseFloat(style.columnGap) || 0;
+    // A whole number of cards, so a card edge lands on the gutter (R11 rule 3).
+    const distance = Number.isFinite(visible)
+      ? Math.max(1, Math.floor(visible) - 1) * (card + gap)
+      : Math.max(card, list.clientWidth - card);
     const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     list.scrollBy({ left: direction * distance, behavior: reduce ? 'auto' : 'smooth' });
   }
