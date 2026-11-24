@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>S25 End screen mobile</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+<style>
+
+body{margin:0;background:#F5F5F2;font-family:'Inter',system-ui,sans-serif;color:#1A1C22}
+a{color:inherit;text-decoration:none}
+*{box-sizing:border-box}
+h1,h2,h3{font-family:'Space Grotesk',sans-serif;margin:0;color:#12263A}
+p{margin:0}
+button{font-family:inherit}
+:focus-visible{outline:3px solid #1F6FB5;outline-offset:2px}
+.dk :focus-visible,.dk:focus-visible{outline-color:#FFC93C}
+.btn{min-height:44px;padding:0 20px;border-radius:8px;border:2px solid transparent;font-size:16px;font-weight:600;display:inline-flex;align-items:center;justify-content:center;gap:8px;cursor:pointer;white-space:nowrap}
+.bp{background:#1F6FB5;color:#fff}
+.bs{background:#fff;color:#1A1C22;border-color:#8A8D94}
+.bg{background:transparent;color:#1F6FB5}
+.by{background:#FFC93C;color:#1A1C22}
+.bd{background:rgba(255,255,255,.16);color:#fff}
+.bdo{background:transparent;color:#fff;border-color:#B4B8C2}
+.pill{min-height:44px;padding:0 18px;border-radius:22px;border:1px solid #8A8D94;background:#fff;color:#1A1C22;font-size:15px;display:inline-flex;align-items:center;cursor:pointer}
+.pill.on{background:#1F6FB5;border-color:#1F6FB5;color:#fff;font-weight:600}
+.chip{display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 10px;border-radius:14px;background:#ECEAE3;color:#1A1C22;font-size:13px;font-weight:500}
+.cc{display:inline-flex;align-items:center;height:24px;padding:0 8px;border:1.5px solid #5B606B;border-radius:4px;font-size:12px;font-weight:700;color:#1A1C22}
+.lab{background:#12263A;color:#fff;font-family:'Space Grotesk',sans-serif;font-size:14px;letter-spacing:.04em;text-transform:uppercase;padding:10px 48px}
+.lab.m{padding:10px 16px;font-size:12px}
+.sk{background:#ECEAE3;border-radius:6px}
+.ico{display:inline-block;vertical-align:middle;flex:none}
+.card{background:#fff;border:1px solid #DEDDD6;border-radius:12px}
+.ib{width:44px;height:44px;border:0;border-radius:8px;background:transparent;color:#fff;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;flex:none}
+.sheetrow{min-height:44px;display:flex;align-items:center;justify-content:space-between;padding:0 16px;font-size:16px}
+.kbd{display:inline-flex;align-items:center;justify-content:center;min-width:32px;height:32px;padding:0 8px;border:1.5px solid #8A8D94;border-bottom-width:3px;border-radius:6px;background:#fff;font-size:14px;font-weight:600;color:#1A1C22}
+
+</style>
+</helmet>
+<div style="width:390px;background:#F5F5F2;display:flex;flex-direction:column;position:relative">
+<div class="lab m">25 End screen mobile</div><div class="nt" style="padding:10px 16px 12px;background:#fff;border-bottom:1px solid #DEDDD6;font-size:13px;line-height:1.45;color:#5B606B"><b style="color:#1A1C22">Note.</b> Updated in the L4 review: 5 second countdown, autoplay default per R15. S117 holds the full mobile set.</div><div class="lab m">Autoplay on: countdown</div><div class="dk" style="position:relative;width:100%;height:240px;background:#0E0F13;border-radius:0px;overflow:hidden;color:#fff"><div style="position:absolute;inset:0;background:linear-gradient(135deg,#8FD3FF,#CFEBFF);opacity:.9"><svg viewBox="0 0 160 90" preserveAspectRatio="xMidYMid slice" style="position:absolute;inset:0;width:100%;height:100%"><circle cx="118" cy="26" r="13" fill="#FFFFFF" opacity=".7"/><path d="M40 56a14 14 0 0 1 4-27 18 18 0 0 1 34 4 12 12 0 0 1 2 23z" fill="#fff"/><path d="M50 66l-3 9M62 66l-3 9M74 66l-3 9" stroke="#1F6FB5" stroke-width="3" stroke-linecap="round"/></svg></div><div style="position:absolute;inset:0;background:rgba(14,15,19,.85);padding:14px 16px;display:flex;flex-direction:column;gap:10px;justify-content:center" role="dialog" aria-label="Up next">
+<div style="font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:#B4B8C2;font-weight:600">Up next</div>
+<div style="display:flex;gap:12px;align-items:center"><div style="width:100px;flex:none"><div style="position:relative;width:100px;border-radius:8px;overflow:hidden;background:linear-gradient(135deg,#FFD66B,#FFEDB8);flex:none;aspect-ratio:16/9;"><svg viewBox="0 0 160 90" preserveAspectRatio="xMidYMid slice" style="position:absolute;inset:0;width:100%;height:100%" aria-hidden="true"><circle cx="80" cy="45" r="22" fill="#fff" opacity=".85"/><path d="M80 10v10M80 70v10M45 45h10M105 45h10M55 20l7 7M98 63l7 7M105 20l-7 7M62 63l-7 7" stroke="#fff" stroke-width="4" stroke-linecap="round"/></svg></div></div><div style="flex:1;min-width:0;font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:16px;line-height:1.2">Why the Sky Is Blue</div><div style="position:relative;width:52px;height:52px;flex:none"><svg width="52" height="52" viewBox="0 0 52 52" style="transform:rotate(-90deg)" aria-hidden="true"><circle cx="26.0" cy="26.0" r="24.0" fill="none" stroke="#3A3D46" stroke-width="4"/><circle cx="26.0" cy="26.0" r="24.0" fill="none" stroke="#FFC93C" stroke-width="4" stroke-linecap="round" stroke-dasharray="150.8 150.8"/></svg><div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:20px;color:#fff">5</div></div></div>
+<div style="display:flex;gap:8px"><a href="Watch_OffWhite.dc.html" class="btn by" style="flex:1">Play now</a><button class="btn bdo" style="flex:1">Cancel</button></div></div></div><div style="height:12px"></div><div class="lab m">Autoplay off</div><div class="dk" style="position:relative;width:100%;height:240px;background:#0E0F13;border-radius:0px;overflow:hidden;color:#fff"><div style="position:absolute;inset:0;background:linear-gradient(135deg,#8FD3FF,#CFEBFF);opacity:.9"><svg viewBox="0 0 160 90" preserveAspectRatio="xMidYMid slice" style="position:absolute;inset:0;width:100%;height:100%"><circle cx="118" cy="26" r="13" fill="#FFFFFF" opacity=".7"/><path d="M40 56a14 14 0 0 1 4-27 18 18 0 0 1 34 4 12 12 0 0 1 2 23z" fill="#fff"/><path d="M50 66l-3 9M62 66l-3 9M74 66l-3 9" stroke="#1F6FB5" stroke-width="3" stroke-linecap="round"/></svg></div><div style="position:absolute;inset:0;background:rgba(14,15,19,.88);padding:14px 16px;display:flex;flex-direction:column;gap:10px;justify-content:center"><div style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:17px">Next: Why the Sky Is Blue</div>
+<div style="display:flex;gap:8px"><a href="Watch_OffWhite.dc.html" class="btn by" style="flex:1"><svg class="ico" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" ><path d="M7 4v16l13-8z" fill="currentColor" stroke="none"/></svg> Play next</a><button class="btn bdo" style="flex:1"><svg class="ico" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" ><path d="M4 12a8 8 0 1 0 3-6.2M4 4v5h5"/></svg> Replay</button></div><button class="btn bdo" style="width:100%"><svg class="ico" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" ><path d="M12 5v14M5 12h14"/></svg> Add to My List</button></div></div><div style="height:12px"></div><div class="lab m">Last episode</div><div class="dk" style="position:relative;width:100%;height:240px;background:#0E0F13;border-radius:0px;overflow:hidden;color:#fff"><div style="position:absolute;inset:0;background:linear-gradient(135deg,#8FD3FF,#CFEBFF);opacity:.9"><svg viewBox="0 0 160 90" preserveAspectRatio="xMidYMid slice" style="position:absolute;inset:0;width:100%;height:100%"><circle cx="118" cy="26" r="13" fill="#FFFFFF" opacity=".7"/><path d="M40 56a14 14 0 0 1 4-27 18 18 0 0 1 34 4 12 12 0 0 1 2 23z" fill="#fff"/><path d="M50 66l-3 9M62 66l-3 9M74 66l-3 9" stroke="#1F6FB5" stroke-width="3" stroke-linecap="round"/></svg></div><div style="position:absolute;inset:0;background:rgba(14,15,19,.88);padding:14px 16px;display:flex;flex-direction:column;gap:10px;justify-content:center"><div style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:18px;line-height:1.2">You finished Everyday Science</div><div style="font-size:13px;color:#D5D8E0">Season 2 starts next.</div>
+<div style="display:flex;gap:8px"><a href="S19_series_m.dc.html" class="btn by" style="flex:1">Season 2</a><button class="btn bdo" style="flex:1"><svg class="ico" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" ><path d="M4 12a8 8 0 1 0 3-6.2M4 4v5h5"/></svg> Replay</button></div></div></div><div style="height:12px"></div><div class="lab m">Standalone or no next title</div><div class="dk" style="position:relative;width:100%;height:240px;background:#0E0F13;border-radius:0px;overflow:hidden;color:#fff"><div style="position:absolute;inset:0;background:linear-gradient(135deg,#8FD3FF,#CFEBFF);opacity:.9"><svg viewBox="0 0 160 90" preserveAspectRatio="xMidYMid slice" style="position:absolute;inset:0;width:100%;height:100%"><circle cx="118" cy="26" r="13" fill="#FFFFFF" opacity=".7"/><path d="M40 56a14 14 0 0 1 4-27 18 18 0 0 1 34 4 12 12 0 0 1 2 23z" fill="#fff"/><path d="M50 66l-3 9M62 66l-3 9M74 66l-3 9" stroke="#1F6FB5" stroke-width="3" stroke-linecap="round"/></svg></div><div style="position:absolute;inset:0;background:rgba(14,15,19,.88);padding:14px 16px;display:flex;flex-direction:column;gap:10px;justify-content:center"><div style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:18px">Thanks for watching</div>
+<div style="display:flex;gap:8px"><button class="btn by" style="flex:1"><svg class="ico" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" ><path d="M4 12a8 8 0 1 0 3-6.2M4 4v5h5"/></svg> Replay</button><button class="btn bdo" style="flex:1"><svg class="ico" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" ><path d="M12 5v14M5 12h14"/></svg> My List</button></div><a href="Main.dc.html" class="btn bdo">Back to Home</a></div></div><div style="height:12px"></div><div class="nt" style="padding:12px 16px 24px;background:#F5F5F2;font-size:14px;line-height:1.5;color:#5B606B"><b style="color:#1A1C22">Reduced motion.</b> The ring is a static circle and only the number changes. The countdown is still cancellable.</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview": {"width": 390, "height": 1000}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>
