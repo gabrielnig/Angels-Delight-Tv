@@ -17,6 +17,8 @@ export interface BulkRecord {
   bulkId: string;
   ids: readonly string[];
   outcome?: BulkOutcome;
+  /** One reason applied to every item, for example a suspend reason. */
+  reason?: string;
   /** The run was refused before any item was touched. */
   denied?: boolean;
   /** Write one normal row per succeeded id. Callers that audit inside their own transaction pass false. */
@@ -52,6 +54,7 @@ export async function recordBulk(
       skipped: outcome?.skipped.length ?? 0,
       ids: shown,
       idsTruncated: record.ids.length > SUMMARY_ID_CAP,
+      ...(record.reason ? { reason: record.reason } : {}),
     },
   });
 

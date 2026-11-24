@@ -1,19 +1,27 @@
-import Link from 'next/link';
-import { formatDate } from '@/lib/admin/format';
+import type { BulkOutcome, BulkUndo } from '@/lib/data/admin/bulk';
 import type { UserRecord } from '@/lib/data/admin/types';
-import { Badge } from './Badge';
+import type { UserBulkAction } from '@/lib/data/admin/user-bulk';
 import { Button, LinkButton } from './Button';
 import { EmptyState } from './states';
+import { UsersTableClient } from './UsersTableClient';
 
 /** Server rendered. The filter is a plain GET form, so it works without scripts. */
 export function UsersTable({
   users,
   q,
   status,
+  canBulk,
+  selfId,
+  bulk,
+  undo,
 }: {
   users: UserRecord[];
   q: string;
   status: string;
+  canBulk: boolean;
+  selfId: string;
+  bulk: (ids: string[], action: UserBulkAction, bulkId: string) => Promise<BulkOutcome>;
+  undo: (undo: BulkUndo) => Promise<{ succeeded: string[]; failed: unknown[] }>;
 }) {
   return (
     <div className="adm-stack">
@@ -42,44 +50,7 @@ export function UsersTable({
           icon="users"
         />
       ) : (
-        <div className="adm-card adm-table-card">
-          <table className="adm-table adm-table--always">
-            <caption className="adm-sr">Viewer accounts</caption>
-            <thead>
-              <tr>
-                <th scope="col">Email</th>
-                <th scope="col">Status</th>
-                <th scope="col">Created</th>
-                <th scope="col">Last active</th>
-                <th scope="col" className="adm-num">
-                  Profiles
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {users.map((u) => (
-                <tr key={u.id}>
-                  <th scope="row">
-                    <Link className="adm-link" href={`/admin/users/${u.id}`}>
-                      {u.email}
-                    </Link>
-                  </th>
-                  <td>
-                    <Badge
-                      tone={u.status === 'active' ? 'success' : 'warning'}
-                      icon={u.status === 'active' ? 'check' : 'lock'}
-                    >
-                      {u.status === 'active' ? 'Active' : 'Suspended'}
-                    </Badge>
-                  </td>
-                  <td>{formatDate(u.createdAt)}</td>
-                  <td>{u.lastActiveAt ? formatDate(u.lastActiveAt) : 'Never'}</td>
-                  <td className="adm-num">{u.profiles.length}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <UsersTableClient users={users} canBulk={canBulk} selfId={selfId} bulk={bulk} undo={undo} />
       )}
     </div>
   );

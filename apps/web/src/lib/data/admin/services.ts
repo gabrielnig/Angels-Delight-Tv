@@ -399,6 +399,7 @@ import type { SaveResult, CaptionResult } from './caption-commands';
 import type { Cue } from '@/lib/admin/cues';
 import { validateCues } from '@/lib/admin/cues';
 import type { BulkIssue, BulkOutcome, BulkUndo } from './bulk';
+import { runUserBulk, undoUserBulk, userBulkFor, type UserBulkAction } from './user-bulk';
 import { runSeriesBulk, seriesBulkFor, undoSeriesBulk, type SeriesBulkAction } from './series-bulk';
 import type { CaptionState, CaptionTrack } from './types';
 
@@ -700,6 +701,17 @@ export interface PeopleService {
   suspend(actor: AdminActor, id: string, reason: string): Promise<CommandResult>;
   reinstate(actor: AdminActor, id: string): Promise<CommandResult>;
   revokeSessions(actor: AdminActor, id: string, reason: string): Promise<CommandResult>;
+  /** Suspend, reinstate or force sign out for many viewer accounts. Admin only (users.bulk). */
+  bulkUsers(
+    actor: AdminActor,
+    ids: string[],
+    action: UserBulkAction,
+    bulkId: string,
+  ): Promise<BulkOutcome>;
+  undoUsers(
+    actor: AdminActor,
+    undo: BulkUndo,
+  ): Promise<{ succeeded: string[]; failed: BulkIssue[] }>;
   staff(actor: AdminActor): Promise<{ staff: StaffRecord[]; invites: InviteRecord[] }>;
   /** Confirms the staff member's password so a sensitive action can follow (D-069). */
   reauthenticate(actor: AdminActor, password: string): Promise<CommandResult>;
@@ -740,6 +752,14 @@ const fixturePeopleService: PeopleService = {
   async revokeSessions(actor, id, reason) {
     need(actor, 'users.suspend');
     return revokeSessions(getStore(), id, reason, actor.accountId, actor.name, Date.now());
+  },
+  async bulkUsers(actor, ids, action, bulkId) {
+    need(actor, 'users.bulk');
+    return runUserBulk(userBulkFor(fixturePeopleService, actor), actor.accountId, ids, action, bulkId);
+  },
+  async undoUsers(actor, undo) {
+    need(actor, 'users.bulk');
+    return undoUserBulk(userBulkFor(fixturePeopleService, actor), actor.accountId, undo);
   },
   async staff(actor) {
     need(actor, 'roles.view');

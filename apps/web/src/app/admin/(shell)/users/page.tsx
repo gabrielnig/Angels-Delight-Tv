@@ -5,6 +5,7 @@ import { UsersTable } from '@/components/admin/UsersTable';
 import { can } from '@/lib/admin/can';
 import { peopleService } from '@/lib/data/admin/services';
 import { requireActor } from '@/lib/data/admin/session-next';
+import { bulkUsersAction, undoBulkUsersAction } from './actions';
 
 export const metadata: Metadata = { title: 'Users' };
 
@@ -26,7 +27,15 @@ export default async function UsersPage({
         title="Users"
         lead="Viewer accounts. Staff are managed under Roles."
       />
-      <UsersTable users={users} q={q} status={status} />
+      <UsersTable
+        users={users}
+        q={q}
+        status={status}
+        canBulk={can(actor.role, 'users.bulk')}
+        selfId={actor.accountId}
+        bulk={bulkUsersAction}
+        undo={undoBulkUsersAction}
+      />
     </>
   );
 }
