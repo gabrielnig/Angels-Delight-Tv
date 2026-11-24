@@ -1,6 +1,11 @@
 export { Player, type PlayerProps } from './Player';
 export { PlayerView, type PlayerViewProps } from './ui/PlayerView';
-export { PlayerController, type PlayerControllerOptions, type TokenSource } from './controller';
+export {
+  PlayerController,
+  clampCountdown,
+  type PlayerControllerOptions,
+  type TokenSource,
+} from './controller';
 export type { EndScreenData, RelatedItem } from './ui/EndScreen';
 export type { OverlayLinks } from './ui/Overlays';
 export {

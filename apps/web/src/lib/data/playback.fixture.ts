@@ -174,7 +174,8 @@ export function createFixturePlaybackData(): PlaybackData {
           : null,
         upNext: tiles(entry.video.id),
         related,
-        preferences: { ...DEFAULT_PREFERENCES, captionsOn: viewer.kids },
+        // R15: autoplay next is on except for kids profiles.
+        preferences: { ...DEFAULT_PREFERENCES, captionsOn: viewer.kids, autoplayNext: !viewer.kids },
         captionStyle: DEFAULT_CAPTION_STYLE,
         inMyList: false,
       };

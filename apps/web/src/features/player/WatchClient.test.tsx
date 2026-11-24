@@ -8,7 +8,8 @@ import { captionStyleKey, preferencesKey } from './preferences';
 import { WatchClient } from './WatchClient';
 
 const push = vi.fn();
-vi.mock('next/navigation', () => ({ useRouter: () => ({ push }) }));
+const prefetch = vi.fn();
+vi.mock('next/navigation', () => ({ useRouter: () => ({ push, prefetch }) }));
 
 const viewer = { profileId: 'p1', kids: false };
 
@@ -24,6 +25,7 @@ function mount(
     startAt?: number | null;
     network?: FakeNetwork;
     prefsSync?: NonNullable<Parameters<typeof WatchClient>[0]['prefsSync']>;
+    countdownSeconds?: number;
   } = {},
 ) {
   const engine = new FakeEngine();
@@ -35,6 +37,7 @@ function mount(
       transport="fixture"
       startAt={extra.startAt ?? null}
       prefsSync={extra.prefsSync}
+      countdownSeconds={extra.countdownSeconds}
       testing={{ createEngine: async () => engine, network }}
     >
       <h1>{data.video.title}</h1>
@@ -310,6 +313,61 @@ describe('WatchClient', () => {
       expect(JSON.parse(localStorage.getItem(captionStyleKey('p1')) ?? '{}')).toMatchObject({
         edge: 'outline',
       });
+    });
+  });
+
+  describe('up next polish (L4-08)', () => {
+    function nearEnd(video: HTMLVideoElement) {
+      Object.defineProperty(video, 'duration', { value: 100, configurable: true });
+      Object.defineProperty(video, 'currentTime', {
+        value: 90,
+        configurable: true,
+        writable: true,
+      });
+      act(() => {
+        video.dispatchEvent(new Event('timeupdate'));
+      });
+    }
+
+    beforeEach(() => {
+      push.mockClear();
+      prefetch.mockClear();
+      sessionStorage.clear();
+    });
+
+    it('uses the site countdown from the page', async () => {
+      const { engine } = mount(await dataFor('v-sky'), { countdownSeconds: 8 });
+      await waitFor(() => expect(engine.loads).toHaveLength(1));
+      act(() => {
+        document.querySelector('video')!.dispatchEvent(new Event('ended'));
+      });
+      expect(await screen.findByText('Up next in 8 seconds')).toBeTruthy();
+    });
+
+    it('warms the next watch page once when the Next tile shows', async () => {
+      const { engine } = mount(await dataFor('v-sky'));
+      await waitFor(() => expect(engine.loads).toHaveLength(1));
+      nearEnd(document.querySelector('video')!);
+      expect(prefetch).toHaveBeenCalledWith('/watch/v-sun');
+      expect(prefetch).toHaveBeenCalledTimes(1);
+    });
+
+    it('does not warm the next page with Data saver on', async () => {
+      const data = await dataFor('v-sky');
+      const { engine } = mount({ ...data, preferences: { ...data.preferences, dataSaver: true } });
+      await waitFor(() => expect(engine.loads).toHaveLength(1));
+      nearEnd(document.querySelector('video')!);
+      expect(prefetch).not.toHaveBeenCalled();
+    });
+
+    it('asks Still watching after three unattended autoplays kept in session storage', async () => {
+      sessionStorage.setItem('ad:autoplay-streak', '3');
+      const { engine } = mount(await dataFor('v-sky'));
+      await waitFor(() => expect(engine.loads).toHaveLength(1));
+      act(() => {
+        document.querySelector('video')!.dispatchEvent(new Event('ended'));
+      });
+      expect(await screen.findByRole('alertdialog', { name: 'Still watching?' })).toBeTruthy();
     });
   });
 

@@ -1282,3 +1282,9 @@ Per video tri state, site default (Super admin), Admin changes it with a reason 
 - Options: warn only, or correct the drawing.
 - Why: white text on a bright frame with no edge is unreadable, and a warning still leaves it unreadable.
 - Reversible: yes.
+
+## D-241 Autoplay countdown is a site setting, Still watching follows three unattended autoplays, and the next page is only warmed outside Data saver (lane L4, L4-D4)
+- Decision: the countdown length is the site setting `playback.countdown_seconds` (whole seconds, 5 to 10, default 5), named like the other `playback.*` keys instead of the plan's `playerCountdownSeconds`, and the controller corrects any other value into that range. After three autoplays in a row with no pointer, touch or key input (count kept in `sessionStorage` under `ad:autoplay-streak`) the end screen shows "Still watching?" with Keep watching and Stop and does not count down. The Next tile starts at the credits marker when one exists, otherwise in the last 15 seconds. The host is asked to warm the next watch page once when the tile shows, and never with Data saver on.
+- Options: a free text or per profile countdown, always counting down, prefetching with Data saver on.
+- Why: one admin number is enough, an unattended screen should stop spending a viewer's data, and Data saver must mean nothing is fetched early.
+- Reversible: yes.

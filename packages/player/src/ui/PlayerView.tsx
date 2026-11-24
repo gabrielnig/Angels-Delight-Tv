@@ -15,7 +15,7 @@ import {
 } from 'react';
 import { normalizeChapters, type PlayerChapter } from '../chapters';
 import { DEFAULT_CAPTION_STYLE, captionStyleVars, type CaptionStyle } from '../captionStyle';
-import type { PlayerController } from '../controller';
+import { clampCountdown, type PlayerController } from '../controller';
 import { formatClock } from '../format';
 import { TapTracker } from '../gestures';
 import { resolveShortcut } from '../keyboard';
@@ -270,6 +270,7 @@ export function PlayerView(props: PlayerViewProps) {
     const target = e.target as HTMLElement;
     if (target.closest('[role="menu"], [role="dialog"]')) return;
     bump();
+    controller.noteInput();
     if (state.upNext.countdown !== null) controller.cancelCountdown();
     const onButton = target.closest('button, a');
     if (onButton && (e.key === ' ' || e.key === 'Enter')) return;
@@ -295,6 +296,7 @@ export function PlayerView(props: PlayerViewProps) {
 
   const onSurfacePointerDown = (e: PointerEvent<HTMLDivElement>) => {
     pointerType.current = e.pointerType;
+    controller?.noteInput();
   };
 
   const onSurfacePointerUp = (e: PointerEvent<HTMLDivElement>) => {
@@ -380,7 +382,11 @@ export function PlayerView(props: PlayerViewProps) {
       data-skip={state.marker ? 'true' : undefined}
       data-phase={state.phase}
       onKeyDown={onKeyDown}
-      onPointerMove={(e) => e.pointerType === 'mouse' && bump()}
+      onPointerMove={(e) => {
+        if (e.pointerType !== 'mouse') return;
+        controller?.noteInput();
+        bump();
+      }}
       onFocus={onFocus}
       onBlur={(e) => {
         if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setFocusInside(false);
@@ -483,8 +489,11 @@ export function PlayerView(props: PlayerViewProps) {
           data={props.end ?? {}}
           next={next}
           countdown={state.upNext.countdown}
-          countdownTotal={props.countdownSeconds ?? 5}
+          countdownTotal={clampCountdown(props.countdownSeconds)}
           cancelled={state.upNext.cancelled}
+          stillWatching={state.upNext.stillWatching}
+          onKeepWatching={() => controller?.keepWatching()}
+          onStopAutoplay={() => controller?.stopAutoplay()}
           autoplayNext={props.autoplayNext ?? false}
           onPlayNext={() => controller?.playNext()}
           onCancel={() => controller?.cancelCountdown()}

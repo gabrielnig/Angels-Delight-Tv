@@ -31,7 +31,7 @@ export const IDLE_STATE: PlayerState = {
     dataSaver: false,
   },
   toast: null,
-  upNext: { tile: false, countdown: null, cancelled: false },
+  upNext: { tile: false, countdown: null, cancelled: false, stillWatching: false },
   hasAudio: true,
   backOnline: false,
   marker: null,

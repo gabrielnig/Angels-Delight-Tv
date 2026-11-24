@@ -17,6 +17,7 @@ import { WatchDetails } from '@/features/player/WatchDetails';
 import '@/features/player/watch.css';
 import { getSite } from '@/lib/data';
 import { turnstileSiteKey } from '@/server/auth/turnstile-site';
+import { playerCountdownSeconds } from '@/server/player/player-settings';
 
 interface PageProps {
   params: Promise<{ videoId: string }>;
@@ -72,6 +73,7 @@ export default async function WatchPage({ params, searchParams }: PageProps) {
           transport={getTransport()}
           progressTransport={getProgressTransport(viewer)}
           startAt={parseStartAt(query.t)}
+          countdownSeconds={await playerCountdownSeconds()}
           {...(viewer.guest
             ? {}
             : { prefsSync: { save: savePlayerPrefsAction, migrate: migrateDevicePrefsAction } })}

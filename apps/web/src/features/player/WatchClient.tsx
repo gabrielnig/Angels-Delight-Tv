@@ -25,6 +25,7 @@ import {
   readLocalProgress,
 } from './fixture-adapters';
 import { getAnalyticsClient } from '@/lib/analytics/browser';
+import { createAutoplayStreak } from './autoplay-streak';
 import { createWatchMetrics, createWatchTelemetry } from './telemetry';
 import { toViewerProgressBody } from './progress-body';
 import {
@@ -85,6 +86,8 @@ export interface WatchClientProps {
       autoplayNext: boolean;
     }>;
   };
+  /** Seconds the next video waits (site setting `playback.countdown_seconds`, 5 to 10). */
+  countdownSeconds?: number | undefined;
   /** Test seams passed straight to the player. */
   testing?: Pick<PlayerProps, 'createEngine' | 'network' | 'page' | 'hints' | 'autoplay'>;
 }
@@ -118,6 +121,7 @@ export function WatchClient({
   startAt,
   children,
   prefsSync: prefsSyncProp,
+  countdownSeconds,
   testing,
   signUpOpen,
   challengeSiteKey,
@@ -297,6 +301,20 @@ export function WatchClient({
     }
   }, [origin, video.id]);
 
+  // Never called with Data saver on, so the next page is only fetched when the viewer or the countdown goes there.
+  const prefetchNext = useCallback(
+    (item: UpNextItem) => router.prefetch(watchPath(item.id)),
+    [router],
+  );
+  const autoplayStreak = useMemo(() => {
+    let store: Storage | null = null;
+    try {
+      store = typeof window === 'undefined' ? null : window.sessionStorage;
+    } catch {
+      store = null;
+    }
+    return createAutoplayStreak(store);
+  }, []);
   const onNext = useCallback((item: UpNextItem) => router.push(watchPath(item.id)), [router]);
 
   const end: EndScreenData = {
@@ -349,6 +367,9 @@ export function WatchClient({
             preferences={preferences}
             onPreferencesChange={onPreferencesChange}
             next={nextTitle}
+            {...(countdownSeconds ? { countdownSeconds } : {})}
+            prefetchNext={prefetchNext}
+            autoplayStreak={autoplayStreak}
             onNext={onNext}
             end={end}
             links={{

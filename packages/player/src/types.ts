@@ -41,6 +41,8 @@ export interface UpNextState {
   countdown: number | null;
   /** The viewer pressed Cancel on the countdown. */
   cancelled: boolean;
+  /** Three autoplays ran with no input, so the end screen asks "Still watching?" and waits (R15). */
+  stillWatching: boolean;
 }
 
 export interface PlayerCaptionState {

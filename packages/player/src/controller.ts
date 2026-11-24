@@ -9,7 +9,7 @@ import type {
 } from './engine';
 import { chapterAt, normalizeChapters, type PlayerChapter } from './chapters';
 import type { ShortcutAction } from './keyboard';
-import { activeMarker, type MarkerKind, type PlayerMarkers } from './markers';
+import { activeMarker, normalizeMarkers, type MarkerKind, type PlayerMarkers } from './markers';
 import { ProgressReporter, type ProgressSink } from './progress';
 import {
   buildQualityMenu,
@@ -60,7 +60,12 @@ export interface PlayerControllerOptions {
   page?: PageEvents;
   hints?: NetworkHints;
   dataSaverMaxHeight?: number;
+  /** Length of the autoplay countdown. Whole seconds from 5 to 10, anything else is corrected. */
   countdownSeconds?: number;
+  /** Asked once when the Next tile shows, never with Data saver on. The host warms the next page with it. */
+  prefetchNext?: (item: UpNextItem) => void;
+  /** Autoplays in a row with no input. The host keeps it for the session so it survives page changes. */
+  autoplayStreak?: { get(): number; set(value: number): void };
   progressIntervalMs?: number;
   autoplay?: boolean;
   metrics?: MetricsSink;
@@ -77,6 +82,15 @@ const SLOW_AFTER_MS = 8_000;
 const STALL_RECOVERY_MS = 20_000;
 const AUTH_RETRY_WINDOW_MS = 15_000;
 const UP_NEXT_TILE_SECONDS = 15;
+const COUNTDOWN_MIN = 5;
+const COUNTDOWN_MAX = 10;
+const STILL_WATCHING_AFTER = 3;
+
+/** Whole seconds from 5 to 10, so a bad site setting cannot make the countdown too short or too long. */
+export function clampCountdown(value: number | undefined): number {
+  if (value === undefined || !Number.isFinite(value)) return COUNTDOWN_MIN;
+  return Math.min(COUNTDOWN_MAX, Math.max(COUNTDOWN_MIN, Math.round(value)));
+}
 const END_GUARD_SECONDS = 0.5;
 const SEEK_TIMEOUT_MS = 6_000;
 const SEGMENT_SECONDS = 6;
@@ -174,7 +188,7 @@ export class PlayerController {
       captions: { available: this.tracks.length > 0, tracks: this.tracks, active },
       quality: this.qualityState(),
       toast: null,
-      upNext: { tile: false, countdown: null, cancelled: false },
+      upNext: { tile: false, countdown: null, cancelled: false, stillWatching: false },
       hasAudio: true,
       marker: null,
       chapter: null,
@@ -534,7 +548,7 @@ export class PlayerController {
     this.set({
       phase: 'ready',
       currentTime: 0,
-      upNext: { tile: false, countdown: null, cancelled: false },
+      upNext: { tile: false, countdown: null, cancelled: false, stillWatching: false },
     });
     this.play();
   }
@@ -766,13 +780,22 @@ export class PlayerController {
     if (this.stallStartedAt !== null && media.currentTime > this.stallAt + 0.1) this.clearStall();
     const remaining = media.duration - media.currentTime;
     const next = this.o.upNext;
+    // Credits start the tile when there is a marker, otherwise it is the last 15 seconds (L4-08).
+    const credits = this.o.markers?.credits
+      ? normalizeMarkers(this.o.markers, media.duration).credits
+      : undefined;
+    const inWindow = credits
+      ? media.currentTime >= credits.start
+      : remaining <= UP_NEXT_TILE_SECONDS;
     const tile =
-      !!next &&
-      !this.tileDismissed &&
-      Number.isFinite(remaining) &&
-      remaining <= UP_NEXT_TILE_SECONDS &&
-      remaining > 0;
-    if (tile !== this.state.upNext.tile) this.set({ upNext: { ...this.state.upNext, tile } });
+      !!next && !this.tileDismissed && Number.isFinite(remaining) && inWindow && remaining > 0;
+    if (tile !== this.state.upNext.tile) {
+      this.set({ upNext: { ...this.state.upNext, tile } });
+      if (tile && next && !this.prefs.dataSaver && !this.prefetched) {
+        this.prefetched = true;
+        this.o.prefetchNext?.(next);
+      }
+    }
     this.checkPendingStop();
   }
 
@@ -834,14 +857,40 @@ export class PlayerController {
     this.clearStall();
     this.set({ phase: 'ended', playing: false, buffering: false, slowNotice: false });
     const next = this.o.upNext;
-    if (next && this.prefs.autoplayNext) this.startCountdown();
+    if (!next || !this.prefs.autoplayNext) return;
+    if ((this.o.autoplayStreak?.get() ?? 0) >= STILL_WATCHING_AFTER) {
+      this.set({
+        upNext: { tile: false, countdown: null, cancelled: false, stillWatching: true },
+      });
+      return;
+    }
+    this.startCountdown();
   }
 
+  /** Any pointer, touch or key input from the viewer means someone is there, so the streak starts again. */
+  noteInput(): void {
+    if ((this.o.autoplayStreak?.get() ?? 0) !== 0) this.o.autoplayStreak?.set(0);
+  }
+
+  /** "Keep watching" on the Still watching card: the viewer is there, so play the next title. */
+  keepWatching(): void {
+    this.noteInput();
+    this.set({ upNext: { ...this.state.upNext, stillWatching: false } });
+    this.playNext();
+  }
+
+  /** "Stop" on the Still watching card: no navigation, the card keeps Play next and Back. */
+  stopAutoplay(): void {
+    this.set({ upNext: { ...this.state.upNext, stillWatching: false, cancelled: true } });
+  }
+
+  private prefetched = false;
+
   private startCountdown(): void {
-    const seconds = this.o.countdownSeconds ?? 5;
+    const seconds = clampCountdown(this.o.countdownSeconds);
     this.clearCountdown();
     this.set({
-      upNext: { tile: false, countdown: seconds, cancelled: false },
+      upNext: { tile: false, countdown: seconds, cancelled: false, stillWatching: false },
       announce: msg('player.nextStarts', { seconds }),
     });
     this.countdownTimer = setInterval(() => {
@@ -849,6 +898,8 @@ export class PlayerController {
       if (left <= 0) {
         this.clearCountdown();
         this.set({ upNext: { ...this.state.upNext, countdown: null } });
+        const streak = this.o.autoplayStreak;
+        streak?.set((streak.get() ?? 0) + 1);
         this.playNext();
         return;
       }
