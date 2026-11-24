@@ -179,6 +179,9 @@ export const EN_NG = {
   'guest.import.failed': 'We could not add your history. It is still on this device.',
   // Discovery (L6)
   'og.freeToWatch': 'Free to watch',
+  'language.picker.button': 'Language',
+  'language.picker.menu': 'Choose a language',
+  'language.picker.stillEnglish': 'Some text is still in English',
   'format.duration.min': '{count} min',
   'format.duration.hr': '{count} hr',
   'format.duration.hrMin': '{hours} hr {minutes} min',

@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import { KidsGate } from '../../../../../components/KidsGate';
 import { EditScreen } from '../../../../../components/profiles/ProfileScreens';
 import { getProfiles } from '../../../../../lib/data';
+import { themeRuntime } from '../../../../../lib/data/admin/theme-runtime';
 import { requireSession } from '../../../../../lib/session';
 
 export const metadata: Metadata = { title: 'Edit profile' };
@@ -18,9 +19,11 @@ export default async function EditProfilePage({ params }: { params: Promise<{ id
   ]);
   if (!profile) notFound();
   const adults = profiles.filter((p) => !p.kids);
+  const languages: string[] = await (await themeRuntime()).settings.get('content.ui_languages');
   return (
     <div className="web-profileform-wrap">
       <EditScreen
+        languages={languages}
         profile={profile}
         limitReached={false}
         lastAdult={!profile.kids && adults.length === 1}

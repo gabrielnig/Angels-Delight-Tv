@@ -25,6 +25,8 @@ export interface ChromeProps {
   /** `soft` is the S27 to S31 header: page colour, Subjects and New links, name beside the avatar, support address in the footer. */
   skin?: 'soft';
   supportEmail?: string;
+  /** The language picker, drawn by the server shell when two or more languages are enabled. */
+  languagePicker?: ReactNode;
   children: ReactNode;
 }
 
@@ -59,6 +61,7 @@ export function ViewerChrome({
   year,
   skin,
   supportEmail,
+  languagePicker,
   children,
 }: ChromeProps) {
   const pathname = usePathname();
@@ -111,6 +114,7 @@ export function ViewerChrome({
           overHero={pathname === '/'}
           kids={kids}
           skin={skin}
+          trailing={languagePicker}
           onExitKids={() => setExitOpen(true)}
           onBack={detail ? () => router.back() : undefined}
         />

@@ -35,3 +35,9 @@ Scoped tests only: `pnpm vitest run <file>`.
 - Settings `content.ui_languages` (default en) and `i18n.publish_min_percent` (80). Launch config `languages.ui` maps to `content.ui_languages`.
 - `assertSupportedLanguage` in `packages/viewer/src/profiles.ts` guards profile create and update.
 - Gap: `accounts.locale` is not read by `getLocale` (session has no field). `production-env.test.ts` fails on main from the Paystack variables (not this lane).
+
+## Slice 5
+- `@ad/ui` `LanguagePicker` (radio menu, endonym plus English name, 44px rows, label folds under 240px, hidden below two locales) and `Icon` `globe`. `TopNav` gets a `trailing` slot (hidden on kids profiles). `GuestChrome` and `ViewerChrome` take a `languagePicker` node, built in `Shell.tsx` from `lib/i18n/picker-data.ts`.
+- `lib/i18n/set-language.ts` (`setLanguage`, tested) and `app/actions-language.ts` (`setLanguageAction`). `components/i18n/LanguagePickerHost.tsx`.
+- `ProfileForm` language options come from `content.ui_languages` (prop `languages`).
+- Not done here: the player `t` prop moves to wave D of slice 7. Design review was a self check against the skill list (tokens only, 44px, hover guarded, no motion); no screenshot pass.

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
+import { useEffect, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
 import { Avatar } from './Avatar';
 import { cx } from './cx';
 import { Icon, type IconName } from './Icon';
@@ -36,6 +36,7 @@ export function TopNav({
   switchHref = '/profiles?switch=1',
   onBack,
   skin = 'default',
+  trailing,
 }: {
   brand: { name: string; href: string; logoUrl?: string };
   links: NavLink[];
@@ -53,6 +54,8 @@ export function TopNav({
   onBack?: () => void;
   /** `soft` sits on the page colour with a search circle and a profile pill that shows the name (S27 to S31). */
   skin?: 'default' | 'soft';
+  /** Extra tool shown before the profile menu, such as the language picker. Not shown on a kids profile. */
+  trailing?: ReactNode;
 }) {
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
@@ -177,6 +180,7 @@ export function TopNav({
             <Link href={searchHref} className="ad-iconbtn" aria-label="Search" data-variant="plain">
               <Icon name="search" size={24} />
             </Link>
+            {kids ? null : trailing}
             <div className="ad-nav__account">
               <button
                 ref={triggerRef}

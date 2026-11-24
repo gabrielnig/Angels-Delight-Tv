@@ -282,3 +282,22 @@ describe('ProfileForm PIN (M03-S12)', () => {
     expect(screen.queryByLabelText(/^PIN/)).not.toBeInTheDocument();
   });
 });
+
+describe('ProfileForm language options (M46)', () => {
+  it('language options follow the enabled list', () => {
+    render(
+      <ProfileForm
+        profile={{ ...emeka, language: 'yo' }}
+        languages={['en', 'yo', 'ha']}
+        onSave={vi.fn()}
+        onDone={vi.fn()}
+      />,
+    );
+    const options = screen.getAllByRole('option').map((o) => o.textContent);
+    expect(options).toEqual(['English', 'Yorùbá', 'Hausa']);
+  });
+  it('offers English only by default', () => {
+    render(<ProfileForm profile={emeka} onSave={vi.fn()} onDone={vi.fn()} />);
+    expect(screen.getAllByRole('option').map((o) => o.textContent)).toEqual(['English']);
+  });
+});
