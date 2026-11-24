@@ -1,10 +1,12 @@
 import {
   VIEW_ALL_URL_MESSAGE,
+  resolveViewAll,
   slugifyRowName,
   viewAllUrlProblem,
   type ViewAllMode,
 } from '@ad/shared/view-all';
-import type { SeriesRecord, VideoRecord } from './types';
+import type { RowKind } from '@ad/shared';
+import type { CategoryRecord, SeriesRecord, VideoRecord } from './types';
 
 export type HomeRowType =
   | 'manual'
@@ -370,3 +372,85 @@ export const defaultHome = (): HomeConfig => ({
     },
   ],
 });
+
+/** One line meanings for the Add section dialog (S97 state 3). Built in sections are not offered. */
+export const ADD_TYPE_HINTS: Record<
+  'manual' | 'category' | 'newest' | 'series' | 'smart' | 'each_category' | 'all_series',
+  string
+> = {
+  manual: 'You pick the titles and their order.',
+  category: 'The newest titles from one subject.',
+  newest: 'The newest titles. Updates by itself.',
+  smart: 'Most watched this week. Hidden until 4 titles qualify.',
+  series: 'The episodes of one series.',
+  each_category: 'One section for every subject with enough titles.',
+  all_series: 'Series cards, newest first.',
+};
+
+const KIND_OF: Record<HomeRowType, RowKind> = {
+  manual: 'curated',
+  category: 'category',
+  newest: 'recently_added',
+  series: 'curated',
+  smart: 'popular',
+  each_category: 'each_category',
+  all_series: 'all_series',
+  continue_watching: 'continue_watching',
+  my_list: 'my_list',
+};
+
+export interface SectionSources {
+  categories: CategoryRecord[];
+  series: SeriesRecord[];
+}
+
+function viewAllTarget(row: HomeRow, src: SectionSources) {
+  if (row.type === 'continue_watching') return null;
+  const category = row.type === 'category' ? src.categories.find((c) => c.id === row.sourceId) : undefined;
+  const series = row.type === 'series' ? src.series.find((s) => s.id === row.sourceId) : undefined;
+  return resolveViewAll({
+    kind: KIND_OF[row.type],
+    mode: row.viewAllMode ?? 'auto',
+    url: row.viewAllUrl ?? null,
+    categorySlug: category ? slugifyRowName(category.name) : null,
+    seriesSlug: series ? slugifyRowName(series.title) : null,
+    rowSlug: row.type === 'manual' ? (row.slug ?? null) : null,
+  });
+}
+
+/** The short View all line under a section name in the list (S97 state 1). */
+export function viewAllSummary(row: HomeRow, src: SectionSources): string {
+  const mode = row.viewAllMode ?? 'auto';
+  if (row.type === 'continue_watching' || mode === 'none') return 'No View all link';
+  if (mode === 'custom') return `View all: Custom, ${row.viewAllUrl || 'enter a link'}`;
+  if (row.type === 'each_category') return 'View all: Automatic, one per category';
+  const target = viewAllTarget(row, src);
+  return target ? `View all: Automatic, ${target.href}` : 'No View all link';
+}
+
+/** What an automatic link opens, in words, or null when the section has none (M41-S08 AC1). */
+export function viewAllOpens(row: HomeRow, src: SectionSources): string | null {
+  const target = viewAllTarget(row, src);
+  if (!target) return null;
+  const words: Partial<Record<HomeRowType, string>> = {
+    newest: 'All new videos',
+    smart: 'All trending videos',
+    all_series: 'All series',
+    my_list: 'Your My List',
+    series: 'The series page',
+    category: `The ${row.name} list`,
+    manual: `The ${row.name} list`,
+  };
+  return `${words[row.type] ?? 'This list'} (${target.href})`;
+}
+
+/** A duplicate name is allowed. The editor only says so, and says how a manual link ends (M41-S06 edge). */
+export function duplicateNameNote(config: HomeConfig, id: string): string | null {
+  const row = config.rows.find((r) => r.id === id);
+  if (!row) return null;
+  const name = cleanName(row.name);
+  const twin = config.rows.some((r) => r.id !== id && cleanName(r.name).toLowerCase() === name.toLowerCase());
+  if (!twin) return null;
+  const ending = row.type === 'manual' ? /-(\d+)$/.exec(row.slug ?? '') : null;
+  return `Another section is called ${name}. That is allowed.${ending ? ` This link will end in -${ending[1]}.` : ''}`;
+}
