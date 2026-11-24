@@ -23,8 +23,12 @@ vi.mock('next/headers', () => ({
   cookies: async () => ({ get: () => undefined }),
 }));
 // The language lookup reads the theme runtime and the session, which need a database. The layout test pins markup.
+const localeState = vi.hoisted(() => ({
+  value: 'en',
+  fontCalls: [] as Array<[string, string | undefined]>,
+}));
 vi.mock('../lib/i18n/server', () => ({
-  getLocale: async () => 'en',
+  getLocale: async () => localeState.value,
   loadCatalog: async () => ({ nav: {} }),
 }));
 vi.mock('../components/account/AccountSupport', () => ({
@@ -42,7 +46,10 @@ vi.mock('../components/consent/StorageNotice', () => ({
   ),
 }));
 vi.mock('../lib/fonts', () => ({
-  selectFonts: (key: string) => ({ classNames: `font-${key}`, variables: {} }),
+  selectFonts: (key: string, lang?: string) => {
+    localeState.fontCalls.push([key, lang]);
+    return { classNames: `font-${key}`, variables: {} };
+  },
 }));
 vi.mock('./providers', () => ({
   Providers: ({ children }: { children: React.ReactNode }) => <>{children}</>,
@@ -73,6 +80,8 @@ const theme = {
 
 describe('root layout', () => {
   beforeEach(() => {
+    localeState.value = 'en';
+    localeState.fontCalls.length = 0;
     reqHeaders.value = {};
     getRootTheme.mockReset();
     getRootTheme.mockResolvedValue(theme);
@@ -97,6 +106,13 @@ describe('root layout', () => {
     expect(html).toContain('<main>Page</main>');
     expect(html).toContain('data-testid="pwa"');
     expect(html).toContain('data-testid="vitals"');
+  });
+
+  it('passes the request locale to selectFonts and sets the html lang (M46-S04)', async () => {
+    localeState.value = 'yo';
+    const html = renderToStaticMarkup(await RootLayout({ children: <main>Page</main> }));
+    expect(localeState.fontCalls).toEqual([['nunito', 'yo']]);
+    expect(html).toContain('lang="yo');
   });
 
   it('sets data-tv for a TV browser and for the stored choice, and not otherwise (M49-S15)', async () => {
