@@ -38,6 +38,9 @@ Scoped tests only: `pnpm vitest run <file>`. DB tests need `pg_ctlcluster 16 mai
 
 - Slice 14 hardening: `apps/web/src/server/donations/hardening.test.ts` (kids matrix over checkout, status, sponsor selection, click and cap cookie for kids, unknown and empty audiences; role matrix for the admin donation actions; a source scan that donate and sponsor pages carry no absolute http address, script, iframe or third party font), exact CSP snapshot in `packages/security/src/headers.test.ts`, logger now redacts Paystack keys in free text (`packages/shared/src/logger.ts`), SECURITY.md capability rows, DEPLOYMENT.md section 14 (webhook URL, Cloudflare rate rule and WAF skip, go live order, rotation), CLIENT-INPUTS.md section 6, CHANGELOG entry.
 
+- Slice 13 (partial, cheap Could item): bank transfer instructions on `/donate` (`BankTransfer`, shown only when `donate.bank_transfer.enabled` is on and text exists, rendered as plain text). Not built: manual entry in the admin, USD hardening, Flutterwave, cover the fee checkbox.
+  Tests: `components/donate/BankTransfer.test.tsx`.
+
 ## Paystack facts verified on 2026-11-24 (plan [VERIFY] items)
 Sources: paystack.com/docs/payments/webhooks, paystack.com/docs/api/transaction, support.paystack.com (transaction charges, USD).
 - Webhook signature: header `x-paystack-signature`, HMAC SHA512 of the raw body keyed with the secret key. Confirmed. Respond 200. Retries: live mode every 3 minutes for 4 tries then hourly for 72 hours, test mode hourly for 72 hours. The docs page does not list source IPs, so the code never relies on IPs.
@@ -49,4 +52,4 @@ Sources: paystack.com/docs/payments/webhooks, paystack.com/docs/api/transaction,
 - USD: the business requests international payments in the Dashboard (answer within 48 working hours), holds a Zenith Bank USD domiciliary account, adds it under Settings, Accounts, and Paystack confirms within 24 hours. Until then `donate.usd.enabled` stays off. Recurring plans and subscriptions on the account were not verified here and need a check in the Paystack dashboard before monthly giving is switched on.
 
 ## Remaining
-Slice 10 monthly giving (blocked on a Paystack dashboard check, D-335) and slice 13 Could items (bank transfer, USD checkout hardening, Flutterwave, cover fees): not built.
+Slice 10 monthly giving (blocked on a Paystack dashboard check, D-335) and the rest of slice 13 (admin manual entry, USD hardening, Flutterwave, cover fees): not built.

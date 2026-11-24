@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import { msg } from '@ad/shared/messages';
 import { AppShell } from '../../../components/Shell';
 import { DonateForm } from '../../../components/donate/DonateForm';
+import { BankTransfer } from '../../../components/donate/BankTransfer';
 import { DonateKids } from '../../../components/donate/DonateKids';
 import '../../../components/donate/donate.css';
 import { currentDonateGate, readDonatePage } from '../../../server/donations/page-data';
@@ -44,6 +45,7 @@ export default async function DonatePage() {
           orgName={data.orgName}
           testMode={data.testMode}
         />
+        <BankTransfer instructions={data.bankInstructions} />
       </div>
     </AppShell>
   );
