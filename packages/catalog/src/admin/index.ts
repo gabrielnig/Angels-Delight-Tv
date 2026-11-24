@@ -3,6 +3,7 @@ export * from './videos';
 export * from './categories';
 export * from './series';
 export * from './home';
+export * from './preview-clip';
 export * from './captions';
 export * from './posters';
 export * from './notices';

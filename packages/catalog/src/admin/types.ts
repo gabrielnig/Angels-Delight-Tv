@@ -52,6 +52,13 @@ export interface AdminVideo {
   /** Captions for viewers: null follows the site default, true offers them, false offers none. */
   captionsEnabled: boolean | null;
   captionsOffReason: string | null;
+  /** The Home hero clip: what was made, how it is chosen and a plain note when it failed or was skipped (M41). */
+  preview: {
+    state: 'none' | 'queued' | 'ready' | 'failed' | 'skipped';
+    mode: 'auto' | 'picked' | 'off';
+    startMs: number | null;
+    note: string | null;
+  };
 }
 
 export type CommandResult = { ok: true } | { ok: false; error: string };
