@@ -13,6 +13,8 @@
     "test:file": "vitest run"
   },
   "dependencies": {
-    "@ad/shared": "workspace:*"
+    "@ad/db": "workspace:*",
+    "@ad/shared": "workspace:*",
+    "drizzle-orm": "^0.45.4"
   }
 }
