@@ -379,6 +379,7 @@ One track per video and language.
 | `label` | text | no | Shown in the menu, 1 to 40 |
 | `kind` | text | no | `captions` or `subtitles` |
 | `is_default` | boolean | no | false |
+| `published` | boolean | no | true. A viewer sees a track only when it is approved and published (migration 0040, M46) |
 | `approved_caption_id` | uuid | yes | FK `captions` ON DELETE SET NULL, deferrable (circular) |
 | `created_at` | timestamptz | no | |
 
@@ -399,6 +400,8 @@ Constraints: `UNIQUE (video_id, language)`; `UNIQUE (video_id) WHERE is_default`
 | `bytes` | integer | no | Max 1 MiB |
 | `cue_count` | integer | no | |
 | `model` | text | yes | Whisper model and version, or alignment tool |
+| `source_caption_id` | uuid | yes | FK `captions` ON DELETE SET NULL. For a translation, the revision it was translated from. Check `captions_source_only_for_translation` (migration 0040) |
+| `source_sha256` | bytea | yes | Hash of that source revision when translated, so a changed source can be flagged |
 | `created_by` | uuid | yes | FK `accounts` SET NULL, null for machine output |
 | `reviewed_by` | uuid | yes | FK `accounts` SET NULL |
 | `reviewed_at` | timestamptz | yes | |
@@ -406,6 +409,14 @@ Constraints: `UNIQUE (video_id, language)`; `UNIQUE (video_id) WHERE is_default`
 | `created_at` | timestamptz | no | |
 
 Constraints: `UNIQUE (track_id, revision)`; `CHECK (status <> 'approved' OR (reviewed_by IS NOT NULL AND public_key IS NOT NULL))`. Index `(track_id, status)`. Approving a revision marks the previous approved one `superseded` in the same transaction.
+
+### 6.3 `ui_translations`, `ui_missing_keys` and `translation_usage` (migration 0040, M46)
+
+`ui_translations`: interface text edited in admin. Columns `id`, `locale` (en, yo, ig, ha, pcm), `key` (3 to 120 characters), `text` (jsonb: a string or an object keyed by CLDR plural category), `status` (`ui_translation_status`: draft, in_review, approved), `source_hash` (sha256 of the English text when translated), `note`, `updated_by`, `reviewed_by`, `reviewed_at`, `updated_at`, `created_at`. `UNIQUE (locale, key)`. Row level security: anyone reads approved rows, only Editor, Admin and Super admin read drafts and write.
+
+`ui_missing_keys`: keys viewers saw in English instead of their language. Primary key `(locale, key)`, `hits`, `first_seen`, `last_seen`. Written only by the SECURITY DEFINER function `record_missing_key(locale, key, hits)`, capped at 10,000 keys per locale. Staff read.
+
+`translation_usage`: `(month, provider)` primary key and `chars`, the cost guard for paid translation providers.
 
 ## 7. Viewer activity tables
 

@@ -8,6 +8,7 @@ export default defineConfig({
     './src/schema/captions.ts',
     './src/schema/content.ts',
     './src/schema/enums.ts',
+    './src/schema/i18n.ts',
     './src/schema/identity.ts',
     './src/schema/notices.ts',
     './src/schema/markers.ts',

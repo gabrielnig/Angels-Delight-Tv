@@ -1,6 +1,7 @@
 export * from './activity';
 export * from './auth';
 export * from './captions';
+export * from './i18n';
 export * from './content';
 export * from './enums';
 export * from './identity';

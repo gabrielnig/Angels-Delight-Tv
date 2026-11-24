@@ -7,7 +7,8 @@ Scoped tests only: `pnpm vitest run <file>`.
 | Slice | What | PR |
 |---|---|---|
 | 1 | Locale registry, plurals, numbers, dates, durations | 280 |
-| 2 | Catalog loader, merge, validation, pseudo locale, namespaces | pending |
+| 2 | Catalog loader, merge, validation, pseudo locale, namespaces | 284 |
+| 3 | Migration 0040 and schema (ui tables, caption published, translation source) | see PR list |
 
 ## Slice 1
 - `packages/shared/src/messages/locales.ts`: `LOCALES`, `LOCALE_CODES`, `normalizeLocale`, `parseAcceptLanguage`, `pickLocale`, `localeInfo`.
@@ -20,3 +21,11 @@ Scoped tests only: `pnpm vitest run <file>`.
 - `apps/web/src/lib/i18n`: `server.ts` (`getTranslator(locale)`, `loadCatalog`, `registerCatalogOverlay`, `registerMissingSink`), `provider.tsx` (`I18nProvider`, `useT`, `useLocale`), `namespaces.ts` (`pickNamespaces`).
 - Env `DEV_PSEUDO_LOCALE` (web, rejected in production). The pseudo locale code is `xx`.
 - Decision D-270.
+
+## Slice 3
+- Migration \`0040_i18n_and_caption_languages.sql\` (taken after other lanes used 0038 and 0039). Tables \`ui_translations\`, \`ui_missing_keys\`, \`translation_usage\`, enum \`ui_translation_status\`, columns \`caption_tracks.published\`, \`captions.source_caption_id\`, \`captions.source_sha256\`.
+- Schema: \`packages/db/src/schema/i18n.ts\` (also added to \`drizzle.config.ts\`, which lists schema files explicitly). Function \`record_missing_key(locale, key, hits)\`.
+- RLS: viewers read approved \`ui_translations\` only, staff (editor, admin, super_admin) read and write all. \`ui_missing_keys\` has no insert path except the function.
+- Test: \`TEST_DATABASE_ADMIN_URL=postgres://postgres:postgres@localhost:5432/postgres pnpm vitest run packages/db/src/i18n.int.test.ts packages/db/src/schema.int.test.ts\`
+- Decision: see the "Caption track publish flag and missing key function" entry in docs/DECISIONS.md.
+- Snapshot note: migration 0039 (sponsors, another lane) shipped without a drizzle snapshot, so `meta/0040_snapshot.json` also contains the sponsor tables. The 0040 SQL file holds only the i18n statements. Its journal `when` is set above 0039 so databases already at 0039 still apply it.

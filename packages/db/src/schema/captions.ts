@@ -27,6 +27,8 @@ export const captionTracks = pgTable(
     label: text('label').notNull(),
     kind: text('kind').notNull(),
     isDefault: boolean('is_default').notNull().default(false),
+    /** A viewer sees a track only when it is approved and published (M46). Existing tracks stay visible. */
+    published: boolean('published').notNull().default(true),
     // Circular with captions. Made DEFERRABLE by a hand-written migration.
     approvedCaptionId: uuid('approved_caption_id').references((): AnyPgColumn => captions.id, {
       onDelete: 'set null',
@@ -64,11 +66,20 @@ export const captions = pgTable(
     reviewedAt: timestamptz('reviewed_at'),
     reviewNote: text('review_note'),
     /** Start times (ms) of cues an aligned revision is unsure about. Review highlights them. */
+    /** For a translation: the revision it was translated from and that revision's hash at the time (M46). */
+    sourceCaptionId: uuid('source_caption_id').references((): AnyPgColumn => captions.id, {
+      onDelete: 'set null',
+    }),
+    sourceSha256: bytea('source_sha256'),
     lowConfidenceCues: integer('low_confidence_cues').array().notNull().default(sql`'{}'::integer[]`),
     createdAt: createdAt(),
   },
   (t) => [
     check('captions_revision_positive', sql`${t.revision} >= 1`),
+    check(
+      'captions_source_only_for_translation',
+      sql`${t.source} = 'translation' OR ${t.sourceCaptionId} IS NULL`,
+    ),
     check('captions_size_limit', sql`${t.bytes} BETWEEN 0 AND 1048576`),
     check(
       'captions_approved_is_reviewed',

@@ -1494,3 +1494,9 @@ Per video tri state, site default (Super admin), Admin changes it with a reason 
 - Options: keep the plan columns on `sponsors` and hide them with column grants, a separate private table.
 - Why: column grants cannot depend on the actor role, so a staff only table with its own policy is the simplest way to make leaks impossible.
 - Reversible: yes.
+
+## D-277 Caption track publish flag and missing key function (lane L7)
+- Decision: caption_tracks.published defaults to true so every existing approved track stays visible. ui_translations is readable by anyone for approved rows only and writable by staff through row level security. Viewer requests record missing keys only through the SECURITY DEFINER function record_missing_key, capped at 10,000 keys per locale.
+- Options: Open insert grant on ui_missing_keys, a worker only writer.
+- Why: A viewer with no account must be able to record a hit, and must never read drafts or the report.
+- Reversible: yes
