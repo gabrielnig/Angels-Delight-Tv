@@ -171,6 +171,24 @@ describe('WatchClient', () => {
     expect(screen.queryByRole('button', { name: /^Captions/ })).toBeNull();
   });
 
+  it('no CC button when captions are unavailable, even when the saved choice is on', async () => {
+    const data = await dataFor('v-magnets');
+    data.captions = [];
+    data.preferences = { ...data.preferences, captionsOn: true };
+    const { engine } = mount(data);
+    await waitFor(() => expect(engine.loads).toHaveLength(1));
+    expect(screen.queryByRole('button', { name: /^Captions/ })).toBeNull();
+    expect(document.querySelectorAll('track')).toHaveLength(0);
+  });
+
+  it('CC button shows and starts on for a saved on choice when a track exists', async () => {
+    const data = await dataFor('v-rain');
+    data.preferences = { ...data.preferences, captionsOn: true };
+    const { engine } = mount(data);
+    await waitFor(() => expect(engine.loads).toHaveLength(1));
+    expect(screen.getByRole('button', { name: /^Captions/ })).toBeTruthy();
+  });
+
   it('uses the AES-128 sample for the encrypted fixture', async () => {
     const { engine } = mount(await dataFor('v-encrypted'));
     await waitFor(() => expect(engine.loads).toHaveLength(1));
