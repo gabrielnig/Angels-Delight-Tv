@@ -1,6 +1,8 @@
 import type { Metadata } from 'next';
 import { notFound, permanentRedirect } from 'next/navigation';
 import { formatDuration } from '@ad/ui';
+import { setGuestAudienceAction } from '../../../actions';
+import { GuestKidsBlocked } from '../../../../components/guest/GuestKidsBlocked';
 import { TitleBlocked } from '../../../../components/title/TitleStates';
 import { PublicTitle, TitleView } from '../../../../components/title/TitleView';
 import { getCatalog, getLibrary } from '../../../../lib/data';
@@ -56,7 +58,11 @@ export default async function TitlePage({ params }: Params) {
   if (!detail) notFound();
   if ('redirect' in detail) permanentRedirect(detail.redirect);
   if ('blocked' in detail) {
-    return <TitleBlocked />;
+    return viewer.kind === 'guest' ? (
+      <GuestKidsBlocked setKidsMode={setGuestAudienceAction} />
+    ) : (
+      <TitleBlocked />
+    );
   }
   if (viewer.kind === 'guest') {
     const { signUpOpen } = await getSite().content();

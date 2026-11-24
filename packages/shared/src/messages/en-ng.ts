@@ -118,4 +118,12 @@ export const EN_NG = {
   'guest.save.createAccount': 'Create account',
   'guest.nav.main': 'Main',
   'guest.nav.skip': 'Skip to main content',
+  'guest.menu': 'Menu',
+  'guest.kids.label': 'Kids mode',
+  'guest.kids.help': 'Shows videos made for children. Anyone using this device can turn it off.',
+  'guest.kids.turnOff': 'Turn off Kids mode',
+  'guest.kids.blocked.title': 'This video is not in Kids mode',
+  'guest.kids.blocked.body':
+    'It is not part of the Kids library. Turn off Kids mode to watch it, or browse videos made for children.',
+  'guest.kids.browse': 'Browse',
 } as const satisfies CatalogShape;

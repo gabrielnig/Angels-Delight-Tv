@@ -13,7 +13,7 @@ import {
   ThemeService,
 } from '@ad/theme';
 import { beforeEach, describe, expect, it } from 'vitest';
-import { applyClientConfig, type ApplyDeps } from './apply';
+import { applyClientConfig, desiredSettings, type ApplyDeps } from './apply';
 import type { ClientConfig } from './client-config';
 
 const actor: Actor = { accountId: '018f0000-0000-7000-8000-000000000001', role: 'admin' };
@@ -181,5 +181,26 @@ describe('applyClientConfig', () => {
   it('never puts file contents or secrets in the report', async () => {
     const report = await applyClientConfig(config, h.deps, { dryRun: false });
     expect(JSON.stringify(report)).not.toContain('We keep little data');
+  });
+});
+
+describe('desiredSettings for guests (M40)', () => {
+  const base = {
+    platformName: 'Angels Delight TV',
+    domain: 'angelsdelight.tv',
+    supportEmail: 'help@angelsdelight.tv',
+    adminOwnerEmail: 'owner@angelsdelight.tv',
+  } as never;
+
+  it('maps guestAudience and guestPlay to their settings only when given', () => {
+    expect(
+      desiredSettings({ ...(base as object), guestAudience: 'kids', guestPlay: false } as never),
+    ).toMatchObject({
+      'features.guest_audience': 'kids',
+      'features.guest_play': false,
+    });
+    const none = desiredSettings(base) as Record<string, unknown>;
+    expect('features.guest_audience' in none).toBe(false);
+    expect('features.guest_play' in none).toBe(false);
   });
 });

@@ -4,8 +4,9 @@ import { createRealViewerResolver } from './analytics-identity';
 
 const secret = new Uint8Array(32).fill(4);
 
-function resolver(actor: unknown = null, secure = true) {
+function resolver(actor: unknown = null, secure = true, kids = false) {
   return createRealViewerResolver({
+    guestAudience: async () => ({ kids }),
     ctx: { db: {} } as never,
     secureCookies: secure,
     profileSecret: secret,
@@ -51,5 +52,15 @@ describe('analytics identity for guests (M40-S16)', () => {
     const id = newGuestId();
     const who = await resolver(null, false)(req(`ad_guest=${signGuest(secret, id)}`));
     expect(who.subjectId).toBe(id);
+  });
+
+  it('stores no identity for a guest in Kids mode', async () => {
+    const id = newGuestId();
+    const who = await resolver(
+      null,
+      true,
+      true,
+    )(req(`${guestCookieName(true)}=${signGuest(secret, id)}`));
+    expect(who).toEqual({ profileId: null, audience: 'kids' });
   });
 });

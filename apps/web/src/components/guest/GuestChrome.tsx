@@ -1,9 +1,9 @@
 'use client';
 
-import { usePathname } from 'next/navigation';
-import type { ReactNode } from 'react';
+import { usePathname, useRouter } from 'next/navigation';
+import { useEffect, useRef, useState, useTransition, type ReactNode } from 'react';
 import { msg } from '@ad/shared/messages';
-import { BottomTabBar, ButtonLink, Icon, Link, SiteFooter } from '@ad/ui';
+import { BottomTabBar, Button, ButtonLink, Icon, Link, SiteFooter } from '@ad/ui';
 import './guest.css';
 
 export interface GuestChromeProps {
@@ -14,6 +14,8 @@ export interface GuestChromeProps {
   signUpOpen: boolean;
   /** Kids mode on this device: the header shows the logo mark alone (R17). */
   kids?: boolean;
+  /** Remembers the Kids mode choice of this device. Missing means the switch is not offered. */
+  setKidsMode?: (kids: boolean) => Promise<void>;
   children: ReactNode;
 }
 
@@ -42,9 +44,40 @@ export function GuestChrome({
   year,
   signUpOpen,
   kids = false,
+  setKidsMode,
   children,
 }: GuestChromeProps) {
   const pathname = usePathname();
+  const router = useRouter();
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [pending, start] = useTransition();
+  const menuButton = useRef<HTMLButtonElement>(null);
+  const menu = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!menuOpen) return;
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape') return;
+      setMenuOpen(false);
+      menuButton.current?.focus();
+    };
+    const onPointer = (event: MouseEvent) => {
+      const target = event.target as Node;
+      if (!menu.current?.contains(target) && !menuButton.current?.contains(target))
+        setMenuOpen(false);
+    };
+    document.addEventListener('keydown', onKey);
+    document.addEventListener('mousedown', onPointer);
+    return () => {
+      document.removeEventListener('keydown', onKey);
+      document.removeEventListener('mousedown', onPointer);
+    };
+  }, [menuOpen]);
+  const changeKids = (next: boolean) =>
+    start(async () => {
+      await setKidsMode?.(next);
+      setMenuOpen(false);
+      router.refresh();
+    });
   const detail = pathname.startsWith('/title/');
   return (
     <div className="web-shell" data-kids={kids ? 'true' : undefined} data-guest="true">
@@ -97,6 +130,35 @@ export function GuestChrome({
                   {msg('guest.save.createAccount')}
                 </ButtonLink>
               ) : null}
+              {setKidsMode ? (
+                <div className="web-guestbar__menuwrap">
+                  <button
+                    ref={menuButton}
+                    type="button"
+                    className="web-guestbar__link"
+                    aria-haspopup="true"
+                    aria-expanded={menuOpen}
+                    onClick={() => setMenuOpen((open) => !open)}
+                  >
+                    {msg('guest.menu')}
+                  </button>
+                  {menuOpen ? (
+                    <div ref={menu} className="web-guestbar__menu">
+                      <button
+                        type="button"
+                        role="switch"
+                        aria-checked={kids}
+                        className="web-guestbar__switch"
+                        disabled={pending}
+                        onClick={() => changeKids(!kids)}
+                      >
+                        {msg('guest.kids.label')}
+                      </button>
+                      <p className="web-guestbar__help">{msg('guest.kids.help')}</p>
+                    </div>
+                  ) : null}
+                </div>
+              ) : null}
             </div>
           </>
         )}
@@ -104,6 +166,13 @@ export function GuestChrome({
       <main id="main" className="web-main" tabIndex={-1}>
         {children}
       </main>
+      {kids && setKidsMode ? (
+        <div className="web-guestbar__kidsoff">
+          <Button variant="ghost" size="sm" loading={pending} onClick={() => changeKids(false)}>
+            {msg('guest.kids.turnOff')}
+          </Button>
+        </div>
+      ) : null}
       <SiteFooter platformName={platformName} year={year} links={footerLinks} />
       {detail || kids ? null : <BottomTabBar tabs={TABS} currentPath={pathname} />}
     </div>

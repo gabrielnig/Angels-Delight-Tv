@@ -22,6 +22,8 @@ import {
   ALWAYS_ASK_MAX_AGE,
   alwaysAskFromCookie,
 } from '../lib/profiles/always-ask';
+import { guestCookiesSecure } from '../server/guest/guest-view';
+import { setGuestAudience } from '../server/guest/set-guest-audience';
 import { realDataEnabled } from '../server/data/mode';
 import { cookieProfileIo } from '../server/data/profile-io';
 
@@ -125,6 +127,11 @@ export async function signOutAction() {
   if (realDataEnabled()) await cookieProfileIo().clearActive();
 }
 
+/** Kids mode for a device with no account (M40-S09). No session is needed and nothing personal is stored. */
+export async function setGuestAudienceAction(kids: boolean): Promise<void> {
+  setGuestAudience(await cookies(), kids === true, guestCookiesSecure());
+}
+
 // ---- Profiles ----
 
 /** Makes a profile the active one. Real data sets the signed cookie itself, fixtures use the plain one. */
@@ -132,6 +139,11 @@ async function activate(accountId: string, profileId: string, proof?: SelectProo
   const result = await getProfiles().select(accountId, profileId, proof);
   if (result.ok && !realDataEnabled())
     (await cookies()).set(sessionCookieNames.profile, profileId, cookieOptions);
+  if (result.ok) {
+    // A device left on a kids profile stays in Kids mode after sign out (M40-S09).
+    const chosen = (await getProfiles().list(accountId)).find((p) => p.id === profileId);
+    if (chosen?.kids) setGuestAudience(await cookies(), true, guestCookiesSecure());
+  }
   return result;
 }
 
@@ -169,6 +181,7 @@ export async function deleteProfileAction(id: string) {
 export async function checkKidsPasswordAction(password: string) {
   const result = await getAuth().checkPassword(password);
   if (result.ok) {
+    setGuestAudience(await cookies(), false, guestCookiesSecure());
     if (realDataEnabled()) await cookieProfileIo().clearLock();
     const accountId = await currentAccountId();
     // Prefer a grown-up profile without a PIN. When every one has a PIN, leave the kids profile and show the

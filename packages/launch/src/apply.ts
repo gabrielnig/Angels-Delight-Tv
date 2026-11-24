@@ -81,6 +81,8 @@ export function desiredSettings(config: ClientConfig): Partial<ResolvedSettings>
     'platform.support_email': config.supportEmail,
   };
   if (config.tagline !== undefined) out['platform.tagline'] = config.tagline;
+  if (config.guestAudience !== undefined) out['features.guest_audience'] = config.guestAudience;
+  if (config.guestPlay !== undefined) out['features.guest_play'] = config.guestPlay;
   if (config.footerText !== undefined) out['platform.footer_text'] = config.footerText;
   if (config.socialLinks !== undefined) out['platform.social_links'] = config.socialLinks;
   if (config.languages) {
