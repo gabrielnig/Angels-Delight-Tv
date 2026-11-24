@@ -4,6 +4,9 @@ import { itemKey, percent } from '../../lib/format';
 import { primaryAction } from '../../lib/title-cta';
 import './title.css';
 import { exactDuration, seriesLine, titlePrimaryText, watchedLabel } from '../../lib/title-format';
+import { MostLikedLabel } from '@ad/ui';
+import { msg } from '@ad/shared/messages';
+import { MaturityBadge } from '../engage/MaturityBadge';
 import { TitleRating, type RatingTarget } from '../engage/TitleRating';
 import type { SelectedSponsor } from '@ad/sponsors';
 import { SponsorCard } from '../sponsor/SponsorCard';
@@ -76,6 +79,8 @@ export function TitleView({
             <span>{exactDuration(video.durationSeconds)}</span>
             <span>{video.categoryName}</span>
             {video.ageLabel ? <span>{video.ageLabel}</span> : null}
+            <MaturityBadge rank={video.maturityRank} />
+            {video.mostLiked ? <MostLikedLabel label={msg('engage.mostLiked')} /> : null}
             {video.hasCaptions ? (
               <span
                 className="tv-cc"

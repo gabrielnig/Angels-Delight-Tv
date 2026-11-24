@@ -77,6 +77,20 @@ describe.skipIf(!integrationEnabled())('title queries', () => {
       });
     });
 
+    it('carries the maturity rank of videos and series, null when unrated (M44-S13)', async () => {
+      const rated = await seedVideo(t.setup, { title: 'Rated card', maturityRank: 3, kidsSafe: false });
+      const unrated = await seedVideo(t.setup, { title: 'Unrated card', maturityRank: null, kidsSafe: false });
+      const series = await seedSeries(t.setup, { series: { title: 'Rated series card', maturityRank: 1 } });
+      const cards = await run((tx) =>
+        fetchCards(tx, ctx, general, [
+          { kind: 'video', id: rated.id },
+          { kind: 'video', id: unrated.id },
+          { kind: 'series', id: series.id },
+        ]),
+      );
+      expect(cards.map((card) => card.maturityRank)).toEqual([3, null, 1]);
+    });
+
     it('gives null category fields when the title has no visible category', async () => {
       const video = await seedVideo(t.setup, { title: 'No category' });
       const [card] = await run((tx) => fetchCards(tx, ctx, general, [{ kind: 'video', id: video.id }]));

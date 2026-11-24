@@ -3,6 +3,7 @@ import { render, screen, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { ToastProvider } from '@ad/ui';
 import type { TitleDetail, VideoSummary } from '../../lib/data';
+import { MaturityLabelsProvider } from '../../lib/maturity-context';
 import { PublicSeries, PublicTitle, TitleView } from './TitleView';
 
 vi.mock('../../app/actions', () => ({ toggleListAction: vi.fn() }));
@@ -86,15 +87,25 @@ describe('TitleView layout (S18)', () => {
   it('draws a play button and a progress strip on the poster', () => {
     const { container } = view(full());
     const poster = container.querySelector('.tv-poster')!;
-    expect(within(poster as HTMLElement).getByRole('link', { name: 'Resume How Rain Is Made' })).toHaveAttribute('href', '/watch/v1');
+    expect(
+      within(poster as HTMLElement).getByRole('link', { name: 'Resume How Rain Is Made' }),
+    ).toHaveAttribute('href', '/watch/v1');
     const strip = poster.querySelector('.tv-poster__strip > span') as HTMLElement;
     expect(strip.style.width).toBe('38%');
   });
 
   it('keeps the play button on a poster with no picture, and no strip before the first play', () => {
-    const { container } = view(full({ video: { ...full().video, thumbnail: undefined }, progress: undefined, play: { label: 'play', startSeconds: 0 } }));
+    const { container } = view(
+      full({
+        video: { ...full().video, thumbnail: undefined },
+        progress: undefined,
+        play: { label: 'play', startSeconds: 0 },
+      }),
+    );
     const poster = container.querySelector('.tv-poster')!;
-    expect(within(poster as HTMLElement).getByRole('link', { name: 'Play How Rain Is Made' })).toBeInTheDocument();
+    expect(
+      within(poster as HTMLElement).getByRole('link', { name: 'Play How Rain Is Made' }),
+    ).toBeInTheDocument();
     expect(poster.querySelector('.tv-poster__strip')).toBeNull();
   });
 
@@ -102,9 +113,16 @@ describe('TitleView layout (S18)', () => {
     const { container } = view(full());
     const link = container.querySelector('.tv-series') as HTMLElement;
     expect(link).toHaveAttribute('href', '/series/everyday-science');
-    expect(container.querySelector('.tv-series__long')).toHaveTextContent('Everyday Science, Season 1, Episode 3');
-    expect(container.querySelector('.tv-series__short')).toHaveTextContent('Everyday Science, S1 E3');
-    expect(link.compareDocumentPosition(screen.getByRole('heading', { level: 1 })) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(container.querySelector('.tv-series__long')).toHaveTextContent(
+      'Everyday Science, Season 1, Episode 3',
+    );
+    expect(container.querySelector('.tv-series__short')).toHaveTextContent(
+      'Everyday Science, S1 E3',
+    );
+    expect(
+      link.compareDocumentPosition(screen.getByRole('heading', { level: 1 })) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
   });
 
   it('shows the exact length, subject, age and a CC badge as plain meta', () => {
@@ -113,7 +131,9 @@ describe('TitleView layout (S18)', () => {
     expect(meta).toHaveTextContent('5 min 52 sec');
     expect(meta).toHaveTextContent('Science');
     expect(meta).toHaveTextContent('Ages 8 and up');
-    expect(within(meta as HTMLElement).getByLabelText('Captions available')).toHaveTextContent('CC');
+    expect(within(meta as HTMLElement).getByLabelText('Captions available')).toHaveTextContent(
+      'CC',
+    );
   });
 
   it('shows no CC badge when there are no captions', () => {
@@ -124,7 +144,9 @@ describe('TitleView layout (S18)', () => {
   it('shows the description once, with the credits line under it', () => {
     view(full());
     expect(screen.getAllByText('Rain starts as water in the sea.')).toHaveLength(1);
-    expect(screen.getByText('Presented by Dr Ifeoma Okafor. Captions in English.')).toBeInTheDocument();
+    expect(
+      screen.getByText('Presented by Dr Ifeoma Okafor. Captions in English.'),
+    ).toBeInTheDocument();
     expect(screen.queryByRole('tab')).toBeNull();
   });
 
@@ -137,7 +159,10 @@ describe('TitleView layout (S18)', () => {
   it('has a sticky Play bar for phones with the same destination', () => {
     const { container } = view(full());
     const bar = container.querySelector('.tv-sticky') as HTMLElement;
-    expect(within(bar).getByRole('link', { name: 'Resume, 3 min 38 sec left' })).toHaveAttribute('href', '/watch/v1');
+    expect(within(bar).getByRole('link', { name: 'Resume, 3 min 38 sec left' })).toHaveAttribute(
+      'href',
+      '/watch/v1',
+    );
   });
 });
 
@@ -179,13 +204,21 @@ describe('TitleView', () => {
 
   it('offers Resume with the time left, Start over and a progress bar', () => {
     view(full());
-    expect(screen.getAllByRole('link', { name: 'Resume, 3 min 38 sec left' }).length).toBeGreaterThan(0);
-    expect(screen.getByRole('link', { name: 'Start over' })).toHaveAttribute('href', '/watch/v1?t=0');
+    expect(
+      screen.getAllByRole('link', { name: 'Resume, 3 min 38 sec left' }).length,
+    ).toBeGreaterThan(0);
+    expect(screen.getByRole('link', { name: 'Start over' })).toHaveAttribute(
+      'href',
+      '/watch/v1?t=0',
+    );
   });
 
   it('offers Watch again for a finished title, starting at zero', () => {
     view(detail({ play: { label: 'watch_again', startSeconds: 0 } }));
-    expect(screen.getAllByRole('link', { name: 'Watch again' })[0]).toHaveAttribute('href', '/watch/v1?t=0');
+    expect(screen.getAllByRole('link', { name: 'Watch again' })[0]).toHaveAttribute(
+      'href',
+      '/watch/v1?t=0',
+    );
   });
 
   it('has a Share button', () => {
@@ -261,9 +294,14 @@ describe('PublicSeries', () => {
   });
 
   it('shows the rating group for a signed in adult and for a guest, never for kids or an episode', () => {
-    vi.stubGlobal('fetch', vi.fn(() => new Promise(() => undefined)));
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(() => new Promise(() => undefined)),
+    );
     const withUi = (ui: React.ReactElement) => render(<ToastProvider>{ui}</ToastProvider>);
-    const guestView = withUi(<TitleView detail={detail({})} inList={false} guest={{ signUpOpen: true }} />);
+    const guestView = withUi(
+      <TitleView detail={detail({})} inList={false} guest={{ signUpOpen: true }} />,
+    );
     expect(screen.getByRole('group', { name: 'Rate this title' })).toBeInTheDocument();
     guestView.unmount();
     const kidsView = withUi(
@@ -314,5 +352,43 @@ describe('TitleView sponsor card (M48)', () => {
   it('never draws the card for kids even if one is passed in', () => {
     withSponsor({ sponsor, kids: true });
     expect(screen.queryByText('Learn with Acme')).toBeNull();
+  });
+});
+
+describe('TitleView maturity badge and Most liked (M44-S05, S13)', () => {
+  const show = (patch: Partial<VideoSummary>, labels: string[] | null = null) =>
+    render(
+      <ToastProvider>
+        <MaturityLabelsProvider labels={labels}>
+          <TitleView detail={detail({ video: { ...video, ...patch } })} inList={false} />
+        </MaturityLabelsProvider>
+      </ToastProvider>,
+    );
+
+  it('shows the rating label with a spoken Rated form', () => {
+    show({ maturityRank: 2 });
+    const badge = screen.getByLabelText('Rated 12');
+    expect(badge).toHaveTextContent('12');
+  });
+
+  it('shows G too, and uses the configured labels', () => {
+    show({ maturityRank: 0 }, ['All', '7+', '13+', '16+', '18+']);
+    expect(screen.getByLabelText('Rated All')).toBeInTheDocument();
+  });
+
+  it('shows nothing for an unrated title', () => {
+    show({ maturityRank: null });
+    expect(screen.queryByLabelText(/^Rated /)).toBeNull();
+  });
+
+  it('shows the Most liked label, never a count', () => {
+    show({ mostLiked: true });
+    expect(screen.getByText('Most liked')).toBeInTheDocument();
+    expect(screen.queryByText(/ratings/)).toBeNull();
+  });
+
+  it('shows no Most liked label for a title that has none', () => {
+    show({ mostLiked: false });
+    expect(screen.queryByText('Most liked')).toBeNull();
   });
 });

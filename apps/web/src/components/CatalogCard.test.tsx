@@ -3,6 +3,7 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { ToastProvider } from '@ad/ui';
+import { MaturityLabelsProvider } from '../lib/maturity-context';
 import { ProfileIdProvider, ProfileKidsProvider } from '../lib/profile-context';
 import type { CatalogItem } from '../lib/data';
 import { CatalogCard } from './CatalogCard';
@@ -95,5 +96,42 @@ describe('CatalogCard rating cluster', () => {
   it('says Most liked in the link name', () => {
     mount(video);
     expect(screen.getByRole('link')).toHaveAccessibleName(/Most liked/);
+  });
+});
+
+describe('CatalogCard maturity chip in the peek (M44-S13)', () => {
+  const withRank = (maturityRank: number | null, labels: string[] | null = null) =>
+    render(
+      <ToastProvider>
+        <MaturityLabelsProvider labels={labels}>
+          <CatalogCard
+            item={{ ...(video as Extract<CatalogItem, { kind: 'video' }>), maturityRank }}
+            inList={false}
+            toggle={async () => 'sent'}
+          />
+        </MaturityLabelsProvider>
+      </ToastProvider>,
+    );
+
+  it('shows no chip for G, the norm on this site', () => {
+    withRank(0);
+    expect(screen.queryByTestId('card-rated')).toBeNull();
+    expect(screen.getByRole('link')).not.toHaveAccessibleName(/Rated/);
+  });
+
+  it('shows the label in the peek and says Rated 15 to screen readers', () => {
+    withRank(3);
+    expect(screen.getByTestId('card-rated')).toHaveTextContent('15');
+    expect(screen.getByRole('link')).toHaveAccessibleName(/Rated 15/);
+  });
+
+  it('uses the configured labels', () => {
+    withRank(3, ['All', '7+', '13+', '16+', '18+']);
+    expect(screen.getByTestId('card-rated')).toHaveTextContent('16+');
+  });
+
+  it('shows no chip for an unrated card', () => {
+    withRank(null);
+    expect(screen.queryByTestId('card-rated')).toBeNull();
   });
 });

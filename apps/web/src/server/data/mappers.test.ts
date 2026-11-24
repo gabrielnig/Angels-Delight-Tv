@@ -31,6 +31,7 @@ const videoCard = (over: Partial<TitleCardDto> = {}): TitleCardDto => ({
   durationMs: 125_400,
   episodeCount: null,
   kidsSafe: true,
+  maturityRank: null,
   hasCaptions: true,
   poster,
   categorySlug: 'geography',
@@ -90,6 +91,17 @@ describe('toThumb formats', () => {
   });
   it('has no fallback for old webp only rows', () => {
     expect(toThumb(poster)!.fallbackSrcSet).toBeUndefined();
+  });
+});
+
+describe('cardToItem maturity rank (M44-S13)', () => {
+  it('carries the rank of a video and a series, and null when unrated', () => {
+    expect(cardToItem(videoCard({ maturityRank: 3 }))).toMatchObject({ maturityRank: 3 });
+    expect(
+      cardToItem(videoCard({ kind: 'series', episodeCount: 2, maturityRank: null })),
+    ).toMatchObject({
+      maturityRank: null,
+    });
   });
 });
 
