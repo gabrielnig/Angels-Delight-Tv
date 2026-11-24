@@ -1736,3 +1736,9 @@ Decision: `video.preview` catches every error and records `failed` or `skipped` 
 - Options: A separate translation screen; one screen with tabs; language in the URL path
 - Why: Reuses the tested review editor and autosave, and keeps links shareable with ?lang=.
 - Reversible: Yes
+
+## D-318 My List filter and sort live in the URL as plain links, and Started means real watching (lane L5, M44-S15, S16)
+- Decision: `/my-list?filter=started|not_started&sort=oldest|az|za` is rendered on the server with link pills, so a choice survives a refresh and works without script. Started means a progress row at or past the minimum watch time or finished, for the video or any episode of the series. Not started is the exact complement. A to Z and Z to A page on the accent folded lower case title with the row id as the tie break. Continue learning cards take their Next label from the server `nextUp` flag, show the row title from the curated descriptor (default Continue learning, R14), and move Remove from row into a menu with a 6 second Undo.
+- Options: client side filtering of the loaded page, a select box, a separate saved views feature.
+- Why: client side filtering breaks with paging, and links need no state and are keyboard friendly.
+- Reversible: yes. Nothing is stored.

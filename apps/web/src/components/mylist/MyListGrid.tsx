@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Button, EmptyState, SeriesCard, VideoCard, useToast } from '@ad/ui';
 import { addToListAction, removeFromListAction } from '../../app/actions';
 import type { CatalogItem, Page } from '../../lib/data';
+import { msg } from '@ad/shared/messages';
 import { itemHref, itemKey, metaLine } from '../../lib/format';
 
 export interface MyListGridProps {
@@ -11,6 +12,9 @@ export interface MyListGridProps {
   total: number;
   nextCursor: string | null;
   hiddenCount: number;
+  /** The active filter, so an empty result can say why and offer a way back (S128). */
+  filter?: 'all' | 'started' | 'not_started';
+  sort?: 'newest' | 'oldest' | 'az' | 'za';
   loadMore: (cursor: string) => Promise<Page<CatalogItem>>;
   remove?: (itemKey: string) => Promise<void>;
   add?: (itemKey: string) => Promise<void>;
@@ -22,6 +26,7 @@ export function MyListGrid({
   total,
   nextCursor,
   hiddenCount,
+  filter = 'all',
   loadMore,
   remove = removeFromListAction,
   add = addToListAction,
@@ -85,6 +90,26 @@ export function MyListGrid({
     hiddenCount > 0 ? (
       <p className="web-grid-count">{`${hiddenCount} ${hiddenCount === 1 ? 'item is' : 'items are'} hidden in this profile.`}</p>
     ) : null;
+
+  if (items.length === 0 && !cursor && filter !== 'all') {
+    const started = filter === 'started';
+    return (
+      <EmptyState
+        live
+        title={
+          started
+            ? msg('engage.mylist.emptyStartedTitle')
+            : msg('engage.mylist.emptyNotStartedTitle')
+        }
+        description={
+          started
+            ? msg('engage.mylist.emptyStartedBody')
+            : msg('engage.mylist.emptyNotStartedBody')
+        }
+        action={{ label: msg('engage.mylist.showAll'), href: '/my-list' }}
+      />
+    );
+  }
 
   if (items.length === 0 && !cursor) {
     return (

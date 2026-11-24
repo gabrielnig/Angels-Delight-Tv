@@ -258,9 +258,15 @@ export async function reloadContinueRowAction() {
   return getLibrary().continueWatching(ctx);
 }
 
-export async function loadMoreMyListAction(cursor: string) {
+export async function loadMoreMyListAction(
+  cursor: string,
+  options?: { filter?: 'all' | 'started' | 'not_started'; sort?: 'newest' | 'oldest' | 'az' | 'za' },
+) {
   const { ctx } = await context();
-  return getLibrary().myList(ctx, cursor);
+  return getLibrary().myList(ctx, cursor, {
+    filter: options?.filter,
+    sort: options?.sort,
+  });
 }
 
 export async function removeContinueAction(videoId: string) {

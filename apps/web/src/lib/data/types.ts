@@ -110,6 +110,10 @@ export interface Progress {
   positionSeconds: number;
   durationSeconds: number;
   updatedAt: string;
+  /** True for the next episode after a finished one, not yet started. */
+  nextUp?: boolean;
+  /** "S1 E4" for an episode. */
+  episodeLabel?: string | null;
 }
 
 export interface HeroSlot {
@@ -295,7 +299,17 @@ export interface LibraryRepository {
   activity(ctx: ViewerContext, cursor?: string): Promise<ActivityPageData>;
   removeActivity(ctx: ViewerContext, videoId: string): Promise<void>;
   clearActivity(ctx: ViewerContext): Promise<{ cleared: number }>;
-  myList(ctx: ViewerContext, cursor?: string): Promise<Page<CatalogItem> & { hiddenCount: number }>;
+  myList(
+    ctx: ViewerContext,
+    cursor?: string,
+    options?: { filter?: 'all' | 'started' | 'not_started'; sort?: 'newest' | 'oldest' | 'az' | 'za' },
+  ): Promise<
+    Page<CatalogItem> & {
+      hiddenCount: number;
+      /** Filter chip counts. Absent when the source cannot tell. */
+      counts?: { all: number; started: number; notStarted: number };
+    }
+  >;
   myListIds(ctx: ViewerContext): Promise<string[]>;
   addToList(ctx: ViewerContext, itemKey: string): Promise<void>;
   removeFromList(ctx: ViewerContext, itemKey: string): Promise<void>;

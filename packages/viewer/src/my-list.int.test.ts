@@ -1,7 +1,7 @@
 import { eq } from 'drizzle-orm';
-import { myList, videos } from '@ad/db';
+import { myList, videos, watchProgress } from '@ad/db';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { addToMyList, listMyList, removeFromMyList } from './my-list';
+import { addToMyList, countMyList, listMyList, removeFromMyList } from './my-list';
 import { createHarness, NOW, seedSeries, seedVideo, type ViewerHarness } from './testing';
 
 const later = (seconds: number) => new Date(NOW.getTime() + seconds * 1000);
@@ -213,6 +213,81 @@ describe.skipIf(!process.env.TEST_DATABASE_ADMIN_URL)('my list', () => {
       expect((await list(user.kidsProfileId)).items.map((item) => item.card.title)).toEqual([
         'Child saved',
       ]);
+    });
+  });
+
+  describe('filter and sort', () => {
+    async function watch(profileId: string, videoId: string, positionMs: number, completed = false) {
+      await h.db.setup
+        .insert(watchProgress)
+        .values({ profileId, videoId, positionMs, durationMs: 120_000, completed });
+    }
+
+    async function seeded() {
+      const ctxt = await setup();
+      const started = await seedVideo(h.db.setup, { title: 'Bravo started' });
+      const finished = await seedVideo(h.db.setup, { title: 'Alpha finished' });
+      const glance = await seedVideo(h.db.setup, { title: 'Delta glance' });
+      const fresh = await seedVideo(h.db.setup, { title: 'Charlie fresh' });
+      const show = await seedSeries(h.db.setup, { series: { title: 'Echo show' } });
+      const ids = [started, finished, glance, fresh];
+      for (const [index, video] of ids.entries()) {
+        h.setNow(later(index));
+        await ctxt.add(video.id);
+      }
+      h.setNow(later(10));
+      await ctxt.add(show.id, 'series');
+      await watch(ctxt.user.profileId, started.id, 60_000);
+      await watch(ctxt.user.profileId, finished.id, 120_000, true);
+      await watch(ctxt.user.profileId, glance.id, 1_000);
+      await watch(ctxt.user.profileId, show.episodes[1]!.id, 30_000);
+      return { ...ctxt, started, finished, glance, fresh, show };
+    }
+
+    it('started includes finished titles and series with a started episode, ignoring a glance', async () => {
+      const { list, started, finished, show } = await seeded();
+      const page = await list(undefined, { filter: 'started' });
+      expect(page.items.map((item) => item.card.id).sort()).toEqual(
+        [started.id, finished.id, show.id].sort(),
+      );
+    });
+
+    it('not started is the exact complement', async () => {
+      const { list, glance, fresh } = await seeded();
+      const page = await list(undefined, { filter: 'not_started' });
+      expect(page.items.map((item) => item.card.id).sort()).toEqual([glance.id, fresh.id].sort());
+    });
+
+    it('sorts oldest added first and newest added first', async () => {
+      const { list, started, show } = await seeded();
+      expect((await list(undefined, { sort: 'oldest' })).items[0]!.card.id).toBe(started.id);
+      expect((await list(undefined, { sort: 'newest' })).items[0]!.card.id).toBe(show.id);
+    });
+
+    it('sorts A to Z and Z to A by title and pages without gaps or repeats', async () => {
+      const { list } = await seeded();
+      const az = await list(undefined, { sort: 'az', limit: 2 });
+      const next = await list(undefined, { sort: 'az', limit: 2, cursor: az.nextCursor! });
+      const last = await list(undefined, { sort: 'az', limit: 2, cursor: next.nextCursor! });
+      expect([...az.items, ...next.items, ...last.items].map((item) => item.card.title)).toEqual([
+        'Alpha finished',
+        'Bravo started',
+        'Charlie fresh',
+        'Delta glance',
+        'Echo show',
+      ]);
+      const za = await list(undefined, { sort: 'za' });
+      expect(za.items.map((item) => item.card.title)[0]).toBe('Echo show');
+    });
+
+    it('counts all, started and not started', async () => {
+      const { user } = await seeded();
+      expect(await countMyList(h.ctx, user.actor, { profileId: user.profileId })).toMatchObject({
+        visible: 5,
+        hidden: 0,
+        started: 3,
+        notStarted: 2,
+      });
     });
   });
 

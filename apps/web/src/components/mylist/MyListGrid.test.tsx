@@ -80,4 +80,15 @@ describe('MyListGrid', () => {
     await user.click(screen.getByRole('button', { name: 'Show more' }));
     await waitFor(() => expect(screen.getAllByRole('listitem')).toHaveLength(3));
   });
+
+  it('explains an empty Started filter and links back to the whole list (S128)', () => {
+    setup({ initialItems: [], total: 0, filter: 'started' });
+    expect(screen.getByText('Nothing started yet')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Show all' })).toHaveAttribute('href', '/my-list');
+  });
+
+  it('explains an empty Not started filter', () => {
+    setup({ initialItems: [], total: 0, filter: 'not_started' });
+    expect(screen.getByText('You have started everything')).toBeInTheDocument();
+  });
 });

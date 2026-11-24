@@ -242,6 +242,14 @@ describe.skipIf(!integrationEnabled())('viewer api', () => {
     expect(del.status).toBe(200);
   });
 
+  it('validates My List filter and sort, and accepts the documented values', async () => {
+    signedIn = me.actor;
+    const base = `/api/my-list?profileId=${me.profileId}`;
+    expect((await api.myList.list(req(`${base}&filter=bogus`))).status).toBe(422);
+    expect((await api.myList.list(req(`${base}&sort=sideways`))).status).toBe(422);
+    expect((await api.myList.list(req(`${base}&filter=not_started&sort=za`))).status).toBe(200);
+  });
+
   it('title detail takes an id and 404s on junk', async () => {
     signedIn = me.actor;
     const q = `profileId=${me.profileId}`;
