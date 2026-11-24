@@ -168,3 +168,19 @@ describe('engagement queues (L5, M44)', () => {
     });
   });
 });
+
+describe('trending queue (L5, M44-S07)', () => {
+  it('defines trending.refresh with concurrency 1, retry 3 and an hourly cron at minute 10', () => {
+    expect(QUEUE_DEFINITIONS['trending.refresh']).toMatchObject({
+      concurrency: 1,
+      retryLimit: 3,
+      retryDelaySeconds: 60,
+      expireInSeconds: 600,
+    });
+    expect(ENGAGE_CRON_SCHEDULES).toContainEqual({
+      queue: 'trending.refresh',
+      cron: '10 * * * *',
+      timezone: 'Africa/Lagos',
+    });
+  });
+});

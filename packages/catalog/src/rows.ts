@@ -3,6 +3,7 @@ import type { RowKind } from '@ad/shared';
 import { fetchHeroArtwork } from './detail';
 import { rowsOf } from './sql';
 import { fetchCards, listTitles, popularTitles, type TitleCard } from './titles';
+import { mostLikedTitles, trendingTitles } from './trending';
 import type { Audience, CatalogContext, Tx } from './types';
 
 export interface RowDescriptor {
@@ -119,6 +120,18 @@ export async function resolveRow(
         cards: await popularTitles(tx, ctx, audience, { limit: row.maxItems }),
         seeAll: null,
       };
+    case 'trending':
+      return {
+        cards: await trendingTitles(tx, ctx, audience, { kind: 'trending', limit: row.maxItems }),
+        seeAll: null,
+      };
+    case 'top_ten':
+      return {
+        cards: await trendingTitles(tx, ctx, audience, { kind: 'top_ten', limit: 10 }),
+        seeAll: null,
+      };
+    case 'most_liked':
+      return { cards: await mostLikedTitles(tx, ctx, audience, row.maxItems), seeAll: null };
     default:
       return { cards: [], seeAll: null };
   }

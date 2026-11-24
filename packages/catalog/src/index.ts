@@ -7,6 +7,7 @@ export * from './titles';
 export * from './videos';
 export * from './detail';
 export * from './rows';
+export * from './trending';
 export * from './publishing';
 export * from './seed-demo';
 export * from './admin';

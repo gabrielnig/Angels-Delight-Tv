@@ -47,6 +47,9 @@ export const ROW_KINDS = [
   'continue_watching',
   'my_list',
   'popular',
+  'trending',
+  'top_ten',
+  'most_liked',
 ] as const;
 /** Maturity ladder, lowest to highest. Rank 0 is all ages and equals the legacy kids safe flag (L5, M44). */
 export const MATURITY_RANKS = [0, 1, 2, 3, 4] as const;
