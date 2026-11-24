@@ -62,6 +62,26 @@ describe('registerMaintenanceHandlers', () => {
     expect(calls).toEqual(['rollup', 'prune-events', 'prune-audit']);
   });
 
+  it('prunes old missed searches after the nightly rollup, and a failure does not fail the rollup (M45-S09)', async () => {
+    const { boss, deps, calls } = setup({
+      pruneSearchMisses: async () => void calls.push('prune-misses'),
+    });
+    await registerMaintenanceHandlers(boss, deps as never);
+    await boss.send('analytics.rollup', {});
+    await boss.drain('analytics.rollup');
+    expect(calls).toEqual(['rollup', 'prune-misses']);
+
+    const failing = setup({
+      pruneSearchMisses: async () => {
+        throw new Error('db');
+      },
+    });
+    await registerMaintenanceHandlers(failing.boss, failing.deps as never);
+    await failing.boss.send('analytics.rollup', {});
+    await expect(failing.boss.drain('analytics.rollup')).resolves.not.toThrow();
+    expect(failing.calls).toEqual(['rollup']);
+  });
+
   it('leaves the prunes out and says so when no maintenance connection is configured', async () => {
     const warnings: string[] = [];
     const { boss, deps } = setup({

@@ -176,6 +176,9 @@ importers:
       '@ad/audit':
         specifier: workspace:*
         version: link:../../packages/audit
+      '@ad/catalog':
+        specifier: workspace:*
+        version: link:../../packages/catalog
       '@ad/config':
         specifier: workspace:*
         version: link:../../packages/config

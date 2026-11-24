@@ -11,7 +11,8 @@ Plan: `docs/plan/v2/L6-discovery.md`. Rulings: `docs/plan/v2/RULINGS.md`. Review
 | 3 | Share images and metadata | merged | #296 |
 | 4 | Discovery tab, settings, robots and layout metadata | merged | #305 |
 | 5 | Share menu | merged | #308 |
-| 6a | Search core: migration 0043, corrections, synonyms, subjects, misses | in review | |
+| 6a | Search core: migration 0043, corrections, synonyms, subjects, misses | merged | #314 |
+| 6b | Search service, API, UI notes, misses pruning in worker | in review | |
 
 ## Slice 1 (sitemap)
 

@@ -101,7 +101,7 @@ export function guestCategories(
 export function guestSearch(
   ctx: ViewerContext,
   audience: GuestAudience,
-  input: Omit<SearchInput, 'profileId' | 'record'>,
+  input: Omit<SearchInput, 'profileId'>,
 ): Promise<SearchResultDto> {
   return searchFor(ctx, { kids: audience.kids, maxRank: audience.maxRank }, input);
 }

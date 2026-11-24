@@ -187,6 +187,10 @@ export const EN_NG = {
   },
   'guest.import.failed': 'We could not add your history. It is still on this device.',
   // Discovery (L6)
+  'search.showingFor': 'Showing results for {query}',
+  'search.searchInstead': 'Search instead for {query}',
+  'search.didYouMean': 'Did you mean {query}?',
+  'search.subjects': 'Subjects',
   'share.button': 'Share',
   'share.title.video': 'Share this video',
   'share.title.series': 'Share this series',

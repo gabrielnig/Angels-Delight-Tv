@@ -1560,3 +1560,9 @@ Per video tri state, site default (Super admin), Admin changes it with a reason 
 - Options: compute per request, always fill the row with newest titles, a per profile snapshot.
 - Why: honest rows on a new site, no per profile data in the snapshot, and one cheap read per audience.
 - Reversible: yes.
+
+## D-288 Search misses pruning rides the nightly rollup job (lane L6)
+- Decision: pruneMisses runs after the analytics rollup in the same worker handler; a failure is logged and never fails the rollup.
+- Options: A separate pg-boss queue; a database cron.
+- Why: No new queue or schedule to operate, and rollup success matters more than a prune.
+- Reversible: Yes, move to its own queue later.

@@ -201,13 +201,26 @@ export function guestContext(audience: Audience): ViewerContext {
   return { accountId: '', profileId: 'none', audience, guest: true };
 }
 
+/** A page of search results with the notes the screen shows above them (M45). */
+export interface SearchPage extends Page<CatalogItem> {
+  subjects?: { slug: string; name: string }[];
+  /** The spelling the results are for, when it differs from what was typed. */
+  showingFor?: string | null;
+  didYouMean?: string | null;
+}
+
 export interface CatalogRepository {
   home(ctx: ViewerContext): Promise<HomeData>;
   /** The next page of rows below the first screen. */
   homeRows(ctx: ViewerContext, cursor: string): Promise<HomeRowsPage>;
   categories(ctx: ViewerContext): Promise<Category[]>;
   browse(ctx: ViewerContext, query: BrowseQuery): Promise<Page<CatalogItem>>;
-  search(ctx: ViewerContext, q: string, cursor?: string): Promise<Page<CatalogItem>>;
+  search(
+    ctx: ViewerContext,
+    q: string,
+    cursor?: string,
+    options?: { exact?: boolean },
+  ): Promise<SearchPage>;
   suggest(ctx: ViewerContext, q: string): Promise<Suggestion[]>;
   popular(ctx: ViewerContext): Promise<VideoSummary[]>;
   /**

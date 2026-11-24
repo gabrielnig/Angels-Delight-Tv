@@ -1,5 +1,6 @@
 import { makeNotifier } from './notifier';
 import { runNightlyRollup } from '@ad/analytics';
+import { pruneMisses } from '@ad/catalog';
 import type { WorkerEnv } from '@ad/config';
 import { Mailer, transportFromSmtpUrl, type MailTransport } from '@ad/mailer';
 import { createDb, createPool, type Database } from '@ad/db';
@@ -47,12 +48,13 @@ export function buildMaintenanceDeps(
   _logger: Logger,
 ): Omit<MaintenanceDeps, 'mirror' | 'logger'> {
   const maintenanceUrl = env.DATABASE_URL_MAINTENANCE;
-  if (!maintenanceUrl) return { rollup: () => runNightlyRollup(db) };
+  const pruneSearchMisses = () => pruneMisses(db, new Date());
+  if (!maintenanceUrl) return { rollup: () => runNightlyRollup(db), pruneSearchMisses };
   const maintenance = createDb(
     createPool(maintenanceUrl, { max: 1, applicationName: 'ad-worker-maintenance' }),
   );
   // The purge row is written by the worker role, because ad_maintenance cannot insert (migration 0012).
-  return { rollup: () => runNightlyRollup(db), ...makePrunes(maintenance, db) };
+  return { rollup: () => runNightlyRollup(db), pruneSearchMisses, ...makePrunes(maintenance, db) };
 }
 
 export function buildVideoHandlerDeps(

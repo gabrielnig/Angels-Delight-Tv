@@ -50,6 +50,10 @@ export const searchQuery = profileIdQuery.extend({
     .enum(['1', '0', 'true', 'false'])
     .transform((v) => v === '1' || v === 'true')
     .optional(),
+  exact: z
+    .enum(['1', '0', 'true', 'false'])
+    .transform((v) => v === '1' || v === 'true')
+    .optional(),
 });
 
 export const suggestQuery = profileIdQuery.extend({ q: z.string().max(400) });
@@ -115,7 +119,7 @@ export const myListRemoveBody = z.object({ profileId: id, target: titleRef });
  */
 export const guestHomeQuery = z.object({ cursor: cursor.optional() });
 export const guestBrowseQuery = browseQuery.omit({ profileId: true });
-export const guestSearchQuery = searchQuery.omit({ profileId: true, record: true });
+export const guestSearchQuery = searchQuery.omit({ profileId: true });
 export const guestSuggestQuery = z.object({ q: z.string().max(400) });
 export const guestTitleQuery = titleDetailQuery.omit({ profileId: true });
 /** Comma separated ids, at most 20 (the service refuses more). */

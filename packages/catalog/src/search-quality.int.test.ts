@@ -9,7 +9,6 @@ import {
   searchSubjects,
   searchWithCorrection,
 } from './search-quality';
-import { searchTitles } from './titles';
 import {
   categorize,
   createViewerTestDb,
