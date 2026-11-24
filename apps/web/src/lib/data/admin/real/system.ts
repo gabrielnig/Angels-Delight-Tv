@@ -20,6 +20,8 @@ const KIND: Record<string, JobRecord['kind']> = {
   'video.purge': 'cleanup',
   'uploads.cleanup': 'cleanup',
   'videos.purge_deleted': 'cleanup',
+  'ratings.rollup': 'engagement',
+  'trending.refresh': 'engagement',
 };
 
 const num = (value: unknown) => Number(value ?? 0);
@@ -105,6 +107,15 @@ export const realSystemService: SystemService = {
         failedAt: new Date((row.finished_at ?? row.created_at) as string | Date).toISOString(),
       } satisfies JobRecord;
     });
+  },
+
+  async trendingRefreshedAt(actor) {
+    need(actor, 'system.view');
+    const result = await adminRuntime().db().execute(
+      sql`SELECT max(computed_at) AS at FROM title_scores WHERE kind = 'trending'`,
+    );
+    const at = (result.rows[0] as { at: string | Date | null } | undefined)?.at;
+    return at ? new Date(at).toISOString() : null;
   },
 
   async retryJob(actor, id) {

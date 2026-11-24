@@ -27,7 +27,41 @@ const KIND: Record<JobRecord['kind'], string> = {
   poster: 'Poster',
   email: 'Email',
   cleanup: 'Cleanup',
+  engagement: 'Ratings and trending',
 };
+function TrendingFreshness({
+  at,
+  now,
+  staleHours,
+}: {
+  at: string | null | undefined;
+  now: number;
+  staleHours: number;
+}) {
+  if (at === undefined) return null;
+  if (at === null)
+    return (
+      <Banner tone="warning">
+        Trending has not been refreshed yet. Trending and Top 10 stay hidden until the first
+        refresh.
+      </Banner>
+    );
+  const stale = now - new Date(at).getTime() > staleHours * 3_600_000;
+  return (
+    <>
+      <p className="adm-muted" style={{ margin: 0 }}>
+        Trending last refreshed {formatRelative(at, now)}.
+      </p>
+      {stale ? (
+        <Banner tone="warning">
+          The Trending snapshot is older than {staleHours} hours, so Trending and Top 10 are hidden
+          from viewers. Check that the trending.refresh job is running.
+        </Banner>
+      ) : null}
+    </>
+  );
+}
+
 const ms = (v: number | null) => (v === null ? 'No data yet' : `${(v / 1000).toFixed(1)} s`);
 
 export function SystemView({
@@ -38,6 +72,8 @@ export function SystemView({
   now,
   canAct,
   showJobs = true,
+  trendingRefreshedAt,
+  trendingStaleHours = 3,
   actions,
 }: {
   jobs: JobRecord[];
@@ -49,6 +85,9 @@ export function SystemView({
   canAct: boolean;
   /** Failed jobs are for a Super admin (M30-S03). An admin sees Storage and Player quality. */
   showJobs?: boolean;
+  /** When the trending snapshot was last computed. Null means never, undefined means not known here. */
+  trendingRefreshedAt?: string | null;
+  trendingStaleHours?: number;
   actions: SystemActions;
 }) {
   const { run, busy } = useCommand();
@@ -77,13 +116,15 @@ export function SystemView({
       ]}
     >
       {tab === 'jobs' ? (
-        jobs.length === 0 ? (
+        <>
+          <TrendingFreshness at={trendingRefreshedAt} now={now} staleHours={trendingStaleHours} />
+          jobs.length === 0 ? (
           <EmptyState
             title="No failed jobs."
             help="Background work is running normally."
             icon="check"
           />
-        ) : (
+          ) : (
           <div className="adm-card adm-table-card">
             <table className="adm-table adm-table--always adm-table--sticky">
               <caption className="adm-sr">Failed and dead background jobs</caption>
@@ -137,7 +178,8 @@ export function SystemView({
               </tbody>
             </table>
           </div>
-        )
+          )
+        </>
       ) : tab === 'storage' ? (
         <div className="adm-card adm-stack">
           <h2 className="adm-h3">Storage used: {formatBytes(total)}</h2>
@@ -222,11 +264,7 @@ export function SystemView({
             </div>
           </div>
           <section className="adm-card adm-table-card" aria-labelledby="err-h">
-            <h2
-              className="adm-h3"
-              id="err-h"
-             
-            >
+            <h2 className="adm-h3" id="err-h">
               Playback errors
             </h2>
             {quality.errorsByCode.length === 0 ? (

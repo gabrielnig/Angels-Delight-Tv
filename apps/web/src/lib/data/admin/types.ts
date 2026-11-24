@@ -208,7 +208,7 @@ export interface MyAccount {
 
 export interface JobRecord {
   id: string;
-  kind: 'encode' | 'captions' | 'poster' | 'email' | 'cleanup';
+  kind: 'encode' | 'captions' | 'poster' | 'email' | 'cleanup' | 'engagement';
   state: 'failed' | 'dead';
   subject: string;
   attempts: number;

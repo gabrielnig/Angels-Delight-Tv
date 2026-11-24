@@ -15,6 +15,7 @@ import { realDashboardService } from './dashboard';
 import { realSystemService } from './system';
 
 describe.skipIf(!integrationEnabled())('real system and dashboard services', () => {
+  const viewerLike = (): AdminActor => ({ accountId: 'none', role: 'viewer' as never, name: 'None' });
   let t: ViewerTestDb;
   let admin: AdminActor;
   let plainAdmin: AdminActor;
@@ -54,6 +55,17 @@ describe.skipIf(!integrationEnabled())('real system and dashboard services', () 
   });
   beforeEach(() => {
     queued.length = 0;
+  });
+
+  it('reports when the trending snapshot was last computed, or null when there is none (L5 M44-S07)', async () => {
+    expect(await realSystemService.trendingRefreshedAt(plainAdmin)).toBeNull();
+    const video = await seedVideo(t.setup, { title: 'Scored' });
+    const at = new Date(Date.now() - 5 * 3_600_000);
+    await t.setup
+      .insert(schema.titleScores)
+      .values({ kind: 'trending', videoId: video.id, score: 1, plays: 9, rank: 1, computedAt: at });
+    expect(await realSystemService.trendingRefreshedAt(plainAdmin)).toBe(at.toISOString());
+    await expect(realSystemService.trendingRefreshedAt(viewerLike())).rejects.toThrow();
   });
 
   it('keeps failed jobs, retry and discard for a Super admin, and storage for admins (M30-S03)', async () => {
