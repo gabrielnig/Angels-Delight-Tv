@@ -1612,3 +1612,9 @@ Per video tri state, site default (Super admin), Admin changes it with a reason 
 - Options: Draw the card inside `@ad/player` beside Up next, draw it in the watch page under the player, count the cap at render time.
 - Why: The player package belongs to another lane and its end screen is already crowded. Cookies cannot be set from a server component, and counting at render would count cards nobody saw. A staff member checking a card must not inflate a sponsor report.
 - Reversible: Yes. Moving the card into the end screen later only changes where it renders.
+
+## D-295 Card rating chip: fine pointer only, one tab stop that expands, focus shows the card at once (lane L5, M44)
+- Decision: the card actions cluster holds My List and a rating chip. The chip shows the current level (Like when unrated) and expands to Not for me, Like and Love on hover or focus within, with the chip first in tab order. It exists for hover and fine pointer only, kids profiles and guests get none, touch rates on the title page. Keyboard focus (`:has(:focus-visible)`) scales the card and shows the peek with no delay. Most liked shows in the peek and is spoken in the link name, never as a count.
+- Options: three always visible buttons, a popover menu, hover only.
+- Why: the compact chip keeps the 44 px targets without covering the thumbnail, it stays reachable by keyboard, and `:focus-visible` avoids scaling a card after a mouse click.
+- Reversible: yes.
