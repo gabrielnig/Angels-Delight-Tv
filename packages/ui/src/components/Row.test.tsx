@@ -88,6 +88,27 @@ describe('Row', () => {
     }
   });
 
+  it('pages by whole cards from the visible column count minus one', async () => {
+    render(<Row title="Health">{cards}</Row>);
+    const list = screen.getByRole('list');
+    setScroll(list, { scrollLeft: 0, scrollWidth: 2000, clientWidth: 800 });
+    Object.defineProperty(list.firstElementChild as HTMLElement, 'offsetWidth', {
+      configurable: true,
+      value: 200,
+    });
+    const style = {
+      getPropertyValue: (name: string) => (name === '--cards-visible' ? '5.3' : ''),
+      columnGap: '12px',
+    };
+    const spy = vi.spyOn(window, 'getComputedStyle').mockReturnValue(style as unknown as CSSStyleDeclaration);
+    try {
+      await userEvent.setup().click(screen.getByRole('button', { name: 'Next titles' }));
+    } finally {
+      spy.mockRestore();
+    }
+    expect(list.scrollBy).toHaveBeenCalledWith({ left: 4 * (200 + 12), behavior: 'smooth' });
+  });
+
   it('hides the whole row when empty', () => {
     const { container } = render(<Row title="Continue watching" />);
     expect(container.firstChild).toBeNull();
