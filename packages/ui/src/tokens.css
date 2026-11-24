@@ -78,6 +78,9 @@
   --color-danger-border: #E8B4AE;
   --color-danger-surface: #FFFBFA;
   --color-danger-ink: #8F1D13;      /* text on danger tint, 8:1 */
+  --color-info-ink: #14568F;        /* text on info tint, 6.6:1 */
+  --color-success-ink: #14532D;     /* text on success tint, 8:1 */
+  --color-warning-ink: #5E3D00;     /* text on warning tint, 8.9:1 */
   --color-warning-strong: #B26A00;  /* password strength bars and word */
   --color-switch-off: #6E7179;
   --color-switch-locked: #C9C8C1;
