@@ -2,6 +2,7 @@ import { readFileSync, readdirSync, statSync, existsSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { DEFAULT_SESSION_POLICIES, PENDING_MFA_SECONDS } from '@ad/auth';
 import { describe, expect, it } from 'vitest';
+import { DEVICE_COOKIE_DAYS } from '../../server/auth/cookies';
 import { GUEST_AUDIENCE_DAYS } from '../../server/guest/guest-audience';
 import { GUEST_COOKIE_DAYS } from '../../server/guest/guest-cookie';
 import { LOCALE_COOKIE_MAX_AGE } from '../i18n/cookie';
@@ -65,6 +66,7 @@ describe('storage inventory (M45-S11)', () => {
     expect(seconds('ad.pickercache.v1')).toBe(PICKER_CACHE_MAX_AGE_MS / 1000);
     expect(seconds('ad:guest:intent:v1')).toBe(GUEST_INTENT_MAX_AGE_MS / 1000);
     expect(seconds('ad:notice:v1')).toBe(NOTICE_MAX_AGE_MS / 1000);
+    expect(seconds('__Host-ad_dev')).toBe(DEVICE_COOKIE_DAYS * 86400);
     expect(seconds('__Host-ad_profile')).toBe(30 * 86400);
     for (const item of STORAGE_INVENTORY) {
       if (item.seconds !== undefined) expect(item.kept, item.name).toContain(durationText(item.seconds));
@@ -78,6 +80,7 @@ describe('storage inventory (M45-S11)', () => {
     expect(durationText(7 * 86400)).toBe('7 days');
     expect(durationText(180 * 86400)).toBe('180 days');
     expect(durationText(365 * 86400)).toBe('12 months');
+    expect(durationText(400 * 86400)).toBe('13 months');
   });
 
   it('names the guest Kids mode choice and the import answer (R17) and the real guest cookie (R19)', () => {
