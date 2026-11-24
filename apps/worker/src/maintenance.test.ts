@@ -82,6 +82,19 @@ describe('registerMaintenanceHandlers', () => {
     expect(failing.calls).toEqual(['rollup']);
   });
 
+  it('adds the sign in history prune when it is given, daily after the audit prune', async () => {
+    const { boss, deps, calls } = setup({
+      pruneLoginEvents: async () => void calls.push('prune-logins'),
+    });
+    await registerMaintenanceHandlers(boss, deps as never);
+    expect(boss.handlers.has('auth.login_events_prune')).toBe(true);
+    const entry = MAINTENANCE_CRON_SCHEDULES.find((e) => e.queue === 'auth.login_events_prune');
+    expect(entry).toMatchObject({ cron: '45 3 * * *', timezone: 'Africa/Lagos' });
+    await boss.send('auth.login_events_prune', {});
+    await boss.drain('auth.login_events_prune');
+    expect(calls).toEqual(['prune-logins']);
+  });
+
   it('leaves the prunes out and says so when no maintenance connection is configured', async () => {
     const warnings: string[] = [];
     const { boss, deps } = setup({

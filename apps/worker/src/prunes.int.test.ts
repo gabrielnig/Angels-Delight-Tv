@@ -3,6 +3,7 @@ import {
   asRole,
   createTestDatabase,
   integrationEnabled,
+  makeAccount,
   makeVideo,
   type TestDatabase,
 } from '@ad/db/testing';
@@ -97,5 +98,21 @@ describe.skipIf(!integrationEnabled())('prunes read their retention from setting
     );
     await runPrunes((p) => p.pruneViewEvents());
     expect(await left()).toBe(1);
+  });
+
+  it('prunes sign in history older than 90 days with the maintenance role', async () => {
+    const account = makeAccount();
+    await t.db.insert(schema.accounts).values(account);
+    const daysAgo = (n: number) => new Date(Date.now() - n * 86_400_000);
+    for (const at of [daysAgo(120), daysAgo(91), daysAgo(10)]) {
+      await t.db
+        .insert(schema.loginEvents)
+        .values({ accountId: account.id, outcome: 'success', at });
+    }
+    const removed = await runPrunes((p) => p.pruneLoginEvents());
+    expect(removed).toBe(2);
+    const left = (await t.pool.query('select count(*)::int as n from login_events')).rows[0]
+      .n as number;
+    expect(left).toBe(1);
   });
 });

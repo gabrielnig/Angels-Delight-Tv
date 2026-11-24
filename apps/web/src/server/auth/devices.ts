@@ -32,3 +32,13 @@ export function relativeTime(then: Date, now: Date = new Date()): string {
   if (seconds < 86400) return plural(Math.floor(seconds / 3600), 'hour');
   return plural(Math.floor(seconds / 86400), 'day');
 }
+
+/** A country name for a two letter code. Never an address. */
+export function placeLabel(country: string | null | undefined): string {
+  if (!country) return 'Location unknown';
+  try {
+    return new Intl.DisplayNames(['en'], { type: 'region' }).of(country) ?? 'Location unknown';
+  } catch {
+    return 'Location unknown';
+  }
+}

@@ -3,9 +3,14 @@ import { msg } from '@ad/shared/messages';
 const NOTICES: Record<string, string> = {
   reset: msg('auth.notice.reset'),
   ended: msg('auth.notice.ended'),
+  everywhere: msg('auth.notice.everywhere'),
 };
 
-const TONES: Record<string, 'success' | 'info'> = { reset: 'success', ended: 'info' };
+const TONES: Record<string, 'success' | 'info'> = {
+  reset: 'success',
+  ended: 'info',
+  everywhere: 'success',
+};
 
 export function signInNotice(code: string | undefined): string | undefined {
   return code && Object.hasOwn(NOTICES, code) ? NOTICES[code] : undefined;

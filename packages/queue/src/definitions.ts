@@ -12,6 +12,7 @@ export const QUEUES = {
   videosPurgeDeleted: 'videos.purge_deleted',
   analyticsRollup: 'analytics.rollup',
   analyticsPrune: 'analytics.prune',
+  loginEventsPrune: 'auth.login_events_prune',
   auditPrune: 'audit.prune',
   emailOutbox: 'email.outbox',
   emailDigest: 'email.digest',
@@ -131,6 +132,13 @@ export const QUEUE_DEFINITIONS: Record<QueueName, QueueDefinition> = {
     retryBackoff: true,
     expireInSeconds: 60 * 60,
   },
+  'auth.login_events_prune': {
+    concurrency: 1,
+    retryLimit: 2,
+    retryDelaySeconds: 600,
+    retryBackoff: true,
+    expireInSeconds: 60 * 60,
+  },
   'audit.prune': {
     concurrency: 1,
     retryLimit: 2,
@@ -203,6 +211,7 @@ const PAYLOADS = {
   'video.purge': videoPayload,
   'uploads.cleanup': z.strictObject({}),
   'videos.purge_deleted': z.strictObject({}),
+  'auth.login_events_prune': z.strictObject({}),
   'analytics.rollup': z.strictObject({}),
   'analytics.prune': z.strictObject({}),
   'audit.prune': z.strictObject({}),
@@ -241,6 +250,7 @@ export const MAINTENANCE_CRON_SCHEDULES: CronEntry[] = [
   { queue: 'analytics.rollup', cron: '0 2 * * *', timezone: 'Africa/Lagos' },
   { queue: 'analytics.prune', cron: '0 3 1 * *', timezone: 'Africa/Lagos' },
   { queue: 'audit.prune', cron: '30 3 1 * *', timezone: 'Africa/Lagos' },
+  { queue: 'auth.login_events_prune', cron: '45 3 * * *', timezone: 'Africa/Lagos' },
 ];
 
 /** Mail jobs (M15-S01, M21-S03). The outbox drain also queues "at once" notices, so those leave within a minute. */

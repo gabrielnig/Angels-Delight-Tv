@@ -3,6 +3,7 @@ import type {
   AccountRepository,
   DeviceSession,
   ExportState,
+  LoginHistoryEntry,
   PlaybackSettings,
 } from '../types';
 
@@ -187,6 +188,36 @@ export class FixtureAccount implements AccountRepository {
 
   async revokeDevice(_accountId: string, id: string) {
     state.devices = state.devices.filter((d) => d.id !== id || d.current);
+  }
+
+  async signOutEverywhere(_id: string, password: string) {
+    if (password === 'wrong-password')
+      return { ok: false as const, reason: 'wrong_password' as const };
+    state.devices = [];
+    return { ok: true as const };
+  }
+
+  async loginHistory(): Promise<LoginHistoryEntry[]> {
+    return [
+      {
+        id: 'ev-1',
+        when: 'Active now',
+        outcome: 'success',
+        place: 'Nigeria',
+        deviceLabel: 'Chrome on Android',
+        device: 'phone',
+        newDevice: false,
+      },
+      {
+        id: 'ev-2',
+        when: '2 days ago',
+        outcome: 'failed',
+        place: 'Location unknown',
+        deviceLabel: 'Edge on Windows',
+        device: 'computer',
+        newDevice: false,
+      },
+    ];
   }
 
   async revokeOtherDevices() {

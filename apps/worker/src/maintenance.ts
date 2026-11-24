@@ -18,6 +18,8 @@ export interface MaintenanceDeps {
   pruneViewEvents?(): Promise<unknown>;
   /** Deletes audit entries past retention. Same connection, so also optional. */
   pruneAudit?(): Promise<unknown>;
+  /** Deletes sign in history past 90 days (M49-S14). Same connection, so also optional. */
+  pruneLoginEvents?(): Promise<unknown>;
   mirror: JobMirror;
   logger: Logger;
 }
@@ -75,7 +77,19 @@ export async function registerMaintenanceHandlers(
     });
     scheduled.push(entry(QUEUES.auditPrune));
   }
-  if (!pruneViewEvents || !pruneAudit) {
+  const { pruneLoginEvents } = deps;
+  if (pruneLoginEvents) {
+    await registerWorker(boss, {
+      ...base,
+      queue: QUEUES.loginEventsPrune,
+      async handle() {
+        const removed = await pruneLoginEvents();
+        logger.info('sign in history prune finished', { removed });
+      },
+    });
+    scheduled.push(entry(QUEUES.loginEventsPrune));
+  }
+  if (!pruneViewEvents || !pruneAudit || !pruneLoginEvents) {
     logger.warn('retention prunes are not scheduled because DATABASE_URL_MAINTENANCE is not set');
   }
 

@@ -108,6 +108,7 @@ export function AcctIcon({
       strokeLinejoin="round"
       aria-hidden="true"
       focusable="false"
+      data-icon={name}
       className={className}
     >
       {SHAPES[name]}

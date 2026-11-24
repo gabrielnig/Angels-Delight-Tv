@@ -13,6 +13,13 @@ export function twoStepCookieName(secure: boolean): string {
   return secure ? '__Host-ad_mv' : 'ad_mv';
 }
 
+/** A random id for this browser, used to tell a new device from a known one (M49-S13). Long lived, never shown. */
+export function deviceCookieName(secure: boolean): string {
+  return secure ? '__Host-ad_dev' : 'ad_dev';
+}
+
+export const DEVICE_COOKIE_DAYS = 400;
+
 export interface CookieOptions {
   httpOnly: true;
   secure: boolean;

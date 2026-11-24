@@ -153,6 +153,10 @@ export const sessions = pgTable(
     reauthAt: timestamptz('reauth_at'),
     ipTrunc: text('ip_trunc'),
     userAgent: text('user_agent'),
+    /** Two letter country from the trusted proxy header, for the device list and login history (M49-S13). */
+    country: text('country'),
+    /** Keyed hash of the long lived device cookie, so a known device can be told from a new one. */
+    deviceHash: bytea('device_hash'),
     /** The profile this session is using. Server side, so a client cookie cannot change who is watching. */
     activeProfileId: uuid('active_profile_id').references(() => profiles.id, {
       onDelete: 'set null',

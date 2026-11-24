@@ -1,8 +1,10 @@
 import {
   FieldErrors,
+  type LoginEventView,
   type SessionService,
   type StaffService,
   type ViewerMfaService,
+  deviceKind,
 } from '@ad/auth';
 import { RateLimited } from '@ad/shared';
 import { FixtureAccount } from '../../lib/data/fixtures/account';
@@ -11,15 +13,17 @@ import type {
   AccountRepository,
   DeviceSession,
   ExportState,
+  LoginHistoryEntry,
   PlaybackSettings,
 } from '../../lib/data/types';
-import { deviceLabel, relativeTime } from './devices';
+import { deviceLabel, placeLabel, relativeTime } from './devices';
 import type { GatewayIo } from './gateway';
 
 type Service = Pick<
   StaffService,
   | 'getOverview'
   | 'changePassword'
+  | 'signOutEverywhere'
   | 'deleteAccount'
   | 'getDeletionState'
   | 'cancelDeletion'
@@ -91,6 +95,7 @@ export class RealAccountRepository implements AccountRepository {
     private readonly clock: () => Date = () => new Date(),
     private readonly viewer?: AccountViewerSource,
     private readonly mfa?: Mfa,
+    private readonly history?: (accountId: string) => Promise<LoginEventView[]>,
   ) {}
 
   private lockedOrNetwork(error: unknown) {
@@ -305,9 +310,42 @@ export class RealAccountRepository implements AccountRepository {
     return rows.map((row) => ({
       id: row.id,
       label: deviceLabel(row.userAgent),
-      place: row.ipTrunc ?? 'Location unknown',
+      place: placeLabel(row.country),
       lastActive: relativeTime(row.lastSeenAt, now),
       current: row.id === actor.sessionId,
+      kind: deviceKind(row.userAgent),
+    }));
+  }
+
+  async signOutEverywhere(
+    accountId: string,
+    password: string,
+  ): ReturnType<AccountRepository['signOutEverywhere']> {
+    const actor = await this.actor(accountId);
+    try {
+      await this.service.signOutEverywhere(actor, password, await this.io.meta());
+      await this.io.clearSession();
+      return { ok: true as const };
+    } catch (error) {
+      if (error instanceof FieldErrors)
+        return { ok: false as const, reason: 'wrong_password' as const };
+      if (error instanceof RateLimited) return this.lockedOrNetwork(error);
+      return { ok: false as const, reason: 'network' as const };
+    }
+  }
+
+  async loginHistory(accountId: string): Promise<LoginHistoryEntry[]> {
+    if (!this.history) return [];
+    const now = this.clock();
+    const rows = await this.history(accountId);
+    return rows.map((row) => ({
+      id: row.id,
+      when: relativeTime(row.at, now),
+      outcome: row.outcome,
+      place: placeLabel(row.country),
+      deviceLabel: row.deviceLabel,
+      device: row.device,
+      newDevice: row.newDevice,
     }));
   }
 

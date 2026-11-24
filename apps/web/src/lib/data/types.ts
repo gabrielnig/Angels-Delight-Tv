@@ -419,12 +419,27 @@ export interface PlaybackSettings {
   captionLanguage: string;
 }
 
+export type DeviceKind = 'phone' | 'tablet' | 'tv' | 'computer' | 'other';
+
 export interface DeviceSession {
   id: string;
   label: string;
   place: string;
   lastActive: string;
   current: boolean;
+  /** Picks the icon. Missing means the label decides. */
+  kind?: DeviceKind;
+}
+
+/** One row of the recent sign ins list (M49-S14). Country only, never an address. */
+export interface LoginHistoryEntry {
+  id: string;
+  when: string;
+  outcome: 'success' | 'failed' | 'mfa_failed' | 'locked';
+  place: string;
+  deviceLabel: string;
+  device: DeviceKind;
+  newDevice: boolean;
 }
 
 export interface ExportState {
@@ -514,6 +529,17 @@ export interface AccountRepository {
   devices(accountId: string): Promise<DeviceSession[]>;
   revokeDevice(accountId: string, id: string): Promise<void>;
   revokeOtherDevices(accountId: string): Promise<number>;
+  /** Ends every session including this one, after the password is confirmed (M49-S12). */
+  signOutEverywhere(
+    accountId: string,
+    password: string,
+  ): Promise<
+    | { ok: true }
+    | { ok: false; reason: 'wrong_password' | 'network' }
+    | { ok: false; reason: 'locked'; minutes: number }
+  >;
+  /** The last 20 sign in attempts, newest first (M49-S14). */
+  loginHistory(accountId: string): Promise<LoginHistoryEntry[]>;
   changePassword(
     accountId: string,
     input: { current: string; next: string },

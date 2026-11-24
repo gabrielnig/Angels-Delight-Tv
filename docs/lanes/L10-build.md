@@ -11,16 +11,17 @@ Plan: `docs/plan/v2/L10-account-and-reach.md` (section 12 wins), rulings R24, R3
 - S4 (PR 300): Two step verification card (`TwoFactorCard`, `RecoveryCodes`), account repository and actions, admin Reset two step verification on the user page (`resetTwoFactorForUserAction`, `PeopleService.resetViewerTwoFactor`). Test: `account-repo.mfa.test.ts`, `TwoFactorCard.test.tsx`, `RecoveryCodes.test.tsx`, `UserDetail.test.tsx`.
 - S5 (viewing activity): `packages/viewer/src/activity.ts` (`listActivity`, `removeActivity`, `clearActivity`), `LibraryRepository.activity, removeActivity, clearActivity`, server actions (not API routes, same guard as other account actions, adults only), `/account/activity`, `ActivityView`, nav link, Data and privacy card (S180), icons tv, tablet, clock, eye. Tests: `activity.int.test.ts`, `ActivityView.test.tsx`, `activity-groups.test.ts`.
 
+- S6 (sign in history, new device mail, sign out everywhere): migration `0047_login_events.sql` (table, RLS owner policy, maintenance policy, `sessions.country`, `sessions.device_hash`), `packages/auth/src/login-events.ts` (record, list, purge, device hash and labels), hooks in `AccountService.signIn` and `ViewerMfaService.openSession` (never block sign in), `RATE_POLICIES.newDeviceMail`, `RequestMeta.country` and `deviceId` (`ad_dev` cookie minted in `requestMeta()`), queue `auth.login_events_prune` (daily 03:45 Lagos, worker `pruneLoginEvents`), `DevicesCard` Sign out everywhere dialog, `LoginHistoryCard`, notice `everywhere`. Decision D-292. Tests: `login-events.int.test.ts`, `signout-everywhere.int.test.ts`, `account-repo.signout.test.ts`, `LoginHistoryCard.test.tsx`, `DevicesPanel.test.tsx`, `request.test.ts`, `maintenance.test.ts`, `prunes.int.test.ts`, queue `definitions.test.ts`. Known unrelated failures on main: `catalog.int.test.ts` publish ("Choose a maturity rating") and `system.int.test.ts` storage.
+
 ## Was in PR (slice 3, challenge half)
 - Env `VIEWER_MFA_ENABLED`, `RealAuthGateway.verifyTwoStep, verifyRecovery, hasTwoStepPending`, cookie `ad_mv` (`__Host-ad_mv`), `/sign-in/verify` page, `TwoStepForm`, actions `verifyTwoStepAction`, `verifyRecoveryAction`, copy in `packages/shared/src/messages/l10-messages.ts` (spread into `EN_NG`, add all later L10 keys there).
 
 ## Not built yet (resume here, in this order)
-1. New device email and login events (migration), sign out everywhere button (`AccountService.signOutEverywhere` exists), login history.
-2. Playback settings: `captionColor`, reset, Data saver device note.
-3. `--font-mono` doc rows in DESIGN-SYSTEM.
-4. Google sign in (see plan slice 5 and 6).
-5. TV mode.
-6. Docs: M49 stories, MODULES, BUILD-PLAN, SCREEN-ARCHITECTURE, SECURITY, CLIENT-INPUTS, not now notes (offline downloads, passkeys), decisions D-L10-03 to D-L10-15.
+1. Playback settings: `captionColor`, reset, Data saver device note.
+2. `--font-mono` doc rows in DESIGN-SYSTEM.
+3. Google sign in (see plan slice 5 and 6).
+4. TV mode.
+5. Docs: M49 stories, MODULES, BUILD-PLAN, SCREEN-ARCHITECTURE, SECURITY, CLIENT-INPUTS, not now notes (offline downloads, passkeys), decisions D-L10-03 to D-L10-15.
 Owner follow up: the `.claude` skill grep edit for the Google mark (plan 12.2) is not done because the shell must not write there.
 
 ## Scoped tests

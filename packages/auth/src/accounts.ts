@@ -1,6 +1,14 @@
 import { schema, withAccount } from '@ad/db';
 import { LimiterUnavailable, LOCKOUT_POLICIES, RATE_POLICIES } from '@ad/security';
-import { Conflict, hmacSha256, RateLimited, sha256, uuidv7, isStaffRole } from '@ad/shared';
+import {
+  type AccountRole,
+  Conflict,
+  hmacSha256,
+  RateLimited,
+  sha256,
+  uuidv7,
+  isStaffRole,
+} from '@ad/shared';
 import { and, count, eq, isNotNull, isNull, lte } from 'drizzle-orm';
 import {
   checkCode,
@@ -12,6 +20,13 @@ import {
 import { findUsableInvite, consumeInvite } from './signup-invites';
 import { emailHash, maskEmail, normalizeEmail } from './identifiers';
 import { findAccountByEmailHash, isUniqueViolation } from './lookup';
+import {
+  countryName,
+  deviceHash,
+  deviceLabel,
+  recordLoginEvent,
+  type LoginOutcome,
+} from './login-events';
 import { signPendingMfa } from './mfa-pending';
 import { checkPassword } from './policy';
 import {
@@ -611,6 +626,11 @@ export class AccountService {
         kind: 'viewer',
         ipTrunc: meta.ipTrunc,
         userAgent: meta.userAgent,
+        ...this.sessionExtras(meta),
+      });
+      await this.recordLogin(account.id, account.role, 'success', meta, {
+        sessionId: session.session.id,
+        email,
       });
       await this.audit('auth.login', 'success', meta, {
         accountId: account.id,
@@ -689,6 +709,11 @@ export class AccountService {
       kind: 'viewer',
       ipTrunc: meta.ipTrunc,
       userAgent: meta.userAgent,
+      ...this.sessionExtras(meta),
+    });
+    await this.recordLogin(account.id, account.role, 'success', meta, {
+      sessionId: session.session.id,
+      email,
     });
     await this.audit('auth.login', 'success', meta, { accountId: account.id, role: account.role });
     return {
@@ -723,6 +748,7 @@ export class AccountService {
   ): Promise<void> {
     await this.closed(() => this.deps.limiter.consume(RATE_POLICIES.loginIp, ipKey));
     await this.audit('auth.login', 'failure', meta, { accountId });
+    if (accountId) await this.recordLogin(accountId, 'viewer', 'failed', meta);
     if (!hash || !email) return;
     await this.registerAccountFailure(hash, accountId, email, meta, LOCKOUT_POLICIES.viewerLogin);
   }
@@ -756,6 +782,65 @@ export class AccountService {
         });
       }
     });
+  }
+
+  /** Country and device hash for a new session, so the sessions list and login history can show them. */
+  protected sessionExtras(meta: RequestMeta): {
+    country: string | null;
+    deviceHash: Uint8Array | null;
+  } {
+    return {
+      country: meta.country ?? null,
+      deviceHash: meta.deviceId ? deviceHash(this.deps.pepper, meta.deviceId) : null,
+    };
+  }
+
+  /**
+   * M49-S13: writes one login event and, for a first sign in from an unknown device, sends the new device email
+   * at most once an hour. Never throws: a history problem must not block a person from signing in.
+   */
+  protected async recordLogin(
+    accountId: string,
+    role: AccountRole,
+    outcome: LoginOutcome,
+    meta: RequestMeta,
+    options: { sessionId?: string | null; email?: string | null } = {},
+  ): Promise<void> {
+    try {
+      const extras = this.sessionExtras(meta);
+      const result = await recordLoginEvent(this.deps.db, {
+        accountId,
+        role,
+        outcome,
+        sessionId: options.sessionId ?? null,
+        country: extras.country,
+        deviceHash: extras.deviceHash,
+        userAgent: meta.userAgent,
+        at: this.now(),
+      });
+      if (outcome !== 'success' || !result.newDevice || !result.hadEarlierSignIn) return;
+      this.run(async () => {
+        const allowed = await this.deps.limiter.consume(
+          RATE_POLICIES.newDeviceMail,
+          this.subject('acct', accountId),
+        );
+        if (!allowed.allowed) return;
+        let to = options.email ?? null;
+        if (!to) {
+          const account = await this.loadOwn(accountId);
+          if (!account?.emailEnc) return;
+          to = await this.deps.keys.open(accountId, 'email', account.emailEnc);
+        }
+        await this.deps.mailer.sendNewDeviceSignIn({
+          to,
+          device: deviceLabel(meta.userAgent),
+          country: countryName(extras.country),
+          time: `${this.now().toISOString().slice(0, 16).replace('T', ' ')} UTC`,
+        });
+      });
+    } catch (error) {
+      this.logger.error('login event failed', { error: String(error) });
+    }
   }
 
   async signOut(token: string, meta: RequestMeta): Promise<void> {

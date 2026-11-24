@@ -1,5 +1,6 @@
 import { pruneViewEvents } from '@ad/analytics';
 import { pruneAudit } from '@ad/audit';
+import { purgeLoginEvents } from '@ad/auth';
 import type { Database } from '@ad/db';
 import { readSetting } from '@ad/theme/settings';
 
@@ -13,6 +14,9 @@ export function makePrunes(maintenance: Database, writer: Database) {
     async pruneAudit() {
       const retentionMonths = await readSetting(writer, 'audit.retention_months');
       return pruneAudit(maintenance, writer, { retentionMonths });
+    },
+    async pruneLoginEvents() {
+      return purgeLoginEvents(maintenance, new Date());
     },
     async pruneViewEvents() {
       const retentionDays = await readSetting(writer, 'analytics.raw_retention_days');

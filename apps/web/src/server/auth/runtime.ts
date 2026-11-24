@@ -9,7 +9,7 @@ import {
   isPasswordBreached,
 } from '@ad/auth';
 import { type WebEnv, loadWebEnv } from '@ad/config';
-import { createDb, createPool } from '@ad/db';
+import { type Database, createDb, createPool } from '@ad/db';
 import { Mailer, OutageMonitor, RetryingTransport, transportFromSmtpUrl } from '@ad/mailer';
 import { createSuppressionStore } from '../email/suppression';
 import { emailBrandFrom } from './email-brand';
@@ -20,6 +20,7 @@ import { createLogger } from '@ad/shared';
 
 export interface AuthRuntime {
   env: WebEnv;
+  db: Database;
   staff: StaffService;
   viewerMfa: ViewerMfaService;
   sessions: SessionService;
@@ -113,6 +114,7 @@ function build(env: WebEnv): AuthRuntime {
   const viewerMfa = new ViewerMfaService(deps);
   return {
     env,
+    db,
     staff,
     viewerMfa,
     sessions,

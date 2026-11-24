@@ -13,7 +13,16 @@ describe('sign in notices (M01-S12 AC3)', () => {
   });
 
   it('keeps the reset notice', () => {
-    expect(signInNotice('reset')).toBe('Your password was changed. Sign in with your new password.');
+    expect(signInNotice('reset')).toBe(
+      'Your password was changed. Sign in with your new password.',
+    );
+  });
+
+  it('confirms a sign out on every device', () => {
+    expect(signInNotice('everywhere')).toBe(
+      'You were signed out on every device. Sign in again to continue.',
+    );
+    expect(signInNoticeTone('everywhere')).toBe('success');
   });
 
   it('ignores unknown codes', () => {

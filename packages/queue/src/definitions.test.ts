@@ -58,7 +58,12 @@ describe('queue definitions', () => {
 
 describe('maintenance queues', () => {
   it('defines rollup and both prunes with no payload fields', () => {
-    for (const name of ['analytics.rollup', 'analytics.prune', 'audit.prune'] as const) {
+    for (const name of [
+      'analytics.rollup',
+      'analytics.prune',
+      'audit.prune',
+      'auth.login_events_prune',
+    ] as const) {
       expect(QUEUE_DEFINITIONS[name]).toMatchObject({ concurrency: 1 });
       expect(parsePayload(name, {})).toEqual({});
       expect(() => parsePayload(name, { videoId: 'x' })).toThrow();
@@ -71,6 +76,7 @@ describe('maintenance queues', () => {
       'analytics.prune',
       'analytics.rollup',
       'audit.prune',
+      'auth.login_events_prune',
     ]);
     for (const entry of MAINTENANCE_CRON_SCHEDULES) expect(entry.timezone).toBe('Africa/Lagos');
   });

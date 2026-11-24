@@ -1,5 +1,6 @@
 import { sql } from 'drizzle-orm';
 import {
+  boolean,
   check,
   index,
   integer,
@@ -82,5 +83,36 @@ export const signupInvites = pgTable(
     check('signup_invites_uses_in_range', sql`${t.uses} >= 0 AND ${t.uses} <= ${t.maxUses}`),
     check('signup_invites_max_uses_range', sql`${t.maxUses} BETWEEN 1 AND 1000`),
     uniqueIndex('signup_invites_code_hash_uniq').on(t.codeHash),
+  ],
+);
+
+/**
+ * Recent sign in attempts for one account (M49-S13, S14). Country only, never an address. Rows older than
+ * `LOGIN_EVENT_RETENTION_DAYS` (90) are deleted by the maintenance job.
+ */
+export const loginEvents = pgTable(
+  'login_events',
+  {
+    id: pk(),
+    accountId: uuid('account_id')
+      .notNull()
+      .references(() => accounts.id, { onDelete: 'cascade' }),
+    sessionId: uuid('session_id'),
+    at: timestamptz('at').notNull().defaultNow(),
+    outcome: text('outcome').notNull(),
+    country: text('country'),
+    ipTrunc: text('ip_trunc'),
+    userAgent: text('user_agent'),
+    deviceHash: bytea('device_hash'),
+    newDevice: boolean('new_device').notNull().default(false),
+  },
+  (t) => [
+    index('login_events_account_at_idx').on(t.accountId, t.at.desc()),
+    index('login_events_at_idx').on(t.at),
+    check(
+      'login_events_outcome_known',
+      sql`${t.outcome} IN ('success', 'failed', 'mfa_failed', 'locked')`,
+    ),
+    check('login_events_country_code', sql`${t.country} IS NULL OR char_length(${t.country}) = 2`),
   ],
 );

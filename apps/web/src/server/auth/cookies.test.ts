@@ -4,6 +4,7 @@ import {
   pendingCookieOptions,
   sessionCookieName,
   sessionCookieOptions,
+  deviceCookieName,
   twoStepCookieName,
 } from './cookies';
 
@@ -62,5 +63,12 @@ describe('two step pending cookie', () => {
   it('uses the host prefix when cookies are secure', () => {
     expect(twoStepCookieName(true)).toBe('__Host-ad_mv');
     expect(twoStepCookieName(false)).toBe('ad_mv');
+  });
+});
+
+describe('device cookie', () => {
+  it('uses the __Host- prefix only when secure', () => {
+    expect(deviceCookieName(true)).toBe('__Host-ad_dev');
+    expect(deviceCookieName(false)).toBe('ad_dev');
   });
 });

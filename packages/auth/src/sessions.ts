@@ -47,6 +47,8 @@ export interface CreateSessionInput {
   kind: SessionKind;
   ipTrunc?: string | null;
   userAgent?: string | null;
+  country?: string | null;
+  deviceHash?: Uint8Array | null;
 }
 
 export interface SessionListItem {
@@ -55,6 +57,7 @@ export interface SessionListItem {
   lastSeenAt: Date;
   ipTrunc: string | null;
   userAgent: string | null;
+  country: string | null;
   mfaVerified: boolean;
 }
 
@@ -101,6 +104,8 @@ export class SessionService {
         mfaVerifiedAt: input.kind === 'staff' ? now : null,
         ipTrunc: input.ipTrunc ?? null,
         userAgent: input.userAgent ? input.userAgent.slice(0, 200) : null,
+        country: input.country ?? null,
+        deviceHash: input.deviceHash ? Buffer.from(input.deviceHash) : null,
       })
       .returning({ id: schema.sessions.id });
     if (!row) throw new Error('Session insert returned no row');
@@ -300,6 +305,7 @@ export class SessionService {
         lastSeenAt: row.lastSeenAt,
         ipTrunc: row.ipTrunc,
         userAgent: row.userAgent,
+        country: row.country,
         mfaVerified: row.mfaVerifiedAt !== null,
       }));
   }

@@ -88,6 +88,10 @@ export interface RequestMeta {
   ipTrunc: string | null;
   userAgent: string | null;
   requestId: string | null;
+  /** Two letter country from the edge, when known. */
+  country?: string | null;
+  /** The random device cookie value. Only a keyed hash of it is stored. */
+  deviceId?: string | null;
 }
 
 export const NO_META: RequestMeta = { ip: null, ipTrunc: null, userAgent: null, requestId: null };
