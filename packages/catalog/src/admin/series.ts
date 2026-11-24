@@ -8,6 +8,7 @@ import {
   isUuid,
   uuidv7,
   type Actor,
+  isAdminRole,
   isStaffRole,
 } from '@ad/shared';
 import { rowsOf } from '../sql';
@@ -250,7 +251,7 @@ export async function deleteAdminSeries(
   actor: Actor,
   id: string,
 ): Promise<CommandResult> {
-  assertStaff(actor);
+  if (!isStaffRole(actor.role) || !isAdminRole(actor.role)) throw new Forbidden('Admins only');
   if (!isUuid(id)) return fail(NOT_FOUND);
   return withAccount(ctx.db, actor, async (tx) => {
     const [current] = await tx

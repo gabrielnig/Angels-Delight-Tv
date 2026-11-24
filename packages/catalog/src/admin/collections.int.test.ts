@@ -34,12 +34,14 @@ describe.skipIf(!integrationEnabled())('admin categories and series', () => {
   let t: ViewerTestDb;
   let ctx: AdminContext;
   let editor: Actor;
+  let admin: Actor;
   let viewer: Actor;
 
   beforeAll(async () => {
     t = await createViewerTestDb();
     ctx = { db: t.app };
     editor = { accountId: (await seedAccount(t.setup, 'editor')).id, role: 'editor' };
+    admin = { accountId: (await seedAccount(t.setup, 'admin')).id, role: 'admin' };
     viewer = { accountId: (await seedAccount(t.setup)).id, role: 'viewer' };
   });
   afterAll(async () => {
@@ -217,7 +219,8 @@ describe.skipIf(!integrationEnabled())('admin categories and series', () => {
       const v = await seedVideo(t.setup);
       await setAdminEpisode(ctx, editor, v.id, series.id, 1, 1);
 
-      expect(await deleteAdminSeries(ctx, editor, series.id)).toEqual({ ok: true });
+      await expect(deleteAdminSeries(ctx, editor, series.id)).rejects.toThrow(/admin/i);
+      expect(await deleteAdminSeries(ctx, admin, series.id)).toEqual({ ok: true });
       expect((await listAdminSeries(ctx, editor)).some((x) => x.id === series.id)).toBe(false);
       const [row] = await t.setup.select().from(videos).where(eq(videos.id, v.id));
       expect(row?.kind).toBe('standalone');

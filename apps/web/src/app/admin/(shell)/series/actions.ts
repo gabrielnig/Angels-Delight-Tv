@@ -1,6 +1,9 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
+import { MAX_BULK_CALL, newBulkId, type BulkOutcome, type BulkUndo } from '@/lib/data/admin/bulk';
+import type { SeriesBulkAction } from '@/lib/data/admin/series-bulk';
+import { auditBulkRun } from '@/server/admin/bulk-run';
 import { collectionService } from '@/lib/data/admin/services';
 import { requireActionActor } from '@/lib/data/admin/session-next';
 import type { SeriesPatch } from '@/lib/data/admin/collection-commands';
@@ -50,4 +53,35 @@ export async function setEpisodeAction(
       Number.isInteger(episode) && episode! > 0 ? episode : null,
     ),
   );
+}
+
+/** Publish, unpublish or delete many series. Delete is admin only and has no undo. */
+export async function bulkSeriesAction(
+  ids: string[],
+  action: SeriesBulkAction,
+  bulkId: string = newBulkId(),
+): Promise<BulkOutcome> {
+  const actor = await requireActionActor('/admin/series');
+  const used = ids.slice(0, MAX_BULK_CALL);
+  const outcome = await collectionService.bulkSeries(actor, used, action, bulkId);
+  await auditBulkRun(
+    { accountId: actor.accountId, role: actor.role },
+    {
+      action: `series.bulk_${action.type}`,
+      label: action.type === 'delete' ? 'Delete series' : `${action.type === 'publish' ? 'Publish' : 'Unpublish'} series`,
+      targetType: 'series',
+      bulkId,
+      ids: used,
+      outcome,
+    },
+  );
+  revalidatePath('/admin', 'layout');
+  return outcome;
+}
+
+export async function undoBulkSeriesAction(undo: BulkUndo) {
+  const actor = await requireActionActor('/admin/series');
+  const result = await collectionService.undoSeries(actor, undo);
+  revalidatePath('/admin', 'layout');
+  return result;
 }
