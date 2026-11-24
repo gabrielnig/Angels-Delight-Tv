@@ -123,6 +123,8 @@ Roles:
 | Delete a series, handle viewer accounts in bulk (`series.delete`, `users.bulk`) | no | no | no | yes | yes |
 | Change roles in bulk (`roles.bulk`, re-auth once, never self) | no | no | no | no | yes |
 | Read audit log | no | no | no | content actions only | yes, all entries and export |
+| See donations, export them as CSV, settle a gift that needs review (`donation.view`, `donation.export`, `donation.resolve`, M48) | no | no | no | yes (email masked, full address only through an audited reveal) | yes |
+| Donate, check a gift status (`POST /api/donate/checkout`, `GET /api/donate/status`, M48) | yes, when donations are on, never on a kids profile or kids mode (403) | yes, adult profiles only | yes, adult profiles only | yes, adult profiles only | yes, adult profiles only |
 
 Rules:
 - Profile ownership: any route with a profile id loads it through `getOwnedProfile(actor, id)`, which returns 404 (not 403) when the profile belongs to someone else, to avoid leaking existence.

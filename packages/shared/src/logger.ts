@@ -4,7 +4,9 @@ const LEVEL_ORDER: Record<LogLevel, number> = { debug: 10, info: 20, warn: 30, e
 const SECRET_FIELD =
   /pass(word)?|secret|token|authorization|cookie|api_?key|private_?key|kek|pepper|e_?mail/i;
 const EMAIL = /[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/g;
-const maskEmails = (text: string) => text.replace(EMAIL, '[email]');
+/** Paystack secret keys (sk_test_, sk_live_), so one pasted into a message or error never reaches a log line. */
+const PAYSTACK_KEY = /\bsk_(?:test|live)_[A-Za-z0-9]+/g;
+const maskEmails = (text: string) => text.replace(EMAIL, '[email]').replace(PAYSTACK_KEY, '[redacted]');
 
 export interface Logger {
   debug(message: string, fields?: Record<string, unknown>): void;

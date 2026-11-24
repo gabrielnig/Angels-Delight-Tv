@@ -73,3 +73,22 @@ Every variable is documented in `.env.production.example` with a tag: `[generate
 ## 5. Decisions the client may still make
 
 Name, domain, colours and legal text are expected to change. Because they are all configuration, changing one is an edit to `client.json` and a rerun of `apply`, with no code change and no redeploy. Moderation rules, age rating policy and the languages offered are settings in the admin.
+
+## 6. Donations and sponsors (client, owner)
+
+Nothing here is hardcoded. Each item maps to a setting in Settings, Monetization, or to a record in the admin.
+
+| Needed from the client | Where it goes | Notes |
+|---|---|---|
+| Organisation legal name | `donate.org_name` | Shown on the Donate page and on receipts |
+| Registration number (optional) | `donate.org_registration` | |
+| Paystack account, test and live secret keys | `PAYSTACK_SECRET_KEY` on the server | Owner pastes it into the server secrets, never into chat or settings |
+| Support or receipt reply email | `donate.receipts.reply_to` or the support email | |
+| Preset amounts, smallest and largest gift | `donate.presets_minor.ngn`, `donate.min_minor.ngn`, `donate.max_minor.ngn` | In kobo |
+| Page wording (title, text, thank you) | `donate.intro_*`, `donate.thank_you_*` | Draft wording is provided |
+| USD gifts (optional) | `donate.usd.enabled` | Needs Paystack international payments and a USD account |
+| Bank details for transfers (optional) | `donate.bank_transfer.instructions` | Plain text. Not built yet (Could) |
+| Transparency page content | `donate.transparency.*` | Percentages that total 100, or amounts; the owner must supply real figures |
+| Tax or receipt wording | Not configured | Receipts make no tax claim until the owner and an adviser decide |
+| Sponsor terms and sponsors themselves | Admin, Sponsors | Names, links and images come from each sponsor |
+

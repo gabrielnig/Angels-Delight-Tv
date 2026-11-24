@@ -97,4 +97,18 @@ describe('createLogger email redaction', () => {
     expect(lines[0]).not.toMatch(/@example\.(com|org|net)/);
     expect(lines[0]).toContain('[email]');
   });
+
+  it('redacts Paystack keys and donor emails in messages, fields and errors (M48-S44)', () => {
+    const lines: string[] = [];
+    const log = createLogger({ write: (l) => lines.push(l) });
+    log.warn('call failed with sk_test_abc123DEF and donor@example.com', {
+      paystackSecretKey: 'sk_live_zzz',
+      note: 'bearer sk_live_QWERTY12345 used',
+      donorEmail: 'donor@example.com',
+      error: new Error('Paystack rejected sk_test_abc123DEF for donor@example.com'),
+    });
+    const out = lines.join('\n');
+    expect(out).not.toMatch(/sk_(test|live)_/);
+    expect(out).not.toContain('donor@example.com');
+  });
 });

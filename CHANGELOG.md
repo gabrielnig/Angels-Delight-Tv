@@ -7,6 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 ## [Unreleased]
 
 ### Added
+- Lane L9 donations and giving (M48): the Donate page, Paystack hosted checkout, thank you and cancelled pages, emailed receipts, the admin donations list with CSV export and audited review resolution, the transparency page, and the hardening tests (kids matrix, authorization rows, unchanged CSP, log redaction of Paystack keys). Everything is off by default and never shows to kids. Monthly giving is not built.
 - Lane L9 donations backbone (M48): donations and payment event tables, a signed and idempotent Paystack webhook, an event processor that confirms every payment with Paystack, and worker jobs that settle stuck payments, mark old ones abandoned and prune old payloads. Off until a Paystack key is set. Also wires the sponsor reach prune job into the worker.
 - Lane L9 payments core (M48): `@ad/payments` with a Paystack adapter (hosted redirect only), webhook signature check, money and reference helpers and an in memory fake Paystack for tests. Nothing calls it yet.
 - Lane L9 sponsor report (M48): per sponsor impressions, clicks, click rate and daily reach for any range up to 400 days, with an admin only CSV download and a print page.
