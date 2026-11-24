@@ -1898,3 +1898,9 @@ Decision: `video.preview` catches every error and records `failed` or `skipped` 
 - Options: Store text on the video, or on the hero row item. Trim on every keystroke or on save.
 - Why: The text belongs to one slide of one layout, not to the video, so it lives on the row item and goes with Publish and Restore previous. Trimming while typing removed the space between words, so it trims on save and the catalog write.
 - Reversible: Yes.
+
+## D-345 Sample draft catalogs for Yoruba, Igbo and Hausa (lane L7)
+- Decision: Sample drafts live in packages/shared/src/messages/drafts/{yo,ig,ha}.json with status draft, reviewed false and no reviewer. They are not baselines and never reach viewers. An editor loads them from the workspace button Load sample draft, which writes draft rows (never approved, never over existing text). Native review and Admin approval are still required.
+- Options: Ship them as baselines; ship nothing; ship as drafts the editor loads
+- Why: A baseline would show unreviewed text to children and parents the moment a language is enabled. Loading them as draft rows saves a reviewer typing from scratch and keeps the approval rule intact.
+- Reversible: Yes

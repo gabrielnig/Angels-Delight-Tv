@@ -54,3 +54,14 @@ export async function unpublishLanguageAction(locale: string) {
     return failure(error);
   }
 }
+
+export async function loadDraftsAction(locale: string) {
+  try {
+    const actor = await requireActionActor(`${LIST}/${locale}`);
+    await spendAdminBudget(actor);
+    const result = await (await translationServiceFor(actor)).loadDrafts(actor, locale);
+    return { ok: true as const, ...result };
+  } catch (error) {
+    return failure(error);
+  }
+}
