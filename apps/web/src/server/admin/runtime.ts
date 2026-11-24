@@ -6,7 +6,8 @@ import { DrizzleJobMirror, JobProducer, createProducerBoss, bossAdapter } from '
 import { sql } from 'drizzle-orm';
 import { eq } from 'drizzle-orm';
 import type { Actor } from '@ad/shared';
-import { CaptionService, FailedEncodeService } from '@ad/video';
+import { CaptionService, FailedEncodeService, translationCapability } from '@ad/video';
+import { readSetting } from '@ad/theme/settings';
 import { recordAudit } from '@ad/audit';
 import { createStorage, storageConfigFromEnv, type StorageAdapter } from '@ad/storage';
 import type { KeyService, SessionService, StaffService, ViewerMfaService } from '@ad/auth';
@@ -219,6 +220,8 @@ function build(): AdminRuntime {
         originals,
         media: services.mediaStorage,
         producer: { enqueue: (...args) => adminRuntime().enqueue(...args) },
+        translation: translationCapability(env.TRANSLATE_PROVIDER),
+        captionLanguages: async () => (await readSetting(db, 'content.languages')) as string[],
         audit: {
           record: (event) =>
             recordAudit(db, {

@@ -153,4 +153,62 @@ describe.skipIf(!integrationEnabled())('admin caption rows', () => {
     const [row] = await t.setup.select().from(videos).where(eq(videos.id, video.id));
     expect(row?.captionOverrideReason).toBeNull();
   });
+
+  describe('translations (M46)', () => {
+    async function translation(
+      videoId: string,
+      language: string,
+      status: 'in_review' | 'approved',
+      opts: { published?: boolean; sourceSha?: Buffer } = {},
+    ) {
+      const [tr] = await t.setup
+        .insert(captionTracks)
+        .values({ videoId, language, label: language, kind: 'subtitles', isDefault: false, published: opts.published ?? false })
+        .returning();
+      const rev = await revision(tr!.id, 1, status, {
+        source: 'translation',
+        sourceSha256: opts.sourceSha ?? Buffer.alloc(32),
+      });
+      if (status === 'approved') await t.setup.update(captionTracks).set({ approvedCaptionId: rev.id }).where(eq(captionTracks.id, tr!.id));
+    }
+    async function approvedEnglish(title: string) {
+      const video = await seedVideo(t.setup, { title });
+      const tr = await track(video.id);
+      const rev = await revision(tr.id, 1, 'approved');
+      await t.setup.update(captionTracks).set({ approvedCaptionId: rev.id }).where(eq(captionTracks.id, tr.id));
+      return video;
+    }
+    const rowOf = async (id: string) => (await listAdminCaptionRows(ctx, editor)).find((r) => r.videoId === id)!;
+
+    it('rows carry a chip per translation with its state and publish flag', async () => {
+      const video = await approvedEnglish('Translated');
+      await translation(video.id, 'yo', 'approved', { published: true });
+      await translation(video.id, 'ha', 'in_review');
+      const row = await rowOf(video.id);
+      expect(row.spokenLanguage).toBe('en');
+      expect(row.translations.map((x) => [x.language, x.state, x.published])).toEqual([
+        ['ha', 'needs_review', false],
+        ['yo', 'approved', true],
+      ]);
+    });
+
+    it('reports Source changed when the translation was made from a different source revision', async () => {
+      const video = await approvedEnglish('Changed source');
+      await translation(video.id, 'yo', 'approved', { sourceSha: Buffer.alloc(32, 9) });
+      expect((await rowOf(video.id)).translations[0]).toMatchObject({ language: 'yo', sourceChanged: true });
+    });
+
+    it('a video with no translations has an empty list and keeps its English state', async () => {
+      const video = await approvedEnglish('Plain');
+      const row = await rowOf(video.id);
+      expect(row.translations).toEqual([]);
+      expect(row.state).toBe('approved');
+    });
+
+    it('a translation never changes the spoken language state', async () => {
+      const video = await seedVideo(t.setup, { title: 'Only translation' });
+      await translation(video.id, 'yo', 'approved');
+      expect((await rowOf(video.id)).state).toBe('none');
+    });
+  });
 });

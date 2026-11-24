@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import type { AccountRole } from '@ad/shared';
+import { localeInfo, type AccountRole } from '@ad/shared';
 import type { CaptionRow } from '@/lib/data/admin/services';
 import type { CaptionState } from '@/lib/data/admin/types';
 import { CaptionTable, type ApproveManyAction } from './CaptionTable';
@@ -21,6 +21,8 @@ export function CaptionList({
   role,
   approve,
   neverEdited,
+  languages = [],
+  activeLanguage,
 }: {
   rows: CaptionRow[];
   counts: Record<string, number>;
@@ -29,9 +31,33 @@ export function CaptionList({
   role: AccountRole;
   approve: ApproveManyAction;
   neverEdited?: boolean;
+  /** Translation languages that exist on any video, for the language filter (M46). */
+  languages?: string[];
+  activeLanguage?: string;
 }) {
+  const query = (state: CaptionState | undefined, lang: string | undefined) => {
+    const parts = [state ? `state=${state}` : '', lang ? `lang=${lang}` : ''].filter(Boolean);
+    return parts.length ? `/admin/captions?${parts.join('&')}` : '/admin/captions';
+  };
   return (
     <div className="adm-stack">
+      {languages.length > 0 ? (
+        <nav aria-label="Filter by language" className="adm-row">
+          {[undefined, ...languages].map((code) => {
+            const selected = code === activeLanguage;
+            return (
+              <Link
+                key={code ?? 'all'}
+                className="adm-tab"
+                aria-current={selected ? 'true' : undefined}
+                href={query(active, code)}
+              >
+                {code ? (localeInfo(code)?.englishName ?? code) : 'All languages'}
+              </Link>
+            );
+          })}
+        </nav>
+      ) : null}
       <nav aria-label="Filter by caption state" className="adm-row">
         {FILTERS.map((filter) => {
           const selected = filter.state === active;
@@ -41,7 +67,7 @@ export function CaptionList({
               className={`adm-tab${selected ? '' : ''}`}
               aria-current={selected ? 'true' : undefined}
               aria-selected={undefined}
-              href={filter.state ? `/admin/captions?state=${filter.state}` : '/admin/captions'}
+              href={query(filter.state, activeLanguage)}
               style={
                 selected
                   ? {

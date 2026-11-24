@@ -4,9 +4,23 @@ import { Forbidden, NotFound, isUuid, type Actor, isStaffRole } from '@ad/shared
 import { rowsOf } from '../sql';
 import { isoOf, type AdminCaptionState, type AdminContext } from './types';
 
+/** One translated language of a video, for the chip on the Captions list. */
+export interface AdminTranslationChip {
+  language: string;
+  state: 'needs_review' | 'approved' | 'rejected';
+  /** Viewers can see it (the per language Publish switch). */
+  published: boolean;
+  /** The approved source revision changed after this translation was made. */
+  sourceChanged: boolean;
+}
+
 export interface AdminCaptionRow {
   videoId: string;
   title: string;
+  /** The language spoken in the video. `state` is the state of its track. */
+  spokenLanguage: string;
+  /** Other languages, ordered by code. Never changes `state`. */
+  translations: AdminTranslationChip[];
   state: AdminCaptionState;
   cueCount: number | null;
   /** When the newest revision was made, or null when there is none. */
@@ -29,7 +43,7 @@ export async function listAdminCaptionRows(
   assertStaff(actor);
   return withAccount(ctx.db, actor, async (tx) => {
     const result = await tx.execute(sql`
-      SELECT v.id, v.title, cap.status, cap.cue_count, cap.created_at, cap.reviewed_by, cap.created_by, cap.source,
+      SELECT v.id, v.title, coalesce(v.language, 'en') AS spoken, cap.status, cap.cue_count, cap.created_at, cap.reviewed_by, cap.created_by, cap.source,
         EXISTS (SELECT 1 FROM jobs j WHERE j.video_id = v.id AND j.queue = 'caption.generate'
           AND j.status IN ('queued', 'running')) AS generating,
         EXISTS (SELECT 1 FROM jobs j WHERE j.video_id = v.id AND j.queue = 'caption.generate'
@@ -39,12 +53,43 @@ export async function listAdminCaptionRows(
       LEFT JOIN LATERAL (
         SELECT c.status, c.cue_count, c.created_at, c.reviewed_by, c.created_by, c.source
         FROM caption_tracks ct JOIN captions c ON c.track_id = ct.id
-        WHERE ct.video_id = v.id AND ct.language = 'en' ORDER BY c.revision DESC LIMIT 1) cap ON true
+        WHERE ct.video_id = v.id AND ct.language = coalesce(v.language, 'en') ORDER BY c.revision DESC LIMIT 1) cap ON true
       WHERE v.deleted_at IS NULL AND v.status = 'ready'
       ORDER BY v.title, v.id`);
+    const chips = rowsOf<{
+      video_id: string;
+      language: string;
+      published: boolean;
+      status: string;
+      source_changed: boolean;
+    }>(
+      await tx.execute(sql`
+        SELECT ct.video_id, ct.language, ct.published, lat.status,
+          (ap.source_sha256 IS NOT NULL AND src.sha256 IS NOT NULL AND ap.source_sha256 <> src.sha256) AS source_changed
+        FROM caption_tracks ct
+        JOIN videos v ON v.id = ct.video_id
+        JOIN LATERAL (SELECT c.status FROM captions c WHERE c.track_id = ct.id ORDER BY c.revision DESC LIMIT 1) lat ON true
+        LEFT JOIN captions ap ON ap.id = ct.approved_caption_id
+        LEFT JOIN caption_tracks st ON st.video_id = v.id AND st.language = coalesce(v.language, 'en')
+        LEFT JOIN captions src ON src.id = st.approved_caption_id
+        WHERE ct.language <> coalesce(v.language, 'en') AND v.deleted_at IS NULL AND v.status = 'ready'
+        ORDER BY ct.video_id, ct.language`),
+    );
+    const byVideo = new Map<string, AdminTranslationChip[]>();
+    for (const chip of chips) {
+      const list = byVideo.get(chip.video_id) ?? [];
+      list.push({
+        language: chip.language,
+        state: chip.status === 'approved' ? 'approved' : chip.status === 'rejected' ? 'rejected' : 'needs_review',
+        published: chip.published,
+        sourceChanged: chip.source_changed,
+      });
+      byVideo.set(chip.video_id, list);
+    }
     return rowsOf<{
       id: string;
       title: string;
+      spoken: string;
       status: string | null;
       cue_count: number | null;
       created_at: Date | string | null;
@@ -66,6 +111,8 @@ export async function listAdminCaptionRows(
       return {
         videoId: row.id,
         title: row.title,
+        spokenLanguage: row.spoken,
+        translations: byVideo.get(row.id) ?? [],
         state,
         cueCount: row.status ? row.cue_count : null,
         updatedAt: row.status ? isoOf(row.created_at) : null,

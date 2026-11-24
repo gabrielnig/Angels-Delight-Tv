@@ -138,3 +138,70 @@ describe('CaptionReview script alignment', () => {
     expect(screen.queryByRole('button', { name: 'Align a script' })).toBeNull();
   });
 });
+
+describe('CaptionReview translation mode (M46-S15)', () => {
+  const translated = {
+    state: 'needs_review',
+    language: 'yo',
+    cues: [
+      { id: 'a', start: 0, end: 2000, text: 'Kaabo' },
+      { id: 'b', start: 2000, end: 4000, text: 'Ila keji' },
+    ],
+    updatedAt: 2,
+    translation: {
+      spokenLanguage: 'en',
+      sourceCues: [
+        { id: 's1', start: 0, end: 2000, text: 'Hello there' },
+        { id: 's2', start: 2000, end: 4000, text: 'Second line' },
+      ],
+      published: false,
+      sourceChanged: false,
+    },
+  } as never;
+  const mount = (a = actions(), t = translated) =>
+    render(
+      <ToastProvider>
+        <CaptionReview video={video} track={t} role="admin" actions={a} />
+      </ToastProvider>,
+    );
+
+  it('shows the spoken language cue beside each translated cue', () => {
+    mount();
+    expect(screen.getByLabelText('English cue 1').textContent).toBe('Hello there');
+    expect(screen.getByLabelText('English cue 2').textContent).toBe('Second line');
+    expect(screen.getByLabelText('English cue 1').getAttribute('lang')).toBe('en');
+    expect(screen.getByLabelText('Words in cue 1').getAttribute('lang')).toBe('yo');
+  });
+
+  it('time fields are locked until Unlock timing, which warns', () => {
+    mount();
+    expect((screen.getByLabelText('Start of cue 1') as HTMLInputElement).disabled).toBe(true);
+    expect(screen.queryByRole('button', { name: /Split cue 1/ })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Unlock timing' }));
+    expect((screen.getByLabelText('Start of cue 1') as HTMLInputElement).disabled).toBe(false);
+    expect(screen.getByText(/Changing times can put the words out of step/)).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Lock timing' })).toBeTruthy();
+  });
+
+  it('the spoken language screen has no source column and no lock', () => {
+    view();
+    expect(screen.queryByLabelText('English cue 1')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Unlock timing' })).toBeNull();
+  });
+
+  it('approve says viewers will not see it until it is published', async () => {
+    const a = actions();
+    mount(a);
+    fireEvent.click(screen.getByRole('button', { name: /Approve/ }));
+    expect(await screen.findByText(/Viewers will not see it until an admin publishes this language/)).toBeTruthy();
+  });
+
+  it('Source changed shows a banner with a Retranslate action', async () => {
+    const a = { ...actions(), retranslate: vi.fn().mockResolvedValue({ ok: true }) };
+    const t = { ...(translated as object), translation: { ...(translated as never as { translation: object }).translation, sourceChanged: true } } as never;
+    mount(a, t);
+    expect(screen.getByText(/The source captions changed after this translation was made/)).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Retranslate' }));
+    expect(a.retranslate).toHaveBeenCalled();
+  });
+});

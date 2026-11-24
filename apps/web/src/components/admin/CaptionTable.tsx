@@ -10,6 +10,7 @@ import { planBulkApprove } from '@/lib/data/admin/caption-commands';
 import { describeOutcome, mergeOutcomes, newBulkId, type BulkOutcome } from '@/lib/data/admin/bulk';
 import type { CaptionRow } from '@/lib/data/admin/services';
 import { CaptionBadge } from './Badge';
+import { TranslationChips } from './captions/TranslationChips';
 import { BulkBar, type BulkBarAction } from './bulk/BulkBar';
 import { BulkProgress } from './bulk/BulkProgress';
 import { BulkReport } from './bulk/BulkReport';
@@ -188,7 +189,10 @@ export function CaptionTable({
                 <td>
                   <CaptionBadge state={row.state} />
                 </td>
-                <td>{row.language}</td>
+                <td>
+                  {row.language}
+                  <TranslationChips translations={row.translations ?? []} />
+                </td>
                 <td className="adm-num">
                   {row.cueCount ?? (row.state === 'generating' ? 'Working' : 'None')}
                 </td>

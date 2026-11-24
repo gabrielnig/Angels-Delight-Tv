@@ -1730,3 +1730,9 @@ Decision: `video.preview` catches every error and records `failed` or `skipped` 
 - Options: store a random unusable hash (rejected, hides a real state); an emailed one time code to link (rejected for now, needs a new token purpose).
 - Why: the honest state in the database is the safe one, and the unreachable edge stays closed.
 - Reversible: yes, with a migration.
+
+## D-317 Caption admin works per language through one optional language argument (lane L7)
+- Decision: The admin caption service methods (track, save, approve, upload) take an optional language that defaults to the video's spoken language, so existing callers and fixture data are unchanged. Translation tracks open in the same review screen with the spoken cue beside each cue and timing locked until Unlock timing. Add translation, estimate and the Publish switch are separate permissions (caption.translate Editor, caption.publish_language Admin). The web process learns what engine exists from TRANSLATE_PROVIDER alone (translationCapability), never the API key. Retranslate is offered on Source changed; a Still correct action is not built.
+- Options: A separate translation screen; one screen with tabs; language in the URL path
+- Why: Reuses the tested review editor and autosave, and keeps links shareable with ?lang=.
+- Reversible: Yes

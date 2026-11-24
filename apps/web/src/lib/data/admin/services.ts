@@ -416,6 +416,15 @@ export interface CaptionRow {
   warnings: number;
   /** Automatic captions nobody has opened or edited. */
   untouchedAuto: boolean;
+  /** The language spoken in the video (M46). Absent in fixture data, which is English only. */
+  spokenLanguage?: string;
+  /** One chip per translated language. Absent in fixture data. */
+  translations?: Array<{
+    language: string;
+    state: 'needs_review' | 'approved' | 'rejected';
+    published: boolean;
+    sourceChanged: boolean;
+  }>;
 }
 
 export interface BulkParts {
@@ -432,12 +441,14 @@ export interface ApproveManyResult {
 
 export interface CaptionService {
   list(actor: AdminActor, filter?: { state?: CaptionState }): Promise<CaptionRow[]>;
+  /** `language` defaults to the language spoken in the video. Fixture data is English only and ignores it. */
   track(
     actor: AdminActor,
     videoId: string,
+    language?: string,
   ): Promise<{ track: CaptionTrack | null; video: VideoRecord }>;
-  save(actor: AdminActor, videoId: string, cues: Cue[]): Promise<SaveResult>;
-  approve(actor: AdminActor, videoId: string): Promise<CaptionResult>;
+  save(actor: AdminActor, videoId: string, cues: Cue[], language?: string): Promise<SaveResult>;
+  approve(actor: AdminActor, videoId: string, language?: string): Promise<CaptionResult>;
   /** Approves many tracks. Admin only. Tracks with warnings are skipped, never forced. */
   approveMany(actor: AdminActor, ids: string[]): Promise<ApproveManyResult>;
   regenerate(actor: AdminActor, videoId: string): Promise<CaptionResult>;
@@ -445,7 +456,23 @@ export interface CaptionService {
   previewScript(actor: AdminActor, script: string): Promise<string>;
   /** Stores the script and queues alignment to the audio (M15-S02). */
   alignScript(actor: AdminActor, videoId: string, script: string): Promise<CaptionResult>;
-  upload(actor: AdminActor, videoId: string, cues: Cue[]): Promise<CaptionResult>;
+  upload(actor: AdminActor, videoId: string, cues: Cue[], language?: string): Promise<CaptionResult>;
+  /** Queues a machine translation draft (M46). Editors and above. */
+  translate(actor: AdminActor, videoId: string, language: string): Promise<CaptionResult>;
+  /** Characters and cost for the Add translation dialog. */
+  estimate(actor: AdminActor, videoId: string, language: string): Promise<TranslationEstimateView>;
+  /** The per language Publish switch (M46). Admins only. */
+  setPublished(actor: AdminActor, videoId: string, language: string, published: boolean): Promise<CaptionResult>;
+}
+
+export interface TranslationEstimateView {
+  configured: boolean;
+  supported: boolean;
+  provider: string;
+  sourceLanguage: string;
+  cues: number;
+  characters: number;
+  estimatedUsd: number | null;
 }
 
 function liveVideo(id: string) {
@@ -510,6 +537,19 @@ const fixtureCaptionService: CaptionService = {
   },
   async upload(actor, videoId, cues) {
     return replaceCues(getStore(), liveVideo(videoId), cues, actor.role, actor.name, Date.now());
+  },
+  // Fixture data is English only: translation is a real data feature (M46).
+  async translate(actor) {
+    need(actor, 'caption.translate');
+    return { ok: false, error: 'Translation is not available in fixture mode.' };
+  },
+  async estimate(actor) {
+    need(actor, 'caption.translate');
+    return { configured: false, supported: false, provider: 'none', sourceLanguage: 'en', cues: 0, characters: 0, estimatedUsd: null };
+  },
+  async setPublished(actor) {
+    need(actor, 'caption.publish_language');
+    return { ok: false, error: 'Publishing a language is not available in fixture mode.' };
   },
 };
 
