@@ -87,7 +87,7 @@ Nothing here is hardcoded. Each item maps to a setting in Settings, Monetization
 | Preset amounts, smallest and largest gift | `donate.presets_minor.ngn`, `donate.min_minor.ngn`, `donate.max_minor.ngn` | In kobo |
 | Page wording (title, text, thank you) | `donate.intro_*`, `donate.thank_you_*` | Draft wording is provided |
 | USD gifts (optional) | `donate.usd.enabled` | Needs Paystack international payments and a USD account |
-| Bank details for transfers (optional) | `donate.bank_transfer.instructions` | Plain text. Not built yet (Could) |
+| Bank details for transfers (optional) | `donate.bank_transfer.instructions`, switch `donate.bank_transfer.enabled` | Plain text, shown on the Donate page only when the switch is on |
 | Transparency page content | `donate.transparency.*` | Percentages that total 100, or amounts; the owner must supply real figures |
 | Tax or receipt wording | Not configured | Receipts make no tax claim until the owner and an adviser decide |
 | Sponsor terms and sponsors themselves | Admin, Sponsors | Names, links and images come from each sponsor |
