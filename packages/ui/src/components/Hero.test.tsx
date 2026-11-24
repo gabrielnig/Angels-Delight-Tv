@@ -1,7 +1,7 @@
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
-import { Hero, type HeroItem } from './Hero';
+import { Hero, HERO_ROTATE_MS, type HeroItem } from './Hero';
 
 const items: HeroItem[] = [
   {
@@ -96,6 +96,65 @@ describe('Hero', () => {
       vi.advanceTimersByTime(20000);
     });
     expect(screen.getByRole('heading', { name: 'Stay healthy' })).toBeInTheDocument();
+  });
+
+  it('shares one rotation constant of 10 seconds', () => {
+    expect(HERO_ROTATE_MS).toBe(10000);
+  });
+
+  it('crossfades: the leaving slide stays for the fade then is removed', () => {
+    vi.useFakeTimers();
+    const { container } = render(
+      <Hero items={items} label="Featured" autoRotateMs={HERO_ROTATE_MS} />,
+    );
+    act(() => {
+      vi.advanceTimersByTime(HERO_ROTATE_MS + 50);
+    });
+    expect(container.querySelectorAll('.ad-hero__slide')).toHaveLength(2);
+    const leaving = container.querySelector('.ad-hero__slide--leaving');
+    expect(leaving).toHaveAttribute('aria-hidden', 'true');
+    expect(
+      container.querySelector('.ad-hero__slide:not(.ad-hero__slide--leaving)'),
+    ).toHaveAttribute('data-fade', 'true');
+    act(() => {
+      vi.advanceTimersByTime(400);
+    });
+    expect(container.querySelectorAll('.ad-hero__slide')).toHaveLength(1);
+  });
+
+  it('skips the crossfade under reduced motion', () => {
+    const original = window.matchMedia;
+    window.matchMedia = ((query: string) => ({
+      matches: query === '(prefers-reduced-motion: reduce)',
+      media: query,
+      addEventListener: () => {},
+      removeEventListener: () => {},
+    })) as unknown as typeof window.matchMedia;
+    vi.useFakeTimers();
+    try {
+      const { container } = render(
+        <Hero items={items} label="Featured" autoRotateMs={HERO_ROTATE_MS} />,
+      );
+      act(() => {
+        screen.getByRole('button', { name: 'Next slide' }).click();
+      });
+      expect(container.querySelectorAll('.ad-hero__slide')).toHaveLength(1);
+    } finally {
+      window.matchMedia = original;
+    }
+  });
+
+  it('stops rotating after two loops', () => {
+    vi.useFakeTimers();
+    render(<Hero items={items} label="Featured" autoRotateMs={1000} />);
+    act(() => {
+      vi.advanceTimersByTime(4100);
+    });
+    const at = screen.getByRole('heading').textContent;
+    act(() => {
+      vi.advanceTimersByTime(5000);
+    });
+    expect(screen.getByRole('heading').textContent).toBe(at);
   });
 
   it('shows a skeleton while loading', () => {
