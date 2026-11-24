@@ -78,7 +78,13 @@ export async function listSitemapRows(db: Database, now: Date): Promise<SitemapR
             AND v.status = 'ready' AND ${PUBLISHED('v', now)} AND NOT ${KIDS_ONLY_VIDEO})
         OR EXISTS (
           SELECT 1 FROM series_categories sc JOIN series s ON s.id = sc.series_id
-          WHERE sc.category_id = c.id AND s.deleted_at IS NULL AND ${PUBLISHED('s', now)}))
+          WHERE sc.category_id = c.id AND s.deleted_at IS NULL AND ${PUBLISHED('s', now)}
+            AND EXISTS (
+              SELECT 1 FROM seasons sn
+                JOIN episodes ep ON ep.season_id = sn.id
+                JOIN videos v ON v.id = ep.video_id
+              WHERE sn.series_id = s.id AND v.deleted_at IS NULL AND v.status = 'ready'
+                AND ${PUBLISHED('v', now)} AND NOT ${KIDS_ONLY_VIDEO})))
       ORDER BY c.slug
       LIMIT ${SITEMAP_ROW_LIMIT}`),
   );

@@ -79,4 +79,37 @@ describe('share image route (M45-S03)', () => {
     expect(res.status).toBe(200);
     expect(render).toHaveBeenCalledWith(expect.objectContaining({ poster: null, title: 'Rivers' }));
   });
+
+  it('asks search engines not to index the share image of a kids only title (R26)', async () => {
+    const h = createOgHandler({ ...base, preview: preview(video), indexable: async () => false });
+    const res = await h(new Request('https://e.test/og/title/rivers'), 'video', 'rivers');
+    expect(res.status).toBe(200);
+    expect(res.headers.get('x-robots-tag')).toBe('noindex');
+  });
+
+  it('keeps the noindex header on the fallback redirect of a kids only title', async () => {
+    const h = createOgHandler({
+      ...base,
+      preview: preview(video),
+      indexable: async () => false,
+      render: async () => {
+        throw new Error('satori failed');
+      },
+    });
+    const res = await h(new Request('https://e.test/og/title/rivers'), 'video', 'rivers');
+    expect(res.headers.get('x-robots-tag')).toBe('noindex');
+  });
+
+  it('adds no robots header for a title that is for everyone, and treats a failed lookup as not indexable', async () => {
+    const open = createOgHandler({ ...base, preview: preview(video), indexable: async () => true });
+    expect((await open(new Request('https://e.test/x'), 'video', 'rivers')).headers.get('x-robots-tag')).toBeNull();
+    const failing = createOgHandler({
+      ...base,
+      preview: preview(video),
+      indexable: async () => {
+        throw new Error('db down');
+      },
+    });
+    expect((await failing(new Request('https://e.test/x'), 'video', 'rivers')).headers.get('x-robots-tag')).toBe('noindex');
+  });
 });

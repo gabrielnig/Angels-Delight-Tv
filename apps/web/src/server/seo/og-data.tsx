@@ -2,6 +2,7 @@ import 'server-only';
 import { msg } from '@ad/shared/messages';
 import { getCatalog } from '../../lib/data';
 import { getRootTheme } from '../../lib/theme/root';
+import { titleIndexable } from './page-seo';
 import { getSeoSettings } from './seo-settings';
 import { createOgHandler } from './og-handler';
 import { renderOgJpeg } from './og-render';
@@ -22,6 +23,7 @@ export const ogHandler = createOgHandler({
   siteName: async () => (await getRootTheme()).platformName,
   freeLine: () => msg('og.freeToWatch'),
   defaultImageUrl: async () => (await getSeoSettings()).socialImageUrl,
+  indexable: (slug, kind) => titleIndexable(kind, slug),
   fetchPoster,
   render: renderOgJpeg,
 });

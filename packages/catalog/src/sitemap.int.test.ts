@@ -98,6 +98,20 @@ describe.skipIf(!integrationEnabled())('sitemap rows (M45-S01)', () => {
     expect(found).not.toContain(empty.slug);
   });
 
+  it('skips a category whose only titles are kids only, including a kids only series (R26)', async () => {
+    const kidsCategory = await seedCategory(t.setup, 'Sitemap kids only');
+    const kidsSeries = await seedSeries(t.setup, { episode: { suitability: 'kids', kidsSafe: true } });
+    await categorize(t.setup, { seriesId: kidsSeries.id }, kidsCategory.id);
+    const kidsVideo = await seedVideo(t.setup, { suitability: 'kids', kidsSafe: true });
+    await categorize(t.setup, { videoId: kidsVideo.id }, kidsCategory.id);
+    const mixedCategory = await seedCategory(t.setup, 'Sitemap mixed');
+    const everyoneSeries = await seedSeries(t.setup);
+    await categorize(t.setup, { seriesId: everyoneSeries.id }, mixedCategory.id);
+    const found = (await listSitemapRows(t.app, NOW)).categories.map((c) => c.slug);
+    expect(found).not.toContain(kidsCategory.slug);
+    expect(found).toContain(mixedCategory.slug);
+  });
+
   it('never lists a slug that only exists as a redirect', async () => {
     const video = await seedVideo(t.setup);
     await t.setup

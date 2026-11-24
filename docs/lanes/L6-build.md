@@ -15,7 +15,8 @@ Plan: `docs/plan/v2/L6-discovery.md`. Rulings: `docs/plan/v2/RULINGS.md`. Review
 | 6b | Search service, API, UI notes, misses pruning in worker | merged | #320 |
 | 7 | Storage notice (S138), storage inventory, notice and toast placement | merged | #332 |
 | 8 | Error pages (S139), one action each (R39) | merged | #339 |
-| 9 | Discovery tab: synonyms editor with error lines, empty search report | in review | |
+| 9 | Discovery tab: synonyms editor with error lines, empty search report | merged | #342 |
+| 10 | Kids only titles: share image noindex header, sitemap category fix; social image contrast already tested | in review | |
 
 ## Slice 1 (sitemap)
 
@@ -85,3 +86,10 @@ Plan: `docs/plan/v2/L6-discovery.md`. Rulings: `docs/plan/v2/RULINGS.md`. Review
 - Fixed: `replaceSynonymGroups` now stamps `clock_timestamp()` so group order is stable.
 - Already in place from slice 4 and guarded by `discovery-switches.test.tsx`: named 44 px switches, share channel switches, the Kids only never indexed line.
 - Tests: `pnpm vitest run apps/web/src/components/admin/site apps/web/src/lib/admin/synonym-text.test.ts` and, with the database, `apps/web/src/lib/data/admin/real/search-admin.int.test.ts packages/catalog/src/search-quality.int.test.ts`.
+
+## Slice 10 (kids only titles, R26)
+
+- Already done earlier and re-checked: kids only video and series pages send `noindex, nofollow` and no JSON-LD (slice 2 tests), the sitemap leaves out kids only videos and series (D-269), Share is hidden for kids (slice 5), home and category JSON-LD hold no titles.
+- New: `createOgHandler` takes `indexable` and sends `X-Robots-Tag: noindex` on the share image (and its fallback redirect) of a kids only title, and also when the lookup fails. `og-data.tsx` wires `titleIndexable`.
+- Fixed: a category whose only titles were kids only series was still in the sitemap. The category query now needs a series with a public episode that is not kids only. Test in `sitemap.int.test.ts`.
+- Social image contrast (4.5:1 on a white poster, title zone) was built with slice 3: `lib/seo/og-image.test.ts` (scrim maths) and `server/seo/og-render.test.tsx` (rendered pixels). No change needed.
