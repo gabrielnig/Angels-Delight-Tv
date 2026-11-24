@@ -27,10 +27,10 @@ afterEach(() => {
 });
 
 describe('HomeHero', () => {
-  it('rotates every 8 seconds', () => {
+  it('rotates every 10 seconds', () => {
     render(<HomeHero items={items} label="Featured" profileId="p1" />);
     expect(screen.getByRole('heading', { name: 'One' })).toBeInTheDocument();
-    act(() => void vi.advanceTimersByTime(8000));
+    act(() => void vi.advanceTimersByTime(10000));
     expect(screen.getByRole('heading', { name: 'Two' })).toBeInTheDocument();
   });
 
