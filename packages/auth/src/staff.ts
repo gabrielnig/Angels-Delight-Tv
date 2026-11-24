@@ -109,7 +109,7 @@ export class StaffService extends AccountService {
   }
 
   /** Sensitive actions need the password confirmed within the last ten minutes (SECURITY.md section 4). */
-  private async assertRecentReauth(actor: Actor): Promise<void> {
+  async assertRecentReauth(actor: Actor): Promise<void> {
     const [session] = await this.deps.db
       .select({ reauthAt: schema.sessions.reauthAt })
       .from(schema.sessions)

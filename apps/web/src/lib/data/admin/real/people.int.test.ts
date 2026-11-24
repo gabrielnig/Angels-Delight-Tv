@@ -236,6 +236,36 @@ describe.skipIf(!integrationEnabled())('real people service', () => {
       expect(invites[0]!.invitedBy.length).toBeGreaterThan(0);
     });
 
+    it('bulk staff actions are Super admin only and move Editor and Admin roles', async () => {
+      await expect(
+        realPeopleService.bulkStaff(admin, [editor.accountId], { type: 'role', role: 'admin' }, 'x'),
+      ).rejects.toThrow();
+      expect((await realPeopleService.reauthenticate(boss, bossMember.password)).ok).toBe(true);
+      expect((await realPeopleService.bulkPreflight(boss)).ok).toBe(true);
+      const refused = await realPeopleService.bulkStaff(
+        boss,
+        [editor.accountId, boss.accountId],
+        { type: 'role', role: 'admin' },
+        'b0',
+      );
+      expect(refused.succeeded).toEqual([]);
+      expect(refused.failed[0]!.reason).toBe('You cannot change your own role.');
+      const out = await realPeopleService.bulkStaff(
+        boss,
+        [editor.accountId],
+        { type: 'role', role: 'admin' },
+        'b1',
+      );
+      expect(out.succeeded).toEqual([editor.accountId]);
+      const back = await realPeopleService.bulkStaff(
+        boss,
+        [editor.accountId],
+        { type: 'role', role: 'editor' },
+        'b2',
+      );
+      expect(back.succeeded).toEqual([editor.accountId]);
+    });
+
     it('rejects a bad address with the field message', async () => {
       const r = await realPeopleService.invite(boss, 'not an email', 'editor');
       expect(r.ok).toBe(false);

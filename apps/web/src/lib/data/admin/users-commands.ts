@@ -224,6 +224,7 @@ export function resendInvite(
   const invite = s.invites.find((i) => i.id === id);
   if (!invite) return fail('Invite not found.');
   invite.expiresAt = new Date(now + INVITE_DAYS * DAY).toISOString();
+  invite.createdAt = new Date(now).toISOString();
   pushAudit(
     s,
     {

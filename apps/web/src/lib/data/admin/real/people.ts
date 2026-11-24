@@ -1,4 +1,5 @@
 import 'server-only';
+import { runStaffBulk, type StaffBulkService } from '../staff-bulk';
 import { runUserBulk, undoUserBulk, userBulkFor } from '../user-bulk';
 import { writeAudit } from '@ad/audit';
 import { schema } from '@ad/db';
@@ -244,6 +245,35 @@ export const realPeopleService: PeopleService = {
     return { staff: staffRecords, invites };
   },
 
+  async bulkPreflight(actor) {
+    try {
+      need(actor, 'roles.bulk');
+      await adminRuntime().auth().staff.assertRecentReauth(staffActor(actor));
+      return OK;
+    } catch (error) {
+      return staffFailure(error);
+    }
+  },
+  async bulkStaff(actor, ids, action, bulkId) {
+    need(actor, 'roles.bulk');
+    const rt = adminRuntime();
+    const who = staffActor(actor);
+    await rt.auth().staff.assertRecentReauth(who);
+    const service: StaffBulkService = {
+      async staff() {
+        return (await rt.auth().staff.listStaff(who)).map((m) => ({ id: m.accountId, role: m.role }));
+      },
+      async invites() {
+        return (await rt.auth().staff.listInvites(who)).map((i) => ({
+          id: i.id,
+          createdAt: i.createdAt.toISOString(),
+        }));
+      },
+      changeRole: (id, role) => realPeopleService.changeRole(actor, id, role),
+      resend: (id) => realPeopleService.resendInvite(actor, id),
+    };
+    return runStaffBulk(service, actor.accountId, ids, action, bulkId, rt.now().getTime());
+  },
   async reauthenticate(actor, password) {
     try {
       need(actor, 'roles.change');
