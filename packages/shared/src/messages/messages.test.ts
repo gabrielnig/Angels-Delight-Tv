@@ -1,12 +1,12 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
   createMessages as createTyped,
-  formatDuration,
   formatNumber,
   msg,
   type CatalogShape,
 } from './messages';
 import { EN_NG } from './en-ng';
+import { formatDuration } from './format';
 
 // These tests use ad hoc catalogs, so the key type is widened to string.
 const createMessages = (...args: Parameters<typeof createTyped>) =>
@@ -83,5 +83,30 @@ describe('the English catalog', () => {
   it('keeps the shipped copy word for word', () => {
     expect(msg('auth.error.generic')).toBe('Something went wrong. Please try again.');
     expect(msg('player.resumed', { time: '2:10' })).toBe('Resumed from 2:10');
+  });
+});
+
+describe('plural objects by category', () => {
+  const cat = {
+    'en-NG': { 'a.n': { one: '{count} video', other: '{count} videos' } },
+    yo: { 'a.n': { other: '{count} fídíò' } },
+    ha: { 'a.n': { other: '{count} bidiyo' } },
+  } as unknown as Record<string, CatalogShape>;
+  it('a plural object with only other works for a locale without one', () => {
+    const t = createMessages('yo', cat);
+    expect(t('a.n', { count: 1 })).toBe('1 fídíò');
+    expect(t('a.n', { count: 7 })).toBe('7 fídíò');
+  });
+  it('a missing plural category falls back to other', () => {
+    const t = createMessages('ha', cat);
+    expect(t('a.n', { count: 1 })).toBe('1 bidiyo');
+  });
+  it('a missing key reports locale and key once', () => {
+    const onMissing = vi.fn();
+    const t = createMessages('yo', cat, onMissing);
+    t('b.x');
+    t('b.x');
+    expect(onMissing).toHaveBeenCalledTimes(1);
+    expect(onMissing).toHaveBeenCalledWith('b.x', 'yo');
   });
 });

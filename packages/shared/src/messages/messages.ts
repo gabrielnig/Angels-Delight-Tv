@@ -3,25 +3,17 @@
  * English and reports the key once, and if English lacks it too the key itself is shown.
  */
 import { EN_NG } from './en-ng';
+import { formatNumber, pluralCategory } from './intl';
 
-export type MessageText = string | { one: string; other: string };
+export { formatNumber } from './intl';
+
+/** A plain string, or plural forms by CLDR category with `other` required. */
+export type MessageText = string | ({ other: string } & Partial<Record<Intl.LDMLPluralRule, string>>);
 export type CatalogShape = Record<string, MessageText>;
 export type MessageKey = keyof typeof EN_NG;
 export type MessageParams = Record<string, string | number>;
 
 const BASE = 'en-NG';
-
-export function formatNumber(value: number, locale: string = BASE): string {
-  return new Intl.NumberFormat(locale).format(value);
-}
-
-/** 6 becomes "6 min", 60 becomes "1 hr", 220 becomes "3 hr 40 min". */
-export function formatDuration(minutes: number): string {
-  const hours = Math.floor(minutes / 60);
-  const rest = minutes % 60;
-  if (hours === 0) return `${rest} min`;
-  return rest === 0 ? `${hours} hr` : `${hours} hr ${rest} min`;
-}
 
 export type Translate = (key: MessageKey, params?: MessageParams) => string;
 
@@ -32,6 +24,7 @@ export function createMessages(
     console.warn(`Missing message "${key}" for ${loc}`),
 ): Translate {
   const reported = new Set<string>();
+  if (locale === 'en') locale = BASE;
   return (key, params) => {
     let text: MessageText | undefined = catalogs[locale]?.[key];
     if (text === undefined) {
@@ -43,7 +36,9 @@ export function createMessages(
     }
     if (text === undefined) return key;
     const chosen =
-      typeof text === 'string' ? text : Number(params?.['count']) === 1 ? text.one : text.other;
+      typeof text === 'string'
+        ? text
+        : (text[pluralCategory(locale, Number(params?.['count']))] ?? text.other);
     return chosen.replace(/\{(\w+)\}/g, (whole, name: string) => {
       const value = params?.[name];
       if (value === undefined) return whole;
