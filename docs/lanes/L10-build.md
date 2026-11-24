@@ -19,6 +19,8 @@ Plan: `docs/plan/v2/L10-account-and-reach.md` (section 12 wins), rulings R24, R3
 
 - S9 (Google sign in, L10b): migration `0052_account_identities.sql` (table, RLS, `auth_find_identity`, `auth_find_account_for_link`, credentials check relaxed), `packages/auth/src/oauth/` (`google.ts` OIDC client with PKCE and ID token checks, `link-rules.ts`, `note.ts` signed notes, `service.ts` `GoogleAuthService` extending `ViewerMfaService`: `begin`, `complete`, `confirmLink`, `finishSignUp`, `identityStatus`, `unlink`, `peekNote`; `fake-google.ts` test provider), env `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` (both or neither), site setting `features.signin_with_google`, `RATE_POLICIES.googleStartIp` and `googleCallbackIp`, web `server/auth/google-flow.ts` (cookies and redirects), `google-runtime.ts`, `google-enabled.ts`, routes `/api/auth/google/start` and `/callback` (404 without keys), pages `/sign-in/link-google`, `/sign-in/google-failed`, `/sign-up/google`, `GoogleButton`, `GoogleMark`, `SocialButtons`, `LinkGoogleForm`, `FinishGoogleSignUp`, `ConnectedSignInCard` on Security, actions in `app/actions-google.ts`. Decisions D-314 to D-316. DESIGN-SYSTEM 11.26 and the skill grep carry the colour exception. Guest import after Google needs nothing extra: `ImportPrompt` runs from `ViewerChrome` on any viewer page. Tests: `oauth/*.test.ts`, `oauth/service.int.test.ts`, `google-flow.test.ts`, `google-enabled.test.ts`, `google-routes.test.ts`, `GoogleButton.test.tsx`, `LinkGoogleForm.test.tsx`, `FinishGoogleSignUp.test.tsx`, `ConnectedSignInCard.test.tsx`. Manual step for launch: create a Google Cloud OAuth client with redirect URI `<APP_ORIGIN>/api/auth/google/callback` and set the two env keys.
 
+- S10 (TV mode, L10b): `apps/web/src/lib/tv/` (`detect.ts` `isTvBrowser`, `parseTvPreference`, `resolveTvMode`; `spatial-nav.ts` pure `nextFocus`; `useSpatialNav.ts` hook with `collectFocusables`; `server.ts` `tvModeFromHeaders`; `client.ts` `setTvPreference`, `readTvPreference`, `TV_EVENT`), `components/tv/TvNav.tsx` mounted in the root layout (off on `/watch`), `app/tv.css` (all rules under `html[data-tv]`), `app/tv/route.ts` (`/tv`), a This device TV mode choice in Playback settings. Decision D-319 (cookie `ad_tv` instead of local storage). Tests: `lib/tv/*.test.ts(x)`, `app/tv-css.test.ts`, `app/tv/tv-route.test.ts`, `components/tv/TvNav.test.tsx`, the layout and `PlaybackSettings` tests, and e2e `apps/web/e2e/tv.e2e.ts` (written, not run here). Hand off to L4: the player must wire Up to open controls and Enter to play or pause, and keep captions inside `--tv-safe-x` and `--tv-safe-y` (set on `html[data-tv]`). Review finding 13 (`/activate`) does not apply, no code sign in is built.
+
 ## Was in PR (slice 3, challenge half)
 - Env `VIEWER_MFA_ENABLED`, `RealAuthGateway.verifyTwoStep, verifyRecovery, hasTwoStepPending`, cookie `ad_mv` (`__Host-ad_mv`), `/sign-in/verify` page, `TwoStepForm`, actions `verifyTwoStepAction`, `verifyRecoveryAction`, copy in `packages/shared/src/messages/l10-messages.ts` (spread into `EN_NG`, add all later L10 keys there).
 
@@ -26,7 +28,7 @@ Plan: `docs/plan/v2/L10-account-and-reach.md` (section 12 wins), rulings R24, R3
 1. (done, S7)
 2. (done, S8)
 3. (done, S9)
-4. TV mode.
+4. (done, S10)
 5. Docs: M49 stories, MODULES, BUILD-PLAN, SCREEN-ARCHITECTURE, SECURITY, CLIENT-INPUTS, not now notes (offline downloads, passkeys), decisions D-L10-03 to D-L10-15.
 Owner follow up: the `.claude` skill grep edit for the Google mark (plan 12.2) is not done because the shell must not write there.
 

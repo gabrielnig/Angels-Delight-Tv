@@ -1742,3 +1742,9 @@ Decision: `video.preview` catches every error and records `failed` or `skipped` 
 - Options: client side filtering of the loaded page, a select box, a separate saved views feature.
 - Why: client side filtering breaks with paging, and links need no state and are keyboard friendly.
 - Reversible: yes. Nothing is stored.
+
+## D-319 TV mode choice is a cookie read by the server, and the CSS is scoped rather than loaded on demand (lane L10, M49-S15)
+- Decision: the TV mode choice (`auto`, `on`, `off`) is stored in the `ad_tv` cookie, not in local storage under `ad:tv-mode:v1` as the plan said. The root layout reads it with the user agent and sets `html[data-tv]` on the server. `tv.css` is always bundled and every rule starts with `html[data-tv]`, so with TV mode off nothing changes. `/tv` sets the cookie and redirects Home. Spatial navigation lives in `apps/web/src/lib/tv` and is mounted by `TvNav`, which stays off on `/watch`.
+- Options: local storage with a first paint script (the plan), a server setting on the account (guests would not get it), a separate TV site.
+- Why: a cookie lets the server draw the first paint at TV size, with no flash of small text, and works for guests. The cookie holds a display preference only, so being readable by script is fine. Scoped CSS is tiny and avoids a second request path.
+- Reversible: yes. Nothing else reads the cookie.
