@@ -44,11 +44,13 @@ export class ViewerMfaService extends AccountService {
     return this.mfaCore;
   }
 
-  private hook(accountId: string, meta: RequestMeta, field = 'code') {
+  private hook(accountId: string, meta: RequestMeta, field = 'code', signIn = false) {
     return {
       field,
-      onFailure: () =>
-        this.audit('viewer.mfa_failed', 'failure', meta, { accountId, role: 'viewer' }),
+      onFailure: async () => {
+        await this.audit('viewer.mfa_failed', 'failure', meta, { accountId, role: 'viewer' });
+        if (signIn) await this.recordLogin(accountId, 'viewer', 'mfa_failed', meta);
+      },
     };
   }
 
@@ -136,6 +138,10 @@ export class ViewerMfaService extends AccountService {
       kind: 'viewer',
       ipTrunc: meta.ipTrunc,
       userAgent: meta.userAgent,
+      ...this.sessionExtras(meta),
+    });
+    await this.recordLogin(accountId, account.role, 'success', meta, {
+      sessionId: session.session.id,
     });
     await this.audit('auth.login', 'success', meta, { accountId, role: account.role });
     const handle = { token: session.token, id: session.session.id };
@@ -162,7 +168,7 @@ export class ViewerMfaService extends AccountService {
   ): Promise<ViewerMfaSignIn> {
     const accountId = this.pending(pendingToken);
     await this.mfa.verifyCode(accountId, input.code, {
-      ...this.hook(accountId, meta),
+      ...this.hook(accountId, meta, 'code', true),
       requireConfirmed: true,
     });
     return this.openSession(accountId, meta);
@@ -178,7 +184,7 @@ export class ViewerMfaService extends AccountService {
     const { remaining } = await this.mfa.claimRecoveryCode(
       accountId,
       input.code,
-      this.hook(accountId, meta),
+      this.hook(accountId, meta, 'code', true),
     );
     const opened = await this.openSession(accountId, meta);
     await this.audit('viewer.recovery_used', 'success', meta, { accountId, role: 'viewer' });

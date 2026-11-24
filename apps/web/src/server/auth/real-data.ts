@@ -1,5 +1,11 @@
 import 'server-only';
-import { PENDING_MFA_SECONDS, readPending, readPendingMfa, signPending } from '@ad/auth';
+import {
+  PENDING_MFA_SECONDS,
+  listLoginEvents,
+  readPending,
+  readPendingMfa,
+  signPending,
+} from '@ad/auth';
 import { type AccountViewerSource, RealAccountRepository } from './account-repo';
 import { type GatewayIo, RealAuthGateway } from './gateway';
 import { authRuntime } from './runtime';
@@ -76,5 +82,6 @@ export const createRealAccount = (viewer?: AccountViewerSource) => {
     () => new Date(),
     viewer,
     runtime.viewerMfa,
+    (accountId) => listLoginEvents(runtime.db, accountId, 20),
   );
 };

@@ -15,7 +15,8 @@ export const L10_MESSAGES = {
   'auth.twoStep.useRecovery': 'Use a recovery code',
   'auth.twoStep.useApp': 'Use my authenticator app',
   'auth.twoStep.recoveryLabel': 'Recovery code',
-  'auth.twoStep.recoveryHint': 'Each recovery code works once. Letters can be any case and the dash is optional.',
+  'auth.twoStep.recoveryHint':
+    'Each recovery code works once. Letters can be any case and the dash is optional.',
   'auth.twoStep.recoveryWrong': 'That recovery code is not right or was already used.',
   'auth.twoStep.recoverySubmit': 'Sign in',
   'auth.twoStep.lost': 'Lost your phone? Contact support.',
@@ -23,12 +24,17 @@ export const L10_MESSAGES = {
 
   // Two step verification on the Security screen (M49-S01, S03, S04)
   'account.twoStep.title': 'Two step verification',
-  'account.twoStep.offLead': 'Ask for a code from an authenticator app when you sign in, so a stolen password is not enough.',
+  'account.twoStep.offLead':
+    'Ask for a code from an authenticator app when you sign in, so a stolen password is not enough.',
   'account.twoStep.turnOn': 'Turn on',
   'account.twoStep.onBadge': 'On',
-  'account.twoStep.codesLeft': { one: '{count} backup code left', other: '{count} backup codes left' },
+  'account.twoStep.codesLeft': {
+    one: '{count} backup code left',
+    other: '{count} backup codes left',
+  },
   'account.twoStep.noCodes': 'No backup codes left',
-  'account.twoStep.lowWarning': 'You are running low on backup codes. Get new ones before you need them.',
+  'account.twoStep.lowWarning':
+    'You are running low on backup codes. Get new ones before you need them.',
   'account.twoStep.newCodes': 'Get new codes',
   'account.twoStep.turnOff': 'Turn off',
   'account.twoStep.setupScan': 'Scan this picture with your authenticator app.',
@@ -37,18 +43,21 @@ export const L10_MESSAGES = {
   'account.twoStep.codeLabel': 'Enter the 6 digit code from the app',
   'account.twoStep.confirm': 'Confirm and turn on',
   'account.twoStep.cancel': 'Cancel',
-  'account.twoStep.wrongCode': 'That code is not right. Check the time on your phone and try again.',
+  'account.twoStep.wrongCode':
+    'That code is not right. Check the time on your phone and try again.',
   'account.twoStep.locked': 'Too many wrong codes. Try again in {wait}.',
   'account.twoStep.network': 'We could not reach the server. Check your connection and try again.',
   'account.twoStep.codesTitle': 'Your backup codes',
-  'account.twoStep.codesLead': 'Each code works once if you lose your phone. They are shown only now.',
+  'account.twoStep.codesLead':
+    'Each code works once if you lose your phone. They are shown only now.',
   'account.twoStep.copy': 'Copy codes',
   'account.twoStep.copied': 'Codes copied',
   'account.twoStep.download': 'Download codes',
   'account.twoStep.saved': 'I saved these codes',
   'account.twoStep.done': 'Done',
   'account.twoStep.turnOffTitle': 'Turn off two step verification?',
-  'account.twoStep.turnOffLead': 'Enter your password and a current code. We will sign you out on your other devices.',
+  'account.twoStep.turnOffLead':
+    'Enter your password and a current code. We will sign you out on your other devices.',
   'account.twoStep.passwordLabel': 'Your password',
   'account.twoStep.anyCodeLabel': 'Authenticator code or backup code',
   'account.twoStep.wrongPassword': 'That password is not right.',
@@ -74,14 +83,34 @@ export const L10_MESSAGES = {
   'account.activity.more': 'Show more',
   'account.activity.clear': 'Clear activity',
   'account.activity.clearTitle': 'Clear activity for {name}?',
-  'account.activity.clearLead': 'This removes every title from this profile\'s list and from Continue learning. Clearing activity does not delete your account.',
+  'account.activity.clearLead':
+    "This removes every title from this profile's list and from Continue learning. Clearing activity does not delete your account.",
   'account.activity.clearCancel': 'Cancel',
   'account.activity.clearDone': 'Activity cleared.',
   'account.activity.clearFailed': 'We could not clear the list. Nothing was changed.',
   'account.activity.download': 'Download my data first',
   'account.activity.progress': '{pct}% watched',
   'account.data.activityTitle': 'Viewing activity',
-  'account.data.activityLead': 'See what each profile has watched, remove a title, or clear the list. Clearing your viewing activity does not delete your account.',
+  'account.data.activityLead':
+    'See what each profile has watched, remove a title, or clear the list. Clearing your viewing activity does not delete your account.',
   'account.data.activityOpen': 'Open viewing activity',
   'account.nav.activity': 'Viewing activity',
+  'auth.notice.everywhere': 'You were signed out on every device. Sign in again to continue.',
+  'account.devices.everywhere': 'Sign out everywhere',
+  'account.devices.everywhereTitle': 'Sign out everywhere?',
+  'account.devices.everywhereLead':
+    'This signs you out on every device, including this one. Enter your password to confirm.',
+  'account.devices.passwordLabel': 'Your password',
+  'account.devices.wrongPassword': 'That password is not right.',
+  'account.devices.locked': 'Too many tries. Try again in {minutes} minutes.',
+  'account.devices.failed': 'We could not sign you out everywhere. Try again.',
+  'account.history.title': 'Recent sign ins',
+  'account.history.lead':
+    'The last 20 attempts in the past 90 days. We keep the country only, never an address.',
+  'account.history.empty': 'No sign ins recorded yet.',
+  'account.history.success': 'Signed in',
+  'account.history.failed': 'Wrong password',
+  'account.history.mfaFailed': 'Wrong code',
+  'account.history.locked': 'Blocked after too many tries',
+  'account.history.newDevice': 'New device',
 } as const;

@@ -14,7 +14,22 @@ describe('buildMeta', () => {
       ipTrunc: '203.0.113.0/24',
       userAgent: 'Mozilla/5.0',
       requestId: 'req-9',
+      country: null,
+      deviceId: null,
     });
+  });
+
+  it('reads the country from the trusted proxy header only, as two capital letters', () => {
+    const trusted = new Headers({ 'cf-ipcountry': 'ng' });
+    expect(buildMeta(trusted, 'cloudflare').country).toBe('NG');
+    expect(buildMeta(new Headers({ 'cf-ipcountry': 'XX' }), 'cloudflare').country).toBeNull();
+    expect(buildMeta(new Headers({ 'cf-ipcountry': 'T1' }), 'cloudflare').country).toBeNull();
+    expect(buildMeta(new Headers({ 'cf-ipcountry': 'Nigeria' }), 'cloudflare').country).toBeNull();
+    expect(buildMeta(trusted, 'none').country).toBeNull();
+  });
+
+  it('carries the device id it is given', () => {
+    expect(buildMeta(new Headers(), 'none', 'dev-1').deviceId).toBe('dev-1');
   });
 
   it('has no address when no trusted proxy is configured, even with spoofed headers', () => {

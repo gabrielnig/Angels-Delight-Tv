@@ -78,4 +78,65 @@ describe('DevicesCard', () => {
     render(<DevicesCard devices={devices.slice(0, 1)} onRevoke={noop} onRevokeOthers={noop} />);
     expect(screen.queryByRole('button', { name: 'Sign out all other devices' })).toBeNull();
   });
+
+  it('S176: Sign out everywhere asks for the password and says this device is included', async () => {
+    const onSignOutEverywhere = vi.fn(async () => ({ ok: true as const }));
+    const user = userEvent.setup();
+    render(
+      <DevicesCard
+        devices={devices}
+        onRevoke={noop}
+        onRevokeOthers={noop}
+        onSignOutEverywhere={onSignOutEverywhere}
+      />,
+    );
+    await user.click(screen.getByRole('button', { name: 'Sign out everywhere' }));
+    const dialog = screen.getByRole('dialog', { name: 'Sign out everywhere?' });
+    expect(within(dialog).getByText(/including this one/)).toBeInTheDocument();
+    await user.type(within(dialog).getByLabelText('Your password'), 'river-lantern-42');
+    await user.click(within(dialog).getByRole('button', { name: 'Sign out everywhere' }));
+    expect(onSignOutEverywhere).toHaveBeenCalledWith('river-lantern-42');
+  });
+
+  it('S176: a wrong password keeps the dialog open with a message', async () => {
+    const onSignOutEverywhere = vi.fn(async () => ({
+      ok: false as const,
+      reason: 'wrong_password' as const,
+    }));
+    const user = userEvent.setup();
+    render(
+      <DevicesCard
+        devices={devices}
+        onRevoke={noop}
+        onRevokeOthers={noop}
+        onSignOutEverywhere={onSignOutEverywhere}
+      />,
+    );
+    await user.click(screen.getByRole('button', { name: 'Sign out everywhere' }));
+    const dialog = screen.getByRole('dialog');
+    await user.type(within(dialog).getByLabelText('Your password'), 'nope');
+    await user.click(within(dialog).getByRole('button', { name: 'Sign out everywhere' }));
+    expect(await within(dialog).findByText('That password is not right.')).toBeInTheDocument();
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
+  });
+
+  it('does not offer Sign out everywhere when no handler is given', () => {
+    render(<DevicesCard devices={devices} onRevoke={noop} onRevokeOthers={noop} />);
+    expect(screen.queryByRole('button', { name: 'Sign out everywhere' })).toBeNull();
+  });
+
+  it('shows a tv or tablet icon from the device kind', () => {
+    const { container } = render(
+      <DevicesCard
+        devices={[
+          { ...devices[0]!, kind: 'tv' as const },
+          { ...devices[1]!, kind: 'tablet' as const },
+        ]}
+        onRevoke={noop}
+        onRevokeOthers={noop}
+      />,
+    );
+    expect(container.querySelectorAll('[data-icon="tv"]')).toHaveLength(1);
+    expect(container.querySelectorAll('[data-icon="tablet"]')).toHaveLength(1);
+  });
 });

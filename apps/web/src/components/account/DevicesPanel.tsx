@@ -2,8 +2,28 @@
 
 import { useState } from 'react';
 import { Button, Modal } from '@ad/ui';
-import type { DeviceSession } from '../../lib/data';
-import { AcctIcon } from './icons';
+import { msg } from '@ad/shared/messages';
+import type { DeviceKind, DeviceSession } from '../../lib/data';
+import { AcctField } from './Field';
+import { AcctIcon, type AcctIconName } from './icons';
+
+export type SignOutEverywhereResult =
+  | { ok: true }
+  | { ok: false; reason: 'wrong_password' | 'network' }
+  | { ok: false; reason: 'locked'; minutes: number };
+
+const KIND_ICON: Record<DeviceKind, AcctIconName | null> = {
+  tv: 'tv',
+  tablet: 'tablet',
+  phone: 'phone',
+  computer: 'laptop',
+  other: null,
+};
+
+function iconFor(device: DeviceSession): AcctIconName {
+  const byKind = device.kind ? KIND_ICON[device.kind] : null;
+  return byKind ?? (isDesktop(device.label) ? 'laptop' : 'phone');
+}
 
 const isDesktop = (label: string) => /windows|mac|linux|chromebook|desktop/i.test(label);
 
@@ -17,12 +37,46 @@ export function DevicesCard({
   devices,
   onRevoke,
   onRevokeOthers,
+  onSignOutEverywhere,
 }: {
   devices: DeviceSession[];
   onRevoke: (id: string) => void | Promise<void>;
   onRevokeOthers: () => void | Promise<void>;
+  /** When given, the card offers Sign out everywhere, which asks for the password and includes this device. */
+  onSignOutEverywhere?: (password: string) => Promise<SignOutEverywhereResult>;
 }) {
   const [confirming, setConfirming] = useState(false);
+  const [everywhere, setEverywhere] = useState(false);
+  const [password, setPassword] = useState('');
+  const [problem, setProblem] = useState<string | undefined>();
+  const [busy, setBusy] = useState(false);
+
+  function closeEverywhere() {
+    setEverywhere(false);
+    setPassword('');
+    setProblem(undefined);
+  }
+
+  async function submitEverywhere() {
+    if (!onSignOutEverywhere || busy || password.length === 0) return;
+    setBusy(true);
+    setProblem(undefined);
+    try {
+      const result = await onSignOutEverywhere(password);
+      if (result.ok) return;
+      setProblem(
+        result.reason === 'wrong_password'
+          ? msg('account.devices.wrongPassword')
+          : result.reason === 'locked'
+            ? msg('account.devices.locked', { minutes: String(result.minutes) })
+            : msg('account.devices.failed'),
+      );
+    } catch {
+      setProblem(msg('account.devices.failed'));
+    } finally {
+      setBusy(false);
+    }
+  }
   const others = devices.filter((d) => !d.current);
   const count = `${others.length} ${others.length === 1 ? 'device' : 'devices'}`;
   return (
@@ -31,17 +85,24 @@ export function DevicesCard({
         <h2 id="acct-devices" className="acct-h2">
           Where you are signed in
         </h2>
-        {others.length > 0 ? (
-          <Button variant="danger-outline" onClick={() => setConfirming(true)}>
-            Sign out all other devices
-          </Button>
-        ) : null}
+        <div className="acct-row" data-wrap data-tight>
+          {others.length > 0 ? (
+            <Button variant="danger-outline" onClick={() => setConfirming(true)}>
+              Sign out all other devices
+            </Button>
+          ) : null}
+          {onSignOutEverywhere ? (
+            <Button variant="danger" onClick={() => setEverywhere(true)}>
+              {msg('account.devices.everywhere')}
+            </Button>
+          ) : null}
+        </div>
       </div>
       <ul className="acct-devices">
         {devices.map((d) => (
           <li key={d.id} className="acct-device">
             <div className="acct-device__lead">
-              <AcctIcon name={isDesktop(d.label) ? 'laptop' : 'phone'} size={24} />
+              <AcctIcon name={iconFor(d)} size={24} />
               <div className="acct-col">
                 <span className="acct-device__label">{d.label}</span>
                 <span className="acct-muted acct-small">{`${d.place}, ${d.lastActive}`}</span>
@@ -87,6 +148,40 @@ export function DevicesCard({
         }
       >
         <p className="acct-muted">{`This signs you out on ${joinNames(others.map((d) => d.label))}. You stay signed in here.`}</p>
+      </Modal>
+      <Modal
+        open={everywhere}
+        onClose={closeEverywhere}
+        title={msg('account.devices.everywhereTitle')}
+        className="acct-dialog"
+        hideClose
+        footer={
+          <>
+            <Button variant="secondary" onClick={closeEverywhere}>
+              Cancel
+            </Button>
+            <Button
+              variant="danger"
+              disabled={busy || password.length === 0}
+              onClick={() => void submitEverywhere()}
+            >
+              {msg('account.devices.everywhere')}
+            </Button>
+          </>
+        }
+      >
+        <p className="acct-muted">{msg('account.devices.everywhereLead')}</p>
+        <AcctField
+          label={msg('account.devices.passwordLabel')}
+          type="password"
+          autoComplete="current-password"
+          value={password}
+          error={problem}
+          onChange={(event) => setPassword(event.target.value)}
+          onKeyDown={(event) => {
+            if (event.key === 'Enter') void submitEverywhere();
+          }}
+        />
       </Modal>
     </section>
   );

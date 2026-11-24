@@ -15,6 +15,7 @@ export const RATE_POLICIES = {
   resetRequestIp: perMinutes('reset-ip', 10, 60),
   verifyResendAccount: perMinutes('verify-resend', 3, 60),
   lockoutNoticeAccount: perMinutes('lockout-notice', 1, 60),
+  newDeviceMail: perMinutes('new-device-mail', 1, 60),
   adminGeneral: perMinutes('admin-general', 300, 1),
   globalApiIp: perMinutes('api-ip', 300, 1),
   inviteSend: perMinutes('invite-send', 20, 60),

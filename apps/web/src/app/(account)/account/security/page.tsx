@@ -10,10 +10,11 @@ export const metadata = { title: 'Security' };
 export default async function SecurityPage() {
   const { session, profile } = await requireProfile('/account/security');
   if (profile.kids) return <AdultsOnly profileName={profile.name} />;
-  const [overview, devices, twoFactor] = await Promise.all([
+  const [overview, devices, twoFactor, history] = await Promise.all([
     getAccount().overview(session.accountId),
     getAccount().devices(session.accountId),
     getAccount().twoFactor(session.accountId),
+    getAccount().loginHistory(session.accountId),
   ]);
   const copy = ACCOUNT_PAGES['/account/security']!;
   return (
@@ -24,6 +25,7 @@ export default async function SecurityPage() {
         passwordChanged={overview.passwordChanged}
         devices={devices}
         twoFactor={twoFactor}
+        history={history}
       />
     </AccountFrame>
   );

@@ -383,6 +383,19 @@ export async function revokeOtherDevicesAction() {
   return getAccount().revokeOtherDevices(await currentAccountId());
 }
 
+/** M49-S12. On success every session is gone, this browser included, so the profile cookies go too. */
+export async function signOutEverywhereAction(password: string) {
+  const result = await getAccount().signOutEverywhere(await currentAccountId(), password);
+  if (result.ok) {
+    const jar = await cookies();
+    jar.set(sessionCookieNames.fixture, 'out', cookieOptions);
+    jar.delete(sessionCookieNames.profile);
+    jar.delete(ACCOUNT_HINT_COOKIE);
+    if (realDataEnabled()) await cookieProfileIo().clearActive();
+  }
+  return result;
+}
+
 export async function requestExportAction(input: { password: string }) {
   return getAccount().requestExport(await currentAccountId(), input);
 }

@@ -1600,3 +1600,9 @@ Per video tri state, site default (Super admin), Admin changes it with a reason 
 - Options: Count in the job only; count in the adapter wrapper; no cap
 - Why: Every call path through the chooser is guarded, including later bulk jobs, and the guard cannot be skipped by a new caller.
 - Reversible: Yes
+
+## D-293 Sign in history keeps country only, new devices are told apart by a device cookie hash (lane L10, M49-S13, S14)
+- Decision: `login_events` records success, failed, mfa_failed and locked attempts with a two letter country from the trusted proxy header, a short device label and a keyed hash of a random `ad_dev` cookie. No address is stored. A new device email goes out only when that hash was never seen on a success before and the account already had a success, at most once an hour per account. Rows are deleted after 90 days by a daily `auth.login_events_prune` job on the maintenance connection. `sessions` gain `country` and `device_hash` so the devices list shows a country, not an address. Sign out everywhere reuses the existing password confirmed `signOutEverywhere` and lands on Sign in with a notice.
+- Options: Store the truncated address, use the user agent as the device key, mail on every sign in.
+- Why: The NDPA brief wants the least personal data that still answers "was this me". A user agent changes with every browser update, so it would mail people for nothing. A cookie hash does not.
+- Reversible: Yes. The table and cookie can be dropped without touching sessions.

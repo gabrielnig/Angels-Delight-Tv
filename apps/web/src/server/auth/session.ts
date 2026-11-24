@@ -1,5 +1,6 @@
 import 'server-only';
 import { DEFAULT_SESSION_POLICIES, type SessionContext } from '@ad/auth';
+import { randomBytes } from 'node:crypto';
 import { cookies, headers } from 'next/headers';
 import { cache } from 'react';
 import {
@@ -8,6 +9,8 @@ import {
   pendingCookieOptions,
   sessionCookieName,
   sessionCookieOptions,
+  DEVICE_COOKIE_DAYS,
+  deviceCookieName,
   twoStepCookieName,
 } from './cookies';
 import { buildMeta, sameOriginOr403 } from './request';
@@ -19,8 +22,29 @@ const IDLE: Record<SessionCookieKind, number> = {
   pending_mfa: DEFAULT_SESSION_POLICIES.pendingMfa.idleSeconds,
 };
 
+/** The device id of this browser. Minted on first use. Setting a cookie can fail outside an action, which is fine. */
+async function deviceId(): Promise<string> {
+  const secure = authRuntime().secureCookies;
+  const jar = await cookies();
+  const existing = jar.get(deviceCookieName(secure))?.value;
+  if (existing && /^[A-Za-z0-9_-]{16,64}$/.test(existing)) return existing;
+  const minted = randomBytes(24).toString('base64url');
+  try {
+    jar.set(deviceCookieName(secure), minted, {
+      httpOnly: true,
+      secure,
+      sameSite: 'lax',
+      path: '/',
+      maxAge: DEVICE_COOKIE_DAYS * 86_400,
+    });
+  } catch {
+    // Read only context: the next action sets it.
+  }
+  return minted;
+}
+
 export async function requestMeta() {
-  return buildMeta(await headers(), authRuntime().env.TRUSTED_PROXY_MODE);
+  return buildMeta(await headers(), authRuntime().env.TRUSTED_PROXY_MODE, await deviceId());
 }
 
 /** Server actions are also checked against Origin here, on top of the framework check (SECURITY.md section 4). */

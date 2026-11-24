@@ -1,12 +1,18 @@
 'use client';
 
+import { useRouter } from 'next/navigation';
 import { useCallback, useState } from 'react';
-import { revokeDeviceAction, revokeOtherDevicesAction } from '../../app/actions';
-import type { DeviceSession, TwoFactorState } from '../../lib/data';
+import {
+  revokeDeviceAction,
+  revokeOtherDevicesAction,
+  signOutEverywhereAction,
+} from '../../app/actions';
+import type { DeviceSession, LoginHistoryEntry, TwoFactorState } from '../../lib/data';
 import { ChangePasswordForm } from './ChangePassword';
-import { DevicesCard } from './DevicesPanel';
+import { DevicesCard, type SignOutEverywhereResult } from './DevicesPanel';
 import { EmailCard } from './EmailCard';
 import { InlineToast } from './InlineToast';
+import { LoginHistoryCard } from './LoginHistoryCard';
 import { TwoFactorCard } from './TwoFactorCard';
 import { msg } from '@ad/shared/messages';
 
@@ -17,17 +23,22 @@ export function SecurityView({
   passwordChanged,
   devices: initial,
   twoFactor,
+  history,
   revoke = revokeDeviceAction,
   revokeOthers = revokeOtherDevicesAction,
+  signOutEverywhere = signOutEverywhereAction,
 }: {
   email: string;
   verified: boolean;
   passwordChanged: string;
   devices: DeviceSession[];
   twoFactor?: TwoFactorState;
+  history?: LoginHistoryEntry[];
   revoke?: (id: string) => Promise<unknown>;
   revokeOthers?: () => Promise<unknown>;
+  signOutEverywhere?: (password: string) => Promise<SignOutEverywhereResult>;
 }) {
+  const router = useRouter();
   const [devices, setDevices] = useState(initial);
   const [toast, setToast] = useState<{ text: string; error?: boolean } | null>(null);
   const dismiss = useCallback(() => setToast(null), []);
@@ -50,6 +61,12 @@ export function SecurityView({
     } catch {
       setToast({ text: 'We could not sign the other devices out. Try again.', error: true });
     }
+  }
+
+  async function onSignOutEverywhere(password: string): Promise<SignOutEverywhereResult> {
+    const result = await signOutEverywhere(password);
+    if (result.ok) router.push('/sign-in?notice=everywhere');
+    return result;
   }
 
   return (
@@ -91,7 +108,13 @@ export function SecurityView({
         verified={verified}
         onChanged={() => setToast({ text: 'Email changed.' })}
       />
-      <DevicesCard devices={devices} onRevoke={onRevoke} onRevokeOthers={onRevokeOthers} />
+      <DevicesCard
+        devices={devices}
+        onRevoke={onRevoke}
+        onRevokeOthers={onRevokeOthers}
+        onSignOutEverywhere={onSignOutEverywhere}
+      />
+      {history ? <LoginHistoryCard entries={history} /> : null}
     </>
   );
 }
