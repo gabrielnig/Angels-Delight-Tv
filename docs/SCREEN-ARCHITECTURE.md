@@ -25,13 +25,13 @@ From `/home/claude/shared-protocols/docs/UI-UX-STANDARD.md`:
 
 | Name | Width | Notes |
 |---|---|---|
-| xs | 320 to 479 | Smallest phones. Design baseline is 360. |
-| sm | 480 to 767 | Large phones, landscape phones. |
-| md | 768 to 1023 | Tablets. |
-| lg | 1024 to 1279 | Small laptops. 4 cards per row. |
-| xl | 1280 and up | Desktop. 5 cards per row (as in the brief). |
+| base | under 600 | Phones. Design baseline is 360. Rows show 2.3 cards. |
+| sm | 600 to 959 | Large phones, tablets. 3.3 cards per row. |
+| md | 960 to 1279 | Small laptops. 4.3 cards per row. |
+| lg | 1280 to 1919 | Desktop. 5.3 cards per row. |
+| xl | 1920 and up | Wide desktop. 6.3 cards per row, rails cap at 120rem. |
 
-- Mobile first CSS. Cards per row: xs 2.3 (peek), sm 3.3, md 4.3, lg 4.5, xl 5 (peek of next).
+- Mobile first CSS. Cards per row follow the row container: base 2.3 (peek), sm 3.3, md 4.3, lg 5.3, xl 6.3 (peek of next). Gutter is `clamp(1rem, 4vw, 3.5rem)`.
 - Admin is designed for lg and up, with a usable md and a reduced sm (lists become cards, side menu becomes a drawer). Upload and caption review must work on a laptop first, phone second.
 - Safe area insets respected on notched phones.
 - No horizontal page scroll at any width. Rows scroll horizontally inside their own container.

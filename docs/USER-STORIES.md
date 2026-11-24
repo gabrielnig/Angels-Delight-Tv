@@ -435,7 +435,7 @@ As a viewer on a slow network, I want catalog pages to respond quickly, so that 
 ### M05-S01 Hero banner (Must)
 As a viewer, I want a featured title at the top of Home, so that I see something worth watching at once.
 - AC1: Given Home loads, When a hero is configured, Then I see poster art, title, a one-line description, a Play (or Resume) button and a More info button.
-- AC2: Given multiple hero titles are set, When I wait, Then they rotate every 8 seconds with visible dots and a Pause control, and rotation stops when reduced motion is on.
+- AC2: Given multiple hero titles are set, When I wait, Then they rotate every 10 seconds with visible dots and a Pause control, and rotation stops when reduced motion is on.
 - AC3: Given I tap Play, When the title is a series, Then it plays the next unwatched episode for my profile.
 - Edge: text over the image keeps WCAG contrast through a gradient scrim.
 - Error: if the hero image fails to load, a solid theme colour with the title still shows.
@@ -2510,3 +2510,162 @@ Total stories: 271. Must: 176. Should: 75. Could: 20.
 | M36 | 4 |
 
 Modules with no viewer or admin screen of their own (M04, M22, M23, M24, M30, M31, M33) still carry stories because their behaviour is testable and has user visible effects.
+
+## M47 Design system tuning and guards
+
+### M47-S01 Next card peeks at every width (Must)
+As a viewer on any screen, I want to see part of the next card in every row, so that I know the row scrolls.
+- AC1: Given a row on a container 360 px wide, When it renders, Then 2.3 cards are visible and the next card is partly shown.
+- AC2: Given container widths 600, 960, 1280 and 1920 px, When the row renders, Then 3.3, 4.3, 5.3 and 6.3 cards are visible.
+- AC3: Given the row sits in a narrower container (for example a split layout), When it renders, Then the count follows the container, not the viewport.
+- AC4: Given the skeleton row, When it shows, Then card width and gutters equal the real row (no layout shift when content arrives).
+- Edge: a row with fewer cards than fit shows them left aligned without arrows. Browsers without container queries use the viewport values.
+- Error: not applicable.
+- Empty: a row with no cards is hidden (My List shows its empty state).
+
+### M47-S02 Hover only where hover exists (Must)
+As a phone user, I want no sticky hover states, so that taps do not leave things highlighted or moved.
+- AC1: Given any stylesheet, When scanned in CI, Then every `:hover` rule sits inside `@media (hover: hover)`.
+- AC2: Given a rule that scales, moves or reveals, When scanned, Then it sits inside `(hover: hover) and (pointer: fine)`.
+- AC3: Given a touch device, When I tap a card, Then no hover card, lift or reveal appears and the card opens.
+- Edge: hybrid devices (laptop with touch) use the fine pointer rules while the mouse is the primary pointer.
+- Error: CI fails with the file and line of the rule.
+- Empty: not applicable.
+
+### M47-S03 Hover card (Should)
+As a desktop viewer, I want a quick preview of a title when I rest the mouse on it, so that I can decide without opening it.
+- AC1: Given a fine pointer, When I rest on a card for 300 ms, Then the card scales to 1.25 over 250 ms with a strong ease out and shows title, length, subject and Play.
+- AC2: Given I move the pointer away, When it leaves, Then the card returns immediately with no delay.
+- AC3: Given the first card of a row, When it scales, Then it grows from the left edge. Given the last card, Then from the right edge. Others grow from the centre.
+- AC4: Given the card scales, When it overlaps neighbours, Then it sits above them and is never clipped by the row.
+- AC5: Given keyboard focus on a card, When focus-within applies, Then the same content shows without scale.
+- AC6: Given reduced motion, When I hover, Then there is no scale and no delay, and the content shows at once.
+- Edge: no video preview, ever. Title is read once by screen readers (the preview is `aria-hidden`).
+- Error: not applicable.
+- Empty: a card without a description shows title, length and Play only.
+
+### M47-S04 Nav that turns solid on scroll (Must)
+As a viewer, I want the top bar to stay readable over the hero and solid once I scroll, so that links are always legible.
+- AC1: Given the Home page at the top, When it loads, Then the nav is clear over the hero scrim with white text.
+- AC2: Given I scroll more than 40 px, When the sentinel leaves the viewport, Then the nav fades to the surface colour with ink text over 200 ms.
+- AC3: Given a page restored scrolled, When it loads, Then the nav is already solid.
+- AC4: Given a non hero page, When it loads, Then the nav is always solid.
+- AC5: Given no IntersectionObserver, When the page loads, Then the nav is solid.
+- Edge: nav height is 3.5 rem on phones and 4.25 rem from 960 px, in the same place in both states (no jump).
+- Error: not applicable.
+- Empty: not applicable.
+
+### M47-S05 Row arrows and native scrolling (Must)
+As a mouse user, I want arrows on a row, and as a touch user I want to swipe, so that both feel natural.
+- AC1: Given a fine pointer, When I hover or focus inside a row, Then prev and next arrows appear centred on the thumbnails; the prev arrow is hidden at the start and the next at the end.
+- AC2: Given I press an arrow, When the row pages, Then it moves one visible page minus one card, and focus stays on the arrow.
+- AC3: Given reduced motion, When I page, Then the row jumps without smooth scrolling.
+- AC4: Given a touch device, When I swipe, Then scrolling is native, snaps to a card start when near one, and the page does not scroll sideways.
+- Edge: arrow targets are 44 px. Arrow keys are not hijacked.
+- Error: not applicable.
+- Empty: a row with all cards visible shows no arrows.
+
+### M47-S06 Focus rings that always show and pass contrast (Must)
+As a keyboard user, I want a visible ring on every focusable thing, so that I never lose my place.
+- AC1: Given the profile picker, When a tile takes keyboard focus, Then a 3 px ring with a 3 px gap draws around the avatar with at least 3 to 1 contrast against the page.
+- AC2: Given a card link, When focused, Then the ring draws around the thumbnail with a 2 px offset.
+- AC3: Given Windows forced colors, When a tile or card is focused, Then the ring uses the system highlight colour.
+- AC4: Given the default theme and every preset, When CI computes ring contrast, Then it is at least 3 to 1 against each adjacent colour.
+- Edge: no component sets `outline: none` without a replacement ring (programmatic focus landmarks excepted).
+- Error: CI names the selector.
+- Empty: not applicable.
+
+### M47-S07 Motion tokens and reduced motion (Must)
+As a viewer who prefers less motion, I want movement removed everywhere, so that the site is comfortable.
+- AC1: Given hover on desktop, When a control changes, Then it uses 250 ms with a strong ease out, and press uses 0 ms.
+- AC2: Given `prefers-reduced-motion: reduce`, When any page loads, Then transitions and animations are near zero, hover cards do not scale, the hero does not crossfade or rotate, skeletons are static and rows jump instead of gliding.
+- AC3: Given Data saver is on, When pages load, Then slow transitions are also removed.
+- AC4: Given a stylesheet, When scanned, Then only transform, opacity and colour properties transition (progress width excepted).
+- Edge: nothing flashes more than 3 times a second.
+- Error: CI names the rule.
+- Empty: not applicable.
+
+### M47-S08 Button size tokens with 44 px targets (Should)
+As a viewer, I want buttons that look tidy on desktop and are easy to press on a phone.
+- AC1: Given a fine pointer, When a small, medium or large button renders, Then it looks 2, 2.5 or 3 rem tall and its tap area is still 44 px.
+- AC2: Given a touch device, When any button renders, Then it is at least 44 px tall.
+- AC3: Given two buttons side by side, When they render, Then their hit areas do not overlap (8 px between).
+- Edge: icon only buttons are 44 by 44.
+- Error: not applicable.
+- Empty: not applicable.
+
+### M47-S09 One type scale for docs and code (Must)
+As a phone user, I want headings sized for a small screen, so that titles do not wrap into narrow columns.
+- AC1: Given a viewport under 960 px, When pages render, Then H1 to lead are 28, 24, 20, 18 and 17 px.
+- AC2: Given 960 px and above, When pages render, Then they are 40, 32, 24, 20 and 18 px.
+- AC3: Given the hero title, When the viewport changes, Then it scales between 2 and 3.5 rem with `clamp(2rem, 5vw, 3.5rem)`.
+- AC4: Given the admin base size factor 0.9 to 1.15, When set, Then all sizes scale and the layout survives 200 percent zoom.
+- Edge: avatar initials do not follow the hero size.
+- Error: not applicable.
+- Empty: not applicable.
+
+### M47-S10 Hero crossfade, rotation and readable text (Must)
+As a viewer, I want the hero to change gently and always keep its text readable.
+- AC1: Given several hero titles, When I wait, Then they rotate every 10 seconds with a 350 ms crossfade, a visible Pause control and dots.
+- AC2: Given I hover, focus, touch or press Pause, When it happens, Then rotation stops.
+- AC3: Given reduced motion or Data saver, When Home loads, Then the hero does not rotate and does not crossfade.
+- AC4: Given any hero image, When the title shows, Then white text on the scrim is at least 4.5 to 1 against the lightest possible image.
+- Edge: one title never rotates and has no dots. The hero is a still image (no video).
+- Error: a missing image falls back to a solid primary panel with the title.
+- Empty: no hero items hides the hero.
+
+### M47-S11 Yoruba and Igbo letters in every font (Must)
+As a Yoruba or Igbo speaker, I want my letters shown properly, so that titles and captions are correct.
+- AC1: Given any of the six fonts, When text has `ọ ẹ ṣ ń ị ụ` and capitals, Then they render in the chosen font.
+- AC2: Given the theme editor, When staff pick a font, Then the sample line shows these letters.
+- AC3: Given CI, When fonts change, Then a coverage test lists any missing glyph by family.
+- Edge: the naira sign falls back to the system font for fonts that do not carry it.
+- Error: CI names family and glyph.
+- Empty: not applicable.
+
+### M47-S12 Skeletons that match the real layout (Must)
+As a viewer on a slow network, I want placeholders the same size as the content, so that nothing jumps.
+- AC1: Given a loading row, When the skeleton shows, Then each card matches width, 16:9 thumb, two title lines and a meta line of the real card.
+- AC2: Given a wait under 300 ms, When it ends, Then no skeleton flashes.
+- AC3: Given content arrives, When it replaces the skeleton, Then it appears in one step with no shift (CLS under 0.1).
+- AC4: Given reduced motion, When a skeleton shows, Then it is a static fill with a hidden "Loading" label and `aria-busy`.
+- Edge: a failed load shows the error state, never a skeleton.
+- Error: not applicable.
+- Empty: not applicable.
+
+### M47-S13 One sentence, one action (Should)
+As a viewer, I want clear messages when there is nothing to show or something fails, so that I know what to do.
+- AC1: Given an empty state, When it shows, Then it has a headline, one sentence and one action.
+- AC2: Given an error, When it shows, Then it says what happened and what to do next, with a reference code only in small text.
+- AC3: Given any copy, When scanned in CI, Then it has no dashes, emojis or exclamation marks.
+- Edge: row errors show "Could not load this row. Try again." and the other rows continue.
+- Error: the error state is the story.
+- Empty: My List empty says "Your list is empty." with "Browse videos".
+
+### M47-S14 Bottom tab bar on phones (Should)
+As a phone user, I want the main places one thumb away, so that I can move around easily.
+- AC1: Given a phone width, When any viewer page shows, Then a 4 item bar (Home, Browse, Search, My List) sits at the bottom with the safe area inset, the current item marked by colour and a 3 px top bar.
+- AC2: Given the title page or the watch page, When it shows, Then the bar is hidden.
+- AC3: Given 960 px and wider, When pages show, Then the bar is hidden and the top nav shows the links.
+- AC4: Given content near the page end, When I scroll, Then the footer clears the bar by exactly the bar height.
+- Edge: a guest sees the same bar (no sign in wall, per the guest program).
+- Error: not applicable.
+- Empty: not applicable.
+
+### M47-S15 Docs, decisions and guards stay in step (Must)
+As the developer, I want docs and code to fail a check when they drift, so that the design system stays true.
+- AC1: Given a number in DS sections 5, 6 or 8, When it differs from tokens.css, Then CI fails.
+- AC2: Given `docs/DECISIONS.md`, When a new duplicate id is added, Then CI fails. The four known pairs are listed in a register.
+- AC3: Given `ai-context.md`, When it quotes a decision number, Then it equals the highest heading.
+- AC4: Given a new interactive class, When it has no touch target or focus ring rule, Then CI fails.
+- Edge: allowlists carry a reason comment.
+- Error: CI prints the file, line and rule.
+- Empty: not applicable.
+
+### M47-S16 Night theme preset (Could)
+As the owner, I want an optional dark theme, so that the platform can look cinematic if the client prefers.
+- AC1: Given the theme editor, When I pick Night, Then the colours fill and pass the contrast gate.
+- AC2: Given Night is saved, When pages render, Then nav, cards, hero and player stay readable and focus rings use the dark ring.
+- Edge: the default stays Default (off white).
+- Error: a failing pair blocks save with the reason.
+- Empty: not applicable.

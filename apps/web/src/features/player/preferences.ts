@@ -7,7 +7,7 @@ export interface KeyValueStore {
 
 export const preferencesKey = (profileId: string) => `ad.player.prefs.${profileId}`;
 
-/** Fields the server keeps per profile. The device keeps only volume and mute (M03-S09, D-108). */
+/** Fields the server keeps per profile. The device keeps only volume and mute (M03-S09, D-108 (M2)). */
 export interface ServerPreferenceFields {
   rate: number;
   captionsOn: boolean;

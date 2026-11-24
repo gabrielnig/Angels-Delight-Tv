@@ -41,17 +41,17 @@ Contents
 
 | Research finding | Decision here |
 |---|---|
-| Transparent nav over hero, solid on scroll; artwork is the visual | Top nav is transparent over hero with a scrim, solid `--color-surface` after 48px scroll (11.8) |
-| Cards: 2:3 and 16:9, about 6 visible on desktop, about 2.5 on mobile with a peeking card | Our videos are 16:9. 5 visible on desktop, 2.4 on mobile (6, 10) |
-| Hover preview expands after a delay, costs data | No video preview. On hover a card lifts slightly and shows action buttons after `--hover-intent-delay`. Touch has none (11.5) |
+| Transparent nav over hero, solid on scroll; artwork is the visual | Top nav is transparent over hero with a scrim, solid `--color-surface` after 40px scroll (11.8) |
+| Cards: 2:3 and 16:9, about 6 visible on desktop, about 2.5 on mobile with a peeking card | Our videos are 16:9. 5.3 visible from 1280 and 6.3 from 1920, 2.3 on mobile, so the next card always peeks (6, 10) |
+| Hover preview expands after a delay, costs data | No video preview. On hover a card scales to 1.25 after `--hover-card-delay` and shows title, length, subject and Play. Touch has none (11.5) |
 | Thin progress bar on Continue Watching | 4px rail, accent fill, on the card bottom (11.5) |
 | Continue Watching and My List first, resume button says Resume | Home order puts Continue Watching first for returning users; hero and detail button switch to "Continue" with time left (11.7, 12) |
 | Profile gate after sign in, kids flag, PIN optional | Profile picker tiles page, kids safe flag, no PIN in v1 (11.9) |
 | Skeleton placeholders, dark canvas hides gaps | Skeleton with matched geometry, shimmer left to right (11.14) |
 | Dense autoplay video heroes cost data | Hero is a still image. No autoplay anywhere on Home (11.7) |
 | YouTube data saver, quality control, double tap seek, speed menu | Data saver switch, quality menu, double tap 10s, speed menu (11.22, 13) |
-| Up next end card with countdown | Pastel up-next tiles, 8s countdown, cancellable (11.23) |
-| Apple: hero 3 to 8 items, alt text must include banner text | Hero carousel max 6 items, manual first, alt text includes any text in image (11.7) |
+| Up next end card with countdown | Pastel up-next tiles, 5s countdown, cancellable (11.23) |
+| Apple: hero 3 to 8 items, alt text must include banner text | Hero carousel max 5 items, rotating by default with a Pause control, alt text includes any text in image (11.7) |
 | Resumable uploads, per file lanes, honest progress | Upload dropzone and queue lane per UI standard section 4 (11.17) |
 | Single colour token system that propagates (Hawkins style) | One token file, theme editor writes tokens, components read tokens only (3, 11.24) |
 | Showmax failed on cost, relevance and data mattered | Light pages, small images, local tone, no paid UI (13, 14) |
@@ -172,7 +172,7 @@ The theme editor computes these checks live and shows a warning chip beside each
 
 ### 5.1 Curated font list
 
-Free Google Fonts under the SIL Open Font License. Self-host WOFF2, subset to Latin plus Latin Extended (needed for Yoruba and Igbo marks such as ọ, ẹ, ṣ, ń), `font-display: swap`. Load at most one family at a time, regular 400, medium 500, semibold 600 and bold 700 only (variable font file if smaller).
+Free Google Fonts under the SIL Open Font License. Self-host WOFF2, ship the latin, latin-ext and vietnamese subsets (the vietnamese subset holds the precomposed Yoruba and Igbo letters ọ, ẹ, ị, ụ; ṣ and ń come from latin-ext), `font-display: swap`. Load at most one family at a time, regular 400, medium 500, semibold 600 and bold 700 only (variable font file if smaller).
 
 | Font | Feel | Default | Notes |
 |---|---|---|---|
@@ -215,6 +215,7 @@ Component CSS uses the tokens above. Responsive sizes are set with media queries
 | Setting | Range | Token |
 |---|---|---|
 | Font family | Curated list only | `--font-sans`, `--font-display` |
+| Mono font | System stack, no web font, recovery codes only (R38) | `--font-mono` |
 | Base size factor | 0.9 to 1.15, step 0.05 | `--type-scale` |
 | Weight | Not editable | fixed |
 | Line height | Not editable | fixed |
@@ -228,7 +229,7 @@ Component CSS uses the tokens above. Responsive sizes are set with media queries
 - Breakpoints (min width, mobile first): base 0, `sm` 600, `md` 960, `lg` 1280, `xl` 1920 (content stops growing at `--content-max` 1440).
 - Page gutter: 16 (base), 24 (sm), 40 (md), 48 (lg).
 - Grid: 4 columns base, 8 at sm, 12 at md and up, 16px gutters on mobile, 24px from md.
-- Rows: `--cards-visible` 2.4 (base, the partial card tells people to swipe), 3.4 (sm), 4.4 (md), 5 (lg). Card gap 8, 12 from md. Row gap `--row-gap` 32. Section gap 64.
+- Rows: `--cards-visible` 2.3 (base, the partial card tells people to swipe), 3.3 (sm), 4.3 (md), 5.3 (lg), 6.3 (xl, 1920 and up). Gutter `--page-gutter` is `clamp(1rem, 4vw, 3.5rem)`. Breakpoints are 600 (sm), 960 (md), 1280 (lg) and 1920 (xl). Card gap 8, 12 from md. Row gap `--row-gap` 32. Section gap 64.
 - Browse grid (category page, search results): 2 columns base, 3 at sm, 4 at md, 5 at lg.
 - Safe areas: honour `env(safe-area-inset-*)` on fixed bars and the player.
 - Touch targets at least 44 by 44 CSS pixels with 8px between neighbours. A smaller visible icon gets padding to reach 44.
@@ -269,13 +270,13 @@ Z order: base 0, sticky 10, nav 20, overlay 30, modal 40, toast 50.
 | `--ease-standard` | cubic-bezier(0.4, 0, 0.2, 1) | Default |
 | `--ease-enter` | cubic-bezier(0, 0, 0.2, 1) | Things arriving |
 | `--ease-exit` | cubic-bezier(0.4, 0, 1, 1) | Things leaving |
-| `--hover-intent-delay` | 500ms | Card hover actions, so passing the cursor does not trigger them |
+| `--hover-card-delay` | 300ms | Card hover on enter only, so passing the cursor does not trigger it. `--hover-intent-delay` stays as an alias for one release |
 
 Rules:
 - Animate `transform` and `opacity` only. Never animate width, height, top or left (exception: progress bar width, 300ms ease-out, per UI standard).
 - Feedback under 400ms always. Nothing decorative runs longer than 400ms.
 - Shimmer: 1.4s linear loop, left to right. One shimmer per page region, not per element.
-- Hero crossfade 350ms. Auto rotate is off by default. If the admin turns it on, interval 7s, pauses on hover, focus and touch, and shows a pause control.
+- Hero crossfade 350ms. Auto rotate is on, 10 s per slide, paused by hover, focus, touch and the Pause control, off under reduced motion and Data saver.
 - **Reduced motion** (`prefers-reduced-motion: reduce`): durations become near zero (the tokens do this), no parallax, no scale on hover, no shimmer (use a static sunken fill), no hero rotation, no autoplay of anything, smooth scrolling off, up next countdown remains but without animated ring (number only). State changes still happen, only movement is removed.
 - Data saver on: also drop the slow transitions.
 - No flashing content. Nothing flashes more than 3 times per second.
@@ -294,7 +295,7 @@ Rules:
 | Asset | Ratio | Source size | Delivered widths |
 |---|---|---|---|
 | Video card thumbnail | 16:9 | 1280 by 720 | 320, 480, 640 |
-| Series card | 16:9 (poster 2:3 optional later) | 1280 by 720 | 320, 480, 640 |
+| Series card | 16:9 (2:3 poster is not used in v1, DEC-L8-03) | 1280 by 720 | 320, 480, 640 |
 | Hero, desktop | 16:9 (stretches to 21:9 crop by CSS) | 1920 by 1080 | 960, 1440, 1920 |
 | Hero, mobile | 4:5 | 1080 by 1350 | 540, 720 |
 | Watch page up next tile | 16:9 | 1280 by 720 | 240, 320 |
@@ -404,7 +405,7 @@ Correct `type`, `inputmode`, `autocomplete` and `enterkeyhint` on every field. M
 | State | Look |
 |---|---|
 | Default | image, badge, title |
-| Hover (desktop) | after `--hover-intent-delay` lift 4px (translateY) and `--shadow-1`, show Play and My List icon buttons over thumbnail bottom. No video preview |
+| Hover (desktop, `hover: hover` and `pointer: fine`, row at least 600px wide) | after `--hover-card-delay` (enter only) the thumbnail scales to `--card-scale` 1.25 over `--motion-hover` with `--ease-out-strong`, shows title, length, subject and Play. Origin left for the first card, right for the last. No video preview |
 | Focus | ring around the thumbnail, actions revealed |
 | Active | scale 0.98 |
 | Disabled | not used. Unavailable videos are not shown to viewers |
@@ -439,7 +440,7 @@ Accessibility: card is an `<a>` with accessible name "Title, 4 minutes". Actions
 
 - Content: still image, title (`--text-hero`), one to two line description, meta (category, length), primary action "Play" (or "Continue", with time left), secondary "More info". No autoplay video, no sound.
 - Layout mobile: 4:5 image, scrim at the bottom, text and buttons stacked inside at the bottom, buttons full width. Desktop: 16:9 up to a max height of 70vh, text block on the left at most 40 characters wide per line, `--color-scrim-bottom` and a left scrim.
-- Carousel: 1 to 6 items (3 to 6 is best), dots indicator (44px hit area, current marked with accent fill plus `aria-current`), manual by default, swipe on touch, arrows on desktop. Optional rotation per section 8.
+- Carousel: 1 to 5 items, dots indicator (44px hit area, current marked with accent fill plus `aria-current`), rotating by default (section 8), swipe on touch, arrows beside Pause on desktop.
 - States: loading (skeleton with the hero box, text bars), error (fall back to a solid `--color-primary` panel with title text), reduced motion (no crossfade, no parallax).
 - Text sits on scrim so white text reaches 4.5:1. Title is live text, not baked into the image. Alt text includes any baked text.
 - Resume logic: if the signed in profile has progress on the featured title, the primary button becomes "Continue" and shows "12 min left".
@@ -449,7 +450,7 @@ Accessibility: card is an `<a>` with accessible name "Title, 4 minutes". Actions
 - Height `--nav-height` (56 mobile, 68 from `md`). Logo (links home) left, primary links (Home, Browse, My List) then search and profile avatar on the right.
 - Mobile: logo, search icon, avatar in the top bar. A bottom tab bar (Home, Browse, Search, My List) with 4 items, 56px tall, icon plus label, current item marked with `--color-primary` icon and text plus a 3px top bar. Safe area padding. The bottom bar hides on the watch page.
 - Desktop: text links, 16px semibold. Active link has a 3px `--color-primary` underline.
-- Behaviour: transparent with a top scrim over the hero, becomes `--color-surface` with `--shadow-1` after 48px scroll. On non hero pages it is always solid. Text colour flips with background to keep contrast (white on scrim, ink on surface).
+- Behaviour: transparent with a top scrim over the hero, becomes `--color-surface` with `--shadow-1` after 40px scroll (a sentinel and IntersectionObserver). On non hero pages it is always solid. Text colour flips with background to keep contrast (white on scrim, ink on surface).
 - States per link: default, hover (underline), focus (ring), active (`aria-current="page"`), loading none.
 - Accessibility: `<nav aria-label="Main">`, skip link "Skip to main content" is the first focusable element, bottom tab bar is `<nav aria-label="Primary">`.
 
@@ -590,9 +591,9 @@ Types: inline field error (11.2), banner (page level, danger tint, icon, message
 
 - Appears in two places: in a right column or below the player (list of up to 5 tiles), and as an end card during the last 10 seconds.
 - Tile: pastel fill from `--color-tile-*` (rotating by position), `--radius-md`, 16:9 thumbnail left (120 wide) or top (mobile full width), title (ink, 2 lines), length, and a small "Up next" micro label. Ink on pastel is at least 12:1.
-- End card: "Next: {title}" with a 8 second countdown ring (number only under reduced motion), primary button "Play now" and secondary "Cancel". Autoplay next is off by default and a setting in the profile, and always off in Data saver. The countdown stops on Cancel or any key.
+- End card: "Next: {title}" with a 5 second countdown ring (site setting 5 to 10) (number only under reduced motion), primary button "Play now" and secondary "Cancel". Autoplay next is off by default and a setting in the profile, and always off in Data saver. The countdown stops on Cancel or any key.
 - States: default, hover (lift 2px, shadow 1), focus (ring), active, loading (skeleton), empty (hidden), error (hidden, no retry noise), current (the playing item gets a "Now playing" badge and no link).
-- Accessibility: tile is a link named "Play next: {title}, {length}". Countdown announced once ("Next video starts in 8 seconds") with `aria-live="polite"`, not each second.
+- Accessibility: tile is a link named "Play next: {title}, {length}". Countdown announced once ("Next video starts in 5 seconds") with `aria-live="polite"`, not each second.
 
 ### 11.24 Theme editor (admin)
 
@@ -628,7 +629,7 @@ Each template lists regions in order. All are mobile first and use the shell for
 |---|---|---|
 | Home | Top nav, hero banner, Continue watching row (if any), My List row (if any), curated rows (e.g. New, Learn a skill, Health, Money), footer | 5 to 8 rows at launch. Rows lazy render below the fold |
 | Browse by category | Nav, H1 with category, filter pills (sort, length), video grid, load more | Cursor pagination, state in the URL |
-| Title detail (video) | Nav, banner image with scrim, title, meta, Play or Continue, My List toggle, description, captions note, tabs (Details, More like this) | Can be a modal on desktop from a card, a full page on mobile and for deep links |
+| Title detail (video) | Nav, banner image with scrim, title, meta, Play or Continue, My List toggle, description, captions note, tabs (Details, More like this) | Detail is a page. A modal is not used |
 | Series detail | As title detail plus episode list with progress and a season selector if more than one | Episode rows are 44px+ tall targets |
 | Watch | Dark player, title and description under it, action row (My List, Share), up next tiles (right column on desktop, below on mobile), tabs (Details, Transcript) | Page background stays `--color-bg`. Bottom tab bar hidden. Back goes to the previous page |
 | Search | Nav with open search, recent or suggestions, results grid, empty state | |
