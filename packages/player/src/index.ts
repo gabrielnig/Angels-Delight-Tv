@@ -74,7 +74,9 @@ export { createHttpProgressSink, createHttpSessionProvider } from './http';
 export { clampBandwidth, readBandwidthSeed, saveBandwidth } from './bandwidth';
 export {
   CAPTION_BACKGROUNDS,
+  CAPTION_COLORS,
   CAPTION_CONTRASTS,
+  captionColorAllowed,
   CAPTION_EDGES,
   effectiveEdge,
   CAPTION_SIZES,
@@ -84,6 +86,7 @@ export {
   normalizeCaptionStyle,
   resolveCaptionColors,
   type CaptionBackground,
+  type CaptionColor,
   type CaptionContrast,
   type CaptionEdge,
   type CaptionSize,

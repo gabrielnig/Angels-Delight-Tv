@@ -4,17 +4,20 @@ export const CAPTION_SIZES = ['small', 'medium', 'large', 'xlarge'] as const;
 export const CAPTION_BACKGROUNDS = ['none', 'dark', 'solid'] as const;
 export const CAPTION_EDGES = ['none', 'shadow', 'outline'] as const;
 export const CAPTION_CONTRASTS = ['standard', 'high'] as const;
+export const CAPTION_COLORS = ['white', 'yellow'] as const;
 
 export type CaptionSize = (typeof CAPTION_SIZES)[number];
 export type CaptionBackground = (typeof CAPTION_BACKGROUNDS)[number];
 export type CaptionEdge = (typeof CAPTION_EDGES)[number];
 export type CaptionContrast = (typeof CAPTION_CONTRASTS)[number];
+export type CaptionColor = (typeof CAPTION_COLORS)[number];
 
 export interface CaptionStyle {
   size: CaptionSize;
   background: CaptionBackground;
   contrast: CaptionContrast;
   edge: CaptionEdge;
+  color: CaptionColor;
 }
 
 /** White on a semi opaque dark background, the M11-S06 default. */
@@ -23,20 +26,38 @@ export const DEFAULT_CAPTION_STYLE: CaptionStyle = {
   background: 'dark',
   contrast: 'standard',
   edge: 'shadow',
+  color: 'white',
 };
 
 const SIZE_PX: Record<CaptionSize, number> = { small: 16, medium: 20, large: 26, xlarge: 34 };
+
+/** Yellow on 72 percent black and on solid black, about 16 to 1. The text colour for the yellow choice. */
+const YELLOW = '#ffe600';
+
+/**
+ * Yellow with no background and standard contrast is refused (M49-S11): the words would sit on whatever the
+ * picture shows and a bright frame can drop yellow under 4.5 to 1. High contrast has its own colours.
+ */
+export function captionColorAllowed(style: CaptionStyle): boolean {
+  return !(
+    style.color === 'yellow' &&
+    style.background === 'none' &&
+    style.contrast === 'standard'
+  );
+}
 
 export function normalizeCaptionStyle(input: unknown): CaptionStyle {
   const v = (typeof input === 'object' && input !== null ? input : {}) as Record<string, unknown>;
   const pick = <T extends string>(value: unknown, allowed: readonly T[], fallback: T): T =>
     allowed.includes(value as T) ? (value as T) : fallback;
-  return {
+  const style: CaptionStyle = {
     size: pick(v.size, CAPTION_SIZES, DEFAULT_CAPTION_STYLE.size),
     background: pick(v.background, CAPTION_BACKGROUNDS, DEFAULT_CAPTION_STYLE.background),
     contrast: pick(v.contrast, CAPTION_CONTRASTS, DEFAULT_CAPTION_STYLE.contrast),
     edge: pick(v.edge, CAPTION_EDGES, DEFAULT_CAPTION_STYLE.edge),
+    color: pick(v.color, CAPTION_COLORS, DEFAULT_CAPTION_STYLE.color),
   };
+  return captionColorAllowed(style) ? style : { ...style, color: DEFAULT_CAPTION_STYLE.color };
 }
 
 function luminance(hex: string): number {
@@ -78,7 +99,7 @@ export function resolveCaptionColors(style: CaptionStyle): {
       : style.background === 'solid'
         ? '#000000'
         : 'rgba(0, 0, 0, 0.72)';
-  return { fg: '#ffffff', bg: '#000000', fill };
+  return { fg: style.color === 'yellow' ? YELLOW : '#ffffff', bg: '#000000', fill };
 }
 
 const EDGE_VALUE: Record<CaptionEdge, string> = {

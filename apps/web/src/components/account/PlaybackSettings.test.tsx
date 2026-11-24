@@ -15,6 +15,7 @@ const initial = {
   captionBackground: 'dark' as const,
   captionContrast: 'standard' as const,
   captionEdge: 'shadow' as const,
+  captionColor: 'white' as const,
   captionLanguage: 'en',
 };
 const wrap = (save: (p: object) => Promise<unknown>, kids = false) =>
@@ -183,5 +184,117 @@ describe('PlaybackSettings state 5: save error, setting reverted', () => {
     await waitFor(() => expect(save).toHaveBeenCalledTimes(2));
     expect(save).toHaveBeenLastCalledWith({ autoplayNext: false });
     await waitFor(() => expect(sw).toHaveAttribute('aria-checked', 'false'));
+  });
+});
+
+describe('PlaybackSettings caption colour, reset and device note (M49-S11)', () => {
+  it('names the profile in the heading so a shared device is clear', () => {
+    render(<PlaybackSettingsForm initial={initial} save={vi.fn() as never} profileName="Ada" />);
+    expect(screen.getByRole('heading', { name: 'Settings for Ada' })).toBeInTheDocument();
+  });
+
+  it('saves the caption colour and the preview follows it', async () => {
+    const save = vi.fn().mockResolvedValue(initial);
+    const user = userEvent.setup();
+    wrap(save);
+    const preview = screen.getByTestId('caption-preview');
+    expect(preview.style.getPropertyValue('--adp-cap-fg')).toBe('#ffffff');
+    await user.selectOptions(screen.getByRole('combobox', { name: 'Caption colour' }), 'yellow');
+    expect(save).toHaveBeenCalledWith({ captionColor: 'yellow' });
+    expect(preview.style.getPropertyValue('--adp-cap-fg')).toBe('#ffe600');
+  });
+
+  it('edge and colour roll back with a notice when the save fails', async () => {
+    const save = vi.fn().mockRejectedValue(new Error('no'));
+    const user = userEvent.setup();
+    wrap(save);
+    const colour = screen.getByRole('combobox', { name: 'Caption colour' });
+    await user.selectOptions(colour, 'yellow');
+    await waitFor(() => expect(screen.getByRole('alert')).toBeInTheDocument());
+    expect(colour).toHaveValue('white');
+    const edge = screen.getByRole('combobox', { name: 'Caption edge' });
+    await user.selectOptions(edge, 'outline');
+    await waitFor(() => expect(edge).toHaveValue('shadow'));
+  });
+
+  it('refuses yellow with no background and says why', async () => {
+    const save = vi.fn().mockResolvedValue(initial);
+    const user = userEvent.setup();
+    render(
+      <PlaybackSettingsForm
+        initial={{ ...initial, captionBackground: 'none' }}
+        save={save as never}
+      />,
+    );
+    const yellow = within(screen.getByRole('combobox', { name: 'Caption colour' })).getByRole(
+      'option',
+      { name: 'Yellow' },
+    );
+    expect(yellow).toBeDisabled();
+    expect(
+      screen.getByText('Yellow needs a dark or solid background, or high contrast.'),
+    ).toBeInTheDocument();
+    await user.selectOptions(screen.getByRole('combobox', { name: 'Caption colour' }), 'white');
+    expect(save).not.toHaveBeenCalledWith({ captionColor: 'yellow' });
+  });
+
+  it('reset restores the caption defaults only after a confirm', async () => {
+    const save = vi.fn().mockResolvedValue(initial);
+    const user = userEvent.setup();
+    render(
+      <PlaybackSettingsForm
+        initial={{
+          ...initial,
+          captionSize: 'xlarge',
+          captionBackground: 'solid',
+          captionEdge: 'outline',
+          captionColor: 'yellow',
+          captionContrast: 'high',
+          quality: '720',
+        }}
+        save={save as never}
+      />,
+    );
+    await user.click(screen.getByRole('button', { name: 'Reset to defaults' }));
+    expect(save).not.toHaveBeenCalled();
+    await user.click(screen.getByRole('button', { name: 'Reset captions' }));
+    expect(save).toHaveBeenCalledWith({
+      captionSize: 'medium',
+      captionBackground: 'dark',
+      captionEdge: 'shadow',
+      captionColor: 'white',
+      captionContrast: 'standard',
+    });
+    expect(screen.getByRole('combobox', { name: 'Caption size' })).toHaveValue('medium');
+    expect(screen.getByRole('combobox', { name: 'Video quality' })).toHaveValue('720');
+  });
+
+  it('cancelling the reset changes nothing', async () => {
+    const save = vi.fn();
+    const user = userEvent.setup();
+    wrap(save);
+    await user.click(screen.getByRole('button', { name: 'Reset to defaults' }));
+    await user.click(screen.getByRole('button', { name: 'Cancel' }));
+    expect(save).not.toHaveBeenCalled();
+    expect(screen.queryByRole('button', { name: 'Reset captions' })).not.toBeInTheDocument();
+  });
+
+  it('shows a read only note when this device is on Data saver', async () => {
+    Object.defineProperty(navigator, 'connection', {
+      value: { saveData: true },
+      configurable: true,
+    });
+    try {
+      wrap(vi.fn());
+      expect(await screen.findByText('This device is on Data saver')).toBeInTheDocument();
+      expect(screen.getByText(/fewer Home previews and a slower hero/i)).toBeInTheDocument();
+    } finally {
+      Reflect.deleteProperty(navigator, 'connection');
+    }
+  });
+
+  it('shows no device note when the device is not on Data saver', () => {
+    wrap(vi.fn());
+    expect(screen.queryByText('This device is on Data saver')).not.toBeInTheDocument();
   });
 });

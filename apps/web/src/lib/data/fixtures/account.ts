@@ -18,6 +18,7 @@ const DEFAULTS: PlaybackSettings = {
   captionBackground: 'dark',
   captionContrast: 'standard',
   captionEdge: 'shadow',
+  captionColor: 'white',
   captionLanguage: 'en',
 };
 

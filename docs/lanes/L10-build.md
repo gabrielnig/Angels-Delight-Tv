@@ -13,11 +13,13 @@ Plan: `docs/plan/v2/L10-account-and-reach.md` (section 12 wins), rulings R24, R3
 
 - S6 (sign in history, new device mail, sign out everywhere): migration `0047_login_events.sql` (table, RLS owner policy, maintenance policy, `sessions.country`, `sessions.device_hash`), `packages/auth/src/login-events.ts` (record, list, purge, device hash and labels), hooks in `AccountService.signIn` and `ViewerMfaService.openSession` (never block sign in), `RATE_POLICIES.newDeviceMail`, `RequestMeta.country` and `deviceId` (`ad_dev` cookie minted in `requestMeta()`), queue `auth.login_events_prune` (daily 03:45 Lagos, worker `pruneLoginEvents`), `DevicesCard` Sign out everywhere dialog, `LoginHistoryCard`, notice `everywhere`. Decision D-293. Tests: `login-events.int.test.ts`, `signout-everywhere.int.test.ts`, `account-repo.signout.test.ts`, `LoginHistoryCard.test.tsx`, `DevicesPanel.test.tsx`, `request.test.ts`, `maintenance.test.ts`, `prunes.int.test.ts`, queue `definitions.test.ts`. Known unrelated failures on main: `catalog.int.test.ts` publish ("Choose a maturity rating") and `system.int.test.ts` storage.
 
+- S7 (playback settings, L10b): `captionColor` (`white` or `yellow`) in `packages/player/src/captionStyle.ts` (`CAPTION_COLORS`, `captionColorAllowed`; yellow with no background and standard contrast is refused, the normaliser falls back to white), `PlaybackSettings.captionColor`, stored in `profiles.playback_prefs` jsonb (no migration), server refusal in `AccountViewerData.savePlayback`, caption colour row, Reset to defaults (confirm dialog, captions only), profile name heading, Data saver extra line and "This device is on Data saver" note from `navigator.connection.saveData`, copy `account.playback.*`. `captionEdge` already existed. Fixed `catalog.int.test.ts` publish fixture (PR 328): it broke when the maturity gate landed (commit 926eca1, L5), not an L10 change. `system.int.test.ts` passes on a clean main now. Tests: `captionStyle.test.ts`, `PlaybackSettings.test.tsx`, `real-account-data.int.test.ts`.
+
 ## Was in PR (slice 3, challenge half)
 - Env `VIEWER_MFA_ENABLED`, `RealAuthGateway.verifyTwoStep, verifyRecovery, hasTwoStepPending`, cookie `ad_mv` (`__Host-ad_mv`), `/sign-in/verify` page, `TwoStepForm`, actions `verifyTwoStepAction`, `verifyRecoveryAction`, copy in `packages/shared/src/messages/l10-messages.ts` (spread into `EN_NG`, add all later L10 keys there).
 
 ## Not built yet (resume here, in this order)
-1. Playback settings: `captionColor`, reset, Data saver device note.
+1. (done, S7)
 2. `--font-mono` doc rows in DESIGN-SYSTEM.
 3. Google sign in (see plan slice 5 and 6).
 4. TV mode.

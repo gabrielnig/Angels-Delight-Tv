@@ -46,7 +46,9 @@ describe('player preferences storage', () => {
   it('turns autoplay next on for adults and off for kids profiles unless the profile says otherwise (R15)', () => {
     expect(loadPreferences(memory(), 'p1', { kids: false }).autoplayNext).toBe(true);
     expect(loadPreferences(memory(), 'p1', { kids: true }).autoplayNext).toBe(false);
-    expect(loadPreferences(memory(), 'p1', { kids: false }, { autoplayNext: false }).autoplayNext).toBe(false);
+    expect(
+      loadPreferences(memory(), 'p1', { kids: false }, { autoplayNext: false }).autoplayNext,
+    ).toBe(false);
   });
 
   it('round trips per profile', () => {
@@ -199,7 +201,11 @@ describe('server owned preferences (M03-S09)', () => {
 describe('theatre mode on the device (M43-S08)', () => {
   const memory = (initial: Record<string, string> = {}) => {
     const data = { ...initial };
-    return { getItem: (k: string) => data[k] ?? null, setItem: (k: string, v: string) => void (data[k] = v), data };
+    return {
+      getItem: (k: string) => data[k] ?? null,
+      setItem: (k: string, v: string) => void (data[k] = v),
+      data,
+    };
   };
 
   it('is off by default and remembers on and off', () => {
@@ -220,7 +226,13 @@ describe('theatre mode on the device (M43-S08)', () => {
 });
 
 describe('caption style on the device (L4-07)', () => {
-  const style = { size: 'large', background: 'none', contrast: 'high', edge: 'outline' } as const;
+  const style = {
+    size: 'large',
+    background: 'none',
+    contrast: 'high',
+    edge: 'outline',
+    color: 'white',
+  } as const;
 
   it('keeps the caption style on the device when there is no profile sync', () => {
     const store = memory();
