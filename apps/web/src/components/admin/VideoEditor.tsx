@@ -7,15 +7,11 @@ import type { AccountRole } from '@ad/shared';
 import { can } from '@/lib/admin/can';
 import { formatDuration } from '@/lib/admin/format';
 import { formatBytes } from '@/lib/uploader/format';
-import type {
-  CategoryRecord,
-  SeriesRecord,
-  Suitability,
-  VideoRecord,
-} from '@/lib/data/admin/types';
+import type { CategoryRecord, SeriesRecord, VideoRecord } from '@/lib/data/admin/types';
+import { useMaturityLabels } from '@/lib/maturity-context';
 import type { BulkAction, BulkResult } from '@/lib/data/admin/video-queries';
 import type { CommandResult, PublishRequest, VideoPatch } from '@/lib/data/admin/video-commands';
-import { adminStatusOf, publishChecklist } from '@/lib/data/admin/video-rules';
+import { adminStatusOf, effectiveMaturityRank, publishChecklist } from '@/lib/data/admin/video-rules';
 import { StatusBadge } from './Badge';
 import { Button, LinkButton } from './Button';
 import { Checklist } from './ChecklistCard';
@@ -59,7 +55,8 @@ interface FormState {
   description: string;
   tags: string;
   categoryIds: string[];
-  suitability: Suitability | '';
+  /** '' until rated, then '0' to '4'. */
+  maturityRank: string;
   seriesId: string;
   episodeNumber: string;
 }
@@ -70,7 +67,7 @@ const toForm = (video: VideoRecord): FormState => ({
   description: video.description,
   tags: video.tags.join(', '),
   categoryIds: video.categoryIds,
-  suitability: video.suitability ?? '',
+  maturityRank: String(effectiveMaturityRank(video) ?? ''),
   seriesId: video.seriesId ?? '',
   episodeNumber: video.episodeNumber ? String(video.episodeNumber) : '',
 });
@@ -89,6 +86,7 @@ export function VideoEditor({
 }: Props) {
   const router = useRouter();
   const toast = useToast();
+  const maturityLabels = useMaturityLabels();
   const [saved, setSaved] = useState<FormState>(() => toForm(video));
   const [form, setForm] = useState<FormState>(saved);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -143,7 +141,7 @@ export function VideoEditor({
           .map((t) => t.trim())
           .filter(Boolean),
         categoryIds: form.categoryIds,
-        suitability: form.suitability || null,
+        ...(form.maturityRank !== '' ? { maturityRank: Number(form.maturityRank) } : {}),
         seriesId: form.seriesId || null,
         episodeNumber: form.seriesId && Number.isFinite(episode) ? episode : null,
       });
@@ -283,16 +281,15 @@ export function VideoEditor({
             error={errors.tags}
           />
           <SelectField
-            label="Suitability"
-            value={form.suitability}
-            error={errors.suitability}
+            label="Maturity rating"
+            hint="Viewers whose limit is below this rating cannot see or play it. G is the only rating kids profiles see."
+            value={form.maturityRank}
+            error={errors.maturityRank}
             options={[
-              { value: '', label: 'Choose who it is for' },
-              { value: 'everyone', label: 'Everyone' },
-              { value: 'kids', label: 'Kids' },
-              { value: 'older', label: 'Older viewers' },
+              { value: '', label: 'Choose a rating' },
+              ...maturityLabels.map((label, rank) => ({ value: String(rank), label })),
             ]}
-            onChange={(e) => set('suitability', e.target.value as FormState['suitability'])}
+            onChange={(e) => set('maturityRank', e.target.value)}
           />
           <div className="adm-grid-2">
             <SelectField
@@ -481,6 +478,18 @@ export function VideoEditor({
         checklist={checklist}
         role={role}
         publish={actions.publish}
+        maturity={{
+          labels: maturityLabels,
+          save: async (rank) => {
+            const result = await actions.update({ maturityRank: rank });
+            return result.ok
+              ? { ok: true }
+              : {
+                  ok: false,
+                  error: result.errors.maturityRank ?? 'Could not save the rating. Try again.',
+                };
+          },
+        }}
         onDone={(mode) => {
           setPublishOpen(false);
           toast.show({

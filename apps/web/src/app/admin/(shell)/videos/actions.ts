@@ -110,6 +110,8 @@ function bulkLabel(action: BulkAction): string {
       return 'Remove from category';
     case 'suitability':
       return 'Set suitability';
+    case 'maturity':
+      return 'Set maturity rating';
     case 'captions_available':
       return 'Captions for viewers';
   }

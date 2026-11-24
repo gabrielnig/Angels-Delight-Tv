@@ -6,6 +6,8 @@ import { getSession } from '../lib/session';
 import { setGuestAudienceAction } from '../app/actions';
 import { currentGuestAudience } from '../server/guest/guest-view';
 import { guestPlayEnabled } from '../server/guest/guest-settings';
+import { maturityLabelsSetting } from '../server/maturity-labels';
+import { MaturityLabelsProvider } from '../lib/maturity-context';
 import { Brand } from './AuthLayouts';
 import { GuestChrome } from './guest/GuestChrome';
 import { ViewerChrome } from './ViewerChrome';
@@ -20,8 +22,12 @@ export async function AppShell({ children, skin }: { children: ReactNode; skin?:
   const msg = await getTranslator(await getLocale());
   const picker = await pickerData();
   const languagePicker = picker ? <LanguagePickerHost {...picker} /> : undefined;
+  const labels = await maturityLabelsSetting();
+  const withLabels = (node: ReactNode) => (
+    <MaturityLabelsProvider labels={labels}>{node}</MaturityLabelsProvider>
+  );
   if (session?.profile) {
-    return (
+    return withLabels(
       <ViewerChrome
         platformName={site.platformName}
         logoUrl={site.logoUrl}
@@ -36,11 +42,11 @@ export async function AppShell({ children, skin }: { children: ReactNode; skin?:
         languagePicker={languagePicker}
       >
         {children}
-      </ViewerChrome>
+      </ViewerChrome>,
     );
   }
   if (await guestPlayEnabled()) {
-    return (
+    return withLabels(
       <GuestChrome
         platformName={site.platformName}
         logoUrl={site.logoUrl}
@@ -52,10 +58,10 @@ export async function AppShell({ children, skin }: { children: ReactNode; skin?:
         languagePicker={languagePicker}
       >
         {children}
-      </GuestChrome>
+      </GuestChrome>,
     );
   }
-  return (
+  return withLabels(
     <div className="web-shell">
       <a className="ad-skip" href="#main">
         {msg('nav.skip')}
@@ -77,6 +83,6 @@ export async function AppShell({ children, skin }: { children: ReactNode; skin?:
         {children}
       </main>
       <SiteFooter platformName={site.platformName} year={year} links={site.footerLinks} />
-    </div>
+    </div>,
   );
 }

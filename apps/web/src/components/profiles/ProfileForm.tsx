@@ -18,10 +18,22 @@ import {
 } from '@ad/ui';
 import type { Profile, ProfileFailure, ProfileInput } from '../../lib/data';
 import { LOCALES } from '@ad/shared/messages';
+import { MATURITY_DEFAULT_LABELS } from '@ad/shared';
+import { useMaturityLabels } from '../../lib/maturity-context';
 import { NETWORK_MESSAGE } from '../auth/shared';
 import { useFocusFirstInvalid } from '../auth/useFocusFirstInvalid';
 
 const MAX_NAME = 20;
+
+/** A plain meaning beside each default label. A site that renames the labels keeps only its own words. */
+const MATURITY_MEANING = [
+  'all ages',
+  'parental guidance',
+  'ages 12 and up',
+  'ages 15 and up',
+  'adults only',
+] as const;
+const DEFAULT_LIMIT = 2;
 
 const isArtId = (id: string | undefined): id is AvatarArtId =>
   id !== undefined && (AVATAR_ART_IDS as readonly string[]).includes(id);
@@ -63,6 +75,9 @@ export function ProfileForm({
   const [kids, setKids] = useState(profile?.kids ?? false);
   const [language, setLanguage] = useState(profile?.language ?? 'en');
   const [autoplay, setAutoplay] = useState(profile?.autoplayNext ?? true);
+  const labels = useMaturityLabels();
+  const savedRank = profile?.kids ? 0 : (profile?.maxMaturityRank ?? DEFAULT_LIMIT);
+  const [rank, setRank] = useState(String(savedRank));
   const [password, setPassword] = useState('');
   const [pin, setPin] = useState('');
   const [removePin, setRemovePin] = useState(false);
@@ -83,6 +98,7 @@ export function ProfileForm({
     (editing &&
       (language !== (profile?.language ?? 'en') ||
         autoplay !== (profile?.autoplayNext ?? true) ||
+        (!kids && Number(rank) !== savedRank) ||
         pin !== '' ||
         removePin));
 
@@ -94,7 +110,8 @@ export function ProfileForm({
   }, [dirty]);
 
   const pinChange = !kids && editing && (pin !== '' || removePin);
-  const needsPassword = (Boolean(profile?.kids) && !kids) || pinChange;
+  const raisesLimit = editing && !kids && Number(rank) > savedRank;
+  const needsPassword = (Boolean(profile?.kids) && !kids) || pinChange || raisesLimit;
   const pinProblem =
     !kids && pin !== '' && !/^\d{4}$/.test(pin) ? 'Use exactly four digits.' : undefined;
   const nameProblem = !name.trim() ? 'Type a name for this profile.' : undefined;
@@ -102,7 +119,9 @@ export function ProfileForm({
     needsPassword && !password
       ? pinChange
         ? 'Enter your account password to change the PIN.'
-        : 'Enter your account password to make this an adult profile.'
+        : profile?.kids && !kids
+          ? 'Enter your account password to make this an adult profile.'
+          : 'Enter your account password to raise the limit.'
       : undefined;
 
   async function submit(event: FormEvent) {
@@ -123,6 +142,8 @@ export function ProfileForm({
         avatarId,
         ...(editing ? { language, autoplayNext: autoplay } : {}),
       };
+      if (editing && !kids && (Number(rank) !== savedRank || Boolean(profile?.kids)))
+        input.maxMaturityRank = Number(rank);
       if (needsPassword) input.password = password;
       if (!kids && editing && pin !== '') input.pin = pin;
       else if (!kids && editing && removePin) input.pin = null;
@@ -230,9 +251,39 @@ export function ProfileForm({
       <Switch
         label="Kids profile"
         checked={kids}
-        onCheckedChange={setKids}
+        onCheckedChange={(value) => {
+          setKids(value);
+          // Leaving Kids mode starts at the default limit and can be changed straight away.
+          if (!value && profile?.kids)
+            setRank((current) => (current === '0' ? String(DEFAULT_LIMIT) : current));
+        }}
         hint="Shows only videos picked as suitable for children. Search and categories are limited, and leaving Kids mode needs your account password."
       />
+
+      {editing ? (
+        <Select
+          label="Allow titles rated up to"
+          value={kids ? '0' : rank}
+          disabled={kids}
+          onChange={(event) => {
+            setRank(event.target.value);
+            setPasswordServerError(undefined);
+          }}
+          hint={
+            kids
+              ? 'Kids profiles only show titles for all ages.'
+              : 'Titles above this rating are hidden from this profile everywhere: Home, search, My List and playback.'
+          }
+        >
+          {labels.map((label, index) => (
+            <option key={index} value={String(index)}>
+              {label === MATURITY_DEFAULT_LABELS[index]
+                ? `${label}, ${MATURITY_MEANING[index]}`
+                : label}
+            </option>
+          ))}
+        </Select>
+      ) : null}
 
       {editing && !kids ? (
         <>
@@ -284,11 +335,13 @@ export function ProfileForm({
             onChange={(event) => setLanguage(event.target.value)}
             hint="Captions and menus use this language for this profile."
           >
-            {LOCALES.filter((l) => languages.includes(l.code) || l.code === language).map((item) => (
-              <option key={item.code} value={item.code} lang={item.htmlLang}>
-                {item.endonym}
-              </option>
-            ))}
+            {LOCALES.filter((l) => languages.includes(l.code) || l.code === language).map(
+              (item) => (
+                <option key={item.code} value={item.code} lang={item.htmlLang}>
+                  {item.endonym}
+                </option>
+              ),
+            )}
           </Select>
           <Switch
             label="Autoplay next video"

@@ -89,6 +89,7 @@ export function ConfirmDialog({
   title,
   consequence,
   confirmLabel,
+  cancelLabel = 'Cancel',
   danger,
   busy,
   acknowledge,
@@ -101,6 +102,8 @@ export function ConfirmDialog({
   title: string;
   consequence: string;
   confirmLabel: string;
+  /** Words for the way out, when Cancel is vague (for example Keep episode ratings). */
+  cancelLabel?: string;
   danger?: boolean;
   busy?: boolean;
   acknowledge?: string;
@@ -124,7 +127,7 @@ export function ConfirmDialog({
       footer={
         <>
           <Button variant="ghost" onClick={onClose}>
-            Cancel
+            {cancelLabel}
           </Button>
           <Button
             variant={danger ? 'danger' : 'primary'}

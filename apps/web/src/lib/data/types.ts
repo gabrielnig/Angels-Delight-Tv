@@ -390,6 +390,8 @@ export interface ProfileInput {
   autoplayNext?: boolean;
   /** Four digits to set, or null to remove. Needs the account password. */
   pin?: string | null;
+  /** 0 (G) to 4 (18). Raising it needs the account password. Kids profiles stay at 0 (M44-S19). */
+  maxMaturityRank?: number;
 }
 
 export type ProfileFailure = 'duplicate' | 'limit' | 'last_adult' | 'password_required' | 'network';

@@ -81,3 +81,35 @@ describe('series', () => {
     expect(s.videos.every((v) => v.seriesId !== 'ser_maths')).toBe(true);
   });
 });
+
+describe('series maturity rating (M44-S13)', () => {
+  const withEpisodes = () => {
+    const s = fresh();
+    const series = s.series[0]!;
+    const episodes = s.videos.filter((v) => v.seriesId === series.id && v.deletedAt === null);
+    return { s, series, episodes };
+  };
+
+  it('sets the series rank and leaves the episodes alone', () => {
+    const { s, series, episodes } = withEpisodes();
+    const before = episodes.map((v) => v.maturityRank);
+    expect(updateSeries(s, series.id, { maturityRank: 2 }).ok).toBe(true);
+    expect(series.maturityRank).toBe(2);
+    expect(episodes.map((v) => v.maturityRank)).toEqual(before);
+  });
+
+  it('with applyToEpisodes gives every episode the same rank', () => {
+    const { s, series, episodes } = withEpisodes();
+    expect(episodes.length).toBeGreaterThan(0);
+    expect(updateSeries(s, series.id, { maturityRank: 3, applyToEpisodes: true }).ok).toBe(true);
+    expect(episodes.every((v) => v.maturityRank === 3)).toBe(true);
+  });
+
+  it('refuses a rank outside 0 to 4 and changes nothing', () => {
+    const { s, series } = withEpisodes();
+    const before = series.maturityRank;
+    const result = updateSeries(s, series.id, { maturityRank: 9 });
+    expect(result).toEqual({ ok: false, error: 'Choose one of the five ratings.' });
+    expect(series.maturityRank).toBe(before);
+  });
+});

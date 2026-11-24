@@ -6,6 +6,7 @@ import type { AdminActor, Suitability, VideoRecord } from './types';
 export interface VideoSnapshot {
   publishState: VideoRecord['publishState'];
   suitability: Suitability | null;
+  maturityRank: number | null;
   categoryIds: string[];
   captionsEnabled: boolean | null;
   captionsOffReason: string | null;
@@ -18,6 +19,7 @@ export type UndoStep =
       action: BulkAction;
       ids: string[];
       expectSuitability?: Suitability;
+      expectMaturity?: number;
       expectCaptions?: boolean | null;
     };
 
@@ -25,6 +27,7 @@ export function snapshotOf(video: VideoRecord): VideoSnapshot {
   return {
     publishState: video.publishState,
     suitability: video.suitability,
+    maturityRank: video.maturityRank ?? null,
     categoryIds: [...video.categoryIds],
     captionsEnabled: video.captionsEnabled ?? null,
     captionsOffReason: video.captionsOffReason ?? null,
@@ -37,6 +40,7 @@ const PERMANENT = [
   /do not have permission/,
   /^Only an admin/,
   /^Pick categories/,
+  /^Choose one of the five ratings/,
   /^Give a reason/,
 ];
 
@@ -100,6 +104,24 @@ export function buildUndo(
       }
       break;
     }
+    case 'maturity': {
+      for (const id of known) {
+        const previous = before[id]!.maturityRank;
+        if (previous === null || previous === action.value) continue;
+        const last = steps.find(
+          (s) => s.kind === 'bulk' && s.action.type === 'maturity' && s.action.value === previous,
+        );
+        if (last) last.ids.push(id);
+        else
+          steps.push({
+            kind: 'bulk',
+            action: { type: 'maturity', value: previous },
+            ids: [id],
+            expectMaturity: action.value,
+          });
+      }
+      break;
+    }
     case 'captions_available': {
       for (const id of known) {
         const previous = before[id]!.captionsEnabled;
@@ -142,6 +164,8 @@ function undoLabel(action: BulkAction): string {
       return 'Remove from category';
     case 'suitability':
       return 'Set suitability';
+    case 'maturity':
+      return 'Set maturity rating';
     case 'captions_available':
       return 'Captions for viewers';
   }
@@ -176,6 +200,9 @@ export function planUndo(undo: BulkUndo, current: Record<string, VideoSnapshot>)
         break;
       case 'suitability':
         ids = step.ids.filter((id) => current[id]?.suitability === step.expectSuitability);
+        break;
+      case 'maturity':
+        ids = step.ids.filter((id) => current[id]?.maturityRank === step.expectMaturity);
         break;
       case 'captions_available':
         ids = step.ids.filter((id) => current[id] !== undefined && current[id]!.captionsEnabled === step.expectCaptions);

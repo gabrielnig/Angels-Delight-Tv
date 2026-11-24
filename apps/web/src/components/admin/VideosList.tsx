@@ -38,6 +38,7 @@ import { Icon } from './Icon';
 import { PosterTile, seedOf } from './PosterTile';
 import { EmptyState } from './states';
 import { useToast } from './Toast';
+import { useMaturityLabels } from '@/lib/maturity-context';
 
 const STATUS_OPTIONS = [
   ['', 'All statuses'],
@@ -88,6 +89,7 @@ const labelOf = (action: BulkAction): string =>
     category: 'Add to category',
     remove_category: 'Remove from category',
     suitability: 'Set suitability',
+    maturity: 'Set maturity rating',
     captions_available: 'Captions for viewers',
   })[action.type];
 
@@ -98,6 +100,7 @@ export function VideosList({ page, query, categories, role, bulk, undo, matching
   const router = useRouter();
   const pathname = usePathname();
   const toast = useToast();
+  const maturityLabels = useMaturityLabels();
   const [pending, start] = useTransition();
   const [compact, setCompact] = useState(false);
   const [q, setQ] = useState(query.q ?? '');
@@ -110,7 +113,7 @@ export function VideosList({ page, query, categories, role, bulk, undo, matching
   const [lastRun, setLastRun] = useState<{ action: BulkAction; ids: string[] } | null>(null);
   const [confirm, setConfirm] = useState<'publish' | 'trash' | null>(null);
   const [picker, setPicker] = useState<
-    'category' | 'remove_category' | 'suitability' | 'captions' | null
+    'category' | 'remove_category' | 'maturity' | 'captions' | null
   >(null);
   const [pickValue, setPickValue] = useState('');
   const [pickReason, setPickReason] = useState('');
@@ -171,11 +174,11 @@ export function VideosList({ page, query, categories, role, bulk, undo, matching
     setPicker(null);
     setPickValue('');
     setPickReason('');
-    // Suitability is all or nothing (M35-S04), so it goes in one call, not in chunks.
+    // Suitability and maturity are all or nothing (M35-S04), so they go in one call, not in chunks.
     const result = await runner.start(
       idsToRun,
       prior?.bulkId ?? newBulkId(),
-      action.type === 'suitability' ? MAX_BULK_CALL : undefined,
+      action.type === 'maturity' || action.type === 'suitability' ? MAX_BULK_CALL : undefined,
     );
     const merged = prior ? mergeOutcomes(prior, result) : result;
     const nothingHappened =
@@ -237,10 +240,10 @@ export function VideosList({ page, query, categories, role, bulk, undo, matching
       disabledReason: canEdit ? undefined : 'Your role cannot edit videos.',
     },
     {
-      id: 'suitability',
-      label: 'Set suitability',
+      id: 'maturity',
+      label: 'Set maturity rating',
       secondary: true,
-      onClick: () => setPicker('suitability'),
+      onClick: () => setPicker('maturity'),
       disabledReason: canEdit ? undefined : 'Your role cannot edit videos.',
     },
     {
@@ -259,8 +262,8 @@ export function VideosList({ page, query, categories, role, bulk, undo, matching
     },
   ];
   const pickerOptions =
-    picker === 'suitability'
-      ? SUITABILITY_OPTIONS.filter(([value]) => value).map(([value, label]) => ({ value, label }))
+    picker === 'maturity'
+      ? maturityLabels.map((label, rank) => ({ value: String(rank), label }))
       : categories.map((c) => ({ value: c.id, label: c.name }));
   const applyPicker = () => {
     if (!picker || !pickValue) return;
@@ -275,8 +278,8 @@ export function VideosList({ page, query, categories, role, bulk, undo, matching
       return;
     }
     const action: BulkAction =
-      picker === 'suitability'
-        ? { type: 'suitability', value: pickValue as 'everyone' | 'kids' | 'older' }
+      picker === 'maturity'
+        ? { type: 'maturity', value: Number(pickValue) }
         : { type: picker, categoryId: pickValue };
     void run(action, selectedIds);
   };
@@ -645,8 +648,8 @@ export function VideosList({ page, query, categories, role, bulk, undo, matching
         title={
           picker === 'captions'
             ? `Captions for viewers on ${plural(sel.count)}`
-            : picker === 'suitability'
-              ? `Set suitability for ${plural(sel.count)}`
+            : picker === 'maturity'
+              ? `Set maturity rating for ${plural(sel.count)}`
               : picker === 'remove_category'
                 ? `Remove ${plural(sel.count)} from a category`
                 : `Add ${plural(sel.count)} to a category`
@@ -694,9 +697,12 @@ export function VideosList({ page, query, categories, role, bulk, undo, matching
           </>
         ) : (
           <SelectField
-            label={picker === 'suitability' ? 'Suitability' : 'Category'}
+            label={picker === 'maturity' ? 'Maturity rating' : 'Category'}
             value={pickValue}
-            options={[{ value: '', label: 'Choose one' }, ...pickerOptions]}
+            options={[
+              { value: '', label: picker === 'maturity' ? 'Choose a rating' : 'Choose one' },
+              ...pickerOptions,
+            ]}
             onChange={(e) => setPickValue(e.target.value)}
           />
         )}

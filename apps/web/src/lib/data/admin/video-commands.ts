@@ -12,6 +12,8 @@ export interface VideoPatch {
   tags?: string[];
   categoryIds?: string[];
   suitability?: Suitability | null;
+  /** 0 (G) to 4 (18). Wins over the legacy suitability (M44-S13). */
+  maturityRank?: number;
   seriesId?: string | null;
   episodeNumber?: number | null;
 }
@@ -56,6 +58,11 @@ export function validateVideoPatch(input: VideoPatch, validCategoryIds: Set<stri
     if (input.suitability === null || ['everyone', 'kids', 'older'].includes(input.suitability))
       value.suitability = input.suitability;
     else errors.suitability = 'Pick who this is suitable for.';
+  }
+  if (input.maturityRank !== undefined) {
+    if (Number.isInteger(input.maturityRank) && input.maturityRank >= 0 && input.maturityRank <= 4)
+      value.maturityRank = input.maturityRank;
+    else errors.maturityRank = 'Choose one of the five ratings.';
   }
   if (input.seriesId !== undefined) value.seriesId = input.seriesId;
   if (input.episodeNumber !== undefined) {

@@ -95,8 +95,15 @@ export class FixtureProfiles implements ProfilesRepository {
       const otherAdults = list.filter((p) => p.id !== id && !p.kids);
       if (otherAdults.length === 0) return { ok: false as const, reason: 'last_adult' as const };
     }
+    // Kids stay at G. Raising the limit of an adult profile needs the account password, lowering does not.
+    const kidsAfter = input.kids ?? current.kids;
+    const before = current.kids ? 0 : (current.maxMaturityRank ?? 2);
+    const wanted = input.maxMaturityRank ?? (current.kids && !kidsAfter ? 2 : before);
+    if (!kidsAfter && wanted > before && !input.password)
+      return { ok: false as const, reason: 'password_required' as const };
     const next: Profile = {
       ...current,
+      maxMaturityRank: kidsAfter ? 0 : wanted,
       name: input.name?.trim() ?? current.name,
       kids: input.kids ?? current.kids,
       tone: input.tone ?? current.tone,

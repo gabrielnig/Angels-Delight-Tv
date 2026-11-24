@@ -14,6 +14,8 @@ import { extendSessionAction } from '../session-actions';
 import { signOutAction } from '../login/actions';
 import { noticesAdmin } from '@/lib/data/admin/notices';
 import { markNoticesReadAction } from './notice-actions';
+import { maturityLabelsSetting } from '@/server/maturity-labels';
+import { MaturityLabelsProvider } from '@/lib/maturity-context';
 
 export const dynamic = 'force-dynamic';
 
@@ -25,28 +27,31 @@ export default async function ShellLayout({ children }: { children: ReactNode })
   // A bell that cannot load must not take the admin down with it (M21-S03 error case).
   const feed = await noticesAdmin.feed(actor).catch(() => null);
   const times = realAuthEnabled() ? await realSessionTimes() : null;
+  const labels = await maturityLabelsSetting();
   return (
-    <UploaderProvider mode={uploadTransportMode()}>
-      <ToastProvider>
-        <AdminShell
-          platformName={DEFAULT_PLATFORM_NAME}
-          actor={{ name: actor.name, role: actor.role, roleLabel: ROLE_LABELS[actor.role] }}
-          counts={counts}
-          signOut={signOutAction}
-          notices={feed ? { ...feed, markAllRead: markNoticesReadAction } : undefined}
-        >
-          {children}
-        </AdminShell>
-        {times ? (
-          <SessionExpiryWarning
-            remainingMs={Math.min(times.idleMs, times.absoluteMs)}
-            idleMs={DEFAULT_SESSION_POLICIES.staff.idleSeconds * 1000}
-            absoluteMs={times.absoluteMs}
-            extend={extendSessionAction}
-            signInHref="/admin/login?expired=1"
-          />
-        ) : null}
-      </ToastProvider>
-    </UploaderProvider>
+    <MaturityLabelsProvider labels={labels}>
+      <UploaderProvider mode={uploadTransportMode()}>
+        <ToastProvider>
+          <AdminShell
+            platformName={DEFAULT_PLATFORM_NAME}
+            actor={{ name: actor.name, role: actor.role, roleLabel: ROLE_LABELS[actor.role] }}
+            counts={counts}
+            signOut={signOutAction}
+            notices={feed ? { ...feed, markAllRead: markNoticesReadAction } : undefined}
+          >
+            {children}
+          </AdminShell>
+          {times ? (
+            <SessionExpiryWarning
+              remainingMs={Math.min(times.idleMs, times.absoluteMs)}
+              idleMs={DEFAULT_SESSION_POLICIES.staff.idleSeconds * 1000}
+              absoluteMs={times.absoluteMs}
+              extend={extendSessionAction}
+              signInHref="/admin/login?expired=1"
+            />
+          ) : null}
+        </ToastProvider>
+      </UploaderProvider>
+    </MaturityLabelsProvider>
   );
 }

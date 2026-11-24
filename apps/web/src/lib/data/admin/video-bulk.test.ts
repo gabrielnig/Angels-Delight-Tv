@@ -13,6 +13,7 @@ import {
 const snap = (over: Partial<VideoSnapshot> = {}): VideoSnapshot => ({
   publishState: 'draft',
   suitability: null,
+  maturityRank: null,
   categoryIds: [],
   captionsEnabled: null,
   captionsOffReason: null,
@@ -89,6 +90,24 @@ describe('undo for videos (L3-D07)', () => {
     ]);
   });
 
+  it('undo of a maturity change restores each previous rank, only where it is still as the run left it', () => {
+    const undo = buildUndo(
+      { type: 'maturity', value: 3 },
+      { a: snap({ maturityRank: 0 }), b: snap({ maturityRank: 1 }), c: snap({ maturityRank: 0 }), d: snap({ maturityRank: null }) },
+      ['a', 'b', 'c', 'd'],
+    );
+    const steps = planUndo(undo!, {
+      a: snap({ maturityRank: 3 }),
+      b: snap({ maturityRank: 3 }),
+      c: snap({ maturityRank: 4 }),
+      d: snap({ maturityRank: 3 }),
+    });
+    expect(steps).toEqual([
+      { kind: 'bulk', action: { type: 'maturity', value: 0 }, ids: ['a'], expectMaturity: 3 },
+      { kind: 'bulk', action: { type: 'maturity', value: 1 }, ids: ['b'], expectMaturity: 3 },
+    ]);
+  });
+
   it('undo of a captions switch restores each previous tri state, only where it is still as the run left it', () => {
     const undo = buildUndo(
       { type: 'captions_available', value: false, reason: 'No spoken words' },
@@ -123,6 +142,7 @@ describe('undo for videos (L3-D07)', () => {
     ).toEqual({
       publishState: 'published',
       suitability: 'kids',
+      maturityRank: null,
       categoryIds: ['x'],
       captionsEnabled: null,
       captionsOffReason: null,

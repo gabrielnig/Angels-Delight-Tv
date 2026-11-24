@@ -18,6 +18,24 @@ const rules = { requireApprovedCaptions: true };
 const get = (store: ReturnType<typeof seedStore>, id: string) =>
   store.videos.find((v) => v.id === id)!;
 
+describe('validateVideoPatch maturityRank', () => {
+  const categories = new Set<string>();
+  it('accepts 0 to 4', () => {
+    for (const rank of [0, 1, 2, 3, 4])
+      expect(validateVideoPatch({ maturityRank: rank }, categories)).toEqual({
+        ok: true,
+        value: { maturityRank: rank },
+      });
+  });
+  it('refuses anything else', () => {
+    for (const rank of [-1, 5, 1.5, Number.NaN])
+      expect(validateVideoPatch({ maturityRank: rank }, categories)).toEqual({
+        ok: false,
+        errors: { maturityRank: 'Choose one of the five ratings.' },
+      });
+  });
+});
+
 describe('validateVideoPatch', () => {
   const categories = new Set(['cat_life']);
   it('accepts a good patch and trims', () => {
