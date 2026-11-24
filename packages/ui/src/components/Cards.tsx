@@ -123,6 +123,8 @@ export interface VideoCardProps {
   meta?: string;
   /** Shown in a light overlay after the hover delay on desktop. No video preview (M05-S03). */
   description?: string;
+  /** Subject (category) name shown in the hover card. */
+  subject?: string;
   priority?: boolean;
   /** Shows the CC mark and says so in the link name (M11-S05). */
   hasCaptions?: boolean;
@@ -139,6 +141,7 @@ export function VideoCard({
   thumbnail,
   meta,
   description,
+  subject,
   priority,
   hasCaptions,
   inList,
@@ -153,14 +156,17 @@ export function VideoCard({
             <Badge variant="duration">{formatClock(durationSeconds)}</Badge>
           </span>
           {hasCaptions ? <CaptionMark /> : null}
-          {description ? (
-            <span className="ad-card__peek" data-testid="card-peek" aria-hidden="true">
-              <span className="ad-card__peek-text">{description}</span>
-              <span className="ad-card__peek-play">
-                <Icon name="play" size={16} filled /> Play
-              </span>
+          <span className="ad-card__peek" data-testid="card-peek" aria-hidden="true">
+            <span className="ad-card__peek-title">{title}</span>
+            <span className="ad-card__peek-facts">
+              <span className="ad-card__peek-length">{formatClock(durationSeconds)}</span>
+              {subject ? <span className="ad-card__peek-subject">{subject}</span> : null}
             </span>
-          ) : null}
+            {description ? <span className="ad-card__peek-text">{description}</span> : null}
+            <span className="ad-card__peek-play">
+              <Icon name="play" size={16} filled /> Play
+            </span>
+          </span>
         </Thumb>
         <span className="ad-card__title">{title}</span>
         <span className="ad-sr-only">

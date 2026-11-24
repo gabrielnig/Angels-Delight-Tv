@@ -53,7 +53,7 @@ describe('VideoCard', () => {
 
   it('shows the duration badge with a spoken form and a lazy decorative image', () => {
     const { container } = render(<VideoCard {...base} />);
-    expect(screen.getByText('4:12')).toBeInTheDocument();
+    expect(screen.getAllByText('4:12').length).toBeGreaterThan(0);
     const img = container.querySelector('img');
     expect(img).toHaveAttribute('alt', '');
     expect(img).toHaveAttribute('loading', 'lazy');
@@ -205,9 +205,22 @@ describe('VideoCard hover overlay', () => {
     expect(peek).toHaveTextContent('Play');
   });
 
-  it('has no overlay without a description', () => {
+  it('shows title, length, subject and Play, still hidden from assistive technology', () => {
+    render(<VideoCard {...base} subject="Money" description="Learn to budget your data." />);
+    const peek = screen.getByTestId('card-peek');
+    expect(peek).toHaveAttribute('aria-hidden', 'true');
+    expect(peek).toHaveTextContent(base.title);
+    expect(peek).toHaveTextContent('Money');
+    expect(peek).toHaveTextContent('Play');
+    expect(peek.querySelector('.ad-card__peek-length')).not.toBeNull();
+  });
+
+  it('shows title, length and Play when there is no description or subject', () => {
     render(<VideoCard {...base} />);
-    expect(screen.queryByTestId('card-peek')).toBeNull();
+    const peek = screen.getByTestId('card-peek');
+    expect(peek).toHaveTextContent('Play');
+    expect(peek.querySelector('.ad-card__peek-text')).toBeNull();
+    expect(peek.querySelector('.ad-card__peek-subject')).toBeNull();
   });
 
   it('says how many seasons a multi season series has, and stays quiet for one', () => {

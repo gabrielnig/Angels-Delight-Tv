@@ -99,7 +99,7 @@ describe('button and motion tokens (R10, M47-S07, M47-S08)', () => {
     expect(prop('--ease-out-strong')).toBe('cubic-bezier(0.22, 1, 0.36, 1)');
     expect(prop('--hover-card-delay')).toBe('300ms');
     expect(prop('--card-scale')).toBe('1.25');
-    expect(prop('--hover-intent-delay')).toBe('var(--hover-card-delay)');
+    expect(tokens).not.toContain('--hover-intent-delay');
   });
 
   it('the reduce block zeroes every duration and the hover card delay', () => {
