@@ -18,7 +18,8 @@ Plan `docs/plan/v2/L2-home.md`, review `docs/reviews/v2/L2-review.md`, rulings `
 | 9 | Preview clip schema, queue and worker job | merged | 351 |
 | 10 | Admin hero slots: preview mode, slide text | merged | 357 |
 | 11 | Viewer preview delivery, slide text, live admin preview | merged | 367 |
-| 12 | Hover card (portal, 300 ms, mouse only) | this PR | |
+| 12 | Hover card (portal, 300 ms, mouse only) | merged | 370 |
+| 13 | Home skeleton ratio, kids 2.3, state tests | this PR | |
 
 ## Exists
 
@@ -78,3 +79,8 @@ Plan `docs/plan/v2/L2-home.md`, review `docs/reviews/v2/L2-review.md`, rulings `
 - `VideoCard` renders the card on hover with the thumbnail, Play link (`playHref`), My List toggle, rating chip, More info, length, subject, maturity chip, Most liked and a two line description. The inline `.ad-card__peek` and the thumbnail scale CSS are removed. Series and Continue cards have no hover card (they had no peek).
 - `--row-pad-block` (room for the old scale) is left in place so row heights do not move; it can be dropped in a later tidy.
 - `packages/ui/test/focus-ring.test.ts` fails on main for `.ad-bell__popover:focus` (not this lane).
+
+## Slice 13 notes
+
+- `.web-hero-skeleton` now carries the slide's mobile `max-height: 85vh`, so ratio and caps match `.ad-hero__slide` (tested by reading both stylesheets). Kids phone rows show 2.3 cards (R11); larger breakpoints stay larger than the adult rows.
+- `HomeView.states.test.tsx` covers the empty catalog, a hero with no titles (solid primary panel with a heading), a failing Continue or My List row leaving the rest, a hero image that never loads, kids, and the offline banner beside the page.
