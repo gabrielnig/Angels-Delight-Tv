@@ -1110,3 +1110,9 @@ Four ids were used twice by parallel lanes. They are never renumbered because la
 - Options: always visible, timed, or a per profile "skip intros automatically".
 - Why: fewer settings and no surprise on lessons where the intro carries content. Revisit if viewers ask.
 - Reversible: yes.
+
+## D-207 Standalone Up next uses the related list, and autoplay next defaults on except for kids profiles (lane L4)
+- Decision: a standalone video gets its Up next from the related titles in order, skipping the current video and anything this profile has finished. The related list already follows the viewer's audience, so a kids profile never gets a title that is not kids safe. A guest receives the ordered choices and the device picks the first one it has not finished. `loadPreferences` turns autoplay next on for adult profiles and off for kids profiles unless the profile says otherwise (R15).
+- Options: leave standalone videos with no next title, or rank by a recommender.
+- Why: M08-S13 AC4 asks for a next title, the related list is already audience safe, and a recommender is out of scope for a free first release.
+- Reversible: yes.

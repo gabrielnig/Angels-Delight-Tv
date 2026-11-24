@@ -4,6 +4,7 @@ import {
   GUEST_PROGRESS_KEY,
   clearGuestProgress,
   createGuestProgressSink,
+  firstUnfinished,
   listGuestProgress,
   readGuestProgress,
   removeGuestProgress,
@@ -182,5 +183,27 @@ describe('guest progress store (M40-S04)', () => {
         }),
       ).resolves.toBeUndefined();
     });
+  });
+});
+
+describe('firstUnfinished (M08-S13 AC4)', () => {
+  const items = [{ id: id(1) }, { id: id(2) }, { id: id(3) }];
+
+  it('returns the first item this device has not finished', () => {
+    const store = memory();
+    writeGuestProgress(store, id(1), { p: 99, d: 100, f: true }, 1);
+    writeGuestProgress(store, id(2), { p: 10, d: 100, f: false }, 2);
+    expect(firstUnfinished(store, items)?.id).toBe(id(2));
+  });
+
+  it('returns the first item when nothing is stored or storage is blocked', () => {
+    expect(firstUnfinished(memory(), items)?.id).toBe(id(1));
+    expect(firstUnfinished(null, items)?.id).toBe(id(1));
+  });
+
+  it('returns null when every item is finished', () => {
+    const store = memory();
+    items.forEach((i, n) => writeGuestProgress(store, i.id, { p: 9, d: 10, f: true }, n));
+    expect(firstUnfinished(store, items)).toBeNull();
   });
 });

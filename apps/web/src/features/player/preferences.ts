@@ -71,6 +71,8 @@ export function loadPreferences(
   return {
     ...DEFAULT_PREFERENCES,
     captionsOn: profile.kids,
+    // R15: on for everyone except kids profiles, where a parent turns it on.
+    autoplayNext: !profile.kids,
     ...defaults,
     ...(local.volume !== undefined ? { volume: local.volume } : {}),
     ...(local.muted !== undefined ? { muted: local.muted } : {}),

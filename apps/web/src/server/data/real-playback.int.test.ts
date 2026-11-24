@@ -105,7 +105,7 @@ describe.skipIf(!integrationEnabled())('real playback data', () => {
     });
     expect(data.saved).toEqual({ positionSeconds: 90, finished: false });
     expect(data.inMyList).toBe(true);
-    expect(data.next).toBeNull();
+    expect(data.next).toMatchObject({ id: other.id, title: 'Up next one', href: `/watch/${other.id}` });
     expect(data.upNext.map((t) => [t.title, t.href, t.durationLabel])).toEqual([
       ['Up next one', `/watch/${other.id}`, '1 min 30 sec'],
     ]);
@@ -356,6 +356,71 @@ describe.skipIf(!integrationEnabled())('real playback data', () => {
       if (res.status !== 'ok') throw new Error(res.status);
       expect(res.data.markers).toEqual({ intro: { start: 5, end: 20 } });
       expect(res.data.chapters).toEqual([{ start: 0, title: 'One' }]);
+    });
+  });
+
+  describe('standalone Up next (M08-S13 AC4)', () => {
+    async function pair(title: string, kidsSafeOther = true) {
+      const cat = await seedCategory(h.db.setup, `Cat ${title}`);
+      const a = await seedVideo(h.db.setup, { title: `${title} A`, durationMs: 120_000, kidsSafe: true });
+      const b = await seedVideo(h.db.setup, { title: `${title} B`, durationMs: 90_000, kidsSafe: kidsSafeOther });
+      const c = await seedVideo(h.db.setup, { title: `${title} C`, durationMs: 60_000, kidsSafe: true });
+      for (const v of [a, b, c]) await categorize(h.db.setup, { videoId: v.id }, cat.id);
+      return { a, b, c };
+    }
+
+    it('gives a standalone video the best related next title', async () => {
+      const u = await h.makeUser();
+      const { a } = await pair('Best');
+      const res = await playback.getWatchData(a.id, adult(u));
+      if (res.status !== 'ok') throw new Error(res.status);
+      expect(res.data.next).not.toBeNull();
+      expect(res.data.next?.id).not.toBe(a.id);
+      expect(res.data.next?.href).toBe(`/watch/${res.data.next?.id}`);
+      expect(res.data.next?.meta).toMatch(/^Cat Best, \d/);
+    });
+
+    it('skips titles this profile has finished', async () => {
+      const u = await h.makeUser();
+      const { a } = await pair('Finished');
+      const first = await playback.getWatchData(a.id, adult(u));
+      if (first.status !== 'ok' || !first.data.next) throw new Error('no next');
+      await saveProgress(h.ctx, u.actor, {
+        profileId: u.profileId,
+        videoId: first.data.next.id,
+        positionMs: 119_000,
+        ended: true,
+      });
+      const second = await playback.getWatchData(a.id, adult(u));
+      if (second.status !== 'ok') throw new Error(second.status);
+      expect(second.data.next?.id).not.toBe(first.data.next.id);
+      expect(second.data.next).not.toBeNull();
+    });
+
+    it('never picks a title that is not kids safe on a kids profile', async () => {
+      const u = await h.makeUser();
+      const { a, b, c } = await pair('Kids', false);
+      const res = await playback.getWatchData(a.id, kids(u));
+      if (res.status !== 'ok') throw new Error(res.status);
+      expect(res.data.next?.id).toBe(c.id);
+      expect(res.data.next?.id).not.toBe(b.id);
+    });
+
+    it('gives no next title when none qualifies', async () => {
+      const u = await h.makeUser();
+      const lone = await seedVideo(h.db.setup, { title: 'Lonely', durationMs: 60_000, kidsSafe: true });
+      const res = await playback.getWatchData(lone.id, adult(u));
+      if (res.status !== 'ok') throw new Error(res.status);
+      expect(res.data.next).toBeNull();
+    });
+
+    it('gives a guest the candidates so the device can skip finished titles', async () => {
+      const { a } = await pair('Guest');
+      const res = await playback.getWatchData(a.id, { profileId: 'none', kids: false, guest: true });
+      if (res.status !== 'ok') throw new Error(res.status);
+      expect(res.data.next).not.toBeNull();
+      expect((res.data.nextCandidates ?? []).length).toBeGreaterThanOrEqual(2);
+      expect(res.data.nextCandidates?.[0]?.id).toBe(res.data.next?.id);
     });
   });
 });

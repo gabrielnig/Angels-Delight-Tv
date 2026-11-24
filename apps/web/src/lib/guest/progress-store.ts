@@ -94,6 +94,14 @@ export function readGuestProgress(
   return load(store)[videoId] ?? null;
 }
 
+/** The first item this device has not finished, or null. Used to pick a guest's Up next. */
+export function firstUnfinished<T extends { id: string }>(
+  store: GuestStore | null,
+  items: readonly T[],
+): T | null {
+  return items.find((item) => readGuestProgress(store, item.id)?.f !== true) ?? null;
+}
+
 /** Newest write first. */
 export function listGuestProgress(
   store: GuestStore | null,
