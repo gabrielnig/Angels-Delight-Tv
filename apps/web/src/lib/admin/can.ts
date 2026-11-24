@@ -17,6 +17,8 @@ const MATRIX = {
   'caption.review': 'editor',
   'caption.override': 'admin',
   'caption.approve_bulk': 'admin',
+  'caption.translate': 'editor',
+  'caption.publish_language': 'admin',
   'caption.availability': 'admin',
   'encode.retry': 'editor',
   'series.manage': 'editor',

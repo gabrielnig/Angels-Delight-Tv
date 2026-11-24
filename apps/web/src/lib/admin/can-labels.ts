@@ -13,6 +13,8 @@ export const ACTION_LABELS: Record<AdminAction, string> = {
   'caption.review': 'Review and approve captions',
   'caption.override': 'Publish without approved captions',
   'caption.approve_bulk': 'Approve many captions at once',
+  'caption.translate': 'Start a caption translation',
+  'caption.publish_language': 'Publish a caption language for viewers',
   'caption.availability': 'Switch captions on or off for viewers',
   'encode.retry': 'Retry failed encodes',
   'series.manage': 'Manage series',

@@ -102,3 +102,29 @@ describe('CaptionTable bulk approve', () => {
     expect(screen.queryByRole('button', { name: 'Undo' })).toBeNull();
   });
 });
+
+describe('CaptionTable translations (M46-S15)', () => {
+  it('shows a chip per translation in the Language column, with icon and word', () => {
+    setup([
+      row('a', {
+        spokenLanguage: 'en',
+        translations: [
+          { language: 'yo', state: 'approved', published: true, sourceChanged: false },
+          { language: 'ha', state: 'needs_review', published: false, sourceChanged: true },
+        ],
+      }),
+    ]);
+    const table = screen.getByRole('table');
+    expect(within(table).getByText('Yoruba, Live')).toBeTruthy();
+    expect(within(table).getByText('Hausa, Needs review')).toBeTruthy();
+  });
+
+  it('a row without translations shows only its language and the Cues column stays right aligned', () => {
+    setup([row('b')]);
+    const table = screen.getByRole('table');
+    expect(within(table).queryByRole('list', { name: 'Translations' })).toBeNull();
+    const heads = within(table).getAllByRole('columnheader');
+    expect(heads.map((h) => h.textContent)).toContain('Cues');
+    expect(heads.find((h) => h.textContent === 'Cues')!.className).toContain('adm-num');
+  });
+});

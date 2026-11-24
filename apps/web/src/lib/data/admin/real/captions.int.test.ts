@@ -49,6 +49,8 @@ describe.skipIf(!integrationEnabled())('real caption service', () => {
       originals,
       media: new LocalStorage({ root, bucket: 'media', signingSecret: secret }),
       producer,
+      translation: { name: 'google', supports: () => true, usdPerMillionChars: 20 },
+      captionLanguages: async () => ['en', 'yo', 'ha'],
     });
     editor = {
       accountId: (await seedAccount(t.setup, 'editor')).id,
@@ -286,5 +288,97 @@ describe.skipIf(!integrationEnabled())('real caption service', () => {
     const lastTouched = rows.findLastIndex((r) => r.lastEditedAt !== null);
     const firstUntouched = rows.findIndex((r) => r.lastEditedAt === null);
     expect(firstUntouched).toBeGreaterThan(lastTouched);
+  });
+
+  describe('languages (M46)', () => {
+    /** An approved English revision, then a translated Yoruba revision waiting for review. */
+    async function withTranslation() {
+      const video = await withCaptions();
+      await realCaptionService.approve(editor, video.id);
+      const yoTrack = await ensureTrack(t.setup, video.id, 'yo', 'Yorùbá', {
+        kind: 'subtitles',
+        published: false,
+        isDefault: false,
+      });
+      const [source] = await t.setup
+        .select()
+        .from(schema.captions)
+        .innerJoin(schema.captionTracks, eq(schema.captionTracks.id, schema.captions.trackId))
+        .where(eq(schema.captionTracks.videoId, video.id));
+      await storeRevision(t.setup, originals, yoTrack, {
+        cues: [
+          { startMs: 0, endMs: 2000, text: 'Kaabo.' },
+          { startMs: 2500, endMs: 4500, text: 'Ida loni.' },
+        ],
+        source: 'translation',
+        sourceCaptionId: source!.captions.id,
+        sourceSha256: Buffer.from(source!.captions.sha256),
+      });
+      return video;
+    }
+
+    it('the list reports the spoken language and a chip per translation', async () => {
+      const video = await withTranslation();
+      const row = (await realCaptionService.list(editor)).find((r) => r.videoId === video.id)!;
+      expect(row.spokenLanguage).toBe('en');
+      expect(row.translations).toEqual([
+        { language: 'yo', state: 'needs_review', published: false, sourceChanged: false },
+      ]);
+    });
+
+    it('track reads the requested language with the source cues beside it', async () => {
+      const video = await withTranslation();
+      const { track } = await realCaptionService.track(editor, video.id, 'yo');
+      expect(track).toMatchObject({ language: 'yo', state: 'needs_review', translation: { published: false, spokenLanguage: 'en' } });
+      expect(track!.cues.map((c) => c.text)).toEqual(['Kaabo.', 'Ida loni.']);
+      expect(track!.translation!.sourceCues.map((c) => c.text)).toEqual(['Welcome.', 'Fractions today.']);
+    });
+
+    it('the language parameter reaches the service for save and approve', async () => {
+      const video = await withTranslation();
+      const edited = [cue('a', 0, 2000, 'Kaabo si eko.'), cue('b', 2500, 4500, 'Ida loni.')];
+      expect(await realCaptionService.save(editor, video.id, edited, 'yo')).toMatchObject({ ok: true });
+      expect(await realCaptionService.approve(editor, video.id, 'yo')).toEqual({ ok: true });
+      const yo = (await realCaptionService.track(editor, video.id, 'yo')).track!;
+      expect(yo.state).toBe('approved');
+      expect(yo.cues[0]!.text).toBe('Kaabo si eko.');
+      const en = (await realCaptionService.track(editor, video.id)).track!;
+      expect(en.cues[0]!.text).toBe('Welcome.');
+    });
+
+    it('approving a translation does not publish it, and an editor cannot publish', async () => {
+      const video = await withTranslation();
+      await realCaptionService.approve(editor, video.id, 'yo');
+      expect((await realCaptionService.track(editor, video.id, 'yo')).track!.translation!.published).toBe(false);
+      await expect(realCaptionService.setPublished(editor, video.id, 'yo', true)).rejects.toThrow();
+      expect(await realCaptionService.setPublished(admin, video.id, 'yo', true)).toEqual({ ok: true });
+      expect((await realCaptionService.track(editor, video.id, 'yo')).track!.translation!.published).toBe(true);
+    });
+
+    it('publishing before approval is a plain message, not a crash', async () => {
+      const video = await withTranslation();
+      expect(await realCaptionService.setPublished(admin, video.id, 'yo', true)).toMatchObject({
+        ok: false,
+        error: expect.stringMatching(/approve/i),
+      });
+    });
+
+    it('translate queues a job and estimate prices it; a viewer cannot', async () => {
+      const video = await withCaptions();
+      await realCaptionService.approve(editor, video.id);
+      const est = await realCaptionService.estimate(editor, video.id, 'ha');
+      expect(est).toMatchObject({ configured: true, provider: 'google', cues: 2 });
+      expect(await realCaptionService.translate(editor, video.id, 'ha')).toEqual({ ok: true });
+      expect(await realCaptionService.translate(editor, video.id, 'yo')).toMatchObject({ ok: true });
+      await expect(realCaptionService.translate(viewer, video.id, 'ha')).rejects.toThrow();
+    });
+
+    it('translate says why it cannot, in plain words', async () => {
+      const video = await seedVideo(t.setup, { title: 'No captions', durationMs: 60_000 });
+      expect(await realCaptionService.translate(editor, video.id, 'ha')).toMatchObject({
+        ok: false,
+        error: expect.stringMatching(/approve/i),
+      });
+    });
   });
 });

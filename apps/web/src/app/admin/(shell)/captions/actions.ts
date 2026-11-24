@@ -10,15 +10,23 @@ import { requireActionActor } from '@/lib/data/admin/session-next';
 
 const path = (id: string) => `/admin/captions/${id}`;
 
-export async function saveCuesAction(videoId: string, cues: Cue[]): Promise<SaveResult> {
+/** `language` is the track being edited. Undefined means the language spoken in the video. */
+export async function saveCuesAction(
+  videoId: string,
+  language: string | undefined,
+  cues: Cue[],
+): Promise<SaveResult> {
   const actor = await requireActionActor(path(videoId));
   // No revalidate on autosave: the editor holds the live copy and a refresh would fight it.
-  return captionService.save(actor, videoId, cues);
+  return captionService.save(actor, videoId, cues, language);
 }
 
-export async function approveCaptionsAction(videoId: string): Promise<CaptionResult> {
+export async function approveCaptionsAction(
+  videoId: string,
+  language?: string,
+): Promise<CaptionResult> {
   const actor = await requireActionActor(path(videoId));
-  const result = await captionService.approve(actor, videoId);
+  const result = await captionService.approve(actor, videoId, language);
   revalidatePath('/admin', 'layout');
   return result;
 }
@@ -30,9 +38,13 @@ export async function regenerateCaptionsAction(videoId: string): Promise<Caption
   return result;
 }
 
-export async function uploadCaptionsAction(videoId: string, cues: Cue[]): Promise<CaptionResult> {
+export async function uploadCaptionsAction(
+  videoId: string,
+  language: string | undefined,
+  cues: Cue[],
+): Promise<CaptionResult> {
   const actor = await requireActionActor(path(videoId));
-  const result = await captionService.upload(actor, videoId, cues);
+  const result = await captionService.upload(actor, videoId, cues, language);
   revalidatePath('/admin', 'layout');
   return result;
 }
@@ -71,4 +83,29 @@ export async function bulkApproveCaptionsAction(
   );
   revalidatePath('/admin', 'layout');
   return outcome;
+}
+
+/** Queues a machine translation draft. It opens in review and never goes live by itself. */
+export async function translateCaptionsAction(videoId: string, language: string): Promise<CaptionResult> {
+  const actor = await requireActionActor(path(videoId));
+  const result = await captionService.translate(actor, videoId, language);
+  revalidatePath('/admin', 'layout');
+  return result;
+}
+
+export async function estimateTranslationAction(videoId: string, language: string) {
+  const actor = await requireActionActor(path(videoId));
+  return captionService.estimate(actor, videoId, language);
+}
+
+/** The per language Publish switch. Admin only, audited by the service. */
+export async function publishLanguageAction(
+  videoId: string,
+  language: string,
+  published: boolean,
+): Promise<CaptionResult> {
+  const actor = await requireActionActor(path(videoId));
+  const result = await captionService.setPublished(actor, videoId, language, published);
+  revalidatePath('/admin', 'layout');
+  return result;
 }

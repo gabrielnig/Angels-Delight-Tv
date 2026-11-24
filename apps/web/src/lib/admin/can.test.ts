@@ -160,3 +160,17 @@ describe('sponsors permissions (M48, D-263)', () => {
     }
   });
 });
+
+describe('caption language permissions (M46)', () => {
+  it('Editors can start a translation, only Admins can publish a language', async () => {
+    expect(requiredRole('caption.translate')).toBe('editor');
+    expect(can('editor', 'caption.translate')).toBe(true);
+    expect(can('viewer', 'caption.translate')).toBe(false);
+    expect(requiredRole('caption.publish_language')).toBe('admin');
+    expect(can('editor', 'caption.publish_language')).toBe(false);
+    expect(can('admin', 'caption.publish_language')).toBe(true);
+    const { ACTION_LABELS } = await import('./can-labels');
+    expect(ACTION_LABELS['caption.translate']).toMatch(/\w/);
+    expect(ACTION_LABELS['caption.publish_language']).toMatch(/\w/);
+  });
+});

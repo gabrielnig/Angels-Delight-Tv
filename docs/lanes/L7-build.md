@@ -91,3 +91,9 @@ Scoped tests only: `pnpm vitest run <file>`.
 - Still literal in the player (wave D, later slice): Play, Pause, Mute, Unmute and the ShortcutsDialog, SeekBar, EndScreen and caption appearance copy.
 - Tests: `pnpm vitest run packages/player apps/web/src/features/player/WatchClient.language.test.tsx`; int: `service-publish.int.test.ts`, `captions-badge.int.test.ts`, `captions-switch.int.test.ts`.
 - Known: `messages-coverage.test.ts` "no unused key" fails on main for `engage.mostLiked` and `sponsor.*` keys (other lanes), not this lane.
+
+## Slice 15 (admin caption screens by language)
+- Catalog `listAdminCaptionRows` returns `spokenLanguage` and `translations` chips. Web `CaptionService` interface: optional `language` on track, save, approve, upload; new `translate`, `estimate`, `setPublished`. Real implementation in `lib/data/admin/real/captions.ts` (`translationTrack`, `approveTranslation`); fixtures are English only and refuse translate and publish.
+- Components in `components/admin/captions/`: `TranslationChips`, `LanguageTabs`, `TranslationPublishSwitch`, `AddTranslationDialog`, `TranslationTools`. `CaptionReview` shows source cues, Unlock timing, Source changed banner with Retranslate. `CaptionList` language filter (`?lang=`). Permissions `caption.translate` and `caption.publish_language`. Env `TRANSLATE_PROVIDER` on the web too.
+- Not done: Still correct action, API routes unchanged (they are by caption id so already language agnostic), mobile pass by screenshot. Spoken language other than en still reads the English only `captionState` in `packages/catalog/src/admin/videos.ts` until slice 16.
+- Tests: `pnpm vitest run apps/web/src/components/admin/captions apps/web/src/components/admin/CaptionReview.test.tsx apps/web/src/components/admin/CaptionTable.test.tsx apps/web/src/components/admin/CaptionList.test.tsx`; int: `catalog/src/admin/captions.int.test.ts`, `real/captions.int.test.ts`.

@@ -3,7 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { usePreviewClock } from './usePreviewClock';
-import type { AccountRole } from '@ad/shared';
+import { localeInfo, type AccountRole } from '@ad/shared';
 import { can } from '@/lib/admin/can';
 import { formatDateTime } from '@/lib/admin/format';
 import {
@@ -41,6 +41,8 @@ export interface ReviewActions {
   approve(): Promise<CaptionResult>;
   regenerate(): Promise<CaptionResult>;
   upload(cues: Cue[]): Promise<CaptionResult>;
+  /** Translation tracks only: queues a new machine draft from the changed source (M46). */
+  retranslate?(): Promise<CaptionResult>;
   /** Script tools. Leave both out to hide them. */
   previewScript?(script: string): Promise<string>;
   alignScript?(script: string): Promise<CaptionResult>;
@@ -100,6 +102,9 @@ export function CaptionReview({ video, track, role, actions, preview = false }: 
     for (const list of warnings.values()) for (const w of list) totals[w]++;
     return totals;
   }, [warnings]);
+  const translation = track?.translation;
+  const [timingLocked, setTimingLocked] = useState(true);
+  const timingDisabled = !canEdit || (translation !== undefined && timingLocked);
   const toCheck = cues.filter((c) => c.lowConfidence).length;
   const [onlyCheck, setOnlyCheck] = useState(false);
   const warningCount = [...warnings.values()].reduce((n, list) => n + list.length, 0);
@@ -214,7 +219,12 @@ export function CaptionReview({ video, track, role, actions, preview = false }: 
       const result = await actions.approve();
       toast.show(
         result.ok
-          ? { tone: 'success', message: 'Captions approved.' }
+          ? {
+              tone: 'success',
+              message: translation
+                ? 'Captions approved. Viewers will not see it until an admin publishes this language.'
+                : 'Captions approved.',
+            }
           : { tone: 'danger', message: result.error },
       );
       router.refresh();
@@ -411,6 +421,43 @@ export function CaptionReview({ video, track, role, actions, preview = false }: 
         </Banner>
       ) : null}
       {uploadError ? <Banner tone="danger">{uploadError}</Banner> : null}
+      {translation?.sourceChanged ? (
+        <Banner
+          tone="warning"
+          action={
+            actions.retranslate ? (
+              <Button
+                onClick={() =>
+                  void actions.retranslate!().then((r) =>
+                    toast.show(
+                      r.ok
+                        ? { tone: 'success', message: 'A new translation draft is being made.' }
+                        : { tone: 'danger', message: r.error },
+                    ),
+                  )
+                }
+              >
+                Retranslate
+              </Button>
+            ) : null
+          }
+        >
+          <strong>The source captions changed after this translation was made.</strong> Viewers keep seeing the
+          approved translation until you review a new one.
+        </Banner>
+      ) : null}
+      {translation ? (
+        <div className="adm-row">
+          <Button variant="secondary" onClick={() => setTimingLocked((v) => !v)}>
+            {timingLocked ? 'Unlock timing' : 'Lock timing'}
+          </Button>
+          {!timingLocked ? (
+            <span className="adm-muted">
+              Changing times can put the words out of step with the speech.
+            </span>
+          ) : null}
+        </div>
+      ) : null}
       {approved && track.approvedBy ? (
         <Banner tone={changes > 0 ? 'warning' : 'success'}>
           Approved by {track.approvedBy}, {formatDateTime(track.approvedAt!)}.{' '}
@@ -537,14 +584,14 @@ export function CaptionReview({ video, track, role, actions, preview = false }: 
                     <TimeField
                       label={`Start of cue ${index + 1}`}
                       value={cue.start}
-                      disabled={!canEdit}
+                      disabled={timingDisabled}
                       onCommit={(v) => patch(cue.id, { start: v }, 'start')}
                     />
                     <span aria-hidden="true">to</span>
                     <TimeField
                       label={`End of cue ${index + 1}`}
                       value={cue.end}
-                      disabled={!canEdit}
+                      disabled={timingDisabled}
                       onCommit={(v) => patch(cue.id, { end: v }, 'end')}
                     />
                     {cue.lowConfidence ? (
@@ -558,7 +605,17 @@ export function CaptionReview({ video, track, role, actions, preview = false }: 
                       </Badge>
                     ))}
                   </div>
+                  {translation ? (
+                    <p
+                      className="adm-cue__source"
+                      aria-label={`${localeInfo(translation.spokenLanguage)?.englishName ?? translation.spokenLanguage} cue ${index + 1}`}
+                      lang={translation.spokenLanguage}
+                    >
+                      {translation.sourceCues[index]?.text ?? ''}
+                    </p>
+                  ) : null}
                   <textarea
+                    lang={translation ? track.language : undefined}
                     className="adm-input adm-input--area adm-cue__text"
                     aria-label={`Words in cue ${index + 1}`}
                     aria-invalid={
@@ -572,7 +629,7 @@ export function CaptionReview({ video, track, role, actions, preview = false }: 
                     onSelect={(e) => (carets.current[cue.id] = e.currentTarget.selectionStart)}
                     onFocus={() => clock.seek(cue.start)}
                   />
-                  {canEdit ? (
+                  {canEdit && !timingDisabled ? (
                     <div className="adm-row">
                       <Button
                         variant="ghost"

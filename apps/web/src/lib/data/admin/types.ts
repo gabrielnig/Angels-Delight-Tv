@@ -106,7 +106,18 @@ export interface TileState<T> {
 
 export interface CaptionTrack {
   videoId: string;
-  language: 'en';
+  /** Language code of this track. The fixture data only has 'en'. */
+  language: string;
+  /** Translation tracks only (M46). Absent on the spoken language track and in fixture data. */
+  translation?: {
+    spokenLanguage: string;
+    /** The approved spoken language cues, shown beside each translated cue. */
+    sourceCues: Cue[];
+    /** Viewers can see this language (the Publish switch). */
+    published: boolean;
+    /** The approved source changed after this translation was made. */
+    sourceChanged: boolean;
+  };
   state: CaptionState;
   cues: Cue[];
   source: 'whisper' | 'manual';

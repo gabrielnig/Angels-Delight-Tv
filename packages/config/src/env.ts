@@ -85,6 +85,8 @@ const smtpUrl = z
   .transform((v) => (v.toLowerCase() === 'disabled' ? 'disabled' : v));
 
 const webShape = {
+  /** Which caption translation engine the worker runs, so the admin knows what to offer (M46). Off by default. */
+  TRANSLATE_PROVIDER: z.enum(['none', 'google', 'fake']).default('none'),
   COOKIE_PREFIX_SECURE: bool.optional(),
   TRUSTED_PROXY_MODE: z.enum(['none', 'cloudflare']).default('none'),
   EDGE_TOKEN_MODE: z.enum(['off', 'worker']).optional(),
@@ -269,6 +271,7 @@ const webSchema = withRules({ ...commonShape, ...webShape }, (env, add) => {
   }
   if (env.NODE_ENV === 'production') {
     if (env.DEV_PSEUDO_LOCALE) add('DEV_PSEUDO_LOCALE', 'must not be enabled in production');
+    if (env.TRANSLATE_PROVIDER === 'fake') add('TRANSLATE_PROVIDER', 'fake must not be used in production');
     if (env.DEV_SKIP_MFA) add('DEV_SKIP_MFA', 'must not be enabled in production');
     if (env.COOKIE_PREFIX_SECURE === false) {
       add('COOKIE_PREFIX_SECURE', 'must be true in production');

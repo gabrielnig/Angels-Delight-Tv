@@ -460,3 +460,14 @@ describe('viewer two step switch (M49)', () => {
     expect(loadWebEnv({ ...prodWeb, VIEWER_MFA_ENABLED: 'false' }).VIEWER_MFA_ENABLED).toBe(false);
   });
 });
+
+describe('web TRANSLATE_PROVIDER (M46)', () => {
+  it('is none by default so the admin never offers translation', () => {
+    expect(loadWebEnv(devWeb).TRANSLATE_PROVIDER).toBe('none');
+  });
+  it('accepts google and fake in development and rejects fake in production', () => {
+    expect(loadWebEnv({ ...devWeb, TRANSLATE_PROVIDER: 'google' }).TRANSLATE_PROVIDER).toBe('google');
+    expect(loadWebEnv({ ...devWeb, TRANSLATE_PROVIDER: 'fake' }).TRANSLATE_PROVIDER).toBe('fake');
+    expect(failureNames(() => loadWebEnv({ ...prodWeb, TRANSLATE_PROVIDER: 'fake' }))).toEqual(['TRANSLATE_PROVIDER']);
+  });
+});
