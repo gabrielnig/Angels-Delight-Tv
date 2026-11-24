@@ -26,3 +26,19 @@ Plan: `docs/plan/v2/L3-admin-polish.md` (section 14 wins), review `docs/reviews/
 ## Slice 17: docs (partial)
 - Decisions D-209 to D-224 logged (L3-D01 to L3-D16). CHANGELOG entry added.
 - Not done: SECURITY.md matrix rows, M16-S06 correction, M42 stories and MODULES.md, DESIGN-SYSTEM entries, stories audit, plan edits E6 to E17. Slice 16 not built.
+
+## PR numbers (merged)
+- 215 slice 1 layout and alignment; 222 slice 2 breadcrumbs; 223 tokens; 226 slice 3 bulk core; 230 slice 4 videos bulk
+- 236 slice 5 captions availability; 237 slice 6 viewer CC; 238 slice 7 captions bulk; 239 slice 8 captions availability bulk
+- 240 slice 9 encoding bulk; 241 slice 10 Trash bulk; 242 slice 11 series bulk; 243 slice 12 users bulk; 244 tables test fix
+- 245 slice 13 staff bulk; 246 slice 14 upload details; 247 slice 15 overrides; 248 and 270 slice 17 docs and mixed tick and More menu keys
+- Slice 16 (publish later, Could) is not built: it needs the `publish_intent` migration and queue scheduler work. Documented as Could (D-214).
+
+## Browser checks (Playwright, fixture build)
+- `apps/web/e2e/admin-l3-layout.e2e.ts` visits videos, encoding, captions, Trash, series, users, roles, upload and audit log with a row ticked, at 360, 390, 768, 680 (200 percent zoom of 1360) and 1360. It fails on sideways page scroll, breadcrumb overflow, and any bulk control, tick or crumb under 44px. All five widths pass.
+- Fixed from it: desktop table tick cells were 27px wide (now 44), and stacked cards showed the tick label text and squeezed the title (label now visually hidden, 44px box).
+- Design system review (skill greps plus screenshots): no hardcoded colours, fonts, dashes or removed outlines in the lane files; tokens only. Verdict approve.
+- F17 mixed header tick (`aria-checked="mixed"`), F18 More menu keys (focus in, arrows, Escape returns focus, outside click closes), F19 progressbar role with values (already present, tested) are done with tests.
+
+## messages-coverage test
+`apps/web/src/lib/messages-coverage.test.ts` fails on unused keys `player.skip.*`. They belong to lane L4 (skip markers), not L3, so it is left for L4.
