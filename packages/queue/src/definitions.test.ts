@@ -205,3 +205,34 @@ describe('notice queues (L5, M44-S12)', () => {
     expect(ENGAGE_CRON_SCHEDULES).toContainEqual({ queue: 'notices.prune', cron: '40 3 * * *', timezone: 'Africa/Lagos' });
   });
 });
+
+describe('caption.translate queue (L7, M46)', () => {
+  const videoId = '0192f0a0-0000-7000-8000-0000000000aa';
+  it('runs one job at a time with two slow retries and a heartbeat', () => {
+    expect(QUEUE_DEFINITIONS['caption.translate']).toMatchObject({
+      concurrency: 1,
+      retryLimit: 2,
+      retryDelaySeconds: 120,
+      retryBackoff: true,
+      expireInSeconds: 30 * 60,
+      heartbeatSeconds: 300,
+    });
+  });
+  it('payload requires a known language and rejects extra keys', () => {
+    expect(parsePayload('caption.translate', { videoId, targetLanguage: 'yo' })).toEqual({
+      videoId,
+      targetLanguage: 'yo',
+      mode: 'new',
+    });
+    expect(() => parsePayload('caption.translate', { videoId, targetLanguage: 'fr' })).toThrow();
+    expect(() => parsePayload('caption.translate', { videoId, targetLanguage: 'en' })).not.toThrow();
+    expect(() => parsePayload('caption.translate', { videoId, targetLanguage: 'yo', extra: 1 })).toThrow();
+    expect(() => parsePayload('caption.translate', { targetLanguage: 'yo' })).toThrow();
+  });
+  it('accepts a source revision and the retranslate mode', () => {
+    const sourceCaptionId = '0192f0a0-0000-7000-8000-0000000000bb';
+    expect(
+      parsePayload('caption.translate', { videoId, targetLanguage: 'ha', sourceCaptionId, mode: 'retranslate' }),
+    ).toMatchObject({ sourceCaptionId, mode: 'retranslate' });
+  });
+});

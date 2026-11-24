@@ -63,6 +63,21 @@ describe.skipIf(!integrationEnabled())('worker staff notifier', () => {
     });
   });
 
+  it('names the language in translation notices and links to that track', async () => {
+    const notifier = makeNotifier(t.db, createLogger({ write: () => undefined }));
+    await notifier.translationReady(videoId, 'yo');
+    await notifier.translationFailed(videoId, 'ha');
+    const rows = await t.db.select().from(schema.adminNotices);
+    expect(rows.find((r) => r.title === 'Yoruba captions ready to review')).toMatchObject({
+      kind: 'captions_ready',
+      href: `/admin/captions/${videoId}?lang=yo`,
+    });
+    expect(rows.find((r) => r.title === 'Hausa captions could not be made')).toMatchObject({
+      kind: 'captions_failed',
+      href: `/admin/captions/${videoId}?lang=ha`,
+    });
+  });
+
   it('copes with a video that is gone', async () => {
     const notifier = makeNotifier(t.db, createLogger({ write: () => undefined }));
     await expect(

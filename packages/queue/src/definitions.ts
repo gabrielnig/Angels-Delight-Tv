@@ -1,3 +1,4 @@
+import { LOCALE_CODES } from '@ad/shared';
 import { z } from 'zod';
 
 export const QUEUES = {
@@ -5,6 +6,7 @@ export const QUEUES = {
   videoEncode: 'video.encode',
   videoThumbnails: 'video.thumbnails',
   captionGenerate: 'caption.generate',
+  captionTranslate: 'caption.translate',
   imageProcess: 'image.process',
   videoRekey: 'video.rekey',
   videoPurge: 'video.purge',
@@ -67,6 +69,15 @@ export const QUEUE_DEFINITIONS: Record<QueueName, QueueDefinition> = {
     retryDelaySeconds: 120,
     retryBackoff: true,
     expireInSeconds: 45 * 60,
+    heartbeatSeconds: 300,
+  },
+  // Caption translation (L7, M46). One at a time so playback encoding is not starved.
+  'caption.translate': {
+    concurrency: 1,
+    retryLimit: 2,
+    retryDelaySeconds: 120,
+    retryBackoff: true,
+    expireInSeconds: 30 * 60,
     heartbeatSeconds: 300,
   },
   'image.process': {
@@ -221,6 +232,13 @@ const PAYLOADS = {
   'caption.generate': z.strictObject({
     videoId: uuid,
     mode: z.enum(['transcribe', 'align']).default('transcribe'),
+    ...tracking,
+  }),
+  'caption.translate': z.strictObject({
+    videoId: uuid,
+    targetLanguage: z.enum(LOCALE_CODES),
+    sourceCaptionId: uuid.optional(),
+    mode: z.enum(['new', 'retranslate']).default('new'),
     ...tracking,
   }),
   'image.process': z.strictObject({ assetId: uuid, ...tracking }),

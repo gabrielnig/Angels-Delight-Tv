@@ -9,6 +9,7 @@ import {
   type Actor,
   isStaffRole,
   isAdminRole,
+  localeInfo,
 } from '@ad/shared';
 import type { StorageAdapter } from '@ad/storage';
 import { and, asc, desc, eq, inArray, sql } from 'drizzle-orm';
@@ -57,6 +58,31 @@ export interface AuditSink {
   }): Promise<void>;
 }
 
+/** What the web process knows about the translation engine. The engine itself runs in the worker. */
+export interface TranslationCapability {
+  name: string;
+  supports(source: string, target: string): boolean;
+  /** Price for the admin estimate. Null or absent for a self hosted engine (no per use cost). */
+  usdPerMillionChars?: number | null;
+}
+
+export interface TranslationEstimate {
+  configured: boolean;
+  supported: boolean;
+  provider: string;
+  sourceLanguage: string;
+  cues: number;
+  characters: number;
+  estimatedUsd: number | null;
+}
+
+export interface TranslationState {
+  state: CaptionState;
+  /** The approved source revision changed after this translation was made. Viewers keep the approved text. */
+  sourceChanged: boolean;
+  published: boolean;
+}
+
 export interface CaptionServiceDeps {
   db: Database;
   originals: StorageAdapter;
@@ -64,6 +90,10 @@ export interface CaptionServiceDeps {
   producer: Pick<JobProducer, 'enqueue'>;
   audit?: AuditSink;
   clock?: () => Date;
+  /** Absent means no engine is set up (the default, ruling R23). */
+  translation?: TranslationCapability;
+  /** `content.languages`. Absent means English only. */
+  captionLanguages?: () => Promise<readonly string[]>;
 }
 
 export interface TrackSummary {
@@ -127,8 +157,12 @@ export class CaptionService {
   private readonly producer: Pick<JobProducer, 'enqueue'>;
   private readonly audit?: AuditSink;
   private readonly clock: () => Date;
+  private readonly translation?: TranslationCapability;
+  private readonly captionLanguages: () => Promise<readonly string[]>;
 
   constructor(deps: CaptionServiceDeps) {
+    this.translation = deps.translation;
+    this.captionLanguages = deps.captionLanguages ?? (async () => ['en']);
     this.db = deps.db;
     this.originals = deps.originals;
     this.media = deps.media;
@@ -375,6 +409,124 @@ export class CaptionService {
       { videoId, mode },
       { createdBy: actor.accountId },
     );
+  }
+
+  /** The approved spoken language revision a translation starts from, or null with the reason in plain words. */
+  private async translationSource(videoId: string) {
+    const [video] = await this.db.select().from(videos).where(eq(videos.id, videoId)).limit(1);
+    if (!video) throw new NotFound('Video not found');
+    const spoken = video.language || 'en';
+    const [row] = await this.db
+      .select({ caption: captions, track: captionTracks })
+      .from(captionTracks)
+      .innerJoin(captions, eq(captions.id, captionTracks.approvedCaptionId))
+      .where(
+        and(
+          eq(captionTracks.videoId, videoId),
+          eq(captionTracks.language, spoken),
+          eq(captions.status, 'approved'),
+        ),
+      )
+      .limit(1);
+    return { video, spoken, source: row?.caption ?? null };
+  }
+
+  private async checkTranslationTarget(target: string, spoken: string) {
+    if (!localeInfo(target) || target === spoken) {
+      throw new ValidationFailed({ language: ['Choose a language other than the one spoken in the video.'] });
+    }
+    if (!(await this.captionLanguages()).includes(target)) {
+      throw new ValidationFailed({
+        language: ['This language is not turned on for captions. Add it in the content settings first.'],
+      });
+    }
+    if (!this.translation) {
+      throw new Conflict('Translation is not set up on this server, so captions cannot be translated yet.');
+    }
+    if (!this.translation.supports(spoken, target)) {
+      throw new ValidationFailed({ language: ['The translation engine cannot do this language pair.'] });
+    }
+  }
+
+  /** M46-S12: queues a machine translation draft. Staff only, never a viewer. Opens in review, never live. */
+  async requestTranslation(
+    actor: Actor,
+    videoId: string,
+    targetLanguage: string,
+    options: { mode?: 'new' | 'retranslate' } = {},
+  ) {
+    assertStaff(actor);
+    const { spoken, source } = await this.translationSource(videoId);
+    await this.checkTranslationTarget(targetLanguage, spoken);
+    if (!source) {
+      throw new Conflict('Approve the captions in the spoken language first. Translations start from an approved track.');
+    }
+    const queued = await this.producer.enqueue(
+      'caption.translate',
+      {
+        videoId,
+        targetLanguage: targetLanguage as 'en',
+        sourceCaptionId: source.id,
+        mode: options.mode ?? 'new',
+      },
+      { createdBy: actor.accountId },
+    );
+    await this.record(actor, 'caption.translate.request', videoId, {
+      videoId,
+      language: targetLanguage,
+      mode: options.mode ?? 'new',
+      provider: this.translation?.name,
+    });
+    return queued;
+  }
+
+  /** What the Add translation dialog shows before the admin confirms. */
+  async estimateTranslation(actor: Actor, videoId: string, targetLanguage: string): Promise<TranslationEstimate> {
+    assertStaff(actor);
+    const { spoken, source } = await this.translationSource(videoId);
+    const cues = source ? parseVtt(await readText(this.originals, source.storageKey)) : [];
+    const characters = cues.reduce((n, c) => n + c.text.length, 0);
+    const configured = Boolean(this.translation);
+    const price = this.translation?.usdPerMillionChars ?? null;
+    return {
+      configured,
+      supported: Boolean(this.translation?.supports(spoken, targetLanguage)),
+      provider: this.translation?.name ?? 'none',
+      sourceLanguage: spoken,
+      cues: cues.length,
+      characters,
+      estimatedUsd: price === null ? null : (characters * price) / 1_000_000,
+    };
+  }
+
+  /** State of one translation track, with the computed Source changed flag (never stored). */
+  async translationState(videoId: string, language: string): Promise<TranslationState> {
+    const none: TranslationState = { state: 'none', sourceChanged: false, published: false };
+    const [track] = await this.db
+      .select()
+      .from(captionTracks)
+      .where(and(eq(captionTracks.videoId, videoId), eq(captionTracks.language, language)))
+      .limit(1);
+    if (!track) return none;
+    const [latest] = await this.db
+      .select()
+      .from(captions)
+      .where(eq(captions.trackId, track.id))
+      .orderBy(desc(captions.revision))
+      .limit(1);
+    if (!latest) return { ...none, published: track.published };
+    let state: CaptionState = 'needs_review';
+    if (latest.status === 'approved') state = 'approved';
+    else if (latest.status === 'rejected') state = 'rejected';
+    let sourceChanged = false;
+    if (track.approvedCaptionId) {
+      const [approved] = await this.db.select().from(captions).where(eq(captions.id, track.approvedCaptionId)).limit(1);
+      const { source } = await this.translationSource(videoId);
+      if (approved?.sourceSha256 && source) {
+        sourceChanged = !Buffer.from(approved.sourceSha256).equals(Buffer.from(source.sha256));
+      }
+    }
+    return { state, sourceChanged, published: track.published };
   }
 
   async importFile(

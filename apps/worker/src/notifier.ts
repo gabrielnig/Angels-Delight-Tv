@@ -1,13 +1,14 @@
 import { schema, type Database } from '@ad/db';
-import type { Logger } from '@ad/shared';
+import { localeInfo, type Logger } from '@ad/shared';
 import { notifyStaff } from '@ad/video';
 import { eq } from 'drizzle-orm';
 import type { StaffNotifier } from './handlers';
+import type { TranslateNotifier } from './translate-handlers';
 
 const { videos } = schema;
 
 /** Builds the bell notices for job results (M21-S03). Titles come from the video, copy is plain and says what to do. */
-export function makeNotifier(db: Database, logger: Logger): StaffNotifier {
+export function makeNotifier(db: Database, logger: Logger): StaffNotifier & TranslateNotifier {
   const lookup = async (videoId: string) => {
     const [row] = await db
       .select({ title: videos.title, failure: videos.failureMessage })
@@ -60,6 +61,28 @@ export function makeNotifier(db: Database, logger: Logger): StaffNotifier {
         videoId,
         `${v.title}: try again from the captions page.`,
         `/admin/captions/${videoId}`,
+      );
+    },
+    async translationReady(videoId, language) {
+      const v = await lookup(videoId);
+      const name = localeInfo(language)?.englishName ?? language;
+      await send(
+        'captions_ready',
+        `${name} captions ready to review`,
+        videoId,
+        v.title,
+        `/admin/captions/${videoId}?lang=${language}`,
+      );
+    },
+    async translationFailed(videoId, language) {
+      const v = await lookup(videoId);
+      const name = localeInfo(language)?.englishName ?? language;
+      await send(
+        'captions_failed',
+        `${name} captions could not be made`,
+        videoId,
+        `${v.title}: try again from the captions page.`,
+        `/admin/captions/${videoId}?lang=${language}`,
       );
     },
     async posterRecutFailed(videoId) {
