@@ -8,7 +8,9 @@ import type { Cue } from '@/lib/admin/cues';
 import { changesSinceApproval } from '@/lib/admin/cues';
 import { adminRuntime } from '@/server/admin/runtime';
 import { cueListProblem } from '../caption-commands';
-import type { CaptionService } from '../services';
+import type { BulkIssue } from '../bulk';
+import { BULK_DENIED, WARNINGS_REASON, planBulkApprove } from '../caption-commands';
+import type { CaptionRow as CaptionListRow, CaptionService } from '../services';
 import type { CaptionTrack } from '../types';
 import { catalogActor, context, need, toRecord } from './shared';
 
@@ -79,7 +81,7 @@ export const realCaptionService: CaptionService = {
       catalogActor(actor),
       rows.map((r) => r.updatedBy).filter((id): id is string => Boolean(id)),
     );
-    const shaped = rows.map((row) => ({
+    const shaped = rows.map((row): CaptionListRow => ({
       videoId: row.videoId,
       title: row.title,
       state: row.state,
@@ -89,6 +91,9 @@ export const realCaptionService: CaptionService = {
         ? (row.updatedBy && names.get(row.updatedBy)) || 'Automatic'
         : 'Not started',
       lastEditedAt: row.updatedAt,
+      // Cue warnings are only known when the cues are read, so approveMany skips those at approval time.
+      warnings: 0,
+      untouchedAuto: row.untouchedAuto,
     }));
     const filtered = filter?.state ? shaped.filter((r) => r.state === filter.state) : shaped;
     const time = (value: string | null) => (value ? Date.parse(value) : Number.POSITIVE_INFINITY);
@@ -215,6 +220,44 @@ export const realCaptionService: CaptionService = {
       if (reason) return { ok: false, error: reason };
       throw error;
     }
+  },
+
+  async approveMany(actor, ids) {
+    need(actor, 'caption.approve_bulk');
+    const who = catalogActor(actor);
+    const ctx = await context();
+    const service = await adminRuntime().captions();
+    const out = { succeeded: [] as string[], failed: [] as BulkIssue[], skipped: [] as BulkIssue[] };
+    for (const id of ids) {
+      try {
+        const video = await getAdminVideo(ctx, who, id);
+        const summary = (await service.listForVideo(who, id)).find((s) => s.language === 'en');
+        const state = summary?.latestRevisionId || video.captionState !== 'none' ? video.captionState : 'none';
+        const plan = planBulkApprove([
+          { videoId: id, state, warnings: 0, untouchedAuto: false },
+        ]);
+        if (plan.skipped[0]) {
+          out.skipped.push(plan.skipped[0]);
+          continue;
+        }
+        if (!summary?.latestRevisionId) {
+          out.skipped.push({ id, reason: 'No captions yet.' });
+          continue;
+        }
+        await service.approve(who, summary.latestRevisionId, { confirmWarnings: false });
+        await clearCaptionOverride(ctx, who, id);
+        out.succeeded.push(id);
+      } catch (error) {
+        if (error instanceof CaptionNeedsConfirmation) out.skipped.push({ id, reason: WARNINGS_REASON });
+        else if (error instanceof Forbidden) out.failed.push({ id, reason: BULK_DENIED, retryable: false });
+        else if (error instanceof NotFound)
+          out.failed.push({ id, reason: 'This video no longer exists.', retryable: false });
+        else if (error instanceof Conflict || error instanceof ValidationFailed)
+          out.failed.push({ id, reason: reasonOf(error) ?? 'Could not approve.', retryable: false });
+        else out.failed.push({ id, reason: 'Could not approve. Try again.', retryable: true });
+      }
+    }
+    return out;
   },
 
   async regenerate(actor, videoId) {

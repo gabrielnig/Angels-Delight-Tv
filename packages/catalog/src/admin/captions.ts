@@ -13,6 +13,8 @@ export interface AdminCaptionRow {
   updatedAt: string | null;
   /** Account id of whoever made or approved it. Null for automatic captions. */
   updatedBy: string | null;
+  /** Automatic captions nobody has opened or edited, so approving them in bulk needs a tick. */
+  untouchedAuto: boolean;
 }
 
 function assertStaff(actor: Actor): void {
@@ -27,7 +29,7 @@ export async function listAdminCaptionRows(
   assertStaff(actor);
   return withAccount(ctx.db, actor, async (tx) => {
     const result = await tx.execute(sql`
-      SELECT v.id, v.title, cap.status, cap.cue_count, cap.created_at, cap.reviewed_by, cap.created_by,
+      SELECT v.id, v.title, cap.status, cap.cue_count, cap.created_at, cap.reviewed_by, cap.created_by, cap.source,
         EXISTS (SELECT 1 FROM jobs j WHERE j.video_id = v.id AND j.queue = 'caption.generate'
           AND j.status IN ('queued', 'running')) AS generating,
         EXISTS (SELECT 1 FROM jobs j WHERE j.video_id = v.id AND j.queue = 'caption.generate'
@@ -35,7 +37,7 @@ export async function listAdminCaptionRows(
           AND NOT EXISTS (SELECT 1 FROM jobs k WHERE k.video_id = v.id AND k.queue = 'caption.generate' AND k.created_at > j.created_at)) AS failed
       FROM videos v
       LEFT JOIN LATERAL (
-        SELECT c.status, c.cue_count, c.created_at, c.reviewed_by, c.created_by
+        SELECT c.status, c.cue_count, c.created_at, c.reviewed_by, c.created_by, c.source
         FROM caption_tracks ct JOIN captions c ON c.track_id = ct.id
         WHERE ct.video_id = v.id AND ct.language = 'en' ORDER BY c.revision DESC LIMIT 1) cap ON true
       WHERE v.deleted_at IS NULL AND v.status = 'ready'
@@ -48,6 +50,7 @@ export async function listAdminCaptionRows(
       created_at: Date | string | null;
       reviewed_by: string | null;
       created_by: string | null;
+      source: string | null;
       generating: boolean;
       failed: boolean;
     }>(result).map((row) => {
@@ -67,6 +70,11 @@ export async function listAdminCaptionRows(
         cueCount: row.status ? row.cue_count : null,
         updatedAt: row.status ? isoOf(row.created_at) : null,
         updatedBy: row.status === 'approved' ? row.reviewed_by : row.created_by,
+        untouchedAuto:
+          state === 'needs_review' &&
+          row.source === 'whisper' &&
+          row.created_by === null &&
+          row.reviewed_by === null,
       };
     });
   });

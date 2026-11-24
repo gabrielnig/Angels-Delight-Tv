@@ -369,14 +369,18 @@ const fixtureVideoService: VideoService = {
 
 // ---- Captions ----
 import {
+  approveMany,
   approveTrack,
   ensureTrack,
+  isUntouchedAuto,
   regenerateTrack,
   replaceCues,
   saveCues,
 } from './caption-commands';
 import type { SaveResult, CaptionResult } from './caption-commands';
 import type { Cue } from '@/lib/admin/cues';
+import { validateCues } from '@/lib/admin/cues';
+import type { BulkIssue } from './bulk';
 import type { CaptionState, CaptionTrack } from './types';
 
 export interface CaptionRow {
@@ -387,6 +391,16 @@ export interface CaptionRow {
   cueCount: number | null;
   lastEditedBy: string;
   lastEditedAt: string | null;
+  /** Cues with a warning. Zero when it is only known when approving (real data). */
+  warnings: number;
+  /** Automatic captions nobody has opened or edited. */
+  untouchedAuto: boolean;
+}
+
+export interface ApproveManyResult {
+  succeeded: string[];
+  failed: BulkIssue[];
+  skipped: BulkIssue[];
 }
 
 export interface CaptionService {
@@ -397,6 +411,8 @@ export interface CaptionService {
   ): Promise<{ track: CaptionTrack | null; video: VideoRecord }>;
   save(actor: AdminActor, videoId: string, cues: Cue[]): Promise<SaveResult>;
   approve(actor: AdminActor, videoId: string): Promise<CaptionResult>;
+  /** Approves many tracks. Admin only. Tracks with warnings are skipped, never forced. */
+  approveMany(actor: AdminActor, ids: string[]): Promise<ApproveManyResult>;
   regenerate(actor: AdminActor, videoId: string): Promise<CaptionResult>;
   /** The script as it will be used: speaker names and stage directions removed. */
   previewScript(actor: AdminActor, script: string): Promise<string>;
@@ -428,6 +444,8 @@ const fixtureCaptionService: CaptionService = {
           cueCount: track && track.cues.length ? track.cues.length : null,
           lastEditedBy: track?.updatedBy ?? 'Not started',
           lastEditedAt: track?.updatedAt ?? null,
+          warnings: track ? validateCues(track.cues).size : 0,
+          untouchedAuto: track ? isUntouchedAuto(track) : false,
         };
       });
     const filtered = filter?.state ? rows.filter((r) => r.state === filter.state) : rows;
@@ -446,6 +464,9 @@ const fixtureCaptionService: CaptionService = {
   },
   async approve(actor, videoId) {
     return approveTrack(getStore(), liveVideo(videoId), actor.role, actor.name, Date.now());
+  },
+  async approveMany(actor, ids) {
+    return approveMany(getStore(), ids, actor.role, actor.name, Date.now());
   },
   async regenerate(actor, videoId) {
     return regenerateTrack(getStore(), liveVideo(videoId), actor.role, Date.now());
