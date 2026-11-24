@@ -74,6 +74,7 @@ const MAIN_TABLES = [
   'theme_settings',
   'title_rating_stats',
   'title_ratings',
+  'title_scores',
   'translation_usage',
   'ui_missing_keys',
   'ui_translations',

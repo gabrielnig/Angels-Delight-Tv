@@ -33,3 +33,10 @@ Scoped tests: `TEST_DATABASE_ADMIN_URL=postgres://postgres:postgres@localhost:54
 - `apps/worker/src/engage.ts`: `rollupRatings(db, rules)`, `pickMostLiked`, `wilsonLowerBound`, `DEFAULT_RATING_RULES` (10 raters, 85 percent, cap 10, top quarter). One transaction, idempotent. Registered by `apps/worker/src/engage-handlers.ts` from `main.ts`.
 - Tests: `apps/worker/src/engage.test.ts`, `engage.int.test.ts`, `engage-handlers.test.ts`, `packages/queue/src/definitions.test.ts`.
 - NOT done: `ratingTotals` analytics and the admin Top titles columns, CSV columns, settings keys for the rules (constants for now), Most liked row kind (slice 6).
+
+## Slice 6 (trending, popular and Top 10, data and read path)
+- Migration `0044_trending_rows.sql`: `row_kind` gains `trending`, `top_ten`, `most_liked`; table `title_scores`. `ROW_KINDS` extended.
+- `packages/analytics/src/trending.ts`: `refreshTrending(db, now, config)` (7 Lagos days, decay 0.8, 3 plays per viewer per day, completions add one, series sum, min 10 plays, top 60) and 30 day popular. Queue `trending.refresh` (hourly at minute 10) in `ENGAGE_CRON_SCHEDULES`, handler in `apps/worker/src/engage-handlers.ts`.
+- `packages/catalog/src/trending.ts`: `trendingTitles(tx, ctx, audience, { kind, limit })` (liveness, kids and maturity at read time, min 5 titles, min 50 site plays, 3 hour max age, Top 10 needs 10, popular needs 3 titles with 5 views), `mostLikedTitles`, `DEFAULT_TRENDING_RULES`. `resolveRow` handles `trending`, `top_ten`, `most_liked`.
+- Tests: `packages/analytics/src/trending.int.test.ts`, `packages/catalog/src/trending.int.test.ts`, `apps/worker/src/engage-handlers.test.ts`, `packages/queue/src/definitions.test.ts`.
+- NOT done: `popularTitles` still the old video only function (series in Popular, `fallbackTitle`), shared cache key by audience tier, `RankedRow` component and HomeView mapping, HomeCuration type picker, SystemView "Trending last refreshed", default launch seed rows, `trending.*` settings keys, refresh after the nightly rollup.

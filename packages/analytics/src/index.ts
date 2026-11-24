@@ -9,3 +9,4 @@ export * from './rate-limit';
 export * from './rollup';
 export * from './store';
 export type { SqlExecutor } from './sql';
+export * from './trending';

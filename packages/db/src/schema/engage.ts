@@ -1,5 +1,16 @@
 import { sql } from 'drizzle-orm';
-import { boolean, check, index, integer, pgTable, smallint, uniqueIndex, uuid } from 'drizzle-orm/pg-core';
+import {
+  boolean,
+  check,
+  doublePrecision,
+  index,
+  integer,
+  pgTable,
+  smallint,
+  text,
+  uniqueIndex,
+  uuid,
+} from 'drizzle-orm/pg-core';
 import { timestamptz } from './columns';
 import { series, videos } from './content';
 import { profiles } from './identity';
@@ -54,5 +65,33 @@ export const titleRatingStats = pgTable(
     uniqueIndex('title_rating_stats_series_uniq')
       .on(t.seriesId)
       .where(sql`${t.seriesId} IS NOT NULL`),
+  ],
+);
+
+/**
+ * The hourly trending and popular snapshot (L5, M44-S07). Global and unfiltered, top 60 per kind. Visibility and
+ * maturity are applied when a row is read. Aggregate catalog data, so no row level security.
+ */
+export const titleScores = pgTable(
+  'title_scores',
+  {
+    kind: text('kind').notNull(),
+    videoId: uuid('video_id').references(() => videos.id, { onDelete: 'cascade' }),
+    seriesId: uuid('series_id').references(() => series.id, { onDelete: 'cascade' }),
+    score: doublePrecision('score').notNull(),
+    plays: integer('plays').notNull(),
+    rank: integer('rank').notNull(),
+    computedAt: timestamptz('computed_at').notNull().defaultNow(),
+  },
+  (t) => [
+    check('title_scores_kind_known', sql`${t.kind} IN ('trending', 'popular')`),
+    check('title_scores_exactly_one_target', sql`num_nonnulls(${t.videoId}, ${t.seriesId}) = 1`),
+    uniqueIndex('title_scores_kind_video_uniq')
+      .on(t.kind, t.videoId)
+      .where(sql`${t.videoId} IS NOT NULL`),
+    uniqueIndex('title_scores_kind_series_uniq')
+      .on(t.kind, t.seriesId)
+      .where(sql`${t.seriesId} IS NOT NULL`),
+    index('title_scores_kind_rank_idx').on(t.kind, t.rank),
   ],
 );

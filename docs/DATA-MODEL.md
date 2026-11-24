@@ -51,7 +51,7 @@ Roles are created by `packages/db/sql/roles.sql` (compose init and the integrati
 | `upload_kind` | `video`, `image`, `caption` |
 | `upload_status` | `initiated`, `uploading`, `completing`, `completed`, `aborted`, `expired`, `failed` |
 | `job_status` | `queued`, `running`, `succeeded`, `failed`, `failed_permanent`, `cancelled` |
-| `row_kind` | `hero`, `curated`, `category`, `recently_added`, `continue_watching`, `my_list`, `popular` |
+| `row_kind` | `hero`, `curated`, `category`, `recently_added`, `continue_watching`, `my_list`, `popular`, `trending`, `top_ten`, `most_liked` |
 | `token_purpose` | `verify_email`, `reset_password`, `change_email` |
 | `theme_status` | `draft`, `published`, `archived` |
 | `asset_purpose` | `logo`, `favicon`, `thumbnail`, `hero`, `series_art` |
@@ -458,6 +458,10 @@ Constraints: `CHECK (num_nonnulls(video_id, series_id) = 1)`; `UNIQUE (profile_i
 
 `title_rating_stats`: `video_id` or `series_id` (exactly one, unique), `dislikes`, `likes`, `loves`, `most_liked`, `updated_at`. No RLS, no profile data. `ad_app` SELECT, `ad_worker` full DML. Written by the ratings rollup.
 
+### 7.2b `title_scores` (migration 0044)
+
+The hourly snapshot behind Trending now, Top 10 and Popular: `kind` (`trending` or `popular`), `video_id` or `series_id` (exactly one, a series scores as the sum of its episodes), `score` (double), `plays`, `rank`, `computed_at`. Unique per kind and title, index `(kind, rank)`. Global top 60 per kind, unfiltered, no RLS (aggregate data). `ad_app` SELECT, `ad_worker` full DML. Visibility, kids and the maturity limit are applied when a row is read.
+
 ### 7.3 `view_events` and `video_daily_stats`
 
 `view_events`:
@@ -631,6 +635,7 @@ The schema in `packages/db/src/schema` is the source of truth. These changes wer
 | 0033 | New table `staff_exports` (`requester_id` cascade, `kind` audit or analytics, `params`, `scope` all or content, `status` queued, running, ready or failed, `row_count`, `bytes`, `file_key`, `error`, `expires_at`). Row level security: owner only for `ad_app`, all rows for `ad_worker`. |
 | 0034 | `assets` gains `placeholder_blur` (a webp data url under 1 KB, check `length < 1024`) and `candidate_score` (smallint 0 to 100 for poster frames cut from a video). Both are nullable, so older rows are unchanged. |
 | 0037 | `videos.captions_enabled` (boolean, null follows the site default) and `videos.captions_off_reason` (text), check `videos_captions_off_has_reason` (a reason of 5 or more characters while captions are off). Additive, no backfill. |
+| 0044 | `row_kind` gains `trending`, `top_ten` and `most_liked`. New table `title_scores` (section 7.2b). |
 | 0042 | New tables `title_ratings` (owner RLS, kids trigger, `title_rating_aggregate()` for the worker) and `title_rating_stats` (section 7.2a). Policies `profiles_definer_read` and `title_ratings_definer_read` for the migrator role so SECURITY DEFINER triggers can read. |
 | 0038 | `videos.maturity_rank`, `series.maturity_rank` (smallint 0 to 4, checks), `profiles.max_maturity_rank` (smallint, default 4, kids profiles forced to 0 by trigger), backfill (kids safe 0, older 3, the rest 2), triggers `videos_sync_kids_safe` and `series_sync_kids_safe` (`kids_safe` follows rank 0). Additive. |
 | 0039 | Sponsors (M48): enums `sponsor_status` (draft, active, paused, archived) and `sponsor_slot`, `asset_purpose` gains `sponsor`. Tables `sponsors` (name 1 to 80, optional schedule with `ends_at > starts_at`), `sponsor_private` (staff only: encrypted contact, notes), `sponsor_creatives` (headline 1 to 60, body to 140, cta 1 to 24, `destination_url` https only to 500, weight 1 to 10), `sponsor_placements` (creative, slot), `sponsor_daily_stats` (day, creative, slot, impressions, clicks, daily reach; sponsor key restricts delete, creative has no key so numbers outlive it). `sponsor_effective()` and the view `sponsor_effective_status` derive scheduled, live and ended from the dates. RLS forced on all five: staff (editor, admin, super admin) full access, everyone else reads only live sponsors, their active creatives and placements, never `sponsor_private` or the stats. Counters are written only through the SECURITY DEFINER `sponsor_stats_bump()`. |

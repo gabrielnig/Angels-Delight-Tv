@@ -4,6 +4,7 @@ import { DrizzleHeartbeatStore, startHeartbeat } from '@ad/queue';
 import type { PgBoss } from 'pg-boss';
 import { bootWorker } from './boot';
 import { registerVideoHandlers } from './handlers';
+import { refreshTrending } from '@ad/analytics';
 import { rollupRatings } from './engage';
 import { registerEngageHandlers } from './engage-handlers';
 import { registerExportHandlers } from './export-handlers';
@@ -51,6 +52,7 @@ async function main(): Promise<void> {
       });
       await registerEngageHandlers(queueBoss, {
         rollupRatings: () => rollupRatings(db),
+        refreshTrending: () => refreshTrending(db, new Date()),
         mirror: video.mirror,
         logger,
       });
