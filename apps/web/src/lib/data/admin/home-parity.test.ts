@@ -28,6 +28,7 @@ const cases: [string, HomeConfig][] = [
   ['minimum 0', config(row({ minItems: 0 }))],
   ['minimum 21', config(row({ minItems: 21 }))],
   ['too many', config(...Array.from({ length: 13 }, (_, i) => row({ id: `r${i}`, name: `R${i}` })))],
+  ['long fallback title', config(row({ type: 'smart', fallbackToNewest: true, fallbackTitle: 'x'.repeat(81) }))],
   ['too many heroes', { heroIds: ['1', '2', '3', '4', '5', '6'], rows: [] }],
 ];
 
@@ -37,7 +38,7 @@ describe('home rules parity (fixtures and real)', () => {
   });
 
   it('shares the default minimums', () => {
-    const types: HomeRowType[] = ['manual', 'category', 'newest', 'series', 'smart', 'each_category', 'all_series', 'continue_watching', 'my_list'];
+    const types: HomeRowType[] = ['manual', 'category', 'newest', 'series', 'smart', 'each_category', 'all_series', 'continue_watching', 'my_list', 'trending', 'top_ten', 'most_liked'];
     for (const type of types) expect(defaultMinItems(type), type).toBe(realMin(type));
   });
 });

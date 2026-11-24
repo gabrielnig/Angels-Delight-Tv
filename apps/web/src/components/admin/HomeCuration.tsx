@@ -37,11 +37,14 @@ export interface HomeActions {
 
 let counter = 0;
 const newId = () => `row_${Date.now().toString(36)}${++counter}`;
-const ADDABLE = ['manual', 'category', 'newest', 'smart', 'series', 'each_category', 'all_series'] as const;
+const ADDABLE = ['manual', 'category', 'newest', 'smart', 'trending', 'top_ten', 'most_liked', 'series', 'each_category', 'all_series'] as const;
 const DEFAULT_NAMES: Partial<Record<HomeRowType, string>> = {
   manual: 'New list',
   newest: 'New',
-  smart: 'Trending',
+  smart: 'Popular',
+  trending: 'Trending now',
+  top_ten: 'Top 10',
+  most_liked: 'Most liked',
   each_category: 'Browse by subject',
   all_series: 'Series',
 };

@@ -182,7 +182,7 @@ describe('home rules', () => {
     );
   });
   it('labels the new types', () => {
-    expect(ROW_TYPE_LABELS.smart).toBe('Trending');
+    expect(ROW_TYPE_LABELS.smart).toBe('Popular');
     expect(ROW_TYPE_LABELS.each_category).toBe('Each category (automatic)');
     expect(ROW_TYPE_LABELS.all_series).toBe('All series (automatic)');
     expect(ROW_TYPE_LABELS.continue_watching).toBe('Continue learning');
@@ -224,7 +224,7 @@ describe('section summaries for the editor (M41-S06, S08)', () => {
   });
 
   it('says what an automatic link opens, in words', () => {
-    expect(viewAllOpens(row('smart'), none)).toBe('All trending videos (/browse/trending)');
+    expect(viewAllOpens(row('smart'), none)).toBe('All popular videos (/browse/trending)');
     expect(viewAllOpens(row('newest'), none)).toBe('All new videos (/browse/new)');
     expect(viewAllOpens(row('manual', { name: 'Maths week', slug: 'maths-week' }), none)).toBe(
       'The Maths week list (/browse/row/maths-week)',

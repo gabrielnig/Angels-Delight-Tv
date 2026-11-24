@@ -35,6 +35,10 @@ export function cleanHomeConfig(input: HomeConfig): HomeConfig {
       if (r.viewAllUrl !== undefined) row.viewAllUrl = r.viewAllUrl ? String(r.viewAllUrl).slice(0, 300) : null;
       if (r.minItems !== undefined) row.minItems = Number(r.minItems);
       if (r.kidsVisible !== undefined) row.kidsVisible = Boolean(r.kidsVisible);
+      if (r.fallbackToNewest !== undefined) row.fallbackToNewest = Boolean(r.fallbackToNewest);
+      // One over the limit is kept so validation can still refuse it.
+      if (r.fallbackTitle !== undefined)
+        row.fallbackTitle = r.fallbackTitle ? String(r.fallbackTitle).slice(0, 81) : null;
       return row;
     }),
   };

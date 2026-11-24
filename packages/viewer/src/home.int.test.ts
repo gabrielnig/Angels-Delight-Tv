@@ -188,20 +188,25 @@ describe.skipIf(!process.env.TEST_DATABASE_ADMIN_URL)('home', () => {
         title: 'New one',
         publishedAt: new Date('2026-05-01'),
       });
+      const third = await seedVideo(h.db.setup, {
+        title: 'Third one',
+        publishedAt: new Date('2026-03-01'),
+      });
       await categorize(h.db.setup, { videoId: old.id }, shelf.id);
-      await h.db.setup
-        .insert(videoDailyStats)
-        .values({ videoId: old.id, day: '2026-06-10', views: 50 });
+      await h.db.setup.insert(videoDailyStats).values([
+        { videoId: old.id, day: '2026-06-10', views: 50 },
+        { videoId: fresher.id, day: '2026-06-10', views: 8 },
+        { videoId: third.id, day: '2026-06-10', views: 7 },
+      ]);
       await addRow({ title: 'Just in', kind: 'recently_added' });
       await addRow({ title: 'Health talks', kind: 'category', categoryId: shelf.id });
       await addRow({ title: 'Most watched', kind: 'popular' });
 
       const home = await getHome(h.ctx, user.actor, { profileId: user.profileId });
 
-      expect(itemTitles(home.rows[0])).toEqual(['New one', 'Old one']);
+      expect(itemTitles(home.rows[0])).toEqual(['New one', 'Third one', 'Old one']);
       expect(itemTitles(home.rows[1])).toEqual(['Old one']);
-      expect(itemTitles(home.rows[2])).toEqual(['Old one']);
-      expect(fresher.id).toBeDefined();
+      expect(itemTitles(home.rows[2])).toEqual(['Old one', 'New one', 'Third one']);
     });
 
     it('pages rows by cursor so below the fold rows load later', async () => {

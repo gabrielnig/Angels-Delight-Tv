@@ -59,4 +59,14 @@ describe('cleanHomeConfig', () => {
     });
     expect(out.heroText).toEqual({ v1: { headline: 'H'.repeat(80), blurb: 'b' } });
   });
+
+  it('keeps the Popular fallback fields, cuts a long title and coerces the tick', () => {
+    const input = {
+      heroIds: [],
+      rows: [{ id: 'r', type: 'smart', name: 'Popular', visible: true, videoIds: [], sourceId: null, fallbackToNewest: 1, fallbackTitle: 'x'.repeat(200) }],
+    } as unknown as HomeConfig;
+    const row = cleanHomeConfig(input).rows[0]!;
+    expect(row.fallbackToNewest).toBe(true);
+    expect(row.fallbackTitle).toHaveLength(81);
+  });
 });

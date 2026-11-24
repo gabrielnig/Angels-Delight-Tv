@@ -122,8 +122,8 @@ export const LAUNCH_HOME_SECTIONS: ReadonlyArray<{
 }> = [
   { id: 'row_continue', type: 'continue_watching', name: 'Continue learning', minItems: 1 },
   { id: 'row_list', type: 'my_list', name: 'My List', minItems: 1 },
-  { id: 'row_newest', type: 'newest', name: 'New this week', minItems: 1 },
-  { id: 'row_smart', type: 'smart', name: 'Most watched this week', minItems: 4 },
+  { id: 'row_trending', type: 'trending', name: 'Trending now', minItems: 5 },
+  { id: 'row_newest', type: 'newest', name: 'Newly added', minItems: 1 },
   { id: 'row_each_category', type: 'each_category', name: 'Browse by subject', minItems: 4 },
   { id: 'row_all_series', type: 'all_series', name: 'Series', minItems: 2 },
 ];
@@ -139,7 +139,7 @@ export function launchHomeConfig(titles: LaunchHomeTitles = {}): HomeConfig {
   const override: Partial<Record<HomeRowType, string | undefined>> = {
     continue_watching: titles.continueTitle,
     newest: titles.newTitle,
-    smart: titles.trendingTitle,
+    trending: titles.trendingTitle,
   };
   return {
     heroIds: [],

@@ -3,7 +3,7 @@ import { resolveViewAll, type RowKind, type ViewAllMode, type ViewAllTarget } fr
 import { fetchHeroArtwork } from './detail';
 import { rowsOf } from './sql';
 import { categoryTitleCounts, fetchCards, listTitles, popularTitles, type TitleCard } from './titles';
-import { mostLikedTitles, trendingTitles } from './trending';
+import { mostLikedTitles, trendingTitles, type TrendingRules } from './trending';
 import type { Audience, CatalogContext, Tx } from './types';
 
 export interface RowDescriptor {
@@ -45,6 +45,8 @@ export interface RowRules {
   popularWindowDays: number;
   popularMinViews: number;
   popularMinTitles: number;
+  /** Overrides for the trending snapshot rules. */
+  trending?: Partial<TrendingRules>;
 }
 
 const DEFAULT_ROW_RULES: RowRules = {
@@ -284,9 +286,9 @@ async function resolveCards(
     case 'popular':
       return (await popularCards(tx, ctx, audience, row, rules)).cards;
     case 'trending':
-      return trendingTitles(tx, ctx, audience, { kind: 'trending', limit: row.maxItems });
+      return trendingTitles(tx, ctx, audience, { kind: 'trending', limit: row.maxItems, rules: rules.trending });
     case 'top_ten':
-      return trendingTitles(tx, ctx, audience, { kind: 'top_ten', limit: 10 });
+      return trendingTitles(tx, ctx, audience, { kind: 'top_ten', limit: rules.trending?.topTenSize ?? 10, rules: rules.trending });
     case 'most_liked':
       return mostLikedTitles(tx, ctx, audience, row.maxItems);
     default:

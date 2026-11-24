@@ -13,8 +13,8 @@ describe('launch home sections (M41-S09)', () => {
     ).toEqual([
       ['continue_watching', 'Continue learning', 1],
       ['my_list', 'My List', 1],
-      ['newest', 'New this week', 1],
-      ['smart', 'Most watched this week', 4],
+      ['trending', 'Trending now', 5],
+      ['newest', 'Newly added', 1],
       ['each_category', 'Browse by subject', 4],
       ['all_series', 'Series', 2],
     ]);
@@ -38,8 +38,8 @@ describe('launch home sections (M41-S09)', () => {
     expect(config.rows.map((r) => r.name)).toEqual([
       'Keep learning',
       'My List',
+      'Trending now',
       'Fresh',
-      'Most watched this week',
       'Browse by subject',
       'Series',
     ]);
