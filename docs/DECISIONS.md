@@ -1479,4 +1479,14 @@ Per video tri state, site default (Super admin), Admin changes it with a reason 
 - Decision: default labels G, PG, 12, 15, 18 are stored in `maturity.labels` as five comma separated labels of 1 to 4 characters, validated by `parseMaturityLabels`. Guests may see up to rank 2 by default through `maturity.guestMaxRank`. Code only ever compares ranks.
 - Options: fixed labels, labels per language.
 - Why: the client may prefer plain words, and a Nigerian classification name is only a default.
+## D-274 Hero auto rotate is on by default at 10 seconds, driven by two settings and no hardcoded time (lane L2, R12, L2-D01 and L2-D02)
+- Decision: `features.autoplay_hero` defaults to true and `home.hero_interval_seconds` (5 to 20, default 10) sets the time. `home.hero_max_loops` (0 to 5, default 2) stops rotation after that many rounds, 0 means never. The Home tab of Site settings edits them.
+- Options: off at 7 seconds (old docs), on at 8 seconds (old code), on at 10 seconds with settings.
+- Why: the owner asked for about 10 seconds, the pause control and the reduced motion and Data saver rules cover the data and motion risks, and one source removes the disagreement between docs, registry and code.
+- Reversible: yes, by the settings. Sites that already saved `features.autoplay_hero` keep their value.
+
+## D-275 Home keeps its server rules in ViewerRules and its labels in settings (lane L2, L2-D13)
+- Decision: `heroFallbackCount` 5, `popularMinItems` 4, `trendingWindowDays` 7, `autoCategoryMinItems` 4, `autoCategoryMax` 6 and `allSeriesMinItems` 2 are `ViewerRules` defaults. `home.view_all_label` ("View all") and `home.continue_title` ("Continue learning") are public text settings.
+- Options: all of it as settings, all of it as constants.
+- Why: counts and thresholds protect Home from looking empty and rarely change, so they stay rules with a context override. Words the client may want to change are settings.
 - Reversible: yes.

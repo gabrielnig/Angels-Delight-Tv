@@ -206,3 +206,60 @@ describe('guest audience setting (M40-S10, R18)', () => {
     expect(parse('features.guest_audience', true).success).toBe(false);
   });
 });
+
+describe('home settings (M41, R12, R13, R14)', () => {
+  const defaults = defaultSettings();
+
+  it('auto rotate is on by default and the interval is 10 seconds', () => {
+    expect(defaults['features.autoplay_hero']).toBe(true);
+    expect(defaults['home.hero_interval_seconds']).toBe(10);
+    expect(defaults['home.hero_max_loops']).toBe(2);
+  });
+
+  it('previews are on, unknown connections are off, fallback is five', () => {
+    expect(defaults['home.hero_previews']).toBe(true);
+    expect(defaults['home.hero_previews_unknown_connection']).toBe(false);
+    expect(defaults['home.hero_fallback_count']).toBe(5);
+  });
+
+  it('labels default to View all and Continue learning', () => {
+    expect(defaults['home.view_all_label']).toBe('View all');
+    expect(defaults['home.continue_title']).toBe('Continue learning');
+  });
+
+  it('keeps the interval between 5 and 20 and the loops between 0 and 5', () => {
+    expect(parse('home.hero_interval_seconds', 4).success).toBe(false);
+    expect(parse('home.hero_interval_seconds', 5).success).toBe(true);
+    expect(parse('home.hero_interval_seconds', 20).success).toBe(true);
+    expect(parse('home.hero_interval_seconds', 21).success).toBe(false);
+    expect(parse('home.hero_interval_seconds', 7.5).success).toBe(false);
+    expect(parse('home.hero_max_loops', 0).success).toBe(true);
+    expect(parse('home.hero_max_loops', 6).success).toBe(false);
+    expect(parse('home.hero_fallback_count', 0).success).toBe(false);
+    expect(parse('home.hero_fallback_count', 6).success).toBe(false);
+  });
+
+  it('limits the two labels', () => {
+    expect(parse('home.view_all_label', 'x'.repeat(24)).success).toBe(true);
+    expect(parse('home.view_all_label', 'x'.repeat(25)).success).toBe(false);
+    expect(parse('home.continue_title', 'x'.repeat(41)).success).toBe(false);
+  });
+
+  it('exposes what the browser needs and keeps the rest private', () => {
+    for (const key of [
+      'home.hero_interval_seconds',
+      'home.hero_max_loops',
+      'home.hero_previews',
+      'home.hero_previews_unknown_connection',
+      'home.view_all_label',
+      'home.continue_title',
+    ] as const)
+      expect(PUBLIC_SETTING_KEYS, key).toContain(key);
+    expect(PUBLIC_SETTING_KEYS).not.toContain('home.hero_fallback_count');
+  });
+
+  it('the unknown connection switch needs a super admin', () => {
+    expect(SETTING_DEFS['home.hero_previews_unknown_connection'].tier).toBe('super');
+    expect(SETTING_DEFS['home.hero_interval_seconds'].tier).toBe('admin');
+  });
+});

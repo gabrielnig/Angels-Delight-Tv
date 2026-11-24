@@ -463,3 +463,51 @@ describe('pages editor', () => {
     );
   });
 });
+
+describe('home settings tab', () => {
+  const open = async (user: ReturnType<typeof userEvent.setup>) =>
+    user.click(screen.getByRole('tab', { name: 'Home' }));
+
+  it('shows the hero and row settings with their defaults', async () => {
+    const { user } = setup();
+    await open(user);
+    expect(screen.getByLabelText('Seconds per hero slide')).toHaveValue('10');
+    expect(screen.getByLabelText('Hero loops before it stops')).toHaveValue('2');
+    expect(screen.getByLabelText('View all label')).toHaveValue('View all');
+    expect(screen.getByLabelText('Continue row title')).toHaveValue('Continue learning');
+    expect(screen.getByRole('switch', { name: 'Hero preview clips' })).toHaveAttribute(
+      'aria-checked',
+      'true',
+    );
+  });
+
+  it('saves a new interval as a number', async () => {
+    const { actions, user } = setup();
+    await open(user);
+    const field = screen.getByLabelText('Seconds per hero slide');
+    await user.clear(field);
+    await user.type(field, '12');
+    await user.click(screen.getByRole('button', { name: /save changes/i }));
+    await waitFor(() =>
+      expect(actions.update).toHaveBeenCalledWith({ 'home.hero_interval_seconds': 12 }),
+    );
+  });
+
+  it('refuses an interval outside 5 to 20', async () => {
+    const { actions, user } = setup();
+    await open(user);
+    const field = screen.getByLabelText('Seconds per hero slide');
+    await user.clear(field);
+    await user.type(field, '3');
+    await user.click(screen.getByRole('button', { name: /save changes/i }));
+    expect(await screen.findByText(/from 5 to 20/i)).toBeInTheDocument();
+    expect(actions.update).not.toHaveBeenCalled();
+  });
+
+  it('keeps the unknown connection switch read only without super rights', async () => {
+    const { user } = setup(dto({ canChangeFlags: false }));
+    await open(user);
+    expect(screen.getByRole('switch', { name: 'Preview clips on unknown connections' })).toBeDisabled();
+    expect(screen.getByRole('switch', { name: 'Hero preview clips' })).toBeEnabled();
+  });
+});
