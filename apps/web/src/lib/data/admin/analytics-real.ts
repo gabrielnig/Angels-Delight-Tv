@@ -16,7 +16,12 @@ export const realAnalytics = {
       q().topTitles(range, { sort: 'views', limit: 10 }),
       q().audienceSplits(range),
     ]);
-    return { ...overview, top, splits };
+    const ratings = await q().ratingTotals(top.map((t) => t.videoId));
+    return {
+      ...overview,
+      top: top.map((t) => (ratings.has(t.videoId) ? { ...t, ratings: ratings.get(t.videoId) } : t)),
+      splits,
+    };
   },
   exportRows: (range: DayRange) => q().titleDaily(range),
   /** Rows the CSV would have, read a month at a time and stopped once it is past the inline limit. */

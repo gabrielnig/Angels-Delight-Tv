@@ -2602,4 +2602,31 @@
   .adm-langtab {
     transition: none;
   }
+/* ---- Sortable table headings (Top titles) ---- */
+.adm-sortbtn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  min-height: var(--touch-target);
+  padding: 0 var(--space-1);
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+.adm-sortbtn:focus-visible {
+  outline: 3px solid var(--color-focus-ring);
+  outline-offset: 2px;
+}
+th[aria-sort='descending'] .adm-sortbtn::after,
+th[aria-sort='ascending'] .adm-sortbtn::after {
+  content: '';
+  border-inline: 0.3em solid transparent;
+}
+th[aria-sort='descending'] .adm-sortbtn::after {
+  border-top: 0.4em solid currentColor;
+}
+th[aria-sort='ascending'] .adm-sortbtn::after {
+  border-bottom: 0.4em solid currentColor;
 }

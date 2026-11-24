@@ -10,3 +10,4 @@ export * from './rollup';
 export * from './store';
 export type { SqlExecutor } from './sql';
 export * from './trending';
+export * from './ratings';

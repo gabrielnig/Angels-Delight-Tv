@@ -52,7 +52,7 @@ export function auditCsv(rows: AuditRecord[]): string {
   return `${lines.join('\n')}\n`;
 }
 
-export const TITLE_DAILY_CSV_HEADER = 'day,video_id,title,archived,views,watch_seconds,completions';
+export const TITLE_DAILY_CSV_HEADER = 'day,video_id,title,archived,views,watch_seconds,completions,likes,loves,not_for_me,positive_share_percent';
 
 export interface TitleDailyCsvRow {
   day: string;
@@ -62,6 +62,12 @@ export interface TitleDailyCsvRow {
   views: number;
   watchMs: number;
   completions: number;
+  /** Lifetime rating counts for the title. Absent when the title has no ratings row. */
+  likes?: number;
+  loves?: number;
+  dislikes?: number;
+  /** Whole percent, or null under ten ratings. */
+  positiveShare?: number | null;
 }
 
 /** One analytics export row (M19-S05), without the line break. */
@@ -74,6 +80,10 @@ export function titleDailyCsvLine(row: TitleDailyCsvRow): string {
     row.views,
     Math.round(row.watchMs / 1000),
     row.completions,
+    row.likes ?? '',
+    row.loves ?? '',
+    row.dislikes ?? '',
+    row.positiveShare ?? '',
   ]
     .map(csvCell)
     .join(',');

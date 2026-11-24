@@ -1,4 +1,3 @@
-import Link from 'next/link';
 import {
   dayLabel,
   changeLabel,
@@ -16,6 +15,7 @@ import { Chart } from './Chart';
 import { Card } from './PageHeader';
 import { ProgressBar } from './ProgressBar';
 import { EmptyState } from './states';
+import { TopTitlesTable } from './TopTitlesTable';
 
 const PRESETS: Array<{ id: Exclude<RangePreset, 'custom'>; label: string }> = [
   { id: '7d', label: 'Last 7 days' },
@@ -198,40 +198,7 @@ export function AnalyticsOverviewView({
                 No titles were watched in this period.
               </p>
             ) : (
-              <table className="adm-table adm-table--always adm-table--sticky">
-                <caption className="adm-sr">Most watched titles</caption>
-                <thead>
-                  <tr>
-                    <th scope="col">Title</th>
-                    <th scope="col" className="adm-num">
-                      Views
-                    </th>
-                    <th scope="col" className="adm-num">
-                      Watch time
-                    </th>
-                    <th scope="col" className="adm-num">
-                      Finished
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {data.top.map((t) => (
-                    <tr key={t.videoId}>
-                      <th scope="row">
-                        <Link
-                          className="adm-link"
-                          href={`/admin/analytics/${t.videoId}?from=${data.range.from}&to=${data.range.to}&range=custom`}
-                        >
-                          {t.title}
-                        </Link>
-                      </th>
-                      <td className="adm-num">{count(t.views)}</td>
-                      <td className="adm-num">{formatWatchTime(t.watchMs)}</td>
-                      <td className="adm-num">{percent(t.completionRate)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+              <TopTitlesTable top={data.top} range={data.range} />
             )}
           </section>
           <div className="adm-tiles">

@@ -202,6 +202,28 @@ describe.skipIf(!integrationEnabled())('analytics on Postgres', () => {
     await t.pool.query('update videos set deleted_at = null where id = $1', [video.id]);
   });
 
+  it('reads rating totals for titles and carries them on the per title export', async () => {
+    const queries = createAnalyticsQueries(t.db, {
+      now: () => new Date('2026-03-11T15:00:00Z'),
+      cacheTtlMs: 0,
+    });
+    expect((await queries.ratingTotals([video.id, other.id])).size).toBe(0);
+    await t.pool.query(
+      'insert into title_rating_stats (video_id, likes, loves, dislikes) values ($1, 6, 2, 2)',
+      [video.id],
+    );
+    const totals = await queries.ratingTotals([video.id, other.id]);
+    expect(totals.get(video.id)).toEqual({ likes: 6, loves: 2, dislikes: 2 });
+    expect(totals.has(other.id)).toBe(false);
+    expect(await queries.ratingTotals([])).toEqual(new Map());
+    const rows = await queries.titleDaily({ from: '2026-03-10', to: '2026-03-10' });
+    expect(rows[0]).toMatchObject({ likes: 6, loves: 2, dislikes: 2, positiveShare: 80 });
+    await t.pool.query('update title_rating_stats set likes = 1, loves = 0, dislikes = 0 where video_id = $1', [video.id]);
+    const thin = await queries.titleDaily({ from: '2026-03-10', to: '2026-03-10' });
+    expect(thin[0]).toMatchObject({ likes: 1, positiveShare: null });
+    await t.pool.query('delete from title_rating_stats');
+  });
+
   it('reports player quality and empty searches from counters', async () => {
     await send('2026-03-11T12:30:00Z', [
       { kind: 'startup', videoId: video.id, startupMs: 900, rebufferMs: 1000 },

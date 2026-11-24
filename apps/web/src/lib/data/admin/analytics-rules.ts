@@ -1,4 +1,4 @@
-import { addDays, daysBetween, lagosDay, previousPeriod } from '@ad/analytics';
+import { addDays, daysBetween, lagosDay, positiveShare, previousPeriod } from '@ad/analytics';
 import type {
   DayRange,
   OverviewResult,
@@ -219,4 +219,33 @@ export function buildFixtureTitleDaily(
     }
   }
   return rows.sort((a, b) => a.day.localeCompare(b.day) || a.title.localeCompare(b.title));
+}
+
+export type TopSortKey = 'views' | 'likes' | 'loves' | 'dislikes' | 'share';
+
+/** Numbers the Top titles table shows for ratings. Share is null under ten ratings and undefined with none at all. */
+export function ratingCells(t: TopTitle): { likes: number; loves: number; dislikes: number; share: number | null } | null {
+  if (!t.ratings) return null;
+  return { ...t.ratings, share: positiveShare(t.ratings) };
+}
+
+const sortValue = (t: TopTitle, key: TopSortKey): number | null => {
+  if (key === 'views') return t.views;
+  const cells = ratingCells(t);
+  if (!cells) return null;
+  return key === 'share' ? cells.share : cells[key];
+};
+
+/** Sorts a copy. Titles with no figure for the column always go last, whichever way it is sorted. */
+export function sortTop(rows: readonly TopTitle[], key: TopSortKey, dir: 'asc' | 'desc'): TopTitle[] {
+  const sign = dir === 'desc' ? -1 : 1;
+  return rows
+    .map((row, index) => ({ row, index, value: sortValue(row, key) }))
+    .sort((a, b) => {
+      if (a.value === null && b.value === null) return a.index - b.index;
+      if (a.value === null) return 1;
+      if (b.value === null) return -1;
+      return sign * (a.value - b.value) || a.index - b.index;
+    })
+    .map((x) => x.row);
 }
