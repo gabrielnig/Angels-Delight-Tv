@@ -5,6 +5,7 @@ import type { QualityMenu } from '../quality';
 import { PLAYBACK_RATES, type CaptionTrack } from '../types';
 import type { PlayerChapter } from '../chapters';
 import { formatClock } from '../format';
+import { usePlayerT } from '../t';
 import { CheckIcon } from './icons';
 
 export type MenuId =
@@ -85,10 +86,12 @@ interface RowProps {
   checked: boolean;
   disabled?: boolean | undefined;
   hint?: string | undefined;
+  /** Language of the label, when it is not the interface language (a caption language by its own name). */
+  lang?: string | undefined;
   onSelect(): void;
 }
 
-export function MenuRow({ label, detail, checked, disabled, hint, onSelect }: RowProps) {
+export function MenuRow({ label, detail, checked, disabled, hint, lang, onSelect }: RowProps) {
   const text = detail ? `${label}, ${detail}` : label;
   return (
     <button
@@ -97,6 +100,7 @@ export function MenuRow({ label, detail, checked, disabled, hint, onSelect }: Ro
       aria-checked={checked}
       aria-disabled={disabled || undefined}
       aria-label={hint ? `${text}. ${hint}` : text}
+      lang={lang}
       className="adp-menu__row"
       onClick={() => {
         if (!disabled) onSelect();
@@ -191,13 +195,19 @@ export function CaptionRows({
   active: string | null;
   onSelect(id: string | null): void;
 }) {
+  const msg = usePlayerT();
   return (
     <>
-      <MenuRow label="Off" checked={active === null} onSelect={() => onSelect(null)} />
+      <MenuRow
+        label={msg('player.captions.off')}
+        checked={active === null}
+        onSelect={() => onSelect(null)}
+      />
       {tracks.map((t) => (
         <MenuRow
           key={t.id}
           label={t.label}
+          lang={t.language}
           checked={active === t.id}
           onSelect={() => onSelect(t.id)}
         />

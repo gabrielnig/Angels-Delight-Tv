@@ -1674,3 +1674,9 @@ Decision: the dialog lists Manual list, Category, New, Trending, Series, Each ca
 ## D-306 The apply tool seeds Home only when no layout exists, and every launch section is visible to kids (lane L2, M41-S09)
 
 Decision: the `home` step of `launch:apply` publishes the six launch sections only when no layout was ever published or seeded (a stored published config or any row). A site with a layout, even an edited one, reports `unchanged`. All six sections are kids visible, including My List, because kids profiles already filter every list to kid safe titles (M35). Options: overwrite on every run, or seed only the missing sections. Why: overwriting loses client edits, and merging by name is guessy. Editors who want the set back use Restore launch defaults. Reversible: yes.
+
+## D-307 Viewers see a caption track only when approved, published and its language is enabled (lane L7)
+- Decision: One rule everywhere a viewer can reach a track: approved revision, caption_tracks.published true, language in content.languages (English only by default). It is applied in the playback session store, CaptionService.publicCaptions, the CC badge on cards and the title detail track list (catalog helper viewerTrackSql). Publishing is a separate Admin only switch (CaptionService.setPublished, audited as caption.language.publish and unpublish), and removing a language from content.languages is the site wide kill switch. The player picks the default track as profile caption language, then interface language, then English, then the only track if there is exactly one, never tracks[0]. A failed non English track falls back to English with a toast.
+- Options: Publish on approve; per video switch only; one rule with a separate switch
+- Why: Machine drafts that a human approved should still wait for an explicit go live, and a bad language must be removable in one setting. The publish gate for the spoken language track is a separate change (slice 16).
+- Reversible: Yes

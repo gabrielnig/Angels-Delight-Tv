@@ -84,3 +84,10 @@ Scoped tests only: `pnpm vitest run <file>`.
 - `CaptionService`: `requestTranslation`, `estimateTranslation`, `translationState` (computed Source changed). Deps `translation` (capability of the engine) and `captionLanguages` (`content.languages`). The web wiring of those two deps comes with the admin caption screens (slice 15).
 - Worker: `translate-handlers.ts` (`registerTranslateHandlers`), `runtime.ts` `buildTranslateDeps`, notifier `translationReady` and `translationFailed`. Setting `translation.glossary` added to the registry.
 - Tests: `pnpm vitest run apps/worker/src/translate-handlers.test.ts packages/queue/src/definitions.test.ts`; int: `translator-job.int.test.ts`, `service-translate.int.test.ts`, `apps/worker/src/notifier.int.test.ts`.
+
+## Slice 14 (publish switch, viewer track lists, player t prop)
+- `CaptionService.setPublished(actor, videoId, language, published)` (Admin, audited), `publicCaptions` filters on published and `content.languages`. `DrizzlePlaybackStore.captions` applies the same rule. `packages/catalog/src/caption-visibility.ts` `viewerTrackSql(alias)` feeds the CC badge (`videos.ts`, `titles.ts`) and the detail track list.
+- Player: `packages/player/src/t.tsx` (`PlayerTProvider`, `usePlayerT`), `t` and `uiLanguage` on `Player`, `PlayerView` and `PlayerControllerOptions`. Controller default track order and the English fallback toast (`player.captions.fallback`). `CaptionRows` shows Off from the catalog and each language by its own name with `lang`. `WatchClient` passes `useT()` and `useLocale()`; `player` joined `CLIENT_NAMESPACES`.
+- Still literal in the player (wave D, later slice): Play, Pause, Mute, Unmute and the ShortcutsDialog, SeekBar, EndScreen and caption appearance copy.
+- Tests: `pnpm vitest run packages/player apps/web/src/features/player/WatchClient.language.test.tsx`; int: `service-publish.int.test.ts`, `captions-badge.int.test.ts`, `captions-switch.int.test.ts`.
+- Known: `messages-coverage.test.ts` "no unused key" fails on main for `engage.mostLiked` and `sponsor.*` keys (other lanes), not this lane.

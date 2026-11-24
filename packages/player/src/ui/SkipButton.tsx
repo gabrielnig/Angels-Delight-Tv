@@ -1,6 +1,7 @@
 'use client';
 
-import { msg } from '@ad/shared/messages';
+import type { Translate } from '@ad/shared/messages';
+import { usePlayerT } from '../t';
 import { useEffect, useRef, useState } from 'react';
 import type { ActiveMarker } from '../markers';
 import { SkipIcon } from './icons';
@@ -16,7 +17,7 @@ export interface SkipButtonProps {
   onSkip(): void;
 }
 
-export function skipLabel(marker: ActiveMarker): string {
+export function skipLabel(marker: ActiveMarker, msg: Translate): string {
   if (marker.nextLesson) return msg('player.skip.next');
   if (marker.kind === 'intro') return msg('player.skip.intro');
   if (marker.kind === 'recap') return msg('player.skip.recap');
@@ -29,6 +30,7 @@ export function skipLabel(marker: ActiveMarker): string {
  * It is rendered before the control bar so it is the first control in Tab order after the video.
  */
 export function SkipButton({ marker, showKeyHint, activity, onSkip }: SkipButtonProps) {
+  const msg = usePlayerT();
   const [visible, setVisible] = useState(true);
   const held = useRef(false);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -51,7 +53,7 @@ export function SkipButton({ marker, showKeyHint, activity, onSkip }: SkipButton
   }, [kind, activity]);
 
   if (!marker) return null;
-  const label = skipLabel(marker);
+  const label = skipLabel(marker, msg);
 
   const hold = (on: boolean) => {
     held.current = on;

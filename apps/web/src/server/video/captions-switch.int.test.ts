@@ -82,4 +82,57 @@ describe.skipIf(!integrationEnabled())('playback captions follow the captions sw
       .where(eq(schema.videos.id, video.id));
     expect(await store.captions(video.id)).toHaveLength(1);
   });
+
+  describe('translation tracks (M46)', () => {
+    async function withTranslation(published: boolean) {
+      const video = await withApprovedTrack();
+      const trackId = uuidv7();
+      const capId = uuidv7();
+      await t.setup
+        .insert(schema.captionTracks)
+        .values({ id: trackId, videoId: video.id, language: 'yo', label: 'Yorùbá', kind: 'subtitles', published });
+      await t.setup.insert(schema.captions).values({
+        id: capId,
+        trackId,
+        revision: 1,
+        source: 'translation',
+        status: 'approved',
+        storageKey: `c/${capId}.vtt`,
+        sha256: Buffer.alloc(32),
+        bytes: 10,
+        cueCount: 1,
+        publicKey: `cap/${capId}.vtt`,
+        reviewedBy: (await seedAccount(t.setup, 'editor')).id,
+        reviewedAt: NOW,
+      });
+      await t.setup.update(schema.captionTracks).set({ approvedCaptionId: capId }).where(eq(schema.captionTracks.id, trackId));
+      return video;
+    }
+    const setLanguages = (value: string[]) =>
+      t.setup
+        .insert(schema.settings)
+        .values({ key: 'content.languages', value })
+        .onConflictDoUpdate({ target: schema.settings.key, set: { value } });
+
+    it('the session omits an approved but unpublished translation', async () => {
+      await setSiteDefault(true);
+      await setLanguages(['en', 'yo']);
+      const video = await withTranslation(false);
+      expect((await store.captions(video.id)).map((c) => c.language)).toEqual(['en']);
+    });
+
+    it('the session lists a published translation in an enabled language', async () => {
+      await setSiteDefault(true);
+      await setLanguages(['en', 'yo']);
+      const video = await withTranslation(true);
+      expect((await store.captions(video.id)).map((c) => c.language).sort()).toEqual(['en', 'yo']);
+    });
+
+    it('the session omits a language removed from content.languages', async () => {
+      await setSiteDefault(true);
+      await setLanguages(['en']);
+      const video = await withTranslation(true);
+      expect((await store.captions(video.id)).map((c) => c.language)).toEqual(['en']);
+    });
+  });
 });

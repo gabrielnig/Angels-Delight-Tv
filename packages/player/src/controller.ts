@@ -1,4 +1,4 @@
-import { msg } from '@ad/shared/messages';
+import { msg as defaultMsg, type Translate } from '@ad/shared/messages';
 import type {
   EngineError,
   EngineEvent,
@@ -51,6 +51,10 @@ export interface PlayerControllerOptions {
   sink: ProgressSink;
   preferences?: Partial<PlayerPreferences>;
   captions?: CaptionTrack[];
+  /** Interface language of the viewer. Picks the default caption track after the profile's caption language. */
+  uiLanguage?: string;
+  /** Translates player strings. Defaults to the English catalog so the player works without the web app. */
+  t?: Translate;
   resume?: Omit<ResumeInput, 'rewind' | 'minSaved'>;
   upNext?: UpNextItem | null;
   /** Skip windows in seconds (M43). They arrive with the page, never as a separate request. */
@@ -100,14 +104,6 @@ const END_GUARD_SECONDS = 0.5;
 const SEEK_TIMEOUT_MS = 6_000;
 const SEGMENT_SECONDS = 6;
 
-const ERROR_ANNOUNCE: Record<PlayerErrorKind, string> = {
-  'connection-lost': msg('player.error.connectionLost.title'),
-  offline: msg('player.error.offline.title'),
-  'session-expired': msg('player.error.sessionExpired.title'),
-  removed: msg('player.error.removed.title'),
-  'cannot-play': msg('player.error.cannotPlay.title'),
-  'unsupported-browser': msg('player.error.unsupportedBrowser.title'),
-};
 
 type Listener = () => void;
 
@@ -123,6 +119,7 @@ export class PlayerController {
   private readonly reporter: ProgressReporter;
   private readonly prefs: PlayerPreferences;
   private readonly tracks: CaptionTrack[];
+  private readonly msg: Translate;
   private readonly dataSaverMaxHeight: number;
   private readonly network: NetworkMonitor | undefined;
 
@@ -166,6 +163,7 @@ export class PlayerController {
 
   constructor(private readonly o: PlayerControllerOptions) {
     this.engine = o.engine;
+    this.msg = o.t ?? defaultMsg;
     this.prefs = { ...DEFAULT_PREFERENCES, ...o.preferences };
     this.tracks = (o.captions ?? []).filter((t) => t.status === 'approved');
     this.dataSaverMaxHeight = o.dataSaverMaxHeight ?? 360;
@@ -291,7 +289,7 @@ export class PlayerController {
       this.toast(
         {
           kind: 'resume',
-          message: msg('player.resumed', { time: formatClock(resume.resumedFrom) }),
+          message: this.msg('player.resumed', { time: formatClock(resume.resumedFrom) }),
           action: 'start-over',
         },
         8_000,
@@ -402,7 +400,7 @@ export class PlayerController {
       media.currentTime = start;
       this.reporter.update(start, media.duration);
       this.set({ currentTime: start });
-      this.notify(msg('player.seekFallback'));
+      this.notify(this.msg('player.seekFallback'));
     }, SEEK_TIMEOUT_MS);
   }
 
@@ -493,8 +491,8 @@ export class PlayerController {
     this.set({
       captions: { ...this.state.captions, active: track?.id ?? null },
       announce: track
-        ? msg('player.captionsOn', { label: track.label })
-        : msg('player.captionsOff'),
+        ? this.msg('player.captionsOn', { label: track.label })
+        : this.msg('player.captionsOff'),
     });
     this.persist();
   }
@@ -502,10 +500,17 @@ export class PlayerController {
   captionFailed(id: string): void {
     const english = this.tracks.find((t) => t.language === 'en');
     const failed = this.tracks.find((t) => t.id === id);
-    if (failed && failed.language !== 'en' && english) {
+    const fellBack = Boolean(failed && failed.language !== 'en' && english);
+    if (failed && english && fellBack) {
       this.set({ captions: { ...this.state.captions, active: english.id } });
     }
-    this.toast({ kind: 'error', message: msg('player.captionsFailed') }, 6_000);
+    this.toast(
+      {
+        kind: 'error',
+        message: fellBack ? this.msg('player.captions.fallback') : this.msg('player.captionsFailed'),
+      },
+      6_000,
+    );
   }
 
   startOver(): void {
@@ -552,7 +557,7 @@ export class PlayerController {
     this.clearCountdown();
     this.set({
       upNext: { ...this.state.upNext, countdown: null, cancelled: true },
-      announce: msg('player.autoplayCancelled'),
+      announce: this.msg('player.autoplayCancelled'),
     });
   }
 
@@ -718,7 +723,7 @@ export class PlayerController {
     if (marker?.kind !== current?.kind || marker?.nextLesson !== current?.nextLesson) {
       patch.marker = marker;
       if (marker)
-        patch.announce = msg('player.announce.skipAvailable', { label: this.skipLabel(marker) });
+        patch.announce = this.msg('player.announce.skipAvailable', { label: this.skipLabel(marker) });
     }
     const chapter = chapterAt(normalizeChapters(this.o.chapters, duration), time);
     if (
@@ -731,10 +736,10 @@ export class PlayerController {
   }
 
   private skipLabel(marker: { kind: MarkerKind; nextLesson: boolean }): string {
-    if (marker.nextLesson) return msg('player.skip.next');
-    if (marker.kind === 'intro') return msg('player.skip.intro');
-    if (marker.kind === 'recap') return msg('player.skip.recap');
-    return msg('player.skip.credits');
+    if (marker.nextLesson) return this.msg('player.skip.next');
+    if (marker.kind === 'intro') return this.msg('player.skip.intro');
+    if (marker.kind === 'recap') return this.msg('player.skip.recap');
+    return this.msg('player.skip.credits');
   }
 
   private skipped = new Set<MarkerKind>();
@@ -857,12 +862,12 @@ export class PlayerController {
       if (this.selected !== 'auto') {
         // A locked quality cannot drop by itself, so say what the viewer can do (one action: open Quality).
         if (!this.state.hint) {
-          this.set({ hint: { kind: 'locked-quality' }, announce: msg('player.hint.lockedQuality') });
+          this.set({ hint: { kind: 'locked-quality' }, announce: this.msg('player.hint.lockedQuality') });
         }
         return;
       }
       this.engine.dropQuality();
-      this.set({ slowNotice: true, announce: msg('player.slowConnection') });
+      this.set({ slowNotice: true, announce: this.msg('player.slowConnection') });
     }, SLOW_AFTER_MS);
     this.noteStallForDataSaver();
     this.armStallRecovery();
@@ -884,7 +889,7 @@ export class PlayerController {
     )
       return;
     this.dataSaverHinted = true;
-    this.set({ hint: { kind: 'data-saver' }, announce: msg('player.hint.dataSaver') });
+    this.set({ hint: { kind: 'data-saver' }, announce: this.msg('player.hint.dataSaver') });
   }
 
   /**
@@ -909,7 +914,7 @@ export class PlayerController {
     try {
       next = create();
     } catch {
-      this.notify(msg('player.airplay.failed'), 'error');
+      this.notify(this.msg('player.airplay.failed'), 'error');
       return false;
     }
     this.engineOff();
@@ -1002,7 +1007,7 @@ export class PlayerController {
     this.clearCountdown();
     this.set({
       upNext: { tile: false, countdown: seconds, cancelled: false, stillWatching: false },
-      announce: msg('player.nextStarts', { seconds }),
+      announce: this.msg('player.nextStarts', { seconds }),
     });
     this.countdownTimer = setInterval(() => {
       const left = (this.state.upNext.countdown ?? 0) - 1;
@@ -1142,7 +1147,7 @@ export class PlayerController {
           error: null,
           phase: 'ready',
           backOnline: true,
-          announce: msg('player.backOnlineAnnounce'),
+          announce: this.msg('player.backOnlineAnnounce'),
         });
         this.engine.recover();
       }
@@ -1166,7 +1171,7 @@ export class PlayerController {
       playing: false,
       buffering: false,
       slowNotice: false,
-      announce: ERROR_ANNOUNCE[kind],
+      announce: this.errorAnnounce(kind),
     });
   }
 
@@ -1199,8 +1204,36 @@ export class PlayerController {
     });
   }
 
+  /**
+   * The profile's caption language, else the interface language, else English. Never "the first track by
+   * position", which would pick whatever language was added first. A video with a single track uses it.
+   */
+  private errorAnnounce(kind: PlayerErrorKind): string {
+    switch (kind) {
+      case 'connection-lost':
+        return this.msg('player.error.connectionLost.title');
+      case 'offline':
+        return this.msg('player.error.offline.title');
+      case 'session-expired':
+        return this.msg('player.error.sessionExpired.title');
+      case 'removed':
+        return this.msg('player.error.removed.title');
+      case 'cannot-play':
+        return this.msg('player.error.cannotPlay.title');
+      case 'unsupported-browser':
+        return this.msg('player.error.unsupportedBrowser.title');
+    }
+  }
+
   private pickTrack(): CaptionTrack | undefined {
-    return this.tracks.find((t) => t.language === this.prefs.captionLanguage) ?? this.tracks[0];
+    const by = (language: string | undefined) =>
+      language ? this.tracks.find((t) => t.language === language) : undefined;
+    return (
+      by(this.prefs.captionLanguage) ??
+      by(this.o.uiLanguage) ??
+      by('en') ??
+      (this.tracks.length === 1 ? this.tracks[0] : undefined)
+    );
   }
 
   private qualityState(): PlayerState['quality'] {

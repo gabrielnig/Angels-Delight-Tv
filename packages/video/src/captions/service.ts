@@ -676,10 +676,14 @@ export class CaptionService {
     return Boolean(row);
   }
 
-  /** What the player may list. Only approved tracks, and only their media bucket key. */
+  /**
+   * What the player may list: approved, published tracks whose language is in `content.languages`, and only their
+   * media bucket key. Draft, in review and rejected revisions are never reachable from here.
+   */
   async publicCaptions(
     videoId: string,
   ): Promise<{ language: string; label: string; isDefault: boolean; key: string }[]> {
+    const allowed = await this.captionLanguages();
     const rows = await this.db
       .select({
         language: captionTracks.language,
@@ -689,7 +693,33 @@ export class CaptionService {
       })
       .from(captionTracks)
       .innerJoin(captions, eq(captions.id, captionTracks.approvedCaptionId))
-      .where(and(eq(captionTracks.videoId, videoId), eq(captions.status, 'approved')));
-    return rows.flatMap((row) => (row.key ? [{ ...row, key: row.key }] : []));
+      .where(
+        and(
+          eq(captionTracks.videoId, videoId),
+          eq(captions.status, 'approved'),
+          eq(captionTracks.published, true),
+        ),
+      );
+    return rows.flatMap((row) =>
+      row.key && allowed.includes(row.language) ? [{ ...row, key: row.key }] : [],
+    );
+  }
+
+  /** The per language Publish switch for one video (M46-S13). Admin only; the track must have an approved revision. */
+  async setPublished(actor: Actor, videoId: string, language: string, published: boolean): Promise<void> {
+    if (!isAdminRole(actor.role)) throw new Forbidden('Only admins publish a caption language');
+    const [track] = await this.db
+      .select()
+      .from(captionTracks)
+      .where(and(eq(captionTracks.videoId, videoId), eq(captionTracks.language, language)))
+      .limit(1);
+    if (!track || !track.approvedCaptionId) {
+      throw new Conflict('Approve the captions in this language before publishing them.');
+    }
+    await this.db.update(captionTracks).set({ published }).where(eq(captionTracks.id, track.id));
+    await this.record(actor, published ? 'caption.language.publish' : 'caption.language.unpublish', videoId, {
+      videoId,
+      language,
+    });
   }
 }

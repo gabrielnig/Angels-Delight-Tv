@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
+import type { Translate } from '@ad/shared/messages';
 import { PlayerController } from './controller';
 import type { NetworkMonitor, PageEvents, PlayerEngine } from './engine';
 import type { CaptionStyle } from './captionStyle';
@@ -44,6 +45,10 @@ export interface PlayerProps {
   initialSession?: PlaybackSession;
   progressSink: ProgressSink;
   captions?: CaptionTrack[];
+  /** Translates player strings into the viewer's language. English when missing. */
+  t?: Translate;
+  /** The viewer's interface language. It picks the default caption track after the profile's caption language. */
+  uiLanguage?: string;
   /** Seek preview map (WebVTT of sprite tiles). Fetched on first hover, never with Data saver. */
   spriteUrl?: string | null;
   resume?: Omit<ResumeInput, 'rewind' | 'minSaved'>;
@@ -175,6 +180,8 @@ export function Player(props: PlayerProps) {
         hints: p.hints ?? readNetworkHints(),
         ...(p.preferences ? { preferences: p.preferences } : {}),
         ...(p.captions ? { captions: p.captions } : {}),
+        ...(p.t ? { t: p.t } : {}),
+        ...(p.uiLanguage ? { uiLanguage: p.uiLanguage } : {}),
         ...(p.resume ? { resume: p.resume } : {}),
         ...(p.markers ? { markers: p.markers } : {}),
         ...(p.chapters ? { chapters: p.chapters } : {}),
@@ -220,6 +227,7 @@ export function Player(props: PlayerProps) {
     <PlayerView
       controller={controller}
       title={props.title}
+      t={props.t}
       posterUrl={props.posterUrl}
       captionStyle={props.captionStyle}
       airplay={props.airplay === true}

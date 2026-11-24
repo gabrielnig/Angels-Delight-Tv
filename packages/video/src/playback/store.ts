@@ -74,6 +74,12 @@ export class DrizzlePlaybackStore implements PlaybackStore {
         .where(eq(settings.key, 'features.captions_default_available'));
       if (site && site.value === false) return [];
     }
+    // Caption languages the site offers (`content.languages`, English only until changed).
+    const [langs] = await this.db
+      .select({ value: settings.value })
+      .from(settings)
+      .where(eq(settings.key, 'content.languages'));
+    const allowed = Array.isArray(langs?.value) ? (langs.value as unknown[]).map(String) : ['en'];
     const rows = await this.db
       .select({
         language: captionTracks.language,
@@ -83,7 +89,15 @@ export class DrizzlePlaybackStore implements PlaybackStore {
       })
       .from(captionTracks)
       .innerJoin(captions, eq(captions.id, captionTracks.approvedCaptionId))
-      .where(and(eq(captionTracks.videoId, videoId), eq(captions.status, 'approved')));
-    return rows.flatMap((row) => (row.key ? [{ ...row, key: row.key }] : []));
+      .where(
+        and(
+          eq(captionTracks.videoId, videoId),
+          eq(captions.status, 'approved'),
+          eq(captionTracks.published, true),
+        ),
+      );
+    return rows.flatMap((row) =>
+      row.key && allowed.includes(row.language) ? [{ ...row, key: row.key }] : [],
+    );
   }
 }

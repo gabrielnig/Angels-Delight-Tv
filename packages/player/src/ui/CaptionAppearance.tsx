@@ -1,7 +1,7 @@
 'use client';
 
+import { usePlayerT } from '../t';
 import { useState, type CSSProperties } from 'react';
-import { msg } from '@ad/shared/messages';
 import {
   DEFAULT_CAPTION_STYLE,
   captionStyleVars,
@@ -88,6 +88,7 @@ export function CaptionAppearance({
   onChange(style: CaptionStyle): void;
   onClose(): void;
 }) {
+  const msg = usePlayerT();
   const [announced, setAnnounced] = useState('');
   const change = (group: string, label: string, next: CaptionStyle) => {
     setAnnounced(msg('player.captionStyle.changed', { group, value: label }));
