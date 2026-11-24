@@ -62,6 +62,11 @@ export async function HomeView({
   }
 
   const settings = (await themeRuntime()).settings;
+  const [rotate, intervalSeconds, maxLoops] = await Promise.all([
+    settings.get('features.autoplay_hero'),
+    settings.get('home.hero_interval_seconds'),
+    settings.get('home.hero_max_loops'),
+  ]);
   const inList = new Set(idsResult);
   const progress = new Map(
     (continueResult.ok ? continueResult.value : []).map(({ progress: p }) => [p.videoId, p]),
@@ -75,9 +80,9 @@ export async function HomeView({
         label="Featured"
         profileId={ctx.guest ? null : ctx.profileId}
         dataSaver={dataSaver}
-        rotate={settings.get('features.autoplay_hero')}
-        intervalSeconds={settings.get('home.hero_interval_seconds')}
-        maxLoops={settings.get('home.hero_max_loops')}
+        rotate={rotate}
+        intervalSeconds={intervalSeconds}
+        maxLoops={maxLoops}
       />
       <div className="web-wide web-stack web-rows">
         {ctx.guest ? <GuestContinueRow /> : null}
