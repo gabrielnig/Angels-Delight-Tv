@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Angels Delight TV Confirm dialogs</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#F5F5F2;font-family:'Inter',system-ui,sans-serif;color:#1A1C22;font-size:15px;line-height:1.4}
+a{color:inherit;text-decoration:none}
+h1,h2,h3{font-family:'Space Grotesk','Inter',sans-serif;margin:0}
+button,input,select,textarea{font-family:inherit;font-size:15px;color:#1A1C22}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:44px;padding:0 18px;border-radius:8px;border:1px solid #8A8D94;background:#fff;font-weight:600;cursor:pointer;white-space:nowrap}
+.btn.p{background:#1F6FB5;border-color:#1F6FB5;color:#fff}
+.btn.a{background:#FFC93C;border-color:#FFC93C;color:#1A1C22}
+.btn.d{border-color:#B42318;color:#B42318}
+.btn.dd{background:#B42318;border-color:#B42318;color:#fff}
+.btn.g{border-color:transparent;background:transparent;color:#1F6FB5;padding:0 10px}
+.btn.dis{background:#ECEAE3;border-color:#DEDDD6;color:#5B606B;cursor:not-allowed}
+.btn.sm{height:44px;padding:0 12px;font-size:14px}
+.focus{outline:3px solid #1F6FB5;outline-offset:2px}
+.focusd{outline:3px solid #FFC93C;outline-offset:2px}
+.badge{display:inline-flex;align-items:center;gap:5px;height:24px;padding:0 8px;border-radius:4px;font-size:13px;font-weight:600;white-space:nowrap}
+.b-n{background:#ECEAE3;color:#1A1C22}.b-i{background:#E3F1FF;color:#14568F}.b-s{background:#E4F4EA;color:#1E7A46}.b-w{background:#FFF3D6;color:#8A5A00}.b-d{background:#FDECEA;color:#B42318}
+.card{background:#fff;border:1px solid #DEDDD6;border-radius:12px}
+.inp{height:44px;border:1px solid #8A8D94;border-radius:8px;background:#fff;padding:0 12px;display:flex;align-items:center;gap:8px;width:100%}
+.inp.err{border:2px solid #B42318}
+.lbl{font-size:14px;font-weight:600;margin-bottom:6px;display:block}
+.mut{color:#5B606B}
+.bar{height:8px;border-radius:999px;background:#ECEAE3;overflow:hidden}
+.bar>i{display:block;height:8px;border-radius:999px;background:#1F6FB5}
+.bar.dg>i{background:#B42318}.bar.ok>i{background:#1E7A46}.bar.pz>i{background:#8A8D94}
+.tbl{width:100%;border-collapse:collapse;font-size:14px}
+.tbl th{background:#ECEAE3;text-align:left;font-size:13px;font-weight:600;padding:0 14px;height:44px;white-space:nowrap}
+.tbl td{padding:0 14px;height:56px;border-top:1px solid #DEDDD6;vertical-align:middle}
+.tbl tr.sel td{background:#E3F1FF}
+.cbw{display:flex;align-items:center;justify-content:center;width:44px;height:44px;margin:0 -12px}
+.cb{width:20px;height:20px;border:2px solid #8A8D94;border-radius:4px;background:#fff;display:flex;align-items:center;justify-content:center}
+.cb.on{background:#1F6FB5;border-color:#1F6FB5}
+.sec{font-size:13px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:#5B606B}
+.chip{display:inline-flex;align-items:center;gap:6px;height:32px;padding:0 10px;border-radius:16px;background:#E3F1FF;color:#14568F;font-size:14px;font-weight:500}
+.pill{display:inline-flex;align-items:center;gap:6px;height:44px;padding:0 16px;border-radius:22px;border:1px solid #8A8D94;background:#fff;font-weight:500;font-size:14px}
+.pill.on{background:#1F6FB5;border-color:#1F6FB5;color:#fff;font-weight:600}
+.sw{width:44px;height:26px;border-radius:13px;background:#8A8D94;position:relative;flex:none}
+.sw::after{content:"";position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff}
+.sw.on{background:#1F6FB5}.sw.on::after{left:21px}
+.sk{background:#ECEAE3;border-radius:6px}
+.nv{display:flex;align-items:center;gap:12px;height:44px;padding:0 14px;border-radius:8px;color:#A9AEB9;font-size:15px;position:relative}
+.nv.on{background:#2E3138;color:#fff;font-weight:600}
+.nv.on::before{content:"";position:absolute;left:0;top:8px;bottom:8px;width:3px;border-radius:2px;background:#FFC93C}
+.nv .ct{margin-left:auto;background:#FFC93C;color:#1A1C22;font-size:12px;font-weight:700;border-radius:10px;padding:1px 7px}
+.ib{width:44px;height:44px;display:inline-flex;align-items:center;justify-content:center;border-radius:8px;border:1px solid #8A8D94;background:#fff}
+.ibn{border-color:transparent;background:transparent}
+.tip{font-size:13px;color:#5B606B}
+.crumbs ol{display:flex;flex-wrap:wrap;align-items:center;margin:0;padding:0;list-style:none;color:#5B606B;font-size:13px}
+.crumbs li{display:inline-flex;align-items:center;min-width:0;min-height:44px}
+.crumbs li+li::before{content:"/";flex:none;padding:0 8px}
+.crumbs a,.crumbs [aria-current]{display:inline-flex;align-items:center;min-height:44px;line-height:1.5}
+.crumbs a{color:#5B606B;min-width:44px;justify-content:center}
+.crumbs [aria-current]{display:inline-block;line-height:44px;color:#1A1C22;min-width:0;max-width:40ch;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.crumbs.viewer a{color:#1F6FB5;text-decoration:underline}
+.crumbs a.hov{color:#1A1C22;text-decoration:underline}
+.crumbs.bug li{display:block;min-height:0}
+.crumbs.bug li+li{display:block}
+.crumbs.bug a{display:inline-flex;align-items:center;min-height:44px}
+.crumbs.bug [aria-current]{display:inline;min-height:0}
+.crumbs.bug ol{align-items:stretch}
+.crumbs.back li{display:none}
+.crumbs.back li.par{display:inline-flex}
+.crumbs.back li.par::before{content:none}
+.crumbs.back li.par a{gap:4px;font-size:14px;font-weight:600;color:#1F6FB5}
+.crumbs.back li.only{display:inline-flex}
+.crumbs.back li.only::before{content:none}
+.num{text-align:right;font-variant-numeric:tabular-nums}
+.tbl th.num,.tbl td.num{text-align:right;font-variant-numeric:tabular-nums}
+.tbl th.ctr,.tbl td.ctr{text-align:center}
+.tbl th.act,.tbl td.act{text-align:right}
+.tbl th:first-child,.tbl td:first-child{padding-inline-start:16px}
+.tbl th:last-child,.tbl td:last-child{padding-inline-end:16px}
+.tbl tr.hov td{background:#E3F1FF}
+.tbl.bug th{text-align:left}
+.bulk{background:#17181C;color:#fff;border-radius:12px;padding:8px 16px;min-height:60px;display:flex;align-items:center;gap:12px;box-shadow:0 8px 24px rgba(0,0,0,.25);flex-wrap:wrap}
+.bulk .cnt{font-weight:700;font-size:15px;white-space:nowrap}
+.bulk .w{background:#fff;color:#1A1C22;border-color:#fff}
+.bulk .w.dng{color:#B42318}
+.bulk .w.off{background:#3A3D46;border-color:#3A3D46;color:#C9CCD3;cursor:not-allowed}
+.bulk .clr{background:transparent;color:#fff;border-color:#A9AEB9}
+.bulk .lnk{display:inline-flex;align-items:center;min-height:44px;color:#FFC93C;font-weight:600;text-decoration:underline;white-space:nowrap}
+.bulk .mt{color:#C9CCD3;font-size:14px}
+.bulk .focusd{outline:3px solid #FFC93C;outline-offset:2px}
+.tt{background:#1A1C22;color:#fff;font-size:13px;padding:8px 12px;border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.3);display:inline-block;max-width:280px;line-height:1.4}
+.scrim{background:rgba(26,28,34,.6);padding:32px;display:flex;justify-content:center;border-radius:12px}
+.dlg{width:480px;max-width:100%;background:#fff;border-radius:16px;box-shadow:0 16px 48px rgba(0,0,0,.3);display:flex;flex-direction:column}
+.dlg.md{width:560px}
+.dlg .hd{display:flex;align-items:flex-start;gap:8px;padding:20px 20px 0 24px}
+.dlg .hd h3{font-size:20px;flex:1;padding-top:8px}
+.dlg .bd2{padding:12px 24px 8px;display:flex;flex-direction:column;gap:14px}
+.dlg .ft{display:flex;justify-content:flex-end;gap:10px;padding:16px 24px 24px;flex-wrap:wrap}
+.sheet{background:#fff;border-radius:16px 16px 0 0;box-shadow:0 -8px 32px rgba(0,0,0,.3);display:flex;flex-direction:column;padding-bottom:max(16px,env(safe-area-inset-bottom))}
+.sheet .grab{width:40px;height:4px;border-radius:2px;background:#8A8D94;margin:10px auto 0}
+.sheet .hd{padding:8px 16px 0 20px;display:flex;align-items:flex-start;gap:8px}
+.sheet .hd h3{font-size:19px;flex:1;padding-top:8px}
+.sheet .bd2{padding:10px 20px;display:flex;flex-direction:column;gap:12px}
+.sheet .ft{display:flex;flex-direction:column;gap:8px;padding:6px 20px 8px}
+.sheet .ft .btn{width:100%}
+.toast{width:360px;max-width:100%;border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.2);padding:4px 4px 4px 14px;display:flex;align-items:center;gap:10px;min-height:56px;border:1px solid}
+.toast.s{background:#E4F4EA;border-color:#1E7A46;color:#14532D}
+.toast.i{background:#E3F1FF;border-color:#1F6FB5;color:#14568F}
+.toast.e{background:#FDECEA;border-color:#B42318;color:#8E1B12}
+.toast .t{flex:1;font-size:14px;font-weight:500;line-height:1.35;padding:6px 0}
+.toast .t small{display:block;font-weight:400;font-size:13px}
+.toast .ac{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:0 10px;font-weight:700;font-size:14px;text-decoration:underline}
+.cd{height:3px;background:#1E7A46;border-radius:2px}
+.rep{border:1px solid;border-radius:12px;padding:16px 20px;display:flex;flex-direction:column;gap:12px}
+.rep.w{background:#FFF3D6;border-color:#8A5A00;color:#5E3D00}
+.rep.d{background:#FDECEA;border-color:#B42318;color:#8E1B12}
+.rep.s{background:#E4F4EA;border-color:#1E7A46;color:#14532D}
+.rep.n{background:#fff;border-color:#8A8D94;color:#1A1C22}
+.rep h3{font-size:16px}
+.rep ul{list-style:none;margin:0;padding:0;background:#fff;border-radius:8px;color:#1A1C22;border:1px solid #DEDDD6}
+.rep li{display:flex;gap:12px;padding:10px 14px;align-items:baseline;font-size:14px}
+.rep li+li{border-top:1px solid #DEDDD6}
+.rep li a{font-weight:600;text-decoration:underline}
+.rep li .why{color:#5B606B}
+.rep .acts{display:flex;gap:10px;flex-wrap:wrap}
+.lbx{display:flex;gap:12px;align-items:flex-start;min-height:44px}
+.warnp{background:#FFF3D6;border:1px solid #8A5A00;border-radius:8px;padding:12px 14px;color:#5E3D00;display:flex;gap:10px;font-size:14px}
+.erp{background:#FDECEA;border:1px solid #B42318;border-radius:8px;padding:12px 14px;color:#8E1B12;display:flex;gap:10px;font-size:14px}
+.infp{background:#E3F1FF;border:1px solid #1F6FB5;border-radius:8px;padding:12px 14px;color:#14568F;display:flex;gap:10px;font-size:14px}
+.pbar{height:8px;border-radius:999px;background:#ECEAE3;overflow:hidden}
+.pbar i{display:block;height:8px;border-radius:999px;background:#1F6FB5}
+.menu{background:#fff;border:1px solid #DEDDD6;border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.18);padding:4px;display:flex;flex-direction:column;min-width:240px}
+.menu .mi{display:flex;align-items:center;gap:10px;min-height:44px;padding:0 12px;border-radius:6px;font-size:14px;font-weight:500}
+.menu .mi.on{background:#E3F1FF}
+.menu .mi.off{color:#5B606B}
+.frm{border:1px dashed #8A8D94;border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:12px;background:#FAFAF7}
+.ttl{display:flex;align-items:center;gap:12px;margin:0}
+.vp{position:relative;width:390px;background:#F5F5F2;overflow:hidden}
+.dock{position:absolute;left:0;right:0;bottom:0;background:#17181C;color:#fff;padding:10px 12px max(10px,env(safe-area-inset-bottom));box-shadow:0 -4px 16px rgba(0,0,0,.25);display:flex;align-items:center;gap:8px}
+.dock .w{background:#fff;color:#1A1C22;border-color:#fff}
+.dock .clr{background:transparent;color:#fff;border-color:#A9AEB9}
+.sectl{font-size:13px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:#5B606B}
+.rad{width:22px;height:22px;border-radius:50%;border:2px solid #8A8D94;background:#fff;display:flex;align-items:center;justify-content:center;flex:none}
+.rad.on{border-color:#1F6FB5}.rad.on i{width:10px;height:10px;border-radius:50%;background:#1F6FB5;display:block}
+.opt{display:flex;gap:12px;align-items:flex-start;padding:12px 14px;border:1px solid #DEDDD6;border-radius:8px;background:#fff;min-height:44px}
+.opt.on{border:2px solid #1F6FB5;background:#E3F1FF;padding:11px 13px}
+.opt.dis{background:#ECEAE3;color:#5B606B}
+.cmenu{display:flex;gap:6px;flex-wrap:wrap}
+.crd{background:#fff;border:1px solid #DEDDD6;border-radius:12px}
+.crd.sel{background:#E3F1FF;border-color:#1F6FB5}
+.lst{list-style:none;margin:0;padding:4px 16px}
+.lst li{display:flex;align-items:center;gap:12px;padding:12px 0;border-top:1px solid #DEDDD6}
+.lst li:first-child{border-top:0}
+.lst.bug{padding:0}
+.lst.bug li{padding:12px 0}
+.mark{outline:2px dashed #B42318;outline-offset:2px}
+.okmark{outline:2px dashed #1E7A46;outline-offset:2px}
+.spin{width:18px;height:18px;border-radius:50%;border:3px solid currentColor;border-right-color:transparent;display:inline-block;flex:none}
+</style>
+</helmet>
+<div style="width:1360px;background:#F5F5F2;display:flex;align-items:stretch;min-height:700px"><aside style="flex:0 0 240px;background:#17181C;color:#fff;padding:24px 16px;display:flex;flex-direction:column;gap:24px"><a href="S42_dashboard.dc.html" style="display:flex;align-items:center;gap:10px;padding:0 6px"><svg width="28" height="28" viewBox="0 0 28 28" aria-hidden="true"><circle cx="14" cy="14" r="13" fill="#FFC93C"/><path d="M11 8.5v11l9-5.5z" fill="#17181C"/></svg><span style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:17px">ADTV Admin</span></a><nav style="display:flex;flex-direction:column;gap:2px" aria-label="Admin"><a class="nv" href="S42_dashboard.dc.html"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none"><rect x="4" y="4" width="7" height="7"/><rect x="13" y="4" width="7" height="7"/><rect x="4" y="13" width="7" height="7"/><rect x="13" y="13" width="7" height="7"/></svg><span>Dashboard</span></a><a class="nv on" href="S43_videos_list.dc.html"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none"><rect x="3" y="6" width="13" height="12" rx="2"/><path d="M16 10l5-3v10l-5-3"/></svg><span>Videos</span></a><a class="nv" href="S44_upload.dc.html"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none"><path d="M12 17V5M6 11l6-6 6 6M5 20h14"/></svg><span>Upload</span></a><a class="nv" href="S48_encoding_queue.dc.html"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none"><circle cx="12" cy="12" r="3"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1"/></svg><span>Encoding</span><span class="ct">2</span></a><a class="nv" href="S49_caption_list.dc.html"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M10 10.5a2 2 0 100 3M17 10.5a2 2 0 100 3"/></svg><span>Captions</span><span class="ct">3</span></a><a class="nv" href="S51_series_list.dc.html"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none"><rect x="3" y="8" width="14" height="11" rx="2"/><path d="M7 5h14v11"/></svg><span>Series</span></a><a class="nv" href="S53_categories.dc.html"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none"><path d="M4 6h16M4 12h16M4 18h10"/></svg><span>Categories</span></a><a class="nv" href="S54_trash.dc.html"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></svg><span>Trash</span></a><a class="nv" href="#"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none"><path d="M4 11l8-7 8 7v9H4z"/></svg><span>Home curation</span></a><a class="nv" href="#"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none"><circle cx="12" cy="12" r="9"/><path d="M12 3v18"/></svg><span>Theme</span></a><a class="nv" href="#"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none"><circle cx="9" cy="8" r="3"/><path d="M3 20c0-4 3-6 6-6s6 2 6 6M16 5a3 3 0 010 6M18 14c2 1 3 3 3 6"/></svg><span>Users</span></a><a class="nv" href="#"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none"><path d="M4 20V4M4 20h16M8 16v-5M13 16V8M18 16v-9"/></svg><span>Analytics</span></a><a class="nv" href="#"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none"><path d="M8 6h12M8 12h12M8 18h12M4 6h.5M4 12h.5M4 18h.5"/></svg><span>Audit log</span></a><a class="nv" href="#"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none"><path d="M12 3l8 3v6c0 5-4 8-8 9-4-1-8-4-8-9V6z"/></svg><span>Roles</span></a><a class="nv" href="#"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none"><circle cx="12" cy="12" r="3"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3"/></svg><span>Site settings</span></a><a class="nv" href="#"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none"><rect x="4" y="4" width="16" height="6" rx="1"/><rect x="4" y="14" width="16" height="6" rx="1"/></svg><span>System</span></a></nav></aside><div style="flex:1;min-width:0;display:flex;flex-direction:column"><div style="height:68px;background:#fff;border-bottom:1px solid #DEDDD6;display:flex;align-items:center;gap:16px;padding:0 32px"><div class="inp" style="max-width:360px;color:#5B606B"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none"><circle cx="11" cy="11" r="7"/><path d="M16 16l5 5"/></svg><span>Search videos</span></div><span style="flex:1"></span><span class="ib ibn" style="position:relative"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none"><path d="M6 16V11a6 6 0 0112 0v5l2 2H4zM10 20h4"/></svg><span style="position:absolute;top:8px;right:8px;width:10px;height:10px;border-radius:50%;background:#B42318;border:2px solid #fff"></span></span><span style="display:flex;align-items:center;gap:10px;height:44px"><span style="width:36px;height:36px;border-radius:50%;background:#E6DCFF;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px">CO</span><span style="font-size:14px;font-weight:600">Chiamaka Okafor</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none"><path d="M6 9l6 6 6-6"/></svg></span></div><main style="padding:28px 32px 56px;display:flex;flex-direction:column;gap:32px"><div style="display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap"><div style="min-width:0"><nav aria-label="Breadcrumb" class="crumbs"><ol><li><a class="" href="#">Admin</a></li><li><span aria-current="page" title="Videos">Videos</span></li></ol></nav><h1 style="font-size:28px;line-height:1.2">Confirm dialogs</h1><div class="mut" style="margin-top:6px">Every bulk action confirms with its count. Focus moves in, is trapped, Esc closes, focus returns to the trigger.</div></div><div style="display:flex;gap:10px;align-items:center"></div></div><section><div class="sectl">Standard confirm and typed confirm</div><div class="tip" style="margin:4px 0 12px;max-width:900px">Publish shows the count and the first blocker before anything changes. Delete forever needs the count typed. The danger button stays disabled until it matches.</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;align-items:start"><div><div style="font-weight:600;margin-bottom:6px">Standard confirm with count</div><div class="tip" style="margin-bottom:8px">Default</div><div class="scrim" style="padding:28px 16px"><div class="dlg " role="dialog" aria-modal="true" aria-label="Publish 12 videos?"><div class="hd"><h3>Publish 12 videos?</h3><span class="ib ibn" role="button" aria-label="Close" style="" ><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none"><path d="M6 6l12 12M18 6L6 18"/></svg></span></div><div class="bd2"><div>9 are ready and will be published. 3 are not ready and will be skipped.</div><div class="warnp"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none"><path d="M12 4l9 16H3z"/><path d="M12 10v4M12 17v.5"/></svg><div><b>First blocker</b><div>Why We Wash Our Hands: Captions need approval first.</div></div></div></div><div class="ft"><span class="btn "  style="">Not now</span><span class="btn p"  style="">Publish 9 videos</span></div></div></div></div><div><div style="font-weight:600;margin-bottom:6px">Typed confirmation, empty</div><div class="tip" style="margin-bottom:8px">Button disabled</div><div class="scrim" style="padding:28px 16px"><div class="dlg " role="dialog" aria-modal="true" aria-label="Delete 7 videos forever?"><div class="hd"><h3>Delete 7 videos forever?</h3><span class="ib ibn" role="button" aria-label="Close" style="" ><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none"><path d="M6 6l12 12M18 6L6 18"/></svg></span></div><div class="bd2"><div>This removes the videos and their files for everyone. This cannot be undone.</div><div><label class="lbl">Type 7 to confirm</label><div class="inp" style="color:#5B606B;"></div></div></div><div class="ft"><span class="btn "  style="">Keep them</span><span class="btn dis"  style="">Delete 7 videos forever</span></div></div></div></div><div><div style="font-weight:600;margin-bottom:6px">Typed confirmation, matches</div><div class="tip" style="margin-bottom:8px">Button enabled, focus ring on the button</div><div class="scrim" style="padding:28px 16px"><div class="dlg " role="dialog" aria-modal="true" aria-label="Delete 7 videos forever?"><div class="hd"><h3>Delete 7 videos forever?</h3><span class="ib ibn" role="button" aria-label="Close" style="" ><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none"><path d="M6 6l12 12M18 6L6 18"/></svg></span></div><div class="bd2"><div>This removes the videos and their files for everyone. This cannot be undone.</div><div><label class="lbl">Type 7 to confirm</label><div class="inp" style=";">7</div></div></div><div class="ft"><span class="btn "  style="">Keep them</span><span class="btn dd"  style="outline:3px solid #1F6FB5;outline-offset:2px">Delete 7 videos forever</span></div></div></div></div><div><div style="font-weight:600;margin-bottom:6px">Error inside the dialog</div><div class="tip" style="margin-bottom:8px">The dialog stays open and the selection is kept</div><div class="scrim" style="padding:28px 16px"><div class="dlg " role="dialog" aria-modal="true" aria-label="Publish 12 videos?"><div class="hd"><h3>Publish 12 videos?</h3><span class="ib ibn" role="button" aria-label="Close" style="" ><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none"><path d="M6 6l12 12M18 6L6 18"/></svg></span></div><div class="bd2"><div class="erp" role="alert"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none"><path d="M12 4l9 16H3z"/><path d="M12 10v4M12 17v.5"/></svg><div>We could not reach the server. Nothing was changed. Try again.</div></div><div>9 are ready and will be published. 3 are not ready and will be skipped.</div></div><div class="ft"><span class="btn "  style="">Not now</span><span class="btn p"  style="">Publish 9 videos</span></div></div></div></div></div></section><section><div class="sectl">Acknowledgement and shared reason</div><div class="tip" style="margin:4px 0 12px;max-width:900px">Approving auto captions needs a tick. Suspend takes one reason for all accounts.</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;align-items:start"><div><div style="font-weight:600;margin-bottom:6px">Acknowledgement tick</div><div class="tip" style="margin-bottom:8px">Button disabled until ticked</div><div class="scrim" style="padding:28px 16px"><div class="dlg " role="dialog" aria-modal="true" aria-label="Approve 9 captions?"><div class="hd"><h3>Approve 9 captions?</h3><span class="ib ibn" role="button" aria-label="Close" style="" ><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none"><path d="M6 6l12 12M18 6L6 18"/></svg></span></div><div class="bd2"><div>Approved captions are published to viewers. This cannot be undone from here.</div><div class="warnp"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none"><path d="M12 4l9 16H3z"/><path d="M12 10v4M12 17v.5"/></svg><div>4 of these were made by the computer and nobody has opened or edited them. Auto captions can get names, places and numbers wrong.<div style="margin-top:6px"><a style="font-weight:700;text-decoration:underline" href="#">Show those 4 first</a></div></div></div><div class="lbx"><span class="cbw"><span class="cb" style=""></span></span><div style="padding-top:10px;flex:1"><div style="font-weight:600">I understand and approve them anyway</div></div></div></div><div class="ft"><span class="btn "  style="">Not now</span><span class="btn dis"  style="">Approve 9 captions</span></div></div></div></div><div><div style="font-weight:600;margin-bottom:6px">Shared reason, empty</div><div class="tip" style="margin-bottom:8px">Lazy validation, no error until the field is left</div><div class="scrim" style="padding:28px 16px"><div class="dlg " role="dialog" aria-modal="true" aria-label="Suspend 3 accounts?"><div class="hd"><h3>Suspend 3 accounts?</h3><span class="ib ibn" role="button" aria-label="Close" style="" ><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none"><path d="M6 6l12 12M18 6L6 18"/></svg></span></div><div class="bd2"><div>They are signed out now and cannot sign in until you reinstate them.</div><div><label class="lbl">Reason for all 3 accounts</label><div class="ta" style="min-height:84px;border:1px solid #8A8D94;border-radius:8px;padding:10px 12px;background:#fff"><span class="mut">For example: asked to pause the account</span></div><div class="tip" style="margin-top:6px">3 or more characters. It is saved on every audit row.</div></div></div><div class="ft"><span class="btn "  style="">Not now</span><span class="btn dd"  style="">Suspend 3 accounts</span></div></div></div></div><div><div style="font-weight:600;margin-bottom:6px">Shared reason, too short</div><div class="tip" style="margin-bottom:8px">Error shown after leaving the field</div><div class="scrim" style="padding:28px 16px"><div class="dlg " role="dialog" aria-modal="true" aria-label="Suspend 3 accounts?"><div class="hd"><h3>Suspend 3 accounts?</h3><span class="ib ibn" role="button" aria-label="Close" style="" ><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none"><path d="M6 6l12 12M18 6L6 18"/></svg></span></div><div class="bd2"><div>They are signed out now and cannot sign in until you reinstate them.</div><div><label class="lbl">Reason for all 3 accounts</label><div class="ta" style="min-height:84px;border:2px solid #B42318;border-radius:8px;padding:10px 12px;background:#fff">Do</div><div style="color:#B42318;font-size:13px;margin-top:6px;display:flex;gap:6px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none"><path d="M12 4l9 16H3z"/><path d="M12 10v4M12 17v.5"/></svg>Add a reason of at least 3 characters.</div></div></div><div class="ft"><span class="btn "  style="">Not now</span><span class="btn dis"  style="">Suspend 3 accounts</span></div></div></div></div><div><div style="font-weight:600;margin-bottom:6px">Busy</div><div class="tip" style="margin-bottom:8px">Spinner under 3 seconds, progress bar for longer runs. Cancel is disabled while a chunk runs</div><div class="scrim" style="padding:28px 16px"><div class="dlg " role="dialog" aria-modal="true" aria-label="Move 7 videos to Trash?"><div class="hd"><h3>Move 7 videos to Trash?</h3><span class="ib ibn" role="button" aria-label="Close" style="" ><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none"><path d="M6 6l12 12M18 6L6 18"/></svg></span></div><div class="bd2"><div>Working. Keep this window open.</div><div class="pbar" role="progressbar" aria-valuenow="50" aria-valuemin="0" aria-valuemax="100" aria-label="Moving to Trash"><i style="width:50%"></i></div></div><div class="ft"><span class="btn dis"  style="">Cancel</span><span class="btn dd" aria-busy="true" style="opacity:.85"><span class="spin"></span>Moving 7 videos</span></div></div></div></div></div></section></main></div></div>
+</x-dc>
+</body>
+</html>
