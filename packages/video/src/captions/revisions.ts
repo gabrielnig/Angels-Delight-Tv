@@ -22,10 +22,19 @@ export async function ensureTrack(
   videoId: string,
   language: string,
   label = 'English',
+  options: { kind?: TrackRow['kind']; published?: boolean; isDefault?: boolean } = {},
 ): Promise<TrackRow> {
   await db
     .insert(captionTracks)
-    .values({ id: uuidv7(), videoId, language, label, kind: 'captions', isDefault: true })
+    .values({
+      id: uuidv7(),
+      videoId,
+      language,
+      label,
+      kind: options.kind ?? 'captions',
+      isDefault: options.isDefault ?? true,
+      published: options.published ?? true,
+    })
     .onConflictDoNothing();
   const [track] = await db
     .select()
@@ -42,6 +51,9 @@ export interface NewRevision {
   model?: string | null;
   createdBy?: string | null;
   reviewNote?: string | null;
+  /** For `source: 'translation'`: the revision that was translated and its sha256 at that time (M46). */
+  sourceCaptionId?: string | null;
+  sourceSha256?: Buffer | null;
   /** Start times (ms) of cues to highlight in review. */
   lowConfidenceCues?: number[];
   /**
@@ -130,6 +142,8 @@ export async function storeRevision(
         createdBy: input.createdBy ?? null,
         reviewNote: input.reviewNote ?? null,
         lowConfidenceCues: input.lowConfidenceCues ?? [],
+        sourceCaptionId: input.sourceCaptionId ?? null,
+        sourceSha256: input.sourceSha256 ?? null,
       })
       .returning();
     return row!;

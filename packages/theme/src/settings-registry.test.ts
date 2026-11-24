@@ -297,3 +297,12 @@ describe('maturity settings (L5, R20)', () => {
     expect(parse('maturity.guest_max_rank', 5).success).toBe(false);
   });
 });
+
+describe('translation.glossary (L7)', () => {
+  it('defaults to empty, is not public and holds up to 4 KB', () => {
+    expect(defaultSettings()['translation.glossary']).toBe('');
+    expect(SETTING_DEFS['translation.glossary'].isPublic).toBe(false);
+    expect(parse('translation.glossary', 'Angels Delight TV\nSister Vanessa').success).toBe(true);
+    expect(parse('translation.glossary', 'x'.repeat(4097)).success).toBe(false);
+  });
+});

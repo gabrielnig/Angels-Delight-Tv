@@ -15,6 +15,7 @@ const KIND: Record<string, JobRecord['kind']> = {
   'video.thumbnails': 'encode',
   'video.rekey': 'encode',
   'caption.generate': 'captions',
+  'caption.translate': 'captions',
   'image.process': 'poster',
   'video.purge': 'cleanup',
   'uploads.cleanup': 'cleanup',

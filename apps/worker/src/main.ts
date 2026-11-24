@@ -9,10 +9,12 @@ import { rollupRatings } from './engage';
 import { registerEngageHandlers } from './engage-handlers';
 import { fanoutNotices, pruneNotices } from './notices';
 import { registerExportHandlers } from './export-handlers';
+import { registerTranslateHandlers } from './translate-handlers';
 import { registerMailHandlers } from './mail';
 import { registerMaintenanceHandlers } from './maintenance';
 import {
   buildExportDeps,
+  buildTranslateDeps,
   buildMailDeps,
   buildMaintenanceDeps,
   buildVideoHandlerDeps,
@@ -51,6 +53,7 @@ async function main(): Promise<void> {
         mirror: video.mirror,
         logger,
       });
+      await registerTranslateHandlers(queueBoss, buildTranslateDeps(env, db, logger, video.mirror));
       await registerEngageHandlers(queueBoss, {
         rollupRatings: () => rollupRatings(db),
         refreshTrending: () => refreshTrending(db, new Date()),

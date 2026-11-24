@@ -440,6 +440,15 @@ export const SETTING_DEFS = {
     label: 'Language publish threshold percent',
     description: 'Share of core text that must be approved before a language can go live',
   }),
+  'translation.glossary': def({
+    schema: text(4096),
+    default: '',
+    isPublic: false,
+    tier: 'admin',
+    group: 'content',
+    label: 'Translation glossary',
+    description: 'Names and terms kept as written in caption translations, one per line',
+  }),
   'legal.terms_version': def({
     schema: text(40),
     default: 'v0',

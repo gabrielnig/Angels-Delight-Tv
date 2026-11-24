@@ -1638,3 +1638,9 @@ Decision: the View all list pages keep the shared `.web-grid` (2, 3, 4, 5 across
 - Options: Add the `sponsor` kind to `staff_exports` and queue every export, build it inline with a size cap.
 - Why: The data is one row per day, creative and placement, so even 400 days of ten creatives is far under the cap. Inline needs no migration, no stored file and no expiry to manage. The plan's queue step stays available if a range ever outgrows the cap.
 - Reversible: Yes. Adding the kind and routing large ranges to the queue later changes only the route.
+
+## D-300 Translations start from the approved spoken language track and land unpublished (lane L7)
+- Decision: The caption.translate job reads the approved revision of the video's spoken language, translates cue text only (timings copied), and stores an in_review revision with source translation, source_caption_id and source_sha256 on a subtitles track created with published false and is_default false. One job per video at a time (the open job per queue and video rule), so a second request returns deduplicated. The web side asks the service, which checks staff role, content.languages, engine configured and pair supported before queueing. Notices reuse the captions_ready and captions_failed kinds and name the language.
+- Options: New notice kinds; separate queue per language; reuse the one open job rule
+- Why: No schema change, the approved English track keeps playing, and nothing reaches a viewer until a human approves and publishes the language (R23, plan 4.5).
+- Reversible: Yes

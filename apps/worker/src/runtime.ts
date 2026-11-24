@@ -18,6 +18,8 @@ import { createStorage, storageConfigFromEnv } from '@ad/storage';
 import { readSetting } from '@ad/theme/settings';
 import {
   CaptionGenerator,
+  CaptionTranslator,
+  DbUsageStore,
   ImageService,
   LifecycleService,
   UploadService,
@@ -27,6 +29,8 @@ import {
 import type { PgBoss } from 'pg-boss';
 import type { VideoHandlerDeps } from './handlers';
 import { chooseTranscriber } from './transcriber';
+import { chooseTranslator } from './translator';
+import type { TranslateDeps } from './translate-handlers';
 import type { MaintenanceDeps } from './maintenance';
 import type { MailDeps } from './mail';
 import type { ExportDeps } from './export-handlers';
@@ -148,5 +152,31 @@ export function buildExportDeps(
   return {
     generate: (exportId, options) => generateExport(rt, exportId, options),
     cleanup: () => cleanupExports(rt),
+  };
+}
+
+/**
+ * The caption translation job (M46). The engine is off unless TRANSLATE_PROVIDER says otherwise, and a paid
+ * provider is held to TRANSLATE_MONTHLY_CHAR_CAP through the translation_usage table.
+ */
+export function buildTranslateDeps(
+  env: WorkerEnv,
+  db: Database,
+  logger: Logger,
+  mirror: TranslateDeps['mirror'],
+): TranslateDeps {
+  const originals = createStorage(storageConfigFromEnv(env, env.BUCKET_ORIGINALS, env.HLS_KEK));
+  const translator = chooseTranslator(env, new DbUsageStore(db));
+  return {
+    translator: new CaptionTranslator({
+      db,
+      originals,
+      translator,
+      maxChars: env.TRANSLATE_MAX_CHARS_PER_JOB,
+      glossary: async () => String(await readSetting(db, 'translation.glossary')),
+    }),
+    mirror,
+    logger,
+    notifier: makeNotifier(db, logger),
   };
 }
