@@ -1270,3 +1270,9 @@ Per video tri state, site default (Super admin), Admin changes it with a reason 
 - Options: challenge every guest, challenge never, or escalate on abuse.
 - Why: Most visitors never see a check, and a person behind a shared mobile network is only asked after their network has been refused several times.
 - Reversible: yes.
+
+## D-239 Search engines read the public catalog, and guest limits never store a raw address (lane L1)
+- Decision: `robots.txt` (`app/robots.ts`) allows the public catalog (Home, Browse, title and series pages) and disallows `/api/`, `/admin`, `/account`, `/profiles`, `/settings`, `/my-list`, `/watch/`, `/search`, `/sign-in`, `/sign-up` and `/verify-email`. Search and My List also carry `noindex`, because a disallow alone does not stop indexing. A `Sitemap:` line is added as soon as `app/sitemap.ts` exists (lane L6) and `APP_ORIGIN` is set; a test pins it. Guest session limits and the challenge counter key on `networkSubject(secret, ip, label)`, an HMAC of the truncated network (IPv4 /24, IPv6 /48) per purpose, through `PlaybackHttpDeps.guestSubject`, so those tables hold no raw address (SECURITY.md section 11). The older key route bucket (`play-key-ip`) keeps its address subject, as before this lane. The Turnstile check is not offered to a visitor in Kids mode, since Kids playback pages load no third party script (SECURITY.md section 12); they get the wait message. The Playwright journeys for guests are written and gated on `E2E_REAL`, and were not run in the build session.
+- Options: leave the catalog closed to crawlers, or open it. Hash the address, or keep it.
+- Why: Open playback is the point of the lane, and shared links should preview and rank. Hashing costs nothing and matches the privacy table.
+- Reversible: yes.
