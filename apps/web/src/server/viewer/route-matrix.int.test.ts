@@ -7,6 +7,7 @@ import {
 } from '@ad/viewer/testing';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { guestCookieName, newGuestId, signGuest } from '../guest/guest-cookie';
+import { networkSubject } from '../guest/challenge';
 import { createViewerApi, type ViewerApi, type ViewerRuntime } from './api';
 
 /**
@@ -281,20 +282,22 @@ describe.skipIf(!integrationEnabled())('route authorization matrix (guests)', ()
   });
 
   it('spends the guest limits on the address, and on the guest id only when the cookie verifies', async () => {
+    const net = networkSubject(SECRET, '203.0.113.9', 'guest-public');
+    expect(net).not.toContain('203.0.113');
     spent.length = 0;
     await call('anonymous', api.browse, '/api/browse');
-    expect(spent).toEqual([`api:guest-ip:203.0.113.9`]);
+    expect(spent).toEqual([`api:guest-ip:${net}`]);
     spent.length = 0;
     await call('guest', api.search, '/api/search?q=matrix');
     expect(spent).toEqual([
-      'api:guest-ip:203.0.113.9',
+      `api:guest-ip:${net}`,
       `api:guest:${id}`,
-      'search:guest-ip:203.0.113.9',
+      `search:guest-ip:${net}`,
       `search:guest:${id}`,
     ]);
     spent.length = 0;
     await call('forged', api.browse, '/api/browse');
-    expect(spent).toEqual([`api:guest-ip:203.0.113.9`]);
+    expect(spent).toEqual([`api:guest-ip:${net}`]);
   });
 
   it('a guest cookie never turns into an account: personal reads of a profile id stay 401', async () => {

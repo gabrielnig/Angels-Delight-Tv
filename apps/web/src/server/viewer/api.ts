@@ -92,6 +92,7 @@ import {
 import { assertSameOrigin } from '@ad/security';
 import { z } from 'zod';
 import { guestCookieName, readGuest } from '../guest/guest-cookie';
+import { networkSubject } from '../guest/challenge';
 import { createPublicGuard } from './public-api';
 import { errorResponse, etagJson, json, parseWith, queryObject, readJson } from './http';
 
@@ -228,6 +229,8 @@ export function createViewerApi(rt: ViewerRuntime) {
       ),
     audience: async (request) => (await rt.guestAudience?.(request)) ?? { kids: false },
     clientIp: (request) => rt.clientIp?.(request) ?? 'unknown',
+    // The limiter table holds a keyed hash of the network, never a raw address (SECURITY.md section 11).
+    ipSubject: (ip) => networkSubject(rt.profileSecret, ip, 'guest-public'),
     spend: (bucket, subject) => spendAttempt(rt.ctx, bucket, subject),
   });
 

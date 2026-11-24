@@ -35,8 +35,8 @@ export interface PlaybackHttpDeps {
     recordDenial(ip: string): Promise<void>;
   };
   /**
-   * Turns the client address into the opaque subject the guest session limits are keyed on, so the table never
-   * holds a raw address (SECURITY.md section 11). Without it the address itself is used.
+   * Turns the client address into the opaque subject the guest session limits and the key route limit are keyed
+   * on, so the table never holds a raw address (SECURITY.md section 11). Without it the address itself is used.
    */
   guestSubject?(ip: string): string;
   assertSameOrigin?(request: Request): void;
@@ -189,7 +189,8 @@ export function createPlaybackHandlers(deps: PlaybackHttpDeps) {
     key: (request: Request, videoId: string) =>
       audited('key', request, videoId, async () => {
         const { token } = tokenOf(request);
-        const key = await deps.service.key(token, videoId, deps.clientIp(request));
+        const ip = deps.clientIp(request);
+        const key = await deps.service.key(token, videoId, deps.guestSubject?.(ip) ?? ip);
         return new Response(Buffer.from(key), {
           headers: { 'content-type': 'application/octet-stream', ...SECURE_HEADERS },
         });

@@ -111,6 +111,21 @@ describe('playback handlers', () => {
     expect(calls[0]).toEqual(['key', 'tok', VID, '9.9.9.9']);
   });
 
+  it('keys the key route limiter on the pseudonymous network subject, never the raw address', async () => {
+    const calls: unknown[][] = [];
+    const handlers = createPlaybackHandlers({
+      service: {
+        key: async (...a: unknown[]) => (calls.push(['key', ...a]), new Uint8Array(16)),
+      } as never,
+      getViewer: async () => ({ accountId: 'a', profileId: 'p' }),
+      getActor: async () => ({ accountId: 'a', role: 'editor' }),
+      clientIp: () => '9.9.9.9',
+      guestSubject: (ip) => `h(${ip})`,
+    });
+    await handlers.key(new Request('https://app/k?pt=tok'), VID);
+    expect(calls[0]).toEqual(['key', 'tok', VID, 'h(9.9.9.9)']);
+  });
+
   it('maps service errors to statuses', async () => {
     const handlers = createPlaybackHandlers({
       service: {

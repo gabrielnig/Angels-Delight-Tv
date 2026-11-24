@@ -16,6 +16,8 @@ export interface PublicGuardDeps {
   audience(request: Request): Promise<GuestAudienceValue>;
   /** Client address after trusted proxy handling. */
   clientIp(request: Request): string;
+  /** Turns the address into an opaque keyed subject, so the limiter table never holds a raw address. */
+  ipSubject?(ip: string): string;
   /** Spends one attempt and throws RateLimited when the bucket is empty. */
   spend(bucket: 'api' | 'search', subject: string): Promise<void>;
 }
@@ -47,7 +49,8 @@ export function createPublicGuard(deps: PublicGuardDeps) {
       try {
         const actor = await deps.resolveActor(request);
         if (actor) return await personal(request, params);
-        const subjects = [`guest-ip:${deps.clientIp(request)}`];
+        const ip = deps.clientIp(request);
+        const subjects = [`guest-ip:${deps.ipSubject?.(ip) ?? ip}`];
         const id = deps.guestId(request);
         if (id) subjects.push(`guest:${id}`);
         const buckets: Array<'api' | 'search'> = options.search ? ['api', 'search'] : ['api'];

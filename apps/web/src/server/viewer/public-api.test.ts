@@ -63,6 +63,12 @@ describe('public guard (M40-S01, D-G11)', () => {
     expect(without.spent).toEqual(['api:guest-ip:203.0.113.7']);
   });
 
+  it('keys the address limit on the pseudonymous subject when one is configured, never the raw address', async () => {
+    const { handler, spent } = setup({ ipSubject: (ip) => `h(${ip})` });
+    await handler(get(), {});
+    expect(spent).toEqual(['api:guest-ip:h(203.0.113.7)']);
+  });
+
   it('adds the search bucket for search routes', async () => {
     const { searchHandler, spent } = setup({ guestId: () => 'gid' });
     await searchHandler(get('https://app.test/api/search?q=rain'), {});
