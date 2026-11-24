@@ -17,6 +17,10 @@ import {
   resolvePreview,
   setHero,
   toggleRow,
+  duplicateNameNote,
+  viewAllOpens,
+  viewAllSummary,
+  ADD_TYPE_HINTS,
 } from './home-rules';
 import { getStore } from './store';
 
@@ -180,5 +184,72 @@ describe('home rules', () => {
     expect(ROW_TYPE_LABELS.each_category).toBe('Each category (automatic)');
     expect(ROW_TYPE_LABELS.all_series).toBe('All series (automatic)');
     expect(ROW_TYPE_LABELS.continue_watching).toBe('Continue learning');
+  });
+});
+
+describe('section summaries for the editor (M41-S06, S08)', () => {
+  const base = defaultHome();
+  const row = (type: string, extra = {}) => ({ ...base.rows[1]!, type, ...extra }) as never;
+  const none: { categories: never[]; series: never[] } = { categories: [], series: [] };
+
+  it('summarises the View all link in words and a path', () => {
+    expect(viewAllSummary(row('continue_watching'), none)).toBe('No View all link');
+    expect(viewAllSummary(row('newest'), none)).toBe('View all: Automatic, /browse/new');
+    expect(viewAllSummary(row('smart'), none)).toBe('View all: Automatic, /browse/trending');
+    expect(viewAllSummary(row('all_series'), none)).toBe('View all: Automatic, /browse/series');
+    expect(viewAllSummary(row('my_list'), none)).toBe('View all: Automatic, /my-list');
+    expect(viewAllSummary(row('each_category'), none)).toBe('View all: Automatic, one per category');
+    expect(viewAllSummary(row('manual', { slug: 'maths-week' }), none)).toBe(
+      'View all: Automatic, /browse/row/maths-week',
+    );
+    expect(viewAllSummary(row('newest', { viewAllMode: 'none' }), none)).toBe('No View all link');
+    expect(viewAllSummary(row('manual', { viewAllMode: 'custom', viewAllUrl: '/browse/maths' }), none)).toBe(
+      'View all: Custom, /browse/maths',
+    );
+  });
+
+  it('follows a category or series source to its address', () => {
+    const lists = {
+      categories: [{ id: 'c1', name: 'Money Basics', hidden: false, position: 0 }],
+      series: [{ id: 's1', title: 'Money Basics', description: '', posterId: null, published: true }],
+    } as never;
+    expect(viewAllSummary(row('category', { sourceId: 'c1' }), lists)).toBe(
+      'View all: Automatic, /browse/money-basics',
+    );
+    expect(viewAllSummary(row('series', { sourceId: 's1' }), lists)).toBe(
+      'View all: Automatic, /series/money-basics',
+    );
+  });
+
+  it('says what an automatic link opens, in words', () => {
+    expect(viewAllOpens(row('smart'), none)).toBe('All trending videos (/browse/trending)');
+    expect(viewAllOpens(row('newest'), none)).toBe('All new videos (/browse/new)');
+    expect(viewAllOpens(row('manual', { name: 'Maths week', slug: 'maths-week' }), none)).toBe(
+      'The Maths week list (/browse/row/maths-week)',
+    );
+    expect(viewAllOpens(row('continue_watching'), none)).toBeNull();
+  });
+
+  it('notes a duplicate name without refusing it, and names the link ending', () => {
+    const c = {
+      ...base,
+      rows: [
+        { ...base.rows[1]!, id: 'a', type: 'manual', name: 'Maths', slug: 'maths' },
+        { ...base.rows[1]!, id: 'b', type: 'manual', name: 'maths ', slug: 'maths-2' },
+        { ...base.rows[1]!, id: 'c', type: 'newest', name: 'New', slug: null },
+        { ...base.rows[1]!, id: 'd', type: 'smart', name: 'New', slug: null },
+      ],
+    } as never;
+    expect(duplicateNameNote(c, 'b')).toBe(
+      'Another section is called maths. That is allowed. This link will end in -2.',
+    );
+    expect(duplicateNameNote(c, 'a')).toBe('Another section is called Maths. That is allowed.');
+    expect(duplicateNameNote(c, 'd')).toBe('Another section is called New. That is allowed.');
+    expect(duplicateNameNote({ ...base, rows: [base.rows[1]!] }, base.rows[1]!.id)).toBeNull();
+  });
+
+  it('gives every addable type a one line meaning', () => {
+    for (const t of ['manual', 'category', 'newest', 'series', 'smart', 'each_category', 'all_series'] as const)
+      expect(ADD_TYPE_HINTS[t].length).toBeGreaterThan(10);
   });
 });
