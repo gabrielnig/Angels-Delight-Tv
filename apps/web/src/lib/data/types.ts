@@ -112,7 +112,8 @@ export interface HeroSlot {
 export interface HomeRow {
   id: string;
   title: string;
-  seeAllHref?: string;
+  /** Where View all goes. Absent means no link (M41-S08). */
+  viewAll?: { href: string; external: boolean };
   items: CatalogItem[];
 }
 

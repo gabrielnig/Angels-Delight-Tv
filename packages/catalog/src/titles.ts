@@ -160,6 +160,8 @@ export async function fetchCards(
 
 export interface BrowseInput {
   categorySlug?: string;
+  /** Only series, or only standalone videos. */
+  kind?: TitleKind;
   sort: BrowseSort;
   duration?: DurationBucket;
   limit?: number;
@@ -184,9 +186,10 @@ function isKeysetCursor(value: unknown): value is KeysetCursor {
 /** The category, duration and kind filters of a browse, shared by the page query and the count. Null when the category is unknown or hidden. */
 async function browseFilters(
   tx: Tx,
-  input: Pick<BrowseInput, 'categorySlug' | 'duration' | 'sort'>,
+  input: Pick<BrowseInput, 'categorySlug' | 'duration' | 'sort' | 'kind'>,
 ): Promise<SQL[] | null> {
   const filters: SQL[] = [];
+  if (input.kind !== undefined) filters.push(sql`t.kind = ${input.kind}`);
   if (input.categorySlug !== undefined) {
     const found = rowsOf<{ id: string }>(
       await tx.execute(
@@ -212,7 +215,7 @@ export async function countTitles(
   tx: Tx,
   ctx: CatalogContext,
   audience: Audience,
-  input: Pick<BrowseInput, 'categorySlug' | 'duration' | 'sort'>,
+  input: Pick<BrowseInput, 'categorySlug' | 'duration' | 'sort' | 'kind'>,
 ): Promise<number> {
   const filters = await browseFilters(tx, input);
   if (filters === null) return 0;
@@ -462,9 +465,10 @@ export async function popularTitles(
   tx: Tx,
   ctx: CatalogContext,
   audience: Audience,
-  options: { limit: number; fallbackToNewest?: boolean },
+  options: { limit: number; fallbackToNewest?: boolean; windowDays?: number },
 ): Promise<TitleCard[]> {
   const now = ctx.now();
+  const windowDays = options.windowDays ?? POPULAR_WINDOW_DAYS;
   const limit = Math.min(Math.max(options.limit, 1), MAX_PAGE_SIZE);
   const result = await tx.execute(sql`
     WITH ${titlesCte(audience, now, false)}
@@ -472,7 +476,7 @@ export async function popularTitles(
     FROM titles t ${POSTER_JOIN}
     LEFT JOIN LATERAL (
       SELECT sum(d.views) AS views FROM video_daily_stats d
-      WHERE d.video_id = t.id AND d.day >= (${now}::timestamptz)::date - ${POPULAR_WINDOW_DAYS}::int
+      WHERE d.video_id = t.id AND d.day >= (${now}::timestamptz)::date - ${windowDays}::int
     ) pv ON true
     WHERE t.kind = 'video'
     ORDER BY coalesce(pv.views, 0) DESC, t.sort_at DESC, t.id DESC
@@ -481,6 +485,27 @@ export async function popularTitles(
   const popular = rows.filter((row) => Number(row.recent_views) > 0);
   const chosen = popular.length > 0 || !options.fallbackToNewest ? popular : rows;
   return chosen.map((row) => toCard(row, ctx.mediaOrigin));
+}
+
+export interface CategoryCount extends CategoryDto {
+  /** Live titles in the category for this audience. */
+  count: number;
+}
+
+/** Visible categories with how many live titles each holds, in curated order (M41-S05 AC3). */
+export async function categoryTitleCounts(
+  tx: Tx,
+  ctx: CatalogContext,
+  audience: Audience,
+): Promise<CategoryCount[]> {
+  const result = await tx.execute(sql`
+    WITH ${titlesCte(audience, ctx.now(), false)}
+    SELECT c.id, c.slug, c.name::text AS name, c.description,
+      (SELECT count(*)::int FROM titles t WHERE c.id = ANY(t.category_ids)) AS count
+    FROM categories c
+    WHERE c.is_visible
+    ORDER BY c.position, c.name`);
+  return rowsOf<CategoryCount>(result).filter((category) => category.count > 0);
 }
 
 /** True when at least one title is live for this audience. Drives the "new videos are on the way" state. */

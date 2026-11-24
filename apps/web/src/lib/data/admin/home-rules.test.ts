@@ -5,6 +5,13 @@ import {
   defaultHome,
   MAX_ROWS,
   moveRow,
+  reorderRows,
+  renameRow,
+  ROW_TYPE_LABELS,
+  setKidsVisible,
+  setMinItems,
+  setViewAll,
+  validateConfig,
   moveTitle,
   removeRow,
   resolvePreview,
@@ -109,5 +116,69 @@ describe('home rules', () => {
     const preview = resolvePreview(set.config, s.videos, s.series, false);
     expect(preview.heroFallback).toBe(false);
     expect(preview.hero.map((v) => v.id)).toEqual([pub[1]!.id]);
+  });
+
+  it('sets View all, keeping a custom link only when valid', () => {
+    const c = defaultHome();
+    const ok = setViewAll(c, 'row_newest', 'custom', 'https://example.org/p');
+    expect(ok.ok && ok.config.rows.find((r) => r.id === 'row_newest')).toMatchObject({
+      viewAllMode: 'custom',
+      viewAllUrl: 'https://example.org/p',
+    });
+    const bad = setViewAll(c, 'row_newest', 'custom', '//x.com');
+    expect(bad).toEqual({ ok: false, error: 'Use a path on this site or an https link' });
+    const none = setViewAll(c, 'row_newest', 'none', null);
+    expect(none.ok && none.config.rows.find((r) => r.id === 'row_newest')?.viewAllMode).toBe('none');
+  });
+  it('sets the minimum between 1 and 20', () => {
+    const c = defaultHome();
+    expect(setMinItems(c, 'row_smart', 0).ok).toBe(false);
+    expect(setMinItems(c, 'row_smart', 21).ok).toBe(false);
+    const ok = setMinItems(c, 'row_smart', 6);
+    expect(ok.ok && ok.config.rows.find((r) => r.id === 'row_smart')?.minItems).toBe(6);
+  });
+  it('switches kids visibility', () => {
+    const c = setKidsVisible(defaultHome(), 'row_newest', false);
+    expect(c.rows.find((r) => r.id === 'row_newest')?.kidsVisible).toBe(false);
+  });
+  it('gives a new manual list a slug, unique, kept on rename', () => {
+    const a = addRow(defaultHome(), 'manual', 'Farm tips', null, () => 'm1');
+    if (!a.ok) throw new Error();
+    const b = addRow(a.config, 'manual', 'Farm tips', null, () => 'm2');
+    if (!b.ok) throw new Error();
+    expect(b.config.rows.filter((r) => r.type === 'manual').map((r) => r.slug)).toEqual(['farm-tips', 'farm-tips-2']);
+    const renamed = renameRow(b.config, 'm1', 'Better name');
+    expect(renamed.ok && renamed.config.rows.find((r) => r.id === 'm1')?.slug).toBe('farm-tips');
+  });
+  it('adds the two automatic types with their default minimums', () => {
+    const e = addRow(defaultHome(), 'each_category', 'Browse by subject', null, () => 'e1');
+    const s = e.ok ? addRow(e.config, 'all_series', 'Series', null, () => 's1') : e;
+    if (!s.ok) throw new Error();
+    expect(s.config.rows.slice(-2).map((r) => [r.type, r.minItems])).toEqual([
+      ['each_category', 4],
+      ['all_series', 2],
+    ]);
+  });
+  it('reorders a row to a position and says where it went', () => {
+    const c = defaultHome();
+    const moved = reorderRows(c, 'row_smart', 0);
+    expect(moved.rows[0]!.id).toBe('row_smart');
+    expect(reorderRows(c, 'row_smart', 99).rows.at(-1)!.id).toBe('row_smart');
+    expect(reorderRows(c, 'missing', 0)).toBe(c);
+  });
+  it('uses the story words for names and the limit', () => {
+    expect(addRow(defaultHome(), 'manual', ' ', null, () => 'x')).toEqual({
+      ok: false,
+      error: 'Give the section a name',
+    });
+    expect(validateConfig({ heroIds: [], rows: [{ ...defaultHome().rows[0]!, name: ' ' }] })).toBe(
+      'Give the section a name',
+    );
+  });
+  it('labels the new types', () => {
+    expect(ROW_TYPE_LABELS.smart).toBe('Trending');
+    expect(ROW_TYPE_LABELS.each_category).toBe('Each category (automatic)');
+    expect(ROW_TYPE_LABELS.all_series).toBe('All series (automatic)');
+    expect(ROW_TYPE_LABELS.continue_watching).toBe('Continue learning');
   });
 });

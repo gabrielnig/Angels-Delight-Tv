@@ -12,7 +12,8 @@ type Props =
   | {
       title: string;
       kind: 'list';
-      seeAllHref?: string;
+      viewAllHref?: string;
+      viewAllLabel?: string;
       inList: string[];
       load: () => Promise<CatalogItem[]>;
     }
@@ -45,7 +46,7 @@ export function RowError(props: Props) {
     if (list.length === 0) return null;
     const saved = new Set(props.inList);
     return (
-      <Row title={props.title} seeAllHref={props.seeAllHref}>
+      <Row title={props.title} viewAllHref={props.viewAllHref} viewAllLabel={props.viewAllLabel}>
         {list.map((item) => (
           <CatalogCard key={itemKey(item)} item={item} inList={saved.has(itemKey(item))} />
         ))}

@@ -284,7 +284,7 @@ describe.skipIf(!process.env.TEST_DATABASE_ADMIN_URL)('home', () => {
 
       const row = home.rows.find((r) => r.kind === 'my_list');
       expect(row?.items).toHaveLength(20);
-      expect(row).toMatchObject({ seeAll: { type: 'my_list' } });
+      expect(row).toMatchObject({ viewAll: { href: '/my-list', external: false } });
     });
 
     it('starts a new profile with no personal rows', async () => {

@@ -1559,6 +1559,28 @@ Per video tri state, site default (Super admin), Admin changes it with a reason 
 - Decision: `title_scores` holds the top 60 trending and popular titles, refreshed hourly from raw view events (7 Lagos days, decay 0.8, one viewer at most 3 plays per title per day, completions add one, a series scores as its episodes). Each read filters for visibility, kids and the maturity limit. Trending needs 5 qualifying titles and 50 plays, Top 10 needs 10 titles, Popular needs 3 titles with 5 views, and a snapshot older than 3 hours counts as empty.
 - Options: compute per request, always fill the row with newest titles, a per profile snapshot.
 - Why: honest rows on a new site, no per profile data in the snapshot, and one cheap read per audience.
+## D-288 Home sections carry a slug, a View all setting and a minimum, and there are two automatic row kinds (lane L2, L2-D07, L2-D09)
+- Decision: migrations 0042 and 0043 add the row kinds `each_category` and `all_series`, and on `rows` a `slug`, `view_all_mode` (auto, custom, none), `view_all_url`, `min_items` (1 to 20), plus hero text columns on `row_items`. A custom link is a path on this site or an https link of at most 300 characters. Each category rows are expanded at read time from the visible categories with enough live titles, skipping categories that have their own row, up to `autoCategoryMax`.
+- Options: seed one row per category at apply time, query parameters on /browse.
+- Why: seeded rows go stale as content arrives, and a read time expansion keeps Home complete without admin work. The label and the target are separate so an admin can point a row anywhere safe.
+- Reversible: yes, additive columns.
+
+## D-289 Trending hides under four titles with views and never copies New (lane L2, L2-D10)
+- Decision: a section with fewer live titles than `min_items` is hidden. Trending counts views over `trendingWindowDays` (7) and has a default minimum of 4. The old fallback to the newest titles is not used on Home.
+- Options: fall back to New, keep a one title Trending row.
+- Why: a Trending row that repeats New looks broken, and a row of one title is not a trend.
+- Reversible: yes, by the row minimum or the rule.
+
+## D-290 Category slugs cannot be new, trending, series or row (lane L2, L2-D08)
+- Decision: a check on `categories.slug` refuses the four words the /browse list pages own, and migration 0043 renames any existing category that has one by adding -videos.
+- Options: put list pages under /lists, use query parameters.
+- Why: static segments under /browse keep one mental model, and a reserved word list stops a category from hiding a list page.
+- Reversible: not trivially once the list pages are indexed. Moving them needs redirects.
+
+## D-291 The fixture admin and the real admin keep separate rule copies with a parity test (lane L2)
+- Decision: view all, minimum, name and limit rules exist in `apps/web/src/lib/data/admin/home-rules.ts` and `packages/catalog/src/admin/home.ts`. The URL and slug helpers are shared through `@ad/shared/view-all`, and `home-parity.test.ts` checks the validation and default minimums agree.
+- Options: delete the fixture admin, move every rule to one package.
+- Why: the fixture admin is still needed for UI work without a database, and moving it would touch every admin screen in this lane.
 - Reversible: yes.
 
 ## D-288 Search misses pruning rides the nightly rollup job (lane L6)

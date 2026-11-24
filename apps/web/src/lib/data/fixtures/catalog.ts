@@ -36,8 +36,15 @@ const matchesLength = (seconds: number, length: BrowseQuery['length']) => {
 
 const seconds = (item: CatalogItem) => (item.kind === 'video' ? item.durationSeconds : item.episodeCount * 300);
 
-function row(id: string, title: string, items: CatalogItem[], seeAllHref?: string): HomeRow | null {
-  return items.length > 0 ? { id, title, items: items.slice(0, 10), seeAllHref } : null;
+function row(id: string, title: string, items: CatalogItem[], viewAllHref?: string): HomeRow | null {
+  return items.length > 0
+    ? {
+        id,
+        title,
+        items: items.slice(0, 10),
+        viewAll: viewAllHref ? { href: viewAllHref, external: false } : undefined,
+      }
+    : null;
 }
 
 function fixturePlay(progress: Progress | undefined): TitleDetail['play'] {

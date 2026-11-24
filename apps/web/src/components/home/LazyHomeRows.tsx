@@ -18,12 +18,14 @@ export function LazyHomeRows({
   initialCursor,
   inList,
   profileId,
+  viewAllLabel,
   load,
   retryDelaysMs = RETRY_DELAYS_MS,
 }: {
   initialCursor: string;
   inList: string[];
   profileId: string;
+  viewAllLabel?: string;
   load: (cursor: string) => Promise<HomeRowsPage>;
   /** Waits before each automatic retry of a failed page. After the last one only the button remains. */
   retryDelaysMs?: number[];
@@ -84,7 +86,13 @@ export function LazyHomeRows({
   return (
     <>
       {rows.map((row) => (
-        <Row key={row.id} title={row.title} seeAllHref={row.seeAllHref}>
+        <Row
+          key={row.id}
+          title={row.title}
+          viewAllHref={row.viewAll?.href}
+          viewAllExternal={row.viewAll?.external}
+          viewAllLabel={viewAllLabel}
+        >
           {row.items.map((item) => (
             <CatalogCard key={itemKey(item)} item={item} inList={saved.has(itemKey(item))} />
           ))}

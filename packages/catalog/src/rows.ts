@@ -1,8 +1,8 @@
 import { sql } from 'drizzle-orm';
-import type { RowKind } from '@ad/shared';
+import { resolveViewAll, type RowKind, type ViewAllMode, type ViewAllTarget } from '@ad/shared';
 import { fetchHeroArtwork } from './detail';
 import { rowsOf } from './sql';
-import { fetchCards, listTitles, popularTitles, type TitleCard } from './titles';
+import { categoryTitleCounts, fetchCards, listTitles, popularTitles, type TitleCard } from './titles';
 import { mostLikedTitles, trendingTitles } from './trending';
 import type { Audience, CatalogContext, Tx } from './types';
 
@@ -13,23 +13,40 @@ export interface RowDescriptor {
   categorySlug: string | null;
   /** Set on a curated row that follows one series. */
   seriesId: string | null;
+  seriesSlug: string | null;
+  /** Address of a manual row's list page (/browse/row/{slug}). */
+  slug: string | null;
+  viewAllMode: ViewAllMode;
+  viewAllUrl: string | null;
+  /** Fewer live titles than this hides the row. */
+  minItems: number;
   maxItems: number;
 }
 
-export type SeeAll = { type: 'category'; slug: string } | { type: 'browse' } | { type: 'my_list' };
-
 export interface ResolvedRow {
   cards: TitleCard[];
-  seeAll: SeeAll | null;
+  /** Where View all goes, or null for none (M41-S08). */
+  viewAll: ViewAllTarget | null;
 }
+
+/** Server rules the home rows need. Defaults live in ViewerRules. */
+export interface RowRules {
+  trendingWindowDays: number;
+  autoCategoryMax: number;
+}
+
+const DEFAULT_ROW_RULES: RowRules = { trendingWindowDays: 7, autoCategoryMax: 6 };
 
 const HERO_MAX_ITEMS = 5;
 
 /** Published rows in curated order. A kids audience only gets rows the editor marked kids visible. */
 export async function listPublishedRows(tx: Tx, audience: Audience): Promise<RowDescriptor[]> {
   const result = await tx.execute(sql`
-    SELECT r.id, r.title, r.kind, c.slug AS category_slug, r.series_id, r.max_items
-    FROM rows r LEFT JOIN categories c ON c.id = r.category_id AND c.is_visible
+    SELECT r.id, r.title, r.kind, c.slug AS category_slug, r.series_id, sr.slug AS series_slug, r.slug,
+      r.view_all_mode, r.view_all_url, r.min_items, r.max_items
+    FROM rows r
+    LEFT JOIN categories c ON c.id = r.category_id AND c.is_visible
+    LEFT JOIN series sr ON sr.id = r.series_id
     WHERE r.is_published ${audience.kids ? sql`AND r.kids_visible` : sql``}
     ORDER BY r.position`);
   return rowsOf<{
@@ -38,6 +55,11 @@ export async function listPublishedRows(tx: Tx, audience: Audience): Promise<Row
     kind: RowKind;
     category_slug: string | null;
     series_id: string | null;
+    series_slug: string | null;
+    slug: string | null;
+    view_all_mode: ViewAllMode;
+    view_all_url: string | null;
+    min_items: number;
     max_items: number;
   }>(result).map((row) => ({
     id: row.id,
@@ -45,8 +67,57 @@ export async function listPublishedRows(tx: Tx, audience: Audience): Promise<Row
     kind: row.kind,
     categorySlug: row.category_slug,
     seriesId: row.series_id,
+    seriesSlug: row.series_slug,
+    slug: row.slug,
+    viewAllMode: row.view_all_mode,
+    viewAllUrl: row.view_all_url,
+    minItems: row.min_items,
     maxItems: row.max_items,
   }));
+}
+
+/**
+ * Turns Browse by subject rows into one category row for each visible category that has enough live titles, in
+ * category order, skipping categories that already have their own row and stopping at the cap (M41-S05 AC3).
+ */
+export async function expandRows(
+  tx: Tx,
+  ctx: CatalogContext,
+  audience: Audience,
+  descriptors: readonly RowDescriptor[],
+  rules: Pick<RowRules, 'autoCategoryMax'> = DEFAULT_ROW_RULES,
+): Promise<RowDescriptor[]> {
+  if (!descriptors.some((row) => row.kind === 'each_category')) return [...descriptors];
+  const taken = new Set(
+    descriptors.flatMap((row) => (row.kind === 'category' && row.categorySlug ? [row.categorySlug] : [])),
+  );
+  const counts = await categoryTitleCounts(tx, ctx, audience);
+  let made = 0;
+  const out: RowDescriptor[] = [];
+  for (const row of descriptors) {
+    if (row.kind !== 'each_category') {
+      out.push(row);
+      continue;
+    }
+    for (const category of counts) {
+      if (made >= rules.autoCategoryMax) break;
+      if (taken.has(category.slug) || category.count < row.minItems) continue;
+      taken.add(category.slug);
+      made += 1;
+      out.push({
+        ...row,
+        id: `${row.id}:${category.slug}`,
+        title: category.name,
+        kind: 'category',
+        categorySlug: category.slug,
+        slug: null,
+        viewAllMode: 'auto',
+        viewAllUrl: null,
+        minItems: 1,
+      });
+    }
+  }
+  return out;
 }
 
 /** Row kinds that exist at all, published or not. A personal row is added by default only when the editor has none. */
@@ -79,61 +150,72 @@ async function curatedRefs(tx: Tx, rowId: string, limit: number) {
   );
 }
 
-/** The cards of one catalog row (curated, category, recently added or popular), already filtered for the audience. */
+/** The cards of one catalog row (curated, category, recently added, popular or all series), already filtered for the audience. */
 export async function resolveRow(
   tx: Tx,
   ctx: CatalogContext,
   audience: Audience,
   row: RowDescriptor,
+  rules: RowRules = DEFAULT_ROW_RULES,
 ): Promise<ResolvedRow> {
+  const cards = await resolveCards(tx, ctx, audience, row, rules);
+  // Under its minimum a row is hidden, and Trending never borrows titles from New (M41-S05 AC2).
+  const shown = cards.length >= Math.max(1, row.minItems) ? cards : [];
+  const viewAll = resolveViewAll({
+    kind: row.kind,
+    mode: row.viewAllMode,
+    url: row.viewAllUrl,
+    categorySlug: row.categorySlug,
+    seriesSlug: row.seriesSlug,
+    rowSlug: row.slug,
+  });
+  return { cards: shown, viewAll: shown.length > 0 ? viewAll : null };
+}
+
+async function resolveCards(
+  tx: Tx,
+  ctx: CatalogContext,
+  audience: Audience,
+  row: RowDescriptor,
+  rules: RowRules,
+): Promise<TitleCard[]> {
   switch (row.kind) {
     case 'curated': {
       if (row.seriesId) {
         // Episodes are not standalone titles, so their cards come from the episode aware query.
         const refs = await seriesRefs(tx, row.seriesId, row.maxItems);
-        return {
-          cards: await fetchCards(tx, ctx, audience, refs, { includeEpisodes: true }),
-          seeAll: null,
-        };
+        return fetchCards(tx, ctx, audience, refs, { includeEpisodes: true });
       }
-      const refs = await curatedRefs(tx, row.id, row.maxItems);
-      return { cards: await fetchCards(tx, ctx, audience, refs), seeAll: null };
+      return fetchCards(tx, ctx, audience, await curatedRefs(tx, row.id, row.maxItems));
     }
     case 'category': {
-      if (row.categorySlug === null) return { cards: [], seeAll: null };
+      if (row.categorySlug === null) return [];
       const page = await listTitles(tx, ctx, audience, {
         categorySlug: row.categorySlug,
         sort: 'newest',
         limit: row.maxItems,
       });
-      return {
-        cards: page.items,
-        seeAll: page.nextCursor ? { type: 'category', slug: row.categorySlug } : null,
-      };
+      return page.items;
     }
-    case 'recently_added': {
-      const page = await listTitles(tx, ctx, audience, { sort: 'newest', limit: row.maxItems });
-      return { cards: page.items, seeAll: page.nextCursor ? { type: 'browse' } : null };
-    }
+    case 'recently_added':
+      return (await listTitles(tx, ctx, audience, { sort: 'newest', limit: row.maxItems })).items;
+    case 'all_series':
+      return (
+        await listTitles(tx, ctx, audience, { sort: 'newest', kind: 'series', limit: row.maxItems })
+      ).items;
     case 'popular':
-      return {
-        cards: await popularTitles(tx, ctx, audience, { limit: row.maxItems }),
-        seeAll: null,
-      };
+      return popularTitles(tx, ctx, audience, {
+        limit: row.maxItems,
+        windowDays: rules.trendingWindowDays,
+      });
     case 'trending':
-      return {
-        cards: await trendingTitles(tx, ctx, audience, { kind: 'trending', limit: row.maxItems }),
-        seeAll: null,
-      };
+      return trendingTitles(tx, ctx, audience, { kind: 'trending', limit: row.maxItems });
     case 'top_ten':
-      return {
-        cards: await trendingTitles(tx, ctx, audience, { kind: 'top_ten', limit: 10 }),
-        seeAll: null,
-      };
+      return trendingTitles(tx, ctx, audience, { kind: 'top_ten', limit: 10 });
     case 'most_liked':
-      return { cards: await mostLikedTitles(tx, ctx, audience, row.maxItems), seeAll: null };
+      return mostLikedTitles(tx, ctx, audience, row.maxItems);
     default:
-      return { cards: [], seeAll: null };
+      return [];
   }
 }
 

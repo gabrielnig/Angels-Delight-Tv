@@ -1,7 +1,8 @@
 import { withAccount } from '@ad/db';
-import type { Actor, RowKind } from '@ad/shared';
+import { resolveViewAll, type Actor, type RowKind, type ViewAllTarget } from '@ad/shared';
 import {
   configuredRowKinds,
+  expandRows,
   decodeCursor,
   encodeCursor,
   fetchHeroArtwork,
@@ -12,7 +13,6 @@ import {
   type ArtworkDto,
   type Audience,
   type RowDescriptor,
-  type SeeAll,
 } from '@ad/catalog';
 import { annotateCards, type TitleCardDto } from './annotate';
 import { catalogContext, rulesOf, shared, type ViewerContext } from './context';
@@ -33,7 +33,7 @@ export interface ContinueWatchingRow {
   kind: 'continue_watching';
   title: string;
   items: ContinueWatchingItem[];
-  seeAll: null;
+  viewAll: null;
 }
 
 export interface TitleRow {
@@ -41,7 +41,8 @@ export interface TitleRow {
   kind: Exclude<RowKind, 'continue_watching' | 'hero'>;
   title: string;
   items: TitleCardDto[];
-  seeAll: SeeAll | null;
+  /** Where View all goes, or null for no link (M41-S08). */
+  viewAll: ViewAllTarget | null;
 }
 
 export type HomeRowDto = ContinueWatchingRow | TitleRow;
@@ -114,8 +115,12 @@ async function buildHome(
   const rules = rulesOf(ctx);
   const offset = cursor === undefined ? 0 : decodeCursor(cursor, isOffsetCursor).o;
   const catalog = catalogContext(ctx);
-  const descriptors = await shared(ctx, ['home-rows', audience.kids], () =>
-    listPublishedRows(tx, audience),
+  const rowRules = {
+    trendingWindowDays: rules.trendingWindowDays,
+    autoCategoryMax: rules.autoCategoryMax,
+  };
+  const descriptors = await shared(ctx, ['home-rows', audience.kids], async () =>
+    expandRows(tx, catalog, audience, await listPublishedRows(tx, audience), rowRules),
   );
   const configured = profile ? await configuredRowKinds(tx) : new Set<string>();
 
@@ -146,7 +151,7 @@ async function buildHome(
       continue;
     }
     const resolved = await shared(ctx, ['home-row', audience.kids, descriptor.id], () =>
-      resolveRow(tx, catalog, audience, descriptor),
+      resolveRow(tx, catalog, audience, descriptor, rowRules),
     );
     if (resolved.cards.length === 0) continue;
     rows.push({
@@ -154,7 +159,7 @@ async function buildHome(
       kind: descriptor.kind as TitleRow['kind'],
       title: descriptor.title,
       items: await annotateCards(tx, profile?.id ?? null, resolved.cards),
-      seeAll: resolved.seeAll,
+      viewAll: resolved.viewAll,
     });
   }
 
@@ -187,7 +192,7 @@ async function resolvePersonalRow(
       kind,
       title: descriptor?.title ?? 'Continue Watching',
       items,
-      seeAll: null,
+      viewAll: null,
     };
   }
   const page = await loadMyList(tx, ctx, profile, { limit: rules.personalRowItems });
@@ -197,7 +202,11 @@ async function resolvePersonalRow(
     kind,
     title: descriptor?.title ?? 'My List',
     items: page.items.map((item) => item.card),
-    seeAll: page.nextCursor ? { type: 'my_list' } : null,
+    viewAll: resolveViewAll({
+      kind: 'my_list',
+      mode: descriptor?.viewAllMode ?? 'auto',
+      url: descriptor?.viewAllUrl ?? null,
+    }),
   };
 }
 

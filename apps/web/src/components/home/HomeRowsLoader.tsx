@@ -8,6 +8,7 @@ export function HomeRowsLoader(props: {
   initialCursor: string;
   inList: string[];
   profileId: string;
+  viewAllLabel?: string;
 }) {
   return <LazyHomeRows {...props} load={loadMoreHomeRowsAction} />;
 }
