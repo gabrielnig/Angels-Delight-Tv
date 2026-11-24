@@ -1814,3 +1814,27 @@ Decision: `video.preview` catches every error and records `failed` or `skipped` 
 - Options: leave keys on kids only and filter after reading (rejected, leaks counts and costs a query); read settings on every request.
 - Why: the old key was a real leak between audience tiers once ranks existed, and a 60 second memo matches the catalog cache window.
 - Reversible: yes.
+
+## D-329 The donate checkout calls Paystack first and stores the row after it answers (lane L9)
+- Decision: `POST /api/donate/checkout` generates the reference, calls Paystack Initialize, and only then inserts the pending donation through `donation_create`. The browser sends a one time `attemptId`; the row stores it as `attempt_key` with the hosted page address (`checkout_url`), so a double tap or a retry gets the first page back and a second row is never made. Migration 0053 adds both columns and three SECURITY DEFINER functions (`donation_create`, `donation_by_attempt`, `donation_public_status`), so the web role still has no insert or update right on `donations`.
+- Options: Insert a pending row, then call Paystack and delete or mark it on failure; call Paystack first and store after.
+- Why: A failed start then leaves nothing behind and needs no cleanup job. The cost is that two concurrent taps can open two unpaid Paystack transactions, of which only the first is ever shown to the donor, so the extra one cannot be paid by accident.
+- Reversible: Yes. The columns are additive.
+
+## D-330 The thank you page trusts only our database for "succeeded" and uses Paystack only to tell cancelled from confirming (lane L9)
+- Decision: `GET /api/donate/status` returns `succeeded` only when the donation row says so, and the verified webhook is what writes it. For a row still pending it asks Paystack (amount and currency from our own row, never from the request) and maps `failed` to failed and `abandoned` to cancelled; a paid answer still shows as "confirming" until the webhook lands. Amount, kind and reference are returned only with the signed receipt token (HMAC SHA256 over `donate-receipt:v1:<reference>`, canonical base64url, constant time compare); without it only the state is returned. The token travels in the Paystack callback address, and the page sends no referrer.
+- Options: Show success when Paystack says paid; show success only from our row; skip the Paystack call.
+- Why: Paystack documents no cancel redirect parameter (checked 2026-11-24), so a donor who closes the page lands on the callback with the gift still pending. Asking verify is the only way to tell that from a slow webhook. Treating a paid verify as "confirming" keeps one writer of the paid state.
+- Reversible: Yes.
+
+## D-331 Card testing protection uses rate limits only, no Turnstile on the donate form (lane L9)
+- Decision: Checkout allows 10 attempts per 15 minutes per truncated address and 5 per hour per keyed hash of the donor email, and fails closed (429) when the limiter store is down. Status allows 60 per 5 minutes per address and 20 per 5 minutes per reference for the Paystack call. Turnstile is not added to this form.
+- Options: Rate limits only; rate limits plus Turnstile after repeated hits.
+- Why: Turnstile loads a script from another origin, which would change the CSP and break the rule that donate pages load nothing third party (R25). The attacker's target, card testing, happens on Paystack's page, which has its own protection. Reversible by adding the widget behind the existing `useTurnstile` hook and a CSP change.
+- Reversible: Yes.
+
+## D-332 USD limits, monthly refusal and receipt wording until later slices (lane L9)
+- Decision: There is no setting for USD bounds yet, so USD gifts are limited to USD 1 to USD 50,000 in code (`USD_LIMITS` in `server/donations/runtime.ts`). Monthly giving is refused by checkout (400 `monthly`) and never offered by the form until slice 10, even when its switch is on. `receipt_sent_at` records that the receipt was queued in the outbox, not that it was delivered. The receipt names the organisation from `donate.org_name`, falling back to the platform name so an empty setting never blocks a receipt.
+- Options: Add USD min and max settings now; fixed constants; block USD until a setting exists.
+- Why: USD is a Could item behind its own switch, so constants are enough until slice 13. Queueing in the same transaction as the status change is the property that matters for correctness.
+- Reversible: Yes.
