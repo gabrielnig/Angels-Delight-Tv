@@ -7,17 +7,27 @@ export interface VideoSnapshot {
   publishState: VideoRecord['publishState'];
   suitability: Suitability | null;
   categoryIds: string[];
+  captionsEnabled: boolean | null;
+  captionsOffReason: string | null;
 }
 
 export type UndoStep =
   | { kind: 'restore'; ids: string[] }
-  | { kind: 'bulk'; action: BulkAction; ids: string[]; expectSuitability?: Suitability };
+  | {
+      kind: 'bulk';
+      action: BulkAction;
+      ids: string[];
+      expectSuitability?: Suitability;
+      expectCaptions?: boolean | null;
+    };
 
 export function snapshotOf(video: VideoRecord): VideoSnapshot {
   return {
     publishState: video.publishState,
     suitability: video.suitability,
     categoryIds: [...video.categoryIds],
+    captionsEnabled: video.captionsEnabled ?? null,
+    captionsOffReason: video.captionsOffReason ?? null,
   };
 }
 
@@ -27,6 +37,7 @@ const PERMANENT = [
   /do not have permission/,
   /^Only an admin/,
   /^Pick categories/,
+  /^Give a reason/,
 ];
 
 /** Network and server hiccups can be retried. Permission, not ready and missing items cannot. */
@@ -89,6 +100,29 @@ export function buildUndo(
       }
       break;
     }
+    case 'captions_available': {
+      for (const id of known) {
+        const previous = before[id]!.captionsEnabled;
+        if (previous === action.value) continue;
+        const reason = previous === false ? (before[id]!.captionsOffReason ?? undefined) : undefined;
+        const last = steps.find(
+          (s) =>
+            s.kind === 'bulk' &&
+            s.action.type === 'captions_available' &&
+            s.action.value === previous &&
+            s.action.reason === reason,
+        );
+        if (last) last.ids.push(id);
+        else
+          steps.push({
+            kind: 'bulk',
+            action: { type: 'captions_available', value: previous, ...(reason ? { reason } : {}) },
+            ids: [id],
+            expectCaptions: action.value,
+          });
+      }
+      break;
+    }
   }
   if (steps.length === 0) return undefined;
   return { label: undoLabel(action), payload: steps };
@@ -108,6 +142,8 @@ function undoLabel(action: BulkAction): string {
       return 'Remove from category';
     case 'suitability':
       return 'Set suitability';
+    case 'captions_available':
+      return 'Captions for viewers';
   }
 }
 
@@ -141,6 +177,9 @@ export function planUndo(undo: BulkUndo, current: Record<string, VideoSnapshot>)
       case 'suitability':
         ids = step.ids.filter((id) => current[id]?.suitability === step.expectSuitability);
         break;
+      case 'captions_available':
+        ids = step.ids.filter((id) => current[id] !== undefined && current[id]!.captionsEnabled === step.expectCaptions);
+        break;
       default:
         ids = step.ids;
     }
@@ -152,7 +191,7 @@ export function planUndo(undo: BulkUndo, current: Record<string, VideoSnapshot>)
 /** The parts of the video service a bulk run needs. */
 export interface BulkVideoService {
   get(actor: AdminActor, id: string): Promise<VideoRecord>;
-  bulk(actor: AdminActor, ids: string[], action: BulkAction): Promise<BulkResult>;
+  bulk(actor: AdminActor, ids: string[], action: BulkAction, bulkId?: string): Promise<BulkResult>;
   restore(actor: AdminActor, id: string): Promise<{ ok: boolean; error?: string }>;
 }
 
@@ -178,7 +217,7 @@ export async function runVideoBulk(
   bulkId: string,
 ): Promise<BulkResult> {
   const before = action.type === 'trash' ? {} : await snapshots(service, actor, ids);
-  const result = await service.bulk(actor, ids, action);
+  const result = await service.bulk(actor, ids, action, bulkId);
   return {
     ...result,
     failed: markRetryable(result.failed),

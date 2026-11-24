@@ -182,6 +182,31 @@ describe.skipIf(!integrationEnabled())('admin videos', () => {
     expect((await getAdminVideo(ctx, editor, a.id)).suitability).toBe(before);
   });
 
+  it('bulk captions availability is admin only, per id, and writes the bulk id on each audit row', async () => {
+    const a = await seedVideo(t.setup, { title: 'Captions bulk a' });
+    const ghost = uuidv7();
+    const denied = await bulkAdminVideos(ctx, editor, [a.id], { type: 'captions_available', value: true });
+    expect(denied.succeeded).toEqual([]);
+    expect(denied.failed[0]?.reason).toBe('Only an Admin can change this.');
+    const done = await bulkAdminVideos(
+      ctx,
+      admin,
+      [a.id, ghost],
+      { type: 'captions_available', value: false, reason: 'No spoken words' },
+      'bulk-123',
+    );
+    expect(done.succeeded).toEqual([a.id]);
+    expect(done.failed.map((f) => f.id)).toEqual([ghost]);
+    const row = await t.setup.execute(
+      sql`select captions_enabled, captions_off_reason from videos where id = ${a.id}`,
+    );
+    expect(row.rows[0]).toMatchObject({ captions_enabled: false, captions_off_reason: 'No spoken words' });
+    const audit = await t.setup.execute(
+      sql`select metadata from audit_log where target_id = ${a.id} and action = 'video.captions_availability'`,
+    );
+    expect(JSON.stringify(audit.rows[0])).toContain('bulk-123');
+  });
+
   it('bulk remove category removes only where present, skips the rest and audits each removal', async () => {
     const cat = await seedCategory(t.setup, 'Remove me');
     const withCat = await seedVideo(t.setup, { title: 'Has category' });

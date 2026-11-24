@@ -82,9 +82,9 @@ export const realVideoService: VideoService = {
     }
     return toRecord(actor, await updateAdminVideo(ctx, who, id, details));
   },
-  async bulk(actor, ids, action) {
+  async bulk(actor, ids, action, bulkId) {
     need(actor, 'admin.access');
-    return bulkAdminVideos(await context(), catalogActor(actor), ids, action);
+    return bulkAdminVideos(await context(), catalogActor(actor), ids, action, bulkId);
   },
   async publish(actor, id, request) {
     if (!can(actor.role, 'video.publish'))

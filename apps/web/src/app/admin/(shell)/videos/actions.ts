@@ -109,5 +109,7 @@ function bulkLabel(action: BulkAction): string {
       return 'Remove from category';
     case 'suitability':
       return 'Set suitability';
+    case 'captions_available':
+      return 'Captions for viewers';
   }
 }

@@ -1,3 +1,4 @@
+import { setCaptionsAvailabilityMany } from './captions-availability';
 import { and, eq, sql } from 'drizzle-orm';
 import { assets, categories, videoCategories, videos, withAccount } from '@ad/db';
 import { writeAudit } from '../audit';
@@ -684,7 +685,8 @@ export type BulkAction =
   | { type: 'trash' }
   | { type: 'category'; categoryId: string }
   | { type: 'remove_category'; categoryId: string }
-  | { type: 'suitability'; value: Suitability };
+  | { type: 'suitability'; value: Suitability }
+  | { type: 'captions_available'; value: boolean | null; reason?: string };
 
 /**
  * Sets suitability on every selected video in one transaction (M35-S04 AC3). If any id cannot be updated
@@ -752,6 +754,7 @@ export async function bulkAdminVideos(
   actor: Actor,
   ids: readonly string[],
   action: BulkAction,
+  bulkId?: string,
 ): Promise<{
   succeeded: string[];
   failed: Array<{ id: string; reason: string }>;
@@ -767,6 +770,12 @@ export async function bulkAdminVideos(
     return trashVideos(ctx, actor, ids);
   }
   if (action.type === 'suitability') return setSuitabilityAll(ctx, actor, ids, action.value);
+  if (action.type === 'captions_available') {
+    if (!isAdminRole(actor.role))
+      return { succeeded: [], failed: ids.map((id) => ({ id, reason: 'Only an Admin can change this.' })) };
+    const done = await setCaptionsAvailabilityMany(ctx, actor, ids, action.value, action.reason, bulkId);
+    return { succeeded: done.succeeded, failed: done.failed };
+  }
   const result = {
     succeeded: [] as string[],
     failed: [] as Array<{ id: string; reason: string }>,
