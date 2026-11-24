@@ -1,7 +1,8 @@
 // @vitest-environment jsdom
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { GUEST_INTENT_KEY } from '../../lib/guest/intent';
 import { SignInToSaveDialog } from './SignInToSaveDialog';
 
 const open = (props: Partial<React.ComponentProps<typeof SignInToSaveDialog>> = {}) => {
@@ -60,5 +61,26 @@ describe('SignInToSaveDialog (S83)', () => {
   it('renders nothing when closed', () => {
     open({ open: false });
     expect(screen.queryByRole('dialog')).toBeNull();
+  });
+
+  describe('return intent', () => {
+    beforeEach(() => localStorage.clear());
+
+    it('remembers what to save when the visitor goes to sign in', async () => {
+      open({ intent: { kind: 'my-list', itemKey: 'video:a' } });
+      const link = screen.getByRole('link', { name: 'Sign in' });
+      link.addEventListener('click', (event) => event.preventDefault());
+      await userEvent.click(link);
+      expect(JSON.parse(localStorage.getItem(GUEST_INTENT_KEY)!)).toMatchObject({
+        kind: 'my-list',
+        itemKey: 'video:a',
+      });
+    });
+
+    it('stores nothing when the visitor says Not now', async () => {
+      open({ intent: { kind: 'my-list', itemKey: 'video:a' } });
+      await userEvent.click(screen.getByRole('button', { name: 'Not now' }));
+      expect(localStorage.getItem(GUEST_INTENT_KEY)).toBeNull();
+    });
   });
 });

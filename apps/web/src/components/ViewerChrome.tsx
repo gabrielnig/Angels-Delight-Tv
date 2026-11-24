@@ -9,6 +9,7 @@ import { requestSignOut } from '../lib/pwa/sign-out';
 import { useSearchShortcut } from './browse/useSearchShortcut';
 import { ProfileIdProvider } from '../lib/profile-context';
 import { KidsExitDialog } from './KidsExitDialog';
+import { GuestIntentApplier } from './guest/GuestIntentApplier';
 import { QueueSync } from './pwa/QueueSync';
 
 export interface ChromeProps {
@@ -92,6 +93,7 @@ export function ViewerChrome({
   return (
     <ProfileIdProvider id={profileId}>
       <QueueSync profileId={profileId} />
+      <GuestIntentApplier />
       <div
         className="web-shell"
         data-kids={kids ? 'true' : undefined}

@@ -126,4 +126,10 @@ export const EN_NG = {
   'guest.kids.blocked.body':
     'It is not part of the Kids library. Turn off Kids mode to watch it, or browse videos made for children.',
   'guest.kids.browse': 'Browse',
+  'guest.myList.title': 'Keep a list that follows you',
+  'guest.myList.body':
+    'Sign in or create a free account to save videos to a list that follows you on every device. You can keep watching without one.',
+  'guest.myList.kidsBody':
+    'Ask a grown-up to sign in so you can keep a list that follows you on every device.',
+  'guest.myList.added': 'Added to My List',
 } as const satisfies CatalogShape;

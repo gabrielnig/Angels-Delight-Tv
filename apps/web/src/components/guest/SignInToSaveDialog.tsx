@@ -2,6 +2,7 @@
 
 import { msg } from '@ad/shared/messages';
 import { Button, ButtonLink, Modal } from '@ad/ui';
+import { saveIntent, type GuestIntent } from '../../lib/guest/intent';
 
 export type SaveReason = 'my-list' | 'like';
 
@@ -11,6 +12,8 @@ export interface SignInToSaveDialogProps {
   /** The page to return to after signing in or creating an account. */
   next: string;
   signUpOpen: boolean;
+  /** What to do for them after they sign in. Remembered on this device only when they follow a link. */
+  intent?: GuestIntent;
   onClose: () => void;
 }
 
@@ -20,8 +23,12 @@ export function SignInToSaveDialog({
   reason,
   next,
   signUpOpen,
+  intent,
   onClose,
 }: SignInToSaveDialogProps) {
+  const remember = () => {
+    if (intent) saveIntent(window.localStorage, intent);
+  };
   const key = reason === 'like' ? 'like' : 'myList';
   const query = `?next=${encodeURIComponent(next)}`;
   return (
@@ -36,11 +43,13 @@ export function SignInToSaveDialog({
             {msg('guest.save.notNow')}
           </Button>
           {signUpOpen ? (
-            <ButtonLink href={`/sign-up${query}`} variant="secondary">
+            <ButtonLink href={`/sign-up${query}`} variant="secondary" onClick={remember}>
               {msg('guest.save.createAccount')}
             </ButtonLink>
           ) : null}
-          <ButtonLink href={`/sign-in${query}`}>{msg('guest.save.signIn')}</ButtonLink>
+          <ButtonLink href={`/sign-in${query}`} onClick={remember}>
+            {msg('guest.save.signIn')}
+          </ButtonLink>
         </>
       }
     >

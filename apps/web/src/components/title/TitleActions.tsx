@@ -100,6 +100,7 @@ export function TitleActions({
       open={saveOpen}
       reason="my-list"
       next={guest.next}
+      intent={{ kind: 'my-list', itemKey }}
       signUpOpen={guest.signUpOpen}
       onClose={() => setSaveOpen(false)}
     />
