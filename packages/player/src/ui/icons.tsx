@@ -129,3 +129,15 @@ export const CloseIcon = (p: IconProps) => (
     <path d="M6 6l12 12M18 6L6 18" />
   </Icon>
 );
+export const SkipIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M5 5v14l10-7z" fill="currentColor" stroke="none" />
+    <path d="M19 5v14" />
+  </Icon>
+);
+export const ChaptersIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M9 6h11M9 12h11M9 18h11" />
+    <path d="M4 6h.01M4 12h.01M4 18h.01" />
+  </Icon>
+);

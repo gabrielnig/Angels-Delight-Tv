@@ -105,8 +105,10 @@ describe('control scrim and stacking order (plan 11.2 items 1 and 2)', () => {
     expect(rule('.adp-controls')).not.toMatch(/background/);
   });
 
-  it('keeps the scrim below the tile, controls and toasts', () => {
+  it('keeps the scrim below the skip button, tile, controls and toasts', () => {
     const scrim = z('.adp::after');
+    expect(scrim).toBeLessThan(z('.adp-skip'));
+    expect(z('.adp-skip')).toBeLessThan(z('.adp-controls'));
     expect(scrim).toBeLessThan(z('.adp-tile'));
     expect(z('.adp-tile')).toBeLessThan(z('.adp-controls'));
     expect(z('.adp-controls')).toBeLessThan(z('.adp-toast'));
@@ -128,5 +130,33 @@ describe('focus on the picture (L4-D16, R37)', () => {
     expect(block).toMatch(/box-shadow:\s*0 0 0 3px var\(--color-player-bg\)/);
     expect(block).toMatch(/outline-offset:\s*3px/);
     expect(css).toMatch(/forced-colors:\s*active[\s\S]*outline-color:\s*(?:Highlight|CanvasText)/);
+  });
+});
+
+describe('skip button and chapters (M43)', () => {
+  it('has a 44 px minimum height, sits 8 px above the seek hit area and fades with opacity only', () => {
+    const skip = rule('.adp-skip');
+    expect(skip).toMatch(/min-height:\s*var\(--touch-target\)/);
+    expect(skip).toMatch(/bottom:\s*7\.375rem/);
+    expect(skip).toMatch(/transition:\s*opacity/);
+    expect(skip).not.toMatch(/transition:[^;]*(transform|all)/);
+  });
+
+  it('uses tokens only', () => {
+    expect(rule('.adp-skip')).not.toMatch(/#[0-9a-fA-F]{3,6}|rgb\(/);
+  });
+
+  it('takes the Up next tile out of the way while it shows', () => {
+    expect(css).toMatch(/\.adp\[data-skip\] \.adp-tile\s*\{[^}]*bottom:/s);
+  });
+
+  it('gives the chapter label an ellipsis at 24 characters', () => {
+    const label = rule('.adp-chapter');
+    expect(label).toMatch(/max-width:\s*24ch/);
+    expect(label).toMatch(/text-overflow:\s*ellipsis/);
+  });
+
+  it('keeps the skip button on the two ring focus list', () => {
+    expect(css).toMatch(/\.adp-skip:focus-visible,[\s\S]*?\{[^}]*box-shadow:\s*0 0 0 3px var\(--color-player-bg\)/);
   });
 });

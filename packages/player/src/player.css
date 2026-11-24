@@ -190,6 +190,7 @@
 .adp-btn:focus-visible,
 .adp-bigplay:focus-visible,
 .adp-menu__row:focus-visible,
+.adp-skip:focus-visible,
 .adp-toast button:focus-visible,
 .adp-tile button:focus-visible,
 .adp-volume__slider:focus-visible {
@@ -318,6 +319,89 @@
   pointer-events: none;
 }
 
+/* Gap between chapters: a 2px cut in the rail at each chapter start. */
+.adp-seek__tick {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  margin-left: -1px;
+  background: var(--color-player-bg);
+  pointer-events: none;
+}
+
+.adp-seek__tip-chapter {
+  display: block;
+  max-width: 10rem;
+  overflow: hidden;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--text-caption);
+  color: var(--color-player-muted);
+}
+
+.adp-chapter {
+  max-width: 24ch;
+  overflow: hidden;
+  padding-inline: var(--space-2);
+  color: var(--color-player-muted);
+  font-size: var(--text-caption);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ---- skip button (M43): above the scrim, below the controls and their menus ---- */
+
+.adp-skip {
+  position: absolute;
+  right: max(var(--space-4), env(safe-area-inset-right));
+  bottom: 7.375rem;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: var(--touch-target);
+  padding: 0 var(--space-4);
+  border: 2px solid var(--color-player-ink);
+  border-radius: var(--radius-sm);
+  background: var(--color-player-ink);
+  color: var(--color-ink);
+  font: inherit;
+  font-weight: var(--weight-semibold);
+  white-space: nowrap;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity var(--motion-base) ease-out;
+  z-index: 2;
+}
+
+.adp-skip[data-visible] {
+  opacity: 1;
+}
+
+.adp-skip:active {
+  border-color: var(--color-accent-active);
+  background: var(--color-accent-active);
+  transform: scale(0.97);
+}
+
+.adp-skip__key {
+  padding: 0 var(--space-2);
+  border: 1px solid var(--color-ink);
+  border-radius: var(--radius-xs);
+  font-family: var(--font-mono);
+  font-size: var(--text-caption);
+}
+
+/* The Up next tile moves up while the Skip button shows so they never overlap. */
+.adp[data-skip] .adp-tile {
+  bottom: 11rem;
+}
+
+.adp[data-compact] .adp-skip {
+  bottom: 6.375rem;
+}
+
 /* ---- menus ---- */
 
 .adp-anchor {
@@ -371,6 +455,22 @@
 
 .adp-menu__row[aria-checked='true'] {
   font-weight: var(--weight-semibold);
+}
+
+.adp-menu__row--chapter {
+  gap: var(--space-3);
+}
+
+.adp-menu__time {
+  min-width: 3.5rem;
+  color: var(--color-player-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.adp-menu__chapter-title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .adp-menu__row[aria-disabled='true'] {
@@ -908,12 +1008,21 @@
   .adp-ripple {
     display: none;
   }
+
+  .adp-skip:active {
+    transform: none;
+  }
 }
 
 /* Hover only on devices that really hover (R31). Touch gets the pressed state only. */
 @media (hover: hover) and (pointer: fine) {
   .adp-ctl:hover {
     background: var(--color-player-control-bg);
+  }
+
+  .adp-skip:hover {
+    border-color: var(--color-accent);
+    background: var(--color-accent);
   }
 
   .adp-menu__row:hover {
@@ -942,6 +1051,7 @@
   .adp-seek:focus-visible,
   .adp-btn:focus-visible,
   .adp-menu__row:focus-visible,
+  .adp-skip:focus-visible,
   .adp-tile button:focus-visible {
     outline-color: Highlight;
     box-shadow: none;

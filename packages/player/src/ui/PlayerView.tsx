@@ -13,6 +13,7 @@ import {
   type PointerEvent,
   type Ref,
 } from 'react';
+import { normalizeChapters, type PlayerChapter } from '../chapters';
 import { DEFAULT_CAPTION_STYLE, captionStyleVars, type CaptionStyle } from '../captionStyle';
 import type { PlayerController } from '../controller';
 import { formatClock } from '../format';
@@ -23,6 +24,7 @@ import { EndScreen, type EndScreenData } from './EndScreen';
 import {
   Back10Icon,
   CaptionsIcon,
+  ChaptersIcon,
   Forward10Icon,
   FullscreenExitIcon,
   FullscreenIcon,
@@ -34,9 +36,10 @@ import {
   SpeedIcon,
   VolumeIcon,
 } from './icons';
-import { CaptionRows, MenuShell, QualityRows, SpeedRows, type MenuId } from './Menus';
+import { CaptionRows, ChapterRows, MenuShell, QualityRows, SpeedRows, type MenuId } from './Menus';
 import { ErrorOverlay, Spinner, Toast, UpNextTile, type OverlayLinks } from './Overlays';
 import { SeekBar } from './SeekBar';
+import { SkipButton } from './SkipButton';
 import { ShortcutsDialog } from './ShortcutsDialog';
 import { useControllerState } from './useControllerState';
 import { useMediaQuery } from './useMediaQuery';
@@ -58,6 +61,8 @@ export interface PlayerViewProps {
   countdownSeconds?: number;
   /** Seek preview map from the playback session. Ignored with Data saver on. */
   spriteUrl?: string | null;
+  /** Chapters of this video (M43), also given to the controller. Empty or missing hides every chapter surface. */
+  chapters?: PlayerChapter[];
 }
 
 const HIDE_AFTER_MS = 3_000;
@@ -90,7 +95,11 @@ export function PlayerView(props: PlayerViewProps) {
   } | null>(null);
   const [posterFailed, setPosterFailed] = useState(false);
   const [pipSupported, setPipSupported] = useState(false);
+  const [activity, setActivity] = useState(0);
+  const lastActivity = useRef(0);
+  const playRef = useRef<HTMLButtonElement | null>(null);
   const compact = useMediaQuery('(max-width: 640px)');
+  const keyed = useMediaQuery('(hover: hover) and (pointer: fine)');
 
   const setVideo = useCallback(
     (el: HTMLVideoElement | null) => {
@@ -104,6 +113,12 @@ export function PlayerView(props: PlayerViewProps) {
 
   // ---- controls visibility ----
   const bump = useCallback(() => {
+    // The Skip button returns on pointer or key activity. Throttled so it never renders on every move.
+    const now = Date.now();
+    if (now - lastActivity.current > 500) {
+      lastActivity.current = now;
+      setActivity((a) => a + 1);
+    }
     setShown(true);
     if (hideTimer.current) clearTimeout(hideTimer.current);
     hideTimer.current = setTimeout(() => {
@@ -248,7 +263,7 @@ export function PlayerView(props: PlayerViewProps) {
         altKey: e.altKey,
         target: e.target,
       },
-      { hasNext: Boolean(next) },
+      { hasNext: Boolean(next), hasSkip: Boolean(state.marker) },
     );
     if (!action) return;
     e.preventDefault();
@@ -323,6 +338,10 @@ export function PlayerView(props: PlayerViewProps) {
     </p>
   ) : null;
 
+  const chapterList = useMemo(
+    () => normalizeChapters(props.chapters, state.duration),
+    [props.chapters, state.duration],
+  );
   const qualityMenu = state.quality.menu;
   const showQuality = qualityMenu.visible;
 
@@ -337,6 +356,7 @@ export function PlayerView(props: PlayerViewProps) {
       data-compact={compact || undefined}
       data-fullscreen={fullscreen || undefined}
       data-controls={controlsVisible ? 'visible' : 'hidden'}
+      data-skip={state.marker ? 'true' : undefined}
       data-phase={state.phase}
       onKeyDown={onKeyDown}
       onPointerMove={(e) => e.pointerType === 'mouse' && bump()}
@@ -379,6 +399,16 @@ export function PlayerView(props: PlayerViewProps) {
         onPointerUp={onSurfacePointerUp}
         onClick={onSurfaceClick}
         onDoubleClick={() => pointerType.current === 'mouse' && void toggleFullscreen()}
+      />
+
+      <SkipButton
+        marker={state.marker}
+        showKeyHint={keyed}
+        activity={activity}
+        onSkip={() => {
+          controller?.skip();
+          playRef.current?.focus();
+        }}
       />
 
       {ripple ? (
@@ -470,6 +500,7 @@ export function PlayerView(props: PlayerViewProps) {
       >
         <button
           type="button"
+          ref={playRef}
           className="adp-ctl adp-ctl--primary"
           aria-label={state.playing ? 'Pause' : 'Play'}
           onClick={() => controller?.toggle()}
@@ -482,6 +513,7 @@ export function PlayerView(props: PlayerViewProps) {
           bufferedEnd={state.bufferedEnd}
           onSeek={(t) => controller?.seekTo(t)}
           spriteUrl={state.quality.dataSaver ? null : props.spriteUrl}
+          chapters={chapterList}
         />
         <button
           type="button"
@@ -535,7 +567,37 @@ export function PlayerView(props: PlayerViewProps) {
         >
           {time}
         </button>
+        {!compact && state.chapter ? (
+          <span className="adp-chapter">{state.chapter.title}</span>
+        ) : null}
         <span className="adp-spacer" />
+
+        {!compact && chapterList.length > 0 ? (
+          <div className="adp-anchor">
+            <button
+              type="button"
+              className="adp-ctl"
+              aria-haspopup="menu"
+              aria-expanded={menu === 'chapters'}
+              aria-label={msg('player.chapters')}
+              onClick={toggleMenu('chapters')}
+            >
+              <ChaptersIcon />
+            </button>
+            {menu === 'chapters' ? (
+              <MenuShell id="adp-menu-chapters" label={msg('player.chapters')} onClose={closeMenu}>
+                <ChapterRows
+                  chapters={chapterList}
+                  current={state.chapter?.index ?? null}
+                  onSelect={(start) => {
+                    controller?.seekTo(start);
+                    closeMenu();
+                  }}
+                />
+              </MenuShell>
+            ) : null}
+          </div>
+        ) : null}
 
         {state.captions.available ? (
           <div className="adp-anchor">
@@ -657,6 +719,19 @@ export function PlayerView(props: PlayerViewProps) {
                 onClose={closeMenu}
                 footer={dataSaverNote}
               >
+                {chapterList.length > 0 ? (
+                  <>
+                    <p className="adp-menu__section">{msg('player.chapters')}</p>
+                    <ChapterRows
+                      chapters={chapterList}
+                      current={state.chapter?.index ?? null}
+                      onSelect={(start) => {
+                        controller?.seekTo(start);
+                        closeMenu();
+                      }}
+                    />
+                  </>
+                ) : null}
                 <p className="adp-menu__section">{msg('player.menu.speed')}</p>
                 <SpeedRows rate={state.rate} onSelect={(r) => controller?.setRate(r)} />
                 {showQuality ? (

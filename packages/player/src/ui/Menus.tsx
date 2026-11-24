@@ -3,9 +3,11 @@
 import { useEffect, useRef, type KeyboardEvent, type ReactNode } from 'react';
 import type { QualityMenu } from '../quality';
 import { PLAYBACK_RATES, type CaptionTrack } from '../types';
+import type { PlayerChapter } from '../chapters';
+import { formatClock } from '../format';
 import { CheckIcon } from './icons';
 
-export type MenuId = 'speed' | 'quality' | 'captions' | 'settings';
+export type MenuId = 'speed' | 'quality' | 'captions' | 'settings' | 'chapters';
 
 interface MenuShellProps {
   id: string;
@@ -102,6 +104,36 @@ export function MenuRow({ label, detail, checked, disabled, hint, onSelect }: Ro
         {detail ? <span className="adp-menu__detail">{`, ${detail}`}</span> : null}
       </span>
     </button>
+  );
+}
+
+/** One row per chapter: time, title, the current one marked (M43-S05). Selecting seeks to its start. */
+export function ChapterRows({
+  chapters,
+  current,
+  onSelect,
+}: {
+  chapters: readonly PlayerChapter[];
+  current: number | null;
+  onSelect(startSeconds: number): void;
+}) {
+  return (
+    <>
+      {chapters.map((chapter, index) => (
+        <button
+          key={chapter.start}
+          type="button"
+          role="menuitemradio"
+          aria-checked={current === index}
+          aria-label={`${formatClock(chapter.start)} ${chapter.title}`}
+          className="adp-menu__row adp-menu__row--chapter"
+          onClick={() => onSelect(chapter.start)}
+        >
+          <span className="adp-menu__time">{formatClock(chapter.start)}</span>
+          <span className="adp-menu__chapter-title">{chapter.title}</span>
+        </button>
+      ))}
+    </>
   );
 }
 
