@@ -13,6 +13,6 @@ describe('getTranslator', () => {
     const t = await getTranslator('yo');
     expect(t('format.duration.hr', { count: 2 })).toBe('2 wákàtí');
     expect(t('format.duration.min', { count: 2 })).toBe('2 min');
-    expect(sink).toHaveBeenCalledWith('yo', 'format.duration.min');
+    expect(sink).toHaveBeenCalledWith('yo', 'format.duration.min', expect.any(Object));
   });
 });

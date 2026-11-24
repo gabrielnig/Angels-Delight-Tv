@@ -21,8 +21,16 @@ export function registerCatalogOverlay(loader: OverlayLoader): void {
   overlayRegistered = true;
 }
 
+/** The enabled interface languages as last read by getLocale. The missing key sink uses it. */
+let enabledNow: string[] = ['en'];
+export const currentEnabledLocales = () => enabledNow;
+
 /** Called with each key a viewer saw in English instead of their language (slice 11). */
-export type MissingSink = (locale: LocaleCode, key: string) => void;
+export type MissingSink = (
+  locale: LocaleCode,
+  key: string,
+  ctx?: { userAgent?: string | null; prefetch?: boolean },
+) => void;
 let sink: MissingSink = () => {};
 export function registerMissingSink(next: MissingSink): void {
   sink = next;
@@ -39,12 +47,28 @@ export async function loadCatalog(locale: LocaleCode): Promise<CatalogShape> {
   return effectiveCatalog(BASELINES[locale], await overlay(locale));
 }
 
+async function requestContext(): Promise<{ userAgent?: string | null; prefetch?: boolean }> {
+  try {
+    const h = await headers();
+    return {
+      userAgent: h.get('user-agent'),
+      prefetch:
+        h.get('purpose') === 'prefetch' ||
+        Boolean(h.get('sec-purpose')?.includes('prefetch')) ||
+        h.get('next-router-prefetch') !== null,
+    };
+  } catch {
+    return {};
+  }
+}
+
 export async function getTranslator(locale: LocaleCode): Promise<Translate> {
   const catalog = await loadCatalog(locale);
+  const ctx = locale === 'en' ? {} : await requestContext();
   return createMessages(
     locale,
     { 'en-NG': EN_NG as unknown as CatalogShape, [locale]: catalog },
-    (key, loc) => sink(loc as LocaleCode, key),
+    (key, loc) => sink(loc as LocaleCode, key, ctx),
   );
 }
 
@@ -60,6 +84,7 @@ export async function getLocale(): Promise<LocaleCode> {
   const settings = (await themeRuntime()).settings;
   const enabled: string[] = await settings.get('content.ui_languages');
   const fallback = (await settings.get('content.default_language')) as LocaleCode;
+  enabledNow = enabled;
   const hint = h.get('x-ad-locale-source') === 'query' ? h.get('x-ad-locale-hint') : null;
   let profileLanguage: string | null = null;
   try {
