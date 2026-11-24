@@ -20,6 +20,7 @@ vi.mock('../../../../server/guest/guest-settings', () => ({ guestPlayEnabled: as
 vi.mock('../../../../server/seo/page-seo', () => ({
   siteOrigin: () => 'https://example.test',
   titleIndexable: async () => mocks.indexable,
+  shareConfig: async (title: string) => ({ channels: ['whatsapp'], text: title }),
 }));
 vi.mock('../../../../lib/data', () => ({
   getSite: () => ({ content: async () => ({ signUpOpen: true }) }),

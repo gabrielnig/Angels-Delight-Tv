@@ -9,7 +9,7 @@ import { getCatalog, getLibrary } from '../../../../lib/data';
 import { JsonLd } from '../../../../components/seo/JsonLd';
 import { previewMetadata } from '../../../../lib/seo';
 import { titlePageJsonLd } from '../../../../lib/seo/page-jsonld';
-import { siteOrigin, titleIndexable } from '../../../../server/seo/page-seo';
+import { shareConfig, siteOrigin, titleIndexable } from '../../../../server/seo/page-seo';
 import { getRootTheme } from '../../../../lib/theme/root';
 import { itemKey } from '../../../../lib/format';
 import { getSite } from '../../../../lib/data';
@@ -77,10 +77,12 @@ export default async function TitlePage({ params }: Params) {
       <TitleBlocked />
     );
   }
-  const [{ platformName }, indexable] = await Promise.all([
+  const [{ platformName }, indexable, share] = await Promise.all([
     getRootTheme(),
     titleIndexable('video', detail.video.slug),
+    shareConfig(detail.video.title),
   ]);
+  const kids = ctx.audience === 'kids';
   const structured = indexable ? (
     <JsonLd
       data={titlePageJsonLd({ origin: siteOrigin(), siteName: platformName, video: detail.video })}
@@ -91,7 +93,13 @@ export default async function TitlePage({ params }: Params) {
     return (
       <>
         {structured}
-        <TitleView detail={detail} inList={false} guest={{ signUpOpen }} />
+        <TitleView
+          detail={detail}
+          inList={false}
+          guest={{ signUpOpen }}
+          share={share}
+          kids={kids}
+        />
       </>
     );
   }
@@ -99,7 +107,12 @@ export default async function TitlePage({ params }: Params) {
   return (
     <>
       {structured}
-      <TitleView detail={detail} inList={ids.includes(itemKey(detail.video))} />
+      <TitleView
+        detail={detail}
+        inList={ids.includes(itemKey(detail.video))}
+        share={share}
+        kids={kids}
+      />
     </>
   );
 }

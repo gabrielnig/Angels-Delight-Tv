@@ -3,6 +3,8 @@
 import { useState } from 'react';
 import { useEffect } from 'react';
 import { Button, ButtonLink, useToast } from '@ad/ui';
+import { ShareMenu } from '../share/ShareMenu';
+import type { ShareChannelId } from '../share/share-links';
 import { readGuestProgress } from '../../lib/guest/progress-store';
 import { guestPrimary } from '../../lib/guest/resume';
 import { useListToggle } from '../../lib/pwa/useListToggle';
@@ -15,6 +17,12 @@ export interface TitleActionsProps {
   inList: boolean;
   /** Shown to other apps when the link is shared. Share is hidden when this is missing. */
   shareTitle?: string;
+  /** The channels the admin enabled and the text that goes with the link. Defaults: WhatsApp, Facebook, X. */
+  share?: { channels: ShareChannelId[]; text: string };
+  /** A kids profile or Kids mode: no external links, so no Share (M45-S06 AC4). */
+  kids?: boolean;
+  /** Series pages say Share this series. */
+  kind?: 'video' | 'series';
   toggle?: (itemKey: string, add: boolean) => Promise<void | 'sent' | 'queued'>;
   /** `title` is the two row layout of the title page (S18). The default is one wrapping row. */
   layout?: 'default' | 'title';
@@ -31,6 +39,9 @@ export function TitleActions({
   itemKey,
   inList: initial,
   shareTitle,
+  share,
+  kids = false,
+  kind = 'video',
   toggle: toggleProp,
   layout = 'default',
   guest,
@@ -49,7 +60,6 @@ export function TitleActions({
   const queued = useListToggle();
   const toggle = toggleProp ?? queued;
   const [inList, setInList] = useState(initial);
-  const [manualUrl, setManualUrl] = useState<string | null>(null);
   const toast = useToast();
 
   async function onToggle() {
@@ -76,22 +86,6 @@ export function TitleActions({
     }
   }
 
-  async function onShare() {
-    const url = window.location.href;
-    try {
-      if (navigator.share) {
-        await navigator.share({ title: shareTitle, url });
-        return;
-      }
-      await navigator.clipboard.writeText(url);
-      setManualUrl(null);
-      toast.show({ message: 'Link copied', variant: 'success' });
-    } catch (error) {
-      if (error instanceof DOMException && error.name === 'AbortError') return;
-      setManualUrl(url);
-    }
-  }
-
   const listA11y = guest
     ? ({ 'aria-haspopup': 'dialog' } as const)
     : ({ 'aria-pressed': inList } as const);
@@ -106,15 +100,15 @@ export function TitleActions({
     />
   ) : null;
 
-  const manual = manualUrl ? (
-    <input
-      className="web-title-actions__url"
-      readOnly
-      aria-label="Link to share"
-      value={manualUrl}
-      onFocus={(event) => event.currentTarget.select()}
-    />
-  ) : null;
+  const shareMenu =
+    shareTitle && !kids ? (
+      <ShareMenu
+        title={shareTitle}
+        text={share?.text ?? shareTitle}
+        channels={share?.channels ?? ['whatsapp', 'facebook', 'x']}
+        kind={kind}
+      />
+    ) : null;
 
   if (layout === 'title') {
     return (
@@ -139,13 +133,8 @@ export function TitleActions({
           >
             {inList && !guest ? 'In My List' : 'My List'}
           </Button>
-          {shareTitle ? (
-            <Button variant="secondary" icon="share" onClick={() => void onShare()}>
-              Share
-            </Button>
-          ) : null}
+          {shareMenu}
         </div>
-        {manual}
         {dialog}
       </div>
     );
@@ -169,12 +158,7 @@ export function TitleActions({
       >
         My List
       </Button>
-      {shareTitle ? (
-        <Button variant="secondary" onClick={() => void onShare()}>
-          Share
-        </Button>
-      ) : null}
-      {manual}
+      {shareMenu}
       {dialog}
     </div>
   );
