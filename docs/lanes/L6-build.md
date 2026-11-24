@@ -13,6 +13,8 @@ Plan: `docs/plan/v2/L6-discovery.md`. Rulings: `docs/plan/v2/RULINGS.md`. Review
 | 5 | Share menu | merged | #308 |
 | 6a | Search core: migration 0043, corrections, synonyms, subjects, misses | merged | #314 |
 | 6b | Search service, API, UI notes, misses pruning in worker | merged | #320 |
+| 7 | Storage notice (S138), storage inventory, notice and toast placement | merged | #332 |
+| 8 | Error pages (S139), one action each (R39) | in review | |
 
 ## Slice 1 (sitemap)
 
@@ -59,3 +61,17 @@ Plan: `docs/plan/v2/L6-discovery.md`. Rulings: `docs/plan/v2/RULINGS.md`. Review
 - `packages/catalog/src/search-quality.ts`: `refreshSearchTerms(Safe)`, `correctQuery`, `searchWithCorrection` (`showingFor`, `didYouMean`), `searchSubjects`, `replaceSynonymGroups`, `listSynonymGroups`, `recordMiss`, `pruneMisses`, `listMisses`. `publish` and `unpublish` refresh the word list.
 - Left for 6b: the viewer service and API (`subjects`, `showingFor`, `didYouMean`, miss logging on empty results, guests), the search UI states, the synonyms editor and misses report in the Discovery tab, pruning misses in the worker.
 - Tests: `pnpm vitest run packages/catalog/src/search-synonyms.test.ts packages/catalog/src/search-quality.int.test.ts packages/catalog/src/titles.int.test.ts packages/catalog/src/publishing.int.test.ts packages/db/src/schema.int.test.ts` (DB for the int files).
+
+## Slice 7 (storage notice, build agent L6b)
+
+- `apps/web/src/lib/consent/notice.ts` (`NOTICE_KEY` `ad:notice:v1`, `readNotice`, `noticeVisible`, `dismissNotice`, 12 months), `inventory.ts` (`STORAGE_INVENTORY`, `visitorInventory`, `durationText`). Every row names its `source` file and `needle`; durations come from the code constants and are checked in `inventory.test.ts`, which also scans the source for declared cookie names and keys, so a new cookie or key fails the test until it has a row.
+- `components/consent/StorageNotice.tsx` (mounted in the root layout, hidden on `/watch`, publishes `--notice-h`), `StorageList.tsx` (Privacy page, anchor `#storage`), `consent.css`. Toast container CSS in `packages/ui/src/components.css` lifts by `--notice-h` below 1024. `notice-toast-geometry.test.ts` reads the stylesheets and proves the rectangles never meet from 360 to 1920.
+- Settings reach the layout through `getSeoSettings` (`noticeEnabled`, `noticeText`, `noticeVersion`, `supportEmail`). The root `layout.test.tsx` first test failed since the locale work (mock lacked `cookies` and the language lookup); it belonged to L7 and is fixed here with mocks.
+- Decision D-297. Tests: `pnpm vitest run apps/web/src/lib/consent apps/web/src/components/consent apps/web/src/app/layout.test.tsx apps/web/src/lib/site`.
+
+## Slice 8 (error pages)
+
+- `components/errors/ErrorPage.tsx` (one action, heading focus, noindex, reference and support email as plain text, optional search field), `NotFoundSuggestions.tsx` (popular titles, skeleton), `errors.css`.
+- Pages: `app/not-found.tsx`, `app/(viewer)/title/[slug]/not-found.tsx` and `error.tsx`, `app/(viewer)/series/[slug]/not-found.tsx`, `app/error.tsx`, `app/global-error.tsx` (system colours, one Reload button), `app/offline/page.tsx`. `TitleNotFound` and `TitleError` were removed.
+- `error-pages.r39.test.tsx` counts links and buttons in the message block of each page. Support email reaches client error pages through `AccountSupportProvider` at the root layout.
+- Tests: `pnpm vitest run apps/web/src/app/error-pages.r39.test.tsx apps/web/src/app/error.test.tsx apps/web/src/components/errors apps/web/src/components/title`.

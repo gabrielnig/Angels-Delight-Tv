@@ -1644,3 +1644,9 @@ Decision: the View all list pages keep the shared `.web-grid` (2, 3, 4, 5 across
 - Options: New notice kinds; separate queue per language; reuse the one open job rule
 - Why: No schema change, the approved English track keeps playing, and nothing reaches a viewer until a human approves and publishes the language (R23, plan 4.5).
 - Reversible: Yes
+
+## D-301 Error pages carry one action, with no Report link (lane L6, M45)
+- Decision: the 404, removed video and series, server error, root error and offline pages each show exactly one action (Back to Home, Back to Home, Try again, Reload the page, Try again). The reference and the support email are plain text. A search field and popular titles sit beside the message and are not actions. The Report link of M45-S14 AC3 is dropped, so the story is reworded.
+- Options: keep a Report link that replaces Try again; a mailto link as a second action.
+- Why: R39 allows one action, and Try again recovers more viewers than a prefilled email.
+- Reversible: yes.
