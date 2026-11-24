@@ -36,6 +36,7 @@ export const IDLE_STATE: PlayerState = {
   backOnline: false,
   marker: null,
   chapter: null,
+  autoplayNext: false,
   announce: '',
 };
 

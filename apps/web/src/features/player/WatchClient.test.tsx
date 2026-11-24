@@ -26,6 +26,7 @@ function mount(
     network?: FakeNetwork;
     prefsSync?: NonNullable<Parameters<typeof WatchClient>[0]['prefsSync']>;
     countdownSeconds?: number;
+    viewer?: typeof viewer;
   } = {},
 ) {
   const engine = new FakeEngine();
@@ -33,7 +34,7 @@ function mount(
   const utils = render(
     <WatchClient
       data={data}
-      viewer={viewer}
+      viewer={extra.viewer ?? viewer}
       transport="fixture"
       startAt={extra.startAt ?? null}
       prefsSync={extra.prefsSync}
@@ -313,6 +314,27 @@ describe('WatchClient', () => {
       expect(JSON.parse(localStorage.getItem(captionStyleKey('p1')) ?? '{}')).toMatchObject({
         edge: 'outline',
       });
+    });
+  });
+
+  describe('Settings menu (L4-07)', () => {
+    it('shows Autoplay next on for an adult and locked and off for a kids profile (R15)', async () => {
+      const kids = { profileId: 'k1', kids: true };
+      const adultView = mount(await dataFor('v-sky'));
+      await waitFor(() => expect(adultView.engine.loads).toHaveLength(1));
+      fireEvent.click(screen.getByRole('button', { name: 'Settings' }));
+      const adult = screen.getByRole('menuitemcheckbox', { name: 'Autoplay next' });
+      expect(adult.getAttribute('aria-checked')).toBe('true');
+      adultView.unmount();
+
+      const r = await createFixturePlaybackData().getWatchData('v-sky', kids);
+      if (r.status !== 'ok') throw new Error('fixture missing');
+      const kidsView = mount(r.data, { viewer: kids });
+      await waitFor(() => expect(kidsView.engine.loads).toHaveLength(1));
+      fireEvent.click(screen.getByRole('button', { name: 'Settings' }));
+      const row = screen.getByRole('menuitemcheckbox', { name: /^Autoplay next/ });
+      expect(row.getAttribute('aria-checked')).toBe('false');
+      expect(row.getAttribute('aria-disabled')).toBe('true');
     });
   });
 

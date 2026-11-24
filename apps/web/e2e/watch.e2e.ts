@@ -38,7 +38,6 @@ async function expectPlaying(page: Page, minSeconds = 1.5) {
 
 test('plays the unencrypted sample with controls, captions, quality and progress', async ({
   page,
-  isMobile,
 }) => {
   await page.goto('/watch/v-plants');
   await expect(
@@ -48,19 +47,15 @@ test('plays the unencrypted sample with controls, captions, quality and progress
   await expect(region).toBeVisible();
   await expectPlaying(page);
 
-  // Quality ladder comes from the real playlists.
-  if (isMobile) {
-    await page.getByRole('button', { name: 'Settings' }).click();
-    await expect(page.getByRole('menuitemradio', { name: '480p', exact: true })).toBeVisible();
-    await page.getByRole('menuitemradio', { name: '360p', exact: true }).click();
-    await page.keyboard.press('Escape');
-  } else {
-    await page.getByRole('button', { name: /^Quality/ }).click();
-    const menu = page.getByRole('menu', { name: 'Quality' });
-    await expect(menu.getByRole('menuitemradio')).toHaveCount(4);
-    await menu.getByRole('menuitemradio', { name: '360p', exact: true }).click();
-    await expect(page.getByRole('button', { name: 'Quality, 360p' })).toBeVisible();
-  }
+  // Quality ladder comes from the real playlists, behind the one Settings button.
+  await page.getByRole('button', { name: 'Settings' }).click();
+  await page.getByRole('menuitem', { name: /^Quality/ }).click();
+  const menu = page.getByRole('menu', { name: 'Quality' });
+  await expect(menu.getByRole('menuitemradio')).toHaveCount(4);
+  await menu.getByRole('menuitemradio', { name: '360p', exact: true }).click();
+  await page.getByRole('button', { name: 'Settings' }).click();
+  await expect(page.getByRole('menuitem', { name: 'Quality, 360p' })).toBeVisible();
+  await page.keyboard.press('Escape');
 
   // Captions toggle, with only the approved track attached.
   await expect(page.locator('video track')).toHaveCount(1);

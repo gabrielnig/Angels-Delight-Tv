@@ -362,6 +362,7 @@ export function WatchClient({
             {...(data.markers ? { markers: data.markers } : {})}
             {...(data.chapters ? { chapters: data.chapters } : {})}
             captionStyle={captionStyle}
+            lockAutoplay={viewer.kids}
             onCaptionStyleChange={onCaptionStyleChange}
             resume={resume}
             preferences={preferences}

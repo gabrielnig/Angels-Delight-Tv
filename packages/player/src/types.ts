@@ -84,6 +84,8 @@ export interface PlayerState {
   marker: ActiveMarker | null;
   /** The chapter the viewer is in, or null before the first one or with no chapters. */
   chapter: ActiveChapter | null;
+  /** Autoplay next is on for this viewer. The Settings switch changes it at once, so the end screen follows. */
+  autoplayNext: boolean;
   /** Text for the polite live region. */
   announce: string;
 }

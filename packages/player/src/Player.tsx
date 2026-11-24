@@ -31,6 +31,8 @@ export interface PlayerProps {
   captionStyle?: CaptionStyle;
   /** Called when the viewer changes the caption appearance in the player. Without it the entry is hidden. */
   onCaptionStyleChange?: (style: CaptionStyle) => void;
+  /** A kids profile follows its grown up's autoplay choice, so the Settings switch cannot be changed. */
+  lockAutoplay?: boolean;
   /** Origin that serves playlists and keys, for example https://tv.example.org. */
   appOrigin: string;
   sessionProvider: SessionProvider;
@@ -212,6 +214,7 @@ export function Player(props: PlayerProps) {
       title={props.title}
       posterUrl={props.posterUrl}
       captionStyle={props.captionStyle}
+      {...(props.lockAutoplay ? { lockAutoplay: true } : {})}
       {...(props.onCaptionStyleChange ? { onCaptionStyleChange: props.onCaptionStyleChange } : {})}
       videoRef={videoRef}
       next={props.next ?? null}
