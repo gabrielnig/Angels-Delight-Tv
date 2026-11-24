@@ -253,6 +253,13 @@
       "when": 1795009889547,
       "tag": "0035_asset_poster_recut",
       "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "7",
+      "when": 1795096289547,
+      "tag": "0036_video_markers_chapters",
+      "breakpoints": true
     }
   ]
 }

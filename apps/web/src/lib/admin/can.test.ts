@@ -11,6 +11,14 @@ describe('can(role, action)', () => {
     }
   });
 
+  it('lets editors edit markers and denies viewers and unknown roles', () => {
+    expect(can('editor', 'video.markers')).toBe(true);
+    expect(can('admin', 'video.markers')).toBe(true);
+    expect(can('viewer', 'video.markers')).toBe(false);
+    expect(can('owner' as never, 'video.markers')).toBe(false);
+    expect(requiredRole('video.markers')).toBe('editor');
+  });
+
   it('lets editors run the content pipeline', () => {
     for (const action of [
       'admin.access',
