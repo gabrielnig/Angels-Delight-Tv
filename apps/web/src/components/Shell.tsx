@@ -9,11 +9,15 @@ import { guestPlayEnabled } from '../server/guest/guest-settings';
 import { Brand } from './AuthLayouts';
 import { GuestChrome } from './guest/GuestChrome';
 import { ViewerChrome } from './ViewerChrome';
+import { LanguagePickerHost } from './i18n/LanguagePickerHost';
+import { pickerData } from '../lib/i18n/picker-data';
 
 /** Signed in with a profile: the full viewer chrome. Otherwise a light public header and footer. */
 export async function AppShell({ children, skin }: { children: ReactNode; skin?: 'soft' }) {
   const [site, session] = await Promise.all([getSite().content(), getSession()]);
   const year = new Date().getUTCFullYear();
+  const picker = await pickerData();
+  const languagePicker = picker ? <LanguagePickerHost {...picker} /> : undefined;
   if (session?.profile) {
     return (
       <ViewerChrome
@@ -27,6 +31,7 @@ export async function AppShell({ children, skin }: { children: ReactNode; skin?:
         year={year}
         skin={skin}
         supportEmail={site.supportEmail}
+        languagePicker={languagePicker}
       >
         {children}
       </ViewerChrome>
@@ -42,6 +47,7 @@ export async function AppShell({ children, skin }: { children: ReactNode; skin?:
         signUpOpen={site.signUpOpen}
         kids={(await currentGuestAudience()) === 'kids'}
         setKidsMode={setGuestAudienceAction}
+        languagePicker={languagePicker}
       >
         {children}
       </GuestChrome>

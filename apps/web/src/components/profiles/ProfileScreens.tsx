@@ -89,7 +89,9 @@ export function EditScreen({
   limitReached,
   lastAdult,
   suggestedName,
+  languages,
 }: {
+  languages?: readonly string[];
   suggestedName?: string;
   profile?: Profile;
   limitReached: boolean;
@@ -104,6 +106,7 @@ export function EditScreen({
     <ProfileForm
       profile={profile}
       suggestedName={suggestedName}
+      languages={languages}
       limitReached={limitReached}
       lastAdult={lastAdult}
       onDone={done}

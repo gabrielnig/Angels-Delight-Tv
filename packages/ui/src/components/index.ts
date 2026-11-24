@@ -3,6 +3,7 @@ export * from './Button';
 export * from './Field';
 export * from './Icon';
 export * from './Link';
+export * from './LanguagePicker';
 export * from './Pill';
 export * from './ProgressBar';
 export * from './Skeleton';

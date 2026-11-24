@@ -16,6 +16,7 @@ export interface GuestChromeProps {
   kids?: boolean;
   /** Remembers the Kids mode choice of this device. Missing means the switch is not offered. */
   setKidsMode?: (kids: boolean) => Promise<void>;
+  languagePicker?: ReactNode;
   children: ReactNode;
 }
 
@@ -45,6 +46,7 @@ export function GuestChrome({
   signUpOpen,
   kids = false,
   setKidsMode,
+  languagePicker,
   children,
 }: GuestChromeProps) {
   const pathname = usePathname();
@@ -122,6 +124,7 @@ export function GuestChrome({
               </Link>
             </nav>
             <div className="web-guestbar__account">
+              {languagePicker}
               <Link href="/sign-in" className="web-guestbar__link">
                 {msg('guest.save.signIn')}
               </Link>

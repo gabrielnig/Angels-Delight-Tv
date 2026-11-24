@@ -17,10 +17,10 @@ import {
   type AvatarArtId,
 } from '@ad/ui';
 import type { Profile, ProfileFailure, ProfileInput } from '../../lib/data';
+import { LOCALES } from '@ad/shared/messages';
 import { NETWORK_MESSAGE } from '../auth/shared';
 import { useFocusFirstInvalid } from '../auth/useFocusFirstInvalid';
 
-const LANGUAGES = [{ value: 'en', label: 'English' }];
 const MAX_NAME = 20;
 
 const isArtId = (id: string | undefined): id is AvatarArtId =>
@@ -38,6 +38,7 @@ export function ProfileForm({
   onDone,
   cancelHref = '/profiles/manage',
   suggestedName,
+  languages = ['en'],
 }: {
   profile?: Profile;
   /** Pre-fills the name of a first profile, from the email prefix. */
@@ -49,6 +50,8 @@ export function ProfileForm({
   onDelete?: () => Promise<{ ok: true } | { ok: false; reason: ProfileFailure }>;
   onDone: () => void;
   cancelHref?: string;
+  /** Enabled interface languages (content.ui_languages). */
+  languages?: readonly string[];
 }) {
   const editing = Boolean(profile);
   const formRef = useRef<HTMLFormElement>(null);
@@ -281,9 +284,9 @@ export function ProfileForm({
             onChange={(event) => setLanguage(event.target.value)}
             hint="Captions and menus use this language for this profile."
           >
-            {LANGUAGES.map((item) => (
-              <option key={item.value} value={item.value}>
-                {item.label}
+            {LOCALES.filter((l) => languages.includes(l.code) || l.code === language).map((item) => (
+              <option key={item.code} value={item.code} lang={item.htmlLang}>
+                {item.endonym}
               </option>
             ))}
           </Select>
