@@ -1,9 +1,10 @@
 import type { AccountRole } from '@ad/shared';
 import { can } from '@/lib/admin/can';
 import type { Cue } from '@/lib/admin/cues';
-import { changesSinceApproval } from '@/lib/admin/cues';
+import { changesSinceApproval, validateCues } from '@/lib/admin/cues';
+import type { BulkIssue } from './bulk';
 import type { AdminStore } from './store';
-import type { CaptionTrack, VideoRecord } from './types';
+import type { CaptionState, CaptionTrack, VideoRecord } from './types';
 
 const SENTENCES = [
   'Never share your password with anyone.',
@@ -214,4 +215,82 @@ export function replaceCues(
   video.captionCueCount = cues.length;
   video.updatedAt = stamp;
   return { ok: true };
+}
+
+/** True for automatic captions nobody has opened or edited. Approving these in bulk needs a tick. */
+export function isUntouchedAuto(track: Pick<CaptionTrack, 'source' | 'updatedBy'>): boolean {
+  return track.source === 'whisper' && track.updatedBy === 'Automatic';
+}
+
+export interface BulkCaptionRow {
+  videoId: string;
+  state: CaptionState;
+  /** Number of cues with a warning. Zero when it is not known up front. */
+  warnings: number;
+  untouchedAuto: boolean;
+}
+
+const SKIP_REASON: Record<Exclude<CaptionState, 'needs_review'>, string> = {
+  failed: 'Captions failed. Retry or upload a file.',
+  generating: 'Still being made.',
+  none: 'No captions yet.',
+  approved: 'Already approved.',
+};
+export const WARNINGS_REASON = 'Has warnings. Open it to review.';
+
+/** Splits a selection into rows that can be approved and rows that are skipped with a reason (L3-D09). */
+export function planBulkApprove(rows: readonly BulkCaptionRow[]) {
+  const eligible: string[] = [];
+  const untouchedAuto: string[] = [];
+  const skipped: BulkIssue[] = [];
+  for (const row of rows) {
+    if (row.state !== 'needs_review') skipped.push({ id: row.videoId, reason: SKIP_REASON[row.state] });
+    else if (row.warnings > 0) skipped.push({ id: row.videoId, reason: WARNINGS_REASON });
+    else {
+      eligible.push(row.videoId);
+      if (row.untouchedAuto) untouchedAuto.push(row.videoId);
+    }
+  }
+  return { eligible, untouchedAuto, skipped };
+}
+
+export const BULK_DENIED = 'Only an admin can approve captions in bulk.';
+
+/** Fixture bulk approve. Same rules as the real service: admin only, warnings are skipped, never forced. */
+export function approveMany(
+  store: AdminStore,
+  ids: readonly string[],
+  role: AccountRole,
+  by: string,
+  now: number,
+): { succeeded: string[]; failed: BulkIssue[]; skipped: BulkIssue[] } {
+  const out = { succeeded: [] as string[], failed: [] as BulkIssue[], skipped: [] as BulkIssue[] };
+  if (!can(role, 'caption.approve_bulk')) {
+    out.failed = ids.map((id) => ({ id, reason: BULK_DENIED, retryable: false }));
+    return out;
+  }
+  for (const id of ids) {
+    const video = store.videos.find((v) => v.id === id && v.deletedAt === null);
+    if (!video) {
+      out.failed.push({ id, reason: 'This video no longer exists.', retryable: false });
+      continue;
+    }
+    const track = ensureTrack(store, video, now);
+    const plan = planBulkApprove([
+      {
+        videoId: id,
+        state: track?.state ?? 'none',
+        warnings: track ? validateCues(track.cues).size : 0,
+        untouchedAuto: track ? isUntouchedAuto(track) : false,
+      },
+    ]);
+    if (plan.skipped[0]) {
+      out.skipped.push(plan.skipped[0]);
+      continue;
+    }
+    const result = approveTrack(store, video, role, by, now);
+    if (result.ok) out.succeeded.push(id);
+    else out.failed.push({ id, reason: result.error, retryable: false });
+  }
+  return out;
 }

@@ -107,17 +107,28 @@ describe.skipIf(!integrationEnabled())('admin caption rows', () => {
       cueCount: 13,
       updatedAt: '2026-06-02T08:00:00.000Z',
       updatedBy: null,
+      untouchedAuto: true,
     });
     expect(byTitle.Approved).toMatchObject({
       state: 'approved',
       cueCount: 13,
       updatedBy: editor.accountId,
+      untouchedAuto: false,
     });
     expect(byTitle.Generating?.state).toBe('generating');
+    expect(byTitle['No captions yet']?.untouchedAuto).toBe(false);
     expect(byTitle['Still encoding']).toBeUndefined();
     expect(byTitle['In trash']).toBeUndefined();
     void processing;
     void trashed;
+  });
+
+  it('is not untouched once a person made the newest revision', async () => {
+    const edited = await seedVideo(t.setup, { title: 'Edited by hand' });
+    const editedTrack = await track(edited.id);
+    await revision(editedTrack.id, 1, 'in_review', { createdBy: editor.accountId });
+    const rows = await listAdminCaptionRows(ctx, editor);
+    expect(rows.find((r) => r.title === 'Edited by hand')?.untouchedAuto).toBe(false);
   });
 
   it('reports a failed generation when no captions exist yet', async () => {

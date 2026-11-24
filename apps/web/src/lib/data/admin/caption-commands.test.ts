@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import {
+  approveMany,
   approveTrack,
+  isUntouchedAuto,
+  planBulkApprove,
   ensureTrack,
   regenerateTrack,
   replaceCues,
@@ -133,5 +136,70 @@ describe('regenerate and replace', () => {
     expect(video('vid_sky').captionState).toBe('needs_review');
     expect(store.captions.vid_sky!.cues).toHaveLength(1);
     expect(store.captions.vid_sky!.source).toBe('manual');
+  });
+});
+
+describe('isUntouchedAuto', () => {
+  it('is true only for automatic captions nobody has opened or edited', () => {
+    const { store, video } = setup();
+    const track = ensureTrack(store, video('vid_plants'), NOW)!;
+    expect(isUntouchedAuto(track)).toBe(true);
+    track.updatedBy = 'Tunde Bakare';
+    expect(isUntouchedAuto(track)).toBe(false);
+    expect(isUntouchedAuto({ ...track, updatedBy: 'Automatic', source: 'manual' })).toBe(false);
+  });
+});
+
+describe('planBulkApprove', () => {
+  const row = (videoId: string, state: string, warnings = 0, untouchedAuto = false) => ({
+    videoId,
+    state: state as 'approved',
+    warnings,
+    untouchedAuto,
+  });
+  it('keeps clean needs review rows and says why each other row is skipped', () => {
+    const plan = planBulkApprove([
+      row('a', 'needs_review'),
+      row('b', 'needs_review', 2),
+      row('c', 'failed'),
+      row('d', 'generating'),
+      row('e', 'none'),
+      row('f', 'approved'),
+      row('g', 'needs_review', 0, true),
+    ]);
+    expect(plan.eligible).toEqual(['a', 'g']);
+    expect(plan.untouchedAuto).toEqual(['g']);
+    expect(plan.skipped).toEqual([
+      { id: 'b', reason: 'Has warnings. Open it to review.' },
+      { id: 'c', reason: 'Captions failed. Retry or upload a file.' },
+      { id: 'd', reason: 'Still being made.' },
+      { id: 'e', reason: 'No captions yet.' },
+      { id: 'f', reason: 'Already approved.' },
+    ]);
+  });
+});
+
+describe('approveMany', () => {
+  it('approves clean tracks, skips ones with warnings and never approves for an editor', () => {
+    const { store, video } = setup();
+    ensureTrack(store, video('vid_plants'), NOW);
+    const done = approveMany(store, ['vid_plants', 'vid_sky', 'vid_naira'], 'admin', 'Ada', NOW);
+    // The seeded plants track carries warnings, so it is skipped. Sky is approved. Naira has none.
+    expect(done.succeeded).toEqual([]);
+    expect(done.skipped.map((s) => s.id).sort()).toEqual(['vid_naira', 'vid_plants', 'vid_sky']);
+    const track = store.captions['vid_plants']!;
+    track.cues = track.cues.filter((c) => c.text.trim()).map((c, i, all) => ({
+      ...c,
+      start: i * 3000,
+      end: i * 3000 + 2000,
+      text: c.text.slice(0, 40),
+      id: all[i]!.id,
+    }));
+    const ok = approveMany(store, ['vid_plants'], 'admin', 'Ada', NOW);
+    expect(ok.succeeded).toEqual(['vid_plants']);
+    expect(video('vid_plants').captionState).toBe('approved');
+    const denied = approveMany(store, ['vid_plants'], 'editor', 'Eli', NOW);
+    expect(denied.succeeded).toEqual([]);
+    expect(denied.failed[0]).toMatchObject({ id: 'vid_plants', retryable: false });
   });
 });

@@ -3,6 +3,8 @@
 import { revalidatePath } from 'next/cache';
 import type { Cue } from '@/lib/admin/cues';
 import type { CaptionResult, SaveResult } from '@/lib/data/admin/caption-commands';
+import { MAX_BULK_CALL, newBulkId, toOutcome, type BulkOutcome } from '@/lib/data/admin/bulk';
+import { auditBulkRun } from '@/server/admin/bulk-run';
 import { captionService } from '@/lib/data/admin/services';
 import { requireActionActor } from '@/lib/data/admin/session-next';
 
@@ -45,4 +47,28 @@ export async function alignScriptAction(videoId: string, script: string): Promis
   const result = await captionService.alignScript(actor, videoId, script);
   revalidatePath('/admin', 'layout');
   return result;
+}
+
+/** Approves up to MAX_BULK_CALL tracks. Admin only. Tracks with warnings are skipped, never forced. */
+export async function bulkApproveCaptionsAction(
+  ids: string[],
+  bulkId: string = newBulkId(),
+): Promise<BulkOutcome> {
+  const actor = await requireActionActor('/admin/captions');
+  const used = ids.slice(0, MAX_BULK_CALL);
+  const result = await captionService.approveMany(actor, used);
+  const outcome = toOutcome(result, bulkId);
+  await auditBulkRun(
+    { accountId: actor.accountId, role: actor.role },
+    {
+      action: 'caption.bulk_approve',
+      label: 'Approve captions',
+      targetType: 'video',
+      bulkId,
+      ids: used,
+      outcome,
+    },
+  );
+  revalidatePath('/admin', 'layout');
+  return outcome;
 }

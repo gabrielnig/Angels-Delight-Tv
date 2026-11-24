@@ -1,9 +1,8 @@
 import Link from 'next/link';
-import { formatRelative } from '@/lib/admin/format';
+import type { AccountRole } from '@ad/shared';
 import type { CaptionRow } from '@/lib/data/admin/services';
 import type { CaptionState } from '@/lib/data/admin/types';
-import { CaptionBadge } from './Badge';
-import { LinkButton } from './Button';
+import { CaptionTable, type ApproveManyAction } from './CaptionTable';
 import { EmptyState } from './states';
 
 const FILTERS: Array<{ state?: CaptionState; label: string }> = [
@@ -19,11 +18,17 @@ export function CaptionList({
   counts,
   active,
   now,
+  role,
+  approve,
+  neverEdited,
 }: {
   rows: CaptionRow[];
   counts: Record<string, number>;
   active?: CaptionState;
   now: number;
+  role: AccountRole;
+  approve: ApproveManyAction;
+  neverEdited?: boolean;
 }) {
   return (
     <div className="adm-stack">
@@ -54,74 +59,23 @@ export function CaptionList({
         })}
         <span className="adm-muted">Oldest first</span>
       </nav>
-      <div className="adm-card adm-table-card">
-        {rows.length === 0 ? (
+      {neverEdited ? (
+        <p className="adm-muted">
+          Showing automatic captions nobody has opened. <Link href="/admin/captions">Show all</Link>
+        </p>
+      ) : null}
+      {rows.length === 0 ? (
+        <div className="adm-card adm-table-card">
           <EmptyState
             title="No captions waiting."
             help="Every video has approved captions. New uploads will appear here."
             icon="captions"
             live={Boolean(active)}
           />
-        ) : (
-          <table className="adm-table adm-table--always">
-            <caption className="adm-sr">Videos and their captions</caption>
-            <thead>
-              <tr>
-                <th scope="col">Video</th>
-                <th scope="col">State</th>
-                <th scope="col">Language</th>
-                <th scope="col" className="adm-num">
-                  Cues
-                </th>
-                <th scope="col">Last edited</th>
-                <th scope="col">
-                  <span className="adm-sr">Action</span>
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((row) => (
-                <tr key={row.videoId}>
-                  <td>
-                    <Link className="adm-vtitle" href={`/admin/captions/${row.videoId}`}>
-                      {row.title}
-                    </Link>
-                  </td>
-                  <td>
-                    <CaptionBadge state={row.state} />
-                  </td>
-                  <td>{row.language}</td>
-                  <td className="adm-num">
-                    {row.cueCount ?? (row.state === 'generating' ? 'Working' : 'None')}
-                  </td>
-                  <td>
-                    {row.lastEditedAt
-                      ? `${row.lastEditedBy}, ${formatRelative(row.lastEditedAt, now)}`
-                      : row.lastEditedBy}
-                  </td>
-                  <td>
-                    <LinkButton
-                      href={`/admin/captions/${row.videoId}`}
-                      variant={row.state === 'needs_review' ? 'primary' : 'secondary'}
-                      aria-label={`${row.state === 'needs_review' ? 'Review' : row.state === 'approved' ? 'Open' : row.state === 'failed' ? 'Retry' : row.state === 'none' ? 'Generate' : 'View'} captions for ${row.title}`}
-                    >
-                      {row.state === 'needs_review'
-                        ? 'Review'
-                        : row.state === 'approved'
-                          ? 'Open'
-                          : row.state === 'failed'
-                            ? 'Retry'
-                            : row.state === 'none'
-                              ? 'Generate'
-                              : 'View'}
-                    </LinkButton>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-      </div>
+        </div>
+      ) : (
+        <CaptionTable rows={rows} role={role} approve={approve} now={now} />
+      )}
     </div>
   );
 }

@@ -210,6 +210,23 @@ describe.skipIf(!integrationEnabled())('real caption service', () => {
     expect(shown.captionOverrideReason).toBeNull();
   });
 
+  it('bulk approve is admin only, approves clean tracks and skips ones with warnings or already approved', async () => {
+    const clean = await withCaptions();
+    const warned = await withCaptions([cue('a', 0, 2000, 'Hi.'), cue('b', 1000, 3000, 'Overlaps.')]);
+    const done = await withCaptions();
+    expect(await realCaptionService.approve(editor, done.id)).toEqual({ ok: true });
+    await expect(realCaptionService.approveMany(editor, [clean.id])).rejects.toThrow();
+    const result = await realCaptionService.approveMany(admin, [clean.id, warned.id, done.id]);
+    expect(result.succeeded).toEqual([clean.id]);
+    expect(result.skipped).toEqual([
+      { id: warned.id, reason: 'Has warnings. Open it to review.' },
+      { id: done.id, reason: 'Already approved.' },
+    ]);
+    expect(result.failed).toEqual([]);
+    const after = await realCaptionService.track(admin, clean.id);
+    expect(after.track?.state).toBe('approved');
+  });
+
   it('regenerate queues the caption job and the track shows it generating', async () => {
     const video = await withCaptions();
     expect(await realCaptionService.regenerate(editor, video.id)).toEqual({ ok: true });

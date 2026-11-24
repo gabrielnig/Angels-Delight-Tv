@@ -34,7 +34,7 @@ describe('tables are never forced to display table with an inline style', () => 
 
 describe('numeric columns share one class in header and cells', () => {
   const cases: Array<[string, string, string]> = [
-    ['CaptionList.tsx', 'Cues', 'adm-num'],
+    ['CaptionTable.tsx', 'Cues', 'adm-num'],
     ['TrashList.tsx', 'Days left', 'adm-num'],
     ['UsersTable.tsx', 'Profiles', 'adm-num'],
     ['ExportsView.tsx', 'Rows', 'adm-num'],
