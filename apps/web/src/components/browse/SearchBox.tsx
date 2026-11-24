@@ -3,6 +3,10 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import { Icon } from '@ad/ui';
 import type { Suggestion } from '../../lib/data';
+import { useDataSaver } from '../../lib/lowdata/useDataSaver';
+import { useProfileId, useProfileKids } from '../../lib/profile-context';
+import { VoiceSearchButton } from './VoiceSearchButton';
+import { VOICE_SUBMIT_DELAY_MS } from './voice';
 
 const STORAGE_KEY = 'ad-recent-searches';
 const MAX_RECENT = 5;
@@ -60,6 +64,9 @@ export function SearchBox({
   const [active, setActive] = useState(-1);
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [recent, setRecent] = useState<string[]>([]);
+  const kids = useProfileKids();
+  const saver = useDataSaver(useProfileId());
+  const voiceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const seq = useRef(0);
   const lastLive = useRef(initialValue.trim());
   const live = useRef(onLiveQuery);
@@ -106,6 +113,21 @@ export function SearchBox({
     const next = [q, ...readRecent().filter((r) => r !== q)].slice(0, 10);
     writeRecent(next);
     setRecent(next);
+  }
+
+  useEffect(
+    () => () => {
+      if (voiceTimer.current) clearTimeout(voiceTimer.current);
+    },
+    [],
+  );
+
+  /** Words from the microphone fill the box. A final result searches after a short pause (M45-S10). */
+  function onVoiceText(text: string, final: boolean) {
+    if (voiceTimer.current) clearTimeout(voiceTimer.current);
+    setValue(text);
+    setActive(-1);
+    if (final) voiceTimer.current = setTimeout(() => submit(text), VOICE_SUBMIT_DELAY_MS);
   }
 
   function submit(q: string) {
@@ -177,6 +199,7 @@ export function SearchBox({
           }}
           onBlur={() => setOpen(false)}
           onChange={(event) => {
+            if (voiceTimer.current) clearTimeout(voiceTimer.current);
             setValue(event.target.value);
             setActive(-1);
             setOpen(true);
@@ -200,6 +223,7 @@ export function SearchBox({
             <Icon name="close" size={20} aria-hidden="true" />
           </button>
         ) : null}
+        {kids || saver.on ? null : <VoiceSearchButton onText={onVoiceText} />}
       </div>
       {expanded ? (
         <div className="web-search__panel" onMouseDown={(event) => event.preventDefault()}>

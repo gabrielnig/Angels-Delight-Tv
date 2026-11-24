@@ -16,7 +16,8 @@ Plan: `docs/plan/v2/L6-discovery.md`. Rulings: `docs/plan/v2/RULINGS.md`. Review
 | 7 | Storage notice (S138), storage inventory, notice and toast placement | merged | #332 |
 | 8 | Error pages (S139), one action each (R39) | merged | #339 |
 | 9 | Discovery tab: synonyms editor with error lines, empty search report | merged | #342 |
-| 10 | Kids only titles: share image noindex header, sitemap category fix; social image contrast already tested | in review | |
+| 10 | Kids only titles: share image noindex header, sitemap category fix; social image contrast already tested | merged | #344 |
+| 11 | Voice search (S134, Could) | in review | |
 
 ## Slice 1 (sitemap)
 
@@ -93,3 +94,10 @@ Plan: `docs/plan/v2/L6-discovery.md`. Rulings: `docs/plan/v2/RULINGS.md`. Review
 - New: `createOgHandler` takes `indexable` and sends `X-Robots-Tag: noindex` on the share image (and its fallback redirect) of a kids only title, and also when the lookup fails. `og-data.tsx` wires `titleIndexable`.
 - Fixed: a category whose only titles were kids only series was still in the sitemap. The category query now needs a series with a public episode that is not kids only. Test in `sitemap.int.test.ts`.
 - Social image contrast (4.5:1 on a white poster, title zone) was built with slice 3: `lib/seo/og-image.test.ts` (scrim maths) and `server/seo/og-render.test.tsx` (rendered pixels). No change needed.
+
+## Slice 11 (voice search)
+
+- `components/browse/voice.ts` (detection of `SpeechRecognition` and the prefixed one, `voiceAvailable`, `voiceErrorMessage`, `transcriptOf`, `ad:voice:ok` consent, 600 ms delay, languages `en-NG` then `en-US`), `VoiceSearchButton.tsx` (toggle with `aria-pressed`, first use question, Escape stops, errors in plain words, still ring under reduced motion), `voice.css`. New `mic` icon in `@ad/ui`.
+- `SearchBox` shows it unless the profile is Kids or Data saver is on, or the browser cannot listen. Words fill the box, a final result searches after 600 ms, typing cancels the search.
+- `ad:voice:ok` has a row in the storage inventory (the inventory test caught it).
+- Tests: `pnpm vitest run apps/web/src/components/browse apps/web/src/lib/consent`.
