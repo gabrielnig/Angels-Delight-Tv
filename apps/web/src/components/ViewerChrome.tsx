@@ -13,6 +13,7 @@ import { KidsExitDialog } from './KidsExitDialog';
 import { GuestIntentApplier } from './guest/GuestIntentApplier';
 import { ImportPrompt } from './guest/ImportPrompt';
 import { QueueSync } from './pwa/QueueSync';
+import { ViewerBell } from './notices/ViewerBell';
 
 export interface ChromeProps {
   platformName: string;
@@ -119,7 +120,14 @@ export function ViewerChrome({
             overHero={pathname === '/'}
             kids={kids}
             skin={skin}
-            trailing={languagePicker}
+            trailing={
+              kids ? undefined : (
+                <>
+                  {languagePicker}
+                  <ViewerBell profileId={profileId} />
+                </>
+              )
+            }
             onExitKids={() => setExitOpen(true)}
             onBack={detail ? () => router.back() : undefined}
           />

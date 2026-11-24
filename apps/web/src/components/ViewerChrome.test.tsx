@@ -13,16 +13,19 @@ vi.mock('./pwa/QueueSync', () => ({ QueueSync: () => null }));
 vi.mock('./KidsExitDialog', () => ({ KidsExitDialog: () => null }));
 vi.mock('./guest/GuestIntentApplier', () => ({ GuestIntentApplier: () => null }));
 vi.mock('./guest/ImportPrompt', () => ({ ImportPrompt: () => null }));
+vi.mock('./notices/ViewerBell', () => ({
+  ViewerBell: ({ profileId }: { profileId: string }) => <span data-testid="bell">{profileId}</span>,
+}));
 
 import { ViewerChrome } from './ViewerChrome';
 
-const chrome = () =>
+const chrome = (kids = false) =>
   render(
     <ViewerChrome
       platformName="Angels Delight TV"
       profileName="Chidi"
       profileId="p1"
-      kids={false}
+      kids={kids}
       footerLinks={[]}
       year={2026}
     >
@@ -46,5 +49,19 @@ describe('ViewerChrome on title pages (S18)', () => {
     expect(screen.queryByRole('navigation', { name: 'Primary' })).toBeNull();
     await userEvent.click(screen.getByRole('button', { name: 'Back' }));
     expect(nav.back).toHaveBeenCalled();
+  });
+});
+
+describe('ViewerChrome bell slot (M44-S11, S17)', () => {
+  it('renders the bell for an adult profile and keeps the language picker beside it', () => {
+    nav.pathname = '/browse';
+    chrome();
+    expect(screen.getByTestId('bell')).toHaveTextContent('p1');
+  });
+
+  it('renders no bell on a Kids profile', () => {
+    nav.pathname = '/browse';
+    chrome(true);
+    expect(screen.queryByTestId('bell')).toBeNull();
   });
 });

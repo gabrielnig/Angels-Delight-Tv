@@ -61,3 +61,10 @@ Scoped tests: `TEST_DATABASE_ADMIN_URL=postgres://postgres:postgres@localhost:54
 - `packages/viewer/src/notices.ts`: `listNotices`, `countUnread` (cap 99, kids 0), `markRead`, `getPrefs`, `setPrefs`. Kids get 403 `kids_no_notices`.
 - Tests: `packages/db/src/notices.int.test.ts`, `apps/worker/src/notices.int.test.ts`, `packages/viewer/src/notices.int.test.ts`, `packages/queue/src/definitions.test.ts`, `apps/worker/src/engage-handlers.test.ts`.
 - NOT done yet: API routes, bell, pages, settings, email prefs (slice 8).
+
+## Slice 8a (bell, popover, /notifications, notices API; branch l5b-s08-bell)
+- API: `GET`/`POST /api/notices` (`api.notices.list`, `api.notices.markRead`), `GET /api/notices/count` (`api.notices.count`, a kids profile gets `{count: 0}` and no table read, every other route 403 `kids_no_notices`), `GET`/`PUT /api/account/notifications` (`api.notificationPrefs.get`, `.set`). Schemas `noticesQuery`, `noticesReadBody`, `notificationPrefsBody`.
+- UI in `apps/web/src/components/notices/`: `ViewerBell` (number badge capped 9+, spoken count, popover with focus trap and Escape, narrow screens link to `/notifications`, count refresh on route change and every 5 minutes while visible, none under Data saver), `NoticePanel`, `NoticeList`, `NoticesView`, `NoticesKidsState`, `useNoticeFeed`, `notice-format.ts`. Page `app/(viewer)/notifications`. `ViewerChrome` puts the bell in the nav `trailing` slot for non kids.
+- Copy: `packages/shared/src/messages/l5-messages.ts` (spread into `EN_NG`). CSS block at the end of `packages/ui/src/components.css`.
+- Tests: `apps/web/src/server/viewer/api-notices.int.test.ts`, `components/notices/*.test.ts(x)`, `components/ViewerChrome.test.tsx`.
+- NOT done in 8a: settings page, email prefs and digest (8b). Episode notice body ("Episodes 6, 7 and 8 are ready") is empty for now.
