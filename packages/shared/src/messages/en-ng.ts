@@ -133,4 +133,14 @@ export const EN_NG = {
     'Ask a grown-up to sign in so you can keep a list that follows you on every device.',
   'guest.myList.added': 'Added to My List',
   'guest.continue.title': 'Continue learning',
+  'guest.import.title': 'Add what you watched here?',
+  'guest.import.body':
+    'This device remembers where you stopped in some videos. Add them to your history so they follow you on every device.',
+  'guest.import.add': 'Add to my history',
+  'guest.import.notNow': 'Not now',
+  'guest.import.done': {
+    one: 'Added {count} video to your history',
+    other: 'Added {count} videos to your history',
+  },
+  'guest.import.failed': 'We could not add your history. It is still on this device.',
 } as const satisfies CatalogShape;

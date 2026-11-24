@@ -29,13 +29,16 @@ export function SignInToSaveDialog({
   const remember = () => {
     if (intent) saveIntent(window.localStorage, intent);
   };
-  const key = reason === 'like' ? 'like' : 'myList';
+  const copy =
+    reason === 'like'
+      ? { title: msg('guest.save.like.title'), body: msg('guest.save.like.body') }
+      : { title: msg('guest.save.myList.title'), body: msg('guest.save.myList.body') };
   const query = `?next=${encodeURIComponent(next)}`;
   return (
     <Modal
       open={open}
       onClose={onClose}
-      title={msg(`guest.save.${key}.title`)}
+      title={copy.title}
       hideClose
       footer={
         <>
@@ -53,7 +56,7 @@ export function SignInToSaveDialog({
         </>
       }
     >
-      <p>{msg(`guest.save.${key}.body`)}</p>
+      <p>{copy.body}</p>
     </Modal>
   );
 }

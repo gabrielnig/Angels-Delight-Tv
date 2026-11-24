@@ -160,6 +160,9 @@ describe.skipIf(!integrationEnabled())('route authorization matrix (guests)', ()
         });
         const post = { method: 'POST', body };
         expect((await call(who, api.progress.save, '/api/progress', post)).status).toBe(401);
+        expect((await call(who, api.progress.import, '/api/progress/import', post)).status).toBe(
+          401,
+        );
         expect(
           (
             await call(who, api.watchProgress, '/api/watch/progress', {

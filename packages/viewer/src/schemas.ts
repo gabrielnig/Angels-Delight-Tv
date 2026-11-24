@@ -70,6 +70,20 @@ export const saveProgressBody = z.object({
   ended: z.boolean().optional(),
 });
 
+export const importProgressBody = z.object({
+  profileId: id,
+  items: z
+    .array(
+      z.object({
+        videoId: z.string().max(40),
+        positionMs: z.number().min(0).max(86_400_000),
+        finished: z.boolean(),
+        updatedAt: z.number().min(0).max(8_640_000_000_000_000),
+      }),
+    )
+    .max(100),
+});
+
 export const progressQuery = profileIdQuery.extend({ videoId: id.optional() });
 export const removeProgressBody = z.object({ profileId: id, videoId: id });
 
