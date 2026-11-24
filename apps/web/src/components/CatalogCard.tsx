@@ -1,8 +1,10 @@
 'use client';
 
 import { useState } from 'react';
-import { ContinueCard, Row, SeriesCard, VideoCard, useToast } from '@ad/ui';
+import { ContinueCard, Row, SeriesCard, VideoCard, useToast, type CardRating } from '@ad/ui';
+import { msg } from '@ad/shared/messages';
 import { restoreContinueAction, removeContinueAction } from '../app/actions';
+import { useProfileId, useProfileKids } from '../lib/profile-context';
 import { useListToggle } from '../lib/pwa/useListToggle';
 import type { CatalogItem, Progress, VideoSummary } from '../lib/data';
 import { itemHref, itemKey, metaLine, percent, timeLeftLabel } from '../lib/format';
@@ -28,6 +30,50 @@ export function CatalogCard({
   const toggle = toggleProp ?? queued;
   const toast = useToast();
   const key = itemKey(item);
+  const profileId = useProfileId();
+  const kids = useProfileKids();
+  const [rating, setRating] = useState<CardRating['value']>(item.rating ?? null);
+  const rateable = Boolean(profileId) && !kids && item.rating !== undefined && Boolean(item.id);
+
+  async function onRate(next: CardRating['value']) {
+    const previous = rating;
+    setRating(next);
+    try {
+      const response = await fetch('/api/ratings', {
+        method: 'PUT',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          profileId,
+          target: { kind: item.kind, id: item.id },
+          value: next,
+        }),
+      });
+      if (!response.ok) throw new Error(String(response.status));
+      toast.show({
+        message: next === null ? msg('engage.rating.cleared') : msg('engage.rating.saved'),
+        variant: 'success',
+      });
+    } catch {
+      setRating(previous);
+      toast.show({ message: msg('engage.rating.error'), variant: 'error' });
+    }
+  }
+
+  const ratingProps = rateable
+    ? {
+        rating: {
+          value: rating,
+          onChange: (value: CardRating['value']) => void onRate(value),
+          labels: {
+            group: msg('engage.rating.cardGroup'),
+            notForMe: msg('engage.rating.notForMe'),
+            like: msg('engage.rating.like'),
+            love: msg('engage.rating.love'),
+            yourRating: msg('engage.rating.yours'),
+          },
+        },
+      }
+    : {};
 
   async function onToggle() {
     const next = !inList;
@@ -68,6 +114,8 @@ export function CatalogCard({
         priority={priority}
         inList={inList}
         onToggleList={onToggle}
+        mostLiked={item.mostLiked}
+        {...ratingProps}
       />
     );
   }
@@ -83,6 +131,8 @@ export function CatalogCard({
       hasCaptions={item.hasCaptions}
       inList={inList}
       onToggleList={onToggle}
+      mostLiked={item.mostLiked}
+      {...ratingProps}
     />
   );
 }
