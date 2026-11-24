@@ -1506,3 +1506,9 @@ Per video tri state, site default (Super admin), Admin changes it with a reason 
 - Options: Emit ratings from likes, omit structured data, current choice
 - Why: No ratings exist and invented ones break search engine policy. The media url is signed and short lived, so it is never published.
 - Reversible: Ratings: no, it would risk a policy penalty. The rest: yes
+
+## D-279 Locale hint headers and profile language validation (lane L7)
+- Decision: The proxy handles ?lang= (sets ad_locale, keeps the path) and forwards x-ad-locale-hint and x-ad-locale-source. getLocale resolves query, profile, cookie, Accept-Language, site default. Profile language must be a supported code. Account level locale is not read yet because the session carries only the profile.
+- Options: Read accounts.locale in the session now.
+- Why: Keeps the session type unchanged for other lanes. The picker writes the profile for signed in viewers and the cookie for everyone.
+- Reversible: yes

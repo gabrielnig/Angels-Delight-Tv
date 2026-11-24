@@ -1,5 +1,7 @@
 import { type NextRequest, NextResponse } from 'next/server';
 import { requestIdFrom } from './lib/observability/request-id';
+import { normalizeLocale, parseAcceptLanguage } from '@ad/shared/messages';
+import { LOCALE_COOKIE, localeCookieOptions, readLocaleCookie } from './lib/i18n/cookie';
 import { proxyResponseHeaders } from './server/auth/proxy-headers';
 
 /** Nonce CSP, security headers and request ids (SECURITY.md sections 4 and 14). Reads process.env directly. */
@@ -21,10 +23,34 @@ export function proxy(request: NextRequest) {
   const forwarded = new Headers(request.headers);
   forwarded.set('x-nonce', nonce);
   forwarded.set('x-request-id', requestId);
+  // Locale hint (M46): ?lang= wins and is stored in the cookie, else the cookie, else the best Accept-Language match.
+  const queryLocale = normalizeLocale(request.nextUrl.searchParams.get('lang'));
+  const cookieLocale = readLocaleCookie(request.cookies.get(LOCALE_COOKIE)?.value);
+  const acceptLocale = parseAcceptLanguage(request.headers.get('accept-language'))[0];
+  const hint = queryLocale
+    ? { code: queryLocale, source: 'query' }
+    : cookieLocale
+      ? { code: cookieLocale, source: 'cookie' }
+      : acceptLocale && acceptLocale !== 'en'
+        ? { code: acceptLocale, source: 'accept' }
+        : null;
+  forwarded.delete('x-ad-locale-hint');
+  forwarded.delete('x-ad-locale-source');
+  if (hint) {
+    forwarded.set('x-ad-locale-hint', hint.code);
+    forwarded.set('x-ad-locale-source', hint.source);
+  }
   const csp = headers['Content-Security-Policy'] ?? headers['Content-Security-Policy-Report-Only'];
   if (csp) forwarded.set('content-security-policy', csp);
   const response = NextResponse.next({ request: { headers: forwarded } });
   for (const [k, v] of Object.entries(headers)) response.headers.set(k, v);
+  if (queryLocale) {
+    response.cookies.set(
+      LOCALE_COOKIE,
+      queryLocale,
+      localeCookieOptions(process.env.NODE_ENV === 'production'),
+    );
+  }
   return response;
 }
 

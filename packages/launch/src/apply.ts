@@ -88,6 +88,7 @@ export function desiredSettings(config: ClientConfig): Partial<ResolvedSettings>
   if (config.languages) {
     out['content.default_language'] = config.languages.default;
     out['content.languages'] = config.languages.offered;
+    if (config.languages.ui) out['content.ui_languages'] = config.languages.ui as never;
   }
   return out as Partial<ResolvedSettings>;
 }
