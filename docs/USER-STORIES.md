@@ -3075,3 +3075,391 @@ As the owner, I want an optional dark theme, so that the platform can look cinem
 - Edge: the default stays Default (off white).
 - Error: a failing pair blocks save with the reason.
 - Empty: not applicable.
+
+## M48 Sponsors and donations (44 stories)
+
+Off by default. Never shown to kids profiles or Kids mode. Priorities follow `docs/plan/v2/L9-monetization.md` section 7.
+
+### M48-S01 Master and placement switches (Must)
+As an admin, I want one master switch and a switch per placement, so that sponsors never appear until I decide.
+- AC1: Given a fresh install, When I open Settings, Monetization, Then sponsors and every placement are off and the page says nothing is shown to viewers.
+- AC2: Given the master switch is on and Home banner is off, When a viewer opens Home, Then no sponsor markup exists in the page.
+- AC3: Given I turn the master switch on or off, When I save, Then I am asked for my password (reauth), and an audit row is written.
+- Edge: turning the master switch off hides the Sponsors nav entry badge but keeps data.
+- Error: if saving fails, the toggle returns to its previous state with a message.
+- Empty: with the master switch on and no live sponsor, the admin sees "Nothing is showing yet" and a Create sponsor button.
+
+### M48-S02 Create a sponsor (Must)
+As an admin or editor, I want to create a sponsor with a name, optional contact and notes, so that I can organise campaigns.
+- AC1: Given I open Sponsors, New, When I enter a name and save, Then a sponsor is created as draft.
+- AC2: Given the name is empty or over 80 characters, When I blur the field, Then an inline error appears with `aria-invalid`.
+- AC3: Given I enter a contact email, When it is saved, Then it is stored encrypted and shown masked.
+- Edge: duplicate names are allowed but warned.
+- Error: network failure keeps my entries.
+- Empty: the list shows an explanation and a Create button.
+
+### M48-S03 Upload a creative (Must)
+As an editor, I want to add a creative (headline, short text, button label, square image, optional wide image, alt text), so that the sponsor card looks right.
+- AC1: Given I upload a square image of at least 400 px and under 2 MB, When it processes, Then I see WebP and AVIF variants and a preview per placement.
+- AC2: Given I upload a wrong type, too small or too large file, When I submit, Then a plain error says what to fix.
+- AC3: Given the creative has an image, When I leave alt text empty, Then I must tick "decorative" or enter text.
+- Edge: creative with no image renders as a text card.
+- Error: processing failure shows Retry and keeps the draft.
+- Empty: "No creatives yet" with an Add creative button.
+
+### M48-S04 Destination link validation (Must)
+As an admin, I want the link checked, so that viewers are never sent somewhere unsafe.
+- AC1: Given I enter a destination, When I save, Then only https URLs without credentials are accepted.
+- AC2: Given the host is localhost, a private IP or our own site, When I save, Then it is rejected with an explanation.
+- AC3: Given a valid link, When I preview, Then the preview opens it in a new tab and does not count a click.
+- Edge: tracking parameters (utm) are kept as typed.
+- Error: invalid URL shows an inline error.
+- Empty: not applicable.
+
+### M48-S05 Schedule start and end (Must)
+As an admin, I want start and end dates, so that a campaign runs only when agreed.
+- AC1: Given I set start 1 December and end 31 December, When it is 30 November, Then status is Scheduled and nothing shows.
+- AC2: Given the end date has passed, When a viewer loads Home, Then the sponsor does not show even if the worker is down.
+- AC3: Given the end is before the start, When I save, Then an inline error appears.
+- Edge: dates are in Lagos time, the end date is inclusive to 23:59:59.
+- Error: invalid date text is rejected.
+- Empty: no dates means it runs until paused.
+
+### M48-S06 Choose placements per creative (Must)
+As an admin, I want to tick which placements a creative may use, so that a sponsor can be limited to Home only.
+- AC1: Given a creative, When I tick Home banner and Title card, Then only those slots can select it.
+- AC2: Given a placement is globally off, When I view the creative, Then that checkbox shows "Off in settings" and a link.
+- Edge: no placement ticked means the creative is never shown, the form warns.
+- Error: save failure keeps ticks.
+- Empty: not applicable.
+
+### M48-S07 Sponsor status lifecycle (Must)
+As an admin, I want clear statuses (Draft, Scheduled, Live, Paused, Ended, Archived), so that I know what viewers see.
+- AC1: Given any sponsor, When I view the list, Then the status shows as an icon and a word, never colour alone.
+- AC2: Given a Live sponsor, When I press Pause, Then it stops showing on the next page load.
+- AC3: Given a sponsor has report data, When I try to delete it, Then I can only archive.
+- Edge: only admin can move to Live.
+- Error: a failed status change shows the old status.
+- Empty: filters with no result show "No sponsors in this view".
+
+### M48-S08 Frequency caps (Must)
+As an admin, I want caps, so that viewers are not shown the same sponsor too often.
+- AC1: Given the home cap is 2 per day, When a browser has seen the sponsor twice today, Then the third Home load shows no banner and no gap.
+- AC2: Given the browser cleared cookies, When it loads Home, Then the sponsor may show again (documented limit).
+- AC3: Given a cap value outside range, When I save, Then it is rejected.
+- Edge: the cap resets at Lagos midnight.
+- Error: a corrupted cap cookie is ignored.
+- Empty: not applicable.
+
+### M48-S09 Home banner (Must)
+As a viewer, I want a sponsor banner between rows that does not disturb browsing, so that I can scroll past it.
+- AC1: Given a live sponsor and the Home banner on, When I load Home, Then one banner appears after the configured row.
+- AC2: Given the page loads, When the banner renders, Then it occupies its reserved height with no layout shift (CLS 0 from the banner).
+- AC3: Given I use the keyboard, When I Tab, Then the banner link is reachable once and has a visible focus ring.
+- Edge: with fewer rows than the position, no banner.
+- Error: image fails to load, the card shows text with the same height.
+- Empty: no live sponsor means no markup.
+
+### M48-S10 Title page card (Must)
+As a viewer, I want a small sponsor card on a title page, so that it never covers the video or the Play button.
+- AC1: Given a live sponsor with Title card on, When I open a title page, Then the card shows below the action buttons and above More like this.
+- AC2: Given I am on a phone, When the page renders, Then the card is full width and Play stays above the fold.
+- Edge: series pages use the same slot once.
+- Error: image failure falls back to text.
+- Empty: no sponsor, no gap.
+
+### M48-S11 Message card after a video (Should)
+As a viewer, I want a still sponsor message when a video ends, so that it never interrupts the lesson.
+- AC1: Given the video ended and the slot is on, When the end screen shows, Then a card appears next to Up next.
+- AC2: Given an Up next countdown is running, When the card shows, Then the countdown is neither paused nor extended.
+- AC3: Given I press Next or Replay, When I do, Then the card gets out of the way immediately.
+- Edge: not shown when the video was abandoned before the end.
+- Error: none beyond image fallback.
+- Empty: no sponsor, normal end screen.
+
+### M48-S12 Message card before a video (Should)
+As a viewer, I want to skip a sponsor message at once, so that I can start learning without a wait.
+- AC1: Given the slot is on and I tap Play on a fresh start, When the card shows, Then a Skip button is visible and focused from the first moment.
+- AC2: Given I do nothing, When the configured seconds pass (default 5), Then playback starts.
+- AC3: Given the video is loading, When the card shows, Then media requests have already started so the card adds no delay.
+- AC4: Given Data saver is on or I resume partway, When I press Play, Then no card shows.
+- Edge: Enter, Space and Escape skip. Replay in the same session shows no card.
+- Error: card render failure starts playback immediately.
+- Empty: no sponsor, normal start.
+
+### M48-S13 Never on kids (Must)
+As a parent, I want no sponsor content for children, so that kids are protected.
+- AC1: Given a kids profile or Kids mode, When any page loads, Then no sponsor markup, cookie, request or tracking exists.
+- AC2: Given someone calls the click or impression route with a kids context, When processed, Then nothing is recorded and 404 or 204 returns.
+- AC3: Given site guest audience is Kids, When a guest browses, Then no sponsor shows.
+- Edge: switching to Kids mode removes the banner without reload artifacts.
+- Error: if audience cannot be determined, treat as kids (fail closed).
+- Empty: not applicable.
+
+### M48-S14 Sponsored label (Must)
+As a viewer, I want a clear label, so that I can tell a sponsor from lessons.
+- AC1: Given any sponsor card, When it renders, Then "Sponsored by NAME" (or the configured wording) shows as text at 13 px or larger with 4.5:1 contrast.
+- AC2: Given I use a screen reader, When I reach the card, Then it is announced as sponsored before its content.
+- AC3: Given an admin edits the creative, When saving, Then the label cannot be hidden or emptied.
+- Edge: label wording options are limited to the allowed set.
+- Error: not applicable.
+- Empty: not applicable.
+
+### M48-S15 Impression tracking (Must)
+As an admin, I want accurate impression counts without third-party tools, so that reports are trustworthy.
+- AC1: Given a card is 50 percent visible for 1 second, When tracked, Then one impression is counted for that page view.
+- AC2: Given bots, admin previews or kids contexts, When tracked, Then nothing is counted.
+- AC3: Given the viewer is offline, When the batch fails, Then it follows the existing analytics retry rules and never blocks the page.
+- Edge: tab hidden means no count.
+- Error: invalid events are dropped and counted as rejected.
+- Empty: not applicable.
+
+### M48-S16 Click tracking (Must)
+As an admin, I want clicks counted on our own origin, so that no sponsor script runs.
+- AC1: Given I tap a card, When the browser navigates to `/s/{id}`, Then a click is recorded and I land on the sponsor URL.
+- AC2: Given someone tampers with the URL, When requested, Then the destination still comes only from the database.
+- AC3: Given the sponsor is no longer live, When `/s/{id}` is requested, Then it returns 404.
+- Edge: referrer is not sent to the sponsor.
+- Error: a recording failure still redirects (the viewer is not punished), and logs a warning.
+- Empty: not applicable.
+
+### M48-S17 Data saver and offline (Must)
+As a viewer on a slow connection, I want sponsors to cost almost nothing, so that lessons stay fast.
+- AC1: Given Data saver is on, When a sponsor shows, Then it is text only, no image is fetched.
+- AC2: Given I am offline, When a page loads from the service worker, Then no sponsor request is made and no gap is left.
+- AC3: Given Data saver is on, When I press Play, Then no before card shows.
+- Edge: the service worker never caches `/s/*`.
+- Error: not applicable.
+- Empty: not applicable.
+
+### M48-S18 Sponsor report on screen (Must)
+As an admin, I want a report per sponsor, so that I can show results.
+- AC1: Given a date range, When I open the report, Then I see impressions, clicks, click rate, daily reach, by creative and placement, with a chart that has a text table alternative.
+- AC2: Given no data, When I open the report, Then it shows an explanation instead of empty charts.
+- AC3: Given the range is over 400 days, When I apply it, Then an inline error appears.
+- Edge: reach is labelled "daily reach (not unique people)".
+- Error: query failure shows Retry.
+- Empty: "No impressions yet. Check the dates and placements."
+
+### M48-S19 CSV export (Should)
+As an admin, I want a CSV, so that I can share the numbers.
+- AC1: Given a report, When I choose Export CSV, Then a queued export produces a file with fixed columns.
+- AC2: Given a cell starts with `=`, `+`, `-` or `@`, When exported, Then it is neutralised.
+- AC3: Given I am an editor, When I try, Then access is denied.
+- Edge: expires after the export window.
+- Error: failed export shows Retry.
+- Empty: an empty report exports headers only.
+
+### M48-S20 Printable sponsor summary (Should)
+As an admin, I want a one page summary I can send to a sponsor, so that I can save it as PDF.
+- AC1: Given a report, When I choose Print summary, Then a clean page shows sponsor, period, totals, per placement table and a methodology note.
+- AC2: Given I print, When the browser dialog opens, Then the admin shell is hidden and the page fits A4.
+- Edge: uses the site name and logo from settings.
+- Error: not applicable.
+- Empty: totals show zero with the same note.
+
+### M48-S21 Preview without counting (Must)
+As an editor, I want to preview each placement, so that I can check before going live.
+- AC1: Given a creative, When I open Preview, Then I see mobile and desktop renderings per slot, including text only mode.
+- AC2: Given I click inside the preview, When it navigates, Then nothing is counted.
+- Edge: preview works for draft sponsors.
+- Error: not applicable.
+- Empty: not applicable.
+
+### M48-S22 Rotation (Should)
+As an admin, I want several sponsors to share a slot fairly, so that each gets exposure.
+- AC1: Given two live creatives for Home, When pages load across days, Then they alternate evenly by day.
+- AC2: Given weighted mode, When weights are 3 and 1, Then 3 of 4 days show the first.
+- Edge: a capped creative is skipped for that browser.
+- Error: not applicable.
+- Empty: one creative always shows (within caps).
+
+### M48-S23 Why am I seeing this (Could)
+As a viewer, I want a short explanation, so that I understand sponsors fund the platform.
+- AC1: Given a card, When I open "Why am I seeing this?", Then `/sponsors` explains sponsors, that they do not get my data, and that kids never see them.
+- Edge: page 404s when sponsors are off.
+- Error: not applicable.
+- Empty: not applicable.
+
+### M48-S24 Donate button and navigation (Must)
+As a viewer, I want an easy but unpushy way to give, so that I can support the platform if I wish.
+- AC1: Given donations are on, When I view the footer, header menu or end of a video, Then a Donate link shows.
+- AC2: Given donations are off, When I request `/donate`, Then it returns 404 and no link exists anywhere.
+- AC3: Given Kids mode, When I look, Then no Donate link shows and `/donate` explains "Ask a grown-up".
+- Edge: no popups, no banners, no nagging.
+- Error: not applicable.
+- Empty: not applicable.
+
+### M48-S25 Amount selection (Must)
+As a donor, I want presets and a custom amount, so that I can give what I choose.
+- AC1: Given NGN presets, When I tap one, Then it shows as pressed and the button shows the amount.
+- AC2: Given I type a custom amount below the minimum or above the maximum, When I leave the field, Then an inline message states the limit.
+- AC3: Given I use a phone, When I focus the field, Then the numeric keypad opens.
+- Edge: the amount is validated again on the server.
+- Error: failure keeps my input.
+- Empty: not applicable.
+
+### M48-S26 One time donation with Paystack (Must)
+As a donor, I want to pay by card, bank transfer or USSD on a secure page, so that my payment details stay safe.
+- AC1: Given I enter an amount and email and press Donate, When the server creates the transaction, Then I am sent to Paystack's hosted page.
+- AC2: Given I pay, When Paystack redirects me back, Then I land on the thank you page.
+- AC3: Given I close the Paystack page, When I return, Then I see the cancelled page with a way to try again.
+- Edge: double tapping creates one transaction.
+- Error: if Paystack is unreachable, "We could not start the payment. Nothing was charged. Try again." and no stuck row.
+- Empty: not applicable.
+
+### M48-S27 Webhook signature verification (Must)
+As the owner, I want only genuine Paystack events accepted, so that nobody can fake a donation.
+- AC1: Given a request with a missing or wrong `x-paystack-signature`, When it arrives, Then it gets 401 and nothing is stored or enqueued.
+- AC2: Given a correct signature over the raw body, When it arrives, Then it is stored and acknowledged within one second.
+- AC3: Given a body changed by one byte, When it arrives with the old signature, Then it is rejected.
+- Edge: oversized bodies are rejected before hashing.
+- Error: processing errors never change the response to Paystack after storage.
+- Empty: not applicable.
+
+### M48-S28 Idempotent processing (Must)
+As the owner, I want repeated or out of order events to be harmless, so that no donor is charged twice in our books or emailed twice.
+- AC1: Given the same event is delivered twice, When processed, Then one state change and one receipt result.
+- AC2: Given a success event arrives before our row is visible, When processed, Then it is retried, not dropped.
+- AC3: Given the paid amount is lower than expected, When processed, Then the donation is flagged needs review and no receipt is sent.
+- Edge: concurrent deliveries are serialised by reference.
+- Error: poison events end in a failed state with an alert in the admin.
+- Empty: not applicable.
+
+### M48-S29 Thank you page (Must)
+As a donor, I want an honest confirmation, so that I know the gift arrived.
+- AC1: Given I return from Paystack, When the server verifies the reference, Then I see success only if the donation is succeeded.
+- AC2: Given the webhook has not arrived, When I load the page, Then it says "We are confirming your gift" and refreshes the status up to 30 seconds.
+- AC3: Given I edit the URL, When I load it, Then nothing personal is shown without the signed receipt token.
+- Edge: page has `noindex` and no third party scripts.
+- Error: failure shows a calm message and the support email.
+- Empty: not applicable.
+
+### M48-S30 Email receipt (Must)
+As a donor, I want an emailed receipt, so that I have a record.
+- AC1: Given a donation succeeded, When processed, Then one email with reference, amount, date and organisation name is queued through the outbox.
+- AC2: Given the donor name has markup, When rendered, Then it is escaped.
+- AC3: Given tax text is not configured, When the receipt renders, Then it does not claim deductibility.
+- Edge: guests receive it too, using only the email they typed.
+- Error: delivery failure retries through the outbox and shows in the admin row.
+- Empty: not applicable.
+
+### M48-S31 Monthly donation (Should)
+As a donor, I want to give every month, so that I can support steadily.
+- AC1: Given monthly is enabled, When I tick "Give monthly", Then the button shows "Give NGN X every month" and the subscription starts on payment.
+- AC2: Given a later month, When the charge succeeds, Then a new donation row and receipt exist for that month.
+- AC3: Given a charge fails, When Paystack reports it, Then I get one email asking me to update my card.
+- Edge: changing the amount means starting a new monthly gift and cancelling the old one.
+- Error: plan creation failure shows the one time option as a fallback message.
+- Empty: not applicable.
+
+### M48-S32 Cancel monthly giving (Should)
+As a donor, I want to stop at any time, so that I stay in control.
+- AC1: Given a monthly email, When I open the manage link, Then I can cancel in one step.
+- AC2: Given I enter my email on the manage page, When submitted, Then the answer is always "If a monthly gift exists we have emailed a link".
+- AC3: Given the link is older than 30 days, When opened, Then it asks me to request a new one.
+- Edge: cancelling twice is harmless.
+- Error: provider failure shows Retry and keeps the state.
+- Empty: not applicable.
+
+### M48-S33 Guests can donate (Must)
+As a visitor without an account, I want to donate with only an email, so that nothing blocks me.
+- AC1: Given I am a guest, When I donate, Then I am never asked to sign up.
+- AC2: Given I am signed in, When I donate, Then my email is prefilled and the gift is linked to my account, and I can untick "link to my account".
+- AC3: Given a guest session, When a gift is made, Then the guest cookie is not extended or used as a payment identifier.
+- Edge: signing in later does not retroactively link past gifts.
+- Error: not applicable.
+- Empty: not applicable.
+
+### M48-S34 Kids cannot donate (Must)
+As a parent, I want children unable to start a payment, so that no child is charged.
+- AC1: Given a kids profile or Kids mode, When `POST /api/donate/checkout` is called, Then it returns 403.
+- AC2: Given Kids mode, When the page loads, Then `/donate` shows "Ask a grown-up to help" with no form.
+- Edge: audience is derived on the server, never from the body.
+- Error: unknown audience fails closed.
+- Empty: not applicable.
+
+### M48-S35 Test mode and live guard (Must)
+As the developer and owner, I want safe testing and no accident in live mode, so that real money is handled deliberately.
+- AC1: Given no Paystack key, When I try to enable donations, Then the switch refuses and says which variable is missing.
+- AC2: Given a test key, When donations run, Then the page and admin show a Test mode badge, and test rows are excluded from totals.
+- AC3: Given a live key outside production, When the app starts, Then it refuses to boot the payments module.
+- Edge: switching keys never mixes test and live rows (rows store `site_mode`).
+- Error: webhook events for the other mode are stored and ignored.
+- Empty: not applicable.
+
+### M48-S36 Admin donations list and export (Must)
+As an admin, I want to see and export donations, so that I can do accounts.
+- AC1: Given donations exist, When I open Donations, Then I see date, reference, amount, status, kind, masked email, and filters.
+- AC2: Given I press Reveal email, When I confirm, Then the email shows and an audit row records who revealed it.
+- AC3: Given I export, When the file is built, Then it is a queued CSV with formula neutralisation.
+- Edge: anonymous gifts hide the name in lists.
+- Error: export failure shows Retry.
+- Empty: "No donations yet."
+
+### M48-S37 Reconcile pending gifts (Should)
+As the owner, I want missed webhooks recovered, so that every paid gift is recorded.
+- AC1: Given a pending donation older than 15 minutes, When the job runs, Then it is verified with Paystack and updated.
+- AC2: Given a pending gift older than 24 hours with no payment, When the job runs, Then it becomes abandoned.
+- Edge: a succeeded gift is never downgraded.
+- Error: provider errors retry with backoff.
+- Empty: not applicable.
+
+### M48-S38 Transparency page (Should)
+As a donor, I want to see how donations are used, so that I can trust the project.
+- AC1: Given the page is enabled, When I open `/transparency`, Then I see the owner's items, their share or amount, and the last updated date.
+- AC2: Given percent mode, When the owner saves, Then items must total 100 percent.
+- AC3: Given the page is disabled, When requested, Then it returns 404 and no link shows.
+- Edge: no donor names ever appear.
+- Error: not applicable.
+- Empty: not applicable (disabled by default).
+
+### M48-S39 Diaspora USD gifts (Could)
+As a donor abroad, I want to give in US dollars, so that my bank does not convert at a poor rate.
+- AC1: Given USD is enabled and Paystack has USD on the account, When I open `/donate`, Then I can switch currency to USD with its own presets.
+- AC2: Given USD is not enabled, When I open `/donate`, Then no currency switch shows.
+- Edge: totals never add NGN and USD together.
+- Error: USD initialisation failure falls back to NGN with a message.
+- Empty: not applicable.
+
+### M48-S40 Bank transfer instructions (Could)
+As a donor who prefers a transfer, I want account details, so that I can pay from my bank app.
+- AC1: Given it is enabled, When I open `/donate`, Then the instructions show as escaped text with a copy button for the account number.
+- AC2: Given an admin receives a transfer, When they add a manual donation, Then it is stored with source manual and audited.
+- Edge: no receipt is emailed unless the admin chooses to.
+- Error: not applicable.
+- Empty: not applicable.
+
+### M48-S41 Flutterwave option (Could)
+As the owner, I want a second provider if Paystack is a problem, so that I am not locked in.
+- AC1: Given the Flutterwave variables are set and the provider is selected, When a donor pays, Then the same flow works through the provider interface.
+- AC2: Given a webhook with a wrong `verif-hash`, When it arrives, Then it is rejected.
+- Edge: only one provider is active at a time.
+- Error: not applicable.
+- Empty: not applicable.
+
+### M48-S42 Failed and refunded gifts (Should)
+As an admin, I want failures and refunds shown clearly, so that my books match Paystack.
+- AC1: Given a failed payment, When processed, Then the row shows Failed with the reason code and no receipt.
+- AC2: Given a refund event, When processed, Then the row shows Refunded and totals exclude it.
+- Edge: partial refunds are shown as needs review.
+- Error: not applicable.
+- Empty: not applicable.
+
+### M48-S43 Abuse and card testing protection (Must)
+As the owner, I want fraudsters unable to use the form to test stolen cards, so that the account stays in good standing.
+- AC1: Given more than the allowed initiations per IP or per email hash per hour, When another arrives, Then it gets 429.
+- AC2: Given repeated limit hits and Turnstile configured, When the form loads, Then a challenge is required.
+- AC3: Given many pending rows from one source, When the reconcile job runs, Then they are marked abandoned and the admin sees an alert.
+- Edge: limits are tunable in config constants.
+- Error: limiter failure fails closed for checkout.
+- Empty: not applicable.
+
+### M48-S44 Privacy notice and retention (Must)
+As a donor, I want to know what is stored and for how long, so that I can trust the platform.
+- AC1: Given I open `/donate`, When I look under the form, Then a short notice states what we store (email, optional name, amount), who processes it (Paystack), the legal basis and retention, and links to the Privacy page.
+- AC2: Given a marketing tick box, When shown, Then it is unticked by default and not required.
+- AC3: Given a deletion request, When handled, Then name, message and email are erased or hashed while amounts and references remain for accounts, as explained in the notice.
+- Edge: guests are covered by the same notice.
+- Error: not applicable.
+- Empty: not applicable.

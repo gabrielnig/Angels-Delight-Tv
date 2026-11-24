@@ -1318,3 +1318,129 @@ Per video tri state, site default (Super admin), Admin changes it with a reason 
 - Options: URL prefix per locale, cookie and header only.
 - Why: Guests are first class and there is no SEO work yet, so a prefix would touch every route for no viewer benefit. Reversible later with redirects from the cookie.
 - Reversible: yes
+
+## D-247 Allow labelled sponsor slots and donations despite earlier non-goals (lane L9, L9-D01)
+- Decision: Allow, off by default: the client may want funding, and it costs nothing when off
+- Options: Keep platform ad free; allow optional off by default.
+- Why: see the recommended option above and `docs/plan/v2/L9-monetization.md` section 11.
+- Reversible: yes, flags and docs.
+
+## D-248 Payment provider (lane L9, L9-D02)
+- Decision: Paystack first: Nigeria first, NGN settlement, hosted checkout, bank transfer and USSD for donors without cards. Flutterwave as a Could behind the same interface
+- Options: Paystack; Flutterwave; Stripe.
+- Why: see the recommended option above and `docs/plan/v2/L9-monetization.md` section 11.
+- Reversible: yes, provider interface.
+
+## D-249 Checkout style (lane L9, L9-D03)
+- Decision: Hosted redirect: no third-party script, no card data on our servers, no CSP change
+- Options: Popup script; inline fields; hosted redirect.
+- Why: see the recommended option above and `docs/plan/v2/L9-monetization.md` section 11.
+- Reversible: yes.
+
+## D-250 Sponsor format (lane L9, L9-D04)
+- Decision: Still image or text cards only, one link, labelled
+- Options: Video ads; image cards; text only.
+- Why: see the recommended option above and `docs/plan/v2/L9-monetization.md` section 11.
+- Reversible: yes.
+
+## D-251 Click tracking (lane L9, L9-D05)
+- Decision: First party redirect at `/s/{id}`, destination from the database
+- Options: Third-party tracker; client only fetch; first party redirect.
+- Why: see the recommended option above and `docs/plan/v2/L9-monetization.md` section 11.
+- Reversible: yes.
+
+## D-252 Frequency cap storage (lane L9, L9-D06)
+- Decision: First party functional cookie `ad_spc` read on the server: works for guests, no identifier, no shift
+- Options: Account based; server per IP; first party cookie.
+- Why: see the recommended option above and `docs/plan/v2/L9-monetization.md` section 11.
+- Reversible: yes.
+
+## D-253 Reach metric (lane L9, L9-D07)
+- Decision: Daily distinct count only, labelled "daily reach", counts stored not hashes
+- Options: None; hashed unique per day; exact uniques.
+- Why: see the recommended option above and `docs/plan/v2/L9-monetization.md` section 11.
+- Reversible: yes.
+
+## D-254 Kids protection (lane L9, L9-D08)
+- Decision: Server fail closed in selection, click, impression, checkout and cookie code, plus a kids matrix test
+- Options: Filter in UI only; server fail closed.
+- Why: see the recommended option above and `docs/plan/v2/L9-monetization.md` section 11.
+- Reversible: no (safety).
+
+## D-255 Before-video card (lane L9, L9-D09)
+- Decision: Skippable at once, ready media loads in parallel, never on Data saver or resume, off by default, after-video card preferred
+- Options: Forced wait; skippable at once; not offered.
+- Why: see the recommended option above and `docs/plan/v2/L9-monetization.md` section 11.
+- Reversible: yes.
+
+## D-256 Sponsor status (lane L9, L9-D10)
+- Decision: Derived from dates at read time, stored only draft, paused, archived
+- Options: Stored status with cron; derived from dates.
+- Why: see the recommended option above and `docs/plan/v2/L9-monetization.md` section 11.
+- Reversible: yes.
+
+## D-257 Money type (lane L9, L9-D11)
+- Decision: Integer minor units, per currency
+- Options: float; decimal; integer minor units.
+- Why: see the recommended option above and `docs/plan/v2/L9-monetization.md` section 11.
+- Reversible: no.
+
+## D-258 Webhook trust (lane L9, L9-D12)
+- Decision: Signature plus API verify plus amount and currency check, idempotent by event key
+- Options: Trust payload; signature only; signature plus API verify.
+- Why: see the recommended option above and `docs/plan/v2/L9-monetization.md` section 11.
+- Reversible: yes.
+
+## D-259 Donor identity (lane L9, L9-D13)
+- Decision: Email only, guests allowed, account link optional
+- Options: Account required; email only.
+- Why: see the recommended option above and `docs/plan/v2/L9-monetization.md` section 11.
+- Reversible: yes.
+
+## D-260 Donor data at rest (lane L9, L9-D14)
+- Decision: Encrypted email, name, message and raw event payloads with the existing field key, HMAC hash for lookups
+- Options: Plain; encrypted fields.
+- Why: see the recommended option above and `docs/plan/v2/L9-monetization.md` section 11.
+- Reversible: no.
+
+## D-261 Small gifts (lane L9, L9-D15)
+- Decision: Minimum NGN 200 configurable, because flat fees dominate tiny gifts [VERIFY]
+- Options: No minimum; minimum NGN 200.
+- Why: see the recommended option above and `docs/plan/v2/L9-monetization.md` section 11.
+- Reversible: yes.
+
+## D-262 Donor wall (lane L9, L9-D16)
+- Decision: None, privacy and kids concerns. Transparency page shows use of funds only
+- Options: Public names; none.
+- Why: see the recommended option above and `docs/plan/v2/L9-monetization.md` section 11.
+- Reversible: yes.
+
+## D-263 Sponsor and donation roles (lane L9, L9-D17)
+- Decision: Editor manages sponsor drafts, admin activates sponsors and alone sees donations and settings
+- Options: Editor can see all; split.
+- Why: see the recommended option above and `docs/plan/v2/L9-monetization.md` section 11.
+- Reversible: yes.
+
+## D-264 Receipt wording (lane L9, L9-D18)
+- Decision: Acknowledgement only until counsel confirms
+- Options: Tax receipt; acknowledgement.
+- Why: see the recommended option above and `docs/plan/v2/L9-monetization.md` section 11.
+- Reversible: yes.
+
+## D-265 Reporting artefact (lane L9, L9-D19)
+- Decision: CSV and browser printable summary, no portal
+- Options: Sponsor portal; CSV and print page.
+- Why: see the recommended option above and `docs/plan/v2/L9-monetization.md` section 11.
+- Reversible: yes.
+
+## D-266 Test mode safety (lane L9, L9-D20)
+- Decision: Mode derived from key prefix, live key refused outside production, rows tagged with mode
+- Options: Setting; key prefix.
+- Why: see the recommended option above and `docs/plan/v2/L9-monetization.md` section 11.
+- Reversible: yes.
+
+## D-267 Phone sponsor card shows an arrow, the whole card is the link (lane L9, L9-D21)
+- Decision: below 960 px the card shows a 20 px chevron (aria-hidden) and is one anchor whose accessible name is "Sponsored by NAME: HEADLINE. CTA_LABEL". From 960 px the text button from cta_label shows. No nested interactive element in either.
+- Options: a text button inside the compact card, a chevron arrow with the whole card as the link.
+- Why: a text button takes about 90 px of the 190 px text column at 360 px, drops the headline to 3 lines and needs a taller box that pushes the first row down. The arrow keeps 112 px and the target is the whole card.
+- Reversible: yes. Review after a trial on low end Android phones in Lagos.

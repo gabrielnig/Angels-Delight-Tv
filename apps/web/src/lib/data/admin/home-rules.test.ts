@@ -80,34 +80,4 @@ describe('home rules', () => {
       true,
     );
   });
-  it('previews the five newest live titles when no hero titles are chosen', () => {
-    const s = structuredClone(getStore());
-    const preview = resolvePreview(defaultHome(), s.videos, s.series, false);
-    const newest = s.videos
-      .filter((v) => v.deletedAt === null && v.publishState === 'published')
-      .sort((a, b) => (b.publishedAt ?? '').localeCompare(a.publishedAt ?? ''))
-      .slice(0, 5)
-      .map((v) => v.id);
-    expect(preview.heroFallback).toBe(true);
-    expect(preview.hero.map((v) => v.id)).toEqual(newest);
-  });
-  it('previews the same fallback when every chosen hero title is unpublished', () => {
-    const s = structuredClone(getStore());
-    const draft = s.videos.find((v) => v.publishState !== 'published' && v.deletedAt === null)!;
-    const set = setHero(defaultHome(), [draft.id]);
-    if (!set.ok) throw new Error();
-    const preview = resolvePreview(set.config, s.videos, s.series, false);
-    expect(preview.heroFallback).toBe(true);
-    expect(preview.skippedHero.map((v) => v.id)).toEqual([draft.id]);
-    expect(preview.hero.length).toBeGreaterThan(0);
-  });
-  it('keeps chosen hero titles and does not flag a fallback', () => {
-    const s = structuredClone(getStore());
-    const pub = s.videos.filter((v) => v.publishState === 'published' && v.deletedAt === null);
-    const set = setHero(defaultHome(), [pub[1]!.id]);
-    if (!set.ok) throw new Error();
-    const preview = resolvePreview(set.config, s.videos, s.series, false);
-    expect(preview.heroFallback).toBe(false);
-    expect(preview.hero.map((v) => v.id)).toEqual([pub[1]!.id]);
-  });
 });

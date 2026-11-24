@@ -105,3 +105,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - Fixed documents: segment URLs live 2 hours for accounts (SECURITY.md said 6), a kids profile on a non-kid video gets 404 (M31-S01), and the key limits in M31-S02.
 - Not built: Clear history on this device (M40-S18), the audience select on the admin Features screen, and the Playwright journey specs.
 
+
+### Lane L9: Sponsors and donations (M48)
+
+- Slice 0: docs now allow labelled sponsor cards and hosted checkout donations, both off by default and never for kids. Added 38 monetization settings (all off, client inputs empty), cross key checks, and the `PAYSTACK_SECRET_KEY`, `PAYSTACK_BASE_URL` and `DONATE_RECEIPT_TOKEN_SECRET` variables.
