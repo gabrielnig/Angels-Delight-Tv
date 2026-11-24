@@ -1910,3 +1910,9 @@ Decision: `video.preview` catches every error and records `failed` or `skipped` 
 - Options: Leave the journal as it was; raise the out of order values; squash the migrations into one baseline.
 - Why: Drizzle runs a migration only when its `when` is newer than the latest applied one, so a database that was behind would silently skip 0042, 0048 to 0052, 0055 and 0056 and then miss tables. Fresh databases were never affected. No production database exists yet, so the change is safe now and would not be later. A development database already migrated to 0056 would try 0055 and 0056 again, so reset it (docker compose down -v) or delete their two rows from drizzle.__drizzle_migrations.
 - Reversible: Yes, but only before a production database exists.
+
+## D-349 The key route and the public guest reads key their limiters on a keyed network hash, not the raw address (security review)
+- Decision: `play-key-ip`, `api` and `search` guest buckets use `networkSubject` (keyed hash of the IPv4 /24 or IPv6 /48) like the guest session limits, so `rate_limit_buckets` holds no raw address.
+- Options: Keep the raw address in the bucket subject, or hash the full address, or hash the truncated network.
+- Why: SECURITY.md section 10 allows a raw address only in short lived access logs. The truncated hash matches D-197. The key route budget (300 a minute) is now shared by a /24, which is far above one viewer's need because a key is fetched once per playback.
+- Reversible: Yes.
