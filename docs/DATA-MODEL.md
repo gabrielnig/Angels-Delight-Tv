@@ -450,7 +450,7 @@ The position a viewer had before "Remove from row" (M09-S07), kept so Undo works
 | `series_id` | uuid | yes | FK `series` ON DELETE CASCADE |
 | `added_at` | timestamptz | no | |
 
-Constraints: `CHECK (num_nonnulls(video_id, series_id) = 1)`; `UNIQUE (profile_id, video_id) WHERE video_id IS NOT NULL`; `UNIQUE (profile_id, series_id) WHERE series_id IS NOT NULL`. Index `(profile_id, added_at DESC, id)`. RLS identical to `watch_progress`. Max 200 items per profile (service check).
+Constraints: `CHECK (num_nonnulls(video_id, series_id) = 1)`; `UNIQUE (profile_id, video_id) WHERE video_id IS NOT NULL`; `UNIQUE (profile_id, series_id) WHERE series_id IS NOT NULL`. Index `(profile_id, added_at DESC, id)`. RLS identical to `watch_progress`. Max 500 items per profile (service check, `DEFAULT_RULES.maxMyListItems`).
 
 ### 7.2a `title_ratings` and `title_rating_stats` (migration 0042)
 
