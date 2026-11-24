@@ -9,6 +9,8 @@ export interface ToastInput {
   tone?: 'info' | 'success' | 'danger';
   actionLabel?: string;
   onAction?: () => void;
+  /** How long the toast stays. Defaults to 5 seconds; an Undo toast uses 10. */
+  durationMs?: number;
 }
 
 interface ToastItem extends ToastInput {
@@ -34,7 +36,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
     (toast: ToastInput) => {
       const id = Date.now() + Math.random();
       setToasts((all) => [...all, { ...toast, id }]);
-      if (toast.tone !== 'danger') setTimeout(() => dismiss(id), 5000);
+      if (toast.tone !== 'danger') setTimeout(() => dismiss(id), toast.durationMs ?? 5000);
     },
     [dismiss],
   );

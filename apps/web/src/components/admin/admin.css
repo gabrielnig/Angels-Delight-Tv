@@ -1232,21 +1232,185 @@
     grid-template-columns: 2fr repeat(4, 1fr) auto;
   }
 }
+/* ---- Bulk bar, report and progress (L3, tokens only, R30 and R38) ---- */
 .adm-bulk {
   position: sticky;
   top: calc(var(--nav-height) + var(--space-2));
   z-index: var(--z-sticky);
   display: flex;
   flex-wrap: wrap;
-  gap: var(--space-2);
   align-items: center;
-  padding: var(--space-3);
-  background: var(--color-primary-tint);
-  border: 1px solid var(--color-primary);
-  border-radius: var(--radius-md);
+  gap: var(--space-3);
+  min-height: 3.75rem;
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-lg);
+  background: var(--color-sidebar-bg);
+  color: var(--color-sidebar-ink);
+  box-shadow: var(--shadow-3);
 }
 .adm-bulk .adm-field__head {
   display: none;
+}
+.adm-bulk__count {
+  font-weight: 700;
+  white-space: nowrap;
+}
+.adm-bulk__note {
+  color: var(--color-sidebar-muted);
+  font-size: var(--text-caption);
+}
+/* Select all N that match: a 44px high link, never a bare inline link (R30) */
+.adm-bulk__all {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--touch-target);
+  padding: 0 var(--space-1);
+  border: 0;
+  background: none;
+  font: inherit;
+  color: var(--color-focus-ring-dark);
+  font-weight: 600;
+  text-decoration: underline;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.adm-bulk__actions {
+  display: flex;
+  flex: 1 1 auto;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+.adm-bulk__action {
+  display: inline-flex;
+}
+/* Disabled bar action uses tokens, not raw greys (R38). Keeps aria-disabled so it stays focusable and shows its reason. */
+.adm-bulk .adm-btn[aria-disabled='true'] {
+  background: var(--color-sidebar-active);
+  border-color: var(--color-sidebar-active);
+  color: var(--color-sidebar-muted);
+  cursor: not-allowed;
+}
+.adm-bulk .adm-btn--ghost {
+  color: var(--color-sidebar-ink);
+}
+.adm-bulk :focus-visible {
+  outline: 3px solid var(--color-focus-ring-dark);
+  outline-offset: 2px;
+}
+.adm-bulk__clear {
+  margin-inline-start: auto;
+}
+.adm-bulk__morewrap {
+  position: relative;
+  display: none;
+}
+.adm-bulk__menu {
+  position: absolute;
+  inset-block-end: calc(100% + var(--space-2));
+  inset-inline-start: 0;
+  z-index: var(--z-overlay);
+  min-width: 14rem;
+  margin: 0;
+  padding: var(--space-1);
+  list-style: none;
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  color: var(--color-ink);
+  box-shadow: var(--shadow-3);
+}
+.adm-bulk__menuitem {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  min-height: var(--touch-target);
+  padding: 0 var(--space-3);
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: none;
+  font: inherit;
+  color: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+.adm-bulk__menuitem.is-danger {
+  color: var(--color-danger-ink);
+}
+.adm-bulk__menuitem[aria-disabled='true'] {
+  color: var(--color-muted);
+  cursor: not-allowed;
+}
+/* Phones: dock to the bottom edge; secondary actions move into More. */
+@media (max-width: 47.99rem) {
+  .adm-bulk {
+    position: fixed;
+    inset-inline: var(--space-2);
+    inset-block: auto var(--space-2);
+    top: auto;
+    padding-bottom: calc(var(--space-2) + env(safe-area-inset-bottom));
+  }
+  .adm-bulk__secondary {
+    display: none;
+  }
+  .adm-bulk__morewrap {
+    display: inline-flex;
+  }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .adm-bulk {
+    animation: adm-bulk-in var(--motion-fast) var(--ease-standard);
+  }
+}
+@keyframes adm-bulk-in {
+  from {
+    opacity: 0;
+    translate: 0 0.5rem;
+  }
+}
+
+/* Locked row spacer: no checkbox, no greyed box, text stays aligned (R33) */
+.adm-select-spacer {
+  display: block;
+  flex: none;
+  inline-size: 1.25rem;
+  block-size: 1.25rem;
+}
+
+.adm-bulk-report {
+  display: grid;
+  gap: var(--space-2);
+}
+.adm-row-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+.adm-bulk-report__list {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.adm-bulk-report__item {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-3);
+  align-items: center;
+  min-height: var(--touch-target);
+  padding: 0 var(--space-3);
+}
+.adm-bulk-report__item a {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--touch-target);
+}
+.adm-bulk-progress {
+  display: grid;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
 }
 .adm-table-card {
   position: relative; /* clips the absolutely placed .adm-sr text inside wide tables */
