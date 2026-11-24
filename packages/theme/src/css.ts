@@ -1,4 +1,4 @@
-import { themeVariables, type FontKey } from '@ad/ui';
+import { themeVariables, type FontKey } from '@ad/ui/theme';
 import { deriveColors } from './derive';
 import type { ThemeValues } from './model';
 

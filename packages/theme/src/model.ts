@@ -6,7 +6,7 @@ import {
   type FontKey,
   type ThemeColorKey,
   type ThemeIssue,
-} from '@ad/ui';
+} from '@ad/ui/theme';
 import { normalizeHex } from './contrast';
 
 export interface ThemeValues {

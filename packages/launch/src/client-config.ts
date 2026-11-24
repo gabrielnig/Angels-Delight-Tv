@@ -1,4 +1,4 @@
-import { COLOR_KEYS, FONT_KEYS } from '@ad/ui';
+import { COLOR_KEYS, FONT_KEYS } from '@ad/ui/theme';
 import { DEFAULT_THEME, evaluateTheme, parseTheme, type ThemeValues } from '@ad/theme';
 import { z } from 'zod';
 

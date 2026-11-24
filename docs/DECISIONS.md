@@ -872,3 +872,8 @@ Format: decision, options considered, why, reversible or not. Newest first. Deci
 - Decision: `drizzle-orm` moves from devDependencies to dependencies in `apps/worker/package.json`.
 - Options: leave it (the image installs with `pnpm deploy --prod`, so the worker crashed at boot with ERR_MODULE_NOT_FOUND from `src/notifier.ts`), or import it only through `@ad/db`.
 - Why: smallest correct change, found by running the deployed layout locally. Reversible: yes.
+
+## D-166 The tools and the theme package import the pure @ad/ui/theme entry (lane w2)
+- Decision: `@ad/ui` gets a `./theme` export pointing at `src/theme.ts`. `packages/launch` and `packages/theme` take their runtime values from it instead of the `@ad/ui` barrel. A guard test fails if a runtime import of the barrel comes back.
+- Options: add a tsconfig with the automatic JSX runtime to the tools image (tsx ignores files under node_modules unless the config includes them, and it keeps React in the image for no reason), or split the barrel.
+- Why: found on the first real `apply` on the VPS, which crashed with "React is not defined" from `AvatarArt.tsx`. The tools only need colour and font keys, so they should not load any component. Reversible: yes.
