@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { SETTING_DEFS, type SettingKey } from '@ad/theme/client';
 import type { PageSlug } from '@ad/theme/client';
+import type { SearchAdminData, SynonymSaveResult } from '@/lib/data/admin/search-admin-types';
 import type { InviteCodeDto, PageDto, SiteSettingsDto } from '@/lib/data/admin/site-types';
 import type { ActionResult } from '@/lib/data/admin/theme-types';
 import { Badge } from '../Badge';
@@ -11,13 +12,14 @@ import { ConfirmDialog } from '../Dialog';
 import { Switch, TextField } from '../fields';
 import { Icon } from '../Icon';
 import { Card, PageHeader } from '../PageHeader';
-import { Banner } from '../states';
+import { Banner, ErrorState } from '../states';
 import { Tabs } from '../Tabs';
 import { useToast } from '../Toast';
 import { FormActions } from './FormActions';
 import { DiscoveryTab } from './DiscoveryTab';
 import { InviteCodesTab, type InviteCodeActions } from './InviteCodesTab';
 import { PagesEditor } from './PagesEditor';
+import { SearchQualityCards } from './SearchQualityCards';
 import { useSettingsForm, type NumberRule } from './useSettingsForm';
 import './site.css';
 
@@ -26,6 +28,8 @@ export interface SiteActions extends Partial<InviteCodeActions> {
   savePage(slug: PageSlug, body: string): Promise<ActionResult<PageDto>>;
   publishPage(slug: PageSlug): Promise<ActionResult<SiteSettingsDto>>;
   restorePage(slug: PageSlug, version: number): Promise<ActionResult<PageDto>>;
+  /** Present when the person may manage search synonyms (M45-S08). */
+  saveSynonyms?(text: string): Promise<SynonymSaveResult>;
 }
 
 type TabId = 'platform' | 'features' | 'home' | 'discovery' | 'invites' | 'pages' | 'maintenance';
@@ -87,9 +91,14 @@ export function SiteSettingsView({
   initial,
   actions,
   invites,
+  search,
 }: {
   initial: SiteSettingsDto;
   actions: SiteActions;
+  /** Synonyms and the empty search report. Misses are null when that report could not load. */
+  search?:
+    | { synonyms: string; misses: SearchAdminData['misses'] | null }
+    | { unavailable: true };
   /** Present when the person may manage invite codes. The tab is hidden without it. */
   invites?: InviteCodeDto[];
 }) {
@@ -130,7 +139,22 @@ export function SiteSettingsView({
             ) : null}
             {tab === 'home' ? <HomeTab data={data} actions={actions} onSaved={setData} /> : null}
             {tab === 'discovery' ? (
-              <DiscoveryTab data={data} actions={actions} onSaved={setData} />
+              <>
+                <DiscoveryTab data={data} actions={actions} onSaved={setData} />
+                {search && 'unavailable' in search ? (
+                  <ErrorState
+                    compact
+                    title="Search synonyms could not be loaded."
+                    help="Nothing was changed. Reload the page to try again."
+                  />
+                ) : search && actions.saveSynonyms ? (
+                  <SearchQualityCards
+                    synonyms={search.synonyms}
+                    misses={search.misses}
+                    saveSynonyms={actions.saveSynonyms}
+                  />
+                ) : null}
+              </>
             ) : null}
             {tab === 'invites' && invites && actions.create && actions.revoke ? (
               <InviteCodesTab

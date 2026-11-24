@@ -5,6 +5,8 @@ import type { PageSlug } from '@ad/theme/client';
 import { requireActionActor } from '@/lib/data/admin/session-next';
 import { siteSettingsAdmin } from '@/lib/data/admin/site-settings';
 import { inviteCodesAdmin } from '@/lib/data/admin/invite-codes';
+import { searchAdmin } from '@/lib/data/admin/search-admin';
+import type { SynonymSaveResult } from '@/lib/data/admin/search-admin-types';
 import type {
   InviteCodeInput,
   InviteCodeResult,
@@ -52,4 +54,9 @@ export async function createInviteCodeAction(input: InviteCodeInput): Promise<In
 export async function revokeInviteCodeAction(id: string): Promise<InviteCodeResult> {
   const actor = await requireActionActor(NEXT);
   return inviteCodesAdmin.revoke(actor, id);
+}
+
+export async function saveSynonymsAction(text: string): Promise<SynonymSaveResult> {
+  const actor = await requireActionActor(NEXT);
+  return searchAdmin.saveSynonyms(actor, text);
 }

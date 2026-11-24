@@ -4,6 +4,7 @@ import { useEffect, useId, useRef } from 'react';
 import type {
   InputHTMLAttributes,
   ReactNode,
+  Ref,
   SelectHTMLAttributes,
   TextareaHTMLAttributes,
 } from 'react';
@@ -77,7 +78,7 @@ export function TextArea({
   error,
   aside,
   ...rest
-}: FieldShell & TextareaHTMLAttributes<HTMLTextAreaElement>) {
+}: FieldShell & TextareaHTMLAttributes<HTMLTextAreaElement> & { ref?: Ref<HTMLTextAreaElement> }) {
   const id = useId();
   return (
     <Shell id={id} label={label} hint={hint} error={error} aside={aside}>
