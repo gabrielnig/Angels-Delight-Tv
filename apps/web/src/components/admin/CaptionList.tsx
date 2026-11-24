@@ -63,7 +63,7 @@ export function CaptionList({
             live={Boolean(active)}
           />
         ) : (
-          <table className="adm-table" style={{ display: 'table' }}>
+          <table className="adm-table adm-table--always">
             <caption className="adm-sr">Videos and their captions</caption>
             <thead>
               <tr>

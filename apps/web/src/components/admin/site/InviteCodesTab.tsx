@@ -151,7 +151,7 @@ export function InviteCodesTab({
       </Card>
 
       <section className="adm-card adm-table-card" aria-labelledby="codes-h">
-        <h2 className="adm-h3" id="codes-h" style={{ padding: 'var(--space-4) var(--space-4) 0' }}>
+        <h2 className="adm-h3" id="codes-h">
           Codes
         </h2>
         {rows.length === 0 ? (
@@ -159,13 +159,13 @@ export function InviteCodesTab({
             No invite codes yet
           </p>
         ) : (
-          <table className="adm-table" style={{ display: 'table' }}>
+          <table className="adm-table adm-table--always adm-table--sticky">
             <caption className="adm-sr">Sign up invite codes</caption>
             <thead>
               <tr>
                 <th scope="col">Label</th>
                 <th scope="col">Code</th>
-                <th scope="col">Uses</th>
+                <th scope="col" className="adm-num">Uses</th>
                 <th scope="col">Expires</th>
                 <th scope="col">Status</th>
                 <th scope="col">
@@ -178,7 +178,7 @@ export function InviteCodesTab({
                 <tr key={item.id}>
                   <th scope="row">{item.label || 'No label'}</th>
                   <td>Ends in {item.hint}</td>
-                  <td>
+                  <td className="adm-num">
                     {item.uses} of {item.maxUses}
                   </td>
                   <td>{item.expiresAt ? formatDate(item.expiresAt) : 'Never'}</td>

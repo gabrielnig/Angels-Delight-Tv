@@ -85,7 +85,7 @@ export function SystemView({
           />
         ) : (
           <div className="adm-card adm-table-card">
-            <table className="adm-table" style={{ display: 'table' }}>
+            <table className="adm-table adm-table--always adm-table--sticky">
               <caption className="adm-sr">Failed and dead background jobs</caption>
               <thead>
                 <tr>
@@ -225,7 +225,7 @@ export function SystemView({
             <h2
               className="adm-h3"
               id="err-h"
-              style={{ padding: 'var(--space-4) var(--space-4) 0' }}
+             
             >
               Playback errors
             </h2>
@@ -234,7 +234,7 @@ export function SystemView({
                 No playback errors in this period.
               </p>
             ) : (
-              <table className="adm-table" style={{ display: 'table' }}>
+              <table className="adm-table adm-table--always adm-table--sticky">
                 <caption className="adm-sr">Playback errors by code</caption>
                 <thead>
                   <tr>

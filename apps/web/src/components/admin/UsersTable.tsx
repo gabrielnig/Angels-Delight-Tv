@@ -43,7 +43,7 @@ export function UsersTable({
         />
       ) : (
         <div className="adm-card adm-table-card">
-          <table className="adm-table" style={{ display: 'table' }}>
+          <table className="adm-table adm-table--always">
             <caption className="adm-sr">Viewer accounts</caption>
             <thead>
               <tr>

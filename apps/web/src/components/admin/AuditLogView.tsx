@@ -134,7 +134,7 @@ export function AuditLogView({
             />
           ) : (
             <div className="adm-card adm-table-card">
-              <table className="adm-table" style={{ display: 'table' }}>
+              <table className="adm-table adm-table--always adm-table--sticky">
                 <caption className="adm-sr">Audit log, newest first</caption>
                 <thead>
                   <tr>
@@ -248,7 +248,7 @@ function AuditDetail({ row, closeHref }: { row: AuditRow; closeHref: string }) {
           No before and after values were recorded for this action.
         </p>
       ) : (
-        <table className="adm-table" style={{ display: 'table' }}>
+        <table className="adm-table adm-table--always adm-table--sticky">
           <caption className="adm-sr">Values before and after</caption>
           <thead>
             <tr>

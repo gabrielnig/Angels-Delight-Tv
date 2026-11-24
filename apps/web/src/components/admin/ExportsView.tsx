@@ -72,15 +72,15 @@ export function ExportsView({ items, notice }: { items: ExportItem[]; notice?: E
         />
       ) : (
         <div className="adm-card adm-table-card">
-          <table className="adm-table" style={{ display: 'table' }}>
+          <table className="adm-table adm-table--always adm-table--sticky">
             <caption className="adm-sr">Your exports, newest first</caption>
             <thead>
               <tr>
                 <th scope="col">Export</th>
                 <th scope="col">Asked</th>
                 <th scope="col">Status</th>
-                <th scope="col">Rows</th>
-                <th scope="col">Size</th>
+                <th scope="col" className="adm-num">Rows</th>
+                <th scope="col" className="adm-num">Size</th>
                 <th scope="col">File</th>
               </tr>
             </thead>
@@ -101,8 +101,8 @@ export function ExportsView({ items, notice }: { items: ExportItem[]; notice?: E
                         </p>
                       ) : null}
                     </td>
-                    <td>{item.rows === null ? '' : number.format(item.rows)}</td>
-                    <td>{size(item.bytes)}</td>
+                    <td className="adm-num">{item.rows === null ? '' : number.format(item.rows)}</td>
+                    <td className="adm-num">{size(item.bytes)}</td>
                     <td>
                       {item.status === 'ready' ? (
                         <>

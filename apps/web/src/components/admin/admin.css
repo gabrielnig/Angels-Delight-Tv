@@ -1051,6 +1051,14 @@
 .adm-list > li:first-child {
   border-top: 0;
 }
+/* A list that is itself the card: keep the card's horizontal padding (the .adm-list reset above would remove it). */
+.adm-card.adm-list {
+  padding: var(--space-1) var(--space-4);
+  gap: 0;
+}
+.adm-card.adm-list > li:last-child {
+  padding-bottom: var(--space-3);
+}
 .adm-list__main {
   min-width: 0;
   flex: 1 1 14rem;
@@ -1265,8 +1273,17 @@
 .adm-table-card {
   position: relative; /* clips the absolutely placed .adm-sr text inside wide tables */
   padding: 0;
-  overflow: hidden;
+  overflow-x: auto;
+  overflow-y: hidden;
   gap: 0;
+}
+.adm-table-card > .adm-h3,
+.adm-table-card > .adm-card__head {
+  padding: var(--space-4) var(--space-4) var(--space-2);
+}
+.adm-table-card > .adm-muted {
+  margin: 0;
+  padding: 0 var(--space-4) var(--space-3);
 }
 .adm-table {
   display: none;
@@ -1287,6 +1304,44 @@
   height: 3.5rem;
   border-top: 1px solid var(--color-border);
   vertical-align: middle;
+}
+/* Column alignment (L3-01): header and cells of a column share one class. */
+.adm-table th.adm-num,
+.adm-table td.adm-num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.adm-table th.adm-ctr,
+.adm-table td.adm-ctr {
+  text-align: center;
+}
+.adm-table th.adm-actions,
+.adm-table td.adm-actions {
+  text-align: right;
+}
+.adm-table th:first-child,
+.adm-table td:first-child {
+  padding-inline-start: var(--space-4);
+}
+.adm-table th:last-child,
+.adm-table td:last-child {
+  padding-inline-end: var(--space-4);
+}
+.adm-table--always {
+  display: table;
+}
+/* Wide tables keep the first column visible while scrolling sideways. */
+@media (max-width: 63.99rem) {
+  .adm-table--sticky th:first-child,
+  .adm-table--sticky td:first-child {
+    position: sticky;
+    inset-inline-start: 0;
+    background: var(--color-surface);
+    z-index: var(--z-sticky);
+  }
+  .adm-table--sticky thead th:first-child {
+    background: var(--color-surface-sunken);
+  }
 }
 .adm-table.is-compact td {
   height: var(--touch-target);

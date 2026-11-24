@@ -893,3 +893,88 @@ Format: decision, options considered, why, reversible or not. Newest first. Deci
 - Options: leave Hausa on the display font, or add the hooked letters to every family.
 - Why: five of six curated families lack ɓ ɗ ƙ ʼ, and Inter has them. Subsetting every family is larger and slower.
 - Reversible: yes, one font rule.
+
+## D-170 Table alignment rule (lane L3, L3-D01)
+- Decision: Numbers right aligned with right aligned headers (`adm-num`), Yes or No marks centred (`adm-ctr`), row actions right (`adm-actions`), everything else left. Header and cells of a column share one class.
+- Options: Left align everything, centre numbers.
+- Why: Matches DESIGN-SYSTEM 11.16 and fixes the CSS specificity bug (`.adm-table th` beat `.adm-num`) instead of moving headers. Reversible: yes, CSS only.
+
+## D-171 One Breadcrumbs component in @ad/ui (lane L3, L3-D02)
+- Decision: Admin `PageHeader` and the viewer title page use one `Breadcrumbs` component. Current crumb truncates at 40ch, phones show only the parent. Links and the current crumb follow R32.
+- Options: Patch both copies.
+- Why: The defect was a duplicated pattern. Reversible: yes.
+
+## D-172 Tables on phones (lane L3, L3-D03)
+- Decision: Wide tables scroll sideways inside their card with a sticky first column. Captions, Trash and Users get stacked cards when their slices land.
+- Options: Scroll everywhere, cards everywhere.
+- Why: DESIGN-SYSTEM 11.16 and one handed use on low end phones. Reversible: yes.
+
+## D-173 Bulk mechanics constants (lane L3, L3-D04)
+- Decision: 25 ids per chunk, 200 per server call, 500 per selection, 50 for account actions, 20 for invites.
+- Options: One big call.
+- Why: Survives timeouts on slow connections, shows progress, caps blast radius. Reversible: yes, constants.
+
+## D-174 Selection across pages (lane L3, L3-D05)
+- Decision: Page scope by default. Select all that match (filter snapshot, up to 500 ids) only for non destructive reversible actions: category, suitability, captions availability, Restore.
+- Options: Never allow it, always allow it.
+- Why: Saves ticking pages without letting someone change what they cannot see. Reversible: yes.
+
+## D-175 Partial failure (lane L3, L3-D06)
+- Decision: Each item succeeds or fails alone, except suitability (already all or nothing) and staff disable (all or nothing).
+- Options: Everything all or nothing.
+- Why: One bad row never blocks the rest, security changes never half apply. Reversible: yes.
+
+## D-176 Undo (lane L3, L3-D07)
+- Decision: A 10 second toast, client memory only, compare and set on the server. Offered for trash, restore, publish, unpublish, category, suitability, captions availability, suspend, reinstate, series publish. Not for approve captions, delete forever, retry or staff changes.
+- Options: No undo, undo everywhere.
+- Why: Only where reversal is cheap and safe. Reversible: yes.
+
+## D-177 Bulk audit shape (lane L3, L3-D08)
+- Decision: One `bulk.run` summary row plus each item's normal row carrying `extra.bulkId`.
+- Options: Summary only, items only.
+- Why: The log stays searchable by item and by run. Reversible: yes.
+
+## D-178 Bulk approve of captions (lane L3, L3-D09)
+- Decision: Admin only (R21). Skip failed, generating, none, approved and tracks with warnings. Untouched auto captions need a ticked acknowledgement.
+- Options: Editor allowed, block untouched entirely.
+- Why: Clears a backlog without publishing wrong names by accident. Reversible: yes.
+
+## D-179 Bulk retry of encodes (lane L3, L3-D10)
+- Decision: Only jobs whose original file still exists, oldest failure first, one at a time. New action `encode.retry` at editor level.
+- Options: Retry everything.
+- Why: Matches M14-S07 and M14-S09 AC4. Reversible: yes.
+
+## D-180 Users and staff bulk actions (lane L3, L3-D11)
+- Decision: Viewer accounts: suspend with one shared reason, reinstate, force sign out, resend verification, no bulk delete. Staff: Super admin only, re-auth once, Editor and Admin only, never self, never to or from Super admin, disable all or nothing, invite resend with a one hour cooldown.
+- Options: Wider sets.
+- Why: Safest set that removes repeat clicks. Reversible: yes.
+
+## D-181 Series bulk actions (lane L3, L3-D12)
+- Decision: Bulk publish, unpublish, delete (typed count, no undo, new `series.delete` at admin). No series Trash because delete removes seasons. Editors can no longer delete a series.
+- Options: Add soft delete.
+- Why: A restore needs a schema change. Reversible: yes.
+
+## D-182 Trash bulk actions (lane L3, L3-D13)
+- Decision: Bulk restore and delete forever with a typed count. Purge stays admin and M16-S06 is corrected.
+- Options: Super admin only.
+- Why: Docs follow the shipped matrix. Reversible: yes.
+
+## D-183 Bulk upload details (lane L3, L3-D14)
+- Decision: Shared details with per file overrides. Publish later means publish when ready with an optional not before time and never bypasses the caption gate.
+- Options: Schedule a time.
+- Why: Nothing is publishable at upload time. Reversible: yes, drop `publish_intent`.
+
+## D-184 Captions On, Off or Follow site default (lane L3, L3-D15)
+- Decision: Per video tri state `captions_enabled`, site default `captions.defaultAvailable` (Super admin), Admin changes the video with a reason for Off, Off satisfies the publish gate and hides tracks and the CC button, admin can still process captions, profiles keep their saved choice. Approved VTT URLs stay reachable for anyone who has one.
+- Options: Viewer toggle only, per video flag only.
+- Why: From the audit's resolved option (R22). Reversible: yes.
+
+## D-185 Doc and code mismatches fixed in docs (lane L3, L3-D16)
+- Decision: Encoding retry is editor level and Delete forever is admin level; SECURITY.md and M16-S06 are corrected, code unchanged.
+- Options: Change the code.
+- Why: The code matches the stories and the UI. Reversible: yes.
+
+## D-186 Status ink tokens (lane L3, L3-D17)
+- Decision: Add `--color-info-ink` #14568F, `--color-success-ink` #14532D and `--color-warning-ink` #5E3D00 to tokens.css, DESIGN-SYSTEM section 3 and the theme editor Fixed group.
+- Options: Keep raw hex values in screens.
+- Why: Review finding F11: text inks on status tints must be tokens. Contrast 6.63, 7.99 and 8.88. Reversible: yes.
