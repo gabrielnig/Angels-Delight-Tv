@@ -147,6 +147,7 @@ services:
       dockerfile: Dockerfile
     environment:
       WHISPER_MODEL: ${WHISPER_MODEL:-small.en}
+      WHISPER_MODEL_MULTI: ${WHISPER_MODEL_MULTI:-}
       WHISPER_COMPUTE_TYPE: ${WHISPER_COMPUTE_TYPE:-int8}
     volumes:
       - whisper-models:/models

@@ -38,6 +38,17 @@ describe('validateVideoPatch maturityRank', () => {
   });
 });
 
+describe('validateVideoPatch language (M46)', () => {
+  it('accepts a locale code or auto and refuses the rest', () => {
+    for (const code of ['en', 'yo', 'ig', 'ha', 'pcm', 'auto'])
+      expect(validateVideoPatch({ language: code }, new Set())).toEqual({ ok: true, value: { language: code } });
+    expect(validateVideoPatch({ language: 'fr' }, new Set())).toEqual({
+      ok: false,
+      errors: { language: 'Choose a language from the list.' },
+    });
+  });
+});
+
 describe('validateVideoPatch', () => {
   const categories = new Set(['cat_life']);
   it('accepts a good patch and trims', () => {

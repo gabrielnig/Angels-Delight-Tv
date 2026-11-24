@@ -1,6 +1,8 @@
 """Small HTTP service around faster-whisper.
 
-POST /transcribe?language=en   body: audio/wav bytes   ->  JSON with word timestamps
+POST /transcribe?language=en   body: audio/wav bytes   ->  JSON with word timestamps and language_probability
+                               language=auto detects the language. English uses WHISPER_MODEL, everything else
+                               WHISPER_MODEL_MULTI (422 with a plain message when that is not set).
 GET  /health                                          ->  JSON status
 
 It runs one transcription at a time (answering 429 with Retry-After while busy), has no storage credentials and
@@ -23,8 +25,9 @@ CHUNK = 1024 * 1024
 
 
 class State:
-    def __init__(self, transcriber, max_bytes):
+    def __init__(self, transcriber, max_bytes, multi=None):
         self.transcriber = transcriber
+        self.multi = multi
         self.max_bytes = max_bytes
         self.lock = threading.Lock()
 
@@ -51,7 +54,8 @@ def make_handler(state):
         def do_GET(self):
             path = urlparse(self.path).path
             if path == "/health":
-                self._send(200, {"status": "ok", "model": state.transcriber.model_name, "busy": state.lock.locked()})
+                self._send(200, {"status": "ok", "model": state.transcriber.model_name, "busy": state.lock.locked(),
+                                  "multilingual_model": state.multi.model_name if state.multi else None})
             elif path == "/transcribe":
                 self._send(405, {"error": "use POST"}, {"Allow": "POST"})
             else:
@@ -63,7 +67,7 @@ def make_handler(state):
                 self._send(404, {"error": "not found"})
                 return
             language = parse_qs(parsed.query).get("language", ["en"])[0]
-            if not LANGUAGE.match(language):
+            if language != "auto" and not LANGUAGE.match(language):
                 self._send(400, {"error": "invalid language"})
                 return
             if self.headers.get("Content-Type", "").split(";")[0].strip() not in ("audio/wav", "audio/x-wav"):
@@ -79,6 +83,13 @@ def make_handler(state):
             if length > state.max_bytes:
                 self.close_connection = True
                 self._send(413, {"error": "audio too large"})
+                return
+            engine = state.transcriber if language == "en" else state.multi
+            if engine is None:
+                self._send(
+                    422,
+                    {"error": "This server only recognises English. Upload a caption file or align a script."},
+                )
                 return
             if not state.lock.acquire(blocking=False):
                 self._send(429, {"error": "busy"}, {"Retry-After": "30"})
@@ -97,7 +108,7 @@ def make_handler(state):
                 if remaining > 0:
                     self._send(400, {"error": "body ended early"})
                     return
-                result = state.transcriber.transcribe(path, language)
+                result = engine.transcribe(path, None if language == "auto" else language)
                 self._send(200, result)
             except Exception:  # never leak internals to the caller, but tell the operator what broke
                 print("transcription failed:\n" + traceback.format_exc(), file=sys.stderr, flush=True)
@@ -110,8 +121,8 @@ def make_handler(state):
     return Handler
 
 
-def make_server(host, port, transcriber, max_bytes=DEFAULT_MAX_BYTES):
-    state = State(transcriber, max_bytes)
+def make_server(host, port, transcriber, max_bytes=DEFAULT_MAX_BYTES, multi=None):
+    state = State(transcriber, max_bytes, multi)
     return ThreadingHTTPServer((host, port), make_handler(state))
 
 
@@ -124,10 +135,21 @@ def main():
         model_dir=os.environ.get("WHISPER_MODEL_DIR") or None,
         cpu_threads=int(os.environ.get("WHISPER_CPU_THREADS", "0")),
     )
+    multi_name = os.environ.get("WHISPER_MODEL_MULTI") or None
+    multi = (
+        FasterWhisperTranscriber(
+            model_name=multi_name,
+            compute_type=os.environ.get("WHISPER_COMPUTE_TYPE", "int8"),
+            model_dir=os.environ.get("WHISPER_MODEL_DIR") or None,
+            cpu_threads=int(os.environ.get("WHISPER_CPU_THREADS", "0")),
+        )
+        if multi_name
+        else None
+    )
     host = os.environ.get("WHISPER_HOST", "0.0.0.0")
     port = int(os.environ.get("WHISPER_PORT", "8000"))
     max_bytes = int(os.environ.get("WHISPER_MAX_BYTES", str(DEFAULT_MAX_BYTES)))
-    server = make_server(host, port, transcriber, max_bytes)
+    server = make_server(host, port, transcriber, max_bytes, multi)
     print("whisper service listening on %s:%d with model %s" % (host, port, transcriber.model_name), flush=True)
     server.serve_forever()
 

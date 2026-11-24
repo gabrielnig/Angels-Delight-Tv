@@ -63,6 +63,15 @@ describe('VideoEditor maturity rating (M44-S13)', () => {
     expect('suitability' in patch).toBe(false);
   });
 
+  it('saves the spoken language, including Detect automatically (M46)', async () => {
+    const actions = setup('vid_safe_online');
+    await userEvent.selectOptions(screen.getByLabelText('Spoken language'), 'auto');
+    await userEvent.click(screen.getByRole('button', { name: 'Save changes' }));
+    await waitFor(() => expect(actions.update).toHaveBeenCalled());
+    const patch = (actions.update.mock.calls[0] as unknown as [Record<string, unknown>])[0];
+    expect(patch.language).toBe('auto');
+  });
+
   it('shows the field error from the server', async () => {
     const update = vi.fn(async () => ({
       ok: false as const,
@@ -92,6 +101,7 @@ describe('VideoEditor', () => {
       'categoryIds',
       'description',
       'episodeNumber',
+      'language',
       'maturityRank',
       'seriesId',
       'slug',

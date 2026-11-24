@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
-import type { AccountRole } from '@ad/shared';
+import { LOCALES, type AccountRole } from '@ad/shared';
 import { can } from '@/lib/admin/can';
 import { formatDuration } from '@/lib/admin/format';
 import { formatBytes } from '@/lib/uploader/format';
@@ -66,6 +66,7 @@ interface FormState {
   categoryIds: string[];
   /** '' until rated, then '0' to '4'. */
   maturityRank: string;
+  language: string;
   seriesId: string;
   episodeNumber: string;
 }
@@ -77,6 +78,7 @@ const toForm = (video: VideoRecord): FormState => ({
   tags: video.tags.join(', '),
   categoryIds: video.categoryIds,
   maturityRank: String(effectiveMaturityRank(video) ?? ''),
+  language: video.language ?? 'en',
   seriesId: video.seriesId ?? '',
   episodeNumber: video.episodeNumber ? String(video.episodeNumber) : '',
 });
@@ -151,6 +153,7 @@ export function VideoEditor({
           .filter(Boolean),
         categoryIds: form.categoryIds,
         ...(form.maturityRank !== '' ? { maturityRank: Number(form.maturityRank) } : {}),
+        language: form.language,
         seriesId: form.seriesId || null,
         episodeNumber: form.seriesId && Number.isFinite(episode) ? episode : null,
       });
@@ -299,6 +302,17 @@ export function VideoEditor({
               ...maturityLabels.map((label, rank) => ({ value: String(rank), label })),
             ]}
             onChange={(e) => set('maturityRank', e.target.value)}
+          />
+          <SelectField
+            label="Spoken language"
+            hint="Captions are made in this language. Detect automatically works out the language when captions are made."
+            value={form.language}
+            error={errors.language}
+            options={[
+              ...LOCALES.map((l) => ({ value: l.code, label: l.endonym === l.englishName ? l.englishName : `${l.englishName} (${l.endonym})` })),
+              { value: 'auto', label: 'Detect automatically' },
+            ]}
+            onChange={(e) => set('language', e.target.value)}
           />
           <div className="adm-grid-2">
             <SelectField

@@ -1,5 +1,5 @@
 import { schema, type Database } from '@ad/db';
-import { NotFound } from '@ad/shared';
+import { NotFound, localeInfo } from '@ad/shared';
 import type { StorageAdapter } from '@ad/storage';
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
@@ -47,6 +47,13 @@ export class CaptionGenerator {
       .limit(1);
     if (!video) throw new PipelineError('unknown', `video ${videoId} not found`, true);
     if (!video.originalKey) throw new PipelineError('upload_incomplete', 'video has no original');
+    const spoken = video.language || 'en';
+    if (spoken === 'ig')
+      throw new PipelineError(
+        'caption_failed',
+        'Igbo cannot be recognised automatically. Upload a caption file instead.',
+        true,
+      );
 
     let script: string | null = null;
     if (mode === 'align') {
@@ -91,8 +98,24 @@ export class CaptionGenerator {
     );
 
     await progress('Recognising speech', 25);
-    const language = video.language || 'en';
-    const heard = await this.deps.transcriber.transcribe({ audio, language: 'en', signal });
+    // Whisper has no Pidgin model, so pcm is decoded as English and stored as pcm.
+    const asked = spoken === 'pcm' ? 'en' : spoken;
+    const heard = await this.deps.transcriber.transcribe({ audio, language: asked, signal });
+    let language = spoken === 'auto' ? heard.language : spoken;
+    let detectionNote: string | null = null;
+    if (spoken === 'auto') {
+      const known = localeInfo(heard.language);
+      if (known && (heard.languageProbability ?? 0) >= 0.6) {
+        detectionNote = `Detected ${known.englishName}`;
+        await db
+          .update(schema.videos)
+          .set({ language })
+          .where(eq(schema.videos.id, videoId));
+      } else {
+        detectionNote = 'Spoken language uncertain, check the captions';
+        language = known ? language : 'en';
+      }
+    }
 
     await progress('Building captions', 85);
     let cues = cuesFromWords(heard.words);
@@ -105,12 +128,12 @@ export class CaptionGenerator {
       source = 'aligned';
     }
 
-    const track = await ensureTrack(db, videoId, language);
+    const track = await ensureTrack(db, videoId, language, localeInfo(language)?.endonym ?? 'English');
     await storeRevision(db, originals, track, {
       cues,
       source,
       model: heard.model,
-      reviewNote: heard.words.length === 0 ? 'No speech detected' : null,
+      reviewNote: heard.words.length === 0 ? 'No speech detected' : detectionNote,
       lowConfidenceCues,
     });
     await progress('Done', 100);

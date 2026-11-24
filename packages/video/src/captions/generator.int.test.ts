@@ -258,5 +258,63 @@ describe.skipIf(!integrationEnabled())(
       expect(tracks).toHaveLength(1);
       expect((await revisions(video.id)).rows.map((r) => r.revision)).toEqual([1, 2]);
     });
+
+    describe('spoken language (M46)', () => {
+      async function videoIn(language: string) {
+        const video = await newVideo();
+        await t.db.update(schema.videos).set({ language }).where(eq(schema.videos.id, video.id));
+        return video;
+      }
+      const languageOf = async (id: string) =>
+        (await t.db.select({ l: schema.videos.language }).from(schema.videos).where(eq(schema.videos.id, id)))[0]!.l;
+      const noteOf = async (id: string) => {
+        const { rows } = await revisions(id);
+        return rows.at(-1)?.reviewNote ?? null;
+      };
+
+      it('passes the video language to the transcriber (regression for the hardcoded en)', async () => {
+        const video = await videoIn('yo');
+        await generator.generate(video.id, 'transcribe', progress);
+        expect(transcriber.requests[0]).toMatchObject({ language: 'yo' });
+        const { track } = await revisions(video.id);
+        expect(track).toMatchObject({ language: 'yo', label: 'Yorùbá' });
+      });
+
+      it('pcm is decoded as en and stored as pcm', async () => {
+        const video = await videoIn('pcm');
+        await generator.generate(video.id, 'transcribe', progress);
+        expect(transcriber.requests[0]).toMatchObject({ language: 'en' });
+        expect((await revisions(video.id)).track).toMatchObject({ language: 'pcm' });
+      });
+
+      it('ig generation is refused with the upload hint', async () => {
+        const video = await videoIn('ig');
+        await expect(generator.generate(video.id, 'transcribe', progress)).rejects.toMatchObject({
+          permanent: true,
+          message: expect.stringMatching(/upload a caption file/i),
+        });
+        expect(transcriber.requests).toHaveLength(0);
+      });
+
+      it('auto above 0.6 updates videos.language and notes Detected', async () => {
+        transcriber = new FakeTranscriber({ words, model: 'medium', detected: { language: 'ha', probability: 0.88 } });
+        generator = new CaptionGenerator({ db: t.db, originals, runner, transcriber, scratch: { root: join(root, 'scratch'), stats: async () => ({ freeBytes: 1e12, totalBytes: 2e12 }) } });
+        const video = await videoIn('auto');
+        await generator.generate(video.id, 'transcribe', progress);
+        expect(transcriber.requests[0]).toMatchObject({ language: 'auto' });
+        expect(await languageOf(video.id)).toBe('ha');
+        expect(await noteOf(video.id)).toBe('Detected Hausa');
+        expect((await revisions(video.id)).track).toMatchObject({ language: 'ha' });
+      });
+
+      it('auto below 0.6 notes Spoken language uncertain and still needs review', async () => {
+        transcriber = new FakeTranscriber({ words, model: 'medium', detected: { language: 'yo', probability: 0.41 } });
+        generator = new CaptionGenerator({ db: t.db, originals, runner, transcriber, scratch: { root: join(root, 'scratch'), stats: async () => ({ freeBytes: 1e12, totalBytes: 2e12 }) } });
+        const video = await videoIn('auto');
+        await generator.generate(video.id, 'transcribe', progress);
+        expect(await noteOf(video.id)).toBe('Spoken language uncertain, check the captions');
+        expect((await revisions(video.id)).rows.at(-1)).toMatchObject({ status: 'in_review' });
+      });
+    });
   },
 );

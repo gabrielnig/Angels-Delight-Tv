@@ -115,6 +115,17 @@ describe.skipIf(!integrationEnabled())('admin videos', () => {
     expect(after?.kidsSafe).toBe(false);
   });
 
+  it('sets the spoken language, audits it and rejects unknown codes (M46)', async () => {
+    const video = await seedVideo(t.setup, { publishState: 'draft' });
+    expect((await getAdminVideo(ctx, editor, video.id)).language).toBe('en');
+    for (const code of ['yo', 'ha', 'pcm', 'ig', 'auto', 'en']) {
+      expect((await updateAdminVideo(ctx, editor, video.id, { language: code })).language).toBe(code);
+    }
+    await expect(updateAdminVideo(ctx, editor, video.id, { language: 'fr' })).rejects.toMatchObject({
+      fields: { language: expect.any(Array) },
+    });
+  });
+
   it('setting a rank updates kids_safe and writes an audit entry with old and new', async () => {
     const video = await seedVideo(t.setup, { publishState: 'draft', maturityRank: 2 });
     const updated = await updateAdminVideo(ctx, editor, video.id, { maturityRank: 0 });

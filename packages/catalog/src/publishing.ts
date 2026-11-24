@@ -99,7 +99,8 @@ export async function evaluateChecklist(
             char_length(btrim(coalesce(v.description, ''))) > 0 AS description,
             EXISTS (SELECT 1 FROM assets a WHERE a.id = v.poster_asset_id AND a.status = 'ready') AS poster,
             EXISTS (SELECT 1 FROM video_categories vc WHERE vc.video_id = v.id) AS category,
-            EXISTS (SELECT 1 FROM caption_tracks ct WHERE ct.video_id = v.id AND ct.approved_caption_id IS NOT NULL) AS captions,
+            EXISTS (SELECT 1 FROM caption_tracks ct WHERE ct.video_id = v.id AND ct.approved_caption_id IS NOT NULL
+              AND (v.language = 'auto' OR ct.language = v.language)) AS captions,
             (v.maturity_rank IS NOT NULL) AS maturity,
             v.captions_enabled AS captions_enabled
           FROM videos v WHERE v.id = ${id}::uuid`)
