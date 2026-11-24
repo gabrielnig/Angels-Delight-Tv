@@ -10,6 +10,7 @@ import { isUuid, NotFound } from '@ad/shared';
 import {
   catalogContext,
   getTitleDetail,
+  guestTitleDetail,
   loadOwnedProfile,
   type SeriesDetailDto,
   type TitleCardDto,
@@ -81,6 +82,19 @@ export class RealPlaybackData implements PlaybackData {
     }
   }
 
+  /** The same lookup for a guest: an audience and no account (M40, D-G10). */
+  private async guestDetail(
+    kids: boolean,
+    key: { id: string } | { slug: string; kind: 'series' },
+  ): Promise<TitleDetailDto | null> {
+    try {
+      return await guestTitleDetail(this.service, { kids }, key);
+    } catch (error) {
+      if (error instanceof NotFound) return null;
+      throw error;
+    }
+  }
+
   /** True when a grown-up could open this id. Used to tell "not for kids" from "not there". */
   private async existsForAdults(id: string): Promise<boolean> {
     const found = await this.service.db.transaction((tx) =>
@@ -89,7 +103,61 @@ export class RealPlaybackData implements PlaybackData {
     return found !== null;
   }
 
+  /**
+   * A guest sees the watch page for any published title in their audience. Nothing personal is read: no saved
+   * place (the device keeps it), no My List state, default preferences (the device keeps those too).
+   */
+  private async guestWatch(videoId: string, kids: boolean): Promise<WatchLookup> {
+    const found = await this.guestDetail(kids, { id: videoId });
+    if (!found) {
+      return kids && (await this.existsForAdults(videoId))
+        ? { status: 'kids-blocked' }
+        : { status: 'not-found' };
+    }
+    const data =
+      found.type === 'video'
+        ? this.forStandalone(found)
+        : found.type === 'redirect' && found.to.kind === 'series' && found.to.episodeId
+          ? await this.forEpisode(
+              (key) => this.guestDetail(kids, key),
+              found.to.slug,
+              found.to.episodeId,
+            )
+          : null;
+    if (!data) return { status: 'not-found' };
+    return {
+      status: 'ok',
+      data: {
+        ...(await this.withMedia(videoId, data)),
+        preferences: { ...DEFAULT_PREFERENCES, captionsOn: kids, autoplayNext: !kids },
+        captionStyle: normalizeCaptionStyle({}),
+      },
+    };
+  }
+
+  private async withMedia(
+    videoId: string,
+    data: Omit<WatchData, 'preferences' | 'captionStyle'>,
+  ): Promise<Omit<WatchData, 'preferences' | 'captionStyle'>> {
+    const origin = this.service.mediaOrigin.replace(/\/+$/, '');
+    const captions: CaptionTrack[] = (await this.captionsFor(videoId)).map((track) => ({
+      id: track.language,
+      language: track.language,
+      label: track.label,
+      src: `${origin}/${track.key}`,
+      status: 'approved',
+    }));
+    const spriteKey = await this.spriteFor(videoId);
+    return {
+      ...data,
+      captions,
+      ...(spriteKey ? { spriteUrl: `${origin}/${spriteKey}` } : {}),
+    };
+  }
+
   async getWatchData(videoId: string, viewer: ViewerContext): Promise<WatchLookup> {
+    if (viewer.guest)
+      return isUuid(videoId) ? this.guestWatch(videoId, viewer.kids) : { status: 'not-found' };
     if (!viewer.accountId || !isUuid(videoId)) return { status: 'not-found' };
     const { accountId, profileId } = viewer;
     const actor = viewerActor(accountId);
@@ -118,25 +186,18 @@ export class RealPlaybackData implements PlaybackData {
       found.type === 'video'
         ? this.forStandalone(found)
         : found.type === 'redirect' && found.to.kind === 'series' && found.to.episodeId
-          ? this.forEpisode(accountId, profileId, found.to.slug, found.to.episodeId)
+          ? this.forEpisode(
+              (key) => this.detail(accountId, profileId, key),
+              found.to.slug,
+              found.to.episodeId,
+            )
           : null,
     ]);
     if (!data) return { status: 'not-found' };
-    const origin = this.service.mediaOrigin.replace(/\/+$/, '');
-    const captions: CaptionTrack[] = (await this.captionsFor(videoId)).map((track) => ({
-      id: track.language,
-      language: track.language,
-      label: track.label,
-      src: `${origin}/${track.key}`,
-      status: 'approved',
-    }));
-    const spriteKey = await this.spriteFor(videoId);
     return {
       status: 'ok',
       data: {
-        ...data,
-        captions,
-        ...(spriteKey ? { spriteUrl: `${origin}/${spriteKey}` } : {}),
+        ...(await this.withMedia(videoId, data)),
         preferences: {
           ...DEFAULT_PREFERENCES,
           captionsOn: isKids || prefs.captionsDefault,
@@ -154,9 +215,9 @@ export class RealPlaybackData implements PlaybackData {
     };
   }
 
-  private async forStandalone(
+  private forStandalone(
     detail: Extract<TitleDetailDto, { type: 'video' }>,
-  ): Promise<Omit<WatchData, 'preferences' | 'captionStyle'>> {
+  ): Omit<WatchData, 'preferences' | 'captionStyle'> {
     const category = detail.categories[0]?.name ?? '';
     const card = detail.card;
     const video: WatchVideo = {
@@ -188,12 +249,11 @@ export class RealPlaybackData implements PlaybackData {
   }
 
   private async forEpisode(
-    accountId: string,
-    profileId: string,
+    lookup: (key: { slug: string; kind: 'series' }) => Promise<TitleDetailDto | null>,
     seriesSlug: string,
     episodeId: string,
   ): Promise<Omit<WatchData, 'preferences' | 'captionStyle'> | null> {
-    const found = await this.detail(accountId, profileId, { slug: seriesSlug, kind: 'series' });
+    const found = await lookup({ slug: seriesSlug, kind: 'series' });
     if (!found || found.type !== 'series') return null;
     const flat = flatEpisodes(found);
     const index = flat.findIndex((e) => e.video.id === episodeId);

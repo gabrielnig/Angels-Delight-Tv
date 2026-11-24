@@ -5,7 +5,8 @@ type FetchFn = (input: string, init?: RequestInit) => Promise<Response>;
 
 export interface HttpSessionOptions {
   appOrigin: string;
-  profileId: string;
+  /** Omitted for a guest: the body then carries no profile and the server reads the guest cookie. */
+  profileId?: string;
   fetchFn?: FetchFn;
 }
 
@@ -36,7 +37,7 @@ export function createHttpSessionProvider(opts: HttpSessionOptions): SessionProv
           method: 'POST',
           credentials: 'include',
           headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({ profileId: opts.profileId }),
+          body: JSON.stringify(opts.profileId === undefined ? {} : { profileId: opts.profileId }),
           ...(signal ? { signal } : {}),
         });
       } catch {

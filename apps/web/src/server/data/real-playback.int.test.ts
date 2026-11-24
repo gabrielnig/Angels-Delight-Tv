@@ -223,4 +223,68 @@ describe.skipIf(!integrationEnabled())('real playback data', () => {
     // The stored profile is a kids profile, so the grown-up title is blocked whatever the caller claims.
     expect(await playback.getWatchData(adultsOnly.id, lying)).toEqual({ status: 'kids-blocked' });
   });
+
+  describe('guest branch (M40-S02, S04)', () => {
+    const guest = (kidsMode = false) => ({
+      profileId: 'none',
+      kids: kidsMode,
+      guest: true as const,
+    });
+
+    it('describes a published video for a guest with no saved place, no list state, default preferences', async () => {
+      const u = await h.makeUser();
+      const v = await seedVideo(h.db.setup, {
+        title: 'Guest watch',
+        durationMs: 120_000,
+        kidsSafe: true,
+      });
+      await saveProgress(h.ctx, u.actor, {
+        profileId: u.profileId,
+        videoId: v.id,
+        positionMs: 50_000,
+      });
+      await addToMyList(h.ctx, u.actor, {
+        profileId: u.profileId,
+        target: { kind: 'video', id: v.id },
+      });
+      captioned = v.id;
+      const res = await playback.getWatchData(v.id, guest());
+      if (res.status !== 'ok') throw new Error(res.status);
+      expect(res.data.video).toMatchObject({
+        id: v.id,
+        title: 'Guest watch',
+        durationSeconds: 120,
+      });
+      expect(res.data.saved).toBeNull();
+      expect(res.data.inMyList).toBe(false);
+      expect(res.data.captions).toHaveLength(1);
+      expect(res.data.spriteUrl).toContain('cap/p/sprites');
+      expect(res.data.preferences.dataSaver).toBe(false);
+      expect(res.data.preferences.autoplayNext).toBe(true);
+    });
+
+    it('does not find a draft, a malformed id or a missing video', async () => {
+      const draft = await seedVideo(h.db.setup, { publishState: 'draft' });
+      expect((await playback.getWatchData(draft.id, guest())).status).toBe('not-found');
+      expect((await playback.getWatchData('nope', guest())).status).toBe('not-found');
+    });
+
+    it('answers kids-blocked for a Kids mode guest on a non kids video, and plays kids videos', async () => {
+      const adultOnly = await seedVideo(h.db.setup, { title: 'Adult guest', kidsSafe: false });
+      const child = await seedVideo(h.db.setup, { title: 'Child guest', kidsSafe: true });
+      expect((await playback.getWatchData(adultOnly.id, guest(true))).status).toBe('kids-blocked');
+      expect((await playback.getWatchData(adultOnly.id, guest(false))).status).toBe('ok');
+      expect((await playback.getWatchData(child.id, guest(true))).status).toBe('ok');
+    });
+
+    it('follows an episode through its series with a next episode and no progress', async () => {
+      const s = await seedSeries(h.db.setup, { seasonSizes: [2], episode: { kidsSafe: true } });
+      const first = s.episodes[0]!;
+      const res = await playback.getWatchData(first.id, guest());
+      if (res.status !== 'ok') throw new Error(res.status);
+      expect(res.data.video.series).toMatchObject({ episodeLabel: 'S1 E1', lastEpisode: false });
+      expect(res.data.next?.href).toBe(`/watch/${s.episodes[1]!.id}`);
+      expect(res.data.saved).toBeNull();
+    });
+  });
 });
