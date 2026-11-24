@@ -86,3 +86,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 ### Lane L7 review: Languages mockups
 
 - Fixed S140 to S149 for targets, switches, contrast, the 240 px header, Editor and detection states, and wrote the L7 review.
+
+### Lane L3: Admin polish, bulk actions, captions control
+
+- Added a shared bulk framework (selection, bar, progress, report, undo) and bulk actions for videos, captions approval, captions availability, encoding retry and cleanup, Trash restore and delete forever, series, viewer accounts and staff.
+- Added upload shared details and a per-file override table, one breadcrumb component, and table alignment and stacked mobile cards.
+- Series delete is now admin only. Restore from Trash returns a video as a draft.
+- Publish later on upload (L3-16) is not built yet.

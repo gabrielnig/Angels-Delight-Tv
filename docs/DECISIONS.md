@@ -1122,3 +1122,67 @@ Four ids were used twice by parallel lanes. They are never renumbered because la
 - Options: a `guest` prop on the shared TopNav, or a separate guest header.
 - Why: Keeps other lanes free of conflicts in `@ad/ui` and keeps guest and account chrome from sharing state they do not both have.
 - Reversible: yes.
+
+## D-209 Table alignment rule (lane L3)
+
+Options: left everything; right align numbers with right aligned headers (chosen); centre numbers. Why: matches DESIGN-SYSTEM 11.16 and fixes the CSS specificity bug rather than moving headers. Reversible: yes (CSS).
+
+## D-210 One breadcrumb component in `@ad/ui` (lane L3)
+
+Options: patch both copies; shared component (chosen). Truncate current page at 40ch on desktop, show only the parent on phones. Why: the defect was a duplicated pattern. Reversible: yes.
+
+## D-211 Tables on phones (lane L3)
+
+Options: scroll everywhere; stacked cards everywhere; cards for Captions, Trash, Users and scroll with a fixed first column for wide tables (chosen). Why: DESIGN-SYSTEM 11.16 and one handed use on low end phones. Reversible: yes.
+
+## D-212 Bulk mechanics (lane L3)
+
+25 ids per chunk, 200 per server call, 500 per selection, 50 for account actions, 20 for invites. Options: one big call; chunked (chosen). Why: survive timeouts and slow Lagos connections, show progress, cap blast radius. Reversible: yes (constants).
+
+## D-213 Selection across pages (lane L3)
+
+Options: never; always; only for non destructive reversible actions with a filter snapshot (chosen). Why: saves ticking pages without letting someone delete what they cannot see. Reversible: yes.
+
+## D-214 Partial failure (lane L3)
+
+Each item succeeds or fails alone, except suitability (already all or nothing, M35-S04) and staff disable (all or nothing, security). Why: one bad row never blocks the rest, but security changes never half apply. Reversible: yes.
+
+## D-215 Undo (lane L3)
+
+10 second toast, client memory only, compare and set on the server, offered for trash, restore, publish, unpublish, category, suitability, captions availability, suspend and reinstate, series publish. Not offered for approve captions, delete forever, retry, staff changes. Why: only where reversal is cheap and safe. Reversible: yes.
+
+## D-216 Audit shape (lane L3)
+
+One `bulk.run` row plus every item's normal row with `extra.bulkId`. Options: summary only; items only; both (chosen). Why: the log stays searchable by item and by run. Reversible: yes.
+
+## D-217 Bulk approve captions (lane L3)
+
+Admin only; skip failed, generating, none, approved and tracks with warnings; acknowledgement required for untouched auto captions. Options: Editor allowed; block untouched entirely; warn and acknowledge (chosen). Why: Sister Vanessa can clear a backlog, wrong names are not published by accident. Reversible: yes.
+
+## D-218 Bulk retry (lane L3)
+
+Only jobs with the original file, oldest first, one at a time, new action `encode.retry` at editor level. Why: matches M14-S07 and M14-S09 AC4. Reversible: yes.
+
+## D-219 Users and staff bulk (lane L3)
+
+Viewer accounts: suspend with shared reason, reinstate, force sign out, resend verification, no bulk delete. Staff: Super admin only, re-auth once, Editor and Admin only, never self, never to or from Super admin, disable all or nothing, resend invites with a one hour cooldown. Why: the safest set that still removes repeat clicks. Reversible: yes.
+
+## D-220 Series (lane L3)
+
+Bulk publish, unpublish, delete (typed count, no undo, new `series.delete` admin). No series Trash because delete removes seasons and a restore needs a schema change. Behaviour change: editors can no longer delete a series. Reversible: yes (add soft delete later).
+
+## D-221 Trash (lane L3)
+
+Bulk restore and delete forever with typed count; purge stays admin and the doc is corrected (M16-S06 said Super admin). Why: docs follow the shipped matrix. Reversible: yes.
+
+## D-222 Bulk upload (lane L3)
+
+Shared details with per file overrides; "publish later" means publish when ready with an optional not before time and never bypasses the caption gate. Options: schedule a time (cannot work: nothing is publishable at upload); intent (chosen). Reversible: yes (drop `publish_intent`). Slice 16 (publish later) is not built in this lane; the upload form has no publish choice yet.
+
+## D-223 Captions on and off (lane L3)
+
+Per video tri state, site default (Super admin), Admin changes it with a reason for Off, Off satisfies the publish gate, Off hides tracks and the CC button, admin can still process captions, the profile's saved choice is untouched. Options: a viewer only toggle (exists already); a per video flag only; flag plus site default (chosen, from the audit's resolved option). Note: approved VTT files live on the public media path, so switching off stops them being offered but does not revoke a URL someone already has; captions are not secret. Reversible: yes.
+
+## D-224 Doc and code mismatches fixed in docs, not code: encoding retry is editor level; Delete forever is admin level. (lane L3)
+
+
