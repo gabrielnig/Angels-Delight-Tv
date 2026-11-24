@@ -882,3 +882,8 @@ Format: decision, options considered, why, reversible or not. Newest first. Deci
 - Decision: `requests` is pinned in `apps/whisper/requirements.txt`, and the whisper server prints the traceback of a failed transcription to its own log. The caller still only sees "transcription failed".
 - Options: pin an older huggingface_hub that still pulls requests in, or install requests directly.
 - Why: found on the first real caption run on the VPS. faster-whisper 1.1.1 imports requests when it loads, the image did not have it, every caption job failed with a bare 500 and the service log said nothing. Reversible: yes.
+
+## D-168 The whisper image pins av to 13.1.0 (lane w4)
+- Decision: `av==13.1.0` is pinned in `apps/whisper/requirements.txt`, with a guard test.
+- Options: pin an older faster-whisper, or pin av alone.
+- Why: found on the second real caption run on the VPS. faster-whisper 1.1.1 asks for any `av>=11`, the image installed PyAV 19, and PyAV 19 removed the `metadata_errors` argument that faster-whisper passes, so decoding failed with a TypeError. Checked locally with a clean install: model load, decode and transcribe with word timestamps all run. Reversible: yes.
