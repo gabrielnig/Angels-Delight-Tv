@@ -24,6 +24,8 @@ All of these live in one file, `client.json`, copied from `client.example.json` 
 | Terms, privacy, about, help | `legal.<page>.file` or `.html` | Legal pages | Text must be approved by the client. A lawyer should review terms and privacy for NDPA compliance |
 | Footer, social links | `footerText`, `socialLinks` | Settings | Optional |
 | Languages | `languages.default`, `languages.offered` | Settings, caption languages | Codes such as `en`, `yo`, `ig`, `ha` |
+| What visitors see before they choose | `guestAudience` (`general` or `kids`) | Setting `features.guest_audience` (Admin). A visitor can switch Kids mode on or off on their device and that choice wins | Optional, default `general` |
+| Can visitors watch without an account | `guestPlay` (`true` or `false`) | Setting `features.guest_play` (Super admin, the emergency switch). Off sends visitors to sign in to watch while browsing still works | Optional, default `true` |
 
 Regenerated from the logo on every apply: the PWA icons (192, 512, maskable, Apple touch). Served from `/brand-icons/`, stored in `BRAND_DIR`.
 

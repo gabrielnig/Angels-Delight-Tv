@@ -34,6 +34,11 @@ export interface PlaybackHttpDeps {
     verify(request: Request, ip: string): Promise<boolean>;
     recordDenial(ip: string): Promise<void>;
   };
+  /**
+   * Turns the client address into the opaque subject the guest session limits are keyed on, so the table never
+   * holds a raw address (SECURITY.md section 11). Without it the address itself is used.
+   */
+  guestSubject?(ip: string): string;
   assertSameOrigin?(request: Request): void;
   /** Client address after trusted proxy handling. */
   clientIp(request: Request): string;
@@ -140,7 +145,7 @@ export function createPlaybackHandlers(deps: PlaybackHttpDeps) {
           let info: Awaited<ReturnType<typeof deps.service.startGuestSession>>;
           try {
             info = await deps.service.startGuestSession(
-              { guestId: guest.guestId, kids: guest.kids, ip },
+              { guestId: guest.guestId, kids: guest.kids, ip: deps.guestSubject?.(ip) ?? ip },
               videoId,
             );
           } catch (failure) {

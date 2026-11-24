@@ -21,9 +21,9 @@ type Limiter = Pick<RateLimiter, 'consume' | 'peek'>;
  * The address is cut to its network (IPv4 /24, IPv6 /48, SECURITY.md section 11) and keyed with the server
  * secret before it is stored, so the table holds neither a raw address nor something a dictionary can undo.
  */
-function subjectOf(secret: Uint8Array, ip: string): string {
+export function networkSubject(secret: Uint8Array, ip: string, label: string): string {
   const network = truncateIp(ip) ?? 'untrusted';
-  return Buffer.from(hmacSha256(secret, Buffer.from(`ad:guest-challenge:${network}`)))
+  return Buffer.from(hmacSha256(secret, Buffer.from(`ad:${label}:${network}`)))
     .toString('hex')
     .slice(0, 32);
 }
@@ -43,7 +43,10 @@ export function createGuestChallenge(deps: GuestChallengeDeps) {
   return {
     async required(ip: string): Promise<boolean> {
       try {
-        const result = await deps.limiter.peek(GUEST_CHALLENGE_POLICY, subjectOf(deps.secret, ip));
+        const result = await deps.limiter.peek(
+          GUEST_CHALLENGE_POLICY,
+          networkSubject(deps.secret, ip, 'guest-challenge'),
+        );
         return !result.allowed;
       } catch {
         return false;
@@ -51,7 +54,10 @@ export function createGuestChallenge(deps: GuestChallengeDeps) {
     },
     async recordDenial(ip: string): Promise<void> {
       try {
-        await deps.limiter.consume(GUEST_CHALLENGE_POLICY, subjectOf(deps.secret, ip));
+        await deps.limiter.consume(
+          GUEST_CHALLENGE_POLICY,
+          networkSubject(deps.secret, ip, 'guest-challenge'),
+        );
       } catch {
         // Best effort.
       }

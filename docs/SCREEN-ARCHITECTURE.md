@@ -590,6 +590,21 @@ Each specification lists purpose, layout regions, components, data needed, state
 - **Layout.** Change password, 2FA and recovery codes, active admin sessions, notification preferences.
 - **Stories.** M12-S09, M21-S05.
 
+### Screens 80 to 89. Guest access (M40)
+
+A visitor without an account uses the same screens as a viewer, with the differences below. Mockups are drawn by lane L1 as S80 to S89.
+
+- **S80 Home for guests.** Hero and rows with no sign in card. A Continue learning row from this device sits first below the hero and shows only when it has something. No banner, popup or sticky sign up bar. Stories M40-S01, M40-S14.
+- **S81 Signed out header and menu.** Logo, Home, Browse, My List, search, Menu (Kids mode switch and its help line), Sign in and Create account (hidden when sign up is closed). A Primary tab bar on phones, hidden on a title page. Over the hero the bar has a dark backing and a white edge. In Kids mode the header shows only the logo mark, and a Turn off Kids mode button sits above the footer. Stories M40-S06, M40-S09.
+- **S82 Title and series page for guests.** The full title page with Play (or Resume from this device with Start over, or Watch again). My List opens S83. A series page marks watched episodes from this device. Kids mode block screen: "This video is not in Kids mode" with Browse and Turn off Kids mode. With guest play off the page shows the preview and Sign in to watch. Stories M40-S05, M40-S09, M07-S06.
+- **S83 Sign in to save dialog.** A modal (a bottom sheet on phones) with Not now, Create account and Sign in, with the page to return to in `next`. Copy for My List and for a like. Stories M40-S07, M40-S15.
+- **S84 My List explainer.** Why My List needs an account, Sign in, Create account and Browse. In Kids mode only a note for a grown-up. Story M40-S08.
+- **S85 Watch page for guests.** The watch page with My List opening S83 and no Sign in button on the phone. Progress is written to this device and a quiet note says when it cannot be. Stories M40-S02, M40-S04.
+- **S86 Guest Kids mode.** The Menu switch, Home and Browse filtered to kids titles, the blocked direct link. Story M40-S09.
+- **S87 Limit and challenge states.** The wait message for a limit, and the "One quick check" dialog with the Turnstile widget and a single Cancel action. Not shown on a Kids playback page. Stories M40-S11, M40-S12.
+- **S88 Import device history prompt.** After sign in, a dialog "Add what you watched here?" with Not now and Add to my history, then a toast with the count. Never for a kids profile. Story M40-S13.
+- **S89 Device storage and privacy.** The note "Your place is not being saved on this device", and the Privacy page text for the guest cookie and the anonymous daily id. Clear history on this device (M40-S18) is not built yet. Stories M40-S16, M40-S18.
+
 ## 7. Key flows (for navigation checking)
 
 1. **New viewer.** Landing, Sign up, Verify email, Profile picker (create first profile), Home, Title detail, Watch.
@@ -598,6 +613,7 @@ Each specification lists purpose, layout regions, components, data needed, state
 4. **Kid.** Profile picker, Kids Home, Watch, Exit kids mode (password).
 5. **Admin publish.** Admin login, 2FA, Dashboard, Upload, Encoding queue, Caption review (approve), Video edit (checklist), Publish dialog, Home curation.
 6. **Recover.** Sign in (locked), Forgot password, Reset password, Sign in.
+7. **Guest.** Home, Title detail, Watch (progress kept on the device), My List opens the Sign in to save dialog, Sign in, Profile picker, the save is applied, Import prompt.
 
 ## 8. Story coverage check
 

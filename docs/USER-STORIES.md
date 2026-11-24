@@ -133,9 +133,9 @@ As a viewer, I want my session to last without surprise sign-outs, so that I am 
 
 ### M01-S13 Return to intended page after auth (Should)
 As a visitor following a shared link, I want to land on the title after signing in, so that the link works.
-- AC1: Given I open `/title/slug` while signed out, When I am redirected to sign in, Then the `next` parameter holds the path and I return to it after sign in and profile pick.
+- AC1: Given I choose Sign in from a title page or from a Save dialog, When I am sent to sign in, Then the `next` parameter holds the path and I return to it after sign in and profile pick.
 - AC2: Given `next` is an external URL, When I sign in, Then it is ignored and I go to `/profiles`.
-- Edge: the title page itself shows a public preview (title, description, poster) for signed-out visitors with a Sign in to watch button (and Open Graph tags for sharing).
+- Edge: the title page opens for everyone with a Play button (M40-S05) and Open Graph tags for sharing. A signed out visitor is never redirected to sign in just to view or watch.
 - Error: `next` pointing to an unpublished title ends on a 404 page.
 - Empty: not applicable.
 
@@ -144,6 +144,7 @@ As the owner, I want a light bot check on sign up, so that fake accounts do not 
 - AC1: Given sign up is attempted at a rate above threshold from one IP, When the threshold is crossed, Then a Cloudflare Turnstile challenge is required.
 - AC2: Given the challenge is unavailable, When the viewer retries, Then the form remains usable once a fallback (email code only) is satisfied, and the issue is logged.
 - Edge: a honeypot field that real users never fill silently rejects bot submissions with the normal success message.
+- Edge: the same Turnstile keys protect guest playback after repeated limit hits (M40-S12).
 - Error: challenge failure shows "We could not confirm you are human. Try again."
 - Empty: not applicable.
 
@@ -230,6 +231,7 @@ As a viewer, I want to choose who is watching after I sign in, so that my histor
 - AC3: Given I have exactly one profile, When I sign in, Then I skip the picker and go to Home (setting "Always ask who is watching" off by default for single profiles).
 - AC4: Given a device remembers the last profile, When I open the site while signed in, Then I go straight to that profile's Home, and the header menu offers Switch profile.
 - Edge: kids profile tile shows a "Kids" badge. Long names are truncated with an ellipsis.
+- Edge: guests never see the picker. Signing in leads here (M40-S06).
 - Error: failure to load profiles shows a retry card; sign out is still available.
 - Empty: a brand new account shows the Create your first profile flow (M03-S02).
 
@@ -317,6 +319,7 @@ As a viewer, I want the site to open directly in my profile, so that I do not pi
 - AC1: Given I picked a profile on this device, When I reopen the site within the session lifetime, Then Home loads for that profile.
 - AC2: Given the remembered profile was deleted, When I open the site, Then the picker shows.
 - Edge: a shared family tablet can turn on "Always ask who is watching" in Account settings.
+- Edge: a guest has no profile to remember. Kids mode on a guest device is remembered separately (M40-S09).
 - Error: local storage blocked means the picker always shows.
 - Empty: not applicable.
 
@@ -353,7 +356,9 @@ As a parent, I want kids profiles to show only kid suitable titles, so that chil
 - AC1: Given a kids profile is active, When any list is requested (Home, Browse, Search, Related, My List, Continue Watching), Then results contain only titles with suitability `kids`, enforced in the query, not in the UI.
 - AC2: Given a direct link to a non-kid title, When a kids profile opens it, Then it shows "This is not available on this profile" with a Back button.
 - AC3: Given a title's suitability changes to non-kid, When a kids profile has it in My List, Then it disappears from view at once.
+- AC4: Given Kids mode is on for a guest (M40-S09), When any list is requested, Then the same query filter applies.
 - Edge: a series is shown on a kids profile only when all its published episodes are kid suitable (or by series flag).
+- Edge: for guests the filter follows the device setting and is not a lock.
 - Error: filter failure returns an empty list, never an unfiltered one (fail closed).
 - Empty: when no kid titles exist, Home shows "Nothing here yet. Ask a grown-up to switch profile."
 
@@ -371,6 +376,7 @@ As a parent, I want to need my password to leave kids mode, so that children can
 - AC2: Given I enter a wrong password 5 times, When the fifth fails, Then the same lockout as sign in applies (M01-S07).
 - AC3: Given the password dialog, When it opens, Then focus is in the field and Escape closes it.
 - Edge: switching to another kids profile does not need a password.
+- Edge: guest Kids mode needs no password: it is a convenience (M40-S09).
 - Error: network failure shows retry and keeps kids mode.
 - Empty: not applicable.
 
@@ -474,13 +480,15 @@ As a viewer, I want Continue Watching and My List at the top, so that my own thi
 - AC2: Given My List has items, When Home loads, Then My List row follows.
 - AC3: Given the editor moved these rows in curation (M17), When Home loads, Then the configured order applies.
 - Edge: rows are hidden when empty (no empty headings).
+- Edge: guests have no My List row. A Continue Watching row appears from this device's progress (M40-S14).
 - Error: personal rows failing do not block the curated rows.
-- Empty: new profile sees curated rows only.
+- Empty: a new profile or a guest without device progress sees curated rows only.
 
 ### M05-S06 Home on a kids profile (Must)
 As a child, I want a simple Home with big cards, so that I can find videos on my own.
 - AC1: Given a kids profile, When Home loads, Then only kid titles appear and the hero comes from kid titles.
 - AC2: Given the profile, When the header renders, Then it shows no search suggestions of adult titles and no account link.
+- AC3: Given Kids mode is on for a guest, When Home loads, Then AC1 applies and the header shows only the logo mark (M40-S09).
 - Edge: cards are larger on kids Home (3 per row on mobile).
 - Error: same as adult Home, retry per row.
 - Empty: see M35-S01.
@@ -585,7 +593,7 @@ As a viewer, I want results presented as a clear list of cards, so that I can sc
 As the owner, I want search protected from abuse, so that the database stays responsive.
 - AC1: Given an IP makes more than 60 searches per minute, When the next arrives, Then it returns 429 and the UI shows "Slow down a little".
 - AC2: Given a query contains special characters, When it runs, Then it is parameterised and cannot alter the query.
-- Edge: signed out search is not available (viewer is signed in).
+- Edge: signed out visitors can search. Their limit is per IP and per guest id (60 per minute), and their searches are not saved on the server.
 - Error: 429 handling shows a countdown.
 - Empty: not applicable.
 
@@ -598,7 +606,9 @@ As a viewer, I want a page that explains a video before I play it, so that I kno
 - AC1: Given I open `/title/<slug>`, When it loads, Then I see the poster, title, duration, categories, description, caption badge (CC), and primary button Play (or Resume from 2:14).
 - AC2: Given I started the video, When I look at the page, Then a progress bar shows with remaining time.
 - AC3: Given I tap My List, When it toggles, Then the button updates at once (optimistic) with an accessible pressed state.
+- AC4: Given I am a guest, When I tap My List, Then the Sign in to save dialog opens (M40-S07) and the button state does not change.
 - Edge: long descriptions collapse after 4 lines with "More".
+- Edge: for guests Resume uses progress kept on this device (M40-S04).
 - Error: not found shows the 404 page. Load failure shows retry.
 - Empty: not applicable.
 
@@ -619,6 +629,7 @@ As a viewer, I want the main button to do the right thing, so that I never have 
 - AC3: Given I finished the title, When I view the page, Then the button says "Watch again" and starts at 0.
 - AC4: Given the title is a series, When I tap Play, Then the next unwatched episode starts.
 - Edge: a "Start from beginning" secondary link appears when resuming.
+- Edge: For guests the saved position comes from this device (M40-S04).
 - Error: not applicable.
 - Empty: not applicable.
 
@@ -639,11 +650,12 @@ As a viewer, I want suggestions on a title page, so that I can keep learning.
 - Error: failure hides the row silently.
 - Empty: see AC2.
 
-### M07-S06 Public preview for signed out visitors (Should)
+### M07-S06 Public preview when guest play is off (Should)
 As a visitor with a shared link, I want to see what the title is before signing up, so that I decide to join.
-- AC1: Given I am signed out, When I open `/title/<slug>`, Then I see poster, title, description and a Sign in to watch button, with no player.
+- AC1: Given the owner has switched guest play off, When I open `/title/<slug>` signed out, Then I see poster, title, description and a Sign in to watch button, with no player.
 - AC2: Given I tap the button, When I go through sign in, Then I return to the title.
 - Edge: search engines can index the page (title, description, Open Graph).
+- Edge: with guest play on, the page is the full title page (M40-S05).
 - Error: not applicable.
 - Empty: not applicable.
 
@@ -666,6 +678,7 @@ As a viewer, I want a video to start quickly when I press Play, so that I do not
 - AC2: Given autoplay is blocked by the browser, When the page opens from a tap, Then playback still starts (user gesture), else a large Play button is shown.
 - AC3: Given the master playlist request returns a signed URL, When the player loads, Then it uses hls.js (or native HLS on Safari).
 - AC4: Given a 3G connection, When playback starts, Then the first rendition is the 360p (start low, then adapt up).
+- AC5: Given I have no account, When I press Play, Then playback starts the same way with no sign in step (M40-S02).
 - Edge: Startup time and first frame time are measured and sent to observability (M24).
 - Error: see M08-S20 to M08-S24.
 - Empty: not applicable.
@@ -794,6 +807,7 @@ As a viewer, I want the video to start where I stopped, so that I never find my 
 - AC1: Given a saved position of 5 seconds or more, When I open the watch page, Then playback starts at position minus 3 seconds with a toast "Resumed from 2:14. Start over" action.
 - AC2: Given I tap Start over, When pressed, Then playback seeks to 0 and the saved position resets.
 - AC3: Given the URL has `?t=90`, When opened, Then it overrides saved position for that load.
+- AC4: Given I am a guest, When I open the watch page, Then the saved position comes from this device (M40-S04).
 - Edge: if the saved position is beyond the current duration (video replaced), it is ignored and starts at 0.
 - Error: failure to fetch the position starts at 0 and does not block playback.
 - Empty: not applicable.
@@ -804,8 +818,9 @@ As a viewer, I want my place saved reliably, so that I can resume on any device.
 - AC2: Given I pause, seek, or hide the tab, When that happens, Then a write is sent at once.
 - AC3: Given the page closes, When `pagehide` fires, Then a `sendBeacon` write is attempted.
 - AC4: Given the network is offline, When writes fail, Then the latest position is queued locally (only the newest per video) and sent when back online.
+- AC5: Given I am a guest, When progress is due, Then it is written to this device only and no request goes to `/api/progress` (M40-S04).
 - Edge: writes are rate limited per profile to 1 per 5 seconds on the server, extra ones coalesced.
-- Error: a 401 pauses playback and prompts sign in (M01-S12). A 403 for profile mismatch returns to the picker.
+- Error: a 401 pauses playback and prompts sign in (M01-S12) for signed in viewers. A guest session that cannot start shows 'We could not start this video. Try again' with Retry. A 403 for profile mismatch returns to the picker.
 - Empty: not applicable.
 
 ### M08-S17 Buffering indicators (Must)
@@ -933,6 +948,7 @@ As a viewer, I want to start on my phone and continue on my laptop, so that I ca
 - AC1: Given I watched to 3:10 on phone, When I open the video on laptop in the same profile, Then playback starts from 3:07.
 - AC2: Given both devices play at once, When writes conflict, Then the later server timestamp wins (see M09-S06).
 - Edge: a sync delay up to 15 seconds is acceptable.
+- Edge: Guests do not get this: their progress stays on the device. Signing in syncs it, and M40-S13 moves device progress into the account.
 - Error: not applicable.
 - Empty: not applicable.
 
@@ -1032,6 +1048,7 @@ As a viewer, I want to save a title for later, so that I can find it again.
 - AC1: Given a title card, detail page or watch page, When I tap the plus button, Then it is added at once, the icon changes to a tick with accessible state "In My List", and a toast "Added to My List" shows.
 - AC2: Given the server rejects the add, When it fails, Then the icon reverts and a persistent error toast shows.
 - AC3: Given I am offline, When I tap, Then the change is queued and applied on reconnect with a "Saved on this device" note.
+- AC4: Given I am a guest, When I tap the plus button, Then the Sign in to save dialog opens and nothing is stored (M40-S07).
 - Edge: adding the same title twice is idempotent.
 - Error: limit of 500 items per profile; beyond it shows "My List is full".
 - Empty: not applicable.
@@ -1050,6 +1067,7 @@ As a viewer, I want a page listing everything I saved, so that I can choose.
 - AC2: Given a title is later unpublished, When I open the list, Then it is hidden but remains stored and returns if republished.
 - AC3: Given many items, When scrolling, Then items load in pages of 24 with Show more.
 - Edge: kids profile sees only kid titles.
+- Edge: guests see an explainer instead of a list (M40-S08).
 - Error: load failure shows retry.
 - Empty: "Your list is empty. Tap + on any video to save it here" with a Browse button.
 
@@ -1818,6 +1836,7 @@ As the owner, I want views and watch time recorded, so that I can see what is us
 - AC2: Given playback continues, When each 10 second progress is saved, Then watch time accumulates (seconds actually played, not seek jumps).
 - AC3: Given the finish threshold, When reached, Then a completion is recorded once per session.
 - Edge: previews by admins and bots are excluded.
+- Edge: guest plays count like any other play.
 - Error: event write failure never affects playback.
 - Empty: not applicable.
 
@@ -1864,8 +1883,8 @@ As the developer, I want aggregates precomputed, so that dashboards are fast.
 
 ### M19-S07 Privacy of analytics (Must)
 As a viewer, I want analytics to respect my privacy, so that I am not tracked across the web.
-- AC1: Given the platform, When it records events, Then it stores profile id and video id for resume only and uses an anonymous daily rotating id for analytics counts.
-- AC2: Given the privacy page, When viewed, Then it states what is measured.
+- AC1: Given the platform, When it records events, Then it stores profile id and video id for resume only, and uses an anonymous daily rotating id for analytics counts. For guests that id is a hash of the guest id and the day, so the guest id is never stored in analytics (M40-S16).
+- AC2: Given the privacy page, When viewed, Then it states what is measured and names the guest cookie.
 - Edge: no third party scripts.
 - Error: not applicable.
 - Empty: not applicable.
@@ -2009,7 +2028,7 @@ As the owner, I want browsers to enforce safe behaviour, so that common attacks 
 
 ### M23-S03 Rate limiting (Must)
 As the owner, I want limits on sensitive endpoints, so that abuse is blunted.
-- AC1: Given limits (sign in, sign up, reset, resend, search, progress, key requests), When exceeded, Then 429 with Retry-After is returned and the UI shows a plain wait message.
+- AC1: Given limits (sign in, sign up, reset, resend, search, progress, key requests, guest playback sessions, public catalog reads), When exceeded, Then 429 with Retry-After is returned and the UI shows a plain wait message.
 - AC2: Given the limiter store fails, When it is unreachable, Then auth endpoints fail closed and read endpoints fail open with a log (documented decision).
 - Edge: carrier grade NAT is considered (IP limits are generous, account limits are strict).
 - Error: see AC2.
@@ -2176,7 +2195,7 @@ As a viewer, I want one place for settings, so that I can find them.
 
 ### M26-S06 Cookie and storage notice (Could)
 As a viewer in a region that needs consent, I want to be informed about storage, so that rules are respected.
-- AC1: Given the site only uses essential cookies and local storage, When first visited, Then a short notice appears once with a link to Privacy and no tracking choices (none exist).
+- AC1: Given the site only uses essential cookies and local storage (the session, profile, guest and Kids mode cookies and device progress), When first visited, Then a short notice appears once with a link to Privacy and no tracking choices (none exist).
 - Edge: shown only where config says so.
 - Error: not applicable.
 - Empty: not applicable.
@@ -2295,19 +2314,19 @@ As the developer, I want heavy jobs limited, so that the server stays responsive
 ## M31 Playback authorization
 
 ### M31-S01 Signed playlist for authorised viewers (Must)
-As the owner, I want only signed in viewers with an active profile to get a playable URL, so that videos are not freely hot-linked.
-- AC1: Given an authorised profile requests playback, When the server verifies session, profile and video visibility (published, kids filter), Then it returns a signed master playlist URL valid for 2 hours.
-- AC2: Given no session, a suspended account, or a hidden video, When requested, Then it returns 401 or 404 with no URL.
-- AC3: Given a kids profile and a non-kid video, When requested, Then it returns 403.
+As the owner, I want a playable URL only for a signed in viewer with an active profile or for a guest session, so that videos are not freely hot-linked.
+- AC1: Given an authorised profile or a guest requests playback, When the server verifies the session or guest cookie, the video visibility (published) and the kids filter, Then it returns a signed master playlist URL and a 30 minute token, with segment URLs valid for 2 hours for accounts and 20 minutes for guests.
+- AC2: Given a suspended account, a hidden video, or guest play switched off, When requested, Then it returns 401 or 404 with no URL.
+- AC3: Given a kids profile or a guest in Kids mode and a non-kid video, When requested, Then it returns 404.
 - Edge: URLs are bound to the video id and expire.
 - Error: failure to sign returns 500 with a request id.
 - Empty: not applicable.
 
 ### M31-S02 HLS key endpoint (Must)
 As the owner, I want the AES key served only to authorised players, so that stolen segments are useless.
-- AC1: Given the player requests the key, When the session cookie is valid and the video visible, Then the 16 byte key is returned with no-store caching.
+- AC1: Given the player requests the key, When the playback token (account or guest) is valid and the video visible, Then the 16 byte key is returned with no-store caching.
 - AC2: Given an invalid request, When denied, Then 403 and an audit-light log line are written.
-- AC3: Given key requests exceed 30 per minute per session, When exceeded, Then 429.
+- AC3: Given key requests exceed 20 per 10 minutes per profile or guest, or 300 per minute per IP, When exceeded, Then 429.
 - Edge: the key URL cannot be used from another origin (CORS and cookie).
 - Error: key missing for a video blocks publish.
 - Empty: not applicable.
@@ -2317,6 +2336,7 @@ As the owner, I want segments to need a valid token, so that direct links expire
 - AC1: Given signed cookies or query tokens issued with the playlist, When segment requests arrive at the CDN, Then Cloudflare validates them (token auth) and rejects expired ones.
 - AC2: Given a token near expiry during playback, When 30 minutes remain of lifetime, Then the player refreshes it silently (M08-S21).
 - Edge: tokens are scoped to the video path prefix.
+- Edge: guest segment URLs live 20 minutes and account ones 2 hours. The player refreshes an expired URL through a new session (M08-S21).
 - Error: CDN misconfiguration is caught by a smoke test in deploy.
 - Empty: not applicable.
 
@@ -2466,9 +2486,179 @@ As a viewer, I want preview thumbnails on the seek bar, so that I can find a mom
 
 ---
 
+## M40 Guest access
+
+### M40-S01 Browse and search without an account (Must)
+As a visitor, I want to browse and search without signing up, so that I can see what the site offers before I decide anything.
+- AC1: Given I have no account, When I open `/`, Then I see the hero and rows (not a sign in card), the same layout an account holder sees without personal rows.
+- AC2: Given I am a guest, When I open Browse, a category or Search, Then results load and I can open any title.
+- AC3: Given I am a guest, When I open a personal page (`/profiles`, `/account`), Then I go to sign in with the path kept in `next`, and when I open `/my-list` I see the explainer (M40-S08).
+- Edge: a guest sees the general audience unless Kids mode is on (M40-S09). Guest search saves nothing on the server and shows no recent searches.
+- Error: a failed load shows the normal retry card and the header stays usable. A rate limited search shows "Slow down a little" with a countdown (M06-S10).
+- Empty: with no published titles the page shows "New videos are on the way" (M05-S07).
+
+### M40-S02 Play without an account (Must)
+As a visitor, I want to press Play and watch, so that nothing stands between me and the video.
+- AC1: Given I have no account, When I press Play on a title, series, hero or card, Then playback starts exactly as for an account holder, with no sign in step.
+- AC2: Given I press Play, When the server sees no account session, Then it issues a guest playback token (30 minutes, `pid` null, `gst` set) for a published video and the player loads the playlist, key and segments as usual.
+- AC3: Given I am a guest, When the token nears expiry or a segment URL expires, Then the player refreshes through a new session without an error (M08-S21).
+- AC4: Given the owner has switched guest play off, When I press Play, Then I see "Sign in to watch" with Sign in and Create account, and `next` returns me to the title.
+- Edge: a signed in account always takes priority over a guest cookie. Staff previews are unchanged.
+- Error: a draft, deleted or unknown video is "This video is not available" (404). A limit hit shows the wait message (M40-S11). A failure to start shows "We could not start this video. Try again" with Retry.
+- Empty: not applicable.
+
+### M40-S03 Guest identity cookie (Must)
+As the owner, I want a guest to be recognisable only as much as playback needs, so that limits work without collecting personal data.
+- AC1: Given a guest presses Play for the first time, When the session route answers, Then it sets one cookie `__Host-ad_guest` (HttpOnly, SameSite Lax, Secure, Path `/`, 180 days) holding a random 128 bit id and a signature.
+- AC2: Given the cookie exists and verifies, When the guest plays again, Then no new cookie is set.
+- AC3: Given the cookie is forged, truncated or signed with another key, When the guest plays, Then it is treated as absent and a new one is issued.
+- AC4: Given a guest only browses, When pages load, Then no guest cookie is set.
+- Edge: the id is never shown, never stored with a name or email, and the account id and guest id are different spaces.
+- Error: cookies blocked means each play mints a new id, limits then fall back to the IP subject and playback still works.
+- Empty: not applicable.
+
+### M40-S04 Guest progress on this device (Must)
+As a guest, I want my place remembered, so that I can come back and resume.
+- AC1: Given I watch as a guest, When progress is due (M08-S16), Then it is written to this device only, under one storage key, and no request goes to `/api/progress`.
+- AC2: Given I open a video I watched before, When the page loads, Then playback resumes at position minus 3 seconds with the usual toast (M08-S15).
+- AC3: Given the store holds 100 titles, When I watch a new one, Then the least recently watched entry is dropped.
+- AC4: Given the stored data is corrupt, When the page loads, Then it is treated as empty and playback starts at 0.
+- Edge: a finished video shows Watch again. Progress is per browser and per device, never shared across devices for guests.
+- Error: blocked or full storage never stops playback. A small note says "Your place is not being saved on this device" once per visit (S89).
+- Empty: no saved place means playback starts at 0.
+
+### M40-S05 Title and series pages for guests (Must)
+As a guest, I want a full title page with a Play button, so that I can decide and watch from one place.
+- AC1: Given I open `/title/<slug>` as a guest, When it loads, Then I see poster, title, duration, categories, description, caption badge, Play (or Resume 2:14 from this device) and My List.
+- AC2: Given I open `/series/<slug>`, When it loads, Then I see the episode list with progress from this device and the primary button says "Resume S1 E3" or "Play S1 E1".
+- AC3: Given the page is shared, When someone opens the link, Then Open Graph tags show the title and picture and search engines may index the page.
+- Edge: an old slug redirects as today. Guest play switched off shows the public preview with Sign in to watch (M07-S06).
+- Error: not found shows the 404 page. In Kids mode a non-kid title shows "This video is not in Kids mode" with Turn off Kids mode and Browse (M40-S09).
+- Empty: a series with no published episode is a 404.
+
+### M40-S06 Signed out header and navigation (Must)
+As a guest, I want the same navigation as everyone else plus a clear way to sign in, so that I can move around and join when I want.
+- AC1: Given I am signed out on desktop, When any page loads, Then the header shows logo, Home, Browse, My List, search and a Sign in button, plus Create account when sign up is open.
+- AC2: Given I am signed out on a phone, When any page except the watch page loads, Then I see the top bar with logo, search icon and Sign in, and the bottom tab bar with Home, Browse, Search and My List.
+- AC3: Given I open the menu, When it shows, Then it holds Kids mode, Data saver, Help, Sign in and Create account (when open).
+- Edge: Sign in keeps the current path in `next`. The profile picker is never shown to a guest. Create account is hidden when sign up is closed.
+- Error: not applicable.
+- Empty: not applicable.
+
+### M40-S07 Sign in to save (Must)
+As a guest, I want a clear, short prompt when I try to save something, so that I understand why an account is needed and can say no.
+- AC1: Given I am a guest, When I tap My List on a card, title, series or watch page, Then a dialog (bottom sheet on a phone) opens titled "Save this to My List" with Sign in, Create account and Not now, and nothing is stored.
+- AC2: Given the dialog is open, When I press Escape, tap Not now or tap outside, Then it closes, focus returns to the button and I keep watching or browsing.
+- AC3: Given I choose Sign in or Create account, When I leave, Then `next` holds the current path and the pending action is remembered for 30 minutes.
+- AC4: Given likes exist (lane L5), When a guest likes a title, Then the same dialog opens with the like wording.
+- Edge: Create account is hidden when sign up is closed. The button has no pressed state for guests.
+- Error: not applicable. The dialog does no network call.
+- Empty: not applicable.
+
+### M40-S08 My List explainer for guests (Must)
+As a guest, I want `/my-list` to explain itself, so that I am not thrown to a sign in page.
+- AC1: Given I open `/my-list` as a guest, When it loads, Then I see "My List" and "Save videos to watch later", one sentence ("Sign in or create a free account to keep a list that follows you on every device."), a Sign in button, a Create account button and a Browse videos link.
+- AC2: Given I have progress on this device, When the page loads, Then a link to Continue Watching on Home is shown.
+- Edge: Create account is hidden when sign up is closed.
+- Error: not applicable.
+- Empty: this is the empty state.
+
+### M40-S09 Guest audience and Kids mode toggle (Must)
+As a parent sharing a device, I want a Kids mode switch for visitors, so that the screen shows videos made for children.
+- AC1: Given I am a guest and the site default is general, When I switch Kids mode on, Then Home, Browse, Search, up next and related show only kid suitable titles at once, enforced in the query, and the header shows only the logo mark (R17).
+- AC2: Given Kids mode is on, When a direct link to a non-kid title opens, Then I see "This video is not in Kids mode" with Turn off Kids mode and Browse, and no playback session is issued.
+- AC3: Given I switch Kids mode off, When I confirm, Then no password is asked and everything returns to general.
+- AC4: Given the device has made no choice, When I open the site, Then the site setting `guestAudience` decides.
+- AC5: Given I select a kids profile while signed in, When I later lose my session, Then this device stays in Kids mode until it is switched off.
+- Edge: the switch is a convenience, not a lock. Its help text says "Shows videos made for children. Anyone using this device can turn it off." Copy never says locked or safe. A guest in Kids mode stores no analytics identity.
+- Error: a failure to save the choice shows "We could not change Kids mode. Try again." and keeps the old state. A filter failure returns an empty list, never an unfiltered one.
+- Empty: with no kid titles Home shows "Nothing here yet. Ask a grown-up to turn off Kids mode."
+
+### M40-S10 Guest settings the owner controls (Must)
+As the owner, I want to choose what visitors see and whether they can watch without an account, so that I stay in control.
+- AC1: Given Settings, Features, When I open it, Then I see "Default for visitors without an account" (General or Kids, default General) and "Guests can watch" (default on), with the plain descriptions from the registry.
+- AC2: Given `client.json` has `guestAudience` and `guestPlay`, When I run `pnpm launch:apply`, Then the settings take those values, and a second run reports unchanged.
+- AC3: Given guest play is switched off, When a guest presses Play, Then they see Sign in to watch (M40-S02 AC4), while browsing still works.
+- Edge: both settings are Super admin only for guest play and Admin for the audience, and every change is audited.
+- Error: an invalid value is refused with the field named.
+- Empty: not applicable.
+
+### M40-S11 Guest abuse protection (Must)
+As the owner, I want guest playback limited, so that open access does not become an open tap.
+- AC1: Given a guest id mints more than 20 sessions in a minute, When the next arrives, Then it returns 429 with Retry-After and the player shows a plain wait message.
+- AC2: Given an IP mints more than 120 guest sessions in a minute, When the next arrives, Then it returns 429 (generous because mobile networks share addresses).
+- AC3: Given a guest token, When segment URLs are issued, Then they expire in 20 minutes (setting `limits.guest_segment_minutes`), while account URLs last 2 hours.
+- AC4: Given key requests from one guest exceed 20 per 10 minutes or from one IP exceed 300 per minute, When exceeded, Then 429.
+- Edge: refused requests write a log line with route, status, video id and IP, never a token or cookie.
+- Error: a limiter store failure follows the documented rule in M23-S03 AC2 and is logged.
+- Empty: not applicable.
+
+### M40-S12 Challenge after repeated limits (Should)
+As the owner, I want a human check after repeated abuse, so that real viewers are not blocked.
+- AC1: Given an IP hits the guest limits 3 times in 10 minutes and Turnstile is configured, When the next session is requested, Then it answers `challenge_required` and the player shows a short check.
+- AC2: Given the viewer passes the check, When the session is retried, Then playback starts.
+- AC3: Given Turnstile keys are absent, When the limits are hit, Then only the 429 wait applies.
+- Edge: the check never appears for a normal viewer. Kids playback pages follow SECURITY.md section 12 (no third party script) so the check there is replaced by the wait message.
+- Error: check failure shows "We could not confirm you are human. Try again."
+- Empty: not applicable.
+
+### M40-S13 Move device history into my account (Should)
+As a guest who just signed in, I want my watched videos added to my profile, so that I do not lose my place.
+- AC1: Given I sign in, pick a non-kids profile and this device holds guest progress, When the page loads, Then a dialog asks "Add the 6 videos you watched on this device to your profile?" with Add them and No thanks.
+- AC2: Given I choose Add them, When the import runs, Then at most 100 entries are sent, only missing or older server rows are filled, newer server data is never overwritten, and I see "Added 6 videos to Continue Watching".
+- AC3: Given I choose Not now, When I dismiss, Then the device does not ask again during this visit and the guest data stays.
+- AC4: Given the profile is a kids profile, When Home loads, Then no prompt shows.
+- Edge: videos no longer available are skipped, and the toast counts what was added. Imported entries are removed from the device store only after the server accepted them. The prompt is asked once per visit while history remains on the device (D-237).
+- Error: failure shows "We could not add them. Try again." with Retry, and nothing is removed.
+- Empty: with no device progress there is no prompt.
+
+### M40-S14 Continue Watching for guests (Should)
+As a guest, I want Continue Watching on Home, so that I get back to what I was watching.
+- AC1: Given I have unfinished progress on this device, When Home loads, Then a Continue Watching row shows up to 20 titles with progress bars, in the same place accounts see it.
+- AC2: Given I remove an item, When I confirm, Then it leaves the row at once with an Undo toast for 6 seconds.
+- AC3: Given a title was unpublished or is not allowed in Kids mode, When the row loads, Then it is dropped and removed from the device store.
+- Edge: the row is hidden when empty.
+- Error: a failed lookup hides the row and never blocks the rest of Home.
+- Empty: the row is not rendered.
+
+### M40-S15 Finish a save after sign in (Should)
+As a guest who chose to sign in to save, I want the save to happen, so that I do not repeat myself.
+- AC1: Given I opened the dialog on a title and signed in, When I land back on that title with a profile, Then the title is added to My List and "Added to My List" shows.
+- AC2: Given more than 30 minutes passed, When I land, Then nothing is added.
+- AC3: Given the title is not allowed for the chosen profile, When I land, Then nothing is added and no error shows.
+- Edge: the pending action is held in this browser's local storage for 30 minutes, holds one wish, is checked on read and cleared after use. It is written only when the visitor follows Sign in or Create account from the dialog (D-235).
+- Error: a failed add shows the standard My List error toast (M10-S01 AC2).
+- Empty: not applicable.
+
+### M40-S16 Guest analytics and privacy (Must)
+As a viewer, I want guest analytics to stay anonymous, so that I am not tracked.
+- AC1: Given a guest plays a video, When events are recorded, Then the stored viewer id is a hash of the guest id and the day, so it changes daily and the guest id itself is not stored.
+- AC2: Given a guest is in Kids mode, When events are recorded, Then no viewer id is stored.
+- AC3: Given the Privacy page, When viewed, Then it names the guest cookie, its purpose (limits and playback) and its life (180 days), and the anonymous daily id.
+- Edge: no third party scripts. Clearing cookies makes the next day count as a new viewer, which is accepted.
+- Error: an analytics failure never affects playback (M19-S01).
+- Empty: not applicable.
+
+### M40-S17 Search engines can see public pages (Should)
+As the owner, I want titles to be found on search engines, so that more people arrive.
+- AC1: Given a crawler requests `/robots.txt`, When it answers, Then it allows `/`, `/title/`, `/series/` and `/browse` and disallows `/api/`, `/admin`, `/account`, `/profiles`, `/settings`, `/watch/`, `/search`, `/my-list`, `/sign-in` and `/sign-up`.
+- AC2: Given a crawler opens a title page, When it loads, Then the page has real content, a canonical URL and Open Graph tags.
+- AC3: Given a watch page, When it loads, Then it is marked noindex.
+- Edge: the sitemap and structured data belong to lane L6. The `Sitemap:` line is added only when the sitemap exists.
+- Error: not applicable.
+- Empty: not applicable.
+
+### M40-S18 Clear history on this device (Could, not built)
+As a guest on a shared device, I want to clear what this device remembers, so that others do not see my history.
+- AC1: Given I open the menu, When I choose Clear history on this device, Then a confirm asks "Clear history on this device? This removes your places and Continue Watching here. This cannot be undone." with Clear history and Keep it.
+- AC2: Given I confirm, When it finishes, Then the guest progress, the import answer and Kids mode choice for this device are removed and a toast confirms.
+- Edge: signed in accounts see Sign out instead.
+- Error: failure shows an error toast and keeps the data.
+- Empty: with no history the item is hidden.
+
 ## Coverage summary
 
-Total stories: 271. Must: 176. Should: 75. Could: 20.
+Total stories: 289. Must: 188. Should: 80. Could: 21.
 
 | Module | Stories |
 |---|---|
@@ -2508,6 +2698,7 @@ Total stories: 271. Must: 176. Should: 75. Could: 20.
 | M34 | 4 |
 | M35 | 4 |
 | M36 | 4 |
+| M40 | 18 |
 
 Modules with no viewer or admin screen of their own (M04, M22, M23, M24, M30, M31, M33) still carry stories because their behaviour is testable and has user visible effects.
 
