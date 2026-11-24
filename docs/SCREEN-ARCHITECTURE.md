@@ -52,7 +52,7 @@ From `/home/claude/shared-protocols/docs/UI-UX-STANDARD.md`:
 | `/title/[slug]` | Title detail (public preview when signed out) | |
 | `/terms`, `/privacy` | Legal pages | |
 | `/about`, `/help` | About, Help and contact | |
-| `/offline` | Offline screen | Served by service worker |
+| `/offline` | Offline screen | Served by service worker. Offers Reload the page only |
 | `/maintenance` | Maintenance page | 503 |
 | `/unsupported` | Unsupported browser | Static |
 | `*` | 404 | |
@@ -350,6 +350,8 @@ Each specification lists purpose, layout regions, components, data needed, state
 - **Purpose.** Find by typing.
 - **Layout.** Search field at top (full screen on mobile, Cancel), recent searches or popular categories when empty, results grid with count, Show more.
 - **States.** Empty query, typing (thin progress line), no results (tips plus popular titles), error ("Search is unavailable"), rate limited ("Slow down a little").
+- **Voice search.** A mic button inside the field, hidden on kids profiles, under Data saver and in browsers without speech recognition.
+- **Storage notice.** A dismissible notice on every public page except Watch (informational, Got it and Privacy link), above the tab bar on phones. Placement rules in DESIGN-SYSTEM 11.13.
 - **Nav in.** Header icon, `/` key. **Out.** Title detail, Series page, Browse.
 - **Stories.** M06-S03 to M06-S10.
 
@@ -429,9 +431,9 @@ Each specification lists purpose, layout regions, components, data needed, state
 
 ### Screens 32 to 37. System pages
 
-- **404.** Message, Search, Home, header kept.
-- **Server error.** Plain words, Retry, Home, Reference id.
-- **Offline.** "You are offline", Retry, cached links.
+- **404.** Message, one action (Back to Home), a search field and popular titles, header kept. HTTP 404 and `noindex`. Removed video and series pages follow the same pattern.
+- **Server error.** Plain words, one action (Try again), reference id and support email as plain text, no Report link.
+- **Offline.** "You are offline", Reload the page. One action (R39).
 - **Maintenance.** Message and expected time.
 - **Unsupported browser.** List of supported browsers.
 - **Install banner.** Slim banner with Install and Not now, iOS instruction sheet.

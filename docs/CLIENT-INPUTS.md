@@ -15,6 +15,8 @@ All of these live in one file, `client.json`, copied from `client.example.json` 
 | Domain | `domain` | Env `APP_DOMAIN`, `APP_ORIGIN`, Caddy | Without `https://` |
 | Media domain | `mediaDomain` | Env `MEDIA_DOMAIN`, `MEDIA_ORIGIN`, Worker custom domain | Defaults to `media.` plus the domain |
 | Support email | `supportEmail` | Settings, help page, env `SUPPORT_EMAIL` | |
+| Storage notice | Settings, Discovery tab: `noticeEnabled`, `noticeText`, `noticeVersion` | Storage notice on public pages | Default text is a placeholder. Bump the version to show it again |
+| Search synonyms and share channels | Settings, Discovery tab | Search quality, share menu | Optional. Kids-only titles are never indexed whatever is set |
 | Owner email | `adminOwnerEmail` | Who the first owner account is created for | The person who holds the account |
 | Colours | `theme.colors` (bg, surface, ink, muted, border, primary, accent) | Theme service, then every screen through tokens | Hex values. Contrast checked |
 | Font | `theme.fontKey` | Theme service | One of the allowed keys |

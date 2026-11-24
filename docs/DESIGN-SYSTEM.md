@@ -62,6 +62,7 @@ All tokens are CSS custom properties on `:root`. Admin theme settings write over
 
 - Components use `var(--token)` only. Hex, rgb and font names never appear in component CSS.
 - Token groups: **Themeable** (admin can change, contrast checked), **Derived** (computed from themeable ones, shown read only), **Fixed** (not editable).
+- `--notice-h` is a runtime variable, not a theme token: the storage notice publishes its own height so the toast can lift above it (11.13). It is 0 when no notice shows.
 - Tailwind, if used, maps its theme to these variables. It never defines colours of its own.
 
 ### 3.1 Colour tokens
@@ -333,6 +334,7 @@ Rules:
 - Icon colour follows text colour tokens. Icons never carry meaning alone: add a visible label, or `aria-label` on icon only buttons plus a tooltip on hover and focus.
 - Decorative icons get `aria-hidden="true"`.
 - Required set: play, pause, resume, skip back 10, skip forward 10, volume, mute, captions, settings, fullscreen, exit fullscreen, speed, quality, plus, check, close, search, back, chevron left and right, menu, more, trash, edit, upload, retry, eye, eye off, user, users, lock, info, warning, error, success, wifi off, data saver, clock, list (My List), download is not used.
+- Added by M45: mic (voice search).
 - Sprite or per icon import, tree shaken. No icon font.
 
 ## 10. Imagery and aspect ratios
