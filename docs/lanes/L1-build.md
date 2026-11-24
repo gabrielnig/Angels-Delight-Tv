@@ -13,8 +13,8 @@ Plan: `docs/plan/v2/L1-guest-access.md`. Rulings: `docs/plan/v2/RULINGS.md` (the
 | 5 | Home, Browse, Search for guests | merged | #262 |
 | 6 | Guest audience, Kids mode, settings | merged | #263 |
 | 7 | My List explainer, return intent | merged | #264 |
-| 8 | Guest Continue learning | on PR | see below |
-| 9 | History import | todo | |
+| 8 | Guest Continue learning | merged | #265 |
+| 9 | History import | on PR | see below |
 | 10 | Abuse protection, Turnstile escalation | todo | |
 | 11 | Robots, journeys, documents | todo | |
 
@@ -112,3 +112,9 @@ Deviations: no `guest` prop on the shared `TopNav` (D-208). The sticky Play bar 
 - `GuestContinueRow` is mounted at the top of the rows in `HomeView` for guests. Pure parts: `lib/guest/continue.ts`, `lib/guest/episodes.ts`.
 - `ContinueRow` gained an optional `title`. `GuestEpisodeProgress` wraps `EpisodeList` on the series page for guests.
 - The sticky Play bar and the series main button do not follow device progress yet.
+
+## Slice 9 (History import)
+
+- `packages/viewer/src/progress-import.ts` `importGuestProgress`, `MAX_IMPORT_ITEMS`. `api.progress.import` and `/api/progress/import`.
+- Client: `lib/guest/import.ts` (`buildImportItems`, `runImport`), `ImportPrompt` mounted in `ViewerChrome`.
+- Heads up: `messages-coverage.test.ts` fails on `main` for three `player.skip.*` keys that are not mine (L4). Dynamic `msg()` keys are not seen by that test, so write literal keys.
