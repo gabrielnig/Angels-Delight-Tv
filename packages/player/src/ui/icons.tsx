@@ -141,3 +141,8 @@ export const ChaptersIcon = (p: IconProps) => (
     <path d="M4 6h.01M4 12h.01M4 18h.01" />
   </Icon>
 );
+export const TheatreIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <rect x="2.5" y="7" width="19" height="10" rx="2" />
+  </Icon>
+);

@@ -137,3 +137,22 @@ export function serverChanges(before: PlayerPreferences, after: PlayerPreference
   if (before.autoplayNext !== after.autoplayNext) out.autoplayNext = after.autoplayNext;
   return out;
 }
+
+/** Theatre mode is a layout choice about this screen, so it lives on the device like volume (D-205). */
+export const THEATRE_KEY = 'ad.player.theatre';
+
+export function readTheatre(store: Pick<KeyValueStore, 'getItem'> | null): boolean {
+  try {
+    return store?.getItem(THEATRE_KEY) === 'on';
+  } catch {
+    return false;
+  }
+}
+
+export function saveTheatre(store: Pick<KeyValueStore, 'setItem'> | null, on: boolean): void {
+  try {
+    store?.setItem(THEATRE_KEY, on ? 'on' : 'off');
+  } catch {
+    // Storage can be full or blocked. The choice then lasts for this visit only.
+  }
+}

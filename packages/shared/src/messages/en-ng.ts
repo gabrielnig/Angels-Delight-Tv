@@ -78,6 +78,8 @@ export const EN_NG = {
   'player.captions': 'Captions',
   'player.settings': 'Settings',
   'player.chapters': 'Chapters',
+  'player.theatre.enter': 'Theatre mode',
+  'player.theatre.exit': 'Exit theatre mode',
   'player.menu.speed': 'Speed',
   'player.menu.quality': 'Quality',
   'player.pip': 'Picture in picture',

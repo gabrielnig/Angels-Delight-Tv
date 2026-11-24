@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
+  THEATRE_KEY,
+  readTheatre,
+  saveTheatre,
   clearLegacyPreferences,
   loadPreferences,
   preferencesKey,
@@ -180,5 +183,28 @@ describe('server owned preferences (M03-S09)', () => {
       captionLanguage: 'en',
     });
     expect(serverChanges(before, before)).toEqual({});
+  });
+});
+
+describe('theatre mode on the device (M43-S08)', () => {
+  const memory = (initial: Record<string, string> = {}) => {
+    const data = { ...initial };
+    return { getItem: (k: string) => data[k] ?? null, setItem: (k: string, v: string) => void (data[k] = v), data };
+  };
+
+  it('is off by default and remembers on and off', () => {
+    const store = memory();
+    expect(readTheatre(store)).toBe(false);
+    saveTheatre(store, true);
+    expect(readTheatre(store)).toBe(true);
+    saveTheatre(store, false);
+    expect(readTheatre(store)).toBe(false);
+  });
+
+  it('ignores a corrupt stored value and a missing store', () => {
+    expect(readTheatre(memory({ [THEATRE_KEY]: '{"x":1}' }))).toBe(false);
+    expect(readTheatre(memory({ [THEATRE_KEY]: 'maybe' }))).toBe(false);
+    expect(readTheatre(null)).toBe(false);
+    expect(() => saveTheatre(null, true)).not.toThrow();
   });
 });

@@ -107,6 +107,58 @@ describe('WatchClient', () => {
     expect(screen.queryByRole('button', { name: /^Skip/ })).toBeNull();
   });
 
+  it('remembers theatre mode on this device and sets data-theatre on the watch layout', async () => {
+    vi.stubGlobal('matchMedia', (q: string) => ({
+      matches: q.includes('min-width: 960px'),
+      media: q,
+      addEventListener() {},
+      removeEventListener() {},
+    }));
+    const layout = document.createElement('main');
+    layout.className = 'watch';
+    document.body.appendChild(layout);
+    const data = await dataFor('v-rain');
+    const engine = new FakeEngine();
+    render(
+      <WatchClient
+        data={data}
+        viewer={viewer}
+        transport="fixture"
+        startAt={null}
+        testing={{ createEngine: async () => engine, network: new FakeNetwork() }}
+      >
+        <h1>{data.video.title}</h1>
+      </WatchClient>,
+      { container: layout.appendChild(document.createElement('div')) },
+    );
+    await waitFor(() => expect(engine.loads).toHaveLength(1));
+    expect(layout.getAttribute('data-theatre')).toBe('off');
+    fireEvent.click(screen.getByRole('button', { name: 'Theatre mode' }));
+    expect(layout.getAttribute('data-theatre')).toBe('on');
+    expect(localStorage.getItem('ad.player.theatre')).toBe('on');
+    fireEvent.click(screen.getByRole('button', { name: 'Exit theatre mode' }));
+    expect(layout.getAttribute('data-theatre')).toBe('off');
+    layout.remove();
+  });
+
+  it('starts in theatre mode when the device remembers it, and ignores a corrupt value', async () => {
+    vi.stubGlobal('matchMedia', (q: string) => ({
+      matches: q.includes('min-width: 960px'),
+      media: q,
+      addEventListener() {},
+      removeEventListener() {},
+    }));
+    localStorage.setItem('ad.player.theatre', 'on');
+    const { engine, unmount } = mount(await dataFor('v-rain'));
+    await waitFor(() => expect(engine.loads).toHaveLength(1));
+    expect(screen.getByRole('button', { name: 'Exit theatre mode' })).toBeTruthy();
+    unmount();
+    localStorage.setItem('ad.player.theatre', 'garbage');
+    const second = mount(await dataFor('v-rain'));
+    await waitFor(() => expect(second.engine.loads).toHaveLength(1));
+    expect(screen.getByRole('button', { name: 'Theatre mode' })).toBeTruthy();
+  });
+
   it('attaches only the approved caption track', async () => {
     const { container, engine } = mount(await dataFor('v-rain'));
     await waitFor(() => expect(engine.loads).toHaveLength(1));

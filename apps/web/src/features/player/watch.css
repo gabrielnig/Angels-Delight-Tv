@@ -290,3 +290,40 @@
     transition: none;
   }
 }
+
+/* ---- theatre mode (M43-S08): desktop only, a layout the watch page owns ---- */
+
+@media (min-width: 960px) {
+  .watch[data-theatre='on'] {
+    grid-template-columns: minmax(0, 1fr);
+    max-width: none;
+  }
+
+  .watch[data-theatre='on'] .watch__main {
+    display: contents;
+  }
+
+  .watch[data-theatre='on'] .watch__player {
+    /* The player spans the page width. A tall window letterboxes inside the 80vh cap, 16:9 is kept. */
+    grid-column: 1 / -1;
+    width: 100%;
+    max-width: none;
+    max-height: 80vh;
+    margin: 0;
+    background: var(--color-player-bg);
+    transition: opacity var(--motion-base) ease-out;
+  }
+
+  .watch[data-theatre='on'] .watch__player .adp {
+    width: min(100%, calc(80vh * 16 / 9));
+    max-height: 80vh;
+    margin: 0 auto;
+    border-radius: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .watch[data-theatre] .watch__player {
+    transition: none;
+  }
+}

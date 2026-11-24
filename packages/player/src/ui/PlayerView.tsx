@@ -34,6 +34,7 @@ import {
   PlayIcon,
   SettingsIcon,
   SpeedIcon,
+  TheatreIcon,
   VolumeIcon,
 } from './icons';
 import { CaptionRows, ChapterRows, MenuShell, QualityRows, SpeedRows, type MenuId } from './Menus';
@@ -63,6 +64,9 @@ export interface PlayerViewProps {
   spriteUrl?: string | null;
   /** Chapters of this video (M43), also given to the controller. Empty or missing hides every chapter surface. */
   chapters?: PlayerChapter[];
+  /** Theatre mode is a layout the watch page owns (M43-S08). Without a handler the button and the T key are off. */
+  theatre?: boolean;
+  onTheatreToggle?: (() => void) | undefined;
 }
 
 const HIDE_AFTER_MS = 3_000;
@@ -100,6 +104,7 @@ export function PlayerView(props: PlayerViewProps) {
   const playRef = useRef<HTMLButtonElement | null>(null);
   const compact = useMediaQuery('(max-width: 640px)');
   const keyed = useMediaQuery('(hover: hover) and (pointer: fine)');
+  const wide = useMediaQuery('(min-width: 960px) and (pointer: fine)');
 
   const setVideo = useCallback(
     (el: HTMLVideoElement | null) => {
@@ -134,6 +139,7 @@ export function PlayerView(props: PlayerViewProps) {
     };
   }, [state.playing, bump]);
 
+  const theatreAvailable = Boolean(props.onTheatreToggle) && wide && !compact && !fullscreen;
   const controlsVisible =
     shown || !state.playing || menu !== null || focusInside || state.phase !== 'ready';
 
@@ -263,12 +269,13 @@ export function PlayerView(props: PlayerViewProps) {
         altKey: e.altKey,
         target: e.target,
       },
-      { hasNext: Boolean(next), hasSkip: Boolean(state.marker) },
+      { hasNext: Boolean(next), hasSkip: Boolean(state.marker), hasTheatre: theatreAvailable },
     );
     if (!action) return;
     e.preventDefault();
     if (action.type === 'toggle-fullscreen') void toggleFullscreen();
     else if (action.type === 'help') setHelpOpen(true);
+    else if (action.type === 'theatre') props.onTheatreToggle?.();
     else controller.dispatch(action);
   };
 
@@ -756,6 +763,18 @@ export function PlayerView(props: PlayerViewProps) {
             onClick={() => void togglePip()}
           >
             <PipIcon />
+          </button>
+        ) : null}
+
+        {theatreAvailable ? (
+          <button
+            type="button"
+            className="adp-ctl"
+            aria-label={props.theatre ? msg('player.theatre.exit') : msg('player.theatre.enter')}
+            aria-pressed={props.theatre ?? false}
+            onClick={() => props.onTheatreToggle?.()}
+          >
+            <TheatreIcon />
           </button>
         ) : null}
 
