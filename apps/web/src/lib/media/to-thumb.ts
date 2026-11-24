@@ -17,7 +17,6 @@ export function toThumb(poster: ArtworkDto | null): Thumb | undefined {
   const thumb: Thumb = { src: pick(main).url, srcSet: set(main) };
   const blur = safePlaceholderBlur(poster?.placeholderBlur);
   const color = safePlaceholderColor(poster?.placeholderColor);
-  if (poster?.alt) thumb.alt = poster.alt;
   if (blur) thumb.placeholderBlur = blur;
   if (color) thumb.placeholderColor = color;
   if (webp.length > 0 && jpeg.length > 0) {

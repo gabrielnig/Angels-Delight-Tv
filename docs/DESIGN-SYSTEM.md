@@ -107,6 +107,16 @@ All tokens are CSS custom properties on `:root`. Admin theme settings write over
 
 Status colours are fixed so a client colour change cannot make an error look like a success. Status is never conveyed by colour alone: always an icon and a word.
 
+Sponsor slot tokens (M48, all Fixed so a client theme cannot shrink the box or weaken the label; the build writes rem):
+
+| Token | Value | Use |
+|---|---|---|
+| `--sponsor-slot-height-compact` | `calc(7rem * var(--type-scale))` (112 px) | Home and Title card and the phone after card, below 960 px |
+| `--sponsor-slot-height-wide` | `calc(8.5rem * var(--type-scale))` (136 px) | Home and Title card at 960 px and up |
+| `--sponsor-label-bg` / `--sponsor-label-ink` | `#ECEAE3` / `#1A1C22` | "Sponsored by" chip, 14.15:1, independent of the card surface |
+| `--sponsor-label-size` | `var(--text-caption)` | Chip text, never below 13 px at the default factor |
+| `--sponsor-label-height` | `calc(1.5rem * var(--type-scale))` | Chip height |
+
 Tokens added by M47 (layout, motion, scrim and fixed colours):
 
 | Token | Value | Use |
@@ -779,4 +789,4 @@ Don't
 - Don't block the user on a disabled button without telling them why.
 - Don't show raw technical errors, stack traces or codes as the message.
 - Don't nest scroll areas or trap keyboard focus outside modals.
-- Don't add payment, subscription, ad or upsell UI. The platform is free.
+- Don't add payment, subscription, ad or upsell UI except the labelled sponsor slots and the Donate page defined in M48. Never on kids profiles. The platform is free to watch, and both exceptions are off by default.

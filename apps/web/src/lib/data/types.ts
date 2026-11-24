@@ -8,8 +8,6 @@ export type Audience = 'adult' | 'kids';
 
 export interface Thumb {
   src: string;
-  /** Alt text of the artwork when the editor wrote one. */
-  alt?: string;
   srcSet?: string;
   /** jpeg copy for browsers that cannot read webp. */
   fallbackSrc?: string;

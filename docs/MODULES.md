@@ -50,8 +50,9 @@ Related documents: `docs/PRD.md` (why), `docs/USER-STORIES.md` (what, per module
 | M40 | Guest access | Viewer and backend | [READY] |
 | M42 | Admin polish and bulk operations | Admin | [READY] |
 | M47 | Design system tuning and guards | Cross cutting | [READY] |
+| M48 | Sponsors and donations | Viewer and admin | [CLIENT] |
 
-37 modules in total. M01 to M26 follow the planned set. M27 to M36 are modules found while breaking the brief down: they own behaviour that would otherwise be spread across several modules with nobody responsible.
+38 modules in total. M01 to M26 follow the planned set. M27 to M36 are modules found while breaking the brief down: they own behaviour that would otherwise be spread across several modules with nobody responsible.
 
 ## 2. Dependency overview
 
@@ -772,9 +773,26 @@ Each module lists: purpose, responsibilities, data owned, dependencies, client i
 
 ---
 
+### M48 Sponsors and donations [CLIENT]
+
+**Purpose.** Let the owner fund the platform with labelled sponsor cards and optional donations. Everything ships off.
+
+**Responsibilities.**
+- Four sponsor placements (Home banner, Title card, after video, before video), each with its own switch under one master switch.
+- Sponsors admin: list, editor, creative upload through the image pipeline, schedule in Lagos time, placements, derived statuses, previews that never count.
+- First party click redirect at `/s/{id}` (destination read from the database), frequency cap cookie with no identifier, impressions and clicks in first party analytics, sponsor report with CSV and print layout.
+- Kids matrix: no sponsor or donate surface for kids profiles, Kids mode or a kids site audience, enforced in selection, click, impression, cookie and checkout code.
+- Donations by Paystack hosted redirect (no script, no CSP change), webhook with signature check, idempotency and API verify, reconcile job, receipts through the email outbox, thank you page, admin list with masked emails, optional monthly giving, optional USD, transparency page.
+
+**Data owned.** `sponsors`, `sponsor_creatives`, `sponsor_placements`, `sponsor_daily_stats`, `donations`, `donation_subscriptions`, `payment_events`.
+
+**Dependencies.** M19, M21, M23, M29, M30, M35, M36, M40.
+
+**Client input.** Organisation legal name and registration, Paystack account and keys, settlement bank, sponsor names and terms, bank transfer details, donation and transparency copy, preset amounts [CLIENT].
+
 ## 4. Readiness summary
 
-**Counts.** [READY] modules (28): M01, M02, M03, M04, M06, M07, M08, M09, M10, M11, M12, M13, M14, M16, M17, M19, M20, M23, M24, M25, M27, M28, M30, M31, M34, M35, M36, M40. [CLIENT] modules (9): M05, M15, M18, M21, M22, M26, M29, M32, M33. Total 37.
+**Counts.** [READY] modules (28): M01, M02, M03, M04, M06, M07, M08, M09, M10, M11, M12, M13, M14, M16, M17, M19, M20, M23, M24, M25, M27, M28, M30, M31, M34, M35, M36, M40. [CLIENT] modules (10): M05, M15, M18, M21, M22, M26, M29, M32, M33, M48. Total 38.
 
 **What the [CLIENT] modules wait on:**
 

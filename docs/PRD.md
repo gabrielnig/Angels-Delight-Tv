@@ -37,7 +37,7 @@ Opportunity: a small, fast, owned platform that does a few things very well, at 
 
 ## 4. Non-goals (explicit)
 
-- No subscriptions, payments, plans, coupons or ads.
+- No subscriptions to watch, no paywall and no third party ads. Optional labelled sponsor slots (still image or text cards, first party only) and optional donations through a hosted checkout are allowed. Both are module M48, both are off by default, and neither ever appears for kids profiles or Kids mode.
 - No live streaming at launch (possible later; architecture should not prevent it).
 - No user generated content, comments, likes, ratings or social features by viewers.
 - No DRM (Widevine, FairPlay). Signed URLs and HLS encryption are the protection level.
@@ -333,7 +333,7 @@ Targets are for the first 90 days after launch unless stated. Baselines are unkn
 - A Cloudflare account, domain and VPS will be created. Ownership is to be agreed [CLIENT].
 - The domain `angelsdelight.tv` is under consideration and not yet bought. No code assumes it.
 - Email sending uses a provider with a free or low cost tier at this scale.
-- No payment processing and therefore no PCI scope.
+- Card data never touches our servers: donations use the payment provider's hosted checkout by redirect, with no provider script on our pages, so PCI scope stays at SAQ A level at most. Donations and sponsors are off until the owner switches them on (M48).
 
 ## 13. Phases and milestones
 

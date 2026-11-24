@@ -136,7 +136,7 @@ export function HomeCuration({
             </p>
             {config.heroIds.length === 0 ? (
               <p className="adm-muted" style={{ margin: 0 }}>
-                No hero titles chosen. Home shows your 5 newest titles.
+                No hero title yet. Home shows no banner.
               </p>
             ) : (
               <ol className="adm-list">
@@ -416,11 +416,8 @@ export function HomeCuration({
                   ) : null}
                 </div>
               ) : (
-                <p className="adm-muted">Nothing to preview yet.</p>
+                <p className="adm-muted">No hero banner.</p>
               )}
-              {preview.heroFallback && preview.hero.length ? (
-                <p className="adm-muted">Newest titles are used until you choose hero titles.</p>
-              ) : null}
               {preview.skippedHero.length ? (
                 <Banner tone="warning">
                   {preview.skippedHero.length} hero{' '}

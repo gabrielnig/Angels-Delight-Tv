@@ -27,8 +27,6 @@ export interface HomeState {
 
 export const MAX_HERO = 5;
 export const MAX_ROWS = 12;
-/** Titles Home shows as the hero when none are chosen (M41-S03). */
-export const HERO_FALLBACK_COUNT = 5;
 export const MAX_ROW_TITLES = 20;
 export const FIXED_TYPES: HomeRowType[] = ['continue_watching', 'my_list'];
 export const ROW_TYPE_LABELS: Record<HomeRowType, string> = {
@@ -173,8 +171,6 @@ export interface ResolvedPreviewRow {
 
 export interface Preview {
   hero: VideoRecord[];
-  /** True when no chosen hero title is live, so Home shows the newest titles instead (M41-S03). */
-  heroFallback: boolean;
   skippedHero: VideoRecord[];
   rows: ResolvedPreviewRow[];
 }
@@ -220,13 +216,8 @@ export function resolvePreview(
         empty: !isFixed(r) && items.length === 0,
       };
     });
-  const liveHero = hero.filter((v) => isShown(v) && allowed(v));
-  const newest = [...shown]
-    .sort((a, b) => (b.publishedAt ?? '').localeCompare(a.publishedAt ?? ''))
-    .slice(0, HERO_FALLBACK_COUNT);
   return {
-    hero: liveHero.length > 0 ? liveHero : newest,
-    heroFallback: liveHero.length === 0,
+    hero: hero.filter((v) => isShown(v) && allowed(v)),
     skippedHero: hero.filter((v) => !isShown(v)),
     rows,
   };
