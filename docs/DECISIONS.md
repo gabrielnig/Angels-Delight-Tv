@@ -1658,3 +1658,9 @@ Decision: the View all list pages keep the shared `.web-grid` (2, 3, 4, 5 across
 ## D-303 The Add section dialog offers the seven addable types, and Save draft stays open when a link is invalid (lane L2, M41-S06, S07)
 
 Decision: the dialog lists Manual list, Category, New, Trending, Series, Each category and All series. Continue learning and My List are built in and are not offered, so they cannot be added twice. A bad custom View all link blocks Publish and shows its message under the field, but Save draft still works so an editor never loses half finished work. Options: list all nine types and refuse two with an error, or block Save draft as well. Why: refusing after a choice is worse than not offering it, and a draft is not visible to viewers. Reversible: yes, UI only.
+
+## D-304 Synonyms save as one whole list and the editor never opens empty after a failed load (lane L6, M45)
+- Decision: the Discovery tab saves the synonym text as the full list in one transaction, checks it line by line first (shape, repeats), and records one audit entry with the group count only. When the list cannot be loaded the editor is replaced by an error, so a save cannot erase the groups. The empty search report offers Add synonym, which appends a line to the editor.
+- Options: edit one group at a time; allow saving from an empty editor after a failed load; import from a file.
+- Why: the list is small, a whole list replace is simple to reason about, and the textarea is already a paste import.
+- Reversible: yes.

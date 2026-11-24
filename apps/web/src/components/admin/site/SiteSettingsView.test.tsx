@@ -580,3 +580,54 @@ describe('discovery tab (M45-S05)', () => {
     );
   });
 });
+
+describe('discovery tab search quality (M45-S08, M45-S09)', () => {
+  const renderWith = async (
+    search?:
+      | { synonyms: string; misses: { query: string; hits: number; lastSeen: string }[] | null }
+      | { unavailable: true },
+  ) => {
+    const saveSynonyms = vi.fn(async (text: string) => ({ ok: true as const, synonyms: text }));
+    const user = userEvent.setup();
+    render(
+      <ToastProvider>
+        <SiteSettingsView
+          initial={dto()}
+          actions={{
+            update: vi.fn(),
+            savePage: vi.fn(),
+            publishPage: vi.fn(),
+            restorePage: vi.fn(),
+            ...(search ? { saveSynonyms } : {}),
+          }}
+          {...(search ? { search } : {})}
+        />
+      </ToastProvider>,
+    );
+    await user.click(screen.getByRole('tab', { name: 'Discovery' }));
+    return { saveSynonyms, user };
+  };
+
+  it('shows the synonyms editor and the empty search report under the settings', async () => {
+    const { saveSynonyms, user } = await renderWith({
+      synonyms: 'money, finance',
+      misses: [{ query: 'budgetng', hits: 3, lastSeen: new Date().toISOString() }],
+    });
+    expect(screen.getByRole('textbox', { name: 'One group per line' })).toHaveValue('money, finance');
+    expect(screen.getByRole('table', { name: 'Searches with no results' })).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Save synonyms' }));
+    expect(saveSynonyms).toHaveBeenCalledWith('money, finance');
+  });
+
+  it('shows a plain error instead of an empty editor when the synonyms could not be loaded', async () => {
+    await renderWith({ unavailable: true });
+    expect(screen.getByText('Search synonyms could not be loaded.')).toBeInTheDocument();
+    expect(screen.queryByRole('textbox', { name: 'One group per line' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Save synonyms' })).toBeNull();
+  });
+
+  it('leaves both cards out when the person may not manage search', async () => {
+    await renderWith();
+    expect(screen.queryByRole('textbox', { name: 'One group per line' })).toBeNull();
+  });
+});

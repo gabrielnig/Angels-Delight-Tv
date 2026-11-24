@@ -155,10 +155,10 @@ export async function replaceSynonymGroups(db: Database, groups: string[][]): Pr
     await tx.execute(sql`DELETE FROM search_synonyms`);
     for (const terms of groups) {
       await tx.execute(
-        sql`INSERT INTO search_synonyms (terms) VALUES (ARRAY[${sql.join(
+        sql`INSERT INTO search_synonyms (terms, created_at) VALUES (ARRAY[${sql.join(
           terms.map((t) => sql`${t}`),
           sql`, `,
-        )}]::text[])`,
+        )}]::text[], clock_timestamp())`,
       );
     }
   });

@@ -174,3 +174,23 @@
   background: var(--color-border);
   margin-bottom: var(--space-2);
 }
+
+/* Search synonyms and the empty search report (S137 states 4 and 5) */
+.ads-lineerrors {
+  display: grid;
+  gap: var(--space-1);
+  margin: 0;
+  padding-left: var(--space-5);
+}
+
+.ads-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.ads-empty {
+  display: grid;
+  gap: var(--space-1);
+  padding: var(--space-4);
+}
