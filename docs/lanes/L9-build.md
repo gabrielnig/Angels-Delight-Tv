@@ -36,6 +36,8 @@ Scoped tests only: `pnpm vitest run <file>`. DB tests need `pg_ctlcluster 16 mai
 - Slice 12 transparency page (M48-S38): `/transparency` (404 when off, "Ask a grown-up" for kids, indexable, in the sitemap when on), `TransparencyList` (percent lines with a progress bar, amount lines in naira, plain text only, updated date), `currentTransparencyGate` and `readTransparency` in `server/donations/page-data.ts`, footer link "See how gifts are used" through `AppShell`. D-336. No separate admin editor page: the keys are edited in Settings.
   Tests: `components/donate/TransparencyList.test.tsx`, `Shell.test.tsx`.
 
+- Slice 14 hardening: `apps/web/src/server/donations/hardening.test.ts` (kids matrix over checkout, status, sponsor selection, click and cap cookie for kids, unknown and empty audiences; role matrix for the admin donation actions; a source scan that donate and sponsor pages carry no absolute http address, script, iframe or third party font), exact CSP snapshot in `packages/security/src/headers.test.ts`, logger now redacts Paystack keys in free text (`packages/shared/src/logger.ts`), SECURITY.md capability rows, DEPLOYMENT.md section 14 (webhook URL, Cloudflare rate rule and WAF skip, go live order, rotation), CLIENT-INPUTS.md section 6, CHANGELOG entry.
+
 ## Paystack facts verified on 2026-11-24 (plan [VERIFY] items)
 Sources: paystack.com/docs/payments/webhooks, paystack.com/docs/api/transaction, support.paystack.com (transaction charges, USD).
 - Webhook signature: header `x-paystack-signature`, HMAC SHA512 of the raw body keyed with the secret key. Confirmed. Respond 200. Retries: live mode every 3 minutes for 4 tries then hourly for 72 hours, test mode hourly for 72 hours. The docs page does not list source IPs, so the code never relies on IPs.
@@ -47,4 +49,4 @@ Sources: paystack.com/docs/payments/webhooks, paystack.com/docs/api/transaction,
 - USD: the business requests international payments in the Dashboard (answer within 48 working hours), holds a Zenith Bank USD domiciliary account, adds it under Settings, Accounts, and Paystack confirms within 24 hours. Until then `donate.usd.enabled` stays off. Recurring plans and subscriptions on the account were not verified here and need a check in the Paystack dashboard before monthly giving is switched on.
 
 ## Remaining
-Slice 10 (blocked on a Paystack dashboard check), 13 Could items, 14 hardening.
+Slice 10 monthly giving (blocked on a Paystack dashboard check, D-335) and slice 13 Could items (bank transfer, USD checkout hardening, Flutterwave, cover fees): not built.

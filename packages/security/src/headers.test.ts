@@ -90,4 +90,28 @@ describe('buildSecurityHeaders', () => {
       buildSecurityHeaders({ ...base, isDevelopment: true })['Strict-Transport-Security'],
     ).toBeUndefined();
   });
+
+  it('is exactly the policy it was before donations and sponsors: no Paystack or other new origin (M48, R25)', () => {
+    const csp = buildCsp(base);
+    expect(csp).toBe(
+      [
+        "default-src 'self'",
+        "script-src 'self' 'nonce-abc123' 'strict-dynamic'",
+        "style-src 'self' 'nonce-abc123'",
+        'img-src \'self\' data: blob: https://media.example.org',
+        "media-src 'self' blob: https://media.example.org",
+        "font-src 'self'",
+        "connect-src 'self' https://media.example.org",
+        "worker-src 'self' blob:",
+        "frame-src 'none'",
+        "object-src 'none'",
+        "base-uri 'self'",
+        "form-action 'self'",
+        "frame-ancestors 'none'",
+        'report-uri /api/csp-report',
+        'upgrade-insecure-requests',
+      ].join('; '),
+    );
+    expect(csp).not.toMatch(/paystack|flutterwave|googletagmanager/i);
+  });
 });

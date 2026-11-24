@@ -249,3 +249,16 @@ Cost watch items: Worker request volume, R2 operations if cache hit ratio drops,
 [ ] Handover: owners of each account recorded, credentials transferred through the client's password manager
 [ ] ai-context.md, CHANGELOG.md and these docs updated to match reality
 ```
+
+## 14. Donations and sponsors (lane L9, M48)
+
+Everything here is off until the owner sets the Paystack keys and switches `donate.enabled` on in Settings.
+
+- **Secrets.** `PAYSTACK_SECRET_KEY` (a `sk_test_` key anywhere, a `sk_live_` key only in production) and `DONATE_RECEIPT_TOKEN_SECRET` (32 random bytes, generated with `pnpm secrets:generate`) must both be set, or `/donate`, `/api/donate/*` and the webhook answer 404. Set `PAYSTACK_BASE_URL` only for a test double.
+- **Webhook URL.** In the Paystack dashboard, Settings, API Keys and Webhooks, set the live and test webhook URL to `https://<domain>/api/webhooks/paystack`. The signature header is `x-paystack-signature`. Paystack retries for up to 72 hours, so a short outage loses nothing.
+- **Cloudflare rate rule.** Add a rate limiting rule for `/api/donate/checkout` (for example 10 requests per minute per address, block for 10 minutes) and for `/s/*`. The application also limits by address and by hashed donor email, so this is a second layer.
+- **Cloudflare WAF skip rule.** Add a skip rule for `POST /api/webhooks/paystack` so Bot Fight Mode, managed challenges and the rate rule never challenge Paystack. The route is protected by the HMAC signature, not by an address list (Paystack publishes no stable source addresses).
+- **Order of go live.** Test key, make a test gift with a Paystack test card, check the donation in `/admin/donations` shows a Test badge and a receipt in the outbox, then swap in the live key, restart web and worker, and make one real small gift.
+- **Rotation.** To rotate `PAYSTACK_SECRET_KEY`, roll the key in the Paystack dashboard, update the secret on the server, restart web and worker together. Events signed by the old key during the gap are retried by Paystack. Rotating `DONATE_RECEIPT_TOKEN_SECRET` only makes old thank you links show the state without the amount.
+- **Content security policy.** Unchanged. Donors leave the site for Paystack's hosted page by navigation, so no new origin is added to any directive.
+
