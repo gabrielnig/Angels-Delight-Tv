@@ -39,6 +39,10 @@ export const donations = pgTable(
     source: text('source').notNull().default('paystack'),
     siteMode: text('site_mode').notNull(),
     reviewReason: text('review_reason'),
+    /** The browser's one time key for a checkout, so a double tap returns the first donation. */
+    attemptKey: text('attempt_key'),
+    /** The hosted Paystack page for a pending gift. Not a secret: it only lets someone pay. */
+    checkoutUrl: text('checkout_url'),
     paidAt: timestamptz('paid_at'),
     receiptSentAt: timestamptz('receipt_sent_at'),
     createdAt: createdAt(),
@@ -46,6 +50,7 @@ export const donations = pgTable(
   },
   (t) => [
     uniqueIndex('donations_reference_uq').on(t.reference),
+    uniqueIndex('donations_attempt_key_uq').on(t.attemptKey).where(sql`${t.attemptKey} IS NOT NULL`),
     check('donations_amount_positive', sql`${t.amountMinor} > 0`),
     check('donations_paid_amount_positive', sql`${t.paidAmountMinor} IS NULL OR ${t.paidAmountMinor} > 0`),
     check('donations_currency_known', sql`${t.currency} IN ('NGN', 'USD')`),
