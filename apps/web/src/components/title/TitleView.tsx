@@ -4,6 +4,7 @@ import { itemKey, percent } from '../../lib/format';
 import { primaryAction } from '../../lib/title-cta';
 import './title.css';
 import { exactDuration, seriesLine, titlePrimaryText, watchedLabel } from '../../lib/title-format';
+import { TitleRating, type RatingTarget } from '../engage/TitleRating';
 import { ExpandableText } from './ExpandableText';
 import { RelatedRow } from './RelatedRow';
 import { TitleActions } from './TitleActions';
@@ -14,6 +15,7 @@ export function TitleView({
   detail,
   inList,
   guest,
+  rating,
   share,
   kids,
 }: {
@@ -21,6 +23,8 @@ export function TitleView({
   inList: boolean;
   /** Set for a visitor without an account (M40): My List opens the Sign in to save dialog. */
   guest?: { signUpOpen: boolean };
+  /** The signed in profile that may rate this title (adult profiles only, M44-S01). */
+  rating?: RatingTarget;
   share?: { channels: ('whatsapp' | 'facebook' | 'x' | 'email')[]; text: string };
   /** A kids profile or Kids mode: Share is hidden. */
   kids?: boolean;
@@ -97,6 +101,20 @@ export function TitleView({
                 : undefined
             }
           />
+          {!kids && !video.series && (guest || rating) ? (
+            <TitleRating
+              target={guest ? undefined : rating}
+              guest={
+                guest
+                  ? {
+                      signUpOpen: guest.signUpOpen,
+                      next: `/title/${video.slug}`,
+                      itemKey: itemKey(video),
+                    }
+                  : undefined
+              }
+            />
+          ) : null}
           {started ? (
             <div className="tv-progress">
               <ProgressBar
