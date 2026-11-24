@@ -1035,3 +1035,27 @@ Four ids were used twice by parallel lanes. They are never renumbered because la
 - Options: yellow only, two rings, or a dark chip behind the Skip button.
 - Why: yellow alone is 1.06 to 1.24:1 on a bright frame. A chip would change the approved look.
 - Reversible: yes.
+
+## D-194 Guests browse and play with no account (lane L1)
+- Decision: Anyone can browse, search and play without an account. Accounts are only for My List, likes and ratings, cross device progress, profiles and the kids lock. The setting `features.guest_play` (default on, Super admin) returns playback to sign in without a deploy while browsing stays open.
+- Options: keep sign in for everything, browse only, browse and play.
+- Why: Owner rule R01. Removes the biggest drop off. The AES key and signed urls still stop casual hotlinking, and the switch is the emergency fallback if the edge or VPS is overrun.
+- Reversible: yes, one setting.
+
+## D-195 Guest identity is a signed cookie set only by the playback session route (lane L1)
+- Decision: A guest is a random 128 bit id in the cookie `__Host-ad_guest` (`ad_guest` when not secure), HttpOnly, SameSite Lax, 180 days, MAC label `ad:guest:v1` with a key derived from the existing profile cookie secret, so no new environment variable. It is minted only inside `POST /api/play/[id]/session`, after the same origin check, never in a page render and never on a browse only visit. A forged, truncated or foreign cookie counts as absent.
+- Options: no identity (IP only), signed cookie on first play, cookie on first visit, id kept only in localStorage.
+- Why: Per guest limits work, browsing sets no cookie, and the server can read it. IP only would punish shared mobile networks. Server components cannot set cookies, so the plan wording 'set on first play' means the route handler.
+- Reversible: yes, remove the guest branch and the cookie expires.
+
+## D-196 Guest playback token claims (lane L1)
+- Decision: A guest token has `aid` = guest id, `pid` null, `gst: true` and, in Kids mode, `kd: true`. It never carries `pv`: the issuer refuses guest plus preview and the verifier rejects a token with both `gst` and `pv`. Old tokens verify unchanged. The key route skips the profile lookup for guests, limits on the guest id and re-checks `kd` against the video.
+- Options: a fake account id, or guest claims on the existing token.
+- Why: No placeholder account to trip over in policies, and the existing key limiter already uses `pid ?? aid`.
+- Reversible: yes.
+
+## D-197 Guest segment urls last 20 minutes and guest sessions are limited per guest and per address (lane L1)
+- Decision: Guest segment urls use `limits.guest_segment_minutes` (default 20, 5 to 120, Super admin). Account urls stay at 2 hours (D-120). New limiter policies: 20 sessions per minute per guest id and 120 per minute per address. The edge Worker is unchanged and a test pins that forged and expired signatures are still refused.
+- Options: same 2 hours, 20 minutes, 5 minutes.
+- Why: Shrinks the window a shared guest url works. D-120 proved the player recovers from an expired url by minting a new session, which a guest can do because the cookie is there. The address limit is generous because mobile networks share addresses.
+- Reversible: yes, a setting.
