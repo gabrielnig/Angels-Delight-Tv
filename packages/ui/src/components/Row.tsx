@@ -19,6 +19,7 @@ export function Row({
   onRetry,
   empty,
   skeletonDelayMs,
+  ordered = false,
   children,
   className,
 }: {
@@ -35,6 +36,8 @@ export function Row({
   /** Shown instead of hiding the row when it has no cards (My List only). */
   empty?: ReactNode;
   skeletonDelayMs?: number;
+  /** An ordered list, for a ranked row such as Top 10 (M44-S09). */
+  ordered?: boolean;
   children?: ReactNode;
   className?: string;
 }) {
@@ -79,6 +82,7 @@ export function Row({
   }
 
   if (state === 'ready' && items.length === 0 && !empty) return null;
+  const List = ordered ? 'ol' : 'ul';
 
   return (
     <section className={cx('ad-row', className)} aria-labelledby={headingId}>
@@ -90,7 +94,7 @@ export function Row({
           <Link
             href={allHref}
             className="ad-row__all"
-            aria-label={`${viewAllLabel} ${title}${viewAllExternal ? ", opens another site" : ""}`}
+            aria-label={`${viewAllLabel} ${title}${viewAllExternal ? ', opens another site' : ''}`}
             {...(viewAllExternal ? { rel: 'noopener noreferrer', target: '_blank' } : {})}
           >
             {viewAllLabel}
@@ -124,13 +128,13 @@ export function Row({
               onClick={() => page(-1)}
             />
           ) : null}
-          <ul ref={listRef} className="ad-row__list" role="list" onScroll={measure}>
+          <List ref={listRef as never} className="ad-row__list" role="list" onScroll={measure}>
             {items.map((child, index) => (
               <li key={index} className="ad-row__item">
                 {child}
               </li>
             ))}
-          </ul>
+          </List>
           {edges.next ? (
             <IconButton
               className="ad-row__arrow ad-row__arrow--next"

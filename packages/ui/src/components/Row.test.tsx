@@ -184,3 +184,21 @@ describe('Row', () => {
     expect(screen.getByRole('link', { name: 'View all Health' })).toBeInTheDocument();
   });
 });
+
+describe('Row ordered (M44-S09)', () => {
+  it('renders an ordered list when asked', () => {
+    const { container } = render(
+      <Row title="Top 10" ordered>
+        {cards}
+      </Row>,
+    );
+    const list = container.querySelector('.ad-row__list')!;
+    expect(list.tagName).toBe('OL');
+    expect(screen.getAllByRole('listitem')).toHaveLength(6);
+  });
+
+  it('stays an unordered list by default', () => {
+    const { container } = render(<Row title="Plain">{cards}</Row>);
+    expect(container.querySelector('.ad-row__list')!.tagName).toBe('UL');
+  });
+});

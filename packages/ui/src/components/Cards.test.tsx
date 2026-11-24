@@ -471,3 +471,20 @@ describe('ContinueCard polish (M44-S15)', () => {
     expect(kebab).toHaveFocus();
   });
 });
+
+describe('card rank for a Top 10 row (M44-S09)', () => {
+  it('starts the link name with Number 3,', () => {
+    render(<VideoCard {...base} rank={3} />);
+    expect(screen.getByRole('link')).toHaveAccessibleName(/^Number 3,\s?How to save money on data/);
+  });
+
+  it('does the same on a series card', () => {
+    render(<SeriesCard title="Money 101" href="/series/m" episodeCount={4} rank={10} />);
+    expect(screen.getByRole('link')).toHaveAccessibleName(/^Number 10,\s?Money 101/);
+  });
+
+  it('adds nothing without a rank', () => {
+    render(<VideoCard {...base} />);
+    expect(screen.getByRole('link')).not.toHaveAccessibleName(/Number/);
+  });
+});

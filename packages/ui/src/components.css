@@ -1652,6 +1652,34 @@
   }
 }
 
+/* ---------- Ranked row (Top 10, M44-S09) ---------- */
+
+/* The numeral sits beside the tile on a dark block, display type. Rank is also in the list order and the link text. */
+.ad-ranked {
+  display: flex;
+  align-items: stretch;
+  min-width: 0;
+}
+.ad-ranked__num {
+  flex: none;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  inline-size: 2.75rem;
+  aspect-ratio: auto;
+  padding-bottom: var(--space-2);
+  background: var(--color-scrim-top);
+  color: var(--color-player-ink);
+  font-family: var(--font-display);
+  font-size: var(--text-h2);
+  font-weight: var(--weight-bold);
+  line-height: 1;
+  border-radius: var(--radius-sm) 0 0 var(--radius-sm);
+}
+.ad-ranked > .ad-card {
+  flex: 1 1 auto;
+}
+
 /* ---------- Row ---------- */
 
 .ad-row {

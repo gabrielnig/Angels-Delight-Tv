@@ -6,6 +6,7 @@ import type { HomeRow, HomeRowsPage } from '../../lib/data';
 import { itemKey } from '../../lib/format';
 import { useDataSaver } from '../../lib/lowdata/useDataSaver';
 import { CatalogCard } from '../CatalogCard';
+import { RANKED_KINDS, RankedRow } from './RankedRow';
 
 /** Automatic retries after a failed page: 2 s, 5 s, 10 s (M05-S08). */
 const RETRY_DELAYS_MS = [2000, 5000, 10000];
@@ -85,19 +86,23 @@ export function LazyHomeRows({
 
   return (
     <>
-      {rows.map((row) => (
-        <Row
-          key={row.id}
-          title={row.title}
-          viewAllHref={row.viewAll?.href}
-          viewAllExternal={row.viewAll?.external}
-          viewAllLabel={viewAllLabel}
-        >
-          {row.items.map((item) => (
-            <CatalogCard key={itemKey(item)} item={item} inList={saved.has(itemKey(item))} />
-          ))}
-        </Row>
-      ))}
+      {rows.map((row) =>
+        row.kind && RANKED_KINDS.has(row.kind) ? (
+          <RankedRow key={row.id} row={row} inList={saved} viewAllLabel={viewAllLabel} />
+        ) : (
+          <Row
+            key={row.id}
+            title={row.title}
+            viewAllHref={row.viewAll?.href}
+            viewAllExternal={row.viewAll?.external}
+            viewAllLabel={viewAllLabel}
+          >
+            {row.items.map((item) => (
+              <CatalogCard key={itemKey(item)} item={item} inList={saved.has(itemKey(item))} />
+            ))}
+          </Row>
+        ),
+      )}
       {state === 'loading' ? <Row title="More to watch" state="loading" /> : null}
       {state === 'error' ? (
         <Row title="More to watch" state="error" onRetry={() => void next()} />

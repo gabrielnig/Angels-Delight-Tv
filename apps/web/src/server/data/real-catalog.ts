@@ -153,6 +153,7 @@ export class RealCatalog implements CatalogRepository {
       const titleRow = row as Exclude<HomeRowDto, { kind: 'continue_watching' }>;
       rows.push({
         id: titleRow.id,
+        kind: titleRow.kind,
         title: titleRow.title,
         items: titleRow.items.map(cardToItem),
         viewAll: titleRow.viewAll ?? undefined,
