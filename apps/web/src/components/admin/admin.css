@@ -2639,3 +2639,9 @@ th[aria-sort='descending'] .adm-sortbtn::after {
 th[aria-sort='ascending'] .adm-sortbtn::after {
   border-bottom: 0.4em solid currentColor;
 }
+
+/* References and masked emails (M48). */
+.adm-mono {
+  font-family: var(--font-mono);
+  overflow-wrap: anywhere;
+}

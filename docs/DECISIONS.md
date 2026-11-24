@@ -1838,3 +1838,9 @@ Decision: `video.preview` catches every error and records `failed` or `skipped` 
 - Options: Add USD min and max settings now; fixed constants; block USD until a setting exists.
 - Why: USD is a Could item behind its own switch, so constants are enough until slice 13. Queueing in the same transaction as the status change is the property that matters for correctness.
 - Reversible: Yes.
+
+## D-335 Settling a gift in review is a definer function, and monthly giving stays unbuilt (lane L9)
+- Decision: An admin accepts (gift becomes succeeded) or rejects (failed) a gift in `needs_review` through `donation_review_resolve` (migration 0056), which checks the admin role itself, requires a note of 1 to 500 characters, and only touches rows still in review. The web role keeps no update right on `donations`. Accepting sends no receipt. Admin lists show masked emails and hide anonymous names; showing one full address is an audited action whose audit row never holds the address; exports carry masked emails only. Slice 10 (monthly giving) is not built: Paystack plans and subscriptions on the account were never verified (no dashboard access), so the flag stays off and checkout refuses monthly.
+- Options: Let the web role update donations directly; a definer function with the role check inside; build monthly giving against unverified assumptions.
+- Why: A narrow function keeps the table closed to the web role. Building subscriptions blind risks charging donors wrongly, which is worse than waiting for a dashboard check.
+- Reversible: Yes.

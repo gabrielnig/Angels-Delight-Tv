@@ -11,3 +11,4 @@ export * from './seal';
 export * from './receipt';
 export * from './donor';
 export * from './receipt-token';
+export * from './admin/service';

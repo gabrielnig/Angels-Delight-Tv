@@ -138,6 +138,13 @@ export const NAV_ITEMS: NavItem[] = [
     group: 'Monetization',
     action: 'sponsor.manage',
   },
+  {
+    label: 'Donations',
+    href: '/admin/donations',
+    icon: 'sponsor',
+    group: 'Monetization',
+    action: 'donation.view',
+  },
 ];
 
 export interface NavGroup {

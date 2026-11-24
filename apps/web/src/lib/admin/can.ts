@@ -49,6 +49,9 @@ const MATRIX = {
   'sponsor.manage': 'editor',
   'sponsor.activate': 'admin',
   'sponsor.report.export': 'admin',
+  'donation.view': 'admin',
+  'donation.export': 'admin',
+  'donation.resolve': 'admin',
 } as const satisfies Record<string, Exclude<AccountRole, 'viewer'>>;
 
 export type AdminAction = keyof typeof MATRIX;

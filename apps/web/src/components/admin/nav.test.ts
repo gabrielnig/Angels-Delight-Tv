@@ -60,6 +60,15 @@ describe('Monetization group (M48)', () => {
   });
 });
 
+describe('Donations entry (M48-S36)', () => {
+  it('shows Donations to admins only, in the Monetization group', () => {
+    expect(labels('admin')).toContain('Donations');
+    expect(labels('editor')).not.toContain('Donations');
+    expect(labels('viewer')).not.toContain('Donations');
+    expect(navForRole('admin').find((g) => g.items.some((i) => i.label === 'Donations'))?.name).toBe('Monetization');
+  });
+});
+
 describe('isActive', () => {
   const videos = NAV_ITEMS.find((item) => item.label === 'Videos')!;
   const upload = NAV_ITEMS.find((item) => item.label === 'Upload')!;

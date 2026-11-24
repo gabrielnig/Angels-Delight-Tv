@@ -174,3 +174,16 @@ describe('caption language permissions (M46)', () => {
     expect(ACTION_LABELS['caption.publish_language']).toMatch(/\w/);
   });
 });
+
+describe('donations permissions (M48-S36)', () => {
+  it('are admin only for viewing, exporting and settling a review', async () => {
+    for (const action of ['donation.view', 'donation.export', 'donation.resolve'] as const) {
+      expect(requiredRole(action)).toBe('admin');
+      expect(can('editor', action)).toBe(false);
+      expect(can('admin', action)).toBe(true);
+      expect(can('viewer', action)).toBe(false);
+    }
+    const { ACTION_LABELS } = await import('./can-labels');
+    for (const action of ['donation.view', 'donation.export', 'donation.resolve'] as const) expect(ACTION_LABELS[action]).toMatch(/\w/);
+  });
+});
