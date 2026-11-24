@@ -1524,3 +1524,9 @@ Per video tri state, site default (Super admin), Admin changes it with a reason 
 - Options: remove suitability at once, default new videos to a middle rank, allow raising without a password.
 - Why: no title is rated G by accident, a child cannot raise their own limit, and old UI paths keep working until the UI slice replaces them.
 - Reversible: yes.
+
+## D-282 The hero clock keeps spent time, waits for the image and the mobile scrim reaches higher than R36 first said (lane L2, R12, R36)
+- Decision: one timeout per slide keeps the time already spent while held (hover, focus, hidden tab, Pause), restarts on any manual change, starts when the slide image loads or after 1.5 s, and stops on the first slide after `home.hero_max_loops` rounds. Reduced motion is read live. Pause and the dot fill are not drawn once rotation cannot run. The mobile scrim holds 0.85 to 72 percent, 0.7 at 82 and 0 at 96, and the title is clamped to two lines.
+- Options: keep the 50, 65, 80 stops and shrink the text, restart the full interval after a hold.
+- Why: Chromium measurements in packages/ui/test/hero-text-zone.test.ts showed a two line title on a 360 wide phone sits at about 77 percent of the hero height, so the earlier stops left it at alpha 0.08 and contrast 1.2 over white art. The test now guards 4.5 to 1 and alpha above 0.57 at 360, 390 and 1360.
+- Reversible: yes, by the scrim tokens.

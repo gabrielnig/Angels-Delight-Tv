@@ -19,6 +19,7 @@ describe('hero scrim and chip (R12, R36)', () => {
     expect(body).toContain('var(--scrim-hero-hold-mobile)');
     expect(body).toContain('var(--scrim-hero-mid-mobile)');
     expect(body).toContain('var(--scrim-hero-end-mobile)');
+    expect(body).toContain('var(--scrim-hero-mid-m)');
     expect(body).toContain('rgba(var(--scrim-rgb), var(--scrim-hero-start))');
     expect(body).not.toMatch(/--color-scrim-/);
   });
@@ -48,10 +49,10 @@ describe('hero scrim and chip (R12, R36)', () => {
 
   it('slides crossfade with opacity only', () => {
     expect(rules.find((r) => r.selector === '.ad-hero__slide--leaving')?.body).toMatch(
-      /animation:\s*ad-hero-out var\(--motion-slow\) linear forwards/,
+      /animation:\s*ad-hero-out var\(--hero-fade\) linear forwards/,
     );
     expect(rules.find((r) => r.selector === ".ad-hero__slide[data-fade='true']")?.body).toMatch(
-      /animation:\s*ad-hero-in var\(--motion-slow\) linear/,
+      /animation:\s*ad-hero-in var\(--hero-fade\) linear/,
     );
     expect(css).toMatch(/@keyframes ad-hero-in \{\s*from \{ opacity: 0; \}/);
   });

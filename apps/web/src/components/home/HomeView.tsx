@@ -13,6 +13,7 @@ import { itemKey } from '../../lib/format';
 import { CatalogCard, ContinueRow } from '../CatalogCard';
 import { RowError } from '../RowError';
 import { GuestContinueRow } from '../guest/GuestContinueRow';
+import { themeRuntime } from '../../lib/data/admin/theme-runtime';
 import { HomeEmpty } from './HomeEmpty';
 import { HomeHero } from './HomeHero';
 import { heroItems } from './hero-items';
@@ -60,6 +61,7 @@ export async function HomeView({
     );
   }
 
+  const settings = (await themeRuntime()).settings;
   const inList = new Set(idsResult);
   const progress = new Map(
     (continueResult.ok ? continueResult.value : []).map(({ progress: p }) => [p.videoId, p]),
@@ -73,6 +75,9 @@ export async function HomeView({
         label="Featured"
         profileId={ctx.guest ? null : ctx.profileId}
         dataSaver={dataSaver}
+        rotate={settings.get('features.autoplay_hero')}
+        intervalSeconds={settings.get('home.hero_interval_seconds')}
+        maxLoops={settings.get('home.hero_max_loops')}
       />
       <div className="web-wide web-stack web-rows">
         {ctx.guest ? <GuestContinueRow /> : null}
