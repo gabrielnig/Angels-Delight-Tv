@@ -13,6 +13,8 @@ const CLOSED = [
   '/sign-up',
   '/reset-password',
   '/verify-email',
+  '/donate/thank-you',
+  '/donate/cancelled',
   '/offline',
   '/maintenance',
   '/unsupported',

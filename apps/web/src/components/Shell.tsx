@@ -6,6 +6,8 @@ import { getSession } from '../lib/session';
 import { setGuestAudienceAction } from '../app/actions';
 import { currentGuestAudience } from '../server/guest/guest-view';
 import { guestPlayEnabled } from '../server/guest/guest-settings';
+import { currentDonateGate } from '../server/donations/page-data';
+import { donateLinkVisible } from '../server/donations/gate';
 import { maturityLabelsSetting } from '../server/maturity-labels';
 import { MaturityLabelsProvider } from '../lib/maturity-context';
 import { Brand } from './AuthLayouts';
@@ -23,6 +25,10 @@ export async function AppShell({ children, skin }: { children: ReactNode; skin?:
   const picker = await pickerData();
   const languagePicker = picker ? <LanguagePickerHost {...picker} /> : undefined;
   const labels = await maturityLabelsSetting();
+  // The Donate link exists only when donations are on and the viewer is not a kid (R25).
+  const footerLinks = donateLinkVisible(await currentDonateGate())
+    ? [...site.footerLinks, { label: msg('donate.link'), href: '/donate' }]
+    : site.footerLinks;
   const withLabels = (node: ReactNode) => (
     <MaturityLabelsProvider labels={labels}>{node}</MaturityLabelsProvider>
   );
@@ -35,7 +41,7 @@ export async function AppShell({ children, skin }: { children: ReactNode; skin?:
         profileAvatarId={session.profile.avatarId}
         profileId={session.profile.id}
         kids={session.profile.kids}
-        footerLinks={site.footerLinks}
+        footerLinks={footerLinks}
         year={year}
         skin={skin}
         supportEmail={site.supportEmail}
@@ -50,7 +56,7 @@ export async function AppShell({ children, skin }: { children: ReactNode; skin?:
       <GuestChrome
         platformName={site.platformName}
         logoUrl={site.logoUrl}
-        footerLinks={site.footerLinks}
+        footerLinks={footerLinks}
         year={year}
         signUpOpen={site.signUpOpen}
         kids={(await currentGuestAudience()) === 'kids'}
@@ -82,7 +88,7 @@ export async function AppShell({ children, skin }: { children: ReactNode; skin?:
       <main id="main" className="web-main" tabIndex={-1}>
         {children}
       </main>
-      <SiteFooter platformName={site.platformName} year={year} links={site.footerLinks} />
+      <SiteFooter platformName={site.platformName} year={year} links={footerLinks} />
     </div>,
   );
 }

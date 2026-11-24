@@ -86,4 +86,12 @@ describe('sitemap entries (M45-S01)', () => {
   it('always returns at least one chunk', () => {
     expect(chunkEntries([])).toEqual([[]]);
   });
+
+  it('lists extra public pages such as /donate only when they are given, after the static pages', () => {
+    const plain = buildSitemapEntries(origin, rows()).map((e) => e.url);
+    expect(plain).not.toContain(`${origin}/donate`);
+    const withDonate = buildSitemapEntries(origin, rows({ extraPaths: ['/donate'] })).map((e) => e.url);
+    expect(withDonate).toContain(`${origin}/donate`);
+    expect(withDonate.indexOf(`${origin}/donate`)).toBe(6);
+  });
 });
