@@ -4,6 +4,7 @@ import type { CSSProperties, ReactNode } from 'react';
 import '@ad/ui/tokens.css';
 import '@ad/ui/components.css';
 import './globals.css';
+import { StorageNotice } from '../components/consent/StorageNotice';
 import { WebVitals } from '../components/observability/WebVitals';
 import { PwaClient } from '../components/pwa/PwaClient';
 import { selectFonts } from '../lib/fonts';
@@ -46,6 +47,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
   const theme = await getRootTheme(nonce);
   const locale = await getLocale();
   const catalog = pickNamespaces(await loadCatalog(locale), CLIENT_NAMESPACES, { production: true });
+  const seo = await getSeoSettings();
   const fonts = selectFonts(theme.injection.fontKey, locale);
   return (
     <html
@@ -60,6 +62,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
         <I18nProvider locale={locale} catalog={catalog}>
           <Providers>{children}</Providers>
         </I18nProvider>
+        <StorageNotice enabled={seo.noticeEnabled} text={seo.noticeText} version={seo.noticeVersion} />
         <PwaClient platformName={theme.platformName} />
         <WebVitals />
       </body>
