@@ -95,14 +95,23 @@ describe('title daily CSV pieces (M19-S05)', () => {
 
   it('writes the header and a row with seconds, not milliseconds', () => {
     expect(TITLE_DAILY_CSV_HEADER).toBe(
-      'day,video_id,title,archived,views,watch_seconds,completions',
+      'day,video_id,title,archived,views,watch_seconds,completions,likes,loves,not_for_me,positive_share_percent',
     );
     expect(titleDailyCsvLine({ ...row, title: 'Fractions' })).toBe(
-      '2026-06-01,v1,Fractions,no,3,91,1',
+      '2026-06-01,v1,Fractions,no,3,91,1,,,,',
     );
   });
 
+  it('writes rating counts and the share, and leaves the share blank under ten ratings', () => {
+    expect(
+      titleDailyCsvLine({ ...row, title: 'Fractions', likes: 6, loves: 2, dislikes: 2, positiveShare: 80 }),
+    ).toBe('2026-06-01,v1,Fractions,no,3,91,1,6,2,2,80');
+    expect(
+      titleDailyCsvLine({ ...row, title: 'Fractions', likes: 1, loves: 0, dislikes: 0, positiveShare: null }),
+    ).toBe('2026-06-01,v1,Fractions,no,3,91,1,1,0,0,');
+  });
+
   it('neutralises a formula and quotes a comma in the title', () => {
-    expect(titleDailyCsvLine(row)).toBe(`2026-06-01,v1,"'=Fractions, part 1",no,3,91,1`);
+    expect(titleDailyCsvLine(row)).toBe(`2026-06-01,v1,"'=Fractions, part 1",no,3,91,1,,,,`);
   });
 });

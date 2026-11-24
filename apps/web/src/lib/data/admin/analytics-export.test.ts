@@ -17,16 +17,16 @@ describe('titleDailyCsv', () => {
   it('has a header and one line per title per day with exact watch seconds', () => {
     expect(titleDailyCsv([row(), row({ day: '2026-11-17', views: 0, watchMs: 400 })])).toBe(
       [
-        'day,video_id,title,archived,views,watch_seconds,completions',
-        '2026-11-16,v1,How Plants Make Food,no,12,91,3',
-        '2026-11-17,v1,How Plants Make Food,no,0,0,3',
+        'day,video_id,title,archived,views,watch_seconds,completions,likes,loves,not_for_me,positive_share_percent',
+        '2026-11-16,v1,How Plants Make Food,no,12,91,3,,,,',
+        '2026-11-17,v1,How Plants Make Food,no,0,0,3,,,,',
         '',
       ].join('\n'),
     );
   });
 
   it('gives headers only when there is nothing to export', () => {
-    expect(titleDailyCsv([])).toBe('day,video_id,title,archived,views,watch_seconds,completions\n');
+    expect(titleDailyCsv([])).toBe('day,video_id,title,archived,views,watch_seconds,completions,likes,loves,not_for_me,positive_share_percent\n');
   });
 
   it('neutralises formulas and quotes commas in titles', () => {

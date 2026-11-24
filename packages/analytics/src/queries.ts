@@ -19,6 +19,8 @@ export interface OverviewResult {
   daily: Array<{ day: string; views: number; watchMs: number }>;
 }
 
+import { positiveShare, type RatingTotals } from './ratings';
+
 export interface TopTitle {
   videoId: string;
   title: string;
@@ -26,6 +28,8 @@ export interface TopTitle {
   watchMs: number;
   completionRate: number;
   avgPercentWatched: number;
+  /** Lifetime rating counts, when the title has any. Added by the caller from ratingTotals. */
+  ratings?: RatingTotals;
 }
 
 export interface RetentionPoint {
@@ -51,6 +55,12 @@ export interface TitleDailyRow {
   views: number;
   watchMs: number;
   completions: number;
+  /** Lifetime rating counts, only when the title has a ratings row. */
+  likes?: number;
+  loves?: number;
+  dislikes?: number;
+  /** Whole percent, or null under ten ratings. */
+  positiveShare?: number | null;
 }
 
 export interface QueryOptions {
@@ -240,6 +250,25 @@ export function createAnalyticsQueries(db: SqlExecutor, options: QueryOptions = 
       );
     },
 
+    /** Lifetime rating counts per video, from the ratings rollup. Titles with no ratings row are left out. */
+    async ratingTotals(videoIds: readonly string[]): Promise<Map<string, RatingTotals>> {
+      if (videoIds.length === 0) return new Map();
+      const rows = rowsOf<{ video_id: string; likes: number; loves: number; dislikes: number }>(
+        await db.execute(sql`
+          SELECT video_id, likes, loves, dislikes FROM title_rating_stats
+          WHERE video_id IN (${sql.join(
+            videoIds.map((id) => sql`${id}::uuid`),
+            sql`, `,
+          )})`),
+      );
+      return new Map(
+        rows.map((row) => [
+          row.video_id,
+          { likes: num(row.likes), loves: num(row.loves), dislikes: num(row.dislikes) },
+        ]),
+      );
+    },
+
     /** Every title with views on each day of the range: rolled up days plus live rows for today. Not cached, not limited. */
     async titleDaily(range: DayRange): Promise<TitleDailyRow[]> {
       const s = split(range);
@@ -251,6 +280,9 @@ export function createAnalyticsQueries(db: SqlExecutor, options: QueryOptions = 
         views: string;
         watch_ms: string;
         completions: string;
+        likes: number | null;
+        loves: number | null;
+        dislikes: number | null;
       }>(
         await db.execute(sql`
           WITH combined AS (
@@ -266,20 +298,26 @@ export function createAnalyticsQueries(db: SqlExecutor, options: QueryOptions = 
             GROUP BY video_id
           )
           SELECT c.day, c.video_id, v.title, (v.deleted_at IS NOT NULL) AS archived,
-                 c.views, c.watch_ms, c.completions
+                 c.views, c.watch_ms, c.completions, r.likes, r.loves, r.dislikes
           FROM combined c JOIN videos v ON v.id = c.video_id
+          LEFT JOIN title_rating_stats r ON r.video_id = c.video_id
           WHERE c.views > 0 OR c.watch_ms > 0
           ORDER BY c.day, v.title, c.video_id`),
       );
-      return rows.map((row) => ({
-        day: row.day,
-        videoId: row.video_id,
-        title: row.title,
-        archived: Boolean(row.archived),
-        views: num(row.views),
-        watchMs: num(row.watch_ms),
-        completions: num(row.completions),
-      }));
+      return rows.map((row) => {
+        const base: TitleDailyRow = {
+          day: row.day,
+          videoId: row.video_id,
+          title: row.title,
+          archived: Boolean(row.archived),
+          views: num(row.views),
+          watchMs: num(row.watch_ms),
+          completions: num(row.completions),
+        };
+        if (row.likes === null || row.likes === undefined) return base;
+        const totals = { likes: num(row.likes), loves: num(row.loves), dislikes: num(row.dislikes) };
+        return { ...base, ...totals, positiveShare: positiveShare(totals) };
+      });
     },
 
     /** Daily views and a retention curve for one video. The curve needs raw rows, so it covers the raw retention window. */
