@@ -7,6 +7,14 @@ import {
   deleteProfile,
   exitKidsMode,
   getHome,
+  getGuestHome,
+  guestBrowse,
+  guestCategories,
+  guestSearch,
+  guestSuggest,
+  guestTitleDetail,
+  guestTitlesByIds,
+  GUEST_BATCH_MAX,
   getProgress,
   getRecentSearches,
   getTitleDetail,
@@ -28,6 +36,11 @@ import {
   browseQuery,
   createProfileBody,
   exitKidsBody,
+  guestBrowseQuery,
+  guestHomeQuery,
+  guestSearchQuery,
+  guestSuggestQuery,
+  guestTitleQuery,
   homeQuery,
   myListAddBody,
   myListQuery,
@@ -41,9 +54,17 @@ import {
   selectProfileBody,
   suggestQuery,
   titleDetailQuery,
+  titlesBatchQuery,
   updateProfileBody,
 } from '@ad/viewer/schemas';
-import { Forbidden, NotFound, Unauthorized, isUuid, type Actor } from '@ad/shared';
+import {
+  Forbidden,
+  NotFound,
+  Unauthorized,
+  ValidationFailed,
+  isUuid,
+  type Actor,
+} from '@ad/shared';
 import {
   activeProfileCookieName,
   activeProfileCookieOptions,
@@ -53,6 +74,8 @@ import {
 } from './active-profile';
 import { assertSameOrigin } from '@ad/security';
 import { z } from 'zod';
+import { guestCookieName, readGuest } from '../guest/guest-cookie';
+import { createPublicGuard } from './public-api';
 import { errorResponse, etagJson, json, parseWith, queryObject, readJson } from './http';
 
 /** The player's progress sink shape (`ProgressUpdate` in @ad/player): seconds, not milliseconds. */
@@ -80,6 +103,10 @@ export interface ViewerRuntime {
   resolveActor(request: Request): Promise<Actor | null>;
   /** The kids lock on the session row. Server side state, so no cookie can change it. */
   lock: KidsLockStore;
+  /** What a guest is shown: the device Kids mode choice, else the site default. Absent means general (M40). */
+  guestAudience?(request: Request): Promise<{ kids: boolean }>;
+  /** Client address after trusted proxy handling, for guest limits. Absent means one shared bucket (dev only). */
+  clientIp?(request: Request): string;
 }
 
 export interface KidsLock {
@@ -172,6 +199,19 @@ export function createViewerApi(rt: ViewerRuntime) {
     };
   }
 
+  /** Public GETs (M40, D-G11): the personal handler when signed in, the guest handler otherwise. */
+  const publicGet = createPublicGuard({
+    resolveActor: (request) => rt.resolveActor(request),
+    guestId: (request) =>
+      readGuest(
+        rt.profileSecret,
+        cookieValue(request.headers.get('cookie'), guestCookieName(rt.secureCookies)),
+      ),
+    audience: async (request) => (await rt.guestAudience?.(request)) ?? { kids: false },
+    clientIp: (request) => rt.clientIp?.(request) ?? 'unknown',
+    spend: (bucket, subject) => spendAttempt(rt.ctx, bucket, subject),
+  });
+
   const idParam = (params: Record<string, string>): string => {
     const value = params.id ?? '';
     if (!isUuid(value)) throw new NotFound('Not found');
@@ -250,28 +290,58 @@ export function createViewerApi(rt: ViewerRuntime) {
       ),
     },
 
-    home: guard(async (req, actor) => {
-      const q = parseWith(homeQuery, queryObject(req));
-      return etagJson(req, await getHome(rt.ctx, actor, q));
-    }),
+    home: publicGet(
+      guard(async (req, actor) => {
+        const q = parseWith(homeQuery, queryObject(req));
+        return etagJson(req, await getHome(rt.ctx, actor, q));
+      }),
+      async (req, _params, audience) => {
+        const q = parseWith(guestHomeQuery, queryObject(req));
+        return etagJson(req, await getGuestHome(rt.ctx, audience, q));
+      },
+    ),
 
-    browse: guard(async (req, actor) => {
-      const { category, ...q } = parseWith(browseQuery, queryObject(req));
-      return etagJson(req, await browse(rt.ctx, actor, { ...q, categorySlug: category }));
-    }),
-    categories: guard(async (req, actor) => {
-      const q = parseWith(profileIdQuery, queryObject(req));
-      return etagJson(req, { categories: await listBrowseCategories(rt.ctx, actor, q) });
-    }),
+    browse: publicGet(
+      guard(async (req, actor) => {
+        const { category, ...q } = parseWith(browseQuery, queryObject(req));
+        return etagJson(req, await browse(rt.ctx, actor, { ...q, categorySlug: category }));
+      }),
+      async (req, _params, audience) => {
+        const { category, ...q } = parseWith(guestBrowseQuery, queryObject(req));
+        return etagJson(req, await guestBrowse(rt.ctx, audience, { ...q, categorySlug: category }));
+      },
+    ),
+    categories: publicGet(
+      guard(async (req, actor) => {
+        const q = parseWith(profileIdQuery, queryObject(req));
+        return etagJson(req, { categories: await listBrowseCategories(rt.ctx, actor, q) });
+      }),
+      async (req, _params, audience) =>
+        etagJson(req, { categories: await guestCategories(rt.ctx, audience) }),
+    ),
 
-    search: guard(async (req, actor) => {
-      const { q, ...rest } = parseWith(searchQuery, queryObject(req));
-      return json(await search(rt.ctx, actor, { ...rest, query: q }));
-    }),
-    suggest: guard(async (req, actor) => {
-      const { q, profileId } = parseWith(suggestQuery, queryObject(req));
-      return json({ suggestions: await suggest(rt.ctx, actor, { profileId, query: q }) });
-    }),
+    search: publicGet(
+      guard(async (req, actor) => {
+        const { q, ...rest } = parseWith(searchQuery, queryObject(req));
+        return json(await search(rt.ctx, actor, { ...rest, query: q }));
+      }),
+      async (req, _params, audience) => {
+        const { q, ...rest } = parseWith(guestSearchQuery, queryObject(req));
+        return json(await guestSearch(rt.ctx, audience, { ...rest, query: q }));
+      },
+      { search: true },
+    ),
+    suggest: publicGet(
+      guard(async (req, actor) => {
+        const { q, profileId } = parseWith(suggestQuery, queryObject(req));
+        return json({ suggestions: await suggest(rt.ctx, actor, { profileId, query: q }) });
+      }),
+      async (req, _params, audience) => {
+        const { q } = parseWith(guestSuggestQuery, queryObject(req));
+        return json({ suggestions: await guestSuggest(rt.ctx, audience, q) });
+      },
+      { search: true },
+    ),
     recentSearches: {
       list: guard(async (req, actor) => {
         const q = parseWith(profileIdQuery, queryObject(req));
@@ -288,12 +358,35 @@ export function createViewerApi(rt: ViewerRuntime) {
       ),
     },
 
-    title: guard(async (req, actor, params) => {
-      const q = parseWith(titleDetailQuery, queryObject(req));
-      const key = params.id ?? '';
-      const input = isUuid(key) ? { id: key } : { slug: key };
-      return etagJson(req, await getTitleDetail(rt.ctx, actor, { ...q, ...input }));
-    }),
+    title: publicGet(
+      guard(async (req, actor, params) => {
+        const q = parseWith(titleDetailQuery, queryObject(req));
+        const key = params.id ?? '';
+        const input = isUuid(key) ? { id: key } : { slug: key };
+        return etagJson(req, await getTitleDetail(rt.ctx, actor, { ...q, ...input }));
+      }),
+      async (req, params, audience) => {
+        const q = parseWith(guestTitleQuery, queryObject(req));
+        const key = params.id ?? '';
+        const input = isUuid(key) ? { id: key } : { slug: key };
+        return etagJson(req, await guestTitleDetail(rt.ctx, audience, { ...q, ...input }));
+      },
+    ),
+
+    /**
+     * GET /api/titles/batch?ids=a,b,c: cards for ids this device remembers (guest Continue learning, M40-S14).
+     * At most 20 UUIDs. A signed in account has its own server side Continue Watching, so it gets no cards here.
+     */
+    titlesBatch: publicGet(
+      guard(async () => json({ items: [] })),
+      async (req, _params, audience) => {
+        const { ids } = parseWith(titlesBatchQuery, queryObject(req));
+        const list = ids.split(',').map((id) => id.trim());
+        if (list.length > GUEST_BATCH_MAX)
+          throw new ValidationFailed({ ids: [`Send at most ${GUEST_BATCH_MAX} ids`] });
+        return json({ items: await guestTitlesByIds(rt.ctx, audience, list) });
+      },
+    ),
 
     progress: {
       get: guard(async (req, actor) => {

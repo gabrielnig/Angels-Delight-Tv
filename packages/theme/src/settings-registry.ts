@@ -170,6 +170,16 @@ export const SETTING_DEFS = {
     description:
       'Anyone can watch without an account. Off means guests can browse but must sign in to play.',
   }),
+  'features.guest_audience': def({
+    schema: z.enum(['general', 'kids']),
+    default: 'general' as 'general' | 'kids',
+    isPublic: true,
+    tier: 'admin',
+    group: 'features',
+    label: 'Default for visitors without an account',
+    description:
+      'Choose what visitors see before they sign in. They can switch Kids mode on or off on their own device.',
+  }),
   'features.autoplay_hero': def({
     schema: bool,
     default: false,

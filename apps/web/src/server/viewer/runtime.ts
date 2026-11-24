@@ -11,6 +11,9 @@ import { authRuntime } from '../auth/runtime';
 import { cookieValue } from './active-profile';
 import { sessionCookieName } from '../auth/cookies';
 import { viewerActorFor } from './runtime-actor';
+import { clientIp } from '@ad/security';
+import { themeRuntime } from '../../lib/data/admin/theme-runtime';
+import { readGuestAudienceCookie, resolveGuestAudience } from '../guest/guest-audience';
 import { createViewerApi, type ViewerApi, type ViewerRuntime } from './api';
 
 const NAME_COLUMN = 'profile_name';
@@ -83,6 +86,15 @@ function build(): ViewerRuntime {
         auth.sessions.setProfile(sessionId, accountId, profileId, kidsLocked),
       clear: (sessionId, accountId) => auth.sessions.clearKidsLock(sessionId, accountId),
     },
+    async guestAudience(request) {
+      const siteDefault = await (await themeRuntime()).settings.get('features.guest_audience');
+      const choice = readGuestAudienceCookie(request, auth.secureCookies);
+      return { kids: resolveGuestAudience(choice, siteDefault) === 'kids' };
+    },
+    // Without a trusted proxy there is no reliable address, so everyone shares one bucket. Production sets
+    // TRUSTED_PROXY_MODE=cloudflare.
+    clientIp: (request) =>
+      clientIp(request.headers, services.env.TRUSTED_PROXY_MODE) ?? 'untrusted',
     async resolveActor(request) {
       const token = cookieValue(
         request.headers.get('cookie'),

@@ -40,7 +40,8 @@ describe('viewer api global limit', () => {
       profileSecret: new Uint8Array(32),
       resolveActor: async () => null,
     } as unknown as ViewerRuntime);
-    const res = await anon.home(new Request(`${ORIGIN}/api/home`));
+    // A personal route: home is a public GET for guests since M40 and has its own guest limits.
+    const res = await anon.progress.get(new Request(`${ORIGIN}/api/progress?profileId=x`));
     expect(res.status).toBe(401);
     expect(spent).toEqual([]);
   });
