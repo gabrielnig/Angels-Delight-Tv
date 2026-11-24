@@ -633,3 +633,6 @@
 .tv-poster__button svg {
   fill: currentColor;
 }
+.tv-sponsor {
+  margin-block: var(--space-4);
+}

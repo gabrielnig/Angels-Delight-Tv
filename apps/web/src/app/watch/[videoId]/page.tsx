@@ -17,6 +17,7 @@ import { WatchDetails } from '@/features/player/WatchDetails';
 import '@/features/player/watch.css';
 import { getSite } from '@/lib/data';
 import { turnstileSiteKey } from '@/server/auth/turnstile-site';
+import { sponsorFor, sponsorBeforeSeconds } from '@/server/sponsors/surface-runtime';
 import { airplayEnabled, playerCountdownSeconds } from '@/server/player/player-settings';
 
 interface PageProps {
@@ -59,6 +60,18 @@ export default async function WatchPage({ params, searchParams }: PageProps) {
   }
 
   const { data } = lookup;
+  const startAt = parseStartAt(query.t);
+  const resumeSeconds = Math.max(
+    startAt ?? 0,
+    data.saved && !data.saved.finished ? data.saved.positionSeconds : 0,
+  );
+  const [sponsorBefore, sponsorAfter, beforeSeconds] = viewer.kids
+    ? [null, null, 5]
+    : await Promise.all([
+        sponsorFor('player_before', { audience: 'adult', guest: viewer.guest }, { resumeSeconds }),
+        sponsorFor('player_after', { audience: 'adult', guest: viewer.guest }),
+        sponsorBeforeSeconds(),
+      ]);
   return (
     <main className="watch">
       <div className="watch__main">
@@ -72,7 +85,8 @@ export default async function WatchPage({ params, searchParams }: PageProps) {
           signUpOpen={viewer.guest ? (await getSite().content()).signUpOpen : undefined}
           transport={getTransport()}
           progressTransport={getProgressTransport(viewer)}
-          startAt={parseStartAt(query.t)}
+          startAt={startAt}
+          sponsors={{ before: sponsorBefore, after: sponsorAfter, beforeSeconds }}
           countdownSeconds={await playerCountdownSeconds()}
           airplay={await airplayEnabled()}
           {...(viewer.guest

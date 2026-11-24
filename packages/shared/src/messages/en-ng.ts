@@ -1,4 +1,5 @@
 import { L10_MESSAGES } from './l10-messages';
+import { L9_MESSAGES } from './l9-messages';
 import type { CatalogShape } from './messages';
 
 /**
@@ -236,4 +237,5 @@ export const EN_NG = {
   'format.duration.hr': '{count} hr',
   'format.duration.hrMin': '{hours} hr {minutes} min',
   ...L10_MESSAGES,
+  ...L9_MESSAGES,
 } as const satisfies CatalogShape;

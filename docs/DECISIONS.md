@@ -1606,3 +1606,9 @@ Per video tri state, site default (Super admin), Admin changes it with a reason 
 - Options: Store the truncated address, use the user agent as the device key, mail on every sign in.
 - Why: The NDPA brief wants the least personal data that still answers "was this me". A user agent changes with every browser update, so it would mail people for nothing. A cookie hash does not.
 - Reversible: Yes. The table and cookie can be dropped without touching sessions.
+
+## D-294 After-video sponsor card shows under the player, caps are counted by the browser report (lane L9)
+- Decision: The after-video card is drawn under the player when the player reports the ended phase, not inside the player package. The cap cookie (`ad_spc`, `ad_sps`) is written by `POST /api/sponsors/seen`, which the page calls once per viewable impression. Staff clicks on a card go through but are not counted.
+- Options: Draw the card inside `@ad/player` beside Up next, draw it in the watch page under the player, count the cap at render time.
+- Why: The player package belongs to another lane and its end screen is already crowded. Cookies cannot be set from a server component, and counting at render would count cards nobody saw. A staff member checking a card must not inflate a sponsor report.
+- Reversible: Yes. Moving the card into the end screen later only changes where it renders.

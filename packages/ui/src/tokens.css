@@ -64,6 +64,14 @@
   --color-bar-disabled-ink: #C9CCD3;     /* 6.75:1 on the disabled fill */
   --color-hero-chip-bg: rgba(14, 15, 19, 0.6); /* hero More info fill, white text 5.03:1 over a white image */
 
+  /* Sponsor slots (M48, Fixed): a client theme cannot shrink the box or weaken the label */
+  --sponsor-slot-height-compact: calc(7rem * var(--type-scale));
+  --sponsor-slot-height-wide: calc(8.5rem * var(--type-scale));
+  --sponsor-label-bg: #ECEAE3;
+  --sponsor-label-ink: #1A1C22;
+  --sponsor-label-size: var(--text-caption);
+  --sponsor-label-height: calc(1.5rem * var(--type-scale));
+
   /* ---- Fixed: scrim stops (R36). Gradients read these so a gate can test the text zone ---- */
   --scrim-rgb: 14, 15, 19;
   --scrim-hero-start: 0.85;

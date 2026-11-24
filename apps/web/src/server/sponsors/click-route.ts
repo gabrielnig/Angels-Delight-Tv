@@ -6,6 +6,9 @@ import { sql } from 'drizzle-orm';
 import { resolveViewer } from '../../lib/data/analytics-viewer';
 import { getServices } from '../../lib/runtime/services';
 import { installRealViewerResolver } from '../viewer/install-analytics';
+import { realAuthEnabled } from '../auth/mode';
+import { getSession } from '../auth/session';
+import { staffPreview } from './preview';
 import { createSponsorClickHandler, type ClickTarget } from './click';
 
 const rows = <T>(result: unknown): T[] => {
@@ -38,8 +41,9 @@ export function sponsorClickHandler() {
     secret: services.analyticsSecret,
     trustedProxyMode: services.env.TRUSTED_PROXY_MODE,
     resolveViewer,
-    // The admin preview never links here (it uses the stored destination directly), so no request is a preview yet.
-    isAdminPreview: async () => false,
+    // A signed in staff member is previewing the card: the click goes through and is not counted.
+    isAdminPreview: () =>
+      staffPreview(async () => (realAuthEnabled() ? (await getSession())?.role : null)),
     warn: (message, fields) => services.logger.warn(message, fields),
   });
 }

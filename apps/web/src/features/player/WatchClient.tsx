@@ -53,6 +53,9 @@ import {
 } from './routes';
 import { useOnline } from './useOnline';
 import { challengeKeyFor, useGuestChallenge } from './useGuestChallenge';
+import type { SelectedSponsor } from '@ad/sponsors';
+import { SponsorGate } from '@/components/sponsor/SponsorGate';
+import { SponsorMessageCard } from '@/components/sponsor/SponsorMessageCard';
 import { WatchActions } from './WatchActions';
 
 export interface WatchClientProps {
@@ -68,6 +71,12 @@ export interface WatchClientProps {
   progressTransport?: ProgressTransport;
   /** Value of ?t= in seconds, overrides the saved position for this load. */
   startAt: number | null;
+  /** Sponsor cards (M48). The server passes none for kids, kids mode, resume or Data saver. */
+  sponsors?: {
+    before?: SelectedSponsor | null;
+    after?: SelectedSponsor | null;
+    beforeSeconds?: number;
+  };
   /** Details rendered between the player and the action buttons. */
   children?: ReactNode;
   /**
@@ -129,6 +138,7 @@ export function WatchClient({
   testing,
   signUpOpen,
   challengeSiteKey,
+  sponsors,
 }: WatchClientProps) {
   const challenge = useGuestChallenge(challengeKeyFor(viewer, challengeSiteKey));
   const router = useRouter();
@@ -217,6 +227,7 @@ export function WatchClient({
   );
   const lastSynced = useRef<PlayerPreferences | null>(null);
   const controllerRef = useRef<PlayerController | null>(null);
+  const [ended, setEnded] = useState(false);
   const onPreferencesChange = useCallback(
     (prefs: PlayerPreferences) => {
       savePreferences(storage(), viewer.profileId, prefs);
@@ -356,52 +367,65 @@ export function WatchClient({
       ) : null}
       <div className="watch__player" ref={playerBox}>
         {origin && sessionProvider && prefsReady ? (
-          <Player
-            videoId={video.id}
-            profileId={viewer.profileId}
-            title={video.title}
-            {...(video.posterUrl ? { posterUrl: video.posterUrl } : {})}
-            appOrigin={origin}
-            sessionProvider={sessionProvider}
-            progressSink={progressSink}
-            captions={data.captions}
-            spriteUrl={data.spriteUrl ?? null}
-            theatre={theatre}
-            onTheatreToggle={toggleTheatre}
-            {...(data.markers ? { markers: data.markers } : {})}
-            {...(data.chapters ? { chapters: data.chapters } : {})}
-            captionStyle={captionStyle}
-            lockAutoplay={viewer.kids}
-            onController={(c) => {
-              controllerRef.current = c;
-            }}
-            onCaptionStyleChange={onCaptionStyleChange}
-            resume={resume}
-            preferences={preferences}
-            onPreferencesChange={onPreferencesChange}
-            next={nextTitle}
-            {...(countdownSeconds ? { countdownSeconds } : {})}
-            airplay={airplay === true}
-            prefetchNext={prefetchNext}
-            autoplayStreak={autoplayStreak}
-            onNext={onNext}
-            end={end}
-            links={{
-              signIn: signInPath(watchPath(video.id)),
-              browse: BROWSE_PATH,
-              help: HELP_PATH,
-              playbackSettings: PLAYBACK_SETTINGS_PATH,
-            }}
-            onForbidden={() => router.push('/profiles')}
-            {...(telemetry ? { telemetry } : {})}
-            {...(metrics ? { metrics } : {})}
-            deviceClass={viewer.kids ? 'kids' : 'standard'}
-            {...testing}
-          />
+          <SponsorGate
+            sponsor={viewer.kids ? null : sponsors?.before}
+            seconds={sponsors?.beforeSeconds ?? 5}
+          >
+            <Player
+              videoId={video.id}
+              profileId={viewer.profileId}
+              title={video.title}
+              {...(video.posterUrl ? { posterUrl: video.posterUrl } : {})}
+              appOrigin={origin}
+              sessionProvider={sessionProvider}
+              progressSink={progressSink}
+              captions={data.captions}
+              spriteUrl={data.spriteUrl ?? null}
+              theatre={theatre}
+              onTheatreToggle={toggleTheatre}
+              {...(data.markers ? { markers: data.markers } : {})}
+              {...(data.chapters ? { chapters: data.chapters } : {})}
+              captionStyle={captionStyle}
+              lockAutoplay={viewer.kids}
+              onController={(c) => {
+                controllerRef.current = c;
+                if (c && sponsors?.after) {
+                  c.subscribe(() => setEnded(c.getState().phase === 'ended'));
+                }
+              }}
+              onCaptionStyleChange={onCaptionStyleChange}
+              resume={resume}
+              preferences={preferences}
+              onPreferencesChange={onPreferencesChange}
+              next={nextTitle}
+              {...(countdownSeconds ? { countdownSeconds } : {})}
+              airplay={airplay === true}
+              prefetchNext={prefetchNext}
+              autoplayStreak={autoplayStreak}
+              onNext={onNext}
+              end={end}
+              links={{
+                signIn: signInPath(watchPath(video.id)),
+                browse: BROWSE_PATH,
+                help: HELP_PATH,
+                playbackSettings: PLAYBACK_SETTINGS_PATH,
+              }}
+              onForbidden={() => router.push('/profiles')}
+              {...(telemetry ? { telemetry } : {})}
+              {...(metrics ? { metrics } : {})}
+              deviceClass={viewer.kids ? 'kids' : 'standard'}
+              {...testing}
+            />
+          </SponsorGate>
         ) : (
           <div className="watch__placeholder" aria-hidden="true" />
         )}
       </div>
+      {ended && sponsors?.after && !viewer.kids ? (
+        <div className="watch__sponsor">
+          <SponsorMessageCard sponsor={sponsors.after} />
+        </div>
+      ) : null}
       {children}
       {challenge.element}
       <WatchActions

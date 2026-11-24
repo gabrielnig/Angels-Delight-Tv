@@ -1,3 +1,4 @@
+import { Fragment } from 'react';
 import { Row, SkeletonRegion, SkeletonRow } from '@ad/ui';
 import {
   getCatalog,
@@ -14,6 +15,9 @@ import { CatalogCard, ContinueRow } from '../CatalogCard';
 import { RowError } from '../RowError';
 import { GuestContinueRow } from '../guest/GuestContinueRow';
 import { themeRuntime } from '../../lib/data/admin/theme-runtime';
+import { SponsorBanner } from '../sponsor/SponsorBanner';
+import { bannerIndex } from '../sponsor/banner-position';
+import { homeBannerRow, sponsorFor } from '../../server/sponsors/surface-runtime';
 import { HomeEmpty } from './HomeEmpty';
 import { HomeHero } from './HomeHero';
 import { heroItems } from './hero-items';
@@ -68,6 +72,14 @@ export async function HomeView({
     settings.get('home.hero_max_loops'),
     settings.get('home.view_all_label'),
   ]);
+  const kidsAudience = ctx.audience === 'kids';
+  const [sponsor, afterRow] = kidsAudience
+    ? [null, 0]
+    : await Promise.all([
+        sponsorFor('home_banner', ctx, { saveData: dataSaver === true }),
+        homeBannerRow(),
+      ]);
+  const at = sponsor ? bannerIndex(home.rows.length, afterRow) : -1;
   const inList = new Set(idsResult);
   const progress = new Map(
     (continueResult.ok ? continueResult.value : []).map(({ progress: p }) => [p.videoId, p]),
@@ -110,17 +122,20 @@ export async function HomeView({
             load={reloadMyListRowAction}
           />
         )}
-        {home.rows.map((row) => (
-          <Row
-            key={row.id}
-            title={row.title}
-            viewAllHref={row.viewAll?.href}
-            viewAllExternal={row.viewAll?.external}
-            viewAllLabel={viewAllLabel}
-          >
-            {cards(row.items, inList)}
-          </Row>
+        {home.rows.map((row, index) => (
+          <Fragment key={row.id}>
+            {sponsor && index === at ? <SponsorBanner sponsor={sponsor} /> : null}
+            <Row
+              title={row.title}
+              viewAllHref={row.viewAll?.href}
+              viewAllExternal={row.viewAll?.external}
+              viewAllLabel={viewAllLabel}
+            >
+              {cards(row.items, inList)}
+            </Row>
+          </Fragment>
         ))}
+        {sponsor && at === home.rows.length ? <SponsorBanner sponsor={sponsor} /> : null}
         {home.nextCursor ? (
           <HomeRowsLoader
             initialCursor={home.nextCursor}
