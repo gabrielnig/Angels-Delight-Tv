@@ -698,6 +698,17 @@ Types: inline field error (11.2), banner (page level, danger tint, icon, message
 
 - A Top 10 row is an ordered list. The numeral uses `var(--font-display)` at a size from the type scale on a scrim, and the skeleton reserves its width. Hidden when fewer than 10 titles qualify.
 
+### 11.30 Language picker (M46)
+
+- A globe icon button with the current language name beside it from 240px, then the globe alone. It opens a menu of `menuitemradio` rows: the language in its own name (`lang` set to that language) with the English name beneath, a check on the current one, 44px high. Focus moves to the current row on open, arrow keys move, Escape closes and returns focus to the button.
+- Hidden with fewer than two enabled languages and on kids profiles. Below 600px it also lives in the account or guest menu, the settings hub and the footer, so the header does not gain a fifth control on a 360px phone.
+- A line "Some text is still in English" shows under the list when the current language is not complete. Hover styles sit inside the fine pointer media query. Choosing a language announces "Language changed" politely in the new language and updates `<html lang>`.
+
+### 11.31 Translation workspace (admin)
+
+- Rows show key, English, an editable translation, status with an icon and a word, and placeholder chips. Plural rows show only the forms the language uses. Validation messages sit under the field with `aria-describedby`. The Live switch and the row checkboxes are 44px targets and the switch has a name. Bulk approve shows the count and a warning when rows have warnings.
+- Status never relies on colour alone. The Languages table keeps number columns right aligned.
+
 ### 11.26 Auth screens
 
 - Centred card (max 400px), logo above, H1, inputs, one primary full width button, secondary links beneath ("Forgot your password?", "New here? Create an account"). Sign up shows "Step 1 of 3" when multi step. Email verification screen uses the OTP component. Password reset has request, code or link, and new password screens.
@@ -759,7 +770,7 @@ Low data and slow network
 
 ## 14. Content and microcopy
 
-Voice: warm, clear, respectful, like a good teacher. Plain English a secondary school student can read. Nigerian context where natural (naira, local examples, names, places, "data" and "network"), without slang that excludes the diaspora. No Pidgin in the UI in v1 (revisit with language support), and when Yoruba, Igbo, Hausa and Pidgin arrive each gets reviewed by a native speaker.
+Voice: warm, clear, respectful, like a good teacher. Plain English a secondary school student can read. Nigerian context where natural (naira, local examples, names, places, "data" and "network"), without slang that excludes the diaspora. Launch copy is English only. Yoruba, Igbo, Hausa and Pidgin text goes live only after a native speaker has reviewed it and an Admin has approved it (M46), and translations follow the same voice and the no dashes rule.
 
 Rules
 1. Short sentences. One idea each. Aim for under 20 words in UI text and under 12 for buttons and labels.

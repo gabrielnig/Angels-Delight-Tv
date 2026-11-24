@@ -92,3 +92,18 @@ Nothing here is hardcoded. Each item maps to a setting in Settings, Monetization
 | Tax or receipt wording | Not configured | Receipts make no tax claim until the owner and an adviser decide |
 | Sponsor terms and sponsors themselves | Admin, Sponsors | Names, links and images come from each sponsor |
 
+## 7. Languages and translations (client)
+
+Launch is English only. Each item below is a setting or an admin task, nothing is hardcoded.
+
+| Needed from the client | Where it goes | Notes |
+|---|---|---|
+| Which interface languages to turn on | Admin, Languages (`content.ui_languages`) | Off until a language reaches the publish threshold (`i18n.publish_min_percent`, default 80 percent of core text) |
+| Which caption languages to offer | Site settings (`content.languages`) | Yoruba, Igbo, Hausa, Pidgin are possible; English always |
+| A native reviewer for each language | Admin accounts with Admin role to approve | Sample drafts exist for Yoruba, Igbo and Hausa and are marked unreviewed. Pidgin has no draft |
+| Volunteer translators | Sister Vanessa exports a CSV and imports the result | Imports land In review and need an Admin to approve |
+| Caption translation engine | `TRANSLATE_PROVIDER`, `TRANSLATE_API_KEY`, `TRANSLATE_MONTHLY_CHAR_CAP` | Default none. NLLB is non commercial, so with sponsors on use a paid API or a commercially licensed engine (R23) |
+| Multilingual speech model | `WHISPER_MODEL_MULTI` | Needed to caption Yoruba or Hausa audio automatically. Igbo and Pidgin are uploaded or aligned |
+| Names of the languages in the picker | Built in (endonyms) | The client may correct spelling and tone marks |
+| Glossary of protected words | `translation.glossary` | Names and brand words that translation must not change |
+| Privacy page line about a hosted engine | Pages editor | Only when a hosted engine is switched on |

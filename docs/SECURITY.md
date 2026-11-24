@@ -280,6 +280,17 @@ Nigeria Data Protection Act 2023 (NDPA), regulator the Nigeria Data Protection C
 - Data protection impact assessment recommended because children's data is processed.
 - Data minimisation and retention limits are implemented as in section 10.
 
+## 12a. Languages and translations (M46)
+
+- **Permissions.** `i18n.edit` (Editor and above), `i18n.approve` and `i18n.publish` (Admin and above), `i18n.override` (Super admin only, with a reason). Caption side: `caption.translate` (Editor and above to request, Admin to publish a language as `caption.publish_language`). An Analyst has none.
+- **Nothing unreviewed reaches viewers.** Translations are drafts until an Admin approves them. Imports from a spreadsheet land In review, never Approved, so a volunteer file cannot publish anything. Sample draft catalogs load as draft rows and the baseline JSON stays empty until a native speaker has reviewed text. A caption translation is created In review and unpublished, and publishing a language is a separate audited step.
+- **New routes.** `GET /api/admin/languages/[locale]/export?format=csv|json` and `POST /api/admin/languages/[locale]/import?dryRun=1`. Staff session, same origin check, body limit 2 MB and 5,000 rows. Caption routes accept a language parameter and keep their existing permission checks.
+- **Text rules.** Translations are plain text. Validation requires the same placeholders as the English, the plural forms the language uses, and no em or en dashes, and normalises to NFC. Output is escaped by React like all other copy.
+- **Translation engine and API key.** The provider is chosen by `TRANSLATE_PROVIDER` (default `none`, off). `TRANSLATE_API_KEY` lives only in the server environment, is sent as a header, and is never shown in the admin, logged or returned by an API. The Engine panel shows state and usage only. A hosted engine sends caption text to a third party, so the owner must add that to the privacy page before enabling it (CLIENT-INPUTS section 7). A monthly character cap refuses jobs before any call, and the fake provider and the pseudo locale are rejected in production.
+- **Language cookie and storage.** `ad_locale` is a first party, same site cookie holding a language code, set only when a viewer chooses a language or follows `?lang=`. The browser also keeps `ad:locale` in local storage for the offline page. Neither holds personal data. The owner should mention them in the storage notice text. `accounts.locale` and the profile language are covered by the existing account export and deletion.
+- **Missing key report.** Only the key, the locale and a hit count are stored, batched, with no viewer identifier, bots and prefetch ignored, capped per locale.
+- **Mail.** Viewer mail uses the account language and falls back to English per key. Staff mail stays English.
+
 ## 13. Dependency policy
 
 - pnpm lockfile committed. CI installs with `--frozen-lockfile`.

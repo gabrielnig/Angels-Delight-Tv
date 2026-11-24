@@ -106,6 +106,8 @@ From `/home/claude/shared-protocols/docs/UI-UX-STANDARD.md`:
 | `/admin/audit-log` | Audit log | Admin (content), Super admin (all) |
 | `/admin/roles` | Roles and invites | Super admin |
 | `/admin/site-settings` | Site configuration and pages | Admin (flags Super admin) |
+| `/admin/languages` | Languages: status, publish, engine | Editor (view), Admin (approve, publish), Super admin (override, engine) |
+| `/admin/languages/[locale]` | Translate workspace, import and export, missing keys | Editor |
 | `/admin/system` | Jobs, storage, player quality | Super admin |
 | `/admin/account` | My admin account | any admin |
 
@@ -613,6 +615,21 @@ A visitor without an account uses the same screens as a viewer, with the differe
 - **S87 Limit and challenge states.** The wait message for a limit, and the "One quick check" dialog with the Turnstile widget and a single Cancel action. Not shown on a Kids playback page. Stories M40-S11, M40-S12.
 - **S88 Import device history prompt.** After sign in, a dialog "Add what you watched here?" with Not now and Add to my history, then a toast with the count. Never for a kids profile. Story M40-S13.
 - **S89 Device storage and privacy.** The note "Your place is not being saved on this device", and the Privacy page text for the guest cookie and the anonymous daily id. Clear history on this device (M40-S18) is not built yet. Stories M40-S16, M40-S18.
+
+### Screens 140 to 149. Languages (M46)
+
+Mockups are in `docs/mockups/v2` as S140 to S149, reviewed in `docs/reviews/v2/L7-review.md`.
+
+- **S140 Language picker, phone.** A bottom sheet opened from the account menu, the guest menu and the footer. Rows show the endonym with the English name beneath, the current one marked, 44px high. The picker is hidden with only English enabled and for kids profiles. A line "Some text is still in English" shows for a language below 100 percent. Below 240px the label folds into the icon. Stories M46-S01, M46-S03.
+- **S141 Language picker, desktop.** A globe button in the header opens a menu with arrow key navigation, a footer link, and no control on a kids profile. Hover rules sit inside the fine pointer media query. Stories M46-S01, M46-S04.
+- **S142 Language settings.** The settings hub language row and the profile form interface language and caption language selects, disabled for a kids profile, the caption language following the interface language until changed. Stories M46-S01, M03-S09.
+- **S143 Admin Languages.** `/admin/languages` table (cards on phones): state, approved percent, missing, stale, in review, last change, a Live switch with the threshold reason, Super admin Publish anyway with a reason, export links, and the Engine panel with provider, state and monthly use against the cap. Empty: "Only English is set up." Stories M46-S06, M46-S17.
+- **S144 Translate workspace.** `/admin/languages/[locale]` with tabs Missing, Stale, In review, Approved, All and Viewer hits, search, area filter, rows with placeholder chips and the plural forms of the language, Copy English, validation under the field, Save, and a bulk approve bar with count and warning. Sample draft button where a draft exists. Stories M46-S07, M46-S09, M46-S10.
+- **S145 Import and export.** Export CSV and JSON, an import dialog with a dry run table (added, changed, unchanged, rejected with reasons) before confirm, size limit and network failure states. Imports land In review. Story M46-S08.
+- **S146 Missing key report.** The Viewer hits tab sorted by hits, with last seen and a link to the row. Story M46-S10.
+- **S147 Captions list with languages.** Language chips with state, language and state filters, bulk approve, bulk publish and bulk translate dialogs, partial failure summary. Stories M46-S11, M46-S13, M46-S16.
+- **S148 Caption review in translation mode.** Language tabs, the English cue beside the translated cue, timing locked until Unlock timing, the Publish switch (disabled until approved), Source changed banner with Retranslate, Add translation dialog with an estimate and a provider not configured state. Stories M46-S11, M46-S12, M46-S13.
+- **S149 Player caption languages.** The caption menu with Off first, each language by its own name with its own `lang`, a toggle only for one language, the default chosen by profile language then interface language then English, and the English fallback toast. Story M46-S14.
 
 ### Screens 170 to 179. Account security, activity and reach (M49)
 - **S170 Security overview.** Two step verification card, connected sign in card (Google), devices with Sign out everywhere, and sign in history. Route `/account/security`. Stories M49-S01 to S03, S05, S12, S13.
