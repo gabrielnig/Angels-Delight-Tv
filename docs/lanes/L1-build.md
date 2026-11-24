@@ -16,7 +16,7 @@ Plan: `docs/plan/v2/L1-guest-access.md`. Rulings: `docs/plan/v2/RULINGS.md` (the
 | 8 | Guest Continue learning | merged | #265 |
 | 9 | History import | merged | #266 |
 | 10 | Abuse protection, Turnstile escalation | merged | #267 |
-| 11 | Robots, journeys, documents | on PR | see below |
+| 11 | Robots, journeys, documents | merged | #268 |
 
 ## Slice 1 (guest identity and playback)
 
