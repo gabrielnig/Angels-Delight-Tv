@@ -48,6 +48,7 @@ Related documents: `docs/PRD.md` (why), `docs/USER-STORIES.md` (what, per module
 | M35 | Kids mode and content suitability | Viewer | [READY] |
 | M36 | Artwork and thumbnails | Admin and backend | [READY] |
 | M40 | Guest access | Viewer and backend | [READY] |
+| M42 | Admin polish and bulk operations | Admin | [READY] |
 | M47 | Design system tuning and guards | Cross cutting | [READY] |
 
 37 modules in total. M01 to M26 follow the planned set. M27 to M36 are modules found while breaking the brief down: they own behaviour that would otherwise be spread across several modules with nobody responsible.
@@ -743,6 +744,14 @@ Each module lists: purpose, responsibilities, data owned, dependencies, client i
 **Client input.** Custom artwork if wanted [CLIENT, optional].
 
 ---
+
+### M42 Admin polish and bulk operations [READY]
+
+**Area.** Admin.
+
+**Purpose.** One table alignment rule, one breadcrumb, bulk actions with progress, report and undo, upload shared details and per file overrides, and captions on or off control.
+
+**Dependencies.** M12, M13, M14, M15, M16, M20, M27, M28, M11.
 
 ### M40 Guest access [READY]
 

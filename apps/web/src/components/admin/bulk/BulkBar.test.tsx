@@ -67,6 +67,35 @@ describe('BulkBar', () => {
     expect(screen.queryByRole('menuitem')).toBeNull();
   });
 
+  it('More menu: focus moves in, arrows move, Escape closes and returns focus', () => {
+    const two: BulkBarAction[] = [
+      { id: 'a', label: 'First', onClick: () => {}, secondary: true },
+      { id: 'b', label: 'Second', onClick: () => {}, secondary: true },
+    ];
+    render(<BulkBar {...base} count={2} actions={two} />);
+    const more = screen.getByRole('button', { name: 'More' });
+    fireEvent.click(more);
+    const first = screen.getByRole('menuitem', { name: 'First' });
+    const second = screen.getByRole('menuitem', { name: 'Second' });
+    expect(document.activeElement).toBe(first);
+    fireEvent.keyDown(first, { key: 'ArrowDown' });
+    expect(document.activeElement).toBe(second);
+    fireEvent.keyDown(second, { key: 'ArrowDown' });
+    expect(document.activeElement).toBe(first);
+    fireEvent.keyDown(first, { key: 'ArrowUp' });
+    expect(document.activeElement).toBe(second);
+    fireEvent.keyDown(second, { key: 'Escape' });
+    expect(screen.queryByRole('menuitem')).toBeNull();
+    expect(document.activeElement).toBe(more);
+  });
+
+  it('More menu closes on an outside click', () => {
+    render(<BulkBar {...base} count={2} actions={[{ id: 'a', label: 'First', onClick: () => {}, secondary: true }]} />);
+    fireEvent.click(screen.getByRole('button', { name: 'More' }));
+    fireEvent.mouseDown(document.body);
+    expect(screen.queryByRole('menuitem')).toBeNull();
+  });
+
   it('buttons carry a reason when disabled and stay focusable', () => {
     const onClick = vi.fn();
     render(

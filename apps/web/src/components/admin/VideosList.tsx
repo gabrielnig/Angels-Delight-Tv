@@ -109,7 +109,9 @@ export function VideosList({ page, query, categories, role, bulk, undo, matching
   const [outcome, setOutcome] = useState<BulkOutcome | null>(null);
   const [lastRun, setLastRun] = useState<{ action: BulkAction; ids: string[] } | null>(null);
   const [confirm, setConfirm] = useState<'publish' | 'trash' | null>(null);
-  const [picker, setPicker] = useState<'category' | 'remove_category' | 'suitability' | 'captions' | null>(null);
+  const [picker, setPicker] = useState<
+    'category' | 'remove_category' | 'suitability' | 'captions' | null
+  >(null);
   const [pickValue, setPickValue] = useState('');
   const [pickReason, setPickReason] = useState('');
   const canPublish = can(role, 'video.publish');
@@ -183,7 +185,10 @@ export function VideosList({ page, query, categories, role, bulk, undo, matching
       merged.skipped.length === 0;
     if (nothingHappened) {
       setOutcome(null);
-      toast.show({ tone: 'danger', message: `${label} did not work. Nothing was changed. Try again.` });
+      toast.show({
+        tone: 'danger',
+        message: `${label} did not work. Nothing was changed. Try again.`,
+      });
       return;
     }
     setOutcome(merged);
@@ -353,11 +358,10 @@ export function VideosList({ page, query, categories, role, bulk, undo, matching
           onDismiss={() => setOutcome(null)}
           onRetry={(retryIds) => void run(lastRun.action, retryIds, outcome)}
           onContinue={() =>
-            void run(
-              lastRun.action,
-              lastRun.ids.slice(outcome.interrupted?.done ?? 0),
-              { ...outcome, interrupted: undefined },
-            )
+            void run(lastRun.action, lastRun.ids.slice(outcome.interrupted?.done ?? 0), {
+              ...outcome,
+              interrupted: undefined,
+            })
           }
         />
       ) : null}
@@ -375,19 +379,29 @@ export function VideosList({ page, query, categories, role, bulk, undo, matching
                   try {
                     sel.selectMatching(await matching(query));
                   } catch {
-                    toast.show({ tone: 'danger', message: 'Could not select the rest. Try again.' });
+                    toast.show({
+                      tone: 'danger',
+                      message: 'Could not select the rest. Try again.',
+                    });
                   }
                 }
               : undefined
           }
           note={
-            sel.capped ? `Selected ${sel.capped.used}. The first ${sel.capped.used} are used when more match.` : undefined
+            sel.capped
+              ? `Selected ${sel.capped.used}. The first ${sel.capped.used} are used when more match.`
+              : undefined
           }
           returnFocusTo={() => tableRef.current}
         />
       ) : null}
 
-      <div className="adm-card adm-table-card" aria-busy={pending || undefined} ref={tableRef} tabIndex={-1}>
+      <div
+        className="adm-card adm-table-card"
+        aria-busy={pending || undefined}
+        ref={tableRef}
+        tabIndex={-1}
+      >
         {page.items.length === 0 ? (
           filtered ? (
             <EmptyState
@@ -427,6 +441,7 @@ export function VideosList({ page, query, categories, role, bulk, undo, matching
                     <Checkbox
                       label="Select all on this page"
                       checked={sel.allOnPage}
+                      mixed={sel.someOnPage && !sel.allOnPage}
                       onChange={sel.togglePage}
                     />
                   </th>
@@ -631,10 +646,10 @@ export function VideosList({ page, query, categories, role, bulk, undo, matching
           picker === 'captions'
             ? `Captions for viewers on ${plural(sel.count)}`
             : picker === 'suitability'
-            ? `Set suitability for ${plural(sel.count)}`
-            : picker === 'remove_category'
-              ? `Remove ${plural(sel.count)} from a category`
-              : `Add ${plural(sel.count)} to a category`
+              ? `Set suitability for ${plural(sel.count)}`
+              : picker === 'remove_category'
+                ? `Remove ${plural(sel.count)} from a category`
+                : `Add ${plural(sel.count)} to a category`
         }
         size="sm"
         footer={
@@ -644,7 +659,10 @@ export function VideosList({ page, query, categories, role, bulk, undo, matching
             </Button>
             <Button
               variant="primary"
-              disabled={!pickValue || (picker === 'captions' && pickValue === 'off' && pickReason.trim().length < 5)}
+              disabled={
+                !pickValue ||
+                (picker === 'captions' && pickValue === 'off' && pickReason.trim().length < 5)
+              }
               onClick={applyPicker}
             >
               Apply

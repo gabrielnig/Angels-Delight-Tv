@@ -180,6 +180,7 @@ export function TrashList({
                 <Checkbox
                   label="Select all on this page"
                   checked={sel.allOnPage}
+                  mixed={sel.someOnPage && !sel.allOnPage}
                   onChange={sel.togglePage}
                 />
               </th>

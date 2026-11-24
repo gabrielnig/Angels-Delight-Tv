@@ -1,7 +1,7 @@
 'use client';
 
-import { useId, useState } from 'react';
-import type { ReactNode } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
+import type { KeyboardEvent as ReactKeyboardEvent, ReactNode } from 'react';
 
 export interface BulkBarAction {
   id: string;
@@ -64,6 +64,31 @@ export function BulkBar({
   returnFocusTo,
 }: BulkBarProps) {
   const [menuOpen, setMenuOpen] = useState(false);
+  const wrapRef = useRef<HTMLSpanElement>(null);
+  const moreRef = useRef<HTMLButtonElement>(null);
+  useEffect(() => {
+    if (!menuOpen) return;
+    wrapRef.current?.querySelector<HTMLElement>('[role="menuitem"]')?.focus();
+    const away = (e: MouseEvent) => {
+      if (!wrapRef.current?.contains(e.target as Node)) setMenuOpen(false);
+    };
+    document.addEventListener('mousedown', away);
+    return () => document.removeEventListener('mousedown', away);
+  }, [menuOpen]);
+  const onMenuKey = (e: ReactKeyboardEvent) => {
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      setMenuOpen(false);
+      moreRef.current?.focus();
+      return;
+    }
+    if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return;
+    e.preventDefault();
+    const items = Array.from(wrapRef.current?.querySelectorAll<HTMLElement>('[role="menuitem"]') ?? []);
+    const at = items.indexOf(document.activeElement as HTMLElement);
+    const step = e.key === 'ArrowDown' ? 1 : -1;
+    items[(at + step + items.length) % items.length]?.focus();
+  };
   const menuId = useId();
   const secondary = actions.filter((a) => a.secondary);
   const showAll = Boolean(pageFullySelected && onSelectMatching && matchTotal !== undefined && matchTotal > count);
@@ -84,8 +109,9 @@ export function BulkBar({
           <ActionButton key={action.id} action={action} />
         ))}
         {secondary.length > 0 ? (
-          <span className="adm-bulk__morewrap">
+          <span className="adm-bulk__morewrap" ref={wrapRef}>
             <button
+              ref={moreRef}
               type="button"
               className="adm-btn adm-btn--secondary adm-bulk__more"
               aria-haspopup="menu"
@@ -96,7 +122,7 @@ export function BulkBar({
               More
             </button>
             {menuOpen ? (
-              <ul id={menuId} role="menu" className="adm-bulk__menu">
+              <ul id={menuId} role="menu" className="adm-bulk__menu" onKeyDown={onMenuKey}>
                 {secondary.map((action) => {
                   const blocked = Boolean(action.disabledReason);
                   return (

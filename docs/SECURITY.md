@@ -109,7 +109,11 @@ Roles:
 | View users and profiles overview, suspend users | no | no | no | yes | yes |
 | Invite staff, change roles, reset another admin's 2FA | no | no | no | no | yes (re-auth, not self) |
 | Theme and platform settings | no | no | no | yes | yes |
-| Features and limits, retry or discard failed jobs, delete a viewer account at the owner request | no | no | no | no | yes |
+| Features and limits, retry or discard failed jobs on System jobs, delete a viewer account at the owner request | no | no | no | no | yes |
+| Retry failed encodes (one or many) | no | no | no | yes | yes |
+| Bulk approve captions, set captions on or off for a video (`caption.approve_bulk`, `caption.availability`) | no | no | no | yes | yes |
+| Delete a series, handle viewer accounts in bulk (`series.delete`, `users.bulk`) | no | no | no | yes | yes |
+| Change roles in bulk (`roles.bulk`, re-auth once, never self) | no | no | no | no | yes |
 | Read audit log | no | no | no | content actions only | yes, all entries and export |
 
 Rules:
@@ -118,7 +122,7 @@ Rules:
 - Mass assignment: update schemas whitelist fields. `role`, `status`, `email_verified_at` are never accepted from user bodies.
 - No sequential or guessable public ids: UUIDs, and slugs only for already-public catalog items.
 - Do not rely on middleware for authorization. Re-check inside the handler.
-- Only a Super admin can invite staff, change roles, reset another admin's 2FA, read security entries in the audit log, export it, change features and limits, retry failed jobs and delete a viewer account (D-128). The database refuses to lose the last active Super admin (trigger) and `staff_set_role` re-checks the caller in SQL. Nobody can change their own role.
+- Only a Super admin can invite staff, change roles, reset another admin's 2FA, read security entries in the audit log, export it, change features and limits, retry failed jobs on the System jobs screen and delete a viewer account (D-128). Retrying a failed encode is an Editor action (`encode.retry`). The database refuses to lose the last active Super admin (trigger) and `staff_set_role` re-checks the caller in SQL. Nobody can change their own role.
 - The worker role has no grants on identity tables. A compromised worker cannot read accounts.
 
 - Guest rule (M40): a visitor with no account is a guest with an audience and nothing else. The catalog functions they reach take an audience and no actor, run in a plain transaction, and read no row level security table. Personal routes (`/api/progress`, `/api/progress/import`, `/api/my-list`, `/api/profiles`, `/api/search/recent`, `/api/watch/progress`) stay 401 for a guest, even one with a valid guest cookie. A guest cookie is never read as a session and a forged one is ignored. Kids mode for a guest is a device cookie and a convenience, not a lock (D-234).

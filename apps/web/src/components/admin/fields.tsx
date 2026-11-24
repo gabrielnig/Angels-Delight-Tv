@@ -1,6 +1,6 @@
 'use client';
 
-import { useId } from 'react';
+import { useEffect, useId, useRef } from 'react';
 import type {
   InputHTMLAttributes,
   ReactNode,
@@ -122,11 +122,16 @@ export function SelectField({
 
 export function Checkbox({
   label,
+  mixed,
   ...rest
-}: { label: string } & Omit<InputHTMLAttributes<HTMLInputElement>, 'type'>) {
+}: { label: string; mixed?: boolean } & Omit<InputHTMLAttributes<HTMLInputElement>, 'type'>) {
+  const ref = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    if (ref.current) ref.current.indeterminate = Boolean(mixed);
+  }, [mixed]);
   return (
     <label className="adm-check">
-      <input type="checkbox" {...rest} />
+      <input ref={ref} type="checkbox" aria-checked={mixed ? 'mixed' : undefined} {...rest} />
       <span>{label}</span>
     </label>
   );
