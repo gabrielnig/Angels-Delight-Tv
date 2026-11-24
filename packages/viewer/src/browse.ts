@@ -15,7 +15,7 @@ import {
   type TitleCard,
 } from '@ad/catalog';
 import { annotateCards, type TitleCardDto } from './annotate';
-import { catalogContext, rulesOf, shared, type ViewerContext } from './context';
+import { audienceKey, catalogContext, rulesOf, shared, type ViewerContext } from './context';
 import { audienceOf, loadOwnedProfile } from './profiles';
 
 export interface BrowseInput {
@@ -54,7 +54,7 @@ export function categoriesFor(
   ctx: ViewerContext,
   audience: Audience,
 ): Promise<CategoryDto[]> {
-  return shared(ctx, ['categories', audience.kids], () =>
+  return shared(ctx, ['categories', audienceKey(audience)], () =>
     listCategories(tx, catalogContext(ctx), audience),
   );
 }
@@ -85,7 +85,7 @@ export async function browseFor(
       ctx,
       [
         'browse',
-        audience.kids,
+        audienceKey(audience),
         input.categorySlug,
         input.sort,
         input.duration,

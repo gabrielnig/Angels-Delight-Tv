@@ -35,6 +35,10 @@ export const VIEWER_RATE_POLICIES: Record<
 
 /** Everything the viewer services need besides the actor. Built once at startup, passed to every service call. */
 /** Runs a catalog read through the shared cache when there is one. Only for reads that do not depend on the viewer. */
+export function audienceKey(audience: { kids: boolean; maxRank?: number }): string {
+  return audience.kids ? 'kids' : `rank-${audience.maxRank ?? 4}`;
+}
+
 export function shared<T>(ctx: ViewerContext, key: unknown[], load: () => Promise<T>): Promise<T> {
   return ctx.catalogCache ? ctx.catalogCache.remember(JSON.stringify(key), load) : load();
 }
