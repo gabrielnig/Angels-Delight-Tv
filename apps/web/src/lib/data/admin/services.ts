@@ -14,6 +14,9 @@ import {
   restoreVideo,
   retryEncode,
   retryEncodeMany,
+  retryPreview,
+  setPreviewMode,
+  type PreviewModeInput,
   restoreMany,
   purgeMany,
   schedulePublish,
@@ -151,6 +154,9 @@ export interface VideoService {
     assetId: string,
   ): Promise<{ status: 'processing' | 'ready' | 'failed' }>;
   retryEncode(actor: AdminActor, id: string): Promise<CommandResult>;
+  /** How the Home hero clip is made: automatic, a picked start or off (M41-S10). */
+  setPreviewMode(actor: AdminActor, id: string, input: PreviewModeInput): Promise<CommandResult>;
+  retryPreview(actor: AdminActor, id: string): Promise<CommandResult>;
   /** Retries many failed videos, oldest failure first. Each id succeeds, is skipped or fails alone. */
   retryEncodeMany(actor: AdminActor, ids: string[], bulkId?: string): Promise<BulkParts>;
   restoreMany(actor: AdminActor, ids: string[]): Promise<BulkParts>;
@@ -269,6 +275,18 @@ const fixtureVideoService: VideoService = {
     const video = getStore().videos.find((v) => v.id === id);
     if (!video) throw new NotFound('Video not found');
     return retryEncode(video, Date.now());
+  },
+  async setPreviewMode(actor, id, input) {
+    need(actor, 'video.edit');
+    const video = getStore().videos.find((v) => v.id === id);
+    if (!video) throw new NotFound('Video not found');
+    return setPreviewMode(video, input);
+  },
+  async retryPreview(actor, id) {
+    need(actor, 'video.edit');
+    const video = getStore().videos.find((v) => v.id === id);
+    if (!video) throw new NotFound('Video not found');
+    return retryPreview(video);
   },
   async retryEncodeMany(actor, ids) {
     need(actor, 'encode.retry');

@@ -62,6 +62,15 @@ export interface VideoRecord {
   /** Captions for viewers: null or missing follows the site default, true offers them, false offers none. */
   captionsEnabled?: boolean | null;
   captionsOffReason?: string | null;
+  /** The Home hero clip. Fixtures may leave it out, which reads as not made yet and automatic (M41). */
+  preview?: PreviewInfo;
+}
+
+export interface PreviewInfo {
+  state: 'none' | 'queued' | 'ready' | 'failed' | 'skipped';
+  mode: 'auto' | 'picked' | 'off';
+  startMs: number | null;
+  note: string | null;
 }
 
 export interface CategoryRecord {

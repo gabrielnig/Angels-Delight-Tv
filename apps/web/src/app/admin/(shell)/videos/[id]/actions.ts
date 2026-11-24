@@ -6,7 +6,12 @@ import type { PosterChoice } from '@/lib/admin/poster-rules';
 import { videoService } from '@/lib/data/admin/services';
 import { requireActionActor } from '@/lib/data/admin/session-next';
 import type { BulkAction, BulkResult } from '@/lib/data/admin/video-queries';
-import type { CommandResult, PublishRequest, VideoPatch } from '@/lib/data/admin/video-commands';
+import type {
+  CommandResult,
+  PreviewModeInput,
+  PublishRequest,
+  VideoPatch,
+} from '@/lib/data/admin/video-commands';
 
 export async function updateVideoAction(
   id: string,
@@ -59,6 +64,20 @@ export async function setCaptionsAction(
 export async function retryEncodeVideoAction(id: string): Promise<CommandResult> {
   const actor = await requireActionActor(`/admin/videos/${id}`);
   const result = await videoService.retryEncode(actor, id);
+  revalidatePath('/admin', 'layout');
+  return result;
+}
+
+export async function setPreviewModeAction(id: string, input: PreviewModeInput): Promise<CommandResult> {
+  const actor = await requireActionActor(`/admin/videos/${id}`);
+  const result = await videoService.setPreviewMode(actor, id, input);
+  revalidatePath('/admin', 'layout');
+  return result;
+}
+
+export async function retryPreviewAction(id: string): Promise<CommandResult> {
+  const actor = await requireActionActor(`/admin/videos/${id}`);
+  const result = await videoService.retryPreview(actor, id);
   revalidatePath('/admin', 'layout');
   return result;
 }

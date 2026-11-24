@@ -15,6 +15,8 @@ import {
   restoreAdminVideo,
   requestPurgeAdminVideo,
   retryAdminVideo,
+  recutAdminPreview,
+  setAdminPreviewMode,
   setAdminEpisode,
   setAdminPoster,
   unpublish,
@@ -189,6 +191,18 @@ export const realVideoService: VideoService = {
   async retryEncode(actor, id) {
     need(actor, 'video.edit');
     return retryAdminVideo(await context(), catalogActor(actor), id, adminRuntime().enqueue);
+  },
+  async setPreviewMode(actor, id, input) {
+    need(actor, 'video.edit');
+    return asResult(async () =>
+      setAdminPreviewMode(await context(), catalogActor(actor), id, input, adminRuntime().enqueue),
+    );
+  },
+  async retryPreview(actor, id) {
+    need(actor, 'video.edit');
+    return asResult(async () =>
+      recutAdminPreview(await context(), catalogActor(actor), id, adminRuntime().enqueue),
+    );
   },
   async retryEncodeMany(actor, ids, bulkId) {
     need(actor, 'encode.retry');
