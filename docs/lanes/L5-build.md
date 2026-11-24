@@ -54,3 +54,10 @@ Scoped tests: `TEST_DATABASE_ADMIN_URL=postgres://postgres:postgres@localhost:54
 - Web: `CatalogCard` saves through `PUT /api/ratings` with rollback and toast, only for a signed in non kids profile and an item that has `rating`. `ProfileKidsProvider` and `useProfileKids` added to `lib/profile-context`. `cardToItem` carries `rating` and `mostLiked`. Message keys `engage.rating.cardGroup`, `engage.rating.yours`, `engage.mostLiked`.
 - Tests: `packages/ui/src/components/Cards.test.tsx`, `packages/ui/src/cards-css.test.ts`, `apps/web/src/components/CatalogCard.test.tsx`, `apps/web/src/server/data/mappers.test.ts`.
 - Not done here: Most liked label on the title page, Most liked on the series card peek (series cards have no peek), maturity chip in the peek (slice 5, needs `maturityRank` on `TitleCard`), a cross card live update when one card of a title changes (M44-S02 AC2).
+
+## Slice 7 (viewer notices, data, fanout, service; branch l5b-s07-notices)
+- Migration `0048_viewer_notices.sql`: `viewer_notices`, `viewer_notification_prefs`, `videos.announced_at` with backfill, kids trigger, owner and worker policies, `notice_followers()` and `notice_video_audience()` for the worker. Worker role gets SELECT on `series`, `seasons`, `episodes`.
+- `apps/worker/src/notices.ts`: `fanoutNotices(db, now, hooks)`, `pruneNotices(db, now)`. Queues `notices.fanout` (`*/10 * * * *`) and `notices.prune` (`40 3 * * *`), registered in `engage-handlers.ts`.
+- `packages/viewer/src/notices.ts`: `listNotices`, `countUnread` (cap 99, kids 0), `markRead`, `getPrefs`, `setPrefs`. Kids get 403 `kids_no_notices`.
+- Tests: `packages/db/src/notices.int.test.ts`, `apps/worker/src/notices.int.test.ts`, `packages/viewer/src/notices.int.test.ts`, `packages/queue/src/definitions.test.ts`, `apps/worker/src/engage-handlers.test.ts`.
+- NOT done yet: API routes, bell, pages, settings, email prefs (slice 8).

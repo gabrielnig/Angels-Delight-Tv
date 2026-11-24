@@ -7,6 +7,7 @@ import { registerVideoHandlers } from './handlers';
 import { refreshTrending } from '@ad/analytics';
 import { rollupRatings } from './engage';
 import { registerEngageHandlers } from './engage-handlers';
+import { fanoutNotices, pruneNotices } from './notices';
 import { registerExportHandlers } from './export-handlers';
 import { registerMailHandlers } from './mail';
 import { registerMaintenanceHandlers } from './maintenance';
@@ -53,6 +54,8 @@ async function main(): Promise<void> {
       await registerEngageHandlers(queueBoss, {
         rollupRatings: () => rollupRatings(db),
         refreshTrending: () => refreshTrending(db, new Date()),
+        fanoutNotices: () => fanoutNotices(db, new Date()),
+        pruneNotices: () => pruneNotices(db, new Date()),
         mirror: video.mirror,
         logger,
       });

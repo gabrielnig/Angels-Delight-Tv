@@ -20,6 +20,8 @@ export const QUEUES = {
   exportsCleanup: 'exports.cleanup',
   ratingsRollup: 'ratings.rollup',
   trendingRefresh: 'trending.refresh',
+  noticesFanout: 'notices.fanout',
+  noticesPrune: 'notices.prune',
 } as const;
 
 export type QueueName = (typeof QUEUES)[keyof typeof QUEUES];
@@ -125,6 +127,21 @@ export const QUEUE_DEFINITIONS: Record<QueueName, QueueDefinition> = {
     retryBackoff: true,
     expireInSeconds: 10 * 60,
   },
+  // Viewer notices (L5, M44-S12): claims newly live videos and writes one notice per profile.
+  'notices.fanout': {
+    concurrency: 1,
+    retryLimit: 3,
+    retryDelaySeconds: 30,
+    retryBackoff: true,
+    expireInSeconds: 5 * 60,
+  },
+  'notices.prune': {
+    concurrency: 1,
+    retryLimit: 2,
+    retryDelaySeconds: 300,
+    retryBackoff: false,
+    expireInSeconds: 10 * 60,
+  },
   'analytics.prune': {
     concurrency: 1,
     retryLimit: 2,
@@ -221,6 +238,8 @@ const PAYLOADS = {
   'exports.cleanup': z.strictObject({}),
   'ratings.rollup': z.strictObject({}),
   'trending.refresh': z.strictObject({}),
+  'notices.fanout': z.strictObject({}),
+  'notices.prune': z.strictObject({}),
 } satisfies Record<QueueName, z.ZodType>;
 
 export type PayloadOf<Q extends QueueName> = z.output<(typeof PAYLOADS)[Q]>;
@@ -268,4 +287,6 @@ export const EXPORT_CRON_SCHEDULES: CronEntry[] = [
 export const ENGAGE_CRON_SCHEDULES: CronEntry[] = [
   { queue: 'ratings.rollup', cron: '*/15 * * * *', timezone: 'Africa/Lagos' },
   { queue: 'trending.refresh', cron: '10 * * * *', timezone: 'Africa/Lagos' },
+  { queue: 'notices.fanout', cron: '*/10 * * * *', timezone: 'Africa/Lagos' },
+  { queue: 'notices.prune', cron: '40 3 * * *', timezone: 'Africa/Lagos' },
 ];

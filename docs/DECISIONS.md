@@ -1617,4 +1617,8 @@ Per video tri state, site default (Super admin), Admin changes it with a reason 
 - Decision: the card actions cluster holds My List and a rating chip. The chip shows the current level (Like when unrated) and expands to Not for me, Like and Love on hover or focus within, with the chip first in tab order. It exists for hover and fine pointer only, kids profiles and guests get none, touch rates on the title page. Keyboard focus (`:has(:focus-visible)`) scales the card and shows the peek with no delay. Most liked shows in the peek and is spoken in the link name, never as a count.
 - Options: three always visible buttons, a popover menu, hover only.
 - Why: the compact chip keeps the 44 px targets without covering the thumbnail, it stays reachable by keyboard, and `:focus-visible` avoids scaling a card after a mouse click.
+## D-296 Viewer notices are written only by the worker, one per profile per series or day, and grow instead of repeating (lane L5, M44-S12)
+- Decision: the `notices.fanout` job claims newly live videos (`videos.announced_at`, backfilled at migration) in the same transaction that writes the notices, so a crash rolls the claim back. One notice per profile per series per Lagos day, one grouped video notice per profile per day. A later batch the same day raises `item_count`, rewrites the title and marks it unread again. The worker reads followers through SECURITY DEFINER functions and never touches `my_list`, `watch_progress` or `profiles`. Kids profiles are refused by a database trigger.
+- Options: a notice per episode, a notice table written by the web app, a cron that scans every profile.
+- Why: no spam on a binge release, no duplicates on retry, and the worker role stays narrow.
 - Reversible: yes.
