@@ -1697,3 +1697,9 @@ Decision: the `home` step of `launch:apply` publishes the six launch sections on
 - Options: Drop unknown references, retry forever, retry a few times then keep.
 - Why: Dropping loses a real gift that raced our commit. Retrying forever fills the queue with events for other businesses on a shared Paystack account. The orphan outcome shows in the admin for a person to look at.
 - Reversible: Yes. One constant.
+
+## D-311 Analytics stays first party and anonymous, with a guard that blocks trackers until a decision is logged, and a performance budget checked from the build (lane L6, M45)
+- Decision: search and share events are dropped when Global Privacy Control or Do Not Track is on, and playback health, errors and vitals stay. `canUse` allows only necessary and functional storage. A test fails if a script loads from an origin outside its list (only Cloudflare Turnstile) or if analytics code uses device storage or cookies. Budgets: 170 KB gzip first load JS per route, at most four preloaded font files and two families, lazy images except the hero, and LCP 2.5 s, CLS 0.1, INP 200 ms measured in the browser. `pnpm perf:budget` checks the build.
+- Options: a full consent banner now; no guard; Lighthouse in CI only.
+- Why: nothing identified or third party exists, so a banner would have nothing to ask, and the guard keeps it that way.
+- Reversible: yes.
