@@ -466,7 +466,7 @@ As a viewer, I want to see what I rated, so that I can change my mind.
 
 ### M44-S03 Ratings on the title page and the hover card (Must)
 As a viewer, I want to rate from where I choose, so that it takes one tap.
-- AC1: Given a desktop with a mouse, When a card is hovered for 400 ms or focused, Then a thumb button shows in the card actions beside My List and expands to the three levels on hover or focus.
+- AC1: Given a desktop with a mouse, When a card is hovered for 300 ms (ruling R10) or focused, Then a thumb button shows in the card actions beside My List and expands to the three levels on hover or focus.
 - AC2: Given a touch device, When I look at a card, Then there is no rating control on the card, and the title page has the full group.
 - AC3: Given a keyboard user, When focus is on a card, Then Tab reaches My List and the rating chip, the hover overlay text is shown on focus too, and every control has an accessible name.
 - AC4: Given a title page at 360 px, When it loads, Then Play is a full width button and My List, rating group and Share sit in a second row with 44 px targets and no horizontal scroll.
@@ -724,7 +724,7 @@ Reviewed with the skill checklist (tokens, contrast, states, keyboard and focus,
 **Cards and hover card (`packages/ui/src/components/Cards.tsx`, `components.css`).**
 5. The peek overlay is `aria-hidden`, shown only by `.ad-card:hover` inside `@media (hover: hover)` and not by `:focus-within` (`components.css` line 1451 reveals the action only). Keyboard users never see the description or Play label. Fix: reveal the peek on `:focus-within` as well. Slice 4.
 6. A single absolute `ad-card__action` button cannot take a second control. Replace with a flex `ad-card__actions` cluster, 44 px targets with 4 px gaps, top right. On touch the cluster keeps only My List at low emphasis (DESIGN-SYSTEM 11.5) and rating lives on the title page. Slice 4.
-7. Audit 3 (Adapt) asks the hover card to open after 300 ms with 1.25 scale; DESIGN-SYSTEM 11.5 and the code use 400 to 500 ms intent and a 4 px lift, no scale. Keep the code's approach (transform only, `--hover-intent-delay`), no scale change in this lane, note the audit mismatch for the viewer UI lane. Not a defect here.
+7. Ruling R10 supersedes this item: L8 governs the card hover. Scale 1.25 after a 300 ms delay on `hover: hover and pointer: fine` devices only, no delay on mouse out, transform origin left for the first visible card and right for the last. The L5 peek and actions cluster ride on that scaled card and stay transform and opacity only. Not a defect here.
 8. Maturity chip in the peek: text on the scrim chip, contrast computed against `--color-player-control-bg`, 4.5:1 minimum. Check in the slice review.
 
 **Home rows (`HomeView.tsx`, `Row`).**
