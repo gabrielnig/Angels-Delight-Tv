@@ -279,3 +279,40 @@ describe('PublicSeries', () => {
     vi.unstubAllGlobals();
   });
 });
+
+describe('TitleView sponsor card (M48)', () => {
+  const sponsor = {
+    sponsorId: 's',
+    sponsorName: 'Acme',
+    creativeId: '0190a000-0000-7000-8000-000000000002',
+    slot: 'title_card' as const,
+    headline: 'Learn with Acme',
+    body: null,
+    ctaLabel: 'Visit',
+    href: '/s/0190a000-0000-7000-8000-000000000002',
+    imageUrl: null,
+    wideImageUrl: null,
+    altText: null,
+    textOnly: true,
+    label: 'sponsored' as const,
+    newTab: true,
+  };
+  const withSponsor = (props: { sponsor?: typeof sponsor | null; kids?: boolean }) =>
+    render(
+      <ToastProvider>
+        <TitleView detail={detail({})} inList={false} {...props} />
+      </ToastProvider>,
+    );
+  it('shows the card below the actions when one is given', () => {
+    withSponsor({ sponsor });
+    expect(screen.getByText('Learn with Acme')).toBeTruthy();
+  });
+  it('shows nothing without a sponsor', () => {
+    withSponsor({ sponsor: null });
+    expect(screen.queryByText('Sponsored')).toBeNull();
+  });
+  it('never draws the card for kids even if one is passed in', () => {
+    withSponsor({ sponsor, kids: true });
+    expect(screen.queryByText('Learn with Acme')).toBeNull();
+  });
+});

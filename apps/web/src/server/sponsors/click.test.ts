@@ -127,3 +127,17 @@ describe('sponsor click redirect', () => {
     expect((await get()).status).toBe(404);
   });
 });
+
+describe('staffPreview', () => {
+  it('treats a staff session as a preview and anyone else as a real click', async () => {
+    const { staffPreview } = await import('./preview');
+    expect(await staffPreview(async () => 'editor')).toBe(true);
+    expect(await staffPreview(async () => 'admin')).toBe(true);
+    expect(await staffPreview(async () => 'viewer')).toBe(false);
+    expect(await staffPreview(async () => null)).toBe(false);
+  });
+  it('counts the click when the session cannot be read (a real viewer)', async () => {
+    const { staffPreview } = await import('./preview');
+    expect(await staffPreview(async () => { throw new Error('x'); })).toBe(false);
+  });
+});

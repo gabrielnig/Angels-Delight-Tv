@@ -5,6 +5,8 @@ import { primaryAction } from '../../lib/title-cta';
 import './title.css';
 import { exactDuration, seriesLine, titlePrimaryText, watchedLabel } from '../../lib/title-format';
 import { TitleRating, type RatingTarget } from '../engage/TitleRating';
+import type { SelectedSponsor } from '@ad/sponsors';
+import { SponsorCard } from '../sponsor/SponsorCard';
 import { ExpandableText } from './ExpandableText';
 import { RelatedRow } from './RelatedRow';
 import { TitleActions } from './TitleActions';
@@ -18,6 +20,7 @@ export function TitleView({
   rating,
   share,
   kids,
+  sponsor,
 }: {
   detail: TitleDetail;
   inList: boolean;
@@ -28,6 +31,8 @@ export function TitleView({
   share?: { channels: ('whatsapp' | 'facebook' | 'x' | 'email')[]; text: string };
   /** A kids profile or Kids mode: Share is hidden. */
   kids?: boolean;
+  /** The title card sponsor (M48). Ignored for kids, whatever the caller passes. */
+  sponsor?: SelectedSponsor | null;
 }) {
   const { video, progress, play } = detail;
   const started = play.label === 'resume' && progress;
@@ -114,6 +119,11 @@ export function TitleView({
                   : undefined
               }
             />
+          ) : null}
+          {sponsor && !kids ? (
+            <div className="tv-sponsor">
+              <SponsorCard sponsor={sponsor} />
+            </div>
           ) : null}
           {started ? (
             <div className="tv-progress">

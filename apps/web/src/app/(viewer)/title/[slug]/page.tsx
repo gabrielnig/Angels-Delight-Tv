@@ -1,3 +1,4 @@
+import { sponsorFor } from '../../../../server/sponsors/surface-runtime';
 import type { Metadata } from 'next';
 import { notFound, permanentRedirect } from 'next/navigation';
 import { formatDuration } from '@ad/ui';
@@ -83,6 +84,7 @@ export default async function TitlePage({ params }: Params) {
     shareConfig(detail.video.title),
   ]);
   const kids = ctx.audience === 'kids';
+  const sponsor = kids ? null : await sponsorFor('title_card', ctx);
   const structured = indexable ? (
     <JsonLd
       data={titlePageJsonLd({ origin: siteOrigin(), siteName: platformName, video: detail.video })}
@@ -99,6 +101,7 @@ export default async function TitlePage({ params }: Params) {
           guest={{ signUpOpen }}
           share={share}
           kids={kids}
+          sponsor={sponsor}
         />
       </>
     );
@@ -113,6 +116,7 @@ export default async function TitlePage({ params }: Params) {
         rating={{ profileId: ctx.profileId, kind: 'video', id: detail.video.id }}
         share={share}
         kids={kids}
+        sponsor={sponsor}
       />
     </>
   );

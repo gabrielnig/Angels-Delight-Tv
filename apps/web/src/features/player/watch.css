@@ -327,3 +327,6 @@
     transition: none;
   }
 }
+.watch__sponsor {
+  margin-block: var(--space-4);
+}
