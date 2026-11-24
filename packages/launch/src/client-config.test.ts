@@ -107,3 +107,24 @@ describe('checkClientTheme', () => {
     expect(parseClientConfig({ ...valid, guestPlay: 'yes' }).ok).toBe(false);
   });
 });
+
+describe('home block', () => {
+  it('accepts section titles and the seed switch', () => {
+    const result = parseClientConfig({
+      ...valid,
+      home: { seedDefaults: false, continueTitle: 'Keep learning', newTitle: 'Fresh', trendingTitle: 'Popular' },
+    });
+    expect(result.ok).toBe(true);
+  });
+
+  it('is optional', () => {
+    expect(parseClientConfig(valid).ok).toBe(true);
+  });
+
+  it('refuses unknown keys, long titles and placeholders', () => {
+    for (const home of [{ extra: 1 }, { continueTitle: 'x'.repeat(41) }, { newTitle: 'REPLACE_ME title' }]) {
+      const result = parseClientConfig({ ...valid, home });
+      expect(result.ok).toBe(false);
+    }
+  });
+});

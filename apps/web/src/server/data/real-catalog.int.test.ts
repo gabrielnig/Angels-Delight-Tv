@@ -57,7 +57,7 @@ describe.skipIf(!integrationEnabled())('real catalog repository', () => {
       expect(home.rows.length).toBeGreaterThan(0);
       for (const row of home.rows) {
         expect(row.items.length).toBeGreaterThan(0);
-        expect(['Continue Watching', 'My List']).not.toContain(row.title);
+        expect(['Continue Watching', 'Continue learning', 'My List']).not.toContain(row.title);
       }
       expect(new Set(home.rows.map((r) => r.id)).size).toBe(home.rows.length);
     });

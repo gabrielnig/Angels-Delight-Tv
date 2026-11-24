@@ -1,6 +1,11 @@
-import { validateHomeConfig, defaultMinItems as realMin } from '@ad/catalog';
+import {
+  defaultHomeConfig as realDefault,
+  launchHomeConfig as realLaunch,
+  validateHomeConfig,
+  defaultMinItems as realMin,
+} from '@ad/catalog';
 import { describe, expect, it } from 'vitest';
-import { defaultMinItems, validateConfig, type HomeConfig, type HomeRow, type HomeRowType } from './home-rules';
+import { defaultHome, defaultMinItems, launchHome, validateConfig, type HomeConfig, type HomeRow, type HomeRowType } from './home-rules';
 
 /** The fixture admin and the real admin keep their own copies of the rules. This keeps them saying the same thing (F26). */
 const row = (extra: Partial<HomeRow> = {}): HomeRow => ({
@@ -34,5 +39,16 @@ describe('home rules parity (fixtures and real)', () => {
   it('shares the default minimums', () => {
     const types: HomeRowType[] = ['manual', 'category', 'newest', 'series', 'smart', 'each_category', 'all_series', 'continue_watching', 'my_list'];
     for (const type of types) expect(defaultMinItems(type), type).toBe(realMin(type));
+  });
+});
+
+describe('home defaults parity (fixtures and real)', () => {
+  it('starts from the same plain layout', () => {
+    expect(defaultHome()).toEqual(realDefault());
+  });
+  it('builds the same launch layout, with and without client titles', () => {
+    expect(launchHome()).toEqual(realLaunch());
+    const titles = { continueTitle: 'Keep learning', newTitle: 'Fresh', trendingTitle: 'Popular' };
+    expect(launchHome(titles)).toEqual(realLaunch(titles));
   });
 });

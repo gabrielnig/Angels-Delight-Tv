@@ -2,6 +2,7 @@ import { readFile, writeFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import { ConfigError } from '@ad/config';
 import { createLogger } from '@ad/shared';
+import { hasPublishedHome, publishAdminHome } from '@ad/catalog';
 import {
   LogoUploader,
   SettingsService,
@@ -96,6 +97,10 @@ async function main(): Promise<number> {
           assets: createDrizzleAssetStore(runtime.db),
         }),
         actor,
+        home: {
+          hasPublished: () => hasPublishedHome({ db: runtime.db }, actor),
+          publish: (who, layout) => publishAdminHome({ db: runtime.db }, who, layout),
+        },
         baseDir: dirname(configPath),
         iconsDir: parsed.values['icons-dir'] ?? process.env.PWA_ICONS_DIR,
         envFile: parsed.values['env-file'],

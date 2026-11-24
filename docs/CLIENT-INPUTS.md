@@ -24,6 +24,7 @@ All of these live in one file, `client.json`, copied from `client.example.json` 
 | Terms, privacy, about, help | `legal.<page>.file` or `.html` | Legal pages | Text must be approved by the client. A lawyer should review terms and privacy for NDPA compliance |
 | Footer, social links | `footerText`, `socialLinks` | Settings | Optional |
 | Languages | `languages.default`, `languages.offered` | Settings, caption languages | Codes such as `en`, `yo`, `ig`, `ha` |
+| Home sections | `home.seedDefaults`, `home.continueTitle`, `home.newTitle`, `home.trendingTitle` | Home sections (Admin, Home curation) | Optional. On a new site `apply` publishes six sections: Continue learning, My List, New this week, Most watched this week, Browse by subject, Series. It never touches a layout that already exists. Set `seedDefaults` to `false` to skip it |
 | What visitors see before they choose | `guestAudience` (`general` or `kids`) | Setting `features.guest_audience` (Admin). A visitor can switch Kids mode on or off on their device and that choice wins | Optional, default `general` |
 | Can visitors watch without an account | `guestPlay` (`true` or `false`) | Setting `features.guest_play` (Super admin, the emergency switch). Off sends visitors to sign in to watch while browsing still works | Optional, default `true` |
 

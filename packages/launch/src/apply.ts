@@ -11,6 +11,7 @@ import {
   type SettingsService,
   type ThemeService,
 } from '@ad/theme';
+import { launchHomeConfig, type HomeConfig } from '@ad/catalog';
 import { checkClientTheme, type ClientConfig } from './client-config';
 import { envValuesFor, updateEnvText } from './env-file';
 import { generatePwaIcons } from './pwa-icons';
@@ -28,8 +29,16 @@ export interface ApplyDeps {
   baseDir: string;
   /** Where the home screen icons are written. Omit to skip them. */
   iconsDir?: string;
+  /** Seeds the launch sections on Home. Omit to skip the step. */
+  home?: HomeSeeder;
   /** The env file to update with domain and contact values. Omit to skip it. */
   envFile?: string;
+}
+
+/** The two things the apply tool needs from the admin home service. The command line wires these to the catalog. */
+export interface HomeSeeder {
+  hasPublished(): Promise<boolean>;
+  publish(actor: Actor, config: HomeConfig): Promise<{ ok: true } | { ok: false; error: string }>;
 }
 
 export interface ApplyOptions {
@@ -85,6 +94,7 @@ export function desiredSettings(config: ClientConfig): Partial<ResolvedSettings>
   if (config.guestPlay !== undefined) out['features.guest_play'] = config.guestPlay;
   if (config.footerText !== undefined) out['platform.footer_text'] = config.footerText;
   if (config.socialLinks !== undefined) out['platform.social_links'] = config.socialLinks;
+  if (config.home?.continueTitle !== undefined) out['home.continue_title'] = config.home.continueTitle;
   if (config.languages) {
     out['content.default_language'] = config.languages.default;
     out['content.languages'] = config.languages.offered;
@@ -246,6 +256,22 @@ export async function applyClientConfig(
         changed.push(slug);
       }
       add('legal', changed.length ? 'changed' : 'unchanged', changed);
+    }
+
+    // Home sections: seeded once, never over a layout that exists
+    if (!deps.home) add('home', 'skipped', ['no home service']);
+    else if (config.home?.seedDefaults === false) add('home', 'skipped', ['home.seedDefaults is false']);
+    else if (await deps.home.hasPublished()) add('home', 'unchanged');
+    else {
+      const layout = launchHomeConfig(config.home);
+      if (!options.dryRun) {
+        const result = await deps.home.publish(deps.actor, layout);
+        if (!result.ok) throw new Error(`Home sections: ${result.error}`);
+      }
+      add('home', 'changed', [
+        ...(options.dryRun ? [`would seed ${layout.rows.length} sections`] : []),
+        ...layout.rows.map((row) => row.name),
+      ]);
     }
 
     // Home screen icons

@@ -13,7 +13,9 @@ import {
   ThemeService,
 } from '@ad/theme';
 import { beforeEach, describe, expect, it } from 'vitest';
+import { type HomeConfig } from '@ad/catalog';
 import { applyClientConfig, desiredSettings, type ApplyDeps } from './apply';
+import { launchHomeConfig } from '@ad/catalog';
 import type { ClientConfig } from './client-config';
 
 const actor: Actor = { accountId: '018f0000-0000-7000-8000-000000000001', role: 'admin' };
@@ -202,5 +204,88 @@ describe('desiredSettings for guests (M40)', () => {
     const none = desiredSettings(base) as Record<string, unknown>;
     expect('features.guest_audience' in none).toBe(false);
     expect('features.guest_play' in none).toBe(false);
+  });
+});
+
+
+describe('applyClientConfig home step (M41-S09)', () => {
+  let h: Harness;
+  let published: HomeConfig | null;
+  let calls: Array<{ actorId: string; config: HomeConfig }>;
+  beforeEach(async () => {
+    h = await harness();
+    published = null;
+    calls = [];
+    h.deps.home = {
+      hasPublished: async () => published !== null,
+      publish: async (who, next) => {
+        calls.push({ actorId: who.accountId, config: next });
+        published = next;
+        return { ok: true };
+      },
+    };
+  });
+  const find = (report: Awaited<ReturnType<typeof applyClientConfig>>) =>
+    report.steps.find((step) => step.name === 'home')!;
+
+  it('seeds the launch sections on an empty site, as the admin actor', async () => {
+    const report = await applyClientConfig(config, h.deps, { dryRun: false });
+    expect(find(report).status).toBe('changed');
+    expect(calls).toHaveLength(1);
+    expect(calls[0]!.actorId).toBe(actor.accountId);
+    expect(calls[0]!.config.rows.map((r) => r.type)).toEqual([
+      'continue_watching',
+      'my_list',
+      'newest',
+      'smart',
+      'each_category',
+      'all_series',
+    ]);
+  });
+
+  it('uses section titles from the config', async () => {
+    await applyClientConfig({ ...config, home: { continueTitle: 'Keep learning' } }, h.deps, { dryRun: false });
+    expect(calls[0]!.config.rows[0]!.name).toBe('Keep learning');
+  });
+
+  it('leaves an existing published layout alone, even an edited one', async () => {
+    published = launchHomeConfig({ newTitle: 'Edited by the client' });
+    const report = await applyClientConfig(config, h.deps, { dryRun: false });
+    expect(find(report).status).toBe('unchanged');
+    expect(calls).toEqual([]);
+  });
+
+  it('is idempotent: the second run changes nothing', async () => {
+    await applyClientConfig(config, h.deps, { dryRun: false });
+    const second = await applyClientConfig(config, h.deps, { dryRun: false });
+    expect(find(second).status).toBe('unchanged');
+    expect(calls).toHaveLength(1);
+  });
+
+  it('is skipped when seedDefaults is false', async () => {
+    const report = await applyClientConfig({ ...config, home: { seedDefaults: false } }, h.deps, { dryRun: false });
+    expect(find(report).status).toBe('skipped');
+    expect(calls).toEqual([]);
+  });
+
+  it('dry run lists the sections it would seed and writes nothing', async () => {
+    const report = await applyClientConfig(config, h.deps, { dryRun: true });
+    expect(find(report).status).toBe('changed');
+    expect(find(report).details).toEqual(
+      expect.arrayContaining(['would seed 6 sections', 'Continue learning', 'Series']),
+    );
+    expect(calls).toEqual([]);
+  });
+
+  it('reports an error when the home service refuses', async () => {
+    h.deps.home!.publish = async () => ({ ok: false, error: 'Give the section a name' });
+    const report = await applyClientConfig(config, h.deps, { dryRun: false });
+    expect(report.ok).toBe(false);
+  });
+
+  it('is skipped when no home service is wired in', async () => {
+    delete h.deps.home;
+    const report = await applyClientConfig(config, h.deps, { dryRun: false });
+    expect(find(report).status).toBe('skipped');
   });
 });

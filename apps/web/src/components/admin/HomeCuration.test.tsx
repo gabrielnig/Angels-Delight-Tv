@@ -155,13 +155,13 @@ describe('sections list (M41-S06)', () => {
   it('reorders with the buttons and announces the move without losing focus', () => {
     view();
     const before = names();
-    const down = within(sections()).getByRole('button', { name: 'Move New this week down' });
+    const down = within(sections()).getByRole('button', { name: 'Move My List down' });
     down.focus();
     fireEvent.click(down);
     const after = names();
     expect(after[2]).toBe(before[1]);
     expect(screen.getByRole('status', { name: 'Section changes' }).textContent).toBe(
-      'Moved New this week to position 3',
+      'Moved My List to position 3',
     );
     expect(document.activeElement).toBe(down);
   });
@@ -170,12 +170,12 @@ describe('sections list (M41-S06)', () => {
     view();
     const before = names();
     const handle = within(sections()).getByRole('button', { name: 'Drag to reorder Most watched this week' });
-    const target = within(sections()).getByText('Continue Watching').closest('li')!;
-    const data = { setData: vi.fn(), getData: () => before[2]!, effectAllowed: '', dropEffect: '' };
+    const target = within(sections()).getByText('Continue learning', { selector: 'strong' }).closest('li')!;
+    const data = { setData: vi.fn(), getData: () => before[3]!, effectAllowed: '', dropEffect: '' };
     fireEvent.dragStart(handle.closest('li')!, { dataTransfer: data });
     fireEvent.dragOver(target, { dataTransfer: data });
     fireEvent.drop(target, { dataTransfer: data });
-    expect(names()[0]).toBe(before[2]);
+    expect(names()[0]).toBe(before[3]);
     expect(screen.getByRole('status', { name: 'Section changes' }).textContent).toBe(
       'Moved Most watched this week to position 1',
     );
@@ -194,7 +194,7 @@ describe('sections list (M41-S06)', () => {
 
   it('will not remove a built in section and says why', () => {
     view();
-    open('Continue Watching');
+    open('Continue learning');
     expect((within(editor()).getByRole('button', { name: 'Remove section' }) as HTMLButtonElement).disabled).toBe(true);
     expect(within(editor()).getByText('Built in sections can be hidden but not removed.')).toBeTruthy();
   });
@@ -299,5 +299,33 @@ describe('section editor (M41-S07, S08)', () => {
     type(input, 'New this week');
     fireEvent.keyDown(input, { key: 'Enter' });
     expect(within(editor()).getByText(/Another section is called New this week. That is allowed./)).toBeTruthy();
+  });
+});
+
+describe('restore launch defaults (M41-S09)', () => {
+  it('asks first, then puts the launch sections in the draft without saving', () => {
+    const a = view();
+    fireEvent.click(screen.getByRole('button', { name: 'Restore launch defaults' }));
+    const dialog = screen.getByRole('dialog');
+    expect(dialog.textContent).toMatch(/Your sections and their order are replaced/);
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Restore launch defaults' }));
+    expect(within(sections()).getByText('6 of 12')).toBeTruthy();
+    expect(within(sections()).getByText('Browse by subject')).toBeTruthy();
+    expect(screen.getByText('Unsaved changes')).toBeTruthy();
+    expect(a.saveDraft).not.toHaveBeenCalled();
+  });
+  it('is off without curate rights', () => {
+    view(false);
+    expect((screen.getByRole('button', { name: 'Restore launch defaults' }) as HTMLButtonElement).disabled).toBe(true);
+  });
+  it('offers the launch sections from the empty state', () => {
+    const state = { draft: { heroIds: [], rows: [] }, published: defaultHome(), previous: null, publishedAt: null };
+    render(
+      <ToastProvider>
+        <HomeCuration state={state} videos={s.videos} series={s.series} categories={s.categories} canCurate actions={{ saveDraft: ok(), publish: ok(), restore: ok() }} />
+      </ToastProvider>,
+    );
+    expect(screen.getByText(/Home shows only the hero until you add a section/)).toBeTruthy();
+    expect(screen.getAllByRole('button', { name: 'Restore launch defaults' }).length).toBe(2);
   });
 });

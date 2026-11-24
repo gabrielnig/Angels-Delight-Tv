@@ -32,11 +32,11 @@ const ids = () => {
 describe('home rules', () => {
   it('moves rows and stops at the ends', () => {
     const c = defaultHome();
-    expect(moveRow(c, 'row_newest', -1).rows[0]!.id).toBe('row_newest');
+    expect(moveRow(c, 'row_list', -1).rows[0]!.id).toBe('row_list');
     expect(moveRow(c, 'row_continue', -1)).toBe(c);
   });
   it('toggles visibility', () => {
-    expect(toggleRow(defaultHome(), 'row_smart').rows[2]!.visible).toBe(false);
+    expect(toggleRow(defaultHome(), 'row_smart').rows[3]!.visible).toBe(false);
   });
   it('adds a named row and enforces the limit', () => {
     let c = defaultHome();

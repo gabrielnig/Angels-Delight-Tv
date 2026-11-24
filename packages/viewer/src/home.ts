@@ -190,7 +190,7 @@ async function resolvePersonalRow(
     return {
       id: descriptor?.id ?? 'personal:continue_watching',
       kind,
-      title: descriptor?.title ?? 'Continue Watching',
+      title: descriptor?.title ?? 'Continue learning',
       items,
       viewAll: null,
     };

@@ -88,12 +88,52 @@ const plain = (id: string, type: HomeRowType, name: string): HomeRowConfig => ({
 export const defaultHomeConfig = (): HomeConfig => ({
   heroIds: [],
   rows: [
-    plain('row_continue', 'continue_watching', 'Continue Watching'),
+    plain('row_continue', 'continue_watching', 'Continue learning'),
+    plain('row_list', 'my_list', 'My List'),
     plain('row_newest', 'newest', 'New this week'),
     plain('row_smart', 'smart', 'Most watched this week'),
-    plain('row_list', 'my_list', 'My List'),
   ],
 });
+
+/** The sections a new site starts with, in page order (M41-S09). Names are the defaults the client can override. */
+export const LAUNCH_HOME_SECTIONS: ReadonlyArray<{
+  id: string;
+  type: HomeRowType;
+  name: string;
+  minItems: number;
+}> = [
+  { id: 'row_continue', type: 'continue_watching', name: 'Continue learning', minItems: 1 },
+  { id: 'row_list', type: 'my_list', name: 'My List', minItems: 1 },
+  { id: 'row_newest', type: 'newest', name: 'New this week', minItems: 1 },
+  { id: 'row_smart', type: 'smart', name: 'Most watched this week', minItems: 4 },
+  { id: 'row_each_category', type: 'each_category', name: 'Browse by subject', minItems: 4 },
+  { id: 'row_all_series', type: 'all_series', name: 'Series', minItems: 2 },
+];
+
+export interface LaunchHomeTitles {
+  continueTitle?: string;
+  newTitle?: string;
+  trendingTitle?: string;
+}
+
+/** The launch layout with the client's titles. Every section is visible, automatic and kids visible. */
+export function launchHomeConfig(titles: LaunchHomeTitles = {}): HomeConfig {
+  const override: Partial<Record<HomeRowType, string | undefined>> = {
+    continue_watching: titles.continueTitle,
+    newest: titles.newTitle,
+    smart: titles.trendingTitle,
+  };
+  return {
+    heroIds: [],
+    rows: LAUNCH_HOME_SECTIONS.map((section) => ({
+      ...plain(section.id, section.type, cleanRowName(override[section.type] ?? '') || section.name),
+      viewAllMode: 'auto' as const,
+      viewAllUrl: null,
+      minItems: section.minItems,
+      kidsVisible: true,
+    })),
+  };
+}
 
 /** Titles a section needs before it shows. Trending and Each category need 4, All series 2 (M41-S05). */
 export function defaultMinItems(type: HomeRowType): number {
@@ -216,6 +256,15 @@ async function readState(tx: Tx): Promise<HomeState> {
     previous: await readSetting<HomeConfig>(tx, KEYS.previous),
     publishedAt: await readSetting<string>(tx, KEYS.at),
   };
+}
+
+/** True when a home layout was ever published or seeded, so tools never overwrite an edited one. */
+export async function hasPublishedHome(ctx: AdminContext, actor: Actor): Promise<boolean> {
+  assertStaff(actor);
+  return withAccount(ctx.db, actor, async (tx) => {
+    if ((await readSetting<HomeConfig>(tx, KEYS.published)) !== null) return true;
+    return (await configFromRows(tx)) !== null;
+  });
 }
 
 export async function getAdminHome(ctx: AdminContext, actor: Actor): Promise<{ state: HomeState }> {

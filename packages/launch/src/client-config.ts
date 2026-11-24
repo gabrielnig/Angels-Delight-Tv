@@ -66,6 +66,8 @@ const themeSchema = z.strictObject({
   density: z.enum(['compact', 'comfortable', 'spacious']).optional(),
 });
 
+const sectionTitle = z.string().trim().min(1).max(40).refine(noPlaceholder, NO_PLACEHOLDER_MESSAGE);
+
 const socialLink = z.strictObject({
   label: z.string().trim().min(1).max(30),
   url: z.url({ protocol: /^https$/ }).max(300),
@@ -87,6 +89,15 @@ export const clientConfigSchema = z
     /** Turns playback without an account on or off. Off sends visitors to sign in to watch. */
     guestPlay: z.boolean().optional(),
     socialLinks: z.array(socialLink).max(6).optional(),
+    /** The sections Home starts with. Seeded only when no layout has been published yet (M41-S09). */
+    home: z
+      .strictObject({
+        seedDefaults: z.boolean().optional(),
+        continueTitle: sectionTitle.optional(),
+        newTitle: sectionTitle.optional(),
+        trendingTitle: sectionTitle.optional(),
+      })
+      .optional(),
     theme: themeSchema.optional(),
     logo: imageRef.optional(),
     favicon: imageRef.optional(),
