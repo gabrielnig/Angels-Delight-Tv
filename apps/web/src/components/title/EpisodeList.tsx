@@ -1,5 +1,6 @@
 'use client';
 
+import { useT } from '../../lib/i18n/provider';
 import { useState } from 'react';
 import { Link, ProgressBar, Select, formatDuration } from '@ad/ui';
 
@@ -29,6 +30,7 @@ export function EpisodeList({
   seasons: SeasonRows[];
   initialSeason: number;
 }) {
+  const msg = useT();
   const [season, setSeason] = useState(initialSeason);
   const current = seasons.find((s) => s.number === season) ?? seasons[0];
   if (!current) return null;
@@ -51,13 +53,13 @@ export function EpisodeList({
         >
           {seasons.map((s) => (
             <option key={s.number} value={s.number}>
-              Season {s.number}
+              {msg('title.season', { number: s.number })}
             </option>
           ))}
         </Select>
       ) : null}
       <p className="web-episodes__count" aria-live="polite">
-        {`Season ${current.number}, ${count} ${count === 1 ? 'episode' : 'episodes'}`}
+        {msg('title.seasonEpisodes', { number: current.number, count })}
       </p>
       <ol className="web-episodes__list">
         {current.episodes.map((episode) => (
@@ -73,20 +75,24 @@ export function EpisodeList({
               </span>
               <span className="web-episode__body">
                 <span className="web-episode__title">
-                  Episode {episode.number}: {episode.title}
-                  {episode.current ? <span className="web-episode__now"> Up next</span> : null}
+                  {msg('title.episode', { number: episode.number, title: episode.title })}
+                  {episode.current ? (
+                    <span className="web-episode__now"> {msg('title.upNext')}</span>
+                  ) : null}
                 </span>
                 <span className="web-episode__blurb">{episode.blurb}</span>
               </span>
               <span className="web-episode__meta">
                 {formatDuration(episode.durationSeconds)}
-                {episode.watched ? <span className="web-episode__done"> Watched</span> : null}
+                {episode.watched ? (
+                  <span className="web-episode__done"> {msg('title.watched')}</span>
+                ) : null}
               </span>
             </Link>
             {episode.percent ? (
               <ProgressBar
                 value={episode.percent}
-                label={`Episode ${episode.number} progress`}
+                label={msg('title.episodeProgress', { number: episode.number })}
                 size="sm"
               />
             ) : null}

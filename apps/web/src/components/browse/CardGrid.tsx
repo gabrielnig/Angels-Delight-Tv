@@ -1,5 +1,6 @@
 'use client';
 
+import { useT } from '../../lib/i18n/provider';
 import { useState } from 'react';
 import { Badge, Button } from '@ad/ui';
 import type { CatalogItem, Page } from '../../lib/data';
@@ -32,6 +33,7 @@ export function CardGrid({
   countLabel,
   showType = false,
 }: CardGridProps) {
+  const msg = useT();
   const [items, setItems] = useState(initialItems);
   const [cursor, setCursor] = useState(nextCursor);
   const [count, setCount] = useState(total);
@@ -65,20 +67,22 @@ export function CardGrid({
           <li key={itemKey(item)}>
             <CatalogCard item={item} inList={saved.has(itemKey(item))} showMeta />
             {showType ? (
-              <Badge variant="neutral">{item.kind === 'series' ? 'Series' : 'Video'}</Badge>
+              <Badge variant="neutral">
+                {item.kind === 'series' ? msg('browse.series') : msg('browse.video')}
+              </Badge>
             ) : null}
           </li>
         ))}
       </ul>
       {failed ? (
         <p role="alert" className="web-grid-error">
-          Could not load more {countLabel}.
+          {msg('browse.couldNotLoadMore', { countLabel })}
         </p>
       ) : null}
       {cursor ? (
         <div className="web-grid-more">
           <Button variant="secondary" loading={loading} onClick={() => void more()}>
-            {loading ? 'Loading' : 'Show more'}
+            {loading ? msg('browse.loading') : msg('browse.showMore')}
           </Button>
         </div>
       ) : null}

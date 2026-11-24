@@ -1,5 +1,6 @@
 'use client';
 
+import { useT } from '../../lib/i18n/provider';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Row } from '@ad/ui';
 import type { HomeRow, HomeRowsPage } from '../../lib/data';
@@ -31,6 +32,7 @@ export function LazyHomeRows({
   /** Waits before each automatic retry of a failed page. After the last one only the button remains. */
   retryDelaysMs?: number[];
 }) {
+  const msg = useT();
   const saver = useDataSaver(profileId);
   const [rows, setRows] = useState<HomeRow[]>([]);
   const [cursor, setCursor] = useState<string | null>(initialCursor);
@@ -103,9 +105,9 @@ export function LazyHomeRows({
           </Row>
         ),
       )}
-      {state === 'loading' ? <Row title="More to watch" state="loading" /> : null}
+      {state === 'loading' ? <Row title={msg('home.moreToWatch')} state="loading" /> : null}
       {state === 'error' ? (
-        <Row title="More to watch" state="error" onRetry={() => void next()} />
+        <Row title={msg('home.moreToWatch')} state="error" onRetry={() => void next()} />
       ) : null}
       {cursor && state === 'idle' ? <div ref={sentinel} aria-hidden="true" /> : null}
     </>

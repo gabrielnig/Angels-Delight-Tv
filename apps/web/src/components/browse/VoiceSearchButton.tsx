@@ -1,5 +1,6 @@
 'use client';
 
+import { useT } from '../../lib/i18n/provider';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Button, Icon } from '@ad/ui';
 import {
@@ -31,6 +32,7 @@ function deviceStore(): Storage | null {
  * the audio to its speech service. It passes the words on as they come and never stores them.
  */
 export function VoiceSearchButton({ onText }: { onText: (text: string, final: boolean) => void }) {
+  const msg = useT();
   const [ctor, setCtor] = useState<RecognitionConstructor | null>(null);
   const [phase, setPhase] = useState<Phase>('idle');
   const [message, setMessage] = useState<string | null>(null);
@@ -55,7 +57,10 @@ export function VoiceSearchButton({ onText }: { onText: (text: string, final: bo
         if (text) onTextRef.current(text, final);
       };
       instance.onerror = (event) => {
-        if (event.error === 'language-not-supported' && languageIndex + 1 < VOICE_LANGUAGES.length) {
+        if (
+          event.error === 'language-not-supported' &&
+          languageIndex + 1 < VOICE_LANGUAGES.length
+        ) {
           instance.onend = null;
           start(languageIndex + 1);
           return;
@@ -81,7 +86,8 @@ export function VoiceSearchButton({ onText }: { onText: (text: string, final: bo
   );
 
   useEffect(() => {
-    if (phase === 'asking') dialog.current?.querySelector<HTMLButtonElement>('button:last-of-type')?.focus();
+    if (phase === 'asking')
+      dialog.current?.querySelector<HTMLButtonElement>('button:last-of-type')?.focus();
   }, [phase]);
 
   useEffect(() => {
@@ -129,7 +135,7 @@ export function VoiceSearchButton({ onText }: { onText: (text: string, final: bo
         type="button"
         className="web-voice"
         aria-pressed={listening}
-        aria-label={listening ? 'Stop listening' : 'Search by voice'}
+        aria-label={listening ? msg('browse.stopListening') : msg('browse.searchByVoice')}
         data-listening={listening || undefined}
         onMouseDown={(event) => event.preventDefault()}
         onClick={toggle}
@@ -137,12 +143,15 @@ export function VoiceSearchButton({ onText }: { onText: (text: string, final: bo
         <Icon name="mic" size={20} aria-hidden="true" />
       </button>
       {phase === 'asking' ? (
-        <div ref={dialog} className="web-voice__ask" role="dialog" aria-label="Use your voice to search?">
-          <p className="web-voice__title">Use your voice to search?</p>
-          <p className="web-voice__text">
-            Your browser may send what you say to its speech service. We do not store what you say.
-          </p>
-          <p className="web-voice__text">We will not ask again on this device.</p>
+        <div
+          ref={dialog}
+          className="web-voice__ask"
+          role="dialog"
+          aria-label={msg('browse.useYourVoiceTo')}
+        >
+          <p className="web-voice__title">{msg('browse.useYourVoiceTo')}</p>
+          <p className="web-voice__text">{msg('browse.yourBrowserMaySend')}</p>
+          <p className="web-voice__text">{msg('browse.weWillNotAsk')}</p>
           <div className="web-voice__buttons">
             <Button
               variant="secondary"
@@ -151,7 +160,7 @@ export function VoiceSearchButton({ onText }: { onText: (text: string, final: bo
                 trigger.current?.focus();
               }}
             >
-              Cancel
+              {msg('browse.cancel')}
             </Button>
             <Button
               onClick={() => {
@@ -159,7 +168,7 @@ export function VoiceSearchButton({ onText }: { onText: (text: string, final: bo
                 start(0);
               }}
             >
-              Continue
+              {msg('browse.continue')}
             </Button>
           </div>
         </div>
@@ -167,7 +176,7 @@ export function VoiceSearchButton({ onText }: { onText: (text: string, final: bo
       <div className="web-voice__live">
         {listening ? (
           <p role="status" className="web-voice__note">
-            Listening. Say a subject or a title. Press Escape to stop.
+            {msg('browse.listeningSayASubject')}
           </p>
         ) : null}
         {message ? (

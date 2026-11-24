@@ -1,5 +1,6 @@
 'use client';
 
+import { useT } from '../../lib/i18n/provider';
 import { useEffect, useId, useRef, useState } from 'react';
 import { Icon } from '@ad/ui';
 import type { Suggestion } from '../../lib/data';
@@ -56,6 +57,7 @@ export function SearchBox({
   debounceMs = 250,
   autoFocus,
 }: SearchBoxProps) {
+  const msg = useT();
   const uid = useId();
   const listId = `${uid}-list`;
   const inputRef = useRef<HTMLInputElement>(null);
@@ -182,8 +184,8 @@ export function SearchBox({
           role="combobox"
           type="search"
           enterKeyHint="search"
-          aria-label="Search videos"
-          placeholder="Search videos"
+          aria-label={msg('browse.searchVideos')}
+          placeholder={msg('browse.searchVideos')}
           autoComplete="off"
           autoCapitalize="off"
           spellCheck={false}
@@ -210,7 +212,7 @@ export function SearchBox({
           <button
             type="button"
             className="web-search__clear"
-            aria-label="Clear search"
+            aria-label={msg('browse.clearSearch')}
             onMouseDown={(event) => event.preventDefault()}
             onClick={() => {
               setValue('');
@@ -229,7 +231,7 @@ export function SearchBox({
         <div className="web-search__panel" onMouseDown={(event) => event.preventDefault()}>
           {showingRecent ? (
             <div className="web-search__head">
-              <span>Recent searches</span>
+              <span>{msg('browse.recentSearches')}</span>
               <button
                 type="button"
                 className="web-search__clearall"
@@ -239,14 +241,14 @@ export function SearchBox({
                   setOpen(false);
                 }}
               >
-                Clear all
+                {msg('browse.clearAll')}
               </button>
             </div>
           ) : null}
           <ul
             id={listId}
             role="listbox"
-            aria-label={showingRecent ? 'Recent searches' : 'Suggestions'}
+            aria-label={showingRecent ? msg('browse.recentSearches') : msg('browse.suggestions')}
             className="web-search__list"
           >
             {options.map((option, i) => (
@@ -267,12 +269,14 @@ export function SearchBox({
                 />
                 <span>{option.label}</span>
                 {option.kind === 'category' ? (
-                  <span className="web-search__tag">Category</span>
+                  <span className="web-search__tag">{msg('browse.category')}</span>
                 ) : null}
               </li>
             ))}
           </ul>
-          {showingRecent ? <p className="web-search__note">Saved on this device only.</p> : null}
+          {showingRecent ? (
+            <p className="web-search__note">{msg('browse.savedOnThisDevice')}</p>
+          ) : null}
         </div>
       ) : null}
     </div>
