@@ -196,7 +196,7 @@ The theme editor computes these checks live and shows a warning chip beside each
 
 ### 5.1 Curated font list
 
-Free Google Fonts under the SIL Open Font License. Self-host WOFF2, ship the latin, latin-ext and vietnamese subsets (the vietnamese subset holds the precomposed Yoruba and Igbo letters ọ, ẹ, ị, ụ; ṣ and ń come from latin-ext), `font-display: swap`. Load at most one family at a time, regular 400, medium 500, semibold 600 and bold 700 only (variable font file if smaller).
+Free Google Fonts under the SIL Open Font License. Self-host WOFF2, ship the latin, latin-ext and vietnamese subsets (the vietnamese subset holds the precomposed Yoruba and Igbo letters ọ, ẹ, ị, ụ; ṣ and ń come from latin-ext). DM Sans and Poppins have no vietnamese subset upstream, so their stacks end in the Inter latin-ext and vietnamese faces. For lang yo, ig and ha headings use Inter (R23, D-169), `font-display: swap`. Load at most one family at a time, regular 400, medium 500, semibold 600 and bold 700 only (variable font file if smaller).
 
 | Font | Feel | Default | Notes |
 |---|---|---|---|

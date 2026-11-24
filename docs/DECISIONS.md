@@ -1186,3 +1186,9 @@ Per video tri state, site default (Super admin), Admin changes it with a reason 
 ## D-224 Doc and code mismatches fixed in docs, not code: encoding retry is editor level; Delete forever is admin level. (lane L3)
 
 
+
+## D-225 Vietnamese subsets for four fonts, Inter fallback for DM Sans and Poppins (lane L8, DEC-L8-08)
+- Decision: Inter, Lora, Nunito and Space Grotesk ship a vietnamese subset (not preloaded) that holds the precomposed Yoruba and Igbo vowels. DM Sans and Poppins have no vietnamese subset upstream, so their stacks end in the Inter latin-ext and vietnamese faces. `selectFonts` takes a language and uses Inter headings for yo, ig and ha (R23, D-169). A committed coverage manifest and hash check keep the glyph claims true.
+- Options: latin only, latin plus ext, drop DM Sans and Poppins, fall back to Inter for the missing letters.
+- Why: it is the only way to render the letters in the brand fonts that have the subset, and the fallback costs about 95 KB only when a glyph needs it.
+- Reversible: yes. The layout still passes no language, so the language rule waits for the languages lane to wire it.
