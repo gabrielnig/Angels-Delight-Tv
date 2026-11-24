@@ -45,6 +45,17 @@ export async function unpublishVideoAction(id: string): Promise<CommandResult> {
   return result;
 }
 
+export async function setCaptionsAction(
+  id: string,
+  value: boolean | null,
+  reason?: string,
+): Promise<CommandResult> {
+  const actor = await requireActionActor(`/admin/videos/${id}`);
+  const result = await videoService.setCaptionsAvailability(actor, id, value, reason);
+  revalidatePath('/admin', 'layout');
+  return result;
+}
+
 export async function retryEncodeVideoAction(id: string): Promise<CommandResult> {
   const actor = await requireActionActor(`/admin/videos/${id}`);
   const result = await videoService.retryEncode(actor, id);

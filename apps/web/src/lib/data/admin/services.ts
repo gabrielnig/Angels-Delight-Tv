@@ -9,6 +9,7 @@ import { Forbidden, NotFound, ValidationFailed, isAdminRole } from '@ad/shared';
 import type { BulkAction, BulkResult, VideoQuery } from './video-queries';
 import { applyBulk, queryVideos } from './video-queries';
 import {
+  applyCaptionsAvailability,
   purgeVideo,
   restoreVideo,
   retryEncode,
@@ -126,6 +127,13 @@ export interface VideoService {
   bulk(actor: AdminActor, ids: string[], action: BulkAction): Promise<BulkResult>;
   publish(actor: AdminActor, id: string, request: PublishRequest): Promise<CommandResult>;
   unpublish(actor: AdminActor, id: string): Promise<CommandResult>;
+  /** Captions for viewers: null follows the site default, true offers them, false offers none. Admin only. */
+  setCaptionsAvailability(
+    actor: AdminActor,
+    id: string,
+    value: boolean | null,
+    reason?: string,
+  ): Promise<CommandResult>;
   setPoster(actor: AdminActor, id: string, choice: PosterChoice): Promise<CommandResult>;
   /** Real frames and uploaded pictures for the poster picker. Empty means the picker shows placeholders. */
   posterAssets(actor: AdminActor, id: string): Promise<PosterAssetDto[]>;
@@ -211,6 +219,12 @@ const fixtureVideoService: VideoService = {
     video.publishState = 'unpublished';
     video.updatedAt = new Date().toISOString();
     return { ok: true };
+  },
+  async setCaptionsAvailability(actor, id, value, reason) {
+    need(actor, 'caption.availability');
+    const video = getStore().videos.find((v) => v.id === id && v.deletedAt === null);
+    if (!video) throw new NotFound('Video not found');
+    return applyCaptionsAvailability(video, actor.role, value, reason);
   },
   async setPoster(actor, id, choice) {
     need(actor, 'video.edit');

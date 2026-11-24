@@ -57,6 +57,9 @@ export interface VideoRecord {
   /** 0 to 100 while encoding. */
   progress: number;
   captionOverrideReason: string | null;
+  /** Captions for viewers: null or missing follows the site default, true offers them, false offers none. */
+  captionsEnabled?: boolean | null;
+  captionsOffReason?: string | null;
 }
 
 export interface CategoryRecord {

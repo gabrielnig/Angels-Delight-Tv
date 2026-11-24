@@ -1,6 +1,7 @@
 import 'server-only';
 import {
   bulkAdminVideos,
+  setCaptionsAvailability,
   createPosterUpload,
   getPosterAssetStatus,
   listPosterAssets,
@@ -129,6 +130,12 @@ export const realVideoService: VideoService = {
       if (error instanceof Conflict) return { ok: false, error: error.message };
       throw error;
     }
+  },
+  async setCaptionsAvailability(actor, id, value, reason) {
+    need(actor, 'caption.availability');
+    return asResult(async () =>
+      setCaptionsAvailability(await context(), catalogActor(actor), id, value, reason),
+    );
   },
   async setPoster(actor, id, choice) {
     need(actor, 'video.edit');

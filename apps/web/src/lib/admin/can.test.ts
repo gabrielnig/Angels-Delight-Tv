@@ -2,6 +2,30 @@ import { ACCOUNT_ROLES } from '@ad/shared';
 import { describe, expect, it } from 'vitest';
 import { ADMIN_ACTIONS, can, canAny, requiredRole } from './can';
 
+describe('L3 bulk and captions permissions (R21, R22)', () => {
+  it('caption.availability is admin and caption.approve_bulk is admin', () => {
+    for (const action of ['caption.availability', 'caption.approve_bulk', 'series.delete', 'users.bulk'] as const) {
+      expect(requiredRole(action), action).toBe('admin');
+      expect(can('editor', action), action).toBe(false);
+      expect(can('admin', action), action).toBe(true);
+    }
+  });
+
+  it('encode.retry stays at editor level and roles.bulk is Super admin only', () => {
+    expect(requiredRole('encode.retry')).toBe('editor');
+    expect(can('editor', 'encode.retry')).toBe(true);
+    expect(requiredRole('roles.bulk')).toBe('super_admin');
+    expect(can('admin', 'roles.bulk')).toBe(false);
+  });
+
+  it('every new action has a plain language label', async () => {
+    const { ACTION_LABELS } = await import('./can-labels');
+    for (const action of ['caption.availability', 'caption.approve_bulk', 'encode.retry', 'series.delete', 'users.bulk', 'roles.bulk'] as const) {
+      expect(ACTION_LABELS[action], action).toMatch(/\w/);
+    }
+  });
+});
+
 describe('can(role, action)', () => {
   it('denies every action to viewers and to no role', () => {
     for (const action of ADMIN_ACTIONS) {

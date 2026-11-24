@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  applyCaptionsAvailability,
   daysLeftInTrash,
   purgeVideo,
   restoreVideo,
@@ -140,5 +141,27 @@ describe('retryEncode', () => {
       progress: 0,
     });
     expect(retryEncode(get(store, 'vid_sky'), NOW).ok).toBe(false);
+  });
+});
+
+describe('applyCaptionsAvailability (L3-05)', () => {
+  const video = () => ({ captionsEnabled: null, captionsOffReason: null }) as { captionsEnabled: boolean | null; captionsOffReason: string | null; updatedAt: string };
+
+  it('an editor cannot change availability', () => {
+    expect(applyCaptionsAvailability(video() as never, 'editor', true)).toMatchObject({ ok: false });
+  });
+
+  it('turning off without a reason is refused', () => {
+    const v = video();
+    expect(applyCaptionsAvailability(v as never, 'admin', false, 'abc')).toMatchObject({ ok: false });
+    expect(v.captionsEnabled).toBeNull();
+  });
+
+  it('off with a reason stores it, and back to default clears it', () => {
+    const v = video();
+    expect(applyCaptionsAvailability(v as never, 'admin', false, ' Sign language video ')).toEqual({ ok: true });
+    expect(v).toMatchObject({ captionsEnabled: false, captionsOffReason: 'Sign language video' });
+    applyCaptionsAvailability(v as never, 'admin', null);
+    expect(v).toMatchObject({ captionsEnabled: null, captionsOffReason: null });
   });
 });

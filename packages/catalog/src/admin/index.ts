@@ -7,3 +7,4 @@ export * from './captions';
 export * from './posters';
 export * from './notices';
 export * from './slugs';
+export * from './captions-availability';

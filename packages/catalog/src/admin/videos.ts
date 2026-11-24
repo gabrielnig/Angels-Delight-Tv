@@ -57,6 +57,8 @@ interface Row {
   failure_code: string | null;
   failure_message: string | null;
   caption_override_reason: string | null;
+  captions_enabled: boolean | null;
+  captions_off_reason: string | null;
   category_ids: string[];
   series_id: string | null;
   season_number: number | null;
@@ -120,6 +122,8 @@ function toVideo(row: Row): AdminVideo {
         : null,
     progress: row.status === 'ready' ? 100 : (row.job_progress ?? 0),
     captionOverrideReason: row.caption_override_reason,
+    captionsEnabled: row.captions_enabled,
+    captionsOffReason: row.captions_off_reason,
   };
 }
 
@@ -132,7 +136,7 @@ const SELECT = sql`
         WHERE r.cut_from = coalesce(pa.cut_from, v.poster_asset_id) AND r.purpose = 'thumbnail'
           AND r.cut_focus = v.poster_focus ORDER BY r.created_at DESC LIMIT 1) END AS poster_recut,
     v.suitability, v.kids_safe, v.created_by, v.created_at, v.updated_at, v.deleted_at,
-    v.failure_code, v.failure_message, v.caption_override_reason,
+    v.failure_code, v.failure_message, v.caption_override_reason, v.captions_enabled, v.captions_off_reason,
     coalesce((SELECT array_agg(vc.category_id::text ORDER BY c.position)
       FROM video_categories vc JOIN categories c ON c.id = vc.category_id WHERE vc.video_id = v.id), '{}') AS category_ids,
     ep.series_id, ep.season_number, ep.episode_number,
@@ -245,7 +249,8 @@ const ADMIN_STATUS_SQL = sql`CASE
   WHEN s.publish_state = 'published' THEN 'published'
   WHEN s.publish_state = 'scheduled' THEN 'scheduled'
   WHEN btrim(s.title) = '' THEN 'draft'
-  WHEN s.caption_state <> 'approved' AND s.caption_override_reason IS NULL THEN
+  WHEN s.caption_state <> 'approved' AND s.caption_override_reason IS NULL
+    AND s.captions_enabled IS DISTINCT FROM false THEN
     CASE WHEN s.publish_state = 'draft' AND s.caption_state = 'none' AND coalesce(s.description, '') = ''
       THEN 'draft' ELSE 'needs_captions' END
   ELSE 'ready' END`;

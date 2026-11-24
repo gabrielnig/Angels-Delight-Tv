@@ -5,11 +5,13 @@ import { VideoEditor } from '@/components/admin/VideoEditor';
 import { adminDataMode, videoService } from '@/lib/data/admin/services';
 import { markersAdmin } from '@/lib/data/admin/markers';
 import { markersSummary } from '@/lib/admin/markers-summary';
+import { captionsDefaultAvailable } from '@/lib/data/admin/site-settings';
 import { requireActor } from '@/lib/data/admin/session-next';
 import { NotFound } from '@ad/shared';
 import {
   publishVideoAction,
   retryEncodeVideoAction,
+  setCaptionsAction,
   trashVideoAction,
   unpublishVideoAction,
   updateVideoAction,
@@ -28,10 +30,11 @@ export default async function VideoEditPage({ params }: { params: Promise<{ id: 
     if (error instanceof NotFound) notFound();
     throw error;
   });
-  const [categories, series, extras] = await Promise.all([
+  const [categories, series, extras, captionsDefault] = await Promise.all([
     videoService.categories(actor),
     videoService.seriesOptions(actor),
     markersAdmin.get(actor, id).catch(() => null),
+    captionsDefaultAvailable(actor),
   ]);
   return (
     <>
@@ -49,6 +52,7 @@ export default async function VideoEditPage({ params }: { params: Promise<{ id: 
         categories={categories}
         series={series}
         role={actor.role}
+        captionsDefault={captionsDefault}
         viewerHref={viewerHref(id)}
         markersSummary={extras ? markersSummary(extras.markers, extras.chapters) : null}
         actions={{
@@ -57,6 +61,7 @@ export default async function VideoEditPage({ params }: { params: Promise<{ id: 
           unpublish: unpublishVideoAction.bind(null, id),
           retryEncode: retryEncodeVideoAction.bind(null, id),
           bulk: trashVideoAction.bind(null, id),
+          setCaptions: setCaptionsAction.bind(null, id),
         }}
       />
     </>

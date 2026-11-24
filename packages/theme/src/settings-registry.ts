@@ -207,6 +207,15 @@ export const SETTING_DEFS = {
     label: 'Require approved captions',
     description: 'A video needs approved captions before it can be published',
   }),
+  'features.captions_default_available': def({
+    schema: bool,
+    default: true,
+    isPublic: false,
+    tier: 'super',
+    group: 'features',
+    label: 'Captions are available to viewers by default',
+    description: 'Videos that follow the site default offer captions. Each video can override this.',
+  }),
   'limits.max_profiles': def({
     schema: int(1, 10),
     default: 5,

@@ -20,6 +20,8 @@ export interface PublishingContext {
   now?: () => Date;
   /** `features.require_approved_captions`. Default true (D-005). */
   requireApprovedCaptions?: boolean;
+  /** `features.captions_default_available`. Default true. When false, videos that follow it need no captions. */
+  captionsDefaultAvailable?: boolean;
 }
 
 export type ChecklistKey =
@@ -86,7 +88,7 @@ export async function evaluateChecklist(
   tx: Tx,
   target: PublishTarget,
   id: string,
-  options: { requireApprovedCaptions: boolean },
+  options: { requireApprovedCaptions: boolean; captionsDefaultAvailable?: boolean },
 ): Promise<PublishChecklist> {
   const result =
     target === 'video'
@@ -95,7 +97,8 @@ export async function evaluateChecklist(
             char_length(btrim(coalesce(v.description, ''))) > 0 AS description,
             EXISTS (SELECT 1 FROM assets a WHERE a.id = v.poster_asset_id AND a.status = 'ready') AS poster,
             EXISTS (SELECT 1 FROM video_categories vc WHERE vc.video_id = v.id) AS category,
-            EXISTS (SELECT 1 FROM caption_tracks ct WHERE ct.video_id = v.id AND ct.approved_caption_id IS NOT NULL) AS captions
+            EXISTS (SELECT 1 FROM caption_tracks ct WHERE ct.video_id = v.id AND ct.approved_caption_id IS NOT NULL) AS captions,
+            v.captions_enabled AS captions_enabled
           FROM videos v WHERE v.id = ${id}::uuid`)
       : await tx.execute(sql`
           SELECT true AS encoding, char_length(btrim(s.title)) > 0 AS title,
@@ -104,16 +107,22 @@ export async function evaluateChecklist(
             EXISTS (SELECT 1 FROM series_categories sc WHERE sc.series_id = s.id) AS category,
             true AS captions
           FROM series s WHERE s.id = ${id}::uuid`);
-  const row = rowsOf<Record<ChecklistKey, boolean>>(result)[0];
+  const row = rowsOf<Record<ChecklistKey, boolean> & { captions_enabled?: boolean | null }>(result)[0];
   if (!row) throw new NotFound('Not found');
   const keys: ChecklistKey[] =
     target === 'video'
       ? ['encoding', 'title', 'description', 'poster', 'category', 'captions']
       : ['title', 'description', 'poster', 'category'];
+  // Captions switched off (own choice, or following a site default of off) satisfy the gate (L3, D-184).
+  const captionsOff =
+    target === 'video' && (row.captions_enabled ?? options.captionsDefaultAvailable ?? true) === false;
   const items = keys.map((key) => ({
     key,
     label: LABELS[key],
-    ok: key === 'captions' && !options.requireApprovedCaptions ? true : row[key] === true,
+    ok:
+      key === 'captions' && (!options.requireApprovedCaptions || captionsOff)
+        ? true
+        : row[key] === true,
   }));
   return { ok: items.every((item) => item.ok), items };
 }
@@ -177,6 +186,7 @@ export async function publish(
     const current = await lockTarget(tx, target, id);
     const checklist = await evaluateChecklist(tx, target, id, {
       requireApprovedCaptions: (ctx.requireApprovedCaptions ?? true) && !override,
+      captionsDefaultAvailable: ctx.captionsDefaultAvailable,
     });
     if (!checklist.ok) throw new ValidationFailed(failures(checklist));
 
@@ -297,6 +307,7 @@ export async function promoteDueScheduled(ctx: PublishingContext): Promise<Promo
         if (current.publishState !== 'scheduled') return;
         const checklist = await evaluateChecklist(tx, target, id, {
           requireApprovedCaptions: ctx.requireApprovedCaptions ?? true,
+          captionsDefaultAvailable: ctx.captionsDefaultAvailable,
         });
         if (checklist.ok) {
           await applyState(tx, target, id, {

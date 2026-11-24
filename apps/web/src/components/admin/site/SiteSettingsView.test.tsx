@@ -268,6 +268,24 @@ describe('features and limits', () => {
     );
   });
 
+  it('only a Super admin can change the captions default', async () => {
+    const { actions, user } = setup();
+    await open(user);
+    const sw = screen.getByRole('switch', { name: 'Captions are available to viewers by default' });
+    expect(sw).toHaveAttribute('aria-checked', 'true');
+    await user.click(sw);
+    await user.click(screen.getByRole('button', { name: /save changes/i }));
+    await waitFor(() =>
+      expect(actions.update).toHaveBeenCalledWith({ 'features.captions_default_available': false }),
+    );
+  });
+
+  it('the captions default is locked for roles below Super admin', async () => {
+    const { user } = setup(dto({ canChangeFlags: false }));
+    await open(user);
+    expect(screen.getByRole('switch', { name: 'Captions are available to viewers by default' })).toBeDisabled();
+  });
+
   it('is read only when the role cannot change flags', async () => {
     const { user } = setup(dto({ canChangeFlags: false }));
     await open(user);

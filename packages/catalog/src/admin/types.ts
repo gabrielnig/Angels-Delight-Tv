@@ -7,6 +7,8 @@ export interface AdminContext {
   now?: () => Date;
   /** `features.require_approved_captions`. Default true (D-005). */
   requireApprovedCaptions?: boolean;
+  /** `features.captions_default_available`. Default true (D-184). */
+  captionsDefaultAvailable?: boolean;
 }
 
 export type AdminCaptionState = 'none' | 'generating' | 'needs_review' | 'approved' | 'failed';
@@ -45,6 +47,9 @@ export interface AdminVideo {
   failure: { stage: string; reason: string } | null;
   progress: number;
   captionOverrideReason: string | null;
+  /** Captions for viewers: null follows the site default, true offers them, false offers none. */
+  captionsEnabled: boolean | null;
+  captionsOffReason: string | null;
 }
 
 export type CommandResult = { ok: true } | { ok: false; error: string };
