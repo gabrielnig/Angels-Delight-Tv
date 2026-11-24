@@ -54,6 +54,7 @@ Related documents: `docs/PRD.md` (why), `docs/USER-STORIES.md` (what, per module
 | M45 | Discovery, SEO, consent and search | Viewer and admin | [READY] |
 | M47 | Design system tuning and guards | Cross cutting | [READY] |
 | M48 | Sponsors and donations | Viewer and admin | [CLIENT] |
+| M46 | Languages (interface and caption translations) | Viewer and admin | [CLIENT] |
 | M49 | Account security, activity and reach | Viewer and backend | [READY] |
 
 40 modules in total. M41 owns the Home hero carousel, preview clips, row defaults, sections and View all links. M01 to M26 follow the planned set. M27 to M36 are modules found while breaking the brief down: they own behaviour that would otherwise be spread across several modules with nobody responsible.
@@ -272,7 +273,7 @@ Each module lists: purpose, responsibilities, data owned, dependencies, client i
 
 **Responsibilities.**
 - Load only approved WebVTT tracks for the video.
-- Captions on/off, language choice (English at launch), remembered per profile.
+- Captions on/off, language choice among approved published languages, remembered per profile.
 - Style options: size, background, colour from a safe set (Could).
 - Do not show tracks that are not approved. Signal when a title has no captions.
 
@@ -280,7 +281,7 @@ Each module lists: purpose, responsibilities, data owned, dependencies, client i
 
 **Dependencies.** M08, M15 (approved tracks), M22, M03.
 
-**Client input.** Languages beyond English [CLIENT, phase 2].
+**Client input.** Which languages to turn on, and who reviews them (M46) [CLIENT].
 
 ---
 
@@ -702,7 +703,7 @@ Each module lists: purpose, responsibilities, data owned, dependencies, client i
 
 **Responsibilities.**
 - WCAG 2.2 AA: keyboard operability, focus visibility, labels, contrast, reduced motion, screen reader announcements for player state and toasts.
-- All UI strings in message catalogs, English at launch, locale aware dates and numbers (en-NG).
+- All UI strings in message catalogs, English at launch, locale aware dates and numbers (en-NG), and locale aware formatting for en, yo, ig, ha, pcm (M46).
 - Right-to-left safe layout choices (not needed yet, no hardcoded left or right where logical properties work).
 - Accessibility test checklist in CI (axe checks on key screens).
 
@@ -832,6 +833,25 @@ Each module lists: purpose, responsibilities, data owned, dependencies, client i
 **Dependencies.** M19, M21, M23, M29, M30, M35, M36, M40.
 
 **Client input.** Organisation legal name and registration, Paystack account and keys, settlement bank, sponsor names and terms, bank transfer details, donation and transparency copy, preset amounts [CLIENT].
+
+### M46 Languages [CLIENT]
+
+**Purpose.** Let viewers use the interface in Yoruba, Igbo, Hausa or Pidgin, and watch captions in those languages, without ever showing unreviewed text. Launch stays English only and the module is switch off safe.
+
+**Responsibilities.**
+- Locale registry (en, yo, ig, ha, pcm), plural, number, date and duration rules, `Intl` with `en-NG` fallback.
+- Catalog loader: committed baselines, approved database rows over them, English per key fallback, pseudo locale for layout checks.
+- Language choice by `?lang=`, profile, account, cookie `ad_locale`, `Accept-Language`, site default; picker with endonyms; kids profile has no control.
+- Admin Languages screens: status, threshold publish, Super admin override, translate workspace, CSV and JSON export and import (imports land In review), missing key report, sample drafts, translation engine and cost guard.
+- Caption translations: spoken language and detection, multilingual Whisper, `caption.translate` job through a provider adapter, review side by side, per language Publish switch, viewer track list of approved published languages.
+- Viewer mail and the offline page in the account language. Staff mail and admin screens stay English.
+- Fonts and marks: yo and ig headings use Inter and `--leading-marks`.
+
+**Data owned.** `ui_translations`, `ui_missing_keys`, `translation_usage`, `caption_tracks.published`, `captions.source_caption_id` and `source_sha256`, `videos.language`, `accounts.locale`.
+
+**Dependencies.** M11, M15, M29, M34, M30, M12.
+
+**Client input.** Which languages to launch, native reviewers for each, and whether to enable a translation engine and its monthly cap. NLLB is non commercial, so with sponsors on use a commercially licensed engine or a paid API (R23).
 
 ## 4. Readiness summary
 

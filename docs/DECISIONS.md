@@ -1583,13 +1583,13 @@ Per video tri state, site default (Super admin), Admin changes it with a reason 
 - Why: the fixture admin is still needed for UI work without a database, and moving it would touch every admin screen in this lane.
 - Reversible: yes.
 
-## D-288 Search misses pruning rides the nightly rollup job (lane L6)
+## D-347 Search misses pruning rides the nightly rollup job (lane L6)
 - Decision: pruneMisses runs after the analytics rollup in the same worker handler; a failure is logged and never fails the rollup.
 - Options: A separate pg-boss queue; a database cron.
 - Why: No new queue or schedule to operate, and rollup success matters more than a prune.
 - Reversible: Yes, move to its own queue later.
 
-## D-289 Translation engine ships OFF; no NLLB sidecar (lane L7)
+## D-346 Translation engine ships OFF; no NLLB sidecar (lane L7)
 - Decision: Ship only the Translator adapter interface, a Google API key adapter and a test fake. TRANSLATE_PROVIDER defaults to none, API use needs a non zero TRANSLATE_MONTHLY_CHAR_CAP. No NLLB sidecar or apps/translate.
 - Options: Self hosted NLLB; Google API only; adapter only
 - Why: Ruling R23: NLLB weights are non commercial, so enabling them is not allowed for this product. The adapter keeps the door open.

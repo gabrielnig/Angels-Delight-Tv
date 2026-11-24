@@ -302,8 +302,9 @@ As a viewer, I want my history and list to stay separate from other profiles, so
 ### M03-S09 Profile language and caption defaults (Should)
 As a viewer, I want each profile to remember caption preference, so that captions on or off persists.
 - AC1: Given I turn captions on in the player, When I watch another video in this profile, Then captions are on by default.
-- AC2: Given I change the caption language (phase 2), When I save, Then it applies to this profile only.
+- AC2: Given I change the interface or caption language in the profile form, When I save, Then it applies to this profile only (M46-S01).
 - Edge: kids profile defaults captions to on, parent can change.
+- Edge: the interface language and the caption language are separate settings; the caption language defaults to the interface language until changed.
 - Error: save failure falls back to local storage and syncs later.
 - Empty: new profiles default to captions off (adult) or on (kids).
 
@@ -783,7 +784,7 @@ As a viewer, I want to choose video quality, so that I balance clarity and data.
 ### M08-S12 Captions control in the player (Must)
 As a viewer, I want to turn captions on or off from the player, so that I can read along.
 - AC1: Given an approved caption track exists, When I tap the CC button, Then captions toggle and the button shows state.
-- AC2: Given the menu has languages (phase 2), When I choose one, Then the track switches immediately.
+- AC2: Given the menu lists approved languages (M46-S14), When I choose one, Then the track switches immediately and my choice is remembered for this profile.
 - AC3: Given no approved track exists, When I look at the controls, Then the CC button is hidden (not disabled) and the title page shows no CC badge.
 - Edge: captions render above the control bar when controls show.
 - Error: a track that fails to load shows a toast "Captions could not load" and playback continues.
@@ -1110,6 +1111,7 @@ As a viewer, I want captions I can trust, so that I am not shown wrong text.
 - AC1: Given a video has tracks `approved` and `needs_review`, When the player loads, Then only the approved track is attached.
 - AC2: Given a track is later set back to `rejected`, When the next playback starts, Then it is not served.
 - AC3: Given captions files are requested, When served, Then they come from a signed URL with the same access rules as video.
+- AC4: Given a track is approved but its Publish switch is off, or its language is removed from the site's caption languages, When the player loads, Then the track is not attached and not listed.
 - Edge: caption files are cached by the CDN with a version suffix, so approved edits show quickly.
 - Error: if the file fails, playback continues with an informative toast.
 - Empty: no tracks means no CC button.
@@ -1130,13 +1132,14 @@ As a viewer with low vision, I want to change caption size and background, so th
 - Error: not applicable.
 - Empty: not applicable.
 
-### M11-S04 Caption language menu (Could)
-As a viewer, I want to choose among caption languages once translations exist, so that I read in my language.
-- AC1: Given several approved tracks, When I open the menu, Then each language shows by its own name (Yoruba, Igbo, Hausa, Pidgin, English) with Off.
-- AC2: Given the profile language is set, When a track in that language exists, Then it is chosen by default.
-- Edge: only approved tracks per language are listed.
-- Error: a language track failing falls back to English with a toast.
-- Empty: with only English, no menu, just a toggle.
+### M11-S04 Caption language menu (Should)
+As a viewer, I want to choose among caption languages, so that I read in my language.
+- AC1: Given several approved and published tracks, When I open the menu, Then each language shows by its own name (Yorùbá, Igbo, Hausa, Naijá, English) with Off first.
+- AC2: Given my profile caption language has a track, When the video loads, Then that track is chosen. Else the interface language if it has one, else English. Never the first track by position.
+- AC3: Given a language track fails to load, When it fails, Then English is used and a toast says "That language could not load. Showing English."
+- Edge: only approved and published tracks are listed; with only English there is a toggle and no menu; each row carries its own `lang` attribute.
+- Error: no track at all hides the CC button.
+- Empty: not applicable.
 
 ### M11-S05 Caption badge on titles (Should)
 As a viewer, I want to see which titles have captions, so that I can pick one I can follow.
@@ -1443,11 +1446,12 @@ As an admin, I want one screen showing every encoding job, so that I can see wha
 
 ## M15 Caption pipeline and review
 
-### M15-S01 Auto generate English captions (Must)
+### M15-S01 Auto generate captions in the spoken language (Must)
 As an admin, I want captions generated automatically, so that I only have to review them.
-- AC1: Given encoding has produced audio, When the caption job runs, Then faster-whisper creates a WebVTT track in English with word level timing, and the track state becomes `needs_review`.
+- AC1: Given encoding has produced audio, When the caption job runs, Then faster-whisper creates a WebVTT track in the video's spoken language (English, Yoruba or Hausa on a server with the multilingual model, M46-S15) with word level timing, and the track state becomes `needs_review`.
 - AC2: Given generation finishes, When done, Then an admin notification "Captions ready to review" appears (and an email if enabled).
 - AC3: Given silence or music only, When no speech is found, Then the track is `needs_review` with a note "No speech detected".
+- AC4: Given the spoken language is Igbo, When I open Captions, Then generation is not offered and the page says to upload a caption file.
 - Edge: cues are reflowed to at most 2 lines of 42 characters and 1 to 7 seconds long.
 - Error: failure marks the track `generating_failed` with Retry.
 - Empty: not applicable.
@@ -1462,7 +1466,7 @@ As an admin who has the script, I want captions aligned to it, so that wording i
 
 ### M15-S03 Caption review list (Must)
 As an admin, I want to see which videos need caption review, so that none slip through.
-- AC1: Given `/admin/captions`, When it loads, Then videos are listed with caption state, language, cue count, and last edited, filterable by state.
+- AC1: Given `/admin/captions`, When it loads, Then videos are listed with caption state, language, cue count, and last edited, filterable by state. A language chip per translation shows its state, and the list filters by language and by state.
 - AC2: Given I tap a row, When opened, Then the review screen opens.
 - AC3: Given the nav badge, When videos need review, Then it shows the count.
 - Edge: sorted by oldest waiting first.
@@ -1525,20 +1529,14 @@ As an admin, I want to import or export a caption file, so that I can edit elsew
 
 ### M15-S10 Caption gate before publish (Must)
 As the owner, I want videos to need approved captions before going live, so that no viewer sees unreviewed text and every title has captions.
-- AC1: Given a video without an approved English track, When I try to publish, Then publish is blocked with "Approve captions first" and a link to the review screen.
+- AC1: Given a video without an approved track in its spoken language, When I try to publish, Then publish is blocked with "Approve captions first" and a link to the review screen.
 - AC2: Given an Admin overrides with a reason, When confirmed, Then the video publishes without captions and the override is audited (setting `captions_required` can be turned off by Super admin).
-- Edge: Editors cannot override.
+- Edge: Editors cannot override. Translations never block publishing.
 - Error: not applicable.
 - Empty: not applicable.
 
-### M15-S11 Caption translations (Could, phase 2)
-As an admin, I want to add translated tracks, so that more people can follow.
-- AC1: Given an approved English track, When I choose Add translation and pick a language, Then a job creates a draft track in that language (NLLB-200 or the paid service per config).
-- AC2: Given the draft, When created, Then it follows the same review and approval, per language.
-- AC3: Given a translation is not approved, When viewers watch, Then it is never listed.
-- Edge: changing the English text after translation flags translations as "Source changed".
-- Error: unsupported language pair shows a clear message.
-- Empty: not applicable.
+### M15-S11 Caption translations (superseded)
+Moved and expanded as M46-S11 to M46-S13 and M46-S16.
 
 ---
 
@@ -2201,7 +2199,7 @@ As a viewer, I want helpful 404 and error pages, so that I can recover.
 ### M26-S05 Viewer settings hub (Should)
 As a viewer, I want one place for settings, so that I can find them.
 - AC1: Given `/account` and `/settings/playback`, When I navigate, Then they are linked with a tab or list and consistent layout.
-- AC2: Given language, When shown, Then English is the only option with a note "More languages are coming".
+- AC2: Given language, When shown, Then the enabled languages are listed by their own names with the current one selected (M46-S01), and with only English enabled the row is hidden.
 - Edge: a kids profile cannot access this hub.
 - Error: load failure shows retry.
 - Empty: not applicable.
@@ -2255,7 +2253,7 @@ As an admin, I want a summary of sign ups, so that I can see growth.
 
 ### M29-S01 Platform details (Must)
 As an admin, I want to set platform name, tagline and contacts, so that nothing is hardcoded.
-- AC1: Given `/admin/site-settings`, When I edit name, tagline, support email, social links, and default language, Then they are saved and used in the header, emails, titles, manifest and footer.
+- AC1: Given `/admin/site-settings`, When I edit name, tagline, support email, social links, default language, interface languages and caption languages (M46-S06), Then they are saved and used in the header, emails, titles, manifest and footer.
 - AC2: Given empty required values, When saving, Then validation shows which are missing.
 - Edge: changing the name does not change the technical identifiers.
 - Error: save failure keeps edits.
@@ -2455,10 +2453,10 @@ As a viewer with sensitivity or low vision, I want the site to respect my settin
 
 ### M34-S04 Text in catalogs (Should)
 As the developer, I want all UI text in message catalogs, so that new languages are easy later.
-- AC1: Given UI strings, When added, Then they live in a message catalog keyed by id, with plural and number formatting by locale `en-NG`.
+- AC1: Given UI strings, When added, Then they live in a message catalog keyed by id, with plural and number formatting by the locale's Intl data with fallback to `en-NG`. Locales are en, yo, ig, ha and pcm; English is the source.
 - AC2: Given a lint rule, When a hardcoded user-facing string is found in a component, Then CI warns.
-- Edge: dates and durations use locale formatting ("6 min").
-- Error: a missing key falls back to English and logs.
+- Edge: dates and durations come from the catalog and Intl ("6 min" in English).
+- Error: a missing key falls back to English for that key only, and the key is recorded in the missing key report (M46-S10).
 - Empty: not applicable.
 
 ---
@@ -4085,3 +4083,194 @@ As an admin, I want a button that brings back the launch layout, so that I can u
 - Edge: the live layout stays until I publish.
 - Error: failure changes nothing.
 - Empty: not applicable.
+
+---
+
+## M46 Languages
+
+### M46-S01 Choose my language (Must)
+As a viewer, I want to switch the interface to Yoruba, Igbo, Hausa or Pidgin without signing in, so that I can understand the site.
+- AC1: Given more than one language is enabled, When I open the language control, Then I see each language by its own name with the English name beneath, and the current one is marked.
+- AC2: Given I am a guest, When I choose Yorùbá, Then the page re-renders in Yorùbá without a full reload and the choice is kept in the `ad_locale` cookie.
+- AC3: Given I am signed in with a profile, When I choose a language, Then it is saved on that profile and the cookie is also set.
+- AC4: Given only English is enabled, When I look for the control, Then it is not shown.
+- AC5: Given a screen reader, When the language changes, Then a polite announcement says "Language changed to Yorùbá" in the new language, and `<html lang>` updates.
+- Edge: a kids profile does not show the control; the parent sets the language in the profile form. `?lang=yo` in a link sets the language for the visitor.
+- Error: save failure keeps the cookie choice and shows "We could not save your language. It will apply on this device."
+- Empty: not applicable.
+
+### M46-S02 My language is remembered and guessed sensibly (Must)
+As a viewer, I want the site to start in my language, so that I do not hunt for the switch.
+- AC1: Given I have no cookie and my browser prefers `yo-NG` and Yoruba is enabled, When I open the site, Then it renders in Yoruba with no prompt.
+- AC2: Given order of precedence, When several apply, Then query, then profile, then account, then cookie, then browser language, then the site default decide.
+- AC3: Given a locale that is not enabled, When it would otherwise win, Then it is skipped.
+- AC4: Given I sign out on a shared device, When the next person opens the site, Then the cookie language applies, not my profile.
+- Edge: invalid cookie values and unknown `lang` values are ignored.
+- Error: not applicable.
+- Empty: not applicable.
+
+### M46-S03 Missing translations show in English (Must)
+As a viewer, I want a half translated language to stay usable, so that I am never shown a blank or a raw key.
+- AC1: Given a key has no approved translation, When the screen renders, Then that string shows in English and the rest stays in my language.
+- AC2: Given a key is missing everywhere, When rendered, Then the key itself is never shown to viewers (English text exists for every key by the coverage test).
+- AC3: Given a language is below 100 percent, When I open the picker, Then a line says "Some text is still in English."
+- Edge: a stale translation (English changed later) still shows until reviewed.
+- Error: a failure to load the catalog shows English for the page.
+- Empty: not applicable.
+
+### M46-S04 Letters and tone marks display correctly (Must)
+As a Yoruba or Igbo reader, I want ẹ ọ ị ụ ṣ ṅ and tone marks to draw properly in every font the admin can pick, so that words are not wrong or ugly.
+- AC1: Given any of the six theme fonts, When Yoruba or Igbo text shows, Then every character comes from the chosen family or from Inter, never a random system font.
+- AC2: Given English pages, When they load, Then no extra font file is downloaded.
+- AC3: Given stacked marks (a dot below with a tone mark above) in headings, When rendered at the hero size, Then nothing is clipped.
+- AC4: Given captions in Yoruba, When shown in the player, Then marks render with the same rule.
+- Edge: text is stored and compared as NFC; decomposed input is normalised.
+- Error: a font file that fails to load falls back per glyph to Inter, then the system font.
+- Empty: not applicable.
+
+### M46-S05 Numbers, dates, durations and plurals follow my language (Should)
+As a viewer, I want "6 min", "17 Nov 2026" and "1 video" style text to read naturally, so that nothing looks half translated.
+- AC1: Given a language, When a count shows, Then the plural form follows that language's rules (Yoruba and Igbo use one form for all counts).
+- AC2: Given a duration, When shown, Then the words for minute and hour come from the catalog ("6 min" in English).
+- AC3: Given a date, When shown, Then month names come from the locale when its data exists, else English, in the pattern "17 Nov 2026".
+- AC4: Given the naira sign, When shown, Then it is the real ₦ with thousands separators.
+- Edge: "Today" and "Yesterday" come from the catalog.
+- Error: an engine without locale data falls back to `en-NG` formatting.
+- Empty: not applicable.
+
+### M46-S06 See and publish interface languages (Must)
+As an admin, I want one screen to see how complete each language is and turn it on, so that I only publish what is ready.
+- AC1: Given `/admin/languages`, When it loads, Then I see one row per language with state (Off, Draft, Live), approved percent, missing, stale, in review and last change.
+- AC2: Given a language is below the publish threshold (default 80 percent of core keys), When I try to switch it Live, Then the switch is disabled with "Needs 80 percent of core text approved. Now 42 percent."
+- AC3: Given a Super admin, When they override the threshold with a reason, Then the language goes Live and the override is audited.
+- AC4: Given I switch a language Off, When viewers load a page, Then it renders in the fallback language and saved choices for that language are treated as unset.
+- Edge: English cannot be switched off.
+- Error: load failure shows retry inside the table area.
+- Empty: "Only English is set up. Choose a language to start translating."
+
+### M46-S07 Translate in the workspace (Must)
+As an admin or editor, I want to translate text side by side with the English, so that I can work quickly and safely.
+- AC1: Given `/admin/languages/yo`, When it loads, Then each row shows key, English, an editable translation, status and placeholder chips, with filters Missing, Stale, In review, Approved and an area filter and search.
+- AC2: Given I edit a row, When I save, Then it becomes a draft, validation runs (placeholders, plural forms, no dashes, plain text) and errors show under the field.
+- AC3: Given a plural key, When I open it, Then only the forms that language uses are shown.
+- AC4: Given an Admin, When I approve rows, Then they take effect for viewers on the next request; Editors can save but not approve.
+- AC5: Given I select many rows, When I bulk approve, Then a confirmation shows the count and a warning about rows with warnings.
+- Edge: Copy English is offered for names and brand words; the character count warns above 2.5 times the English.
+- Error: save failure keeps my text and offers Retry.
+- Empty: "Everything in this language is approved."
+
+### M46-S08 Export and import translations (Must)
+As an admin, I want to send a spreadsheet to a volunteer and import it back, so that people without accounts can help.
+- AC1: Given a language, When I choose Export, Then I can download CSV (UTF-8 with a BOM so diacritics survive Excel) or JSON with key, area, English, translation, status and note.
+- AC2: Given an edited file, When I import it, Then a dry run shows added, changed, unchanged and rejected rows with a reason per rejected row before I confirm.
+- AC3: Given I confirm, When the import runs, Then rows become In review (never Approved) in one transaction and the import is audited.
+- AC4: Given a file over 2 MB or 5,000 rows, When I choose it, Then it is refused with the limit stated.
+- Edge: decomposed characters are normalised; blank translations are ignored.
+- Error: a malformed file shows the first problem and changes nothing.
+- Empty: not applicable.
+
+### M46-S09 Translation status and stale text (Should)
+As an admin, I want to know which translations need a second look after English changed, so that meaning does not drift.
+- AC1: Given English text changed after it was translated, When I open the workspace, Then the row shows "Source changed" with the old and new English.
+- AC2: Given a stale row, When I choose Still correct, Then the hash is updated and the badge clears; When I edit and approve, Then the same.
+- AC3: Given viewers, When a row is stale, Then they keep seeing the existing approved translation.
+- Edge: the Languages table shows the stale count.
+- Error: not applicable.
+- Empty: not applicable.
+
+### M46-S10 Missing key report (Should)
+As an admin, I want to see which English strings viewers actually met in my language, so that I translate the most seen text first.
+- AC1: Given the Missing tab, When it loads, Then keys are listed by hits with last seen date and area.
+- AC2: Given I tap a key, When opened, Then the workspace shows that row.
+- AC3: Given a key is approved, When viewers next load it, Then it drops off the report.
+- Edge: bots and prefetch are not counted; counts are batched, not per request.
+- Error: a recording failure never affects the page.
+- Empty: "No missing text has been seen yet."
+
+### M46-S11 Add a machine translation of captions (Must)
+As an admin, I want to create a draft translation of approved captions, so that reviewers start from a draft instead of a blank page.
+- AC1: Given a video with an approved track in its spoken language, When I choose Add translation and pick a language, Then a dialog shows the estimate (characters and cost, or minutes on this server) and a Start button.
+- AC2: Given I start, When the job runs, Then a draft track is created in that language with the same timings, `in_review`, Publish off, and a notification "Translation ready to review" appears.
+- AC3: Given the provider is not configured or does not support the language, When I open the dialog, Then it says so in plain words and offers uploading a caption file instead.
+- AC4: Given a monthly character cap is set for an API provider, When a job would cross it, Then it is refused before any text is sent.
+- Edge: only Editors and above can start jobs; viewers can never trigger a translation; glossary terms (platform and program names) are kept unchanged.
+- Error: a failed job shows Retry and the plain reason.
+- Empty: not applicable.
+
+### M46-S12 Review a translated track side by side (Must)
+As a reviewer, I want to read the English cue next to the translated cue, so that I can correct meaning and fit.
+- AC1: Given `/admin/captions/[videoId]?lang=yo`, When it loads, Then tabs list the video's languages, the video overlay shows the Yoruba cue, and each row shows the English cue beside the translated one.
+- AC2: Given timing, When I open a translated track, Then time fields are locked until I choose Unlock timing, which warns that it differs from the source.
+- AC3: Given edits, When I leave a tab with unsaved changes, Then I am warned; autosave, undo and find and replace work as in M15-S05 and S06.
+- AC4: Given warnings (line too long, more than 2 lines), When I approve, Then I confirm them as in M15-S07.
+- Edge: marks type correctly on a Yoruba keyboard and survive save.
+- Error: save failure shows Retry as in M15-S05.
+- Empty: a language with no track shows Add translation.
+
+### M46-S13 Publish a caption language (Must)
+As an admin, I want to decide when a language goes live, so that nothing unreviewed reaches viewers.
+- AC1: Given an approved translated track, When I switch Publish on for this video and language, Then viewers can pick it from the next playback.
+- AC2: Given an unapproved track, When I look at the switch, Then it is disabled with "Approve this track first."
+- AC3: Given Captions settings, When I switch a language off for the whole site, Then it disappears from every player at once, and switching it on restores the published tracks.
+- AC4: Given "Source changed" on a track, When I look at the list, Then I can Retranslate or choose Still correct; viewers keep the approved track meanwhile.
+- Edge: every change is audited with the actor.
+- Error: save failure restores the switch and shows Retry.
+- Empty: not applicable.
+
+### M46-S14 The player lists only approved languages (Must)
+As a viewer, I want the caption menu to show only languages I can trust, so that I do not read a draft.
+- AC1: Given a video with English approved and Yoruba approved and published, When I open the caption menu, Then I see Off, English and Yorùbá, by their own names.
+- AC2: Given Hausa is a draft or unpublished, When I open the menu, Then Hausa is absent.
+- AC3: Given my profile caption language is Yoruba and the track exists, When I start the video, Then Yoruba is chosen; otherwise the interface language; otherwise English.
+- AC4: Given the Yoruba file fails to load, When playback continues, Then English captions are used with the toast "That language could not load. Showing English."
+- Edge: the title page CC badge counts only published tracks.
+- Error: as AC4.
+- Empty: a video with no published tracks has no CC button.
+
+### M46-S15 Spoken language and detection (Must)
+As an admin, I want to say what language a video is spoken in, so that captions come out in that language.
+- AC1: Given the video details form, When I choose Spoken language (English, Yoruba, Hausa, Pidgin, Igbo, Auto), Then it is saved and used by the caption job.
+- AC2: Given Auto, When the job runs, Then the detected language and confidence are noted; at or above 0.6 the video is updated, below it the review note says "Spoken language uncertain, check the captions".
+- AC3: Given Yoruba or Hausa on a server without the multilingual model, When I generate, Then I see "This server only recognises English. Upload a caption file or align a script." and no English transcription is made.
+- AC4: Given Igbo, When I open Captions, Then generation is not offered and Upload is.
+- AC5: Given Pidgin, When generation runs, Then it is decoded as English and the review note says so.
+- Edge: the publish gate checks the spoken language track.
+- Error: a failed job shows Retry as in M15-S01.
+- Empty: not applicable.
+
+### M46-S16 Translate and approve in bulk (Should)
+As an admin, I want to translate a whole library into one language, so that I do not click each video.
+- AC1: Given Captions list, When I choose "Translate approved videos into Hausa", Then a dialog shows how many videos, characters, cost or time, and I confirm.
+- AC2: Given the jobs, When they run, Then they run one at a time and the list shows progress per video.
+- AC3: Given reviewed translations, When I select several and bulk approve, Then a dialog shows the count and a warning about rows with warnings.
+- AC4: Given many approved tracks, When I choose Publish on for selected, Then they are published in one action and audited once per track.
+- Edge: videos without an approved source are skipped with a count.
+- Error: partial failure shows which failed and a Retry for those.
+- Empty: "No videos are ready to translate."
+
+### M46-S17 Translation engine and cost guard (Should)
+As the super admin, I want to see which translation engine is configured and how much has been used, so that costs stay in check.
+- AC1: Given `/admin/languages`, When I open Engine, Then I see provider name, state (Configured, Not configured), supported languages and this month's characters against the cap. The key itself is never shown.
+- AC2: Given an API provider and a cap, When usage reaches 80 percent, Then a notice appears; at 100 percent new jobs are refused.
+- AC3: Given the self hosted engine, When the sidecar is unreachable, Then the page says so and jobs wait for retry.
+- Edge: Pidgin shows "Written by people. No engine drafts this language" unless the LLM option is configured.
+- Error: usage cannot load shows retry.
+- Empty: provider none shows "Machine translation is off. You can still upload translated caption files."
+
+### M46-S18 Emails and the offline page in my language (Could)
+As a viewer, I want the offline page and account emails in my language, so that important messages are understood.
+- AC1: Given I am offline, When the offline page shows, Then it uses my stored language and falls back to English.
+- AC2: Given an account email, When sent, Then it uses my account language and falls back to English per key.
+- Edge: subjects follow the same copy rules and carry no dashes.
+- Error: not applicable.
+- Empty: not applicable.
+
+### M46-S19 Pseudo language for layout checks (Could)
+As a developer, I want a pseudo language that lengthens text and uses the hard letters, so that I can check layout and fonts without a translator.
+- AC1: Given `DEV_PSEUDO_LOCALE` is on, When I pick the pseudo language, Then every string is about 40 percent longer with ẹ ọ ṣ ị ụ and tone marks, placeholders intact.
+- AC2: Given production, When the flag is set, Then startup refuses it.
+- Edge: the font coverage test uses the pseudo output.
+- Error: not applicable.
+- Empty: not applicable.
+
+Counts: 19 new stories in M46 (Must: S01, S02, S03, S04, S06, S07, S08, S11, S12, S13, S14, S15; Should: S05, S09, S10, S16, S17; Could: S18, S19) plus 12 edits to existing stories and docs.
