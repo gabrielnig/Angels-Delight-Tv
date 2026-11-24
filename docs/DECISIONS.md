@@ -1748,3 +1748,51 @@ Decision: `video.preview` catches every error and records `failed` or `skipped` 
 - Options: local storage with a first paint script (the plan), a server setting on the account (guests would not get it), a separate TV site.
 - Why: a cookie lets the server draw the first paint at TV size, with no flash of small text, and works for guests. The cookie holds a display preference only, so being readable by script is fine. Scoped CSS is tiny and avoids a second request path.
 - Reversible: yes. Nothing else reads the cookie.
+
+## D-320 Account activity and security use server actions, not the planned API routes (lane L10, M49-S09, S12)
+- Decision: Activity, two step verification, Google linking and sign out everywhere are server actions behind the same guard as the other account actions (adults only, password gate for Kids). The plan listed `/api/account/...` routes.
+- Options: API routes under `/api/account`, server actions.
+- Why: Every other account action is already a server action with one shared guard, CSRF handling and audit hook. A second path would duplicate the guard. Nothing outside the app calls these.
+- Reversible: yes, an API route can wrap the same service later.
+
+## D-321 Passkeys are not now (lane L10, D-L10-06)
+- Decision: Passkeys are a Could and are not built. If built they use their own table and not `mfa_factors`.
+- Options: Reuse `mfa_factors`, own table, skip.
+- Why: Passkeys have a different lifecycle (credential id, public key, counter) and would blur the TOTP table.
+- Reversible: yes. Nothing is stored.
+
+## D-322 Viewing activity is the watch progress table (lane L10, D-L10-07, D-L10-08)
+- Decision: `/account/activity` reads `watch_progress` as history. Removing a row equals Remove from row on Continue Watching. Clearing deletes the rows. Screens are adults only and a parent views each profile.
+- Options: A separate immutable history table.
+- Why: One source of truth, no extra personal data kept, and the two screens cannot disagree. Trade off: a title removed from activity loses its watched tick.
+- Reversible: yes, no schema change.
+
+## D-323 Playback settings change is captions only (lane L10, D-L10-09)
+- Decision: This lane adds caption colour and Reset to defaults. Edge already existed. Font family is deferred. L4 consumes the values.
+- Options: Add a font family choice now.
+- Why: Keeps the player change small and avoids a new font load on weak networks.
+- Reversible: yes.
+
+## D-324 Offline downloads are not now (lane L10, D-L10-10)
+- Decision: Offline downloads (M49-S18, S19) are recorded as not now, with the minimal design in the plan section 6.
+- Options: Build a first version now.
+- Why: Needs a licence endpoint, key storage and unpublish handling that touch security review, and launch is about the free streaming path. Data saver and resume already help.
+- Reversible: yes.
+
+## D-325 TV mode is a progressive enhancement and Cast is deferred (lane L10, D-L10-11, D-L10-12)
+- Decision: TV mode lives in the existing app (auto detect, `/tv`, a stored choice), not a separate 10 foot product. Cast is deferred and AirPlay is the cheap first step, both owned by L4.
+- Options: A separate TV app, build Cast now.
+- Why: Guests can already watch in a TV browser, so reliable focus navigation is the cheap win. Cast needs the Cast SDK and a receiver that can fetch the key.
+- Reversible: yes.
+
+## D-326 Sign out everywhere needs the password (lane L10, D-L10-14)
+- Decision: Sign out everywhere requires the password and ends this session too. Sign out other devices stays as it was.
+- Options: No password, email confirmation.
+- Why: It is the same proof the user already has and it stops a borrowed unlocked phone from locking the owner out.
+- Reversible: yes.
+
+## D-327 TV sign in by code is not built (lane L10, D-L10-15)
+- Decision: M49-S16 (`/activate` code sign in) is Could and is not built. Guests can watch without an account, so a TV does not need it.
+- Options: Build it with a `device_activations` table.
+- Why: Not needed to watch, and it adds a table and a rate limited public endpoint.
+- Reversible: yes.

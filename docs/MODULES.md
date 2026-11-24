@@ -52,6 +52,7 @@ Related documents: `docs/PRD.md` (why), `docs/USER-STORIES.md` (what, per module
 | M45 | Discovery, SEO, consent and search | Viewer and admin | [READY] |
 | M47 | Design system tuning and guards | Cross cutting | [READY] |
 | M48 | Sponsors and donations | Viewer and admin | [CLIENT] |
+| M49 | Account security, activity and reach | Viewer and backend | [READY] |
 
 38 modules in total. M01 to M26 follow the planned set. M27 to M36 are modules found while breaking the brief down: they own behaviour that would otherwise be spread across several modules with nobody responsible.
 
@@ -820,3 +821,25 @@ Each module lists: purpose, responsibilities, data owned, dependencies, client i
 | M33 | VPS and domain ownership | Developer owned staging |
 
 Nothing in a [CLIENT] module blocks starting. The rule from `CLAUDE.md` applies: take the recommended option, log it in `docs/DECISIONS.md`, keep it configurable.
+
+### M49 Account security, activity and reach [READY]
+
+**Purpose.** Optional viewer two step verification, optional Google sign in, viewing activity, sign in history and security polish, playback caption settings and TV mode.
+
+**Responsibilities.**
+- Optional TOTP for viewers with recovery codes and an audited admin reset (shares `MfaCore` with staff).
+- Optional Continue with Google through an own OIDC client (authorization code with PKCE, state and nonce). Hidden unless both keys are set. Never for staff.
+- Viewing activity at `/account/activity` (the `watch_progress` table seen as history), remove one or clear all.
+- Sign in history with country only, new device email, sign out everywhere.
+- Caption colour and Reset to defaults in Playback settings, and a This device TV mode choice.
+- TV mode: TV browser detection, `/tv`, D-pad focus navigation, large type and a thick focus ring.
+
+**Data owned.** `account_identities`, `login_events`, `sessions.country`, `sessions.device_hash`, `mfa_factors` rows for viewers.
+
+**Dependencies.** M01, M02, M09, M12, M21, M25, M35, M40.
+
+**Client input.** Google Cloud OAuth client id and secret, optional (Google button hidden without them).
+
+**Not now: offline downloads.** Stories M49-S18 and S19. Feasibility and the minimal design are in `docs/plan/v2/L10-account-and-reach.md` section 6. Entry criteria: real repeat viewing of the same lessons on weak networks, a licence endpoint with its own lifetime and revocation, and a security review of key storage on the device.
+
+**Not now: passkeys.** Would use their own table, not `mfa_factors` (D-L10-06). No story is scheduled.

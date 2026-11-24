@@ -81,4 +81,4 @@ The original table above stays as written. Lane notes live in `docs/lanes/`; the
 | `a1-viewer-stories-audit.md` | Lane a1: viewer stories audit and fixes |
 | `a3-platform.md` | Lane a3: platform stories audit and gap fixes |
 
-Version 2 plan lanes (`docs/plan/v2/`): L1 Guest access, L2 Home, L3 Admin polish, L4 Player, L5 Engagement, L6 Discovery, L7 Languages, L8 Design system tuning (M47), L9 Monetization, L10 Account and reach.
+Version 2 plan lanes (`docs/plan/v2/`): L1 Guest access, L2 Home, L3 Admin polish, L4 Player, L5 Engagement, L6 Discovery, L7 Languages, L8 Design system tuning (M47), L9 Monetization, L10 Account and reach (M49).

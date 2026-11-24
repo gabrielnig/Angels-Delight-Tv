@@ -99,7 +99,7 @@ Component responsibilities:
 
 Built as `packages/auth` (sessions, passwords, field encryption keys) with the web gateway in `apps/web/src/server/auth`, following the OWASP session management guidance.
 
-Why not Auth.js: (1) its user model expects a plain email column, which conflicts with encrypted email plus HMAC lookup hash needed for crypto-shredding; (2) the credentials provider is built around JWT sessions, while we need server-side revocation and per-role lifetimes; (3) the profile layer (Netflix style, kids profiles) sits between account and content and is not modelled by it; (4) no social login is needed at launch.
+Why not Auth.js: (1) its user model expects a plain email column, which conflicts with encrypted email plus HMAC lookup hash needed for crypto-shredding; (2) the credentials provider is built around JWT sessions, while we need server-side revocation and per-role lifetimes; (3) the profile layer (Netflix style, kids profiles) sits between account and content and is not modelled by it; (4) Google sign in is optional and is a small own OIDC client beside the custom sessions (D-314), so no auth framework is needed.
 
 Risks accepted: hand-written auth has more bug surface. Mitigations: tiny surface (signup, verify, login, logout, reset, change password, MFA for staff), tests first for every rule, the independent scan pass described in SECURITY.md section 17, and no cleverness (opaque random token, SHA-256 hash in the database, no signed cookies carrying claims). If social login is ever required, add OAuth clients (for example `arctic`) beside this module rather than replacing it. Reversible: yes, at moderate cost.
 
