@@ -5,7 +5,7 @@ import { UploadScreen } from '@/components/admin/UploadScreen';
 import { can } from '@/lib/admin/can';
 import { uploadTransportMode, videoService } from '@/lib/data/admin/services';
 import { requireActor } from '@/lib/data/admin/session-next';
-import { registerUploadAction } from '../actions';
+import { applyUploadDetailsAction, registerUploadAction } from '../actions';
 
 export const metadata: Metadata = { title: 'Upload videos' };
 
@@ -17,6 +17,8 @@ export default async function UploadPage({
   const actor = await requireActor('/admin/videos/upload');
   if (!can(actor.role, 'video.upload')) forbidden();
   const { replace } = await searchParams;
+  const categories = replace ? [] : await videoService.categories(actor).catch(() => []);
+  const series = replace ? [] : await videoService.seriesOptions(actor).catch(() => []);
   const target = replace ? await videoService.get(actor, replace).catch(() => null) : null;
   return (
     <>
@@ -30,6 +32,9 @@ export default async function UploadPage({
         lead="Many at once is fine. A lost connection never loses your progress."
       />
       <UploadScreen
+        categories={categories.map((c) => ({ id: c.id, name: c.name }))}
+        series={series.map((s) => ({ id: s.id, title: s.title }))}
+        applyDetails={applyUploadDetailsAction}
         registerUpload={uploadTransportMode() === 'fixture' ? registerUploadAction : undefined}
         {...(target ? { replace: { videoId: target.id, title: target.title } } : {})}
       />

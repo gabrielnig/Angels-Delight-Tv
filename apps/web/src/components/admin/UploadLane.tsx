@@ -55,10 +55,13 @@ export function UploadLane({
   lane,
   actions,
   videoId,
+  note,
 }: {
   lane: Lane;
   actions: LaneActions;
   videoId?: string;
+  /** A short line under the status, for example that details were saved. */
+  note?: string;
 }) {
   const replaceInput = useRef<HTMLInputElement>(null);
   const tone =
@@ -87,6 +90,7 @@ export function UploadLane({
           <Badge tone="success" icon="check">
             {text}
           </Badge>
+          {note ? <p className="adm-muted">{note}</p> : null}
         </div>
         <div className="adm-lane__actions">
           <Link
