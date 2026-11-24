@@ -22,9 +22,11 @@
   text-decoration: none;
 }
 
-.watch__back:hover {
-  color: var(--color-ink);
-  text-decoration: underline;
+@media (hover: hover) {
+  .watch__back:hover {
+    color: var(--color-ink);
+    text-decoration: underline;
+  }
 }
 
 .watch__back:focus-visible,
@@ -134,8 +136,10 @@
   cursor: pointer;
 }
 
-.watch__button:hover {
-  background: var(--color-surface-sunken);
+@media (hover: hover) {
+  .watch__button:hover {
+    background: var(--color-surface-sunken);
+  }
 }
 
 .watch__button[aria-pressed='true'] {
@@ -194,8 +198,10 @@
   background: var(--color-tile-lavender);
 }
 
-.watch__tile:hover {
-  box-shadow: var(--shadow-2);
+@media (hover: hover) {
+  .watch__tile:hover {
+    box-shadow: var(--shadow-2);
+  }
 }
 
 .watch__tile-title {

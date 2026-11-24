@@ -57,8 +57,10 @@
   color: var(--color-on-primary);
 }
 
-.pwa-btn--primary:hover {
-  background: var(--color-primary-hover);
+@media (hover: hover) {
+  .pwa-btn--primary:hover {
+    background: var(--color-primary-hover);
+  }
 }
 
 .pwa-btn:focus-visible {

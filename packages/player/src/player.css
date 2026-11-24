@@ -150,8 +150,10 @@
   min-width: 3.25rem;
 }
 
-.adp-ctl:hover {
-  background: var(--color-player-control-bg);
+@media (hover: hover) {
+  .adp-ctl:hover {
+    background: var(--color-player-control-bg);
+  }
 }
 
 .adp-ctl[data-on] {
@@ -201,7 +203,7 @@
   accent-color: var(--color-accent);
 }
 
-/* ---- seek bar: 4px rail growing to 8px, 32px tall hit area ---- */
+/* ---- seek bar: 4px rail growing to 8px, 44px tall hit area ---- */
 
 .adp-seek {
   order: -1;
@@ -209,7 +211,7 @@
   position: relative;
   display: flex;
   align-items: center;
-  height: 2rem;
+  height: var(--touch-target);
   cursor: pointer;
   touch-action: none;
 }
@@ -223,10 +225,15 @@
   transition: height 120ms ease-out;
 }
 
-.adp-seek:hover .adp-seek__rail,
 .adp-seek[data-dragging] .adp-seek__rail,
 .adp-seek:focus-visible .adp-seek__rail {
   height: 8px;
+}
+
+@media (hover: hover) {
+  .adp-seek:hover .adp-seek__rail {
+    height: 8px;
+  }
 }
 
 .adp-seek__buffered,
@@ -330,9 +337,14 @@
   cursor: pointer;
 }
 
-.adp-menu__row:hover,
 .adp-menu__row[aria-checked='true'] {
   background: var(--color-sidebar-active);
+}
+
+@media (hover: hover) {
+  .adp-menu__row:hover {
+    background: var(--color-sidebar-active);
+  }
 }
 
 .adp-menu__row[aria-checked='true'] {
@@ -488,8 +500,10 @@
   color: var(--color-on-accent);
 }
 
-.adp-btn--primary:hover {
-  background: var(--color-accent-hover);
+@media (hover: hover) {
+  .adp-btn--primary:hover {
+    background: var(--color-accent-hover);
+  }
 }
 
 .adp-btn--ghost {
@@ -498,8 +512,10 @@
   color: var(--color-player-ink);
 }
 
-.adp-btn--ghost:hover {
-  background: var(--color-sidebar-hover);
+@media (hover: hover) {
+  .adp-btn--ghost:hover {
+    background: var(--color-sidebar-hover);
+  }
 }
 
 .adp-banner {
