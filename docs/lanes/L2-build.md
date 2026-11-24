@@ -15,7 +15,8 @@ Plan `docs/plan/v2/L2-home.md`, review `docs/reviews/v2/L2-review.md`, rulings `
 | 6b | List page loading skeleton, 5 and 6 across grid | merged | 333 |
 | 7 | Admin sections editor | merged | 341 |
 | 8 | Launch default rows and the apply tool | merged | 345 |
-| 9 | Preview clip schema, queue and worker job | this PR | |
+| 9 | Preview clip schema, queue and worker job | merged | 351 |
+| 10 | Admin hero slots: preview mode, slide text | this PR | |
 
 ## Exists
 
@@ -56,3 +57,9 @@ Plan `docs/plan/v2/L2-home.md`, review `docs/reviews/v2/L2-review.md`, rulings `
 - Thumbnails success queues a clip (state `queued`) unless the mode is `off`. Failed encode cleanup removes the clip. Purge already removes `cap/{prefix}/`.
 - Scoped tests: `packages/video/src/preview.test.ts`, `packages/video/src/encode/preview.int.test.ts` (needs ffmpeg and `TEST_DATABASE_ADMIN_URL`), `packages/video/src/preview-sweep.int.test.ts`, `packages/db/src/video-previews.int.test.ts`, `apps/worker/src/preview-handlers.test.ts`.
 - The `cap/` prefix is public and unsigned (sprites use it the same way), so slice 11 can use `${origin}/${previewKey}` without signing.
+
+## Slice 10 notes
+
+- Preview mode and retry: `packages/catalog/src/admin/preview-clip.ts` (`setAdminPreviewMode`, `recutAdminPreview`), `PreviewClipCard` in the admin video editor, fixture twins in `video-commands.ts`.
+- Hero slide text: `HomeConfig.heroText` (keyed by video id, 80 characters each) in both the catalog and web copies. Stored on the hero row items as `hero_headline`, `hero_blurb`, `hero_button_label`. `HeroSlots.tsx` edits it. The viewer does not read it yet (slice 11).
+- Text is kept as typed in the editor and trimmed on save.
