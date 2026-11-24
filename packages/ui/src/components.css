@@ -991,6 +991,7 @@
 @media (hover: hover) {
   .ad-tile:hover .ad-tile__avatar {
     box-shadow: 0 0 0 3px var(--color-primary);
+    outline: 3px solid transparent; /* shows in forced colors */
   }
 }
 
@@ -999,7 +1000,16 @@
 }
 
 .ad-tile:focus-visible .ad-tile__avatar {
-  box-shadow: 0 0 0 3px var(--color-focus-ring);
+  outline: 3px solid var(--color-focus-ring);
+  outline-offset: 2px;
+  box-shadow: none;
+}
+
+@media (forced-colors: active) {
+  .ad-tile:focus-visible .ad-tile__avatar,
+  .ad-card__link:focus-visible .ad-card__thumb {
+    outline-color: Highlight;
+  }
 }
 
 .ad-tile:active .ad-tile__avatar {

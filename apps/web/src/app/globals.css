@@ -1026,8 +1026,10 @@ a {
   text-decoration: none;
 }
 
-.web-chip:hover {
-  border-color: var(--color-accent);
+@media (hover: hover) {
+  .web-chip:hover {
+    border-color: var(--color-ink);
+  }
 }
 
 .web-slowdown {
