@@ -1,5 +1,6 @@
 'use client';
 
+import { useT } from '../../lib/i18n/provider';
 import { useState } from 'react';
 import { SignInToSaveDialog } from '@/components/guest/SignInToSaveDialog';
 
@@ -15,6 +16,7 @@ interface Props {
 
 /** My List and Share under the player (M10, M08-S26). Optimistic with rollback. */
 export function WatchActions({ videoId, title, initialInMyList, onToggleMyList, guest }: Props) {
+  const msg = useT();
   const [saveOpen, setSaveOpen] = useState(false);
   const [inList, setInList] = useState(initialInMyList);
   const [note, setNote] = useState('');
@@ -28,10 +30,10 @@ export function WatchActions({ videoId, title, initialInMyList, onToggleMyList, 
     setInList(next);
     try {
       await onToggleMyList?.(videoId, next);
-      setNote(next ? 'Added to My List' : 'Removed from My List');
+      setNote(next ? msg('watch.addedToMyList') : msg('watch.removedFromMyList'));
     } catch {
       setInList(!next);
-      setNote('Could not update My List. Try again.');
+      setNote(msg('watch.couldNotUpdateMy'));
     }
   }
 
@@ -43,9 +45,9 @@ export function WatchActions({ videoId, title, initialInMyList, onToggleMyList, 
         return;
       }
       await navigator.clipboard.writeText(url);
-      setNote('Link copied');
+      setNote(msg('watch.linkCopied'));
     } catch {
-      setNote('Could not share this video');
+      setNote(msg('watch.couldNotShareThis'));
     }
   }
 
@@ -57,10 +59,10 @@ export function WatchActions({ videoId, title, initialInMyList, onToggleMyList, 
         {...(guest ? { 'aria-haspopup': 'dialog' as const } : { 'aria-pressed': inList })}
         onClick={() => void toggle()}
       >
-        {inList && !guest ? 'In My List' : '+ My List'}
+        {inList && !guest ? msg('watch.inMyList') : '+ My List'}
       </button>
       <button type="button" className="watch__button" onClick={() => void share()}>
-        Share
+        {msg('watch.share')}
       </button>
       <span className="watch__note" role="status">
         {note}

@@ -1,5 +1,6 @@
 'use client';
 
+import { useT } from '../../lib/i18n/provider';
 import { useCallback, useEffect, useState } from 'react';
 import {
   detectPlatform,
@@ -22,6 +23,7 @@ interface InstallPromptEvent extends Event {
 
 /** Install banner (S37). Shows once after two visits 3 days apart, and never nags. */
 export function InstallPrompt({ platformName }: { platformName: string }) {
+  const msg = useT();
   const [state, setState] = useState<InstallState>(EMPTY_INSTALL_STATE);
   const [platform, setPlatform] = useState<InstallPlatform>('none');
   const [deferred, setDeferred] = useState<InstallPromptEvent | null>(null);
@@ -78,7 +80,7 @@ export function InstallPrompt({ platformName }: { platformName: string }) {
   if (panel === 'added') {
     return (
       <div className="pwa-toast" role="status">
-        Added. Open {platformName} from your Home Screen.
+        {msg('pwa.addedOpenFromYour', { platformName })}
       </div>
     );
   }

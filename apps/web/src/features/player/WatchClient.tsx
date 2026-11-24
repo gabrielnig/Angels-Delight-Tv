@@ -113,12 +113,13 @@ function storage(): Storage | null {
 }
 
 function OfflineScreen({ backHref }: { backHref: string }) {
+  const msg = useT();
   return (
     <div className="watch__offline" role="alert">
-      <h2>You are offline</h2>
-      <p>Connect to the internet to watch. Your place is saved.</p>
+      <h2>{msg('watch.youAreOffline')}</h2>
+      <p>{msg('watch.connectToTheInternet')}</p>
       <a className="watch__button" href={backHref}>
-        Back
+        {msg('watch.back')}
       </a>
     </div>
   );
@@ -346,7 +347,7 @@ export function WatchClient({
     related: data.related,
     inMyList: data.inMyList,
     backHref: video.backHref,
-    backLabel: video.series ? 'Back to the series' : 'Back',
+    backLabel: video.series ? msg('watch.backToTheSeries') : 'Back',
     homeHref: HOME_PATH,
     browseHref: BROWSE_PATH,
   };

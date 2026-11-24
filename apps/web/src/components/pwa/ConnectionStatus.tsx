@@ -1,5 +1,6 @@
 'use client';
 
+import { useT } from '../../lib/i18n/provider';
 import { useEffect, useRef, useState } from 'react';
 import './pwa.css';
 
@@ -16,6 +17,7 @@ export function ConnectionStatus({
   /** Home keeps its last rows on the device, so the banner says that instead of a generic warning (M05-S08). */
   savedView?: boolean;
 }) {
+  const msg = useT();
   const [online, setOnline] = useState(initialOnline);
   const [toast, setToast] = useState(false);
   const wasOffline = useRef(!initialOnline);
@@ -51,20 +53,16 @@ export function ConnectionStatus({
     <>
       {!online ? (
         <div className="pwa-status" role="status">
-          <span>
-            {savedView
-              ? 'You are offline. Showing the view saved on this device.'
-              : 'You are offline. Check your data or Wi-Fi.'}
-          </span>
+          <span>{savedView ? msg('pwa.youAreOfflineShowing') : msg('pwa.youAreOfflineCheck')}</span>
           <button type="button" className="pwa-btn" onClick={() => window.location.reload()}>
-            Retry
+            {msg('pwa.retry')}
           </button>
         </div>
       ) : null}
       {toast ? (
         <div className="pwa-toast" role="status">
-          <strong>You are back online</strong>
-          <div>Playback and saved changes carry on.</div>
+          <strong>{msg('pwa.youAreBackOnline')}</strong>
+          <div>{msg('pwa.playbackAndSavedChanges')}</div>
         </div>
       ) : null}
     </>

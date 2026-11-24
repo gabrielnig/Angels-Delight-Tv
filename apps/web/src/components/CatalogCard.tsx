@@ -1,5 +1,6 @@
 'use client';
 
+import { useT } from '../lib/i18n/provider';
 import { useState } from 'react';
 import { ContinueCard, Row, SeriesCard, VideoCard, useToast, type CardRating } from '@ad/ui';
 import { msg } from '@ad/shared/messages';
@@ -29,6 +30,7 @@ export function CatalogCard({
   /** Position in a Top 10 row (M44-S09). */
   rank?: number;
 }) {
+  const msg = useT();
   const [inList, setInList] = useState(initialInList);
   const queued = useListToggle();
   const toggle = toggleProp ?? queued;
@@ -93,13 +95,13 @@ export function CatalogCard({
       toast.show({
         message:
           outcome === 'queued'
-            ? 'Saved on this device. It will sync when you are back online.'
+            ? msg('cards.savedOnThisDevice')
             : next
-              ? 'Added to My List.'
-              : 'Removed from My List.',
+              ? msg('cards.addedToMyList')
+              : msg('cards.removedFromMyList'),
         variant: 'success',
         action: {
-          label: 'Undo',
+          label: msg('cards.undo'),
           onClick: () => {
             setInList(!next);
             void toggle(key, !next).catch(() => setInList(next));
@@ -108,7 +110,7 @@ export function CatalogCard({
       });
     } catch {
       setInList(!next);
-      toast.show({ message: 'We could not update My List. Try again.', variant: 'error' });
+      toast.show({ message: msg('cards.updateFailed'), variant: 'error' });
     }
   }
 
@@ -201,7 +203,7 @@ export function ContinueRow({
         next.delete(video.id);
         return next;
       });
-      toast.show({ message: 'We could not remove that. Try again.', variant: 'error' });
+      toast.show({ message: msg('cards.removeFailed'), variant: 'error' });
     }
   }
 

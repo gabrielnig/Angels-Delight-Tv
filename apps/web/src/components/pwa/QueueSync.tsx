@@ -1,11 +1,13 @@
 'use client';
 
+import { useT } from '../../lib/i18n/provider';
 import { useEffect, useState } from 'react';
 import './pwa.css';
 import { createWriteQueue } from '../../lib/pwa/write-queue';
 
 /** Sends the offline queue of this profile when the page opens online and whenever the network returns (M25-S05). */
 export function QueueSync({ profileId }: { profileId: string }) {
+  const msg = useT();
   const [notice, setNotice] = useState(false);
   useEffect(() => {
     const flush = () => {
@@ -35,7 +37,7 @@ export function QueueSync({ profileId }: { profileId: string }) {
   }, [notice]);
   return notice ? (
     <div className="pwa-toast" role="status">
-      Some changes you made offline could not be saved.
+      {msg('pwa.someChangesYouMade')}
     </div>
   ) : null;
 }

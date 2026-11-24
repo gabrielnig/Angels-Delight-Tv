@@ -1,5 +1,6 @@
 'use client';
 
+import { useT } from '../lib/i18n/provider';
 import { useEffect } from 'react';
 import { useSupportEmail } from '../components/account/AccountSupport';
 import { ErrorPage } from '../components/errors/ErrorPage';
@@ -13,6 +14,7 @@ export default function ErrorRoute({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
+  const msg = useT();
   const supportEmail = useSupportEmail();
   useEffect(() => {
     try {
@@ -24,11 +26,11 @@ export default function ErrorRoute({
 
   return (
     <ErrorPage
-      title="Something went wrong on our side"
+      title={msg('errors.somethingWentWrongOn')}
       description="Try again in a moment. Your list and history are safe."
       supportEmail={supportEmail}
       {...(error.digest ? { reference: error.digest } : {})}
-      action={{ label: 'Try again', onClick: reset }}
+      action={{ label: msg('errors.tryAgain'), onClick: reset }}
     />
   );
 }
