@@ -12,8 +12,8 @@ Plan: `docs/plan/v2/L1-guest-access.md`. Rulings: `docs/plan/v2/RULINGS.md` (the
 | 4 | Guest chrome, title and series, Sign in to save | merged | #235 |
 | 5 | Home, Browse, Search for guests | merged | #262 |
 | 6 | Guest audience, Kids mode, settings | merged | #263 |
-| 7 | My List explainer, return intent | on PR | see below |
-| 8 | Guest Continue learning | todo | |
+| 7 | My List explainer, return intent | merged | #264 |
+| 8 | Guest Continue learning | on PR | see below |
 | 9 | History import | todo | |
 | 10 | Abuse protection, Turnstile escalation | todo | |
 | 11 | Robots, journeys, documents | todo | |
@@ -106,3 +106,9 @@ Deviations: no `guest` prop on the shared `TopNav` (D-208). The sticky Play bar 
 - `SignInToSaveDialog` takes `intent`. `TitleActions` and `WatchActions` pass it.
 - `GuestIntentApplier` is mounted in `ViewerChrome`.
 - `/my-list` for guests: `MyListExplainer`. `lib/guest/next-paths.test.ts` pins that guest return paths survive `safeNext`.
+
+## Slice 8 (Guest Continue learning)
+
+- `GuestContinueRow` is mounted at the top of the rows in `HomeView` for guests. Pure parts: `lib/guest/continue.ts`, `lib/guest/episodes.ts`.
+- `ContinueRow` gained an optional `title`. `GuestEpisodeProgress` wraps `EpisodeList` on the series page for guests.
+- The sticky Play bar and the series main button do not follow device progress yet.
