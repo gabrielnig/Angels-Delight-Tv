@@ -28,7 +28,7 @@ describe('client.example.json', () => {
     expect(result).toMatchObject({ ok: true });
     if (!result.ok) return;
     expect(Object.keys(result.config)).toEqual(
-      expect.arrayContaining(['theme', 'logo', 'favicon', 'legal', 'languages']),
+      expect.arrayContaining(['theme', 'logo', 'favicon', 'legal', 'languages', 'home']),
     );
   });
 });

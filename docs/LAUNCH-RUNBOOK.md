@@ -172,6 +172,8 @@ run apply --config /client/client.json --dry-run
 run apply --config /client/client.json
 ```
 
+On a site with no published Home layout, `apply` also seeds the six launch sections (step `home`). A layout that exists is never overwritten, so the step reports `unchanged` on every later run. To go back to the launch set later, use Restore launch defaults on the Home curation screen.
+
 `apply` is idempotent: run it again after any change to `client.json` and only the changed steps report `changed`. It validates everything first and writes nothing if the file has problems. PWA icons are written to `/opt/angelsdelight/brand` and served from `/brand-icons/`.
 
 ### 9. Content import (15 min plus encode time)

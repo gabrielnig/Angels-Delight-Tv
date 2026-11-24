@@ -6,6 +6,7 @@ import {
   ADD_TYPE_HINTS,
   ADD_TYPE_LABELS,
   addRow,
+  launchHome,
   resolvePreview,
   setHero,
   validateConfig,
@@ -69,6 +70,7 @@ export function HomeCuration({
   const [message, setMessage] = useState<string>();
   const [adding, setAdding] = useState(false);
   const [restoring, setRestoring] = useState(false);
+  const [launching, setLaunching] = useState(false);
   const [newType, setNewType] = useState<HomeRowType>('manual');
   const [newName, setNewName] = useState('');
   const [newSource, setNewSource] = useState('');
@@ -131,6 +133,9 @@ export function HomeCuration({
               : 'Published and up to date'}
         </span>
         <span className="adm-top__space" />
+        <Button disabled={!canCurate || busy} onClick={() => setLaunching(true)}>
+          Restore launch defaults
+        </Button>
         <Button disabled={!canCurate || !state.previous || busy} onClick={() => setRestoring(true)}>
           Restore previous
         </Button>
@@ -257,6 +262,7 @@ export function HomeCuration({
             canCurate={canCurate}
             onSelect={setSelected}
             onChange={setConfig}
+            onRestoreDefaults={() => setLaunching(true)}
             onAdd={() => {
               if (config.rows.length >= MAX_ROWS) {
                 setMessage(
@@ -455,6 +461,19 @@ export function HomeCuration({
           </p>
         ) : null}
       </Dialog>
+      <ConfirmDialog
+        open={launching}
+        title="Restore the launch sections?"
+        consequence="Your sections and their order are replaced by the launch set. Titles stay in your library. Nothing changes for viewers until you publish, and Restore previous still works."
+        confirmLabel="Restore launch defaults"
+        onClose={() => setLaunching(false)}
+        onConfirm={() => {
+          setConfig({ ...launchHome(), heroIds: config.heroIds });
+          setSelected(null);
+          setMessage(undefined);
+          setLaunching(false);
+        }}
+      />
       <ConfirmDialog
         open={restoring}
         title="Restore the previous Home page?"

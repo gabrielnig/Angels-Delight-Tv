@@ -15,6 +15,8 @@ import {
 } from '../testing';
 import {
   getAdminHome,
+  hasPublishedHome,
+  launchHomeConfig,
   publishAdminHome,
   restorePreviousAdminHome,
   saveAdminHomeDraft,
@@ -54,9 +56,9 @@ describe.skipIf(!integrationEnabled())('admin home curation', () => {
     const home = await getAdminHome(ctx, editor);
     expect(home.state.published.rows.map((r) => r.type)).toEqual([
       'continue_watching',
+      'my_list',
       'newest',
       'smart',
-      'my_list',
     ]);
     expect(home.state.publishedAt).toBeNull();
     expect(home.state.previous).toBeNull();
@@ -266,5 +268,19 @@ describe.skipIf(!integrationEnabled())('admin home curation', () => {
       const home = await getAdminHome(ctx, editor);
       expect(home.state.published.rows[0]).toMatchObject({ type: 'series', sourceId: course.id });
     });
+  });
+
+  it('says whether a home layout was ever published, for the launch tool', async () => {
+    const fresh = await createViewerTestDb();
+    try {
+      const who: Actor = { accountId: (await seedAccount(fresh.setup, 'admin')).id, role: 'admin' };
+      const c: AdminContext = { db: fresh.app };
+      expect(await hasPublishedHome(c, who)).toBe(false);
+      expect((await publishAdminHome(c, who, launchHomeConfig())).ok).toBe(true);
+      expect(await hasPublishedHome(c, who)).toBe(true);
+      await expect(hasPublishedHome(c, { accountId: who.accountId, role: 'viewer' })).rejects.toThrow();
+    } finally {
+      await fresh.drop();
+    }
   });
 });

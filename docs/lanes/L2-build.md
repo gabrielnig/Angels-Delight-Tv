@@ -13,7 +13,8 @@ Plan `docs/plan/v2/L2-home.md`, review `docs/reviews/v2/L2-review.md`, rulings `
 | 5 | Row link and preview migrations, row resolution | merged | 322 |
 | 6 | Browse list pages (new, trending, series, row/[slug]) | merged | 329 |
 | 6b | List page loading skeleton, 5 and 6 across grid | merged | 333 |
-| 7 | Admin sections editor | this PR | |
+| 7 | Admin sections editor | merged | 341 |
+| 8 | Launch default rows and the apply tool | this PR | |
 
 ## Exists
 
@@ -38,3 +39,10 @@ Plan `docs/plan/v2/L2-home.md`, review `docs/reviews/v2/L2-review.md`, rulings `
 - `apps/web/src/lib/data/admin/home-clean.ts` rebuilds the config on save and now keeps `slug`, `viewAllMode`, `viewAllUrl`, `minItems`, `kidsVisible` (the old inline copy dropped them).
 - Helpers in `home-rules.ts`: `viewAllSummary`, `viewAllOpens`, `duplicateNameNote`, `ADD_TYPE_LABELS`, `ADD_TYPE_HINTS`.
 - Tabs Hero slots and Sections, and Restore launch defaults from S97 arrive with slices 8 and 10.
+
+## Slice 8 notes
+
+- `packages/catalog/src/admin/home.ts`: `LAUNCH_HOME_SECTIONS`, `launchHomeConfig(titles)`, `hasPublishedHome(ctx, actor)`. `defaultHomeConfig` now puts My List second and names the first row Continue learning (F14, R14).
+- `packages/launch/src/apply.ts`: step `home` through `ApplyDeps.home` (`HomeSeeder`), wired in `cli/apply.ts`. `client.json` block `home` (`seedDefaults`, `continueTitle`, `newTitle`, `trendingTitle`); `continueTitle` also writes setting `home.continue_title`.
+- Admin screen: Restore launch defaults button (toolbar and empty state) puts the launch set in the draft with a confirm, nothing is saved until the editor saves. Web copy in `home-rules.ts` `launchHome`, kept equal by `home-parity.test.ts`.
+- Viewer fallback title for the personal row is now Continue learning.

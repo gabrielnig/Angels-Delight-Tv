@@ -335,43 +335,53 @@ export function validateConfig(config: HomeConfig): string | null {
   return null;
 }
 
+const plainRow = (id: string, type: HomeRowType, name: string): HomeRow => ({
+  id,
+  type,
+  name,
+  visible: true,
+  videoIds: [],
+  sourceId: null,
+});
+
 export const defaultHome = (): HomeConfig => ({
   heroIds: [],
   rows: [
-    {
-      id: 'row_continue',
-      type: 'continue_watching',
-      name: 'Continue Watching',
-      visible: true,
-      videoIds: [],
-      sourceId: null,
-    },
-    {
-      id: 'row_newest',
-      type: 'newest',
-      name: 'New this week',
-      visible: true,
-      videoIds: [],
-      sourceId: null,
-    },
-    {
-      id: 'row_smart',
-      type: 'smart',
-      name: 'Most watched this week',
-      visible: true,
-      videoIds: [],
-      sourceId: null,
-    },
-    {
-      id: 'row_list',
-      type: 'my_list',
-      name: 'My List',
-      visible: true,
-      videoIds: [],
-      sourceId: null,
-    },
+    plainRow('row_continue', 'continue_watching', 'Continue learning'),
+    plainRow('row_list', 'my_list', 'My List'),
+    plainRow('row_newest', 'newest', 'New this week'),
+    plainRow('row_smart', 'smart', 'Most watched this week'),
   ],
 });
+
+export interface LaunchTitles {
+  continueTitle?: string;
+  newTitle?: string;
+  trendingTitle?: string;
+}
+
+/** The launch layout (M41-S09). The real service has the same list, and the parity test keeps them equal. */
+export function launchHome(titles: LaunchTitles = {}): HomeConfig {
+  const named = (fallback: string, own?: string) => cleanName(own ?? '') || fallback;
+  const section = (id: string, type: HomeRowType, name: string, minItems: number): HomeRow => ({
+    ...plainRow(id, type, name),
+    viewAllMode: 'auto',
+    viewAllUrl: null,
+    minItems,
+    kidsVisible: true,
+  });
+  return {
+    heroIds: [],
+    rows: [
+      section('row_continue', 'continue_watching', named('Continue learning', titles.continueTitle), 1),
+      section('row_list', 'my_list', 'My List', 1),
+      section('row_newest', 'newest', named('New this week', titles.newTitle), 1),
+      section('row_smart', 'smart', named('Most watched this week', titles.trendingTitle), 4),
+      section('row_each_category', 'each_category', 'Browse by subject', 4),
+      section('row_all_series', 'all_series', 'Series', 2),
+    ],
+  };
+}
 
 /** One line meanings for the Add section dialog (S97 state 3). Built in sections are not offered. */
 export const ADD_TYPE_HINTS: Record<

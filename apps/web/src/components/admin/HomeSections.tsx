@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useLayoutEffect, useRef, useState } from 'react';
 import {
   MAX_ROWS,
   MAX_ROW_NAME,
@@ -29,6 +29,7 @@ export function HomeSections({
   onSelect,
   onChange,
   onAdd,
+  onRestoreDefaults,
 }: {
   config: HomeConfig;
   selectedId: string | null;
@@ -37,6 +38,7 @@ export function HomeSections({
   onSelect: (id: string | null) => void;
   onChange: (config: HomeConfig) => void;
   onAdd: () => void;
+  onRestoreDefaults: () => void;
 }) {
   const [renaming, setRenaming] = useState<string | null>(null);
   const [draft, setDraft] = useState('');
@@ -44,6 +46,18 @@ export function HomeSections({
   const [dragId, setDragId] = useState<string | null>(null);
   const [overId, setOverId] = useState<string | null>(null);
   const [announcement, setAnnouncement] = useState('');
+  const list = useRef<HTMLOListElement>(null);
+  const refocus = useRef<{ id: string; dir: 'up' | 'down' } | null>(null);
+
+  // A moved row can be re-inserted by the browser, which drops focus. Put it back on the same button.
+  useLayoutEffect(() => {
+    const target = refocus.current;
+    if (!target) return;
+    refocus.current = null;
+    const row = list.current?.querySelector(`[data-section="${CSS.escape(target.id)}"]`);
+    const pick = (dir: string) => row?.querySelector<HTMLButtonElement>(`[data-move="${dir}"]:not(:disabled)`);
+    (pick(target.dir) ?? pick(target.dir === 'up' ? 'down' : 'up'))?.focus();
+  }, [config.rows]);
 
   const announce = (next: HomeConfig, id: string) => {
     const name = next.rows.find((r) => r.id === id)?.name ?? '';
@@ -52,6 +66,7 @@ export function HomeSections({
   const move = (id: string, delta: -1 | 1) => {
     const next = moveRow(config, id, delta);
     if (next === config) return;
+    refocus.current = { id, dir: delta < 0 ? 'up' : 'down' };
     onChange(next);
     announce(next, id);
   };
@@ -97,11 +112,19 @@ export function HomeSections({
         Drag the handle, or use Move up and Move down.
       </p>
       {config.rows.length === 0 ? (
-        <p className="adm-muted">
-          No sections yet. Home shows only the hero until you add a section.
-        </p>
+        <div className="adm-stack">
+          <p className="adm-muted" style={{ margin: 0 }}>
+            No sections yet. Home shows only the hero until you add a section. Start from the launch
+            defaults or add your own.
+          </p>
+          <div className="adm-row">
+            <Button disabled={!canCurate} onClick={onRestoreDefaults}>
+              Restore launch defaults
+            </Button>
+          </div>
+        </div>
       ) : null}
-      <ol className="adm-sections" aria-label="Sections in the order viewers see them">
+      <ol ref={list} className="adm-sections" aria-label="Sections in the order viewers see them">
         {config.rows.map((r, i) => (
           <li
             key={r.id}
@@ -220,6 +243,7 @@ export function HomeSections({
             <Button
               variant="ghost"
               icon="up"
+              data-move="up"
               aria-label={`Move ${r.name} up`}
               disabled={!canCurate || i === 0}
               onClick={() => move(r.id, -1)}
@@ -227,6 +251,7 @@ export function HomeSections({
             <Button
               variant="ghost"
               icon="down"
+              data-move="down"
               aria-label={`Move ${r.name} down`}
               disabled={!canCurate || i === config.rows.length - 1}
               onClick={() => move(r.id, 1)}

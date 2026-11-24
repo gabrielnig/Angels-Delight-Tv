@@ -1670,3 +1670,7 @@ Decision: the dialog lists Manual list, Category, New, Trending, Series, Each ca
 - Options: leave publish disabled until rated, a separate password dialog as in the mockup, hardcode the meaning text, check the guest ceiling only when listing.
 - Why: the mockup keeps Publish pressable with an error beside the field, one inline password field is already how profile changes ask for it and keeps one code path, renamed labels would contradict a fixed meaning, and a listing only check would leave a shared guest url playable after the ceiling is lowered.
 - Reversible: yes.
+
+## D-306 The apply tool seeds Home only when no layout exists, and every launch section is visible to kids (lane L2, M41-S09)
+
+Decision: the `home` step of `launch:apply` publishes the six launch sections only when no layout was ever published or seeded (a stored published config or any row). A site with a layout, even an edited one, reports `unchanged`. All six sections are kids visible, including My List, because kids profiles already filter every list to kid safe titles (M35). Options: overwrite on every run, or seed only the missing sections. Why: overwriting loses client edits, and merging by name is guessy. Editors who want the set back use Restore launch defaults. Reversible: yes.
