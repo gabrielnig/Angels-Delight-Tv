@@ -11,8 +11,8 @@ Plan: `docs/plan/v2/L1-guest-access.md`. Rulings: `docs/plan/v2/RULINGS.md` (the
 | 3 | Account free catalog path and public GETs | merged | #232 |
 | 4 | Guest chrome, title and series, Sign in to save | merged | #235 |
 | 5 | Home, Browse, Search for guests | merged | #262 |
-| 6 | Guest audience, Kids mode, settings | on PR | see below |
-| 7 | My List explainer, return intent | todo | |
+| 6 | Guest audience, Kids mode, settings | merged | #263 |
+| 7 | My List explainer, return intent | on PR | see below |
 | 8 | Guest Continue learning | todo | |
 | 9 | History import | todo | |
 | 10 | Abuse protection, Turnstile escalation | todo | |
@@ -99,3 +99,10 @@ Deviations: no `guest` prop on the shared `TopNav` (D-208). The sticky Play bar 
 - `getViewerContext`, the video runtime `getGuest` and the analytics resolver read the device audience.
 - `client.json`: `guestAudience`, `guestPlay`. Admin Features: guest play switch, guest segment minutes. Not built: audience select in admin (D-234).
 - Series pages have no blocked screen for kids guests yet; they still answer not found.
+
+## Slice 7 (My List explainer, return intent)
+
+- `lib/guest/intent.ts`: `saveIntent`, `takeIntent(store, kinds)`, `clearIntent`, key `ad:guest:intent:v1`, 30 minutes. L5: save `{ kind: 'like', itemKey }` through `SignInToSaveDialog intent=...` and call `takeIntent(localStorage, ['like'])` after sign in.
+- `SignInToSaveDialog` takes `intent`. `TitleActions` and `WatchActions` pass it.
+- `GuestIntentApplier` is mounted in `ViewerChrome`.
+- `/my-list` for guests: `MyListExplainer`. `lib/guest/next-paths.test.ts` pins that guest return paths survive `safeNext`.
