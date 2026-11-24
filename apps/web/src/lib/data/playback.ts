@@ -72,6 +72,8 @@ export interface WatchData {
   chapters?: PlayerChapter[];
   saved: { positionSeconds: number; finished: boolean } | null;
   next: NextVideo | null;
+  /** Guests only: the ordered choices for a standalone video, so the device can skip titles it knows are finished. */
+  nextCandidates?: NextVideo[];
   upNext: UpNextTileData[];
   related: RelatedItem[];
   preferences: PlayerPreferences;

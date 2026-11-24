@@ -34,9 +34,15 @@ describe('player preferences storage', () => {
       rate: 1,
       muted: false,
       dataSaver: false,
-      autoplayNext: false,
+      autoplayNext: true,
     });
     expect(loadPreferences(memory(), 'p1', { kids: true }).captionsOn).toBe(true);
+  });
+
+  it('turns autoplay next on for adults and off for kids profiles unless the profile says otherwise (R15)', () => {
+    expect(loadPreferences(memory(), 'p1', { kids: false }).autoplayNext).toBe(true);
+    expect(loadPreferences(memory(), 'p1', { kids: true }).autoplayNext).toBe(false);
+    expect(loadPreferences(memory(), 'p1', { kids: false }, { autoplayNext: false }).autoplayNext).toBe(false);
   });
 
   it('round trips per profile', () => {

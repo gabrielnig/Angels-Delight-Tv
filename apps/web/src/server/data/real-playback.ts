@@ -124,7 +124,7 @@ export class RealPlaybackData implements PlaybackData {
     }
     const data =
       found.type === 'video'
-        ? this.forStandalone(found)
+        ? this.forStandalone(found, true)
         : found.type === 'redirect' && found.to.kind === 'series' && found.to.episodeId
           ? await this.forEpisode(
               (key) => this.guestDetail(kids, key),
@@ -244,6 +244,7 @@ export class RealPlaybackData implements PlaybackData {
 
   private forStandalone(
     detail: Extract<TitleDetailDto, { type: 'video' }>,
+    guest = false,
   ): Omit<WatchData, 'preferences' | 'captionStyle'> {
     const category = detail.categories[0]?.name ?? '';
     const card = detail.card;
@@ -259,6 +260,7 @@ export class RealPlaybackData implements PlaybackData {
       backHref: `/title/${card.slug}`,
     };
     const tiles = tilesFrom(detail.related, category);
+    const candidates = nextCandidates(detail.related, card.id, category);
     return {
       video,
       captions: [],
@@ -268,7 +270,9 @@ export class RealPlaybackData implements PlaybackData {
             finished: detail.progress.completed,
           }
         : null,
-      next: null,
+      next: candidates[0] ?? null,
+      // A guest keeps finished titles on the device, so the device picks from this list (M40, M08-S13 AC4).
+      ...(guest ? { nextCandidates: candidates } : {}),
       upNext: tiles,
       related: relatedFrom(tiles),
       inMyList: card.inMyList,
@@ -363,6 +367,28 @@ function tilesFrom(cards: readonly TitleCardDto[], tag: string): UpNextTileData[
       durationLabel: durationLabel(secondsOf(card.durationMs ?? 0)),
       href: `/watch/${card.id}`,
       tint: TINTS[i % TINTS.length] as Tint,
+    }));
+}
+
+/**
+ * Up next for a standalone video (M08-S13 AC4): the related titles in order, without the current one and without
+ * anything this profile has finished. The related list already follows the viewer's audience, so a kids profile
+ * never sees a title that is not kids safe. Guests have no progress here, the device filters their copy.
+ */
+export function nextCandidates(
+  related: readonly TitleCardDto[],
+  currentId: string,
+  category: string,
+): NextVideo[] {
+  return related
+    .filter((card) => card.kind === 'video' && card.id !== currentId && !card.progress?.completed)
+    .slice(0, UP_NEXT_TILES)
+    .map((card) => ({
+      id: card.id,
+      title: card.title,
+      posterUrl: toThumb(card.poster)?.src,
+      meta: [category, durationLabel(secondsOf(card.durationMs ?? 0))].filter(Boolean).join(', '),
+      href: `/watch/${card.id}`,
     }));
 }
 

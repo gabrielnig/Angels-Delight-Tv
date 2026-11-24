@@ -13,7 +13,7 @@ import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { msg } from '@ad/shared/messages';
 import type { ProgressTransport, PlaybackTransport, WatchData } from '@/lib/data/playback';
-import { createGuestProgressSink, readGuestProgress } from '@/lib/guest/progress-store';
+import { createGuestProgressSink, firstUnfinished, readGuestProgress } from '@/lib/guest/progress-store';
 import {
   createFixtureSessionProvider,
   createLocalProgressSink,
@@ -202,6 +202,12 @@ export function WatchClient({
     [viewer.profileId, preferences, prefsSync],
   );
 
+  // A guest's finished titles live on this device, so the server sends the ordered choices (M08-S13 AC4).
+  const nextTitle = useMemo(() => {
+    if (!isGuest || !data.nextCandidates) return data.next;
+    return firstUnfinished(storage(), data.nextCandidates);
+  }, [isGuest, data.next, data.nextCandidates]);
+
   const resume = useMemo(() => {
     const guestPlace = isGuest ? readGuestProgress(storage(), video.id) : null;
     const local =
@@ -292,7 +298,7 @@ export function WatchClient({
             resume={resume}
             preferences={preferences}
             onPreferencesChange={onPreferencesChange}
-            next={data.next}
+            next={nextTitle}
             onNext={onNext}
             end={end}
             links={{
