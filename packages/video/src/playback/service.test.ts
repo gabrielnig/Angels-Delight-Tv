@@ -40,6 +40,7 @@ function setup(
     limiter?: unknown;
     sprite?: string | null;
     guestTtl?: number;
+    guestMaxRank?: number | (() => number | Promise<number>);
   } = {},
 ) {
   let clock = 1_800_000_000;
@@ -92,6 +93,7 @@ function setup(
     appOrigin: 'https://app.example',
     mediaOrigin: 'https://media.example',
     ...(over.guestTtl ? { guestSegmentTtlSeconds: over.guestTtl } : {}),
+    ...(over.guestMaxRank !== undefined ? { guestMaxRank: over.guestMaxRank } : {}),
     now: () => clock,
   });
   return { service, advance: (s: number) => (clock += s), clock: () => clock };
@@ -435,5 +437,46 @@ describe('PlaybackService guest sessions (M40-S02)', () => {
     const { token } = await live.service.startGuestSession(guestViewer, VID);
     const dead = setup({ video: { publishState: 'unpublished' } });
     await expect(dead.service.master(token, VID)).rejects.toBeInstanceOf(NotFound);
+  });
+});
+
+describe('PlaybackService guest maturity ceiling (M44-S20)', () => {
+  it('refuses a guest session above the ceiling and allows one at it', async () => {
+    const above = setup({ guestMaxRank: 2, video: { maturityRank: 3 } });
+    await expect(above.service.startGuestSession(guestViewer, VID)).rejects.toBeInstanceOf(NotFound);
+    const at = setup({ guestMaxRank: 2, video: { maturityRank: 2 } });
+    await expect(at.service.startGuestSession(guestViewer, VID)).resolves.toBeTruthy();
+  });
+
+  it('treats an unrated, not kids safe title as the highest rank', async () => {
+    const { service } = setup({ guestMaxRank: 2, video: { maturityRank: null, kidsSafe: false } });
+    await expect(service.startGuestSession(guestViewer, VID)).rejects.toBeInstanceOf(NotFound);
+  });
+
+  it('reads the ceiling when it is a function, so a settings change applies at once', async () => {
+    let ceiling = 4;
+    const { service } = setup({ guestMaxRank: () => ceiling, video: { maturityRank: 4 } });
+    await expect(service.startGuestSession(guestViewer, VID)).resolves.toBeTruthy();
+    ceiling = 1;
+    await expect(service.startGuestSession(guestViewer, VID)).rejects.toBeInstanceOf(NotFound);
+  });
+
+  it('has no ceiling when none is configured', async () => {
+    const { service } = setup({ video: { maturityRank: 4 } });
+    await expect(service.startGuestSession(guestViewer, VID)).resolves.toBeTruthy();
+  });
+
+  it('refuses the key when the ceiling was lowered after the session started', async () => {
+    const live = setup({ guestMaxRank: 4, video: { maturityRank: 3 } });
+    const { token } = await live.service.startGuestSession(guestViewer, VID);
+    const lowered = setup({ guestMaxRank: 2, video: { maturityRank: 3 } });
+    await expect(lowered.service.key(token, VID, '1.1.1.1')).rejects.toBeInstanceOf(NotFound);
+  });
+
+  it('keeps Kids mode guests at rank 0 whatever the ceiling', async () => {
+    const { service } = setup({ guestMaxRank: 4, video: { maturityRank: 1, kidsSafe: true } });
+    await expect(
+      service.startGuestSession({ guestId: GUEST, kids: true }, VID),
+    ).rejects.toBeInstanceOf(NotFound);
   });
 });

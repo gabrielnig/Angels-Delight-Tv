@@ -98,6 +98,8 @@ export interface PlaybackDeps {
   segmentTtlSeconds?: number;
   /** How long signed segment urls last for guest tokens. Defaults to 20 minutes (`limits.guest_segment_minutes`). */
   guestSegmentTtlSeconds?: number | (() => number | Promise<number>);
+  /** Highest maturity rank a guest may play (`maturity.guest_max_rank`). Absent means no ceiling. Kids mode is always 0. */
+  guestMaxRank?: number | (() => number | Promise<number>);
   now?: () => number;
 }
 
@@ -218,7 +220,12 @@ export class PlaybackService {
     await this.deps.limiter?.enforce(PLAY_POLICIES.sessionGuest, guest.guestId);
     if (guest.ip) await this.deps.limiter?.enforce(PLAY_POLICIES.sessionGuestIp, guest.ip);
     const video = await this.deps.store.video(videoId);
-    if (!video || !this.isLive(video) || (guest.kids && !video.kidsSafe))
+    if (
+      !video ||
+      !this.isLive(video) ||
+      (guest.kids && !video.kidsSafe) ||
+      !withinMaturityLimit(video, await this.guestLimit(guest.kids))
+    )
       throw new NotFound('This video is not available.');
     const token = issuePlaybackToken(this.deps.tokens, {
       videoId,
@@ -228,6 +235,13 @@ export class PlaybackService {
       now: this.now,
     });
     return this.session(videoId, token, PLAYBACK_TOKEN_SECONDS, false);
+  }
+
+  /** The rank limit of a guest: 0 in Kids mode, else the configured ceiling, else none. */
+  private async guestLimit(kids: boolean): Promise<number | undefined> {
+    if (kids) return 0;
+    const ceiling = this.deps.guestMaxRank;
+    return typeof ceiling === 'function' ? await ceiling() : ceiling;
   }
 
   /** Admin preview: any non deleted video that finished encoding, no profile, no analytics. */
@@ -321,7 +335,11 @@ export class PlaybackService {
     if (claims.gst) {
       // Guests have no profile row. The Kids mode claim is re-checked against the video as it is now.
       const video = (await this.deps.store.video(videoId)) as PlayableVideo;
-      if (claims.kd && !video.kidsSafe) throw new NotFound('This video is not available.');
+      if (
+        (claims.kd && !video.kidsSafe) ||
+        !withinMaturityLimit(video, await this.guestLimit(Boolean(claims.kd)))
+      )
+        throw new NotFound('This video is not available.');
     } else if (claims.pid) {
       const profile = await this.deps.store.profile(claims.pid, claims.aid);
       const video = (await this.deps.store.video(videoId)) as PlayableVideo;
