@@ -188,7 +188,7 @@ As a viewer, I want to set autoplay, data saver, default captions and speed memo
 
 ### M02-S05 Export my data (Should)
 As a viewer, I want to download my data, so that I can see what the platform holds.
-- AC1: Given I request an export, When I confirm with my password, Then a job starts and I receive an email with a link valid for 24 hours to a JSON file containing account, profiles, list items and progress. The export includes ratings and notices per profile (M44-S25).
+- AC1: Given I request an export, When I confirm with my password, Then a job starts and I receive an email with a link valid for 24 hours to a JSON file containing account, profiles, list items and progress. The export includes ratings and notices per profile (M44-S25). It also lists the account's sign in history, the masked Google link and the gifts made while signed in (M49, M48).
 - AC2: Given I request more than one export in 24 hours, When I tap again, Then I am told the earlier export is still valid.
 - Edge: the export excludes password hash and tokens.
 - Error: job failure sends "We could not build your export" and keeps the request retryable.

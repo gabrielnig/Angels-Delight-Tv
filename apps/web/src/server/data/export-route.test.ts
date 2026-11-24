@@ -12,6 +12,9 @@ const file = {
     emailFrequency: 'off',
     emailConsentedAt: null,
   },
+  signIns: [],
+  linkedSignIn: { google: null },
+  donations: [],
 };
 
 function setup(

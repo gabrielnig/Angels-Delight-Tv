@@ -1,5 +1,8 @@
 import { captionColorAllowed } from '@ad/player';
 import {
+  accountIdentities,
+  donations,
+  loginEvents,
   myList,
   profiles,
   series,
@@ -14,6 +17,7 @@ import { constantTimeEqual, hmacSha256, NotFound, ValidationFailed } from '@ad/s
 import { loadOwnedProfile, type ViewerContext as ServiceContext } from '@ad/viewer';
 import { and, asc, desc, eq, gte, inArray, sql } from 'drizzle-orm';
 import type { PlaybackSettings } from '../../lib/data/types';
+import { deviceLabel } from '../auth/devices';
 import { viewerActor } from './actor';
 
 export const DEFAULT_PLAYBACK: PlaybackSettings = {
@@ -79,6 +83,20 @@ export interface ExportFile {
     emailFrequency: string;
     emailConsentedAt: string | null;
   };
+  /** Sign in history, newest first. Country, outcome and a device name only, never an address (M49). */
+  signIns: Array<{ at: string; outcome: string; country: string | null; device: string }>;
+  /** The linked Google sign in: the masked address and when it was linked. Null when not linked (M49). */
+  linkedSignIn: { google: { hint: string; linkedAt: string } | null };
+  /** Gifts made while signed in to this account. Amounts and status only, never the sealed contact fields (M48). */
+  donations: Array<{
+    reference: string;
+    kind: string;
+    status: string;
+    currency: string;
+    amountMinor: number;
+    createdAt: string;
+    paidAt: string | null;
+  }>;
 }
 
 function pick<T extends string | number>(value: unknown, allowed: readonly T[], fallback: T): T {
@@ -333,7 +351,39 @@ export class AccountViewerData {
         .select()
         .from(viewerNotificationPrefs)
         .where(eq(viewerNotificationPrefs.accountId, accountId));
-      if (ids.length === 0) return { owned, saved: [], progress: [], ratings: [], notices: [], prefs };
+      const events = await tx
+        .select({
+          at: loginEvents.at,
+          outcome: loginEvents.outcome,
+          country: loginEvents.country,
+          userAgent: loginEvents.userAgent,
+        })
+        .from(loginEvents)
+        .where(eq(loginEvents.accountId, accountId))
+        .orderBy(desc(loginEvents.at))
+        .limit(500);
+      const [google] = await tx
+        .select({ hint: accountIdentities.emailHint, linkedAt: accountIdentities.linkedAt })
+        .from(accountIdentities)
+        .where(
+          and(eq(accountIdentities.accountId, accountId), eq(accountIdentities.provider, 'google')),
+        );
+      const gifts = await tx
+        .select({
+          reference: donations.reference,
+          kind: donations.kind,
+          status: donations.status,
+          currency: donations.currency,
+          amountMinor: donations.amountMinor,
+          createdAt: donations.createdAt,
+          paidAt: donations.paidAt,
+        })
+        .from(donations)
+        .where(eq(donations.accountId, accountId))
+        .orderBy(desc(donations.createdAt));
+      const extras = { events, google, gifts };
+      if (ids.length === 0)
+        return { owned, saved: [], progress: [], ratings: [], notices: [], prefs, ...extras };
       const saved = await tx
         .select({
           profileId: myList.profileId,
@@ -382,7 +432,7 @@ export class AccountViewerData {
         .from(viewerNotices)
         .where(inArray(viewerNotices.profileId, ids))
         .orderBy(desc(viewerNotices.createdAt));
-      return { owned, saved, progress, ratings, notices, prefs };
+      return { owned, saved, progress, ratings, notices, prefs, ...extras };
     });
     const profilesOut: ExportFile['profiles'] = [];
     for (const profile of rows.owned) {
@@ -450,6 +500,26 @@ export class AccountViewerData {
         emailFrequency: prefs?.emailFrequency ?? 'off',
         emailConsentedAt: prefs?.addressConsentedAt?.toISOString() ?? null,
       },
+      signIns: rows.events.map((e) => ({
+        at: e.at.toISOString(),
+        outcome: e.outcome,
+        country: e.country,
+        device: deviceLabel(e.userAgent),
+      })),
+      linkedSignIn: {
+        google: rows.google
+          ? { hint: rows.google.hint, linkedAt: rows.google.linkedAt.toISOString() }
+          : null,
+      },
+      donations: rows.gifts.map((g) => ({
+        reference: g.reference,
+        kind: g.kind,
+        status: g.status,
+        currency: g.currency,
+        amountMinor: g.amountMinor,
+        createdAt: g.createdAt.toISOString(),
+        paidAt: g.paidAt?.toISOString() ?? null,
+      })),
     };
   }
 
