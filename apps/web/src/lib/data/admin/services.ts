@@ -399,6 +399,7 @@ import type { SaveResult, CaptionResult } from './caption-commands';
 import type { Cue } from '@/lib/admin/cues';
 import { validateCues } from '@/lib/admin/cues';
 import type { BulkIssue, BulkOutcome, BulkUndo } from './bulk';
+import { runStaffBulk, type StaffBulkAction, type StaffBulkService } from './staff-bulk';
 import { runUserBulk, undoUserBulk, userBulkFor, type UserBulkAction } from './user-bulk';
 import { runSeriesBulk, seriesBulkFor, undoSeriesBulk, type SeriesBulkAction } from './series-bulk';
 import type { CaptionState, CaptionTrack } from './types';
@@ -713,6 +714,18 @@ export interface PeopleService {
     undo: BulkUndo,
   ): Promise<{ succeeded: string[]; failed: BulkIssue[] }>;
   staff(actor: AdminActor): Promise<{ staff: StaffRecord[]; invites: InviteRecord[] }>;
+  /**
+   * Answers `reauth` when the password was not confirmed in the last 10 minutes, so a batch asks once up
+   * front instead of failing item by item. Super admin only (roles.bulk).
+   */
+  bulkPreflight(actor: AdminActor): Promise<CommandResult>;
+  /** Change roles between Editor and Admin, or resend invites, for many people. Super admin only. */
+  bulkStaff(
+    actor: AdminActor,
+    ids: string[],
+    action: StaffBulkAction,
+    bulkId: string,
+  ): Promise<BulkOutcome>;
   /** Confirms the staff member's password so a sensitive action can follow (D-069). */
   reauthenticate(actor: AdminActor, password: string): Promise<CommandResult>;
   /** An admin clears another person's authenticator after confirming with their own code. */
@@ -729,6 +742,9 @@ const shown = (actor: AdminActor, user: UserRecord): UserRecord =>
   can(actor.role, 'users.view') && isAdminRole(actor.role)
     ? { ...user }
     : { ...user, email: maskEmail(user.email) };
+
+/** When the fixture admin last confirmed a password. Real mode reads this from the session. */
+let fixtureReauthAt = 0;
 
 const fixturePeopleService: PeopleService = {
   async users(actor, query) {
@@ -766,9 +782,36 @@ const fixturePeopleService: PeopleService = {
     const s = getStore();
     return { staff: structuredClone(s.staff), invites: structuredClone(s.invites) };
   },
+  async bulkPreflight(actor) {
+    need(actor, 'roles.bulk');
+    return Date.now() - fixtureReauthAt < 10 * 60_000
+      ? { ok: true }
+      : { ok: false, error: 'Confirm your password to continue.', reauth: true };
+  },
+  async bulkStaff(actor, ids, action, bulkId) {
+    need(actor, 'roles.bulk');
+    const store = getStore();
+    const service: StaffBulkService = {
+      async staff() {
+        return store.staff.map((m) => ({ id: m.id, role: m.role }));
+      },
+      async invites() {
+        return store.invites.map((i) => ({ id: i.id, createdAt: i.createdAt }));
+      },
+      async changeRole(id, role) {
+        return changeRole(store, id, role, actor.accountId, actor.name, Date.now());
+      },
+      async resend(id) {
+        return resendInvite(store, id, actor.accountId, actor.name, Date.now());
+      },
+    };
+    return runStaffBulk(service, actor.accountId, ids, action, bulkId, Date.now());
+  },
   async reauthenticate(actor, password) {
     need(actor, 'roles.change');
-    return password.length > 0 ? { ok: true } : { ok: false, error: 'Password is not right' };
+    if (password.length === 0) return { ok: false, error: 'Password is not right' };
+    fixtureReauthAt = Date.now();
+    return { ok: true };
   },
   async resetTwoFactor(actor, staffId, code) {
     need(actor, 'roles.change');

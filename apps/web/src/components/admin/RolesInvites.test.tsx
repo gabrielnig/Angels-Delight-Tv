@@ -196,3 +196,96 @@ describe('UserDetail', () => {
     await waitFor(() => expect(deleteAccount).toHaveBeenCalledWith(s.users[0]!.id, 'DELETE'));
   });
 });
+
+describe('RolesInvites bulk', () => {
+  const outcome = (over = {}) => ({ bulkId: 'b', succeeded: [], failed: [], skipped: [], ...over });
+  function bulkSetup(canBulk = true) {
+    const bulk = vi.fn(async (ids: string[]) => outcome({ succeeded: ids }));
+    const preflight = vi
+      .fn()
+      .mockResolvedValueOnce({ ok: false, error: 'Confirm your password to continue.', reauth: true })
+      .mockResolvedValue({ ok: true });
+    const actions = {
+      invite: ok(),
+      resend: ok(),
+      revoke: ok(),
+      changeRole: ok(),
+      reauthenticate: ok(),
+      resetTwoFactor: ok(),
+      bulk,
+      bulkPreflight: preflight,
+    };
+    render(
+      <ToastProvider>
+        <RolesInvites
+          staff={s.staff}
+          invites={s.invites}
+          now={now}
+          canManage
+          canBulk={canBulk}
+          selfId="acc_arkdev"
+          actions={actions}
+        />
+      </ToastProvider>,
+    );
+    return actions;
+  }
+
+  it('checkboxes appear only for a Super admin', () => {
+    bulkSetup(false);
+    expect(screen.queryAllByRole('checkbox')).toHaveLength(0);
+    cleanup();
+    bulkSetup(true);
+    expect(screen.getByRole('checkbox', { name: 'Select Ngozi' })).toBeTruthy();
+    expect(screen.getByRole('checkbox', { name: 'Select sade@example.test' })).toBeTruthy();
+  });
+
+  it('own row and Super admin rows have no checkbox, and own row says You', () => {
+    bulkSetup();
+    expect(screen.queryByRole('checkbox', { name: 'Select Arkdev' })).toBeNull();
+    expect(screen.getByText('You')).toBeTruthy();
+  });
+
+  it('role change asks for the password once, then runs for the selection', async () => {
+    const a = bulkSetup();
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Select Ngozi' }));
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Select Tobi' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Make Admin' }));
+    fireEvent.change(await screen.findByLabelText('Password'), { target: { value: 'secret-pass' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Confirm' }));
+    const confirm = await screen.findByRole('button', { name: 'Make 2 Admin' });
+    fireEvent.click(confirm);
+    await waitFor(() =>
+      expect(a.bulk).toHaveBeenCalledWith(['stf_2', 'stf_3'], { type: 'role', role: 'admin' }, expect.any(String)),
+    );
+    expect(a.reauthenticate).toHaveBeenCalledTimes(1);
+  });
+
+  it('shows the refusal message from the server', async () => {
+    const a = bulkSetup();
+    a.bulk.mockResolvedValueOnce(
+      outcome({
+        failed: [
+          { id: 'stf_2', reason: 'Moving anyone to or from Super admin is done one at a time.', retryable: false },
+        ],
+      }),
+    );
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Select Ngozi' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Make Editor' }));
+    fireEvent.change(await screen.findByLabelText('Password'), { target: { value: 'secret-pass' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Confirm' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Make 1 Editor' }));
+    expect(await screen.findByText(/done one at a time/)).toBeTruthy();
+  });
+
+  it('resends invites for the selected invites', async () => {
+    const a = bulkSetup();
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Select sade@example.test' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Resend invites' }));
+    fireEvent.change(await screen.findByLabelText('Password'), { target: { value: 'secret-pass' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Confirm' }));
+    await waitFor(() =>
+      expect(a.bulk).toHaveBeenCalledWith(['inv_1'], { type: 'resend_invites' }, expect.any(String)),
+    );
+  });
+});

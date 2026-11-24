@@ -6,6 +6,8 @@ import { can } from '@/lib/admin/can';
 import { peopleService } from '@/lib/data/admin/services';
 import { requireActor } from '@/lib/data/admin/session-next';
 import {
+  bulkPreflightAction,
+  bulkStaffAction,
   changeRoleAction,
   inviteStaffAction,
   reauthenticateAction,
@@ -32,6 +34,7 @@ export default async function RolesPage() {
         invites={invites}
         now={Date.now()}
         canManage={can(actor.role, 'roles.change')}
+        canBulk={can(actor.role, 'roles.bulk')}
         selfId={actor.accountId}
         actions={{
           invite: inviteStaffAction,
@@ -40,6 +43,8 @@ export default async function RolesPage() {
           changeRole: changeRoleAction,
           reauthenticate: reauthenticateAction,
           resetTwoFactor: resetTwoFactorAction,
+          bulkPreflight: bulkPreflightAction,
+          bulk: bulkStaffAction,
         }}
       />
     </>

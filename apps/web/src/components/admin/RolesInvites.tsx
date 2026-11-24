@@ -1,18 +1,25 @@
 'use client';
 
-import { useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { ADMIN_ACTIONS, can } from '@/lib/admin/can';
 import { ACTION_LABELS } from '@/lib/admin/can-labels';
 import { formatDate, formatDateTime } from '@/lib/admin/format';
+import { describeOutcome, mergeOutcomes, newBulkId, type BulkOutcome } from '@/lib/data/admin/bulk';
+import type { StaffBulkAction } from '@/lib/data/admin/staff-bulk';
 import type { InviteRecord, StaffRecord } from '@/lib/data/admin/types';
 import type { CommandResult } from '@/lib/data/admin/video-commands';
 import { Badge } from './Badge';
 import { Button } from './Button';
+import { BulkBar } from './bulk/BulkBar';
+import { BulkReport } from './bulk/BulkReport';
+import { useBulkRun } from './bulk/useBulkRun';
+import { useSelection } from './bulk/useSelection';
 import { ConfirmDialog, Dialog } from './Dialog';
-import { SelectField, TextField } from './fields';
+import { Checkbox, SelectField, TextField } from './fields';
 import { Icon } from './Icon';
 import { useReauth } from './ReauthDialog';
 import { Banner } from './states';
+import { useToast } from './Toast';
 import { useCommand } from './useCommand';
 
 export interface RoleActions {
@@ -24,6 +31,9 @@ export interface RoleActions {
   reauthenticate(password: string): Promise<CommandResult>;
   /** Clears another person's authenticator. Needs the admin's own code. */
   resetTwoFactor(id: string, code: string): Promise<CommandResult>;
+  /** Super admin only. Answers `reauth` when the password was not confirmed recently. */
+  bulkPreflight?(): Promise<CommandResult>;
+  bulk?(ids: string[], action: StaffBulkAction, bulkId: string): Promise<BulkOutcome>;
 }
 
 const ROLE_OPTIONS = [
@@ -51,6 +61,7 @@ export function RolesInvites({
   invites,
   now,
   canManage,
+  canBulk = false,
   selfId,
   actions,
 }: {
@@ -58,6 +69,8 @@ export function RolesInvites({
   invites: InviteRecord[];
   now: number;
   canManage: boolean;
+  /** Super admin only (roles.bulk). Shows the checkboxes and the bar. */
+  canBulk?: boolean;
   /** The signed in person. They cannot reset their own two factor here. */
   selfId?: string;
   actions: RoleActions;
@@ -74,6 +87,57 @@ export function RolesInvites({
   const [resetCode, setResetCode] = useState('');
   const [resetError, setResetError] = useState<string>();
   const supers = staff.filter((m) => m.role === 'super_admin').length;
+  const toast = useToast();
+  const selectable = useMemo(
+    () => [
+      ...staff.filter((m) => m.role !== 'super_admin' && m.id !== selfId).map((m) => `staff:${m.id}`),
+      ...invites.map((i) => `invite:${i.id}`),
+    ],
+    [staff, invites, selfId],
+  );
+  const sel = useSelection(selectable);
+  const actionRef = useRef<StaffBulkAction>({ type: 'resend_invites' });
+  const [roleConfirm, setRoleConfirm] = useState<'editor' | 'admin' | null>(null);
+  const [outcome, setOutcome] = useState<BulkOutcome | null>(null);
+  const [lastAction, setLastAction] = useState<StaffBulkAction>({ type: 'resend_invites' });
+  const runner = useBulkRun(
+    useCallback((chunk, bulkId) => actions.bulk!(chunk, actionRef.current, bulkId), [actions]),
+    { chunkSize: 50 },
+  );
+  const chosen = [...sel.selected];
+  const chosenStaff = chosen.filter((id) => id.startsWith('staff:')).map((id) => id.slice(6));
+  const chosenInvites = chosen.filter((id) => id.startsWith('invite:')).map((id) => id.slice(7));
+  const bulkLabel = (a: StaffBulkAction) =>
+    a.type === 'role' ? `Make ${a.role === 'admin' ? 'Admin' : 'Editor'}` : 'Resend invites';
+  const labelFor = (id: string) =>
+    staff.find((m) => m.id === id)?.name ?? invites.find((i) => i.id === id)?.email ?? id;
+
+  async function runBulk(action: StaffBulkAction, list: string[], prior?: BulkOutcome) {
+    actionRef.current = action;
+    setLastAction(action);
+    setRoleConfirm(null);
+    const result = await runner.start(list, prior?.bulkId ?? newBulkId());
+    const merged = prior ? mergeOutcomes(prior, result) : result;
+    if (merged.interrupted && merged.succeeded.length === 0 && merged.failed.length === 0) {
+      toast.show({ tone: 'danger', message: `${bulkLabel(action)} did not work. Nothing was changed. Try again.` });
+      return;
+    }
+    setOutcome(merged);
+    sel.clear();
+    if (merged.succeeded.length > 0)
+      toast.show({ tone: 'success', message: describeOutcome(bulkLabel(action), merged) });
+  }
+
+  /** Asks for the password once up front, then starts (or asks to confirm) the batch. */
+  async function startBulk(action: StaffBulkAction) {
+    const ready = await guard(() => actions.bulkPreflight!());
+    if (!ready.ok) {
+      if (ready.error !== 'Nothing was changed.') setRoleError(ready.error);
+      return;
+    }
+    if (action.type === 'role') setRoleConfirm(action.role);
+    else void runBulk(action, chosenInvites);
+  }
 
   async function invite(e: React.FormEvent) {
     e.preventDefault();
@@ -87,6 +151,42 @@ export function RolesInvites({
   return (
     <div className="adm-stack">
       {roleError ? <Banner tone="danger">{roleError}</Banner> : null}
+      {outcome ? (
+        <BulkReport
+          label={bulkLabel(lastAction)}
+          outcome={outcome}
+          itemLabel={labelFor}
+          onDismiss={() => setOutcome(null)}
+          onRetry={(list) => void runBulk(lastAction, list, outcome)}
+        />
+      ) : null}
+      {canBulk && sel.count > 0 ? (
+        <BulkBar
+          count={sel.count}
+          onClear={sel.clear}
+          actions={[
+            {
+              id: 'editor',
+              label: 'Make Editor',
+              onClick: () => void startBulk({ type: 'role', role: 'editor' }),
+              disabledReason: chosenInvites.length ? 'Select only people to change roles.' : undefined,
+            },
+            {
+              id: 'admin',
+              label: 'Make Admin',
+              variant: 'primary',
+              onClick: () => void startBulk({ type: 'role', role: 'admin' }),
+              disabledReason: chosenInvites.length ? 'Select only people to change roles.' : undefined,
+            },
+            {
+              id: 'resend',
+              label: 'Resend invites',
+              onClick: () => void startBulk({ type: 'resend_invites' }),
+              disabledReason: chosenStaff.length ? 'Select only invites to resend.' : undefined,
+            },
+          ]}
+        />
+      ) : null}
       <section className="adm-card adm-table-card" aria-labelledby="staff-h">
         <h2 className="adm-h3" id="staff-h">
           Admins
@@ -101,6 +201,11 @@ export function RolesInvites({
           <caption className="adm-sr">People with admin access</caption>
           <thead>
             <tr>
+              {canBulk ? (
+                <th scope="col" className="adm-table__check">
+                  <span className="adm-sr">Select</span>
+                </th>
+              ) : null}
               <th scope="col">Name</th>
               <th scope="col">Email</th>
               <th scope="col">Role</th>
@@ -114,7 +219,23 @@ export function RolesInvites({
               const own = m.id === selfId;
               return (
                 <tr key={m.id}>
-                  <th scope="row">{m.name}</th>
+                  {canBulk ? (
+                    <td className="adm-table__check">
+                      {own || m.role === 'super_admin' ? (
+                        <span className="adm-select-spacer" aria-hidden="true" />
+                      ) : (
+                        <Checkbox
+                          label={`Select ${m.name}`}
+                          checked={sel.isSelected(`staff:${m.id}`)}
+                          onChange={() => sel.toggle(`staff:${m.id}`)}
+                        />
+                      )}
+                    </td>
+                  ) : null}
+                  <th scope="row">
+                    {m.name}
+                    {own ? <span className="adm-muted"> You</span> : null}
+                  </th>
                   <td>{m.email}</td>
                   <td>
                     <SelectField
@@ -211,6 +332,13 @@ export function RolesInvites({
               const expired = Date.parse(i.expiresAt) < now;
               return (
                 <li key={i.id}>
+                  {canBulk ? (
+                    <Checkbox
+                      label={`Select ${i.email}`}
+                      checked={sel.isSelected(`invite:${i.id}`)}
+                      onChange={() => sel.toggle(`invite:${i.id}`)}
+                    />
+                  ) : null}
                   <span className="adm-listrow__main">
                     <strong>{i.email}</strong>
                     <span className="adm-muted">
@@ -300,6 +428,15 @@ export function RolesInvites({
           }
           setPending(null);
         }}
+      />
+      <ConfirmDialog
+        open={roleConfirm !== null}
+        title={`Make ${chosenStaff.length} ${chosenStaff.length === 1 ? 'person' : 'people'} ${roleConfirm === 'admin' ? 'an admin' : 'an editor'}?`}
+        consequence={ROLE_CONSEQUENCE[roleConfirm ?? 'editor'] ?? ''}
+        confirmLabel={`Make ${chosenStaff.length} ${roleConfirm === 'admin' ? 'Admin' : 'Editor'}`}
+        busy={runner.running}
+        onClose={() => setRoleConfirm(null)}
+        onConfirm={() => roleConfirm && void runBulk({ type: 'role', role: roleConfirm }, chosenStaff)}
       />
       <ConfirmDialog
         open={cancelInvite !== null}
