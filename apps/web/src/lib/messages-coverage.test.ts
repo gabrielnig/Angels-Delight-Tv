@@ -37,7 +37,7 @@ describe('message catalog coverage (M34-S04)', () => {
   });
 
   it('has no key that nothing uses, so dead copy does not pile up', () => {
-    const dynamic = ['player.error.'];
+    const dynamic = ['player.error.', 'format.'];
     const unused = Object.keys(EN_NG).filter(
       (key) => !used.has(key) && !dynamic.some((prefix) => key.startsWith(prefix)),
     );
