@@ -7,7 +7,7 @@ import {
   type Logger,
   isAdminRole,
 } from '@ad/shared';
-import { COLOR_KEYS, ThemeValidationError } from '@ad/ui';
+import { COLOR_KEYS, ThemeValidationError } from '@ad/ui/theme';
 import { THEME_CACHE_TTL_MS, TtlCache } from './cache';
 import { buildThemeCss } from './css';
 import { evaluateTheme, type GateResult } from './gate';
