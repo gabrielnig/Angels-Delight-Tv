@@ -400,6 +400,13 @@
       "when": 1796000003000,
       "tag": "0056_donation_review",
       "breakpoints": true
+    },
+    {
+      "idx": 57,
+      "version": "7",
+      "when": 1796000004000,
+      "tag": "0057_definer_search_path",
+      "breakpoints": true
     }
   ]
 }

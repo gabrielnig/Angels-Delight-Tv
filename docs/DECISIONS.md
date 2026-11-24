@@ -1916,3 +1916,9 @@ Decision: `video.preview` catches every error and records `failed` or `skipped` 
 - Options: Keep the raw address in the bucket subject, or hash the full address, or hash the truncated network.
 - Why: SECURITY.md section 10 allows a raw address only in short lived access logs. The truncated hash matches D-197. The key route budget (300 a minute) is now shared by a /24, which is far above one viewer's need because a key is fetched once per playback.
 - Reversible: Yes.
+
+## D-350 Every SECURITY DEFINER function names pg_temp last in its search path (security review)
+- Decision: Migration 0057 sets `search_path = public, pg_temp` on the eight ratings, notices and digest definer functions that had only `public`, and a database test fails for any definer function in `public` that does not end its search path with `pg_temp`.
+- Options: Leave `public` alone because no SQL injection exists today, or fix the eight and add a guard test.
+- Why: Without `pg_temp` last, Postgres searches the temporary schema first, so one SQL injection bug could shadow `profiles` or `viewer_notification_prefs` for a function that runs with owner rights. The fix is metadata only and the guard stops it coming back.
+- Reversible: Yes.
