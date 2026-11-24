@@ -160,4 +160,15 @@ describe('edge media worker', () => {
       (await handle(new Request(url(), { method: 'PUT', body: 'x' }), env(), opts)).status,
     ).toBe(405);
   });
+
+  it('guest length urls (20 minutes) are still checked: forged and expired are refused', async () => {
+    const guestExp = NOW + 20 * 60;
+    const good = url(KEY, guestExp);
+    expect((await handle(new Request(good), env(), opts)).status).toBe(200);
+    const forged = good.replace(/sig=[^&]+/, 'sig=AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA');
+    expect((await handle(new Request(forged), env(), opts)).status).toBe(403);
+    const stretched = good.replace(`exp=${guestExp}`, `exp=${guestExp + 7200}`);
+    expect((await handle(new Request(stretched), env(), opts)).status).toBe(403);
+    expect((await handle(new Request(good), env(), { now: () => guestExp + 31 })).status).toBe(403);
+  });
 });

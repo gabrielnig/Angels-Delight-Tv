@@ -155,3 +155,26 @@ describe('value validation', () => {
     expect(JSON.stringify(result.error!.issues)).toContain('without https://');
   });
 });
+
+describe('guest playback settings (M40-S10, G5, G9)', () => {
+  it('guest play defaults on, is public and Super admin only', () => {
+    const def = SETTING_DEFS['features.guest_play'];
+    expect(def.default).toBe(true);
+    expect(def.isPublic).toBe(true);
+    expect(def.tier).toBe('super');
+    expect(def.label).toBe('Guests can watch');
+    expect(parse('features.guest_play', 'yes').success).toBe(false);
+  });
+
+  it('guest segment minutes default to 20 within 5 and 120 and stay private', () => {
+    const def = SETTING_DEFS['limits.guest_segment_minutes'];
+    expect(def.default).toBe(20);
+    expect(def.isPublic).toBe(false);
+    expect(def.tier).toBe('super');
+    expect(parse('limits.guest_segment_minutes', 4).success).toBe(false);
+    expect(parse('limits.guest_segment_minutes', 5).success).toBe(true);
+    expect(parse('limits.guest_segment_minutes', 120).success).toBe(true);
+    expect(parse('limits.guest_segment_minutes', 121).success).toBe(false);
+    expect(parse('limits.guest_segment_minutes', 20.5).success).toBe(false);
+  });
+});
