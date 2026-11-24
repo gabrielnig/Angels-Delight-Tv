@@ -49,6 +49,7 @@ Related documents: `docs/PRD.md` (why), `docs/USER-STORIES.md` (what, per module
 | M36 | Artwork and thumbnails | Admin and backend | [READY] |
 | M40 | Guest access | Viewer and backend | [READY] |
 | M42 | Admin polish and bulk operations | Admin | [READY] |
+| M45 | Discovery, SEO, consent and search | Viewer and admin | [READY] |
 | M47 | Design system tuning and guards | Cross cutting | [READY] |
 | M48 | Sponsors and donations | Viewer and admin | [CLIENT] |
 
@@ -745,6 +746,16 @@ Each module lists: purpose, responsibilities, data owned, dependencies, client i
 **Client input.** Custom artwork if wanted [CLIENT, optional].
 
 ---
+
+### M45 Discovery, SEO, consent and search [READY]
+
+**Area.** Viewer and admin.
+
+**Purpose.** Let people and search engines find titles: sitemap, robots, structured data, share images and share menu, typo tolerant search with synonyms and a no-results report, voice search (Could), the storage notice and inventory, error pages with one action each, the analytics posture guard and the performance budget.
+
+**Dependencies.** M01, M06, M07, M26, M35, M40, M34.
+
+**Notes.** Kids-only titles are never indexed or placed in the sitemap (R26). Every new cookie or storage key needs a row in `STORAGE_INVENTORY` (`apps/web/src/lib/consent/inventory.ts`). Plan and stories: `docs/plan/v2/L6-discovery.md`. Build notes: `docs/lanes/L6-build.md`.
 
 ### M42 Admin polish and bulk operations [READY]
 

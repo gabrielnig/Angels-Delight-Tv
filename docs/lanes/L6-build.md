@@ -19,7 +19,8 @@ Plan: `docs/plan/v2/L6-discovery.md`. Rulings: `docs/plan/v2/RULINGS.md`. Review
 | 10 | Kids only titles: share image noindex header, sitemap category fix; social image contrast already tested | merged | #344 |
 | 11 | Voice search (S134, Could) | merged | #347 (dash fix #349) |
 | 12 | Analytics posture guard and performance budget checks | merged | #350 |
-| 13 | Canonical and hreflang readiness | in review | |
+| 13 | Canonical and hreflang readiness | merged | #353 |
+| 14 | Docs: M45 story rewording, MODULES, SCREEN-ARCHITECTURE, SECURITY, DESIGN-SYSTEM, CLIENT-INPUTS | in review | |
 
 ## Slice 1 (sitemap)
 
@@ -117,3 +118,9 @@ Plan: `docs/plan/v2/L6-discovery.md`. Rulings: `docs/plan/v2/RULINGS.md`. Review
 - `lib/seo/alternates.ts`: `canonicalPath(path, query)` drops tracking and sort params and sorts the rest, `hreflangAlternates(path, locales, origin, prefix?)` returns nothing under two locales, otherwise every locale plus `x-default`, `listingRobots` gives `noindex,follow` for search and for pages after the first.
 - Title pages already set a canonical path; search and my list already carry `noindex,follow` (M40-S18). Wiring `hreflangAlternates` into page metadata waits for L7 to fix the locale URL prefix (the helper takes the prefix as a parameter).
 - Tests: `pnpm vitest run apps/web/src/lib/seo/alternates.test.ts`.
+
+## Slice 14 (docs)
+
+- Reworded M45 S06 AC2, S11 AC3, S14 AC1 and AC3 in `docs/plan/v2/L6-discovery.md` as the L6 review lists. The M45 stories live in that plan file, not in USER-STORIES.md.
+- Added M45 to MODULES, error and notice lines to SCREEN-ARCHITECTURE, storage inventory, analytics posture and kids noindex lines to SECURITY, the `--notice-h` note and `mic` icon to DESIGN-SYSTEM (11.13 was done in slice 7), and notice and Discovery rows to CLIENT-INPUTS.
+- Open: M26-S04 AC2 in the plan still says the Report link; it follows S14 AC3 and should be read as superseded.

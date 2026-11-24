@@ -152,7 +152,7 @@ As Sister Vanessa, I want to set the site description and the default share pict
 ### M45-S06 Share menu (Must)
 As a viewer, I want to share a title by WhatsApp or by copying the link, so that I can send it to friends and family.
 - AC1: Given my phone supports native share, When I tap Share, Then the system share sheet opens with the title, text and link.
-- AC2: Given a desktop browser, When I click Share, Then a menu offers Copy link and WhatsApp first, then Facebook, X and Email.
+- AC2: Given a desktop browser, When I click Share, Then a menu offers Copy link and WhatsApp first, then Facebook and X, plus any channel the admin enabled.
 - AC3: Given I copy, When it succeeds, Then I see "Link copied", and if the clipboard is blocked a selectable link field shows.
 - AC4: Given I am on a kids profile, When the title page shows, Then there is no Share button.
 - Edge: cancelling the native sheet shows nothing. All external links open in a new tab and say so to screen readers.
@@ -199,7 +199,7 @@ As a viewer on a phone, I want to speak my search, so that I type less.
 As a viewer, I want to know what the site stores on my device, so that I can trust it.
 - AC1: Given my first visit, When the page loads, Then a short notice appears at the bottom with the configured text, a Privacy link and a Got it button, and playback is never blocked.
 - AC2: Given I tap Got it, When I return, Then it stays hidden until the admin bumps the notice version or 12 months pass.
-- AC3: Given the Privacy page, When opened, Then it lists every cookie and storage key with purpose and duration, generated from the same list the code uses.
+- AC3: Given the Privacy page, When opened, Then it lists every cookie and storage key with purpose and duration, generated from the same list the code uses. The list includes the guest Kids mode choice and the import answer.
 - AC4: Given a mobile phone with the bottom tab bar, When the notice shows, Then it sits above the bar and covers no controls permanently.
 - Edge: with storage blocked the notice shows each visit and never errors. It adds no layout shift.
 - Error: not applicable.
@@ -224,9 +224,9 @@ As a viewer on a slow phone, I want pages to load fast, so that I can watch with
 
 ### M45-S14 Not found and error pages (Must)
 As a viewer, I want helpful pages when something is missing or broken, so that I can recover.
-- AC1: Given an unknown URL, When opened, Then the page keeps the header, and offers Search, Home, Browse and popular titles.
+- AC1: Given an unknown URL, When opened, Then the page keeps the header and offers one action, Back to Home, plus a search field and popular titles. Browse is the header link.
 - AC2: Given a removed video, When its link opens, Then I see "This video is no longer available" with search and similar titles, with HTTP 404.
-- AC3: Given a server error, When shown, Then I see plain words, Try again, Home, a Reference id and a Report link that prefills the reference.
+- AC3: Given a server error, When shown, Then I see plain words and one action, Try again, with the reference id and the support email shown as plain text. There is no Report link.
 - AC4: Given the root layout fails, When shown, Then a minimal page with Try again appears.
 - Edge: all error pages are `noindex`.
 - Error: this is the error state.
