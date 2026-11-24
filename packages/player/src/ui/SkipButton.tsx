@@ -18,7 +18,9 @@ export interface SkipButtonProps {
 
 export function skipLabel(marker: ActiveMarker): string {
   if (marker.nextLesson) return msg('player.skip.next');
-  return msg(`player.skip.${marker.kind}` as 'player.skip.intro');
+  if (marker.kind === 'intro') return msg('player.skip.intro');
+  if (marker.kind === 'recap') return msg('player.skip.recap');
+  return msg('player.skip.credits');
 }
 
 /**
