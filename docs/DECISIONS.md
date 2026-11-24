@@ -1594,3 +1594,9 @@ Per video tri state, site default (Super admin), Admin changes it with a reason 
 - Options: Self hosted NLLB; Google API only; adapter only
 - Why: Ruling R23: NLLB weights are non commercial, so enabling them is not allowed for this product. The adapter keeps the door open.
 - Reversible: Yes, a new adapter can be added without schema change
+
+## D-292 Paid translation calls are capped in the worker through translation_usage (lane L7)
+- Decision: `withUsageCap` wraps the Google adapter. Before each request it adds the request characters to the month's `translation_usage` row (first of the UTC month, per provider) and refuses with a permanent error if the total would pass TRANSLATE_MONTHLY_CHAR_CAP, or if the cap is 0. The count is added after the provider answers. A paid provider without a usage store behaves as not configured. The fake engine and any future self hosted engine are not counted.
+- Options: Count in the job only; count in the adapter wrapper; no cap
+- Why: Every call path through the chooser is guarded, including later bulk jobs, and the guard cannot be skipped by a new caller.
+- Reversible: Yes
