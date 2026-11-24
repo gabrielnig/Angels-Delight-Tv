@@ -142,18 +142,18 @@ export async function getTitleDetail(
 
 type ViewerTx = Parameters<Parameters<ViewerContext['db']['transaction']>[0]>[0];
 
-async function buildSeasons(
+export async function buildSeasons(
   tx: ViewerTx,
   ctx: ViewerContext,
   audience: { kids: boolean },
-  profileId: string,
+  profileId: string | null,
   seriesId: string,
   play: PlayTarget | null,
 ): Promise<SeasonDto[]> {
   const episodes =
     (await listEpisodes(tx, catalogContext(ctx), audience, [seriesId])).get(seriesId) ?? [];
   const progressRows =
-    episodes.length === 0
+    episodes.length === 0 || profileId === null
       ? []
       : await tx
           .select()

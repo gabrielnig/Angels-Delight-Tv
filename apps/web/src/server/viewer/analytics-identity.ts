@@ -1,6 +1,7 @@
 import { withAccount } from '@ad/db';
 import { loadOwnedProfile } from '@ad/viewer';
 import type { ViewerResolver } from '../../lib/data/analytics-viewer';
+import { guestCookieName, readGuest } from '../guest/guest-cookie';
 import { activeProfileCookieName, cookieValue, readActiveProfile } from './active-profile';
 import type { ViewerRuntime } from './api';
 
@@ -17,7 +18,14 @@ export function createRealViewerResolver(rt: Needs): ViewerResolver {
   const name = activeProfileCookieName(rt.secureCookies);
   return async (request) => {
     const actor = await rt.resolveActor(request);
-    if (!actor) return { ...anonymous };
+    if (!actor) {
+      // A guest with a valid cookie counts as one viewer per day. The id is only hashed with the day downstream.
+      const guestId = readGuest(
+        rt.profileSecret,
+        cookieValue(request.headers.get('cookie'), guestCookieName(rt.secureCookies)),
+      );
+      return guestId ? { ...anonymous, subjectId: guestId } : { ...anonymous };
+    }
     const profileId = readActiveProfile(
       rt.profileSecret,
       actor.accountId,

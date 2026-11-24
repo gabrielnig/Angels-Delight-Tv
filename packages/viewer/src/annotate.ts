@@ -16,10 +16,13 @@ export interface TitleCardDto extends TitleCard {
 /** Adds personal state to catalog cards. The caller has already verified the profile belongs to the actor. */
 export async function annotateCards(
   tx: ViewerTx,
-  profileId: string,
+  profileId: string | null,
   cards: readonly TitleCard[],
 ): Promise<TitleCardDto[]> {
   if (cards.length === 0) return [];
+  // The guest path (M40) has no profile: nothing personal is read, so the result carries no progress and no My List.
+  if (profileId === null)
+    return cards.map((card) => ({ ...card, progress: null, inMyList: false }));
   const videoIds = cards.filter((card) => card.kind === 'video').map((card) => card.id);
   const seriesIds = cards.filter((card) => card.kind === 'series').map((card) => card.id);
   const progress = await progressForVideos(tx, profileId, videoIds);

@@ -10,3 +10,4 @@ export * from './play-target';
 export * from './title-detail';
 export * from './browse';
 export * from './search';
+export * from './guest';

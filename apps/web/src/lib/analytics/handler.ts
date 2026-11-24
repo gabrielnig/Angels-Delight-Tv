@@ -4,6 +4,8 @@ import { clientIp, truncateIp, type TrustedProxyMode } from '@ad/security';
 export interface ViewerContext {
   profileId: string | null;
   audience: 'general' | 'kids';
+  /** The guest id for a signed guest cookie, so guests count as unique viewers per day (M40-S16). */
+  subjectId?: string | null;
 }
 
 export interface AnalyticsHandlerDeps {
@@ -48,6 +50,7 @@ export function createAnalyticsHandler(deps: AnalyticsHandlerDeps) {
         ipKey: (ip ? truncateIp(ip) : null) ?? 'unknown',
         profileId: viewer.profileId,
         audience: viewer.audience,
+        subjectId: viewer.subjectId ?? null,
       },
       store: deps.store,
       limiter: deps.limiter,
