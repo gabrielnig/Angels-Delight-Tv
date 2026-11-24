@@ -1628,3 +1628,7 @@ Per video tri state, site default (Super admin), Admin changes it with a reason 
 - Options: keep the mockup list with Confirm at build badges; hand written privacy copy; a browser test.
 - Why: the Privacy page cannot promise what the code does not do, and jsdom has no layout, so the check reads the real CSS.
 - Reversible: yes.
+
+## D-298 List pages reuse the card grid and reserve 70vh while loading (lane L2, M41-S08)
+
+Decision: the View all list pages keep the shared `.web-grid` (2, 3, 4, 5 across, and 6 from 1920) and their skeleton uses the same grid with ten card shapes inside a region that holds `min-height: 70vh`. Options: a separate list grid with its own columns, or a fixed pixel height. Why: one grid means one set of columns to test, and 70vh covers two rows of cards at every width so the footer does not jump when cards arrive. Reversible: yes, CSS only.

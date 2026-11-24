@@ -1,6 +1,6 @@
 # Lane L2 build notes (module M41, Home hero, rows and sections)
 
-Plan `docs/plan/v2/L2-home.md`, review `docs/reviews/v2/L2-review.md`, rulings `docs/plan/v2/RULINGS.md`. Worktree `/home/claude/wt2/L2-build`, branch per slice `l2/sN-...`.
+Plan `docs/plan/v2/L2-home.md`, review `docs/reviews/v2/L2-review.md`, rulings `docs/plan/v2/RULINGS.md`. Worktree `/home/claude/wt2/L2b-build` (L2b continues from slice 6b), branch per slice `l2/sN-...`.
 
 ## Slices
 
@@ -11,7 +11,8 @@ Plan `docs/plan/v2/L2-home.md`, review `docs/reviews/v2/L2-review.md`, rulings `
 | 3 | Hero carousel rewrite, scrim measured | merged | 299 |
 | 4 | Row View all, snap, gap compensation, skeleton height | merged | 302 |
 | 5 | Row link and preview migrations, row resolution | merged | 322 |
-| 6 | Browse list pages (new, trending, series, row/[slug]) | this PR | |
+| 6 | Browse list pages (new, trending, series, row/[slug]) | merged | 329 |
+| 6b | List page loading skeleton, 5 and 6 across grid | this PR | |
 
 ## Exists
 
