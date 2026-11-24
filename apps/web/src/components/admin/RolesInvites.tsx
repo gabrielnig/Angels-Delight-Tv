@@ -88,7 +88,7 @@ export function RolesInvites({
     <div className="adm-stack">
       {roleError ? <Banner tone="danger">{roleError}</Banner> : null}
       <section className="adm-card adm-table-card" aria-labelledby="staff-h">
-        <h2 className="adm-h3" id="staff-h" style={{ padding: 'var(--space-4) var(--space-4) 0' }}>
+        <h2 className="adm-h3" id="staff-h">
           Admins
         </h2>
         {supers <= 1 ? (
@@ -97,7 +97,7 @@ export function RolesInvites({
             admin first.
           </p>
         ) : null}
-        <table className="adm-table" style={{ display: 'table' }}>
+        <table className="adm-table adm-table--always adm-table--sticky">
           <caption className="adm-sr">People with admin access</caption>
           <thead>
             <tr>
@@ -249,17 +249,17 @@ export function RolesInvites({
       </section>
 
       <section className="adm-card adm-table-card" aria-labelledby="matrix-h">
-        <h2 className="adm-h3" id="matrix-h" style={{ padding: 'var(--space-4) var(--space-4) 0' }}>
+        <h2 className="adm-h3" id="matrix-h">
           What each role can do
         </h2>
-        <table className="adm-table" style={{ display: 'table' }}>
+        <table className="adm-table adm-table--always adm-table--sticky">
           <caption className="adm-sr">Permissions by role. This table is read only.</caption>
           <thead>
             <tr>
               <th scope="col">Action</th>
-              <th scope="col">Editor</th>
-              <th scope="col">Admin</th>
-              <th scope="col">Super admin</th>
+              <th scope="col" className="adm-ctr">Editor</th>
+              <th scope="col" className="adm-ctr">Admin</th>
+              <th scope="col" className="adm-ctr">Super admin</th>
             </tr>
           </thead>
           <tbody>
@@ -267,7 +267,7 @@ export function RolesInvites({
               <tr key={a}>
                 <th scope="row">{ACTION_LABELS[a]}</th>
                 {(['editor', 'admin', 'super_admin'] as const).map((r) => (
-                  <td key={r}>
+                  <td key={r} className="adm-ctr">
                     {can(r, a) ? (
                       <>
                         <Icon name="check" size={16} /> <span>Yes</span>

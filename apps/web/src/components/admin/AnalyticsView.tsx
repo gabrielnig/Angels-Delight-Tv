@@ -189,7 +189,7 @@ export function AnalyticsOverviewView({
             <h2
               className="adm-h3"
               id="top-h"
-              style={{ padding: 'var(--space-4) var(--space-4) 0' }}
+             
             >
               Top titles
             </h2>
@@ -198,7 +198,7 @@ export function AnalyticsOverviewView({
                 No titles were watched in this period.
               </p>
             ) : (
-              <table className="adm-table" style={{ display: 'table' }}>
+              <table className="adm-table adm-table--always adm-table--sticky">
                 <caption className="adm-sr">Most watched titles</caption>
                 <thead>
                   <tr>
