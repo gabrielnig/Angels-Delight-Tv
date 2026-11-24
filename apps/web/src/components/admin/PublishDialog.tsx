@@ -9,7 +9,7 @@ import type { CommandResult, PublishRequest } from '@/lib/data/admin/video-comma
 import { Button } from './Button';
 import { Checklist } from './ChecklistCard';
 import { Dialog } from './Dialog';
-import { TextArea, TextField } from './fields';
+import { SelectField, TextArea, TextField } from './fields';
 import { Banner } from './states';
 
 interface Props {
@@ -21,7 +21,18 @@ interface Props {
   publish: (request: PublishRequest) => Promise<CommandResult>;
   onDone: (mode: 'now' | 'schedule') => void;
   now?: number;
+  /**
+   * When the maturity rating is missing, the dialog asks for it (S127). The rating is saved first, then the
+   * title is published. Without this prop a missing rating blocks publishing like any other open step.
+   */
+  maturity?: {
+    labels: readonly string[];
+    save: (rank: number) => Promise<{ ok: true } | { ok: false; error: string }>;
+  };
 }
+
+const RATING_REQUIRED =
+  'Choose a maturity rating. Publishing needs one so profiles can be limited correctly.';
 
 /** Publish now or schedule (SCREEN-ARCHITECTURE 47). Times are Africa/Lagos, UTC+1 all year. */
 export function PublishDialog({
@@ -33,6 +44,7 @@ export function PublishDialog({
   publish,
   onDone,
   now = Date.now(),
+  maturity,
 }: Props) {
   const [mode, setMode] = useState<'now' | 'schedule'>('now');
   const [date, setDate] = useState('');
@@ -41,8 +53,15 @@ export function PublishDialog({
   const [override, setOverride] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [rank, setRank] = useState('');
+  const [rankError, setRankError] = useState<string | null>(null);
 
-  const open_ = checklist.filter((item) => !item.done);
+  const askRating = Boolean(maturity) && checklist.some((i) => i.key === 'maturity' && !i.done);
+  const shown = askRating
+    ? checklist.map((i) => (i.key === 'maturity' ? { ...i, done: rank !== '' } : i))
+    : checklist;
+  // A rating that is only missing here is asked for in the dialog and checked on press, so it never disables Publish.
+  const open_ = checklist.filter((item) => !item.done && !(askRating && item.key === 'maturity'));
   const onlyCaptions = open_.length > 0 && open_.every((item) => item.key === 'captions');
   const canOverride = onlyCaptions && can(role, 'caption.override');
   const blocked = open_.length > 0 && !(canOverride && override);
@@ -64,9 +83,20 @@ export function PublishDialog({
   const reasonShort = canOverride && override && reason.trim().length < 5;
 
   async function confirm() {
-    setBusy(true);
     setError(null);
+    if (askRating && rank === '') {
+      setRankError(RATING_REQUIRED);
+      return;
+    }
+    setBusy(true);
     try {
+      if (askRating && maturity) {
+        const saved = await maturity.save(Number(rank));
+        if (!saved.ok) {
+          setError(saved.error);
+          return;
+        }
+      }
       const request: PublishRequest =
         mode === 'now' ? { mode } : { mode, at: scheduledIso ?? undefined };
       if (canOverride && override) request.overrideReason = reason;
@@ -175,7 +205,22 @@ export function PublishDialog({
             : 'Finish them before this video can be published.'}
         </Banner>
       ) : null}
-      <Checklist items={checklist} compact />
+      {askRating && maturity ? (
+        <SelectField
+          label="Maturity rating (required)"
+          value={rank}
+          error={rankError ?? undefined}
+          options={[
+            { value: '', label: 'Choose a rating' },
+            ...maturity.labels.map((label, index) => ({ value: String(index), label })),
+          ]}
+          onChange={(e) => {
+            setRank(e.target.value);
+            setRankError(null);
+          }}
+        />
+      ) : null}
+      <Checklist items={shown} compact />
 
       {canOverride ? (
         <fieldset className="adm-stack" style={{ border: 0, padding: 0, margin: 0 }}>

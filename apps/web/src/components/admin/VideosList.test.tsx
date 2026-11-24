@@ -13,11 +13,15 @@ vi.mock('next/navigation', () => ({
 
 const { VideosList } = await import('./VideosList');
 const { ToastProvider } = await import('./Toast');
+const { MaturityLabelsProvider } = await import('@/lib/maturity-context');
 const NOW = Date.parse('2026-11-17T09:00:00Z');
 const store = seedStore(NOW);
 const page = queryVideos(store.videos, { limit: 5 });
 
-function setup(over: Partial<Parameters<typeof VideosList>[0]> = {}) {
+function setup(
+  over: Partial<Parameters<typeof VideosList>[0]> = {},
+  labels: string[] | null = null,
+) {
   const bulk = vi.fn(async (_ids: string[], _action: unknown, _bulkId: string) => ({
     succeeded: ['a'],
     failed: [{ id: page.items[1]!.id, reason: 'Not ready: Poster needs attention first.' }],
@@ -25,19 +29,21 @@ function setup(over: Partial<Parameters<typeof VideosList>[0]> = {}) {
   const undo = vi.fn(async () => ({ succeeded: ['a'], failed: [] }));
   const matching = vi.fn(async () => Array.from({ length: 48 }, (_, i) => `m-${i}`));
   render(
-    <ToastProvider>
-      <VideosList
-        page={page}
-        query={{}}
-        categories={store.categories}
-        role="admin"
-        bulk={bulk}
-        undo={undo}
-        matching={matching}
-        now={NOW}
-        {...over}
-      />
-    </ToastProvider>,
+    <MaturityLabelsProvider labels={labels}>
+      <ToastProvider>
+        <VideosList
+          page={page}
+          query={{}}
+          categories={store.categories}
+          role="admin"
+          bulk={bulk}
+          undo={undo}
+          matching={matching}
+          now={NOW}
+          {...over}
+        />
+      </ToastProvider>
+    </MaturityLabelsProvider>,
   );
   return { bulk, undo, matching };
 }
@@ -48,21 +54,42 @@ const pick = async (count: number) => {
   }
 };
 
-describe('VideosList bulk suitability', () => {
-  it('sets suitability for the selection', async () => {
+describe('VideosList bulk maturity rating (M44-S13)', () => {
+  it('sets the rating for the selection from the five labels', async () => {
     const { bulk } = setup();
-    for (const item of page.items.slice(0, 2)) {
-      await userEvent.click(screen.getAllByRole('checkbox', { name: `Select ${item.title}` })[0]!);
-    }
-    await userEvent.click(screen.getByRole('button', { name: 'Set suitability' }));
+    await pick(2);
+    await userEvent.click(screen.getByRole('button', { name: 'Set maturity rating' }));
     const dialog = await screen.findByRole('dialog');
-    await userEvent.selectOptions(within(dialog).getByLabelText('Suitability'), 'kids');
+    const select = within(dialog).getByLabelText('Maturity rating');
+    expect(
+      within(select)
+        .getAllByRole('option')
+        .map((o) => o.textContent),
+    ).toEqual(['Choose a rating', 'G', 'PG', '12', '15', '18']);
+    await userEvent.selectOptions(select, '15');
     await userEvent.click(within(dialog).getByRole('button', { name: 'Apply' }));
     await waitFor(() => expect(bulk).toHaveBeenCalled());
     expect(bulk).toHaveBeenCalledWith(
       page.items.slice(0, 2).map((v) => v.id),
-      { type: 'suitability', value: 'kids' },
+      { type: 'maturity', value: 3 },
       expect.any(String),
+    );
+  });
+
+  it('uses the configured labels', async () => {
+    setup({}, ['All', '7+', '13+', '16+', '18+']);
+    await pick(1);
+    await userEvent.click(screen.getByRole('button', { name: 'Set maturity rating' }));
+    const dialog = await screen.findByRole('dialog');
+    expect(within(dialog).getByRole('option', { name: '16+' })).toBeInTheDocument();
+  });
+
+  it('is disabled with a reason for a role that cannot edit', async () => {
+    setup({ role: 'support' as never });
+    await pick(1);
+    expect(screen.getAllByRole('button', { name: 'Set maturity rating' })[0]).toHaveAttribute(
+      'aria-disabled',
+      'true',
     );
   });
 });
@@ -148,7 +175,9 @@ describe('VideosList', () => {
       { type: 'publish' },
       expect.any(String),
     );
-    await waitFor(() => expect(screen.getAllByText(/1 could not be changed/).length).toBeGreaterThan(0));
+    await waitFor(() =>
+      expect(screen.getAllByText(/1 could not be changed/).length).toBeGreaterThan(0),
+    );
     expect(screen.getByText(/Poster needs attention first/)).toBeInTheDocument();
   });
 
@@ -156,15 +185,23 @@ describe('VideosList', () => {
     const bulk = vi.fn(async (_ids: string[], _action: unknown, _bulkId: string) => ({
       succeeded: ['a'],
       failed: [
-        { id: page.items[1]!.id, reason: 'Not ready: Poster needs attention first.', retryable: false },
+        {
+          id: page.items[1]!.id,
+          reason: 'Not ready: Poster needs attention first.',
+          retryable: false,
+        },
         { id: page.items[2]!.id, reason: 'Something went wrong.', retryable: true },
       ],
     }));
     setup({ bulk });
     await pick(3);
     await userEvent.click(screen.getByRole('button', { name: 'Publish' }));
-    await userEvent.click(within(await screen.findByRole('dialog')).getByRole('button', { name: 'Publish 3' }));
-    expect(await screen.findByRole('button', { name: 'Retry the 1 that failed' })).toBeInTheDocument();
+    await userEvent.click(
+      within(await screen.findByRole('dialog')).getByRole('button', { name: 'Publish 3' }),
+    );
+    expect(
+      await screen.findByRole('button', { name: 'Retry the 1 that failed' }),
+    ).toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: 'Retry the 1 that failed' }));
     await waitFor(() => expect(bulk).toHaveBeenCalledTimes(2));
     expect(bulk.mock.calls[1]![0]).toEqual([page.items[2]!.id]);
@@ -189,7 +226,13 @@ describe('VideosList', () => {
     expect(go).toHaveAttribute('aria-disabled', 'true');
     await userEvent.type(within(dialog).getByLabelText('Type 5 to confirm'), '5');
     await userEvent.click(go);
-    await waitFor(() => expect(bulk).toHaveBeenCalledWith(page.items.map((v) => v.id), { type: 'trash' }, expect.any(String)));
+    await waitFor(() =>
+      expect(bulk).toHaveBeenCalledWith(
+        page.items.map((v) => v.id),
+        { type: 'trash' },
+        expect.any(String),
+      ),
+    );
   });
 
   it('undo after trash restores the same ids', async () => {
@@ -202,7 +245,9 @@ describe('VideosList', () => {
     const { undo } = setup({ bulk });
     await pick(1);
     await userEvent.click(screen.getByRole('button', { name: 'Move to Trash' }));
-    await userEvent.click(within(await screen.findByRole('dialog')).getByRole('button', { name: 'Move to Trash' }));
+    await userEvent.click(
+      within(await screen.findByRole('dialog')).getByRole('button', { name: 'Move to Trash' }),
+    );
     await userEvent.click(await screen.findByRole('button', { name: 'Undo' }));
     await waitFor(() => expect(undo).toHaveBeenCalledWith(undoPayload));
   });
@@ -213,9 +258,18 @@ describe('VideosList', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Select all 48 that match' }));
     await waitFor(() => expect(matching).toHaveBeenCalled());
     expect(await screen.findByText('48 selected')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Publish/ })).toHaveAttribute('aria-disabled', 'true');
-    expect(screen.getByRole('button', { name: /Move to Trash/ })).toHaveAttribute('aria-disabled', 'true');
-    expect(screen.getByRole('button', { name: 'Add to category' })).not.toHaveAttribute('aria-disabled', 'true');
+    expect(screen.getByRole('button', { name: /Publish/ })).toHaveAttribute(
+      'aria-disabled',
+      'true',
+    );
+    expect(screen.getByRole('button', { name: /Move to Trash/ })).toHaveAttribute(
+      'aria-disabled',
+      'true',
+    );
+    expect(screen.getByRole('button', { name: 'Add to category' })).not.toHaveAttribute(
+      'aria-disabled',
+      'true',
+    );
   });
 
   it('the count is announced', async () => {

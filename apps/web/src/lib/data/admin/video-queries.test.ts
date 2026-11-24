@@ -200,6 +200,28 @@ describe('applyBulk remove_category (L3-04)', () => {
   });
 });
 
+describe('applyBulk maturity', () => {
+  const rules = { requireCaptions: false } as never;
+  it('sets the rank on every selected video, or on none when one is missing', () => {
+    const store = seedStore(Date.parse('2026-11-17T09:00:00Z'));
+    const [a, b] = store.videos;
+    const ok = applyBulk([a!, b!], [a!.id, b!.id], { type: 'maturity', value: 3 }, 'editor', rules, 0);
+    expect(ok.succeeded).toEqual([a!.id, b!.id]);
+    expect(a!.maturityRank).toBe(3);
+    const none = applyBulk([a!, b!], [b!.id, 'ghost'], { type: 'maturity', value: 1 }, 'editor', rules, 0);
+    expect(none.succeeded).toEqual([]);
+    expect(b!.maturityRank).toBe(3);
+  });
+
+  it('refuses a rank outside 0 to 4', () => {
+    const store = seedStore(Date.parse('2026-11-17T09:00:00Z'));
+    const [a] = store.videos;
+    const out = applyBulk([a!], [a!.id], { type: 'maturity', value: 7 }, 'editor', rules, 0);
+    expect(out.succeeded).toEqual([]);
+    expect(out.failed[0]!.reason).toMatch(/one of the five ratings/);
+  });
+});
+
 describe('applyBulk suitability', () => {
   const rules = { requireCaptions: false } as never;
   it('changes every selected video, or none when one is missing', () => {

@@ -121,6 +121,8 @@ export type BulkAction =
   | { type: 'category'; categoryId: string }
   | { type: 'remove_category'; categoryId: string }
   | { type: 'suitability'; value: NonNullable<VideoRecord['suitability']> }
+  /** 0 (G) to 4 (18). All or nothing like suitability (M44-S13). */
+  | { type: 'maturity'; value: number }
   /** `null` follows the site default. Off needs a reason, applied to every video. Admin only. */
   | { type: 'captions_available'; value: boolean | null; reason?: string };
 
@@ -143,8 +145,15 @@ export function applyBulk(
   now: number,
 ): BulkResult {
   const result: BulkResult = { succeeded: [], failed: [] };
-  if (action.type === 'suitability') {
+  if (action.type === 'suitability' || action.type === 'maturity') {
     // All or nothing (M35-S04 AC3): check every id first, then change them together.
+    if (
+      action.type === 'maturity' &&
+      !(Number.isInteger(action.value) && action.value >= 0 && action.value <= 4)
+    ) {
+      result.failed = ids.map((id) => ({ id, reason: 'Choose one of the five ratings.' }));
+      return result;
+    }
     const missing = ids.filter((id) => !videos.some((v) => v.id === id && v.deletedAt === null));
     if (missing.length || !can(role, 'video.edit')) {
       result.failed = (missing.length ? missing : ids).map((id) => ({
@@ -158,7 +167,8 @@ export function applyBulk(
     const stamp = new Date(now).toISOString();
     for (const id of ids) {
       const video = videos.find((v) => v.id === id)!;
-      video.suitability = action.value;
+      if (action.type === 'maturity') video.maturityRank = action.value;
+      else video.suitability = action.value;
       video.updatedAt = stamp;
       result.succeeded.push(id);
     }

@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import { seedStore } from '@/lib/data/admin/store';
@@ -10,13 +10,14 @@ vi.mock('next/navigation', () => ({
 }));
 
 const { VideoEditor } = await import('./VideoEditor');
+type UpdateResult = { ok: true } | { ok: false; errors: Record<string, string> };
 const store = seedStore(Date.parse('2026-11-17T09:00:00Z'));
 const get = (id: string) => store.videos.find((v) => v.id === id)!;
 
 function setup(
   id: string,
   role: 'admin' | 'editor' = 'admin',
-  update = vi.fn(async () => ({ ok: true as const })),
+  update = vi.fn<(patch: never) => Promise<UpdateResult>>(async () => ({ ok: true })),
   markersSummary: string | null = null,
 ) {
   const actions = {
@@ -40,6 +41,40 @@ function setup(
   return actions;
 }
 
+describe('VideoEditor maturity rating (M44-S13)', () => {
+  it('offers the five labels and shows the video rank', () => {
+    setup('vid_safe_online');
+    const select = screen.getByLabelText('Maturity rating');
+    expect(
+      within(select)
+        .getAllByRole('option')
+        .map((o) => o.textContent),
+    ).toEqual(['Choose a rating', 'G', 'PG', '12', '15', '18']);
+    expect(select).toHaveValue('0');
+  });
+
+  it('sends the chosen rank as a number', async () => {
+    const actions = setup('vid_safe_online');
+    await userEvent.selectOptions(screen.getByLabelText('Maturity rating'), '15');
+    await userEvent.click(screen.getByRole('button', { name: 'Save changes' }));
+    await waitFor(() => expect(actions.update).toHaveBeenCalled());
+    const patch = (actions.update.mock.calls[0] as unknown as [Record<string, unknown>])[0];
+    expect(patch.maturityRank).toBe(3);
+    expect('suitability' in patch).toBe(false);
+  });
+
+  it('shows the field error from the server', async () => {
+    const update = vi.fn(async () => ({
+      ok: false as const,
+      errors: { maturityRank: 'Choose one of the five ratings.' },
+    }));
+    setup('vid_safe_online', 'admin', update);
+    await userEvent.selectOptions(screen.getByLabelText('Maturity rating'), '12');
+    await userEvent.click(screen.getByRole('button', { name: 'Save changes' }));
+    expect(await screen.findByText('Choose one of the five ratings.')).toBeInTheDocument();
+  });
+});
+
 describe('VideoEditor', () => {
   it('starts clean, then shows unsaved changes and saves a whitelisted patch', async () => {
     const actions = setup('vid_safe_online');
@@ -57,9 +92,9 @@ describe('VideoEditor', () => {
       'categoryIds',
       'description',
       'episodeNumber',
+      'maturityRank',
       'seriesId',
       'slug',
-      'suitability',
       'tags',
       'title',
     ]);
@@ -120,8 +155,15 @@ describe('VideoEditor', () => {
   });
 
   it('shows the Skip and chapters card with a one line summary and an Edit link for editors', () => {
-    setup('vid_safe_online', 'editor', undefined, 'Intro 0:12 to 0:48, credits from 5:10, 6 chapters');
-    expect(screen.getByText('Intro 0:12 to 0:48, credits from 5:10, 6 chapters')).toBeInTheDocument();
+    setup(
+      'vid_safe_online',
+      'editor',
+      undefined,
+      'Intro 0:12 to 0:48, credits from 5:10, 6 chapters',
+    );
+    expect(
+      screen.getByText('Intro 0:12 to 0:48, credits from 5:10, 6 chapters'),
+    ).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Edit skip and chapters' })).toHaveAttribute(
       'href',
       '/admin/videos/vid_safe_online/markers',
@@ -136,7 +178,11 @@ describe('VideoEditor', () => {
 });
 
 describe('VideoEditor captions for viewers (L3-05)', () => {
-  const withCaptions = (role: 'admin' | 'editor', over: Record<string, unknown> = {}, siteDefault = true) => {
+  const withCaptions = (
+    role: 'admin' | 'editor',
+    over: Record<string, unknown> = {},
+    siteDefault = true,
+  ) => {
     const setCaptions = vi.fn(async () => ({ ok: true as const }));
     render(
       <VideoEditor

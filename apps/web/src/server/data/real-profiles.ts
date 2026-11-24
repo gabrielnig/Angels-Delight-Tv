@@ -107,6 +107,7 @@ export class RealProfiles implements ProfilesRepository {
     if (input.language !== undefined) patch.language = input.language;
     if (input.autoplayNext !== undefined) patch.autoplayNext = input.autoplayNext;
     if (input.pin !== undefined) patch.pin = input.pin;
+    if (input.maxMaturityRank !== undefined) patch.maxMaturityRank = input.maxMaturityRank;
     try {
       const active = await this.io.activeProfileId();
       const dto = await updateProfile(this.service, viewerActor(accountId), id, patch, {

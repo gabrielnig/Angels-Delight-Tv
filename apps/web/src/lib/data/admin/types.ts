@@ -45,6 +45,8 @@ export interface VideoRecord {
   posterFocus: { x: number; y: number; zoom: number } | null;
   posterRecut?: 'processing' | 'failed' | null;
   suitability: Suitability | null;
+  /** 0 (G) to 4 (18), null until rated. Fixtures may leave it out and keep a legacy suitability (M44-S13). */
+  maturityRank?: number | null;
   seriesId: string | null;
   seasonNumber: number | null;
   episodeNumber: number | null;
@@ -75,6 +77,8 @@ export interface SeriesRecord {
   description: string;
   posterId: string | null;
   published: boolean;
+  /** 0 (G) to 4 (18), null until rated (M44-S13). */
+  maturityRank?: number | null;
 }
 
 export interface Page<T> {
@@ -86,7 +90,7 @@ export interface Page<T> {
 }
 
 export interface ChecklistItem {
-  key: 'uploaded' | 'encoded' | 'poster' | 'captions' | 'details' | 'suitability';
+  key: 'uploaded' | 'encoded' | 'poster' | 'captions' | 'details' | 'maturity';
   label: string;
   done: boolean;
   /** Plain words: what is missing, or what is done. */

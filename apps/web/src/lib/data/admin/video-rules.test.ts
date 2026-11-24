@@ -46,7 +46,7 @@ describe('publishChecklist and canPublish', () => {
       'poster',
       'captions',
       'details',
-      'suitability',
+      'maturity',
     ]);
     expect(items.every((i) => i.done)).toBe(true);
     expect(canPublish(base, { requireApprovedCaptions: true })).toEqual({ ok: true, blockers: [] });
@@ -58,10 +58,12 @@ describe('publishChecklist and canPublish', () => {
       posterId: null,
       captionState: 'needs_review' as const,
       suitability: null,
+      maturityRank: null,
     };
     const result = canPublish(video, { requireApprovedCaptions: true });
     expect(result.ok).toBe(false);
-    expect(result.blockers.map((b) => b.key)).toEqual(['poster', 'captions', 'suitability']);
+    expect(result.blockers.map((b) => b.key)).toEqual(['poster', 'captions', 'maturity']);
+    expect(result.blockers[2]!.detail).toBe('Choose a maturity rating.');
     expect(result.blockers[1]!.detail).toBe('Captions need review before this can go live.');
   });
 
@@ -84,5 +86,15 @@ describe('publishChecklist and canPublish', () => {
   it('requires a title and a description of at least 20 characters', () => {
     const result = canPublish({ ...base, description: 'Short' }, { requireApprovedCaptions: true });
     expect(result.blockers.map((b) => b.key)).toEqual(['details']);
+  });
+});
+
+describe('maturity on the checklist (M44-S13)', () => {
+  it('counts a rank of 0 as set, and derives one from a legacy suitability', () => {
+    const rated = { ...base, suitability: null, maturityRank: 0 };
+    expect(canPublish(rated).ok).toBe(true);
+    const legacy = { ...base, suitability: 'older' as const, maturityRank: undefined };
+    expect(canPublish(legacy).ok).toBe(true);
+    expect(canPublish({ ...base, suitability: null, maturityRank: undefined }).ok).toBe(false);
   });
 });

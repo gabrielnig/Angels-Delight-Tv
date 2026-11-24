@@ -56,6 +56,16 @@ export function adminStatusOf(video: VideoRecord): AdminVideoStatus {
   return 'ready';
 }
 
+const LEGACY_RANK = { everyone: 0, kids: 0, older: 3 } as const;
+
+/** The rank of a video: its own, or the one a legacy suitability maps to (kids and everyone 0, older 3). */
+export function effectiveMaturityRank(
+  video: Pick<VideoRecord, 'maturityRank' | 'suitability'>,
+): number | null {
+  if (video.maturityRank !== undefined && video.maturityRank !== null) return video.maturityRank;
+  return video.suitability ? LEGACY_RANK[video.suitability] : null;
+}
+
 export interface PublishRules {
   requireApprovedCaptions: boolean;
 }
@@ -131,10 +141,13 @@ export function publishChecklist(
       fixHref: editHref,
     },
     {
-      key: 'suitability',
-      label: 'Suitability',
-      done: video.suitability !== null,
-      detail: video.suitability ? 'Suitability is set.' : 'Say who this video is suitable for.',
+      key: 'maturity',
+      label: 'Maturity rating',
+      done: effectiveMaturityRank(video) !== null,
+      detail:
+        effectiveMaturityRank(video) !== null
+          ? 'A maturity rating is set.'
+          : 'Choose a maturity rating.',
       fixHref: editHref,
     },
   ];

@@ -82,6 +82,10 @@ export interface SeriesPatch {
   title?: string;
   description?: string;
   published?: boolean;
+  /** 0 (G) to 4 (18) (M44-S13). */
+  maturityRank?: number;
+  /** With maturityRank: every episode gets the same rating. The editor confirms this first. */
+  applyToEpisodes?: boolean;
 }
 
 export function createSeries(
@@ -110,6 +114,14 @@ export function updateSeries(s: Store, id: string, patch: SeriesPatch): CommandR
     series.title = title.slice(0, 80);
   }
   if (patch.description !== undefined) series.description = patch.description.trim().slice(0, 500);
+  if (patch.maturityRank !== undefined) {
+    if (!Number.isInteger(patch.maturityRank) || patch.maturityRank < 0 || patch.maturityRank > 4)
+      return fail('Choose one of the five ratings.');
+    series.maturityRank = patch.maturityRank;
+    if (patch.applyToEpisodes)
+      for (const v of s.videos)
+        if (v.seriesId === id && v.deletedAt === null) v.maturityRank = patch.maturityRank;
+  }
   if (
     patch.published === true &&
     !live(s).some((v) => v.seriesId === id && v.publishState === 'published')

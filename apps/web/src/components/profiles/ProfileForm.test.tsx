@@ -3,6 +3,7 @@ import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import type { Profile } from '../../lib/data';
+import { MaturityLabelsProvider } from '../../lib/maturity-context';
 import { ProfileForm } from './ProfileForm';
 
 const emeka: Profile = {
@@ -293,11 +294,129 @@ describe('ProfileForm language options (M46)', () => {
         onDone={vi.fn()}
       />,
     );
-    const options = screen.getAllByRole('option').map((o) => o.textContent);
+    const options = within(screen.getByLabelText('Language'))
+      .getAllByRole('option')
+      .map((o) => o.textContent);
     expect(options).toEqual(['English', 'Yorùbá', 'Hausa']);
   });
   it('offers English only by default', () => {
     render(<ProfileForm profile={emeka} onSave={vi.fn()} onDone={vi.fn()} />);
-    expect(screen.getAllByRole('option').map((o) => o.textContent)).toEqual(['English']);
+    expect(
+      within(screen.getByLabelText('Language'))
+        .getAllByRole('option')
+        .map((o) => o.textContent),
+    ).toEqual(['English']);
+  });
+});
+
+describe('ProfileForm maturity limit (S126)', () => {
+  const teen: Profile = { ...emeka, maxMaturityRank: 2 };
+  const limit = () => screen.getByLabelText('Allow titles rated up to');
+
+  it('shows the limit with a plain meaning beside each label', () => {
+    render(<ProfileForm profile={teen} onSave={vi.fn()} onDone={vi.fn()} />);
+    expect(limit()).toHaveValue('2');
+    expect(
+      within(limit())
+        .getAllByRole('option')
+        .map((o) => o.textContent),
+    ).toEqual([
+      'G, all ages',
+      'PG, parental guidance',
+      '12, ages 12 and up',
+      '15, ages 15 and up',
+      '18, adults only',
+    ]);
+    expect(
+      screen.getByText(/hidden from this profile everywhere: Home, search, My List and playback/i),
+    ).toBeInTheDocument();
+  });
+
+  it('uses only the label when the site changed the labels', () => {
+    render(
+      <MaturityLabelsProvider labels={['All', '7+', '13+', '16+', '18+']}>
+        <ProfileForm profile={teen} onSave={vi.fn()} onDone={vi.fn()} />
+      </MaturityLabelsProvider>,
+    );
+    expect(
+      within(limit())
+        .getAllByRole('option')
+        .map((o) => o.textContent),
+    ).toEqual(['All', '7+', '13+', '16+', '18+']);
+  });
+
+  it('lowering needs no password and sends the new rank', async () => {
+    const onSave = vi.fn().mockResolvedValue({ ok: true });
+    const user = userEvent.setup();
+    render(<ProfileForm profile={teen} onSave={onSave} onDone={vi.fn()} />);
+    await user.selectOptions(limit(), '1');
+    expect(screen.queryByLabelText(/Account password/)).toBeNull();
+    await user.click(screen.getByRole('button', { name: 'Save changes' }));
+    expect(onSave).toHaveBeenCalledWith(expect.objectContaining({ maxMaturityRank: 1 }));
+    expect(onSave.mock.calls[0]![0]).not.toHaveProperty('password');
+  });
+
+  it('raising asks for the account password first and sends it with the rank', async () => {
+    const onSave = vi.fn().mockResolvedValue({ ok: true });
+    const user = userEvent.setup();
+    render(<ProfileForm profile={teen} onSave={onSave} onDone={vi.fn()} />);
+    await user.selectOptions(limit(), '3');
+    await user.click(screen.getByRole('button', { name: 'Save changes' }));
+    expect(onSave).not.toHaveBeenCalled();
+    expect(
+      await screen.findByText('Enter your account password to raise the limit.'),
+    ).toBeInTheDocument();
+    await user.type(screen.getByLabelText(/Account password/), 'secret-pass');
+    await user.click(screen.getByRole('button', { name: 'Save changes' }));
+    expect(onSave).toHaveBeenCalledWith(
+      expect.objectContaining({ maxMaturityRank: 3, password: 'secret-pass' }),
+    );
+  });
+
+  it('keeps the old limit and says what happened when the password is wrong', async () => {
+    const onSave = vi.fn().mockResolvedValue({ ok: false, reason: 'password_required' });
+    const user = userEvent.setup();
+    render(<ProfileForm profile={teen} onSave={onSave} onDone={vi.fn()} />);
+    await user.selectOptions(limit(), '3');
+    await user.type(screen.getByLabelText(/Account password/), 'nope');
+    await user.click(screen.getByRole('button', { name: 'Save changes' }));
+    expect(
+      await screen.findByText('That password is not right. Check it and try again.'),
+    ).toBeInTheDocument();
+  });
+
+  it('does not send the limit when it did not change', async () => {
+    const onSave = vi.fn().mockResolvedValue({ ok: true });
+    const user = userEvent.setup();
+    render(<ProfileForm profile={teen} onSave={onSave} onDone={vi.fn()} />);
+    await user.type(screen.getByLabelText(/Name/), 'x');
+    await user.click(screen.getByRole('button', { name: 'Save changes' }));
+    expect(onSave.mock.calls[0]![0]).not.toHaveProperty('maxMaturityRank');
+  });
+
+  it('fixes a kids profile at G, disabled with the reason beside it', () => {
+    render(<ProfileForm profile={amina} onSave={vi.fn()} onDone={vi.fn()} />);
+    expect(limit()).toBeDisabled();
+    expect(limit()).toHaveValue('0');
+    expect(screen.getByText('Kids profiles only show titles for all ages.')).toBeInTheDocument();
+  });
+
+  it('starts at 12 when Kids is turned off, and sends it with the password', async () => {
+    const onSave = vi.fn().mockResolvedValue({ ok: true });
+    const user = userEvent.setup();
+    render(<ProfileForm profile={amina} onSave={onSave} onDone={vi.fn()} />);
+    await user.click(screen.getByRole('switch', { name: 'Kids profile' }));
+    expect(limit()).toBeEnabled();
+    expect(limit()).toHaveValue('2');
+    await user.type(screen.getByLabelText(/Account password/), 'secret-pass');
+    await user.click(screen.getByRole('button', { name: 'Save changes' }));
+    expect(onSave).toHaveBeenCalledWith(
+      expect.objectContaining({ kids: false, maxMaturityRank: 2, password: 'secret-pass' }),
+    );
+  });
+
+  it('is not on the create form', () => {
+    render(<ProfileForm onSave={vi.fn()} onDone={vi.fn()} />);
+    expect(screen.queryByLabelText('Allow titles rated up to')).toBeNull();
   });
 });

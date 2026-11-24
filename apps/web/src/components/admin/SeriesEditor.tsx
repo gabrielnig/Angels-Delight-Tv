@@ -5,6 +5,7 @@ import { useState } from 'react';
 import type { SeriesPatch } from '@/lib/data/admin/collection-commands';
 import type { SeriesDetail } from '@/lib/data/admin/services';
 import type { CommandResult } from '@/lib/data/admin/video-commands';
+import { useMaturityLabels } from '@/lib/maturity-context';
 import { Badge } from './Badge';
 import { Button } from './Button';
 import { ConfirmDialog } from './Dialog';
@@ -43,11 +44,32 @@ export function SeriesEditor({
   const [error, setError] = useState<string>();
   const [confirm, setConfirm] = useState(false);
   const [addId, setAddId] = useState('');
-  const dirty = title !== series.title || description !== series.description;
+  const labels = useMaturityLabels();
+  const savedRank = series.maturityRank ?? null;
+  const [rank, setRank] = useState(savedRank === null ? '' : String(savedRank));
+  const [applyOpen, setApplyOpen] = useState(false);
+  const dirty =
+    title !== series.title ||
+    description !== series.description ||
+    rank !== (savedRank === null ? '' : String(savedRank));
+  const applying = rank === '' ? null : Number(rank);
+  const differing = episodes.filter((v) => (v.maturityRank ?? null) !== applying);
+  const differingRanks = new Set(differing.map((v) => v.maturityRank ?? null));
+  const differingText =
+    differing.length === 0
+      ? 'every episode already has this rating'
+      : differingRanks.size === 1 && !differingRanks.has(null)
+        ? `including ${differing.length} that ${differing.length === 1 ? 'is' : 'are'} rated ${labels[[...differingRanks][0]!]} today`
+        : `including ${differing.length} that ${differing.length === 1 ? 'is' : 'are'} rated differently today`;
 
   async function save() {
     const result = await run(
-      () => actions.update(series.id, { title, description }),
+      () =>
+        actions.update(series.id, {
+          title,
+          description,
+          ...(applying !== null && applying !== savedRank ? { maturityRank: applying } : {}),
+        }),
       'Series saved.',
     );
     setError(result.ok ? undefined : result.error);
@@ -81,6 +103,28 @@ export function SeriesEditor({
           disabled={!canManage}
           onChange={(e) => setDescription(e.target.value)}
         />
+        <SelectField
+          label="Maturity rating (required)"
+          hint="Episodes keep their own rating. A profile sees only the episodes within its limit."
+          value={rank}
+          disabled={!canManage}
+          options={[
+            { value: '', label: 'Choose a rating' },
+            ...labels.map((label, index) => ({ value: String(index), label })),
+          ]}
+          onChange={(e) => setRank(e.target.value)}
+        />
+        {savedRank !== null && rank === String(savedRank) && episodes.length > 0 ? (
+          <div>
+            <Button
+              variant="secondary"
+              disabled={!canManage || busy}
+              onClick={() => setApplyOpen(true)}
+            >
+              {`Apply to all ${episodes.length} ${episodes.length === 1 ? 'episode' : 'episodes'}`}
+            </Button>
+          </div>
+        ) : null}
         <div className="adm-row">
           <Button variant="primary" loading={busy} disabled={!canManage || !dirty} onClick={save}>
             Save changes
@@ -168,6 +212,24 @@ export function SeriesEditor({
           </Button>
         </div>
       </section>
+
+      <ConfirmDialog
+        open={applyOpen && applying !== null}
+        title={`Apply ${applying === null ? '' : labels[applying]} to all ${episodes.length} ${episodes.length === 1 ? 'episode' : 'episodes'}?`}
+        consequence={`This replaces the rating on every episode, ${differingText}. You can change single episodes later.`}
+        confirmLabel={`Apply to ${episodes.length} ${episodes.length === 1 ? 'episode' : 'episodes'}`}
+        cancelLabel="Keep episode ratings"
+        busy={busy}
+        onClose={() => setApplyOpen(false)}
+        onConfirm={async () => {
+          const result = await run(
+            () => actions.update(series.id, { maturityRank: applying!, applyToEpisodes: true }),
+            'Rating applied to every episode.',
+          );
+          setError(result.ok ? undefined : result.error);
+          setApplyOpen(false);
+        }}
+      />
 
       <ConfirmDialog
         open={confirm}
