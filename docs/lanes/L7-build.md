@@ -15,8 +15,13 @@ Scoped tests only: `pnpm vitest run <file>`.
 | 14 | Publish switch, viewer track lists, player t prop | 346 |
 | 15 | Admin caption screens by language | 356 |
 | 16 | Spoken language, multilingual Whisper, detection | 363 |
-| 17 | Mail templates by locale, offline page language, accounts.locale | L7c, see below |
-| 18, waves D onward, draft catalogs, docs | not built | none |
+| 17 | Mail templates by locale, offline page language, accounts.locale | 373 |
+| 7 wave D | Player copy (transport, seek bar, end screen, shortcuts, caption appearance) | 378 |
+| 6 | Coverage test and production env example fixes | 379 |
+| draft catalogs | Sample drafts for yo, ig, ha, loadDrafts, workspace button | 380 |
+| 18 | M46 docs, stories, decision id fixes | 381 |
+| 7 waves B, C, D | Client component extraction: discovery 382, account and auth 383, misc 384 | 382, 383, 384 |
+| 7 remaining | Server components and `@ad/ui` copy, app pages | not built, see the list under (3b) |
 
 ## Slice 1
 - `packages/shared/src/messages/locales.ts`: `LOCALES`, `LOCALE_CODES`, `normalizeLocale`, `parseAcceptLanguage`, `pickLocale`, `localeInfo`.
@@ -129,3 +134,4 @@ Scoped tests only: `pnpm vitest run <file>`.
 - Still literal (server components and packages/ui): `BrowseView`, `HomeView`, `HomeEmpty`, `TitleView`, `TitleStates`, `RelatedRow`, `CatalogCard` (client but in packages/ui props), `@ad/ui` `Cards`, `Hero`, `Row`, `TopNav`, `PasswordField`, `OtpInput`, `Avatar`, `States`, `Field`, `Breadcrumbs`, pages under `app/` (titles, not-found, error pages). Server components need `await getTranslator(await getLocale())` and their tests need `next/headers` mocked; `@ad/ui` components need label props from the host.
 - (3c) Wave C account, auth, profiles, site, consent, errors client components: keys in `packages/shared/src/messages/l7-account-messages.ts` (`account.*`, `auth.*`, `profiles.*`, `site.*`, `consent.*`, `errors.*`), six prefixes added to `CLIENT_NAMESPACES`, 28 component files joined the lint list (`Too short` is allowlisted, it is a label from `evaluatePassword`, not copy). Plural text uses count keys (`account.yourAccountWillClose`, `account.itWillBeRemoved`, `account.passwordUpdatedWeSigned`). `meterView(password, score, msg)` and `accountLinks(msg)` take the translator. Known gaps: `askedFor` in `DataPanel` still builds an English suffix, `CHECK_RUNNING_MESSAGE` in `useTurnstile.tsx` is an exported English constant, a few fragments such as `auth.weSentA6` sit next to an email in markup. Test: `pnpm vitest run apps/web/src/lib/i18n/pseudo-render.account.test.tsx`.
 - (3d) Wave D client leftovers: `features/player` (WatchActions, WatchClient), `CatalogCard`, `KidsGate`, `SignOutButton`, `guest/GuestIntentApplier`, `pwa/*` (ConnectionStatus, InstallPrompt, PwaClient, QueueSync), `app/error.tsx`, `global-error.tsx`, title `error.tsx`. Keys in `l7-misc-messages.ts` (`watch.*`, `cards.*`, `pwa.*`, plus `guest.*` and `errors.*`). `global-error.tsx` renders outside the provider so it stays English by design. Not ours and failing on main: `GuestContinueRow.test.tsx` "removes a video from the device and brings it back with Undo" (a Remove button lookup), and `eqeqeq` on `CatalogCard.tsx` line 42.
+- State at the end of L7c: slices 1 to 18 are merged except the extraction of server components, `@ad/ui` component copy and the page titles under `app/`. The step (1) layout test was PR 366. The lint list now holds every client component moved so far, so new viewer copy in those files fails CI.
