@@ -86,6 +86,9 @@ importers:
       '@ad/mailer':
         specifier: workspace:*
         version: link:../../packages/mailer
+      '@ad/payments':
+        specifier: workspace:*
+        version: link:../../packages/payments
       '@ad/player':
         specifier: workspace:*
         version: link:../../packages/player
@@ -191,6 +194,9 @@ importers:
       '@ad/mailer':
         specifier: workspace:*
         version: link:../../packages/mailer
+      '@ad/payments':
+        specifier: workspace:*
+        version: link:../../packages/payments
       '@ad/queue':
         specifier: workspace:*
         version: link:../../packages/queue

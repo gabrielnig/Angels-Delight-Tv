@@ -7,6 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 ## [Unreleased]
 
 ### Added
+- Lane L9 donations backbone (M48): donations and payment event tables, a signed and idempotent Paystack webhook, an event processor that confirms every payment with Paystack, and worker jobs that settle stuck payments, mark old ones abandoned and prune old payloads. Off until a Paystack key is set. Also wires the sponsor reach prune job into the worker.
 - Lane L9 payments core (M48): `@ad/payments` with a Paystack adapter (hosted redirect only), webhook signature check, money and reference helpers and an in memory fake Paystack for tests. Nothing calls it yet.
 - Lane L9 sponsor report (M48): per sponsor impressions, clicks, click rate and daily reach for any range up to 400 days, with an admin only CSV download and a print page.
 - Lane L9 sponsor placements (M48): labelled sponsor card on Home, title pages and around the player, with a skippable card before a video, frequency caps in a cookie, viewable impression counting and staff clicks left out of reports. Off until the master switch is on, never shown to kids.
