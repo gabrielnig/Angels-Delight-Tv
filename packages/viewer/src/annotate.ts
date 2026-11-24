@@ -1,7 +1,8 @@
 import { and, eq, inArray, or } from 'drizzle-orm';
-import { myList } from '@ad/db';
+import { myList, titleRatingStats } from '@ad/db';
 import type { TitleCard } from '@ad/catalog';
 import type { ViewerContext } from './context';
+import { ratingsFor, type RatingValue } from './ratings';
 import { progressForVideos, type CardProgress } from './progress';
 
 type ViewerTx = Parameters<Parameters<ViewerContext['db']['transaction']>[0]>[0];
@@ -11,6 +12,10 @@ export interface TitleCardDto extends TitleCard {
   /** Videos only. A series card carries no progress of its own. */
   progress: CardProgress | null;
   inMyList: boolean;
+  /** This profile's rating (-1 Not for me, 1 Like, 2 Love) or null. */
+  rating: RatingValue | null;
+  /** The computed Most liked label (M44-S05). Never typed in. */
+  mostLiked: boolean;
 }
 
 /** Adds personal state to catalog cards. The caller has already verified the profile belongs to the actor. */
@@ -22,7 +27,13 @@ export async function annotateCards(
   if (cards.length === 0) return [];
   // The guest path (M40) has no profile: nothing personal is read, so the result carries no progress and no My List.
   if (profileId === null)
-    return cards.map((card) => ({ ...card, progress: null, inMyList: false }));
+    return cards.map((card) => ({
+      ...card,
+      progress: null,
+      inMyList: false,
+      rating: null,
+      mostLiked: false,
+    }));
   const videoIds = cards.filter((card) => card.kind === 'video').map((card) => card.id);
   const seriesIds = cards.filter((card) => card.kind === 'series').map((card) => card.id);
   const progress = await progressForVideos(tx, profileId, videoIds);
@@ -39,9 +50,29 @@ export async function annotateCards(
       ),
     );
   const savedIds = new Set(saved.flatMap((row) => [row.videoId, row.seriesId]));
+  const ratings = await ratingsFor(
+    tx,
+    profileId,
+    cards.map((card) => ({ kind: card.kind, id: card.id })),
+  );
+  const labelled = await tx
+    .select({ videoId: titleRatingStats.videoId, seriesId: titleRatingStats.seriesId })
+    .from(titleRatingStats)
+    .where(
+      and(
+        eq(titleRatingStats.mostLiked, true),
+        or(
+          videoIds.length > 0 ? inArray(titleRatingStats.videoId, videoIds) : undefined,
+          seriesIds.length > 0 ? inArray(titleRatingStats.seriesId, seriesIds) : undefined,
+        ),
+      ),
+    );
+  const likedIds = new Set(labelled.flatMap((row) => [row.videoId, row.seriesId]));
   return cards.map((card) => ({
     ...card,
     progress: progress.get(card.id) ?? null,
     inMyList: savedIds.has(card.id),
+    rating: ratings.get(card.id) ?? null,
+    mostLiked: likedIds.has(card.id),
   }));
 }

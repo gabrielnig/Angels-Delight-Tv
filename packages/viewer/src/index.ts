@@ -12,3 +12,4 @@ export * from './title-detail';
 export * from './browse';
 export * from './search';
 export * from './guest';
+export * from './ratings';
