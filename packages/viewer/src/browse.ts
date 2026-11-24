@@ -4,15 +4,18 @@ import {
   countTitles,
   findCategory,
   listCategories,
+  listRowPage,
   listTitles,
+  popularTitles,
   type Audience,
   type BrowseSort,
   type CategoryDto,
   type DurationBucket,
   type Page,
+  type TitleCard,
 } from '@ad/catalog';
 import { annotateCards, type TitleCardDto } from './annotate';
-import { catalogContext, shared, type ViewerContext } from './context';
+import { catalogContext, rulesOf, shared, type ViewerContext } from './context';
 import { audienceOf, loadOwnedProfile } from './profiles';
 
 export interface BrowseInput {
@@ -117,4 +120,86 @@ export async function browseFor(
       total,
     };
   }
+}
+
+export type ListKind = 'new' | 'trending' | 'series' | 'row';
+
+export interface ListInput {
+  list: ListKind;
+  /** The curated row slug, for the `row` list. */
+  slug?: string;
+  duration?: DurationBucket;
+  cursor?: string;
+  limit?: number;
+}
+
+export interface ListPageDto extends Page<TitleCardDto> {
+  title: string;
+  total: number;
+}
+
+const TRENDING_PAGE = 50;
+
+/**
+ * The list pages View all links open (M41-S08): New (paged), Trending (top 50 for the window), Series and one
+ * curated section in editor order. Null means the page does not exist for this audience, so the route is a 404.
+ */
+export async function browseListFor(
+  tx: ViewerTx,
+  ctx: ViewerContext,
+  audience: Audience,
+  profileId: string | null,
+  input: ListInput,
+): Promise<ListPageDto | null> {
+  const catalog = catalogContext(ctx);
+  const done = async (title: string, cards: readonly TitleCard[], next: string | null, total: number) => ({
+    title,
+    items: await annotateCards(tx, profileId, cards),
+    nextCursor: next,
+    total,
+  });
+  switch (input.list) {
+    case 'new': {
+      const page = await browseFor(tx, ctx, audience, profileId, {
+        sort: 'newest',
+        duration: input.duration,
+        limit: input.limit,
+        cursor: input.cursor,
+      });
+      return { ...page, title: 'New this week' };
+    }
+    case 'trending': {
+      const cards = await popularTitles(tx, catalog, audience, {
+        limit: TRENDING_PAGE,
+        windowDays: rulesOf(ctx).trendingWindowDays,
+      });
+      return done('Trending', cards, null, cards.length);
+    }
+    case 'series': {
+      const page = await listTitles(tx, catalog, audience, {
+        sort: 'newest',
+        kind: 'series',
+        limit: input.limit,
+        cursor: input.cursor,
+      });
+      return done('Series', page.items, page.nextCursor, page.items.length);
+    }
+    case 'row': {
+      if (!input.slug) return null;
+      const row = await listRowPage(tx, catalog, audience, input.slug);
+      if (!row) return null;
+      return done(row.title, row.cards, null, row.cards.length);
+    }
+  }
+}
+
+export async function browseList(
+  ctx: ViewerContext,
+  actor: Actor,
+  input: ListInput & { profileId: string },
+): Promise<ListPageDto | null> {
+  return withAccount(ctx.db, actor, async (tx) => {
+    const profile = await loadOwnedProfile(tx, actor, input.profileId);
+    return browseListFor(tx, ctx, audienceOf(profile), profile.id, input);
+  });
 }

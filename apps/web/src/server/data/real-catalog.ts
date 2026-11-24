@@ -4,12 +4,14 @@ import {
   getTitleDetail,
   getGuestHome,
   guestBrowse,
+  guestBrowseList,
   guestCategories,
   guestPopular,
   guestSearch,
   guestSuggest,
   guestTitleDetail,
   browse,
+  browseList,
   listBrowseCategories,
   search,
   suggest,
@@ -28,6 +30,8 @@ import { withAccount } from '@ad/db';
 import { NotFound, ValidationFailed } from '@ad/shared';
 import type {
   BrowseQuery,
+  ListPage,
+  ListQuery,
   CatalogItem,
   CatalogRepository,
   Category,
@@ -180,6 +184,20 @@ export class RealCatalog implements CatalogRepository {
       ? await guestBrowse(this.service, this.guestAudience(ctx), input)
       : await browse(this.service, this.actor(ctx), { profileId: ctx.profileId, ...input });
     return {
+      items: result.items.map(cardToItem),
+      total: result.total,
+      nextCursor: result.nextCursor,
+    };
+  }
+
+  async browseList(ctx: ViewerContext, query: ListQuery): Promise<ListPage | null> {
+    const input = { list: query.list, slug: query.slug, cursor: query.cursor };
+    const result = ctx.guest
+      ? await guestBrowseList(this.service, this.guestAudience(ctx), input)
+      : await browseList(this.service, this.actor(ctx), { profileId: ctx.profileId, ...input });
+    if (!result) return null;
+    return {
+      title: result.title,
       items: result.items.map(cardToItem),
       total: result.total,
       nextCursor: result.nextCursor,

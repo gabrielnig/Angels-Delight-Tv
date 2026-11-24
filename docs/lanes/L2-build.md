@@ -9,7 +9,9 @@ Plan `docs/plan/v2/L2-home.md`, review `docs/reviews/v2/L2-review.md`, rulings `
 | 1 | Hero artwork and five newest fallback | merged (restored by 288 after two other lanes reverted it) | 281, 288 |
 | 2 | Home settings, Home tab, rules | merged | 289 |
 | 3 | Hero carousel rewrite, scrim measured | merged | 299 |
-| 4 | Row View all, snap, gap compensation, skeleton height | this PR | |
+| 4 | Row View all, snap, gap compensation, skeleton height | merged | 302 |
+| 5 | Row link and preview migrations, row resolution | merged | 322 |
+| 6 | Browse list pages (new, trending, series, row/[slug]) | this PR | |
 
 ## Exists
 

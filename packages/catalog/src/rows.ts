@@ -120,6 +120,30 @@ export async function expandRows(
   return out;
 }
 
+/** One published manual row by its list page slug, or null when it is unknown, unpublished or hidden from a kids audience. */
+export async function resolveRowBySlug(
+  tx: Tx,
+  audience: Audience,
+  slug: string,
+): Promise<RowDescriptor | null> {
+  const rowsNow = await listPublishedRows(tx, audience);
+  return rowsNow.find((row) => row.slug === slug && row.kind === 'curated') ?? null;
+}
+
+/** The whole list behind a curated row's View all link, in editor order (M41-S08). Null when the slug is not open to this audience. */
+export async function listRowPage(
+  tx: Tx,
+  ctx: CatalogContext,
+  audience: Audience,
+  slug: string,
+  limit = 100,
+): Promise<{ title: string; slug: string; cards: TitleCard[] } | null> {
+  const row = await resolveRowBySlug(tx, audience, slug);
+  if (!row) return null;
+  const cards = await resolveCards(tx, ctx, audience, { ...row, maxItems: limit }, DEFAULT_ROW_RULES);
+  return { title: row.title, slug, cards };
+}
+
 /** Row kinds that exist at all, published or not. A personal row is added by default only when the editor has none. */
 export async function configuredRowKinds(tx: Tx): Promise<Set<RowKind>> {
   const result = await tx.execute(sql`SELECT DISTINCT kind FROM rows`);

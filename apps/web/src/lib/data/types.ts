@@ -142,6 +142,18 @@ export interface BrowseQuery {
   limit?: number;
 }
 
+export type ListKind = 'new' | 'trending' | 'series' | 'row';
+
+export interface ListQuery {
+  list: ListKind;
+  slug?: string;
+  cursor?: string;
+}
+
+export interface ListPage extends Page<CatalogItem> {
+  title: string;
+}
+
 export interface Page<T> {
   items: T[];
   total: number;
@@ -216,6 +228,8 @@ export interface CatalogRepository {
   homeRows(ctx: ViewerContext, cursor: string): Promise<HomeRowsPage>;
   categories(ctx: ViewerContext): Promise<Category[]>;
   browse(ctx: ViewerContext, query: BrowseQuery): Promise<Page<CatalogItem>>;
+  /** A View all list page. Null when the list is unknown or not open to this audience (the route is a 404). */
+  browseList(ctx: ViewerContext, query: ListQuery): Promise<ListPage | null>;
   search(
     ctx: ViewerContext,
     q: string,
