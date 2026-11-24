@@ -259,6 +259,16 @@ describe('donation and sponsor queues (L9, M48)', () => {
       { queue: 'donations.prune_events', cron: '20 3 * * *', timezone: 'Africa/Lagos' },
       { queue: 'sponsors.reach_prune', cron: '50 3 * * *', timezone: 'Africa/Lagos' },
     ]);
+describe('viewer digest queue (L5, M44-S15)', () => {
+  it('defines notices.digest at 07:20 Lagos with concurrency 1, retry 3 and a 15 minute expiry', () => {
+    expect(QUEUE_DEFINITIONS['notices.digest']).toMatchObject({
+      concurrency: 1,
+      retryLimit: 3,
+      retryDelaySeconds: 120,
+      expireInSeconds: 900,
+    });
+    expect(parsePayload('notices.digest', {})).toEqual({});
+    expect(ENGAGE_CRON_SCHEDULES).toContainEqual({ queue: 'notices.digest', cron: '20 7 * * *', timezone: 'Africa/Lagos' });
   });
 });
 

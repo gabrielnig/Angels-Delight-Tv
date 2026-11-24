@@ -36,6 +36,7 @@ describe.skipIf(!integrationEnabled())('notices api (M44-S11, S14, S17)', () => 
       secureCookies: false,
       profileSecret: new Uint8Array(32).fill(9),
       resolveActor: async () => signedIn,
+      sealAddress: async () => ({ sealed: new Uint8Array([7, 7, 7]), masked: 'a***@example.org' }),
       lock: { read: async () => lock, set: async () => undefined, clear: async () => undefined },
     };
     api = createViewerApi(runtime);
@@ -105,5 +106,32 @@ describe.skipIf(!integrationEnabled())('notices api (M44-S11, S14, S17)', () => 
     expect(
       (await api.notificationPrefs.set(req('PUT', '/api/account/notifications', { profileId: me.profileId, bell: 'no' }))).status,
     ).toBe(422);
+  });
+
+  it('PUT email needs the confirmation, then stores the consent, shows the masked address, and off clears it', async () => {
+    signedIn = me.actor;
+    const put = (email: unknown) =>
+      api.notificationPrefs.set(req('PUT', '/api/account/notifications', { profileId: me.profileId, email }));
+    expect((await put({ frequency: 'daily' })).status).toBe(422);
+    const on = await put({ frequency: 'weekly', confirm: true });
+    expect(on.status).toBe(200);
+    expect(await on.json()).toMatchObject({ emailFrequency: 'weekly', addressMasked: 'a***@example.org', hasAddress: true });
+    const got = await (await api.notificationPrefs.get(req('GET', `/api/account/notifications?profileId=${me.profileId}`))).json();
+    expect(got.consentedAt).toBeTruthy();
+    expect((await put({ frequency: 'monthly' })).status).toBe(422);
+    const off = await (await put({ frequency: 'off' })).json();
+    expect(off).toMatchObject({ emailFrequency: 'off', addressMasked: null, hasAddress: false, consentedAt: null });
+  });
+
+  it('reading the settings seals the address again after an account email change cleared it', async () => {
+    signedIn = me.actor;
+    await api.notificationPrefs.set(
+      req('PUT', '/api/account/notifications', { profileId: me.profileId, email: { frequency: 'daily', confirm: true } }),
+    );
+    await h.db.setup.execute(sql`UPDATE viewer_notification_prefs SET address_enc = NULL WHERE account_id = ${me.accountId}::uuid`);
+    const got = await (await api.notificationPrefs.get(req('GET', `/api/account/notifications?profileId=${me.profileId}`))).json();
+    expect(got).toMatchObject({ emailFrequency: 'daily', hasAddress: true });
+    const row = await h.db.setup.execute(sql`SELECT address_enc FROM viewer_notification_prefs WHERE account_id = ${me.accountId}::uuid`);
+    expect((row.rows[0] as { address_enc: Buffer }).address_enc.length).toBe(3);
   });
 });

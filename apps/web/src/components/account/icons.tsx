@@ -50,6 +50,12 @@ const SHAPES = {
       <path d="M11 18h2" />
     </>
   ),
+  bell: (
+    <>
+      <path d="M6 17h12l-1.5-2.5V10a4.5 4.5 0 0 0-9 0v4.5z" />
+      <path d="M10 20a2 2 0 0 0 4 0" />
+    </>
+  ),
   clock: (
     <>
       <circle cx="12" cy="12" r="9" />

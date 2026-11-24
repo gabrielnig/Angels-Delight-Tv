@@ -143,4 +143,7 @@ export const notificationPrefsBody = z.object({
   bell: z.boolean().optional(),
   newEpisodes: z.boolean().optional(),
   newVideos: z.boolean().optional(),
+  email: z
+    .object({ frequency: z.string().max(12), confirm: z.boolean().optional() })
+    .optional(),
 });

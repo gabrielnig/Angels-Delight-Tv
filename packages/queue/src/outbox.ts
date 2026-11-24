@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { emailOutbox, type Database } from '@ad/db';
 import { decryptAesGcm, encryptAesGcm } from '@ad/shared';
 import { sql } from 'drizzle-orm';
+import { signUnsubscribeToken } from './unsubscribe-token';
 
 /**
  * The email outbox (M15-S01, M21-S03). Notification and export mail is written here and sent by the worker, so a
@@ -10,7 +11,12 @@ import { sql } from 'drizzle-orm';
  */
 
 export type OutboxKind =
-  'staff_notice' | 'staff_summary' | 'staff_export_ready' | 'staff_export_failed';
+  | 'staff_notice'
+  | 'staff_summary'
+  | 'staff_export_ready'
+  | 'staff_export_failed'
+  | 'viewer_digest_daily'
+  | 'viewer_digest_weekly';
 
 export type OutboxVars = Record<string, string | number>;
 
@@ -33,6 +39,12 @@ export interface OutboxMailer {
     hours: number;
   }): Promise<{ messageId: string } | null>;
   sendStaffExportFailed(input: { to: string; name: string }): Promise<{ messageId: string } | null>;
+  sendViewerDigest(input: {
+    to: string;
+    period: 'day' | 'week';
+    lines: string[];
+    unsubscribeToken: string;
+  }): Promise<{ messageId: string } | null>;
 }
 
 const enc = new TextEncoder();
@@ -152,7 +164,14 @@ interface Claimed {
   attempts: number;
 }
 
-function dispatch(mailer: OutboxMailer, kind: OutboxKind, to: string, vars: OutboxVars) {
+function dispatch(
+  mailer: OutboxMailer,
+  kind: OutboxKind,
+  to: string,
+  vars: OutboxVars,
+  kek: Uint8Array,
+  now: Date,
+) {
   switch (kind) {
     case 'staff_notice':
       return mailer.sendStaffNotice({
@@ -175,6 +194,14 @@ function dispatch(mailer: OutboxMailer, kind: OutboxKind, to: string, vars: Outb
       });
     case 'staff_export_failed':
       return mailer.sendStaffExportFailed({ to, name: String(vars.name ?? '') });
+    case 'viewer_digest_daily':
+    case 'viewer_digest_weekly':
+      return mailer.sendViewerDigest({
+        to,
+        period: kind === 'viewer_digest_weekly' ? 'week' : 'day',
+        lines: String(vars.lines ?? '').split('\n'),
+        unsubscribeToken: signUnsubscribeToken(kek, String(vars.accountId ?? ''), now),
+      });
     default:
       throw Object.assign(new Error(`Unknown outbox kind ${String(kind)}`), {
         name: 'TemplateError',
@@ -228,7 +255,7 @@ export async function drainOutbox(deps: DrainDeps): Promise<DrainResult> {
           name: 'AddressUnreadable',
         });
       }
-      const sent = await dispatch(mailer, row.kind, to, row.vars);
+      const sent = await dispatch(mailer, row.kind, to, row.vars, kek, now);
       await db.execute(sql`
         UPDATE email_outbox
         SET status = 'sent', sent_at = ${stamp}::timestamptz, provider_message_id = ${sent?.messageId ?? null},

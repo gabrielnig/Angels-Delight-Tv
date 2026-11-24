@@ -112,6 +112,11 @@ describe.skipIf(!integrationEnabled())('viewer notices fanout (M44-S12, S13)', (
     });
   });
 
+  it('stores the highest maturity rank in the notice so the digest can limit lines', async () => {
+    const rows = await t.pool.query('SELECT kind, rank FROM viewer_notices WHERE profile_id = $1', [ids.lister]);
+    expect(rows.rows).toEqual([{ kind: 'new_episode', rank: 1 }]);
+  });
+
   it('running the fanout again creates nothing new', async () => {
     const before = await notices();
     const result = await fanoutNotices(worker, NOW);

@@ -146,6 +146,8 @@ const workerShape = {
   /** The worker sends notification and export email from the outbox, and opens the saved staff addresses (M21-S03). */
   FIELD_KEK: key32,
   FIELD_KEK_PREVIOUS: key32.optional(),
+  /** Lets the worker skip bounced addresses in the viewer digest (M44-S15). Optional so an older deploy keeps working. */
+  EMAIL_HASH_PEPPER: key32.optional(),
   SMTP_URL: smtpUrl,
   EMAIL_FROM: z.string().min(3),
   SUPPORT_EMAIL: z.string().min(3).optional(),

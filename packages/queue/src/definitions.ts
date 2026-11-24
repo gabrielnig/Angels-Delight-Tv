@@ -30,6 +30,7 @@ export const QUEUES = {
   donationsReconcile: 'donations.reconcile',
   donationsPruneEvents: 'donations.prune_events',
   sponsorsReachPrune: 'sponsors.reach_prune',
+  noticesDigest: 'notices.digest',
 } as const;
 
 export type QueueName = (typeof QUEUES)[keyof typeof QUEUES];
@@ -196,6 +197,13 @@ export const QUEUE_DEFINITIONS: Record<QueueName, QueueDefinition> = {
     retryBackoff: true,
     expireInSeconds: 5 * 60,
   },
+  'notices.digest': {
+    concurrency: 1,
+    retryLimit: 3,
+    retryDelaySeconds: 120,
+    retryBackoff: true,
+    expireInSeconds: 15 * 60,
+  },
   'notices.prune': {
     concurrency: 1,
     retryLimit: 2,
@@ -319,6 +327,7 @@ const PAYLOADS = {
   'donations.reconcile': z.strictObject({}),
   'donations.prune_events': z.strictObject({}),
   'sponsors.reach_prune': z.strictObject({}),
+  'notices.digest': z.strictObject({}),
 } satisfies Record<QueueName, z.ZodType>;
 
 export type PayloadOf<Q extends QueueName> = z.output<(typeof PAYLOADS)[Q]>;
@@ -380,4 +389,5 @@ export const ENGAGE_CRON_SCHEDULES: CronEntry[] = [
   { queue: 'trending.refresh', cron: '10 * * * *', timezone: 'Africa/Lagos' },
   { queue: 'notices.fanout', cron: '*/10 * * * *', timezone: 'Africa/Lagos' },
   { queue: 'notices.prune', cron: '40 3 * * *', timezone: 'Africa/Lagos' },
+  { queue: 'notices.digest', cron: '20 7 * * *', timezone: 'Africa/Lagos' },
 ];

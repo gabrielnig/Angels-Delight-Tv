@@ -9,6 +9,7 @@ export const ACCOUNT_LINKS: { href: string; label: string; icon: AcctIconName }[
   { href: '/account', label: 'Overview', icon: 'user' },
   { href: '/account/security', label: 'Security', icon: 'shield' },
   { href: '/settings/playback', label: 'Playback settings', icon: 'play' },
+  { href: '/account/notifications', label: msg('engage.notify.nav'), icon: 'bell' },
   { href: '/account/activity', label: msg('account.nav.activity'), icon: 'clock' },
   { href: '/account/data', label: 'Data and privacy', icon: 'download' },
 ];

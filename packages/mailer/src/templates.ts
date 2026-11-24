@@ -53,12 +53,15 @@ export type TemplateName =
   | 'staff_notice'
   | 'staff_summary'
   | 'staff_export_ready'
-  | 'staff_export_failed';
+  | 'staff_export_failed'
+  | 'viewer_digest';
 
 export interface RenderedMail {
   subject: string;
   text: string;
   html: string;
+  /** Extra mail headers from the template, for example List-Unsubscribe. */
+  headers?: Record<string, string>;
 }
 
 export class TemplateError extends Error {
@@ -84,6 +87,7 @@ interface Definition {
   optional?: string[];
   links?: string[];
   build(v: Record<string, string>, brand: BrandContext): Content;
+  headers?(v: Record<string, string>): Record<string, string>;
 }
 
 const DEFINITIONS: Record<TemplateName, Definition> = {
@@ -372,6 +376,23 @@ const DEFINITIONS: Record<TemplateName, Definition> = {
       outro: [`You get this because of your notification settings on ${b.appName}.`],
     }),
   },
+  viewer_digest: {
+    required: ['period', 'count', 'lines', 'linkUrl', 'unsubscribeUrl'],
+    links: ['linkUrl', 'unsubscribeUrl'],
+    build: (v, b) => ({
+      subject: `${v.count === '1' ? 'One new thing' : 'New things'} on ${b.appName} this ${v.period === 'week' ? 'week' : 'day'}`,
+      intro: v.lines!.split('\n').filter((line) => line.trim() !== ''),
+      action: { label: 'See what is new', url: v.linkUrl! },
+      outro: [
+        `You get this because you chose a ${v.period === 'week' ? 'weekly' : 'daily'} email in your notification settings on ${b.appName}.`,
+        `Stop these emails: ${v.unsubscribeUrl}`,
+      ],
+    }),
+    headers: (v) => ({
+      'List-Unsubscribe': `<${v.unsubscribeUrl}>`,
+      'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
+    }),
+  },
   staff_summary: {
     required: ['period', 'count', 'lines', 'linkUrl'],
     links: ['linkUrl'],
@@ -454,7 +475,13 @@ export function renderTemplate(name: TemplateName, vars: Vars, brand: BrandConte
   }
   const content = definition.build(values, brand);
   const subject = stripLineBreaks(content.subject);
-  return { subject, text: toText(content, brand), html: toHtml(content, brand, subject) };
+  const headers = definition.headers?.(values);
+  return {
+    subject,
+    text: toText(content, brand),
+    html: toHtml(content, brand, subject),
+    ...(headers ? { headers } : {}),
+  };
 }
 
 function toText(content: Content, brand: BrandContext): string {

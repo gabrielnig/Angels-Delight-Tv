@@ -60,6 +60,7 @@ interface NoticeDraft {
   seriesId: string | null;
   videoId: string | null;
   count: number;
+  rank: number;
   seriesTitle: string;
   titles: string[];
 }
@@ -133,7 +134,8 @@ export async function fanoutNotices(
           await tx.execute(sql`SELECT * FROM notice_followers(${seriesId}::uuid, ${since}::timestamptz)`),
         );
         for (const follower of followers) {
-          const count = series.ranks.filter((r) => r <= follower.max_rank).length;
+          const visible = series.ranks.filter((r) => r <= follower.max_rank);
+          const count = visible.length;
           if (count === 0) continue;
           drafts.push({
             profileId: follower.profile_id,
@@ -143,6 +145,7 @@ export async function fanoutNotices(
             seriesId,
             videoId: null,
             count,
+            rank: Math.max(...visible),
             seriesTitle: series.title,
             titles: [],
           });
@@ -164,6 +167,7 @@ export async function fanoutNotices(
           seriesId: null,
           videoId: visible.length === 1 ? (visible[0]?.id ?? null) : null,
           count: visible.length,
+          rank: Math.max(...visible.map((v) => v.rank)),
           seriesTitle: '',
           titles: visible.map((v) => v.title),
         });
@@ -185,9 +189,9 @@ type Tx = Parameters<Parameters<Database['transaction']>[0]>[0];
 async function writeDrafts(tx: Tx, drafts: NoticeDraft[], now: Date): Promise<number> {
   if (drafts.length === 0) return 0;
   const keys = JSON.stringify(drafts.map((d) => ({ p: d.profileId, k: d.key })));
-  const existing = rowsOf<{ profile_id: string; dedupe_key: string; item_count: number; body: string }>(
+  const existing = rowsOf<{ profile_id: string; dedupe_key: string; item_count: number; body: string; rank: number }>(
     await tx.execute(sql`
-      SELECT n.profile_id, n.dedupe_key, n.item_count, n.body
+      SELECT n.profile_id, n.dedupe_key, n.item_count, n.body, n.rank
       FROM viewer_notices n
       JOIN jsonb_to_recordset(${keys}::jsonb) AS x(p uuid, k text) ON x.p = n.profile_id AND x.k = n.dedupe_key`),
   );
@@ -207,20 +211,21 @@ async function writeDrafts(tx: Tx, drafts: NoticeDraft[], now: Date): Promise<nu
       series_id: d.seriesId,
       video_id: count > 1 ? null : d.videoId,
       item_count: count,
+      rank: Math.max(d.rank, old?.rank ?? 0),
       dedupe_key: d.key,
     };
   });
   const result = rowsOf<{ id: string }>(
     await tx.execute(sql`
-      INSERT INTO viewer_notices (profile_id, kind, title, body, href, series_id, video_id, item_count, dedupe_key, created_at)
-      SELECT x.profile_id, x.kind, x.title, x.body, x.href, x.series_id, x.video_id, x.item_count, x.dedupe_key,
+      INSERT INTO viewer_notices (profile_id, kind, title, body, href, series_id, video_id, item_count, rank, dedupe_key, created_at)
+      SELECT x.profile_id, x.kind, x.title, x.body, x.href, x.series_id, x.video_id, x.item_count, x.rank, x.dedupe_key,
         ${now.toISOString()}::timestamptz
       FROM jsonb_to_recordset(${JSON.stringify(payload)}::jsonb) AS x(
         profile_id uuid, kind text, title text, body text, href text, series_id uuid, video_id uuid,
-        item_count int, dedupe_key text)
+        item_count int, rank smallint, dedupe_key text)
       ON CONFLICT (profile_id, dedupe_key) DO UPDATE SET
         title = EXCLUDED.title, body = EXCLUDED.body, href = EXCLUDED.href, video_id = EXCLUDED.video_id,
-        item_count = EXCLUDED.item_count, created_at = EXCLUDED.created_at, read_at = NULL
+        item_count = EXCLUDED.item_count, rank = EXCLUDED.rank, created_at = EXCLUDED.created_at, read_at = NULL
       RETURNING id`),
   );
   return result.length;

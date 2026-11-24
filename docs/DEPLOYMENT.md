@@ -135,6 +135,7 @@ Access logs must not record query strings on `/api/play/*` and `/api/hls/*`: con
 - The migrator password is in the same file but only the `migrate` and `tools` services read it, and compose builds each container's connection strings from its own role only.
 - `FIELD_KEK` and `HLS_KEK` are also stored offline by the owner (password manager plus a printed or encrypted copy). Losing them is unrecoverable.
 - Never commit, paste into chat tools, or echo these values in CI logs.
+- Viewer notification email (M44-S15). The digest goes out at 07:20 Lagos time (weekly on Monday) from the same sender as other mail, so set `EMAIL_FROM` to an address on a domain with SPF and DKIM (the `pnpm dns:check` mail checks). Every digest carries a `List-Unsubscribe` header and a link to `/unsubscribe/notices?token=...` on `APP_ORIGIN`, so that path must be reachable without a session (it is, and it is excluded from search). The link token is signed with a key derived from `FIELD_KEK` and lasts one year, so rotating `FIELD_KEK` makes old links say the link is not valid. Give the worker `EMAIL_HASH_PEPPER` too, so it can skip addresses on the bounce and complaint list.
 
 ## 7. Deploy procedure
 

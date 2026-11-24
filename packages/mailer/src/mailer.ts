@@ -12,6 +12,7 @@ export interface OutgoingMail {
   subject: string;
   text: string;
   html: string;
+  headers?: Record<string, string>;
 }
 
 /** The seam for the delivery provider. SMTP covers Mailpit in development and most providers in production. */
@@ -40,6 +41,7 @@ export class SmtpTransport implements MailTransport {
       subject: mail.subject,
       text: mail.text,
       html: mail.html,
+      ...(mail.headers ? { headers: mail.headers } : {}),
     });
     return { messageId: String(info.messageId) };
   }
@@ -82,7 +84,7 @@ export interface MailerSettings extends BrandContext {
 }
 
 /** Mail the person can live without. Everything else is a code, a link or a security notice. */
-const NON_ESSENTIAL: ReadonlySet<TemplateName> = new Set<TemplateName>(['welcome']);
+const NON_ESSENTIAL: ReadonlySet<TemplateName> = new Set<TemplateName>(['welcome', 'viewer_digest']);
 
 /**
  * Typed transactional emails (M21). Sends directly from the calling process, one attempt. Callers decide how
@@ -297,6 +299,17 @@ export class Mailer {
       count: input.lines.length,
       lines: input.lines.join('\n'),
       linkUrl: this.url('/admin'),
+    });
+  }
+
+  /** The viewer digest (M44-S15). Titles and links only, with one click unsubscribe in the footer and headers. */
+  sendViewerDigest(input: { to: string; period: 'day' | 'week'; lines: string[]; unsubscribeToken: string }) {
+    return this.deliverWithId(input.to, 'viewer_digest', {
+      period: input.period,
+      count: input.lines.length,
+      lines: input.lines.join('\n'),
+      linkUrl: this.url('/notifications'),
+      unsubscribeUrl: this.url('/unsubscribe/notices', { token: input.unsubscribeToken }),
     });
   }
 
