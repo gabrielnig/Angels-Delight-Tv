@@ -47,4 +47,4 @@ Sources: paystack.com/docs/payments/webhooks, paystack.com/docs/api/transaction,
 - USD: the business requests international payments in the Dashboard (answer within 48 working hours), holds a Zenith Bank USD domiciliary account, adds it under Settings, Accounts, and Paystack confirms within 24 hours. Until then `donate.usd.enabled` stays off. Recurring plans and subscriptions on the account were not verified here and need a check in the Paystack dashboard before monthly giving is switched on.
 
 ## Remaining
-Slice 10 (blocked on a Paystack dashboard check), 12 transparency page, 13 Could items, 14 hardening.
+Slice 10 (blocked on a Paystack dashboard check), 13 Could items, 14 hardening.
