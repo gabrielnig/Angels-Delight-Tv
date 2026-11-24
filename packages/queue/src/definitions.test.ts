@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   CRON_SCHEDULES,
   ENGAGE_CRON_SCHEDULES,
+  MONETIZATION_CRON_SCHEDULES,
   EXPORT_CRON_SCHEDULES,
   MAIL_CRON_SCHEDULES,
   MAINTENANCE_CRON_SCHEDULES,
@@ -234,5 +235,28 @@ describe('caption.translate queue (L7, M46)', () => {
     expect(
       parsePayload('caption.translate', { videoId, targetLanguage: 'ha', sourceCaptionId, mode: 'retranslate' }),
     ).toMatchObject({ sourceCaptionId, mode: 'retranslate' });
+  });
+});
+
+describe('donation and sponsor queues (L9, M48)', () => {
+  it('processes a stored webhook event with five retries and backoff', () => {
+    expect(QUEUE_DEFINITIONS['donations.process_event']).toMatchObject({ concurrency: 2, retryLimit: 5, retryBackoff: true, expireInSeconds: 300 });
+    expect(parsePayload('donations.process_event', { eventId: 12 })).toEqual({ eventId: 12 });
+    expect(() => parsePayload('donations.process_event', { eventId: '12' })).toThrow();
+    expect(() => parsePayload('donations.process_event', { eventId: 0 })).toThrow();
+    expect(() => parsePayload('donations.process_event', {})).toThrow();
+  });
+  it('reconciles every 30 minutes and prunes events and reach rows nightly, all Lagos time', () => {
+    expect(QUEUE_DEFINITIONS['donations.reconcile']).toMatchObject({ concurrency: 1 });
+    expect(QUEUE_DEFINITIONS['donations.prune_events']).toMatchObject({ concurrency: 1 });
+    expect(QUEUE_DEFINITIONS['sponsors.reach_prune']).toMatchObject({ concurrency: 1 });
+    for (const q of ['donations.reconcile', 'donations.prune_events', 'sponsors.reach_prune'] as const) {
+      expect(parsePayload(q, {})).toEqual({});
+    }
+    expect(MONETIZATION_CRON_SCHEDULES).toEqual([
+      { queue: 'donations.reconcile', cron: '*/30 * * * *', timezone: 'Africa/Lagos' },
+      { queue: 'donations.prune_events', cron: '20 3 * * *', timezone: 'Africa/Lagos' },
+      { queue: 'sponsors.reach_prune', cron: '50 3 * * *', timezone: 'Africa/Lagos' },
+    ]);
   });
 });

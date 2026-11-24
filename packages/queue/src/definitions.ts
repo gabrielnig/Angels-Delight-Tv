@@ -24,6 +24,10 @@ export const QUEUES = {
   trendingRefresh: 'trending.refresh',
   noticesFanout: 'notices.fanout',
   noticesPrune: 'notices.prune',
+  donationsProcessEvent: 'donations.process_event',
+  donationsReconcile: 'donations.reconcile',
+  donationsPruneEvents: 'donations.prune_events',
+  sponsorsReachPrune: 'sponsors.reach_prune',
 } as const;
 
 export type QueueName = (typeof QUEUES)[keyof typeof QUEUES];
@@ -122,6 +126,35 @@ export const QUEUE_DEFINITIONS: Record<QueueName, QueueDefinition> = {
     retryDelaySeconds: 300,
     retryBackoff: true,
     expireInSeconds: 30 * 60,
+  },
+  // Monetization (L9, M48). A stored webhook event is processed with five slow retries.
+  'donations.process_event': {
+    concurrency: 2,
+    retryLimit: 5,
+    retryDelaySeconds: 30,
+    retryBackoff: true,
+    expireInSeconds: 5 * 60,
+  },
+  'donations.reconcile': {
+    concurrency: 1,
+    retryLimit: 2,
+    retryDelaySeconds: 60,
+    retryBackoff: true,
+    expireInSeconds: 10 * 60,
+  },
+  'donations.prune_events': {
+    concurrency: 1,
+    retryLimit: 2,
+    retryDelaySeconds: 300,
+    retryBackoff: true,
+    expireInSeconds: 10 * 60,
+  },
+  'sponsors.reach_prune': {
+    concurrency: 1,
+    retryLimit: 2,
+    retryDelaySeconds: 300,
+    retryBackoff: true,
+    expireInSeconds: 10 * 60,
   },
   // Engagement (L5): recomputes rating totals and the Most liked label every 15 minutes.
   'ratings.rollup': {
@@ -258,6 +291,10 @@ const PAYLOADS = {
   'trending.refresh': z.strictObject({}),
   'notices.fanout': z.strictObject({}),
   'notices.prune': z.strictObject({}),
+  'donations.process_event': z.strictObject({ eventId: z.number().int().positive() }),
+  'donations.reconcile': z.strictObject({}),
+  'donations.prune_events': z.strictObject({}),
+  'sponsors.reach_prune': z.strictObject({}),
 } satisfies Record<QueueName, z.ZodType>;
 
 export type PayloadOf<Q extends QueueName> = z.output<(typeof PAYLOADS)[Q]>;
@@ -299,6 +336,13 @@ export const MAIL_CRON_SCHEDULES: CronEntry[] = [
 /** Deletes expired export files and rows (M19-S05, M20-S03). */
 export const EXPORT_CRON_SCHEDULES: CronEntry[] = [
   { queue: 'exports.cleanup', cron: '45 3 * * *', timezone: 'Africa/Lagos' },
+];
+
+/** Donations and sponsors upkeep (L9, M48). Status of a sponsor is derived from dates, so nothing here starts or ends one. */
+export const MONETIZATION_CRON_SCHEDULES: CronEntry[] = [
+  { queue: 'donations.reconcile', cron: '*/30 * * * *', timezone: 'Africa/Lagos' },
+  { queue: 'donations.prune_events', cron: '20 3 * * *', timezone: 'Africa/Lagos' },
+  { queue: 'sponsors.reach_prune', cron: '50 3 * * *', timezone: 'Africa/Lagos' },
 ];
 
 /** Engagement jobs (L5, M44). Later slices append trending, notices and digest entries here. */
