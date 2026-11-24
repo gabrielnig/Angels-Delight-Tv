@@ -10,7 +10,7 @@ vi.mock('next/navigation', () => ({ useRouter: () => ({ refresh: vi.fn() }) }));
 afterEach(cleanup);
 
 const s = structuredClone(getStore());
-function view(jobs = s.jobs, canAct = true) {
+function view(jobs = s.jobs, canAct = true, trendingRefreshedAt?: string | null) {
   const actions = {
     retry: vi.fn().mockResolvedValue({ ok: true }),
     discard: vi.fn().mockResolvedValue({ ok: true }),
@@ -23,6 +23,7 @@ function view(jobs = s.jobs, canAct = true) {
         quality={fixtureQuality()}
         now={Date.now()}
         canAct={canAct}
+        trendingRefreshedAt={trendingRefreshedAt}
         actions={actions}
       />
     </ToastProvider>,
@@ -112,5 +113,25 @@ describe('storage budget (M22-S03)', () => {
   it('says Not available when the usage query failed', () => {
     storageTab(null);
     expect(screen.getByText(/Not available/)).toBeTruthy();
+  });
+  it('says when Trending was last refreshed and stays quiet while it is fresh', () => {
+    view(s.jobs, true, new Date(Date.now() - 20 * 60_000).toISOString());
+    expect(screen.getByText(/Trending last refreshed 20 min ago/)).toBeTruthy();
+    expect(screen.queryByText(/older than 3 hours/)).toBeNull();
+  });
+  it('warns when the Trending snapshot is older than 3 hours', () => {
+    view(s.jobs, true, new Date(Date.now() - 4 * 3_600_000).toISOString());
+    expect(screen.getByText(/older than 3 hours/)).toBeTruthy();
+  });
+  it('says Trending has never been refreshed, and shows nothing when the figure is unknown', () => {
+    view(s.jobs, true, null);
+    expect(screen.getByText(/Trending has not been refreshed yet/)).toBeTruthy();
+    cleanup();
+    view(s.jobs, true, undefined);
+    expect(screen.queryByText(/Trending/)).toBeNull();
+  });
+  it('names the ratings and trending jobs', () => {
+    view([{ ...s.jobs[0]!, kind: 'engagement' }]);
+    expect(screen.getByRole('button', { name: /Retry Ratings and trending for/ })).toBeTruthy();
   });
 });

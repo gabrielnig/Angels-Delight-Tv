@@ -1087,6 +1087,8 @@ export interface SystemService {
   /** Usage against the saved budget, with the next 30 days estimated from the last 30 (M22-S03). */
   storageBudget(actor: AdminActor): Promise<StorageBudget>;
   quality(actor: AdminActor): Promise<Quality>;
+  /** When the trending snapshot was last computed. Null when there is none, undefined when this data source cannot say. */
+  trendingRefreshedAt(actor: AdminActor): Promise<string | null | undefined>;
 }
 
 /** Jobs and storage stay on fixtures until the queue and storage packages expose list and retry calls. Player quality is real with ADMIN_DATA=real. */
@@ -1116,6 +1118,10 @@ const fixtureSystemService: SystemService = {
     need(actor, 'system.view');
     if (adminDataMode() === 'real') return (await import('./analytics-quality-real')).realQuality();
     return fixtureQuality();
+  },
+  async trendingRefreshedAt(actor) {
+    need(actor, 'system.view');
+    return undefined;
   },
 };
 

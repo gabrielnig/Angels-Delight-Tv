@@ -16,11 +16,12 @@ export default async function SystemPage() {
   if (!can(actor.role, 'system.view')) forbidden();
   const crumbs = [{ label: 'Admin', href: '/admin' }, { label: 'System' }];
   try {
-    const [jobs, storage, budget, quality] = await Promise.all([
+    const [jobs, storage, budget, quality, trendingRefreshedAt] = await Promise.all([
       can(actor.role, 'system.jobs') ? systemService.jobs(actor) : Promise.resolve([]),
       systemService.storage(actor),
       systemService.storageBudget(actor).catch(() => null),
       systemService.quality(actor),
+      systemService.trendingRefreshedAt(actor).catch(() => undefined),
     ]);
     return (
       <>
@@ -34,6 +35,7 @@ export default async function SystemPage() {
           storage={storage}
           budget={budget}
           quality={quality}
+          trendingRefreshedAt={trendingRefreshedAt}
           now={Date.now()}
           canAct={can(actor.role, 'system.jobs')}
           showJobs={can(actor.role, 'system.jobs')}
