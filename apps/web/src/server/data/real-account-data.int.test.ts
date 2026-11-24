@@ -67,6 +67,41 @@ describe.skipIf(!integrationEnabled())('account viewer data', () => {
     });
   });
 
+  describe('export of sign in history, Google link and gifts (M49, M48)', () => {
+    it('lists this account sign in events, its linked Google address hint and its own gifts, and nothing of another account', async () => {
+      const u = await h.makeUser();
+      const other = await h.makeUser();
+      await h.db.setup.execute(sql`
+        INSERT INTO login_events (account_id, outcome, country, user_agent, device_hash)
+        VALUES (${u.accountId}::uuid, 'success', 'NG', 'Mozilla/5.0 (Windows NT 10.0) Chrome/120', 'secret-hash'::bytea),
+               (${other.accountId}::uuid, 'success', 'GH', 'Other', NULL)`);
+      await h.db.setup.execute(sql`
+        INSERT INTO account_identities (account_id, provider, subject, email_hash, email_hint)
+        VALUES (${u.accountId}::uuid, 'google', 'sub-export-1', 'hash'::bytea, 'u***@gmail.com')`);
+      await h.db.setup.execute(sql`
+        INSERT INTO donations (reference, kind, status, currency, amount_minor, donor_email_enc, donor_email_hash, account_id, site_mode, paid_at)
+        VALUES ('ad-don-exportmine00000000a', 'one_time', 'succeeded', 'NGN', 500000, 'sealed'::bytea, 'h1'::bytea, ${u.accountId}::uuid, 'live', now()),
+               ('ad-don-exportother0000000a', 'one_time', 'succeeded', 'NGN', 900000, 'sealed'::bytea, 'h2'::bytea, ${other.accountId}::uuid, 'live', now())`);
+
+      const file = await data.buildExport(u.accountId, { email: 'x@example.com', memberSince: 'now' });
+
+      expect(file.signIns).toEqual([
+        expect.objectContaining({ outcome: 'success', country: 'NG', device: 'Chrome on Windows' }),
+      ]);
+      expect(file.linkedSignIn).toEqual({ google: expect.objectContaining({ hint: 'u***@gmail.com' }) });
+      expect(file.donations).toEqual([
+        expect.objectContaining({
+          reference: 'ad-don-exportmine00000000a',
+          currency: 'NGN',
+          amountMinor: 500000,
+          status: 'succeeded',
+        }),
+      ]);
+      const text = JSON.stringify(file);
+      expect(text).not.toMatch(/secret-hash|sub-export-1|exportother|sealed/);
+    });
+  });
+
   describe('stats', () => {
     it('counts what this account watched this month and saved across profiles', async () => {
       const u = await h.makeUser();
