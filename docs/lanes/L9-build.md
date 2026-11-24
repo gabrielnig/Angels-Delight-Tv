@@ -39,3 +39,8 @@ Sources: paystack.com/docs/payments/webhooks, paystack.com/docs/api/transaction,
 
 ## Remaining
 Slices 1 to 14 of the plan, in order.
+
+## Slice 9 status (in progress, branch l9/s9-donate, not merged)
+Done and committed: receipt builder (`packages/payments/src/receipt.ts`), `donation_receipt` mailer template and `sendDonationReceipt`, `donation_receipt` outbox kind with dedupe key `receipt:<donationId>`.
+Still to build: migration with `donation_create` definer function (next free number on origin/main), worker `onSucceeded` receipt enqueue plus `receipt_sent_at`, `POST /api/donate/checkout`, `GET /api/donate/status`, donate, thank-you and cancelled pages, DonateForm, Donate links (hidden for kids), sitemap and noindex.
+Slices 10 to 14 not started.
