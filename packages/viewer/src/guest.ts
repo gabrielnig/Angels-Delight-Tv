@@ -36,7 +36,7 @@ export async function guestTitleDetail(
   input: GuestTitleInput,
 ): Promise<TitleDetailDto> {
   const catalog = catalogContext(ctx);
-  const filter = { kids: audience.kids };
+  const filter = { kids: audience.kids, maxRank: audience.maxRank };
   if (input.id !== undefined && !isUuid(input.id)) throw new NotFound('Title not found');
   return ctx.db.transaction(async (tx) => {
     const found = await findTitle(tx, catalog, filter, input);
@@ -87,14 +87,14 @@ export function guestBrowse(
   audience: GuestAudience,
   input: Omit<BrowseInput, 'profileId'>,
 ): Promise<BrowsePage> {
-  return ctx.db.transaction((tx) => browseFor(tx, ctx, { kids: audience.kids }, null, input));
+  return ctx.db.transaction((tx) => browseFor(tx, ctx, { kids: audience.kids, maxRank: audience.maxRank }, null, input));
 }
 
 export function guestCategories(
   ctx: ViewerContext,
   audience: GuestAudience,
 ): Promise<CategoryDto[]> {
-  return ctx.db.transaction((tx) => categoriesFor(tx, ctx, { kids: audience.kids }));
+  return ctx.db.transaction((tx) => categoriesFor(tx, ctx, { kids: audience.kids, maxRank: audience.maxRank }));
 }
 
 /** Writes nothing, whatever the caller passes: there is no `record` option on this path. */
@@ -103,7 +103,7 @@ export function guestSearch(
   audience: GuestAudience,
   input: Omit<SearchInput, 'profileId' | 'record'>,
 ): Promise<SearchResultDto> {
-  return searchFor(ctx, { kids: audience.kids }, input);
+  return searchFor(ctx, { kids: audience.kids, maxRank: audience.maxRank }, input);
 }
 
 export function guestSuggest(
@@ -112,7 +112,7 @@ export function guestSuggest(
   query: string,
 ): Promise<Suggestion[]> {
   return ctx.db.transaction((tx) =>
-    suggestTitles(tx, catalogContext(ctx), { kids: audience.kids }, query),
+    suggestTitles(tx, catalogContext(ctx), { kids: audience.kids, maxRank: audience.maxRank }, query),
   );
 }
 
@@ -128,7 +128,7 @@ export async function guestPopular(
       await popularTitles(
         tx,
         catalogContext(ctx),
-        { kids: audience.kids },
+        { kids: audience.kids, maxRank: audience.maxRank },
         {
           limit: options.limit,
           fallbackToNewest: true,
@@ -156,7 +156,7 @@ export async function guestTitlesByIds(
     const cards = await fetchCards(
       tx,
       catalogContext(ctx),
-      { kids: audience.kids },
+      { kids: audience.kids, maxRank: audience.maxRank },
       unique.map((id) => ({ kind: 'video' as const, id })),
       { includeEpisodes: true },
     );

@@ -19,7 +19,16 @@ export interface PlayableVideo {
   publishState: string;
   publishAt: Date | null;
   kidsSafe: boolean;
+  /** Maturity rank 0 (G) to 4 (18). Null or absent means unrated: it counts as kids safe only when the flag says so. */
+  maturityRank?: number | null;
   deletedAt: Date | null;
+}
+
+/** The profile limit check (M44-S20). No limit, or 4, allows everything. Unrated titles fail closed. */
+export function withinMaturityLimit(video: PlayableVideo, limit: number | undefined): boolean {
+  if (limit === undefined || limit >= 4) return true;
+  const rank = video.maturityRank ?? (video.kidsSafe ? 0 : 4);
+  return rank <= limit;
 }
 
 export interface PublicCaption {
@@ -33,7 +42,10 @@ export interface PublicCaption {
 export interface PlaybackStore {
   video(videoId: string): Promise<PlayableVideo | null>;
   /** The profile only when it belongs to the account. */
-  profile(profileId: string, accountId: string): Promise<{ id: string; isKids: boolean } | null>;
+  profile(
+    profileId: string,
+    accountId: string,
+  ): Promise<{ id: string; isKids: boolean; maxMaturityRank?: number } | null>;
   wrappedKey(videoId: string): Promise<Uint8Array | null>;
   captions(videoId: string): Promise<PublicCaption[]>;
   /** Key of the seek preview map under the media origin, or null when none was made. */
@@ -178,7 +190,12 @@ export class PlaybackService {
     if (!profile) throw new Forbidden('That profile is not available.');
     await this.deps.limiter?.enforce(PLAY_POLICIES.sessionProfile, profile.id);
     const video = await this.deps.store.video(videoId);
-    if (!video || !this.isLive(video) || (profile.isKids && !video.kidsSafe))
+    if (
+      !video ||
+      !this.isLive(video) ||
+      (profile.isKids && !video.kidsSafe) ||
+      !withinMaturityLimit(video, profile.isKids ? 0 : profile.maxMaturityRank)
+    )
       throw new NotFound('This video is not available.');
     const token = issuePlaybackToken(this.deps.tokens, {
       videoId,
@@ -308,7 +325,11 @@ export class PlaybackService {
     } else if (claims.pid) {
       const profile = await this.deps.store.profile(claims.pid, claims.aid);
       const video = (await this.deps.store.video(videoId)) as PlayableVideo;
-      if (!profile || (profile.isKids && !video.kidsSafe))
+      if (
+        !profile ||
+        (profile.isKids && !video.kidsSafe) ||
+        !withinMaturityLimit(video, profile.isKids ? 0 : profile.maxMaturityRank)
+      )
         throw new NotFound('This video is not available.');
     }
     const wrapped = await this.deps.store.wrappedKey(videoId);

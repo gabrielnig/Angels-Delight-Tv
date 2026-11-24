@@ -277,3 +277,23 @@ describe('language settings (M46)', () => {
     expect(parse('i18n.publish_min_percent', 60).success).toBe(true);
   });
 });
+
+describe('maturity settings (L5, R20)', () => {
+  it('labels default to G, PG, 12, 15, 18 and must be five short different labels', () => {
+    const def = SETTING_DEFS['maturity.labels'];
+    expect(def.default).toBe('G,PG,12,15,18');
+    expect(def.isPublic).toBe(true);
+    expect(def.tier).toBe('admin');
+    expect(parse('maturity.labels', 'All,7+,13+,16+,18+').success).toBe(true);
+    expect(parse('maturity.labels', 'G,PG,12,15').success).toBe(false);
+    expect(parse('maturity.labels', 'G,PG,PG,15,18').success).toBe(false);
+  });
+
+  it('guests may see up to rank 2 (12) by default, from 0 to 4', () => {
+    const def = SETTING_DEFS['maturity.guest_max_rank'];
+    expect(def.default).toBe(2);
+    expect(parse('maturity.guest_max_rank', 0).success).toBe(true);
+    expect(parse('maturity.guest_max_rank', 4).success).toBe(true);
+    expect(parse('maturity.guest_max_rank', 5).success).toBe(false);
+  });
+});

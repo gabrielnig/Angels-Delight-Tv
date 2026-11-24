@@ -3,6 +3,8 @@ import { errorResponse, json } from './http';
 
 export interface GuestAudienceValue {
   kids: boolean;
+  /** Highest maturity rank a guest may see (setting maturity.guest_max_rank). Absent means no limit. */
+  maxRank?: number;
 }
 
 export interface PublicGuardDeps {

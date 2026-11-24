@@ -106,7 +106,7 @@ export interface ViewerRuntime {
   /** The kids lock on the session row. Server side state, so no cookie can change it. */
   lock: KidsLockStore;
   /** What a guest is shown: the device Kids mode choice, else the site default. Absent means general (M40). */
-  guestAudience?(request: Request): Promise<{ kids: boolean }>;
+  guestAudience?(request: Request): Promise<{ kids: boolean; maxRank?: number }>;
   /** Client address after trusted proxy handling, for guest limits. Absent means one shared bucket (dev only). */
   clientIp?(request: Request): string;
 }

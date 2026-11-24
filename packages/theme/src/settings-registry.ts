@@ -1,3 +1,4 @@
+import { parseMaturityLabels } from '@ad/shared';
 import { z } from 'zod';
 import { MONETIZATION_DEFS } from './settings-monetization';
 
@@ -180,6 +181,28 @@ export const SETTING_DEFS = {
     label: 'Default for visitors without an account',
     description:
       'Choose what visitors see before they sign in. They can switch Kids mode on or off on their own device.',
+  }),
+  'maturity.labels': def({
+    schema: z
+      .string()
+      .trim()
+      .refine((value) => parseMaturityLabels(value) !== null, 'Use five different labels of 1 to 4 characters'),
+    default: 'G,PG,12,15,18',
+    isPublic: true,
+    tier: 'admin',
+    group: 'features',
+    label: 'Maturity rating labels',
+    description:
+      'Five short labels from lowest to highest, separated by commas. For example G,PG,12,15,18 or All,7+,13+,16+,18+.',
+  }),
+  'maturity.guest_max_rank': def({
+    schema: int(0, 4),
+    default: 2,
+    isPublic: false,
+    tier: 'admin',
+    group: 'features',
+    label: 'Highest rating visitors without an account can see',
+    description: 'Position on the rating scale, from 0 (the first label) to 4 (the last). The default 2 is the third label.',
   }),
   'features.autoplay_hero': def({
     schema: bool,
