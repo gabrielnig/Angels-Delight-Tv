@@ -247,4 +247,57 @@ describe('ingestBatch', () => {
     });
     expect(deps.store.views[0]!.country).toBeNull();
   });
+
+  describe('guest identity (M40-S16)', () => {
+    const guestId = 'Zm9vYmFyYmF6cXV4MTIzNA';
+    const run = async (context: Record<string, unknown>, now = '2026-03-11T10:00:00Z') => {
+      const deps = base();
+      await ingestBatch({
+        body: { v: 1, deviceClass: 'phone', events: [start] },
+        context: ctx(context),
+        ...deps,
+        now: () => new Date(now),
+        store: deps.store.store,
+      });
+      return deps.store.views[0]!;
+    };
+
+    it('hashes the guest id with the day, stores no profile and never the id itself', async () => {
+      const row = await run({ profileId: null, subjectId: guestId });
+      expect(row.profileId).toBeNull();
+      expect(row.viewerHash).toMatch(/^[0-9a-f]{24}$/);
+      expect(JSON.stringify(row)).not.toContain(guestId);
+    });
+
+    it('is stable within a day and different the next day', async () => {
+      const a = await run({ profileId: null, subjectId: guestId }, '2026-03-11T08:00:00Z');
+      const b = await run({ profileId: null, subjectId: guestId }, '2026-03-11T20:00:00Z');
+      const c = await run({ profileId: null, subjectId: guestId }, '2026-03-12T08:00:00Z');
+      expect(a.viewerHash).toBe(b.viewerHash);
+      expect(c.viewerHash).not.toBe(a.viewerHash);
+    });
+
+    it('keeps different guests apart', async () => {
+      const a = await run({ profileId: null, subjectId: guestId });
+      const b = await run({ profileId: null, subjectId: 'AAAAAAAAAAAAAAAAAAAAAA' });
+      expect(a.viewerHash).not.toBe(b.viewerHash);
+    });
+
+    it('stores no identity at all for a Kids mode guest', async () => {
+      const row = await run({ profileId: null, subjectId: guestId, audience: 'kids' });
+      expect(row.viewerHash).toBeNull();
+      expect(row.profileId).toBeNull();
+    });
+
+    it('leaves viewerHash null when there is no subject, as before', async () => {
+      const row = await run({ profileId: null });
+      expect(row.viewerHash).toBeNull();
+    });
+
+    it('does not let a guest subject change the hash of a signed in profile', async () => {
+      const withProfile = await run({});
+      const withBoth = await run({ subjectId: guestId });
+      expect(withBoth.viewerHash).toBe(withProfile.viewerHash);
+    });
+  });
 });

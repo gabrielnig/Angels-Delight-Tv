@@ -42,6 +42,11 @@ export interface IngestContext {
   ipKey: string;
   profileId: string | null;
   audience: 'general' | 'kids';
+  /**
+   * A guest's id from the signed guest cookie (M40-S16). Only ever hashed with the day, never stored. A signed in
+   * profile wins over it. A Kids mode guest stores no identity at all.
+   */
+  subjectId?: string | null;
 }
 
 export interface IngestInput {
@@ -107,6 +112,7 @@ export async function ingestBatch(input: IngestInput): Promise<IngestResult> {
         const watchedMs = event.kind === 'view_start' ? 0 : event.watchedMs;
         const startedAt = event.kind === 'view_start' ? now : new Date(now.getTime() - watchedMs);
         const profileId = kids ? null : context.profileId;
+        const subjectId = kids ? null : (context.subjectId ?? null);
         const { created } = await input.store.upsertView({
           playId: event.playId,
           videoId: event.videoId,
@@ -117,7 +123,11 @@ export async function ingestBatch(input: IngestInput): Promise<IngestResult> {
           completed: event.kind === 'complete',
           maxHeight: event.maxHeight ?? null,
           country,
-          viewerHash: profileId ? viewerHash(input.secret, lagosDay(startedAt), profileId) : null,
+          viewerHash: profileId
+            ? viewerHash(input.secret, lagosDay(startedAt), profileId)
+            : subjectId
+              ? viewerHash(input.secret, lagosDay(startedAt), `guest:${subjectId}`)
+              : null,
           deviceClass,
           saveData,
         });

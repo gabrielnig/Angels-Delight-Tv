@@ -39,7 +39,7 @@ export async function seriesPlayTarget(
   tx: ViewerTx,
   ctx: ViewerContext,
   audience: Audience,
-  profileId: string,
+  profileId: string | null,
   seriesId: string,
 ): Promise<PlayTarget | null> {
   const rules = rulesOf(ctx);
@@ -47,18 +47,21 @@ export async function seriesPlayTarget(
     (await listEpisodes(tx, catalogContext(ctx), audience, [seriesId])).get(seriesId) ?? [];
   const first = episodes[0];
   if (!first) return null;
-  const progress = await tx
-    .select()
-    .from(watchProgress)
-    .where(
-      and(
-        eq(watchProgress.profileId, profileId),
-        inArray(
-          watchProgress.videoId,
-          episodes.map((episode) => episode.id),
-        ),
-      ),
-    );
+  const progress =
+    profileId === null
+      ? []
+      : await tx
+          .select()
+          .from(watchProgress)
+          .where(
+            and(
+              eq(watchProgress.profileId, profileId),
+              inArray(
+                watchProgress.videoId,
+                episodes.map((episode) => episode.id),
+              ),
+            ),
+          );
   const counted = progress
     .filter((row) => row.completed || row.positionMs >= rules.minProgressMs)
     .sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime());
