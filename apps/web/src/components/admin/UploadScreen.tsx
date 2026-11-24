@@ -1,12 +1,22 @@
 'use client';
 
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { DragEvent } from 'react';
 import type { Lane } from '@/lib/uploader/types';
+import {
+  EMPTY_DETAILS,
+  resolveDetails,
+  toVideoPatch,
+  validateDetails,
+  type ResolvedDetails,
+  type UploadDetails,
+} from '@/lib/uploader/upload-details';
+import type { VideoPatch } from '@/lib/data/admin/video-commands';
 import { Button } from './Button';
 import { SelectField } from './fields';
 import { Icon } from './Icon';
 import { Banner, EmptyState } from './states';
+import { UploadDetailsForm } from './UploadDetailsForm';
 import { UploadLane } from './UploadLane';
 import type { LaneActions } from './UploadLane';
 import { useUploaderState } from './UploaderContext';
@@ -19,10 +29,17 @@ const ACCEPT = '.mp4,.mov,.mkv,video/mp4,video/quicktime,video/x-matroska';
  */
 export function UploadScreen({
   registerUpload,
+  applyDetails,
+  categories = [],
+  series = [],
   maxFileLabel = '5 GB',
   replace,
 }: {
   registerUpload?: (name: string, size: number) => Promise<{ id: string }>;
+  /** Saves the details onto the draft once it exists. Same validation as the video editor. */
+  applyDetails?: (videoId: string, patch: VideoPatch) => Promise<{ ok: boolean; error?: string }>;
+  categories?: Array<{ id: string; name: string }>;
+  series?: Array<{ id: string; title: string }>;
   maxFileLabel?: string;
   /** Upload a new file for this existing video (a failed encode) instead of making a new draft. */
   replace?: { videoId: string; title: string };
@@ -32,6 +49,13 @@ export function UploadScreen({
   const [parallel, setParallel] = useState('2');
   const [videoIds, setVideoIds] = useState<Record<string, string>>({});
   const registered = useRef(new Set<string>());
+  const [details, setDetails] = useState<UploadDetails>(EMPTY_DETAILS);
+  const [formOpen, setFormOpen] = useState(true);
+  const [notes, setNotes] = useState<string[]>([]);
+  const laneDetails = useRef(new Map<string, ResolvedDetails>());
+  const applied = useRef(new Set<string>());
+  const [saved, setSaved] = useState<Record<string, true>>({});
+  const cursor = useRef(0);
   const input = useRef<HTMLInputElement>(null);
 
   const addFiles = useCallback(
@@ -42,9 +66,21 @@ export function UploadScreen({
         if (list[0]) uploader.add(list[0], { replaceVideoId: replace.videoId });
         return;
       }
-      for (const file of list) uploader.add(file);
+      const checked = validateDetails(
+        details,
+        new Set(categories.map((c) => c.id)),
+        new Set(series.map((s) => s.id)),
+      );
+      setNotes(checked.errors);
+      for (const file of list) {
+        const lane = uploader.add(file);
+        const resolved = resolveDetails(checked.details, undefined, cursor.current++);
+        if (resolved && Object.keys(toVideoPatch(resolved)).length > 0)
+          laneDetails.current.set(lane.id, resolved);
+      }
+      if (list.length) setFormOpen(false);
     },
-    [uploader, replace],
+    [uploader, replace, details, categories, series],
   );
 
   // Fixture: when a lane finishes and the server did not name a video, create the draft.
@@ -61,6 +97,23 @@ export function UploadScreen({
       );
     }
   }
+
+  // Once a draft exists for a lane, save the details it was added with. Each lane is saved once.
+  useEffect(() => {
+    if (!applyDetails) return;
+    for (const lane of lanes) {
+      const videoId = lane.videoId ?? videoIds[lane.id];
+      const resolved = laneDetails.current.get(lane.id);
+      if (!videoId || !resolved || applied.current.has(lane.id)) continue;
+      applied.current.add(lane.id);
+      void applyDetails(videoId, toVideoPatch(resolved))
+        .then((r) => {
+          if (r.ok) setSaved((cur) => ({ ...cur, [lane.id]: true }));
+          else setNotes((cur) => [...cur, `${lane.name}: ${r.error ?? 'Details were not saved.'}`]);
+        })
+        .catch(() => setNotes((cur) => [...cur, `${lane.name}: Details were not saved.`]));
+    }
+  }, [lanes, videoIds, applyDetails]);
 
   const actions: LaneActions = {
     pause: (id) => uploader.pause(id),
@@ -91,6 +144,28 @@ export function UploadScreen({
           the video is prepared again.
         </Banner>
       ) : null}
+      {!replace ? (
+        <UploadDetailsForm
+          details={details}
+          onChange={(next) => {
+            // Episode numbering restarts when the series or the start number changes.
+            if (next.seriesId !== details.seriesId || next.startEpisode !== details.startEpisode)
+              cursor.current = 0;
+            setDetails(next);
+          }}
+          categories={categories}
+          series={series}
+          fileCount={lanes.filter((l) => l.status !== 'rejected').length}
+          open={formOpen}
+          onOpen={() => setFormOpen(true)}
+          onClose={() => setFormOpen(false)}
+        />
+      ) : null}
+      {notes.map((note) => (
+        <Banner key={note} tone="warning">
+          {note}
+        </Banner>
+      ))}
       {!online ? (
         <Banner tone="warning">
           You are offline. Uploads will continue when you are back online.
@@ -175,6 +250,7 @@ export function UploadScreen({
                 lane={lane}
                 actions={actions}
                 videoId={lane.videoId ?? videoIds[lane.id]}
+                note={saved[lane.id] ? 'Details were saved with the draft.' : undefined}
               />
             ))}
           </ul>

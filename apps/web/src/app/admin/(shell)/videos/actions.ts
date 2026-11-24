@@ -9,7 +9,7 @@ import { runVideoBulk, undoRestoreVideos, undoVideoBulk } from '@/lib/data/admin
 import type { BulkAction, BulkResult, VideoQuery } from '@/lib/data/admin/video-queries';
 import { auditBulkRun } from '@/server/admin/bulk-run';
 import type { CleanupResult } from '@/lib/data/admin/types';
-import type { CommandResult } from '@/lib/data/admin/video-commands';
+import type { CommandResult, VideoPatch } from '@/lib/data/admin/video-commands';
 
 export async function bulkVideosAction(
   ids: string[],
@@ -194,4 +194,32 @@ export async function bulkPurgeVideosAction(
   );
   revalidatePath('/admin', 'layout');
   return outcome;
+}
+
+/**
+ * Saves the shared upload details onto a new draft (M42-S18). Same validation as the video editor, so a
+ * category that vanished or a bad episode number comes back as a plain message.
+ */
+export async function applyUploadDetailsAction(
+  videoId: string,
+  patch: VideoPatch,
+): Promise<{ ok: boolean; error?: string }> {
+  const actor = await requireActionActor('/admin/videos/upload');
+  const clean: VideoPatch = {
+    ...(typeof patch.title === 'string' ? { title: patch.title.slice(0, 120) } : {}),
+    ...(Array.isArray(patch.categoryIds) ? { categoryIds: patch.categoryIds.map(String).slice(0, 50) } : {}),
+    ...(patch.suitability ? { suitability: patch.suitability } : {}),
+    ...(Array.isArray(patch.tags) ? { tags: patch.tags.map(String).slice(0, 10) } : {}),
+    ...(typeof patch.seriesId === 'string' ? { seriesId: patch.seriesId } : {}),
+    ...(typeof patch.episodeNumber === 'number' ? { episodeNumber: patch.episodeNumber } : {}),
+  };
+  try {
+    await videoService.update(actor, String(videoId), clean);
+  } catch (error) {
+    const fields = (error as { fields?: Record<string, string[]> }).fields;
+    const first = fields ? Object.values(fields)[0]?.[0] : undefined;
+    return { ok: false, error: first ?? 'Details were not saved. Open the video to set them.' };
+  }
+  revalidatePath('/admin', 'layout');
+  return { ok: true };
 }
