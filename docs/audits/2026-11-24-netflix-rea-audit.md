@@ -53,3 +53,9 @@ Docs to update: SECURITY.md capability table and route tests, ARCHITECTURE.md pl
 ## 6. Owner punch list (to fix in the same program)
 
 1. Encoding queue container padding. 2. Captions table Cues alignment (check all tables). 3. Breadcrumbs misaligned (Encoding, caption pages), audit everywhere. 4. Bulk actions: Videos already has publish, unpublish, trash, category, suitability. Add bulk approve on Captions with count and warning, bulk retry on Encoding, bulk actions on Users, Series, Trash, bulk upload details form. 5. Captions on and off: viewer CC exists, owner meaning unclear (resolved by recommended option: per video admin switch for who can publish captions, plus site default). 6. Home hero: carousel with optional short preview clips, still first, about 10 s per slide, pause control, reduced motion and data saver respected. 7. Home rows: sensible default rows at launch, trending and new. 8. Home sections: per row View all link (custom or automatic to category or series page), rename and reorder already exist.
+
+## Checked (L8, 24 November 2026)
+- Hero crossfade: absent in code, added by M47-S10.
+- Bottom tab bar: present (`BottomTabBar`), hidden from 960 and on title pages.
+- Fonts: six families bundled in latin and latin-ext. The precomposed Yoruba and Igbo letters were missing, fixed by the vietnamese subset (M47-S11).
+- Tile focus ring: it drew a ring, but as a box-shadow below 3:1 on the peach avatar and absent in forced colours. Fixed by an offset outline (M47-S06).

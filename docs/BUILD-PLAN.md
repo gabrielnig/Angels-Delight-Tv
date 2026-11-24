@@ -44,3 +44,41 @@ Lane A must merge first. Lanes B to J then run at the same time, each in its own
 ## Defaults taken (recommended options, logged in docs/DECISIONS.md)
 
 See `docs/DECISIONS.md`. Any new decision is added there at the time it is made.
+
+## Lanes added after phase 4
+
+The original table above stays as written. Lane notes live in `docs/lanes/`; the first line of each note is its scope.
+
+| Note | Scope |
+|---|---|
+| `A2.md` | Lane A2: admin stories audit and fixes (M12 to M20, M27 to M30) |
+| `B-auth.md` | Lane B: auth and accounts |
+| `C-viewer-api.md` | Lane C: viewer API and domain services |
+| `D-video-pipeline.md` | Lane D: Video pipeline |
+| `E-viewer-ui.md` | Lane E: Viewer UI |
+| `F-admin-ui.md` | Lane F: Admin UI |
+| `F1-final-admin.md` | Lane F1: final admin and ops gaps |
+| `F2-final-verification.md` | Lane F2: final verification and viewer leftovers |
+| `F3-parity.md` | Lane F3: viewer mockup parity |
+| `G-player.md` | Lane G: Player (M08, M11) |
+| `H-theme.md` | Lane H: Theme settings and site configuration |
+| `I-lowdata-pwa.md` | Lane I: low data, PWA, observability, analytics collection |
+| `J3-design-review.md` | Lane J3: design system and accessibility review |
+| `K1-viewer-integration.md` | Lane K1: viewer integration |
+| `K2-video-integration.md` | Lane K2: video delivery integration |
+| `K3-admin-integration.md` | Lane K3: admin integration |
+| `M1-launch.md` | Lane M1: launch tooling |
+| `M2-viewer-gaps.md` | Lane M2: viewer gaps |
+| `M3-media-brand.md` | Lane M3: Media processing and brand kit |
+| `P1-auth-pages.md` | Lane P1: sign in (S01) and sign up (S02) to the mockups |
+| `P3-account-pages.md` | Lane P3: account and site screens (S27 to S31) |
+| `Q1-cleanup.md` | Lane Q1: cleanup |
+| `R1-stories.md` | Lane R1: three unbuilt viewer stories |
+| `R2-stories.md` | Lane r2: poster fade, search progress, blur placeholders, focus recut |
+| `R3-fonts-states.md` | Lane R3: Space Grotesk headings and account states |
+| `V1-final-verification.md` | V1 final verification of main |
+| `W1-release.md` | Lane W1: release images and no email first deploy |
+| `a1-viewer-stories-audit.md` | Lane a1: viewer stories audit and fixes |
+| `a3-platform.md` | Lane a3: platform stories audit and gap fixes |
+
+Version 2 plan lanes (`docs/plan/v2/`): L1 Guest access, L2 Home, L3 Admin polish, L4 Player, L5 Engagement, L6 Discovery, L7 Languages, L8 Design system tuning (M47), L9 Monetization, L10 Account and reach.

@@ -47,6 +47,7 @@ Related documents: `docs/PRD.md` (why), `docs/USER-STORIES.md` (what, per module
 | M34 | Accessibility and internationalisation | Cross cutting | [READY] |
 | M35 | Kids mode and content suitability | Viewer | [READY] |
 | M36 | Artwork and thumbnails | Admin and backend | [READY] |
+| M47 | Design system tuning and guards | Cross cutting | [READY] |
 
 36 modules in total. M01 to M26 follow the planned set. M27 to M36 are modules found while breaking the brief down: they own behaviour that would otherwise be spread across several modules with nobody responsible.
 
