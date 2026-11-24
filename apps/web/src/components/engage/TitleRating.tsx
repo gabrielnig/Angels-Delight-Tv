@@ -25,7 +25,7 @@ async function readJson(response: Response) {
 /** The rating group of the title page. Loads this profile's rating, saves through the API (M44-S01, S04). */
 export function TitleRating({ target, guest }: TitleRatingProps) {
   const [initial, setInitial] = useState<RatingValue | null | undefined>(guest ? null : undefined);
-  const [asking, setAsking] = useState(false);
+  const [asking, setAsking] = useState<{ value: RatingValue } | null>(null);
 
   useEffect(() => {
     if (!target) return;
@@ -47,7 +47,7 @@ export function TitleRating({ target, guest }: TitleRatingProps) {
         key={String(initial)}
         initial={initial}
         guest={Boolean(guest)}
-        onGuestAsk={() => setAsking(true)}
+        onGuestAsk={(value) => setAsking({ value })}
         save={async (value) => {
           if (!target) return;
           await readJson(
@@ -65,12 +65,12 @@ export function TitleRating({ target, guest }: TitleRatingProps) {
       />
       {guest ? (
         <SignInToSaveDialog
-          open={asking}
+          open={asking !== null}
           reason="like"
           next={guest.next}
           signUpOpen={guest.signUpOpen}
-          intent={{ kind: 'like', itemKey: guest.itemKey }}
-          onClose={() => setAsking(false)}
+          intent={{ kind: 'like', itemKey: guest.itemKey, value: asking?.value }}
+          onClose={() => setAsking(null)}
         />
       ) : null}
     </>

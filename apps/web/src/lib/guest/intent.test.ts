@@ -46,6 +46,21 @@ describe('guest intent', () => {
     expect(takeIntent(store, ['like'], 2000)).toEqual({ kind: 'like', itemKey: 'video:a' });
   });
 
+  it('carries the chosen rating value of a like', () => {
+    const store = memory();
+    saveIntent(store, { kind: 'like', itemKey: 'video:a', value: 2 }, 1000);
+    expect(takeIntent(store, ['like'], 2000)).toEqual({ kind: 'like', itemKey: 'video:a', value: 2 });
+  });
+
+  it('drops a value that is not a rating', () => {
+    const store = memory();
+    store.setItem(
+      GUEST_INTENT_KEY,
+      '{"v":1,"kind":"like","itemKey":"video:a","value":9,"t":1000}',
+    );
+    expect(takeIntent(store, ['like'], 2000)).toEqual({ kind: 'like', itemKey: 'video:a' });
+  });
+
   it.each([
     'not json',
     '{"v":2}',
