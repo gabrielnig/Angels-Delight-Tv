@@ -1413,6 +1413,12 @@ export class AccountService {
       await tx
         .delete(schema.mfaRecoveryCodes)
         .where(eq(schema.mfaRecoveryCodes.accountId, accountId));
+      // The linked Google identity (subject, keyed email hash, masked address) and the sign in history (country,
+      // device) go with the person. Keeping the identity would also block a later Google sign up (M49).
+      await tx
+        .delete(schema.accountIdentities)
+        .where(eq(schema.accountIdentities.accountId, accountId));
+      await tx.delete(schema.loginEvents).where(eq(schema.loginEvents.accountId, accountId));
       await tx
         .update(schema.accounts)
         .set({
