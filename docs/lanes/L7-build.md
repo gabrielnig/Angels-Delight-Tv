@@ -109,3 +109,7 @@ Scoped tests only: `pnpm vitest run <file>`.
 - Whisper: `WHISPER_MODEL_MULTI` routes non-English and `auto`, 422 when unset; `language_probability` returned. Adapter maps 422 to a permanent plain error. Generator passes the real `videos.language` (the hardcoded en was a bug), pcm decoded as en, ig refused, auto at 0.6 or more updates `videos.language` and notes Detected X.
 - Catalog: `captionState` and nav counts follow the spoken language; publish gate needs an approved track in the spoken language; `updateAdminVideo` validates `language` (locale code or auto). Video details has a Spoken language select. D-328.
 - Tests: `python3 -m unittest test_server test_requirements` in apps/whisper; `packages/video/src/captions/adapter.test.ts`, `generator.int.test.ts`; `packages/catalog/src/publishing.int.test.ts`, `admin/videos.int.test.ts`; `apps/web` `video-commands.test.ts`, `VideoEditor.test.tsx`.
+
+## L7c (finishing build, worktree `/home/claude/wt2/L7c-build`)
+- Remaining order: (1) layout lang test, (2) slice 17, (3) extraction waves, (4) draft catalogs, (5) slice 18 and docs, (6) coverage failures.
+- (1) done: `layout.tsx` already passed the locale to `selectFonts` (slice 4); `layout.test.tsx` now pins it with a spy and checks `html lang`. No code fix was needed.
