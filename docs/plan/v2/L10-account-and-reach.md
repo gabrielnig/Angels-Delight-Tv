@@ -481,3 +481,72 @@ Risks:
 
 1. Do you want Google sign in live at launch? It needs a Google Cloud OAuth client created under the platform's Google account (the plan makes it optional and invisible until keys exist).
 2. For a viewer who loses both phone and recovery codes, is "contact support, an admin resets after checking" acceptable, and who on the team is allowed to do it (admin role only is the recommendation)?
+
+## 12. Amendments (UI review, 24 November 2026)
+
+Added by the UI review of this lane (`docs/reviews/v2/L10-review.md`). Where this section disagrees with sections 1 to 11, this section wins. Rulings R24, R30, R31, R38 apply. R24 sets the scope: viewer 2FA and Google sign in are built, passkeys (S179) and offline downloads (S178) are design records only. Two mockups were added: S180 (Data and privacy with the Viewing activity link) and S181 (security dialogs the first pass left out).
+
+### 12.1 `--font-mono` (R38, finding 14 of section 7)
+
+The token already exists in `packages/ui/src/tokens.css` line 88 and in the skill's `reference/tokens.css`: `--font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;`. It is a fixed system stack, never loaded from the network, not themeable, so it does not count as a second font family. What was missing is the doc. Exact edits:
+
+1. `docs/DESIGN-SYSTEM.md` section 3.1, add after the `--color-tile-*` row, a new subsection "3.3 Type family tokens" with this table:
+
+   | Token | Default | Group | Use |
+   |---|---|---|---|
+   | `--font-sans` | `"Inter", system-ui, ...` | Themeable (curated list) | Body and UI |
+   | `--font-display` | `"Space Grotesk", var(--font-sans)` | Themeable (curated list) | Headings |
+   | `--font-mono` | `ui-monospace, SFMono-Regular, Menlo, Consolas, monospace` | Fixed | Recovery codes, the manual two step setup key, the TV pairing code. Nothing else. |
+
+2. `docs/DESIGN-SYSTEM.md` section 5, line 217 table row "Font family": add a row `| Mono family | Not editable | `--font-mono` |`.
+3. Recovery code and setup key elements use `font-family: var(--font-mono)`, weight 600, `letter-spacing: .08em`, 17px or larger, and `user-select: all` so one tap selects a code. Characters that look alike (0 and O, 1 and I) are not issued by the generator; the monospace face is a second guard.
+4. The theme editor group list (11.24) gets `--font-mono` under Fixed.
+
+### 12.2 Google mark exception for DESIGN-SYSTEM 11.26 and the skill grep (R38)
+
+Append to `docs/DESIGN-SYSTEM.md` section 11.26 (Auth screens):
+
+> **Google sign in button (the one brand colour exception).** The button is optional and renders only when both Google keys are set and the site setting is on (R24). It follows Google's own button rules, so these literal values are allowed and are the only raw colours permitted outside `tokens.css`: the four mark colours `#EA4335`, `#4285F4`, `#FBBC05`, `#34A853` inside the inline SVG in `apps/web/src/components/auth/GoogleMark.tsx`; button fill `#FFFFFF`; button stroke `#747775` (4.53:1 on white, passes the 3:1 control edge rule); label `#1F1F1F` (16.5:1). The label is exactly "Continue with Google" (or "Sign up with Google" on the sign up page, never reworded), 16px, weight 500, in `var(--font-sans)`. The mark is 20px, never recoloured, never on a coloured fill, with at least 12px between mark and label. Height is 48px (the 44px target rule still applies), full width of the card, `--radius-md`. States: hover adds `--color-surface-sunken` fill inside the `hover: hover and pointer: fine` query; focus uses the standard 3px ring with 2px offset; redirecting shows the label "Redirecting" with a spinner that stops under `prefers-reduced-motion: reduce`, size locked. The button is never shown to a staff sign in page or on a kids profile screen. Light theme only: there is no dark button variant because the default theme stays light (R27).
+
+Replace the first line of the quick greps in `.claude/skills/angels-delight-design-system/SKILL.md`:
+
+```bash
+# hardcoded colours (allowed only in the token file, theme defaults and GoogleMark.tsx)
+grep -nE '#[0-9a-fA-F]{3,8}\b|rgba?\(|hsla?\(' <files> | grep -v 'components/auth/GoogleMark.tsx'
+```
+
+and add this checklist line under "Contrast and colour": "`GoogleMark.tsx` and the Google button stroke and label values in 11.26 are the only allowed raw colours. Any other Google brand colour in a component is a Blocker."
+
+Open check for the build: Google's brand page asks for Roboto Medium in the label. We keep `var(--font-sans)` so only one family loads (section 5). If the owner wants strict brand matching, log a decision; this is the recommended option for now.
+
+### 12.3 TV icon for `apps/web/src/components/account/icons.tsx` (finding 3 of section 7)
+
+Add `tv` to `SHAPES` (24 grid, stroke 2 like its siblings, round caps), distinct from `laptop` by the antenna:
+
+```tsx
+tv: (
+  <>
+    <rect x="2" y="7" width="20" height="14" rx="2" />
+    <path d="M8 3l4 4 4-4" />
+  </>
+),
+```
+
+The old mockup glyph (monitor with a stand) read as a desktop. Also add `tablet` (`<rect x="4" y="2" width="16" height="20" rx="2" /><path d="M11 18h2" />`, already drawn in S176), `clock` (`<circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" />`, used by Viewing activity) and `eye` (`<path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z" /><circle cx="12" cy="12" r="3" />`, password reveal). `DeviceKind` is `'phone' | 'tablet' | 'desktop' | 'tv'`, sent by the server, never guessed from the label.
+
+### 12.4 Data and privacy link to Viewing activity (finding 9 of section 7)
+
+The set had no equivalent of S30 that links to the new page. S180 is that screen (S30 plus the change). Build rules:
+
+- `AccountNav` gets "Viewing activity" between "Playback settings" and "Data and privacy" on desktop (sidebar) and mobile (pill row, scrolled so the active pill is in view).
+- `/account/data` gets a card between Export and Delete: heading "Viewing activity", text "See what each profile has watched, remove a title, or clear the list. Clearing your viewing activity does not delete your account.", secondary button "Open viewing activity" linking to `/account/activity`.
+- The Clear activity dialog (S174) says "Clearing activity does not delete your account." and its confirm button reads "Clear activity" (not "Clear all"). Add both strings to `@ad/shared/messages`.
+- S30, S27, S28 and S29 (and their mobile files) still show four links. The build uses `AccountNav` once, so they are fixed by the component; no need to redraw them.
+
+### 12.5 Other amendments from the review
+
+- Touch targets (R30): the desktop header nav links in every L10 mockup were 19px tall. Shared nav link rule is `min-height: 44px; min-width: 44px`. Switches are a 56 by 44 hit area around a 48 by 28 track. The dialog close button is `flex: 0 0 44px` so it cannot shrink.
+- The skip link "Skip to content" is required by section 7 finding 6 for TV mode and is not drawable in a static frame. It is the first tab stop in `Shell.tsx`.
+- S181 holds the dialogs the first pass left out: Turn off two step verification, Get new backup codes, Remove Google (and the "Set a password first" refusal), and the admin Reset two step verification dialog. Admin reset is Admin only (R24), reason required.
+- Seek rail on the TV player uses a rail colour of at least 3:1 on `--color-player-bg` (R34). The mockup uses `#6A6E78` (3.75:1). The token `--color-player-rail` is changed by L8/L4, not here.
+- S178 and S179 carry a "Not built now" band (R24). They are not in the build list.
