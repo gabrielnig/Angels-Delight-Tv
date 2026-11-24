@@ -485,6 +485,12 @@ importers:
 
   packages/shared: {}
 
+  packages/sponsors:
+    dependencies:
+      '@ad/shared':
+        specifier: workspace:*
+        version: link:../shared
+
   packages/storage:
     dependencies:
       '@ad/shared':
