@@ -4,6 +4,7 @@ import {
   ASSET_PURPOSES,
   ASSET_STATUSES,
   CAPTION_SOURCES,
+  UI_TRANSLATION_STATUSES,
   CAPTION_STATUSES,
   JOB_STATUSES,
   PUBLISH_STATES,
@@ -38,3 +39,5 @@ export const assetPurpose = pgEnum('asset_purpose', ASSET_PURPOSES);
 export const assetStatus = pgEnum('asset_status', ASSET_STATUSES);
 export const sponsorStatus = pgEnum('sponsor_status', SPONSOR_STATUSES);
 export const sponsorSlot = pgEnum('sponsor_slot', SPONSOR_SLOTS);
+
+export const uiTranslationStatus = pgEnum('ui_translation_status', UI_TRANSLATION_STATUSES);

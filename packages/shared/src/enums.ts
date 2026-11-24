@@ -13,6 +13,7 @@ export const VIDEO_STATUSES = [
 export const PUBLISH_STATES = ['draft', 'scheduled', 'published', 'unpublished'] as const;
 export const RENDITION_STATUSES = ['pending', 'encoding', 'ready', 'failed'] as const;
 export const CAPTION_SOURCES = ['whisper', 'aligned', 'manual', 'translation'] as const;
+export const UI_TRANSLATION_STATUSES = ['draft', 'in_review', 'approved'] as const;
 export const CAPTION_STATUSES = [
   'draft',
   'in_review',
@@ -52,7 +53,7 @@ export const MATURITY_RANKS = [0, 1, 2, 3, 4] as const;
 export const MATURITY_DEFAULT_LABELS = ['G', 'PG', '12', '15', '18'] as const;
 export const TOKEN_PURPOSES = ['verify_email', 'reset_password', 'change_email'] as const;
 export const THEME_STATUSES = ['draft', 'published', 'archived'] as const;
-export const ASSET_PURPOSES = ['logo', 'favicon', 'thumbnail', 'hero', 'series_art', 'sponsor'] as const;
+export const ASSET_PURPOSES = ['logo', 'favicon', 'thumbnail', 'hero', 'series_art'] as const;
 export const ASSET_STATUSES = ['processing', 'ready', 'failed'] as const;
 
 export type AccountRole = (typeof ACCOUNT_ROLES)[number];
@@ -62,6 +63,7 @@ export type VideoStatus = (typeof VIDEO_STATUSES)[number];
 export type PublishState = (typeof PUBLISH_STATES)[number];
 export type RenditionStatus = (typeof RENDITION_STATUSES)[number];
 export type CaptionSource = (typeof CAPTION_SOURCES)[number];
+export type UiTranslationStatus = (typeof UI_TRANSLATION_STATUSES)[number];
 export type CaptionStatus = (typeof CAPTION_STATUSES)[number];
 export type UploadKind = (typeof UPLOAD_KINDS)[number];
 export type UploadStatus = (typeof UPLOAD_STATUSES)[number];
