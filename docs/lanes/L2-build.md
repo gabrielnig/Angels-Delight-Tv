@@ -70,3 +70,10 @@ Plan `docs/plan/v2/L2-home.md`, review `docs/reviews/v2/L2-review.md`, rulings `
 - Catalog `heroSlideExtras` (rows.ts) returns editor text and `previewUrl`, `previewMs` per hero card (ready and mode not off, a series uses its first episode). Viewer `HeroItem` carries `text`, `previewUrl`, `previewMs`; web `HeroSlot` carries `headline`, `blurb`, `buttonLabel`, `previewUrl`.
 - Eligibility is `apps/web/src/lib/lowdata/hero-preview.ts` (fast link and downlink 5 Mbps or more, Data saver off, no reduced motion, tab visible, unknown connection only when `home.hero_previews_unknown_connection`). `HomeHero` re-decides on connection, motion and visibility changes. `Hero` takes `previewAllowed`; `HeroPreview` mounts one video for the active slide only, source after 1.2 s, removed on error or a 2 s stall, hidden under reduced motion.
 - Admin live preview lists every slide with headline, button and a clip badge, plus each section View all line.
+
+## Slice 12 notes
+
+- `packages/ui/src/components/HoverCard.tsx`: `useHoverCard` (300 ms rest, 100 ms grace, mouse and fine pointer only, one open at a time, Escape, closes on scroll and resize, origin from the row edges) and `HoverCard` (portal in the body, role dialog, scale 1.25 inline, none under reduced motion).
+- `VideoCard` renders the card on hover with the thumbnail, Play link (`playHref`), My List toggle, rating chip, More info, length, subject, maturity chip, Most liked and a two line description. The inline `.ad-card__peek` and the thumbnail scale CSS are removed. Series and Continue cards have no hover card (they had no peek).
+- `--row-pad-block` (room for the old scale) is left in place so row heights do not move; it can be dropped in a later tidy.
+- `packages/ui/test/focus-ring.test.ts` fails on main for `.ad-bell__popover:focus` (not this lane).

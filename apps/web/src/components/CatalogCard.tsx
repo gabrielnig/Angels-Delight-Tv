@@ -139,6 +139,8 @@ export function CatalogCard({
       thumbnail={item.thumbnail}
       meta={showMeta ? metaLine(item) : undefined}
       description={item.description}
+      subject={item.categoryName}
+      playHref={`/watch/${item.id}`}
       priority={priority}
       hasCaptions={item.hasCaptions}
       inList={inList}

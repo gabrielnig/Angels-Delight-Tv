@@ -17,59 +17,32 @@ const find = (selector: string, at?: RegExp) =>
 const HOVER = /hover:\s*hover.*pointer:\s*fine/;
 
 describe('hover card (R10, M47-S03)', () => {
-  it('the hover delay applies on enter only, mouse out is not delayed', () => {
-    const base = find('.ad-card__thumb');
-    expect(base?.body).not.toMatch(/hover-card-delay|hover-intent-delay/);
-    const hover = find('.ad-card:hover .ad-card__thumb', HOVER);
-    expect(hover?.body).toMatch(/transition-delay:\s*var\(--hover-card-delay\)/);
-  });
-
-  it('scale is --card-scale over 250ms with the strong ease out', () => {
-    const base = find('.ad-card__thumb', /container row \(min-width: 600px\)/);
-    expect(flat(base?.body)).toMatch(
-      /transition: transform var\(--motion-hover\) var\(--ease-out-strong\)/,
-    );
-    const hover = find('.ad-card:hover .ad-card__thumb', HOVER);
-    expect(hover?.body).toMatch(/transform:\s*scale\(var\(--card-scale\)\)/);
+  it('the old inline scale, peek and fades are gone (M41-S12)', () => {
+    expect(find('.ad-card:hover .ad-card__thumb', HOVER)).toBeUndefined();
+    expect(find('.ad-card__thumb')?.body).not.toMatch(/transform-origin/);
+    expect(find('.ad-row__item:hover', HOVER)).toBeUndefined();
+    expect(find('.ad-card:hover .ad-card__title, .ad-card:hover .ad-card__meta', HOVER)).toBeUndefined();
+    expect(css).not.toContain('ad-card__peek');
     expect(css).not.toMatch(/translateY\(-4px\)/);
   });
 
-  it('only exists for fine hover pointers on rows 600px or wider', () => {
-    const hover = find('.ad-card:hover .ad-card__thumb', HOVER);
-    expect(hover?.at.some((a) => /container row \(min-width: 600px\)/.test(a))).toBe(true);
+  it('the floating card sits above rows and the nav, in the body, on tokens', () => {
+    const card = find('.ad-hovercard');
+    expect(card?.body).toMatch(/position:\s*fixed/);
+    expect(card?.body).toMatch(/z-index:\s*var\(--z-overlay\)/);
+    expect(card?.body).toMatch(/box-shadow:\s*var\(--shadow-3\)/);
   });
 
-  it('first item grows from the left, last from the right, others from the centre', () => {
-    expect(find('.ad-card__thumb')?.body).toMatch(/transform-origin:\s*center/);
-    expect(find('.ad-row__item:first-child .ad-card__thumb')?.body).toMatch(
-      /transform-origin:\s*left center/,
+  it('fades in over --motion-hover with the strong ease out, opacity only', () => {
+    expect(flat(find('.ad-hovercard')?.body)).toMatch(
+      /animation: ad-hovercard-in var\(--motion-hover\) var\(--ease-out-strong\)/,
     );
-    expect(find('.ad-row__item:last-child .ad-card__thumb')?.body).toMatch(
-      /transform-origin:\s*right center/,
-    );
+    expect(css).toMatch(/@keyframes ad-hovercard-in \{\s*from \{\s*opacity: 0;/);
   });
 
-  it('the raised item sits above its neighbours', () => {
-    const item = find('.ad-row__item:hover', HOVER);
-    expect(item?.body).toMatch(/position:\s*relative/);
-    expect(item?.body).toMatch(/z-index:\s*var\(--z-sticky\)/);
-  });
-
-  it('title and meta fade out under the scaled thumb after the delay', () => {
-    const fade = find('.ad-card:hover .ad-card__title, .ad-card:hover .ad-card__meta', HOVER);
-    expect(fade?.body).toMatch(/opacity:\s*0/);
-    expect(fade?.body).toMatch(/transition-delay:\s*var\(--hover-card-delay\)/);
-  });
-
-  it('keyboard focus shows the same peek with no scale and no delay', () => {
-    const focus = find('.ad-card:focus-within .ad-card__peek');
-    expect(focus?.body).toMatch(/opacity:\s*1/);
-    expect(focus?.body).not.toMatch(/transform/);
-  });
-
-  it('reduce removes the scale', () => {
-    const reduce = find('.ad-card:hover .ad-card__thumb', /prefers-reduced-motion:\s*reduce/);
-    expect(reduce?.body).toMatch(/transform:\s*none/);
+  it('reduce draws no animation, and the card carries no scale of its own in css', () => {
+    expect(find(".ad-hovercard[data-motion='reduced']")?.body).toMatch(/animation:\s*none/);
+    expect(find('.ad-hovercard')?.body).not.toMatch(/transform/);
   });
 
   it('the row list has real block padding for the scale, and only the viewport takes it back', () => {

@@ -69,7 +69,7 @@ html[data-tv] .ad-row__viewport {
 
 /* Hover only effects and previews are off. Focus reveals the same content. */
 html[data-tv] [data-preview],
-html[data-tv] .ad-card__peek:not(:focus-within) {
+html[data-tv] .ad-hovercard {
   display: none;
 }
 
