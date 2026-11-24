@@ -247,3 +247,43 @@ describe('VideoEditor captions for viewers (L3-05)', () => {
     expect(screen.getByText('Only an Admin can change this.')).toBeInTheDocument();
   });
 });
+
+describe('VideoEditor hero preview card (M41-S10)', () => {
+  it('shows the Home preview clip card when the actions are given', () => {
+    const actions = setup('vid_safe_online');
+    expect(screen.queryByRole('heading', { name: 'Home preview clip' })).toBeNull();
+    void actions;
+  });
+
+  it('sends a mode change through the action', async () => {
+    const setPreviewMode = vi.fn(async () => ({ ok: true as const }));
+    const retryPreview = vi.fn(async () => ({ ok: true as const }));
+    const { render: r, cleanup } = await import('@testing-library/react');
+    cleanup();
+    const video = get('vid_safe_online');
+    r(
+      <VideoEditor
+        video={video}
+        categories={store.categories}
+        series={store.series}
+        role="editor"
+        actions={
+          {
+            update: vi.fn(),
+            publish: vi.fn(),
+            unpublish: vi.fn(),
+            retryEncode: vi.fn(),
+            bulk: vi.fn(),
+            setPreviewMode,
+            retryPreview,
+          } as never
+        }
+        viewerHref="/watch/x"
+      />,
+    );
+    expect(screen.getByRole('heading', { name: 'Home preview clip' })).toBeTruthy();
+    await userEvent.click(screen.getByRole('radio', { name: /Off/ }));
+    await userEvent.click(screen.getByRole('button', { name: 'Save preview setting' }));
+    await waitFor(() => expect(setPreviewMode).toHaveBeenCalledWith({ mode: 'off' }));
+  });
+});

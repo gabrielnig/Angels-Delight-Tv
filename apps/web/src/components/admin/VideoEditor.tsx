@@ -10,7 +10,12 @@ import { formatBytes } from '@/lib/uploader/format';
 import type { CategoryRecord, SeriesRecord, VideoRecord } from '@/lib/data/admin/types';
 import { useMaturityLabels } from '@/lib/maturity-context';
 import type { BulkAction, BulkResult } from '@/lib/data/admin/video-queries';
-import type { CommandResult, PublishRequest, VideoPatch } from '@/lib/data/admin/video-commands';
+import type {
+  CommandResult,
+  PreviewModeInput,
+  PublishRequest,
+  VideoPatch,
+} from '@/lib/data/admin/video-commands';
 import { adminStatusOf, effectiveMaturityRank, publishChecklist } from '@/lib/data/admin/video-rules';
 import { StatusBadge } from './Badge';
 import { Button, LinkButton } from './Button';
@@ -18,6 +23,7 @@ import { Checklist } from './ChecklistCard';
 import { ConfirmDialog } from './Dialog';
 import { Checkbox, SelectField, TextArea, TextField } from './fields';
 import { Card } from './PageHeader';
+import { PreviewClipCard } from './PreviewClipCard';
 import { PosterTile, seedOf } from './PosterTile';
 import { PublishDialog } from './PublishDialog';
 import { Banner } from './states';
@@ -33,6 +39,9 @@ export interface EditorActions {
   bulk(action: BulkAction): Promise<BulkResult>;
   /** Captions for viewers (Admin only): null follows the site default. */
   setCaptions?(value: boolean | null, reason?: string): Promise<CommandResult>;
+  /** The Home hero clip (M41-S10). Without these the card is not shown. */
+  setPreviewMode?(input: PreviewModeInput): Promise<CommandResult>;
+  retryPreview?(): Promise<CommandResult>;
 }
 
 interface Props {
@@ -357,6 +366,24 @@ export function VideoEditor({
             {markersSummary ? 'Edit' : 'Set up skip and chapters'}
           </LinkButton>
         </Card>
+        {actions.setPreviewMode && actions.retryPreview ? (
+          <PreviewClipCard
+            key={`${video.preview?.state}-${video.preview?.mode}-${video.preview?.startMs}`}
+            preview={video.preview ?? { state: 'none', mode: 'auto', startMs: null, note: null }}
+            durationSeconds={video.durationSeconds}
+            canEdit={can(role, 'video.edit')}
+            onSetMode={async (input) => {
+              const result = await actions.setPreviewMode!(input);
+              if (result.ok) router.refresh();
+              return result;
+            }}
+            onRetry={async () => {
+              const result = await actions.retryPreview!();
+              if (result.ok) router.refresh();
+              return result;
+            }}
+          />
+        ) : null}
         {actions.setCaptions ? (
           <Card title="Captions for viewers">
             <fieldset className="adm-fieldset" disabled={!canSwitchCaptions}>

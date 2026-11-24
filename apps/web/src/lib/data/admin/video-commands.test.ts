@@ -8,7 +8,9 @@ import {
   restoreVideo,
   retryEncode,
   retryEncodeMany,
+  retryPreview,
   schedulePublish,
+  setPreviewMode,
   validateVideoPatch,
 } from './video-commands';
 import { seedStore } from './store';
@@ -245,5 +247,48 @@ describe('applyCaptionsAvailability (L3-05)', () => {
     expect(v).toMatchObject({ captionsEnabled: false, captionsOffReason: 'Sign language video' });
     applyCaptionsAvailability(v as never, 'admin', null);
     expect(v).toMatchObject({ captionsEnabled: null, captionsOffReason: null });
+  });
+});
+
+describe('hero preview clip commands (M41-S10)', () => {
+  const video = () => {
+    const v = structuredClone(get(seedStore(NOW), seedStore(NOW).videos[0]!.id));
+    v.durationSeconds = 90;
+    v.preview = { state: 'ready', mode: 'auto', startMs: null, note: null };
+    return v;
+  };
+
+  it('turning it off keeps the state and hides the clip', () => {
+    const v = video();
+    expect(setPreviewMode(v, { mode: 'off' })).toEqual({ ok: true });
+    expect(v.preview).toMatchObject({ mode: 'off', state: 'ready' });
+  });
+
+  it('picked needs a start in 100 ms steps with six seconds left, and queues a recut', () => {
+    const v = video();
+    expect(setPreviewMode(v, { mode: 'picked', startMs: 12_350 }).ok).toBe(false);
+    expect(setPreviewMode(v, { mode: 'picked', startMs: 85_000 })).toEqual({
+      ok: false,
+      error: 'Pick a start between 0:00 and 1:24 so the clip has six seconds to play',
+    });
+    expect(setPreviewMode(v, { mode: 'picked' }).ok).toBe(false);
+    expect(setPreviewMode(v, { mode: 'picked', startMs: 12_300 })).toEqual({ ok: true });
+    expect(v.preview).toEqual({ state: 'queued', mode: 'picked', startMs: 12_300, note: null });
+  });
+
+  it('automatic clears the start and queues a recut', () => {
+    const v = video();
+    v.preview = { state: 'failed', mode: 'picked', startMs: 5000, note: 'x' };
+    expect(setPreviewMode(v, { mode: 'auto' })).toEqual({ ok: true });
+    expect(v.preview).toEqual({ state: 'queued', mode: 'auto', startMs: null, note: null });
+  });
+
+  it('retry queues again unless the clip is off', () => {
+    const v = video();
+    v.preview = { state: 'failed', mode: 'auto', startMs: null, note: 'The clip came out too large' };
+    expect(retryPreview(v)).toEqual({ ok: true });
+    expect(v.preview).toMatchObject({ state: 'queued', note: null });
+    v.preview.mode = 'off';
+    expect(retryPreview(v)).toEqual({ ok: false, error: 'Turn the preview clip on first' });
   });
 });

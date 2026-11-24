@@ -11,6 +11,8 @@ import { NotFound } from '@ad/shared';
 import {
   publishVideoAction,
   retryEncodeVideoAction,
+  retryPreviewAction,
+  setPreviewModeAction,
   setCaptionsAction,
   trashVideoAction,
   unpublishVideoAction,
@@ -62,6 +64,8 @@ export default async function VideoEditPage({ params }: { params: Promise<{ id: 
           retryEncode: retryEncodeVideoAction.bind(null, id),
           bulk: trashVideoAction.bind(null, id),
           setCaptions: setCaptionsAction.bind(null, id),
+          setPreviewMode: setPreviewModeAction.bind(null, id),
+          retryPreview: retryPreviewAction.bind(null, id),
         }}
       />
     </>

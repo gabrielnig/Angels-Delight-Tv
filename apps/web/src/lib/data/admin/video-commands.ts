@@ -240,3 +240,39 @@ export function retryEncode(video: VideoRecord, now: number): CommandResult {
   video.updatedAt = new Date(now).toISOString();
   return { ok: true };
 }
+
+export type PreviewModeInput =
+  { mode: 'auto' } | { mode: 'off' } | { mode: 'picked'; startMs?: number };
+
+const CLIP_MS = 6000;
+const clock = (ms: number) =>
+  `${Math.floor(ms / 60_000)}:${String(Math.floor((ms % 60_000) / 1000)).padStart(2, '0')}`;
+
+/** Chooses how the Home hero clip is made. The real service has the same rules (M41-S10). */
+export function setPreviewMode(video: VideoRecord, input: PreviewModeInput): CommandResult {
+  const current = video.preview ?? { state: 'none' as const, mode: 'auto' as const, startMs: null, note: null };
+  if (input.mode === 'off') {
+    video.preview = { ...current, mode: 'off', startMs: null };
+    return { ok: true };
+  }
+  let startMs: number | null = null;
+  if (input.mode === 'picked') {
+    const latest = Math.max(0, video.durationSeconds * 1000 - CLIP_MS);
+    const start = input.startMs;
+    if (start === undefined || !Number.isInteger(start) || start < 0 || start > latest || start % 100 !== 0)
+      return {
+        ok: false,
+        error: `Pick a start between 0:00 and ${clock(latest)} so the clip has six seconds to play`,
+      };
+    startMs = start;
+  }
+  video.preview = { state: 'queued', mode: input.mode, startMs, note: null };
+  return { ok: true };
+}
+
+export function retryPreview(video: VideoRecord): CommandResult {
+  const current = video.preview ?? { state: 'none' as const, mode: 'auto' as const, startMs: null, note: null };
+  if (current.mode === 'off') return { ok: false, error: 'Turn the preview clip on first' };
+  video.preview = { ...current, state: 'queued', note: null };
+  return { ok: true };
+}
