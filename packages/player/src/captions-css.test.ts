@@ -22,4 +22,18 @@ describe('caption styling (M11-S06)', () => {
       /\.adp\[data-controls='visible'\] \.adp-video::-webkit-media-text-track-container\s*\{\s*transform: translateY\(-/,
     );
   });
+
+  it('draws the cue edge from the edge variable', () => {
+    expect(cue).toMatch(/text-shadow:\s*var\(--adp-cue-edge,\s*none\)/);
+  });
+
+  it('styles the appearance preview from the caption variables with tokens only', () => {
+    const sample = /\.adp-capstyle__sample\s*\{([^}]*)\}/.exec(css)?.[1] ?? '';
+    expect(sample).toContain('var(--adp-cap-fg)');
+    expect(sample).toContain('var(--adp-cap-bg)');
+    expect(sample).toContain('var(--adp-cue-edge)');
+    expect(sample).not.toMatch(/#[0-9a-fA-F]{3,8}\b/);
+    const preview = /\.adp-capstyle__preview\s*\{([^}]*)\}/.exec(css)?.[1] ?? '';
+    expect(preview).toContain('var(--color-player-bg)');
+  });
 });

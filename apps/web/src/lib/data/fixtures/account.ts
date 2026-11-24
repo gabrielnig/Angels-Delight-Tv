@@ -16,6 +16,7 @@ const DEFAULTS: PlaybackSettings = {
   captionSize: 'medium',
   captionBackground: 'dark',
   captionContrast: 'standard',
+  captionEdge: 'shadow',
   captionLanguage: 'en',
 };
 

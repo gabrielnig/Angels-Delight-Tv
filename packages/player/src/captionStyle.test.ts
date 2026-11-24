@@ -1,10 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import {
   CAPTION_BACKGROUNDS,
+  CAPTION_EDGES,
   CAPTION_SIZES,
   DEFAULT_CAPTION_STYLE,
   captionStyleVars,
   contrastRatio,
+  effectiveEdge,
   normalizeCaptionStyle,
   resolveCaptionColors,
 } from './captionStyle';
@@ -36,17 +38,18 @@ describe('caption styling (M11-S03)', () => {
     expect(fills[0]).toBe('transparent');
   });
 
-  it('keeps a text shadow when there is no background so text stays readable', () => {
-    const vars = captionStyleVars({ ...DEFAULT_CAPTION_STYLE, background: 'none' });
-    expect(vars['--adp-cap-shadow']).not.toBe('none');
-    expect(
-      captionStyleVars({ ...DEFAULT_CAPTION_STYLE, background: 'solid' })['--adp-cap-shadow'],
-    ).toBe('none');
+  it('keeps an edge when there is no background so text stays readable', () => {
+    const clear = { ...DEFAULT_CAPTION_STYLE, background: 'none' as const, edge: 'none' as const };
+    expect(captionStyleVars(clear)['--adp-cue-edge']).not.toBe('none');
   });
 
   it('meets 7 to 1 contrast in every high contrast combination', () => {
     for (const background of CAPTION_BACKGROUNDS) {
-      const { fg, bg } = resolveCaptionColors({ size: 'medium', background, contrast: 'high' });
+      const { fg, bg } = resolveCaptionColors({
+        ...DEFAULT_CAPTION_STYLE,
+        background,
+        contrast: 'high',
+      });
       expect(contrastRatio(fg, bg)).toBeGreaterThanOrEqual(7);
     }
   });
@@ -65,5 +68,38 @@ describe('caption styling (M11-S03)', () => {
       ...DEFAULT_CAPTION_STYLE,
       size: 'large',
     });
+  });
+
+  it('accepts edge none, shadow and outline', () => {
+    expect(CAPTION_EDGES).toEqual(['none', 'shadow', 'outline']);
+    for (const edge of CAPTION_EDGES) {
+      expect(normalizeCaptionStyle({ edge }).edge).toBe(edge);
+    }
+    expect(normalizeCaptionStyle({ edge: 'glow' }).edge).toBe('shadow');
+  });
+
+  it('defaults a missing edge to shadow', () => {
+    expect(normalizeCaptionStyle({ size: 'large' }).edge).toBe('shadow');
+    expect(DEFAULT_CAPTION_STYLE.edge).toBe('shadow');
+  });
+
+  it('emits a different edge value for shadow and outline, and none on a backed caption', () => {
+    const edgeOf = (edge: 'none' | 'shadow' | 'outline', background: 'none' | 'dark' | 'solid') =>
+      captionStyleVars({ ...DEFAULT_CAPTION_STYLE, edge, background })['--adp-cue-edge'];
+    expect(edgeOf('shadow', 'dark')).not.toBe(edgeOf('outline', 'dark'));
+    expect(edgeOf('none', 'dark')).toBe('none');
+    expect(edgeOf('none', 'solid')).toBe('none');
+  });
+
+  it('switches Edge None to Shadow on a clear background (L4-D19)', () => {
+    expect(effectiveEdge({ ...DEFAULT_CAPTION_STYLE, background: 'none', edge: 'none' })).toBe(
+      'shadow',
+    );
+    expect(effectiveEdge({ ...DEFAULT_CAPTION_STYLE, background: 'none', edge: 'outline' })).toBe(
+      'outline',
+    );
+    expect(effectiveEdge({ ...DEFAULT_CAPTION_STYLE, background: 'dark', edge: 'none' })).toBe(
+      'none',
+    );
   });
 });

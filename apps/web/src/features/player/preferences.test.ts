@@ -4,7 +4,11 @@ import {
   readTheatre,
   saveTheatre,
   clearLegacyPreferences,
+  captionStyleKey,
   loadPreferences,
+  readCaptionStyle,
+  saveCaptionStyle,
+  captionStylePatch,
   preferencesKey,
   readLegacyPreferences,
   serverChanges,
@@ -212,5 +216,41 @@ describe('theatre mode on the device (M43-S08)', () => {
     expect(readTheatre(memory({ [THEATRE_KEY]: 'maybe' }))).toBe(false);
     expect(readTheatre(null)).toBe(false);
     expect(() => saveTheatre(null, true)).not.toThrow();
+  });
+});
+
+describe('caption style on the device (L4-07)', () => {
+  const style = { size: 'large', background: 'none', contrast: 'high', edge: 'outline' } as const;
+
+  it('keeps the caption style on the device when there is no profile sync', () => {
+    const store = memory();
+    saveCaptionStyle(store, 'p1', style);
+    expect(store.getItem(captionStyleKey('p1'))).toContain('outline');
+    expect(readCaptionStyle(store, 'p1')).toEqual(style);
+    expect(readCaptionStyle(store, 'p2')).toBeNull();
+  });
+
+  it('ignores corrupt stored style', () => {
+    const store = memory();
+    store.setItem(captionStyleKey('p1'), '{not json');
+    expect(readCaptionStyle(store, 'p1')).toBeNull();
+    store.setItem(captionStyleKey('p1'), '"text"');
+    expect(readCaptionStyle(store, 'p1')).toBeNull();
+    expect(readCaptionStyle(null, 'p1')).toBeNull();
+  });
+
+  it('fills unknown fields from the defaults', () => {
+    const store = memory();
+    store.setItem(captionStyleKey('p1'), JSON.stringify({ size: 'huge', edge: 'outline' }));
+    expect(readCaptionStyle(store, 'p1')).toMatchObject({ size: 'medium', edge: 'outline' });
+  });
+
+  it('turns a style into the profile service names', () => {
+    expect(captionStylePatch(style)).toEqual({
+      captionSize: 'large',
+      captionBackground: 'none',
+      captionContrast: 'high',
+      captionEdge: 'outline',
+    });
   });
 });

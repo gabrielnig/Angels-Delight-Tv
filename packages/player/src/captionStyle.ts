@@ -2,16 +2,19 @@
 
 export const CAPTION_SIZES = ['small', 'medium', 'large', 'xlarge'] as const;
 export const CAPTION_BACKGROUNDS = ['none', 'dark', 'solid'] as const;
+export const CAPTION_EDGES = ['none', 'shadow', 'outline'] as const;
 export const CAPTION_CONTRASTS = ['standard', 'high'] as const;
 
 export type CaptionSize = (typeof CAPTION_SIZES)[number];
 export type CaptionBackground = (typeof CAPTION_BACKGROUNDS)[number];
+export type CaptionEdge = (typeof CAPTION_EDGES)[number];
 export type CaptionContrast = (typeof CAPTION_CONTRASTS)[number];
 
 export interface CaptionStyle {
   size: CaptionSize;
   background: CaptionBackground;
   contrast: CaptionContrast;
+  edge: CaptionEdge;
 }
 
 /** White on a semi opaque dark background, the M11-S06 default. */
@@ -19,6 +22,7 @@ export const DEFAULT_CAPTION_STYLE: CaptionStyle = {
   size: 'medium',
   background: 'dark',
   contrast: 'standard',
+  edge: 'shadow',
 };
 
 const SIZE_PX: Record<CaptionSize, number> = { small: 16, medium: 20, large: 26, xlarge: 34 };
@@ -31,6 +35,7 @@ export function normalizeCaptionStyle(input: unknown): CaptionStyle {
     size: pick(v.size, CAPTION_SIZES, DEFAULT_CAPTION_STYLE.size),
     background: pick(v.background, CAPTION_BACKGROUNDS, DEFAULT_CAPTION_STYLE.background),
     contrast: pick(v.contrast, CAPTION_CONTRASTS, DEFAULT_CAPTION_STYLE.contrast),
+    edge: pick(v.edge, CAPTION_EDGES, DEFAULT_CAPTION_STYLE.edge),
   };
 }
 
@@ -76,6 +81,21 @@ export function resolveCaptionColors(style: CaptionStyle): {
   return { fg: '#ffffff', bg: '#000000', fill };
 }
 
+const EDGE_VALUE: Record<CaptionEdge, string> = {
+  none: 'none',
+  shadow: '0 0 4px #000000, 0 0 2px #000000, 1px 1px 2px #000000',
+  outline:
+    '-1px -1px 0 #000000, 1px -1px 0 #000000, -1px 1px 0 #000000, 1px 1px 0 #000000, 0 0 3px #000000',
+};
+
+/**
+ * The edge that is drawn. With a clear background an edge of None would leave white text on whatever the frame
+ * shows, so it becomes Shadow (L4-D19). The saved choice is not changed.
+ */
+export function effectiveEdge(style: CaptionStyle): CaptionEdge {
+  return style.background === 'none' && style.edge === 'none' ? 'shadow' : style.edge;
+}
+
 /** CSS custom properties the player stylesheet reads in `::cue`. */
 export function captionStyleVars(style: CaptionStyle): Record<string, string> {
   const { fg, fill } = resolveCaptionColors(style);
@@ -83,9 +103,6 @@ export function captionStyleVars(style: CaptionStyle): Record<string, string> {
     '--adp-cap-size': `${SIZE_PX[style.size]}px`,
     '--adp-cap-fg': fg,
     '--adp-cap-bg': fill,
-    '--adp-cap-shadow':
-      style.background === 'none'
-        ? '0 0 4px #000000, 0 0 2px #000000, 1px 1px 2px #000000'
-        : 'none',
+    '--adp-cue-edge': EDGE_VALUE[effectiveEdge(style)],
   };
 }

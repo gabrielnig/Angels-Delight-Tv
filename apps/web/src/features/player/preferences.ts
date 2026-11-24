@@ -1,4 +1,10 @@
-import { DEFAULT_PREFERENCES, PLAYBACK_RATES, type PlayerPreferences } from '@ad/player';
+import {
+  DEFAULT_PREFERENCES,
+  PLAYBACK_RATES,
+  normalizeCaptionStyle,
+  type CaptionStyle,
+  type PlayerPreferences,
+} from '@ad/player';
 
 export interface KeyValueStore {
   getItem(key: string): string | null;
@@ -23,6 +29,10 @@ export interface ServerPatch {
   captionLanguage?: string;
   dataSaver?: boolean;
   autoplayNext?: boolean;
+  captionSize?: CaptionStyle['size'];
+  captionBackground?: CaptionStyle['background'];
+  captionContrast?: CaptionStyle['contrast'];
+  captionEdge?: CaptionStyle['edge'];
 }
 
 function parse(raw: string | null): Partial<PlayerPreferences> {
@@ -157,4 +167,44 @@ export function saveTheatre(store: Pick<KeyValueStore, 'setItem'> | null, on: bo
   } catch {
     // Storage can be full or blocked. The choice then lasts for this visit only.
   }
+}
+
+/** Caption style for a guest, or for an account whose profile cannot be saved to. It belongs to this device. */
+export const captionStyleKey = (profileId: string) => `ad.player.caption.${profileId}`;
+
+export function readCaptionStyle(
+  store: Pick<KeyValueStore, 'getItem'> | null,
+  profileId: string,
+): CaptionStyle | null {
+  try {
+    const raw = store?.getItem(captionStyleKey(profileId)) ?? null;
+    if (!raw) return null;
+    const value: unknown = JSON.parse(raw);
+    if (typeof value !== 'object' || value === null) return null;
+    return normalizeCaptionStyle(value);
+  } catch {
+    return null;
+  }
+}
+
+export function saveCaptionStyle(
+  store: Pick<KeyValueStore, 'setItem'> | null,
+  profileId: string,
+  style: CaptionStyle,
+): void {
+  try {
+    store?.setItem(captionStyleKey(profileId), JSON.stringify(style));
+  } catch {
+    // Storage can be full or blocked. The choice then lasts for this visit only.
+  }
+}
+
+/** The caption style under the profile service's field names. */
+export function captionStylePatch(style: CaptionStyle): ServerPatch {
+  return {
+    captionSize: style.size,
+    captionBackground: style.background,
+    captionContrast: style.contrast,
+    captionEdge: style.edge,
+  };
 }

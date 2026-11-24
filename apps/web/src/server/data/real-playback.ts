@@ -237,6 +237,7 @@ export class RealPlaybackData implements PlaybackData {
           size: prefs.captionSize,
           background: prefs.captionBackground,
           contrast: prefs.captionContrast,
+          edge: prefs.captionEdge,
         }),
       },
     };

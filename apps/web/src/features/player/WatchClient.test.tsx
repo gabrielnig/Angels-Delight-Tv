@@ -4,7 +4,7 @@ import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createFixturePlaybackData } from '@/lib/data/playback.fixture';
 import type { WatchData } from '@/lib/data/playback';
-import { preferencesKey } from './preferences';
+import { captionStyleKey, preferencesKey } from './preferences';
 import { WatchClient } from './WatchClient';
 
 const push = vi.fn();
@@ -270,6 +270,46 @@ describe('WatchClient', () => {
       expect(JSON.parse(localStorage.getItem(preferencesKey('p1')) ?? '{}')).not.toHaveProperty(
         'rate',
       );
+    });
+  });
+
+  describe('caption appearance (L4-07)', () => {
+    async function twoLanguages(): Promise<WatchData> {
+      const data = await dataFor('v-plants');
+      const en = data.captions[0]!;
+      return { ...data, captions: [en, { ...en, id: 'yo', language: 'yo', label: 'Yoruba' }] };
+    }
+
+    async function pickOutline(engine: FakeEngine) {
+      await waitFor(() => expect(engine.loads).toHaveLength(1));
+      fireEvent.click(screen.getByRole('button', { name: 'Captions, off' }));
+      fireEvent.click(screen.getByRole('menuitem', { name: 'Caption appearance' }));
+      fireEvent.click(screen.getByRole('menuitemradio', { name: 'Edge, Outline' }));
+    }
+
+    it('saves a changed style to the profile and not to the device', async () => {
+      const save = vi.fn(async () => undefined);
+      const settings = {
+        autoplayNext: true,
+        dataSaver: false,
+        speed: 1,
+        captionsDefault: false,
+        captionLanguage: 'en',
+      };
+      const { engine } = mount(await twoLanguages(), {
+        prefsSync: { save, migrate: vi.fn(async () => settings) },
+      });
+      await pickOutline(engine);
+      await waitFor(() => expect(save).toHaveBeenCalledWith('p1', { captionEdge: 'outline' }));
+      expect(localStorage.getItem(captionStyleKey('p1'))).toBeNull();
+    });
+
+    it('keeps the style on the device when there is no profile sync', async () => {
+      const { engine } = mount(await twoLanguages());
+      await pickOutline(engine);
+      expect(JSON.parse(localStorage.getItem(captionStyleKey('p1')) ?? '{}')).toMatchObject({
+        edge: 'outline',
+      });
     });
   });
 

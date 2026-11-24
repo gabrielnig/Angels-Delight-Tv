@@ -7,7 +7,13 @@ import type { PlayerChapter } from '../chapters';
 import { formatClock } from '../format';
 import { CheckIcon } from './icons';
 
-export type MenuId = 'speed' | 'quality' | 'captions' | 'settings' | 'chapters';
+export type MenuId =
+  | 'speed'
+  | 'quality'
+  | 'captions'
+  | 'settings'
+  | 'chapters'
+  | 'captionStyle';
 
 interface MenuShellProps {
   id: string;

@@ -15,6 +15,7 @@ export const DEFAULT_PLAYBACK: PlaybackSettings = {
   captionSize: 'medium',
   captionBackground: 'dark',
   captionContrast: 'standard',
+  captionEdge: 'shadow',
   captionLanguage: 'en',
 };
 
@@ -23,6 +24,7 @@ const SPEEDS = [0.5, 0.75, 1, 1.25, 1.5, 2] as const;
 const CAPTION_SIZES = ['small', 'medium', 'large', 'xlarge'] as const;
 const CAPTION_BACKGROUNDS = ['none', 'dark', 'solid'] as const;
 const CAPTION_CONTRASTS = ['standard', 'high'] as const;
+const CAPTION_EDGES = ['none', 'shadow', 'outline'] as const;
 const LANGUAGE_CODE = /^[a-z]{2,3}(-[A-Za-z0-9]{2,8}){0,2}$/;
 const EXPORT_TOKEN_SECONDS = 10 * 60;
 const LAGOS_OFFSET_MS = 60 * 60 * 1000;
@@ -91,6 +93,7 @@ function readPrefs(row: {
       CAPTION_CONTRASTS,
       DEFAULT_PLAYBACK.captionContrast,
     ),
+    captionEdge: pick(stored.captionEdge, CAPTION_EDGES, DEFAULT_PLAYBACK.captionEdge),
     captionLanguage:
       typeof stored.captionLanguage === 'string' && LANGUAGE_CODE.test(stored.captionLanguage)
         ? stored.captionLanguage
@@ -132,6 +135,8 @@ function validatePatch(patch: Partial<PlaybackSettings>): void {
     bad.captionBackground = ['Pick a listed background'];
   if (patch.captionContrast !== undefined && !CAPTION_CONTRASTS.includes(patch.captionContrast))
     bad.captionContrast = ['Pick a listed contrast'];
+  if (patch.captionEdge !== undefined && !CAPTION_EDGES.includes(patch.captionEdge))
+    bad.captionEdge = ['Pick a listed edge'];
   if (
     patch.captionLanguage !== undefined &&
     (typeof patch.captionLanguage !== 'string' || !LANGUAGE_CODE.test(patch.captionLanguage))
@@ -221,6 +226,7 @@ export class AccountViewerData {
             captionSize: next.captionSize,
             captionBackground: next.captionBackground,
             captionContrast: next.captionContrast,
+            captionEdge: next.captionEdge,
             captionLanguage: next.captionLanguage,
           },
         })

@@ -29,6 +29,8 @@ export interface PlayerProps {
   title: string;
   posterUrl?: string;
   captionStyle?: CaptionStyle;
+  /** Called when the viewer changes the caption appearance in the player. Without it the entry is hidden. */
+  onCaptionStyleChange?: (style: CaptionStyle) => void;
   /** Origin that serves playlists and keys, for example https://tv.example.org. */
   appOrigin: string;
   sessionProvider: SessionProvider;
@@ -204,6 +206,7 @@ export function Player(props: PlayerProps) {
       title={props.title}
       posterUrl={props.posterUrl}
       captionStyle={props.captionStyle}
+      {...(props.onCaptionStyleChange ? { onCaptionStyleChange: props.onCaptionStyleChange } : {})}
       videoRef={videoRef}
       next={props.next ?? null}
       {...(props.end ? { end: props.end } : {})}

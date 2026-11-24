@@ -1,10 +1,11 @@
 // @vitest-environment jsdom
 import { FakeEngine, FakeNetwork } from '@ad/player/testing';
-import { render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createFixturePlaybackData } from '@/lib/data/playback.fixture';
 import type { WatchData } from '@/lib/data/playback';
 import { GUEST_PROGRESS_KEY, readGuestProgress } from '@/lib/guest/progress-store';
+import { captionStyleKey } from './preferences';
 import { WatchClient } from './WatchClient';
 
 const push = vi.fn();
@@ -113,6 +114,22 @@ describe('WatchClient for a guest (M40-S02, S04)', () => {
     const { engine } = mount(data);
     await waitFor(() => expect(engine.loads).toHaveLength(1));
     expect(engine.loads[0]?.startPosition).toBe(17);
+  });
+
+  it('keeps a changed caption style on this device under the guest key (L4-07)', async () => {
+    const data = await dataFor('v-rain');
+    const en = data.captions[0]!;
+    const { engine } = mount({
+      ...data,
+      captions: [en, { ...en, id: 'yo', language: 'yo', label: 'Yoruba', status: 'approved' }],
+    });
+    await waitFor(() => expect(engine.loads).toHaveLength(1));
+    fireEvent.click(screen.getByRole('button', { name: 'Captions, off' }));
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Caption appearance' }));
+    fireEvent.click(screen.getByRole('menuitemradio', { name: 'Edge, Outline' }));
+    expect(JSON.parse(localStorage.getItem(captionStyleKey('guest')) ?? '{}')).toMatchObject({
+      edge: 'outline',
+    });
   });
 
   it('plays from 0 when the stored data is corrupt', async () => {

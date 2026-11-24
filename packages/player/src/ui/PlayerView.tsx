@@ -37,6 +37,7 @@ import {
   TheatreIcon,
   VolumeIcon,
 } from './icons';
+import { CaptionAppearance } from './CaptionAppearance';
 import { CaptionRows, ChapterRows, MenuShell, QualityRows, SpeedRows, type MenuId } from './Menus';
 import { ErrorOverlay, Spinner, Toast, UpNextTile, type OverlayLinks } from './Overlays';
 import { SeekBar } from './SeekBar';
@@ -51,6 +52,8 @@ export interface PlayerViewProps {
   posterUrl?: string | undefined;
   /** Caption size, background and contrast for this profile (M11-S03). */
   captionStyle?: CaptionStyle | undefined;
+  /** Saves a changed caption style. Without it the Caption appearance entry is not offered. */
+  onCaptionStyleChange?: ((style: CaptionStyle) => void) | undefined;
   videoRef?: Ref<HTMLVideoElement>;
   next?: UpNextItem | null;
   end?: EndScreenData;
@@ -87,6 +90,17 @@ export function PlayerView(props: PlayerViewProps) {
   playingRef.current = state.playing;
 
   const [menu, setMenu] = useState<MenuId | null>(null);
+  const [capStyle, setCapStyle] = useState<CaptionStyle>(
+    props.captionStyle ?? DEFAULT_CAPTION_STYLE,
+  );
+  useEffect(() => {
+    if (props.captionStyle) setCapStyle(props.captionStyle);
+  }, [props.captionStyle]);
+  const changeCaptionStyle = (next: CaptionStyle) => {
+    setCapStyle(next);
+    props.onCaptionStyleChange?.(next);
+  };
+  const openCaptionStyle = () => setMenu('captionStyle');
   const [helpOpen, setHelpOpen] = useState(false);
   const [shown, setShown] = useState(true);
   const [focusInside, setFocusInside] = useState(false);
@@ -359,7 +373,7 @@ export function PlayerView(props: PlayerViewProps) {
       role="region"
       aria-label={msg('player.label', { title })}
       tabIndex={-1}
-      style={captionStyleVars(props.captionStyle ?? DEFAULT_CAPTION_STYLE) as CSSProperties}
+      style={captionStyleVars(capStyle) as CSSProperties}
       data-compact={compact || undefined}
       data-fullscreen={fullscreen || undefined}
       data-controls={controlsVisible ? 'visible' : 'hidden'}
@@ -635,7 +649,23 @@ export function PlayerView(props: PlayerViewProps) {
               </button>
             )}
             {menu === 'captions' ? (
-              <MenuShell id="adp-menu-captions" label="Captions" onClose={closeMenu}>
+              <MenuShell
+                id="adp-menu-captions"
+                label="Captions"
+                onClose={closeMenu}
+                footer={
+                  props.onCaptionStyleChange ? (
+                    <button
+                      type="button"
+                      role="menuitem"
+                      className="adp-menu__row"
+                      onClick={openCaptionStyle}
+                    >
+                      {msg('player.captionStyle.link')}
+                    </button>
+                  ) : null
+                }
+              >
                 <CaptionRows
                   tracks={tracks}
                   active={active}
@@ -645,6 +675,13 @@ export function PlayerView(props: PlayerViewProps) {
                   }}
                 />
               </MenuShell>
+            ) : null}
+            {menu === 'captionStyle' ? (
+              <CaptionAppearance
+                style={capStyle}
+                onChange={changeCaptionStyle}
+                onClose={closeMenu}
+              />
             ) : null}
           </div>
         ) : null}
@@ -749,6 +786,16 @@ export function PlayerView(props: PlayerViewProps) {
                       onSelect={(sel) => controller?.selectQuality(sel)}
                     />
                   </>
+                ) : null}
+                {props.onCaptionStyleChange && state.captions.available ? (
+                  <button
+                    type="button"
+                    role="menuitem"
+                    className="adp-menu__row"
+                    onClick={openCaptionStyle}
+                  >
+                    {msg('player.captionStyle.link')}
+                  </button>
                 ) : null}
               </MenuShell>
             ) : null}

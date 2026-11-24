@@ -42,7 +42,7 @@
 .adp-video::cue {
   color: var(--adp-cap-fg, var(--color-player-ink));
   background: var(--adp-cap-bg, var(--color-player-control-bg));
-  text-shadow: var(--adp-cap-shadow, none);
+  text-shadow: var(--adp-cue-edge, none);
   font-family: var(--font-sans);
   font-size: var(--adp-cap-size, 20px);
   line-height: var(--leading-snug);
@@ -483,6 +483,33 @@
   display: inline-flex;
   width: 1rem;
   color: var(--color-accent);
+}
+
+.adp-capstyle__preview {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 4.5rem;
+  margin: 0 0 var(--space-2);
+  padding: var(--space-3);
+  border-radius: var(--radius-sm);
+  background: var(--color-player-bg);
+}
+
+.adp-capstyle__sample {
+  max-width: 100%;
+  padding: 0 var(--space-2);
+  color: var(--adp-cap-fg);
+  background: var(--adp-cap-bg);
+  text-shadow: var(--adp-cue-edge);
+  font-family: var(--font-sans);
+  font-size: var(--adp-cap-size);
+  line-height: var(--leading-snug);
+  text-align: center;
+}
+
+.adp-capstyle__group {
+  margin-top: var(--space-1);
 }
 
 .adp-menu__detail {

@@ -155,6 +155,21 @@ describe.skipIf(!integrationEnabled())('account viewer data', () => {
       expect((await data.playback(u.accountId, u.kidsProfileId)).quality).toBe('auto');
     });
 
+    it('saves and reads captionEdge, and defaults it to shadow', async () => {
+      const u = await h.makeUser();
+      expect((await data.playback(u.accountId, u.profileId)).captionEdge).toBe('shadow');
+      const saved = await data.savePlayback(u.accountId, u.profileId, { captionEdge: 'outline' });
+      expect(saved.captionEdge).toBe('outline');
+      expect((await data.playback(u.accountId, u.profileId)).captionEdge).toBe('outline');
+    });
+
+    it('rejects an unknown edge', async () => {
+      const u = await h.makeUser();
+      await expect(
+        data.savePlayback(u.accountId, u.profileId, { captionEdge: 'glow' as never }),
+      ).rejects.toThrow();
+    });
+
     it('rejects values outside the allowed sets', async () => {
       const u = await h.makeUser();
       await expect(
