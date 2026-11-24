@@ -732,7 +732,9 @@ export class PlayerController {
 
   private skipLabel(marker: { kind: MarkerKind; nextLesson: boolean }): string {
     if (marker.nextLesson) return msg('player.skip.next');
-    return msg(`player.skip.${marker.kind}` as 'player.skip.intro');
+    if (marker.kind === 'intro') return msg('player.skip.intro');
+    if (marker.kind === 'recap') return msg('player.skip.recap');
+    return msg('player.skip.credits');
   }
 
   private skipped = new Set<MarkerKind>();
