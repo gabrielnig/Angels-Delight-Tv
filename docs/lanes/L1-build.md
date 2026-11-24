@@ -9,7 +9,7 @@ Plan: `docs/plan/v2/L1-guest-access.md`. Rulings: `docs/plan/v2/RULINGS.md` (the
 | 1 | Guest identity and guest playback token | merged | #221 |
 | 2 | Watch page, local progress, analytics identity | merged | #227 |
 | 3 | Account free catalog path and public GETs | merged | #232 |
-| 4 | Guest chrome, title and series, Sign in to save | on PR | see below |
+| 4 | Guest chrome, title and series, Sign in to save | merged | #235 |
 | 5 | Home, Browse, Search for guests | todo | |
 | 6 | Guest audience, Kids mode, settings | todo | |
 | 7 | My List explainer, return intent | todo | |

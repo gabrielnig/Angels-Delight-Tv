@@ -71,4 +71,15 @@ describe('GuestChrome (S81)', () => {
     expect(screen.queryByRole('link', { name: 'Create account' })).toBeNull();
     expect(screen.queryByRole('navigation', { name: 'Main' })).toBeNull();
   });
+
+  it('backs the header over the home hero so links stay readable', () => {
+    nav.pathname = '/';
+    const { container } = chrome();
+    expect(container.querySelector('header')).toHaveAttribute('data-over-hero', 'true');
+  });
+
+  it('has no hero backing on other pages', () => {
+    const { container } = chrome();
+    expect(container.querySelector('header')).not.toHaveAttribute('data-over-hero');
+  });
 });

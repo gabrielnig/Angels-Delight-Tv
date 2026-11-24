@@ -129,11 +129,14 @@ test('progress saved through the API shows as Continue Watching and resumes', as
   await expect(page.getByText(title).first()).toBeVisible();
 });
 
-test('a signed out visitor sees the public preview and is sent to sign in for the player', async ({
+test('a signed out visitor can browse and is sent to sign in only for personal pages', async ({
   browser,
 }) => {
   const anon = await browser.newPage();
   await anon.goto('/browse');
+  await expect(anon).toHaveURL(/\/browse/);
+  await expect(anon.getByRole('navigation', { name: 'Main' })).toBeVisible();
+  await anon.goto('/account');
   await expect(anon).toHaveURL(/\/sign-in/);
   await anon.close();
 });

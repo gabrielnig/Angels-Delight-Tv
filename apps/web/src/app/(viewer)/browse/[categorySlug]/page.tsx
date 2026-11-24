@@ -2,7 +2,7 @@ import { notFound } from 'next/navigation';
 import { AppShell } from '../../../../components/Shell';
 import { BrowseView, parseLength, parseSort } from '../../../../components/browse/BrowseView';
 import { getCatalog } from '../../../../lib/data';
-import { requireProfile } from '../../../../lib/session';
+import { getViewerOrGuest } from '../../../../lib/session';
 
 export default async function CategoryPage({
   params,
@@ -12,7 +12,7 @@ export default async function CategoryPage({
   searchParams: Promise<Record<string, string | undefined>>;
 }) {
   const [{ categorySlug }, sp] = await Promise.all([params, searchParams]);
-  const { ctx } = await requireProfile(`/browse/${categorySlug}`);
+  const { ctx } = await getViewerOrGuest(`/browse/${categorySlug}`);
   const categories = await getCatalog().categories(ctx);
   if (!categories.some((c) => c.slug === categorySlug)) notFound();
   return (

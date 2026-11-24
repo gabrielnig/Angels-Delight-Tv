@@ -1,25 +1,40 @@
-import { describe, expect, it } from 'vitest';
-import { guestLibrary } from './guest-library';
+import { describe, expect, it, vi } from 'vitest';
 import { guestContext } from './types';
+import type { LibraryRepository, ViewerContext } from './types';
+import { forGuests } from './guest-library';
 
-const ctx = guestContext('adult');
+const account = {
+  guest: undefined,
+  profileId: 'p1',
+  accountId: 'a1',
+  audience: 'adult',
+} as unknown as ViewerContext;
 
-describe('guest library (M40)', () => {
-  it('answers every read with nothing', async () => {
-    expect(await guestLibrary.myList(ctx)).toEqual({
-      items: [],
-      total: 0,
-      nextCursor: null,
-      hiddenCount: 0,
-    });
-    expect(await guestLibrary.myListIds(ctx)).toEqual([]);
-    expect(await guestLibrary.continueWatching(ctx)).toEqual([]);
+function inner() {
+  return {
+    myListIds: vi.fn(async () => ['video:a']),
+    continueWatching: vi.fn(async () => []),
+    addToList: vi.fn(async () => undefined),
+  } as unknown as LibraryRepository;
+}
+
+describe('forGuests', () => {
+  it('sends an account to the real library untouched', async () => {
+    const real = inner();
+    const lib = forGuests(real);
+    expect(await lib.myListIds(account)).toEqual(['video:a']);
+    await lib.addToList(account, 'video:a');
+    expect(real.addToList).toHaveBeenCalledWith(account, 'video:a');
   });
 
-  it('refuses every write, so a guest can never store anything on the server', async () => {
-    await expect(guestLibrary.addToList(ctx, 'video:1')).rejects.toThrow(/account/i);
-    await expect(guestLibrary.removeFromList(ctx, 'video:1')).rejects.toThrow(/account/i);
-    await expect(guestLibrary.removeFromContinue(ctx, 'v')).rejects.toThrow(/account/i);
-    await expect(guestLibrary.restoreContinue(ctx, 'v')).rejects.toThrow(/account/i);
+  it('answers a guest without touching the real library and refuses writes', async () => {
+    const real = inner();
+    const lib = forGuests(real);
+    const guest = guestContext('adult');
+    expect(await lib.myListIds(guest)).toEqual([]);
+    expect(await lib.continueWatching(guest)).toEqual([]);
+    await expect(lib.addToList(guest, 'video:a')).rejects.toThrow();
+    expect(real.myListIds).not.toHaveBeenCalled();
+    expect(real.addToList).not.toHaveBeenCalled();
   });
 });
