@@ -372,6 +372,13 @@
       "when": 1795542471114,
       "tag": "0052_account_identities",
       "breakpoints": true
+    },
+    {
+      "idx": 53,
+      "version": "7",
+      "when": 1796000000000,
+      "tag": "0053_row_popular_fallback",
+      "breakpoints": true
     }
   ]
 }

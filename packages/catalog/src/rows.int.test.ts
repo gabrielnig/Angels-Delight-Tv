@@ -19,7 +19,13 @@ import type { Audience, CatalogContext } from './types';
 const ctx: CatalogContext = { mediaOrigin: 'https://media.test', now: () => NOW };
 const general: Audience = { kids: false };
 const kids: Audience = { kids: true };
-const rules = { trendingWindowDays: 7, autoCategoryMax: 6 };
+const rules = {
+  trendingWindowDays: 7,
+  autoCategoryMax: 6,
+  popularWindowDays: 30,
+  popularMinViews: 5,
+  popularMinTitles: 3,
+};
 
 describe.skipIf(!integrationEnabled())('home row resolution (M41-S05, M41-S08)', () => {
   let t: ViewerTestDb;
@@ -60,38 +66,119 @@ describe.skipIf(!integrationEnabled())('home row resolution (M41-S05, M41-S08)',
     }
   };
 
-  it('Trending is hidden under its minimum and never copies New', async () => {
+  const views = async (videoId: string, count: number, day = '2026-06-12') =>
+    t.setup.insert(videoDailyStats).values({ videoId, day, views: count });
+  const idsByTitle = async () =>
+    new Map(
+      (await t.setup.execute(sql`SELECT id, title FROM videos`).then((r) => r.rows as { id: string; title: string }[])).map(
+        (r) => [r.title, r.id],
+      ),
+    );
+
+  it('Popular is hidden under its minimum and never copies New', async () => {
     await clean();
     for (let i = 1; i <= 5; i++) await seedVideo(t.setup, { title: `V${i}`, publishedAt: new Date(`2026-05-0${i}`) });
-    const [a, b] = await t.setup.execute(sql`SELECT id FROM videos ORDER BY title LIMIT 2`).then((r) => r.rows as { id: string }[]);
-    await t.setup.insert(videoDailyStats).values([
-      { videoId: a!.id, day: '2026-06-12', views: 9 },
-      { videoId: b!.id, day: '2026-06-12', views: 5 },
-    ]);
-    await addRow({ title: 'Trending', kind: 'popular', minItems: 4 });
-    const [row] = await published();
-    const trending = await resolve(row!);
-    expect(trending.cards).toEqual([]);
-    await addRow({ title: 'Trending relaxed', kind: 'popular', minItems: 2 });
-    const [, relaxed] = await published();
-    expect((await resolve(relaxed!)).cards.map((c) => c.title)).toEqual(['V1', 'V2']);
-  });
-
-  it('Trending counts views only inside the window', async () => {
-    await clean();
-    const v = await seedVideo(t.setup, { title: 'Old views' });
-    await t.setup.insert(videoDailyStats).values({ videoId: v.id, day: '2026-06-01', views: 99 });
-    await addRow({ title: 'Trending', kind: 'popular' });
+    const ids = await idsByTitle();
+    await views(ids.get('V1')!, 9);
+    await views(ids.get('V2')!, 5);
+    await views(ids.get('V3')!, 6);
+    await addRow({ title: 'Popular', kind: 'popular', minItems: 4 });
     const [row] = await published();
     expect((await resolve(row!)).cards).toEqual([]);
+    await addRow({ title: 'Popular relaxed', kind: 'popular', minItems: 3 });
+    const [, relaxed] = await published();
+    expect((await resolve(relaxed!)).cards.map((c) => c.title)).toEqual(['V1', 'V3', 'V2']);
+  });
+
+  it('Popular counts views over 30 days and needs at least 5 views per title', async () => {
+    await clean();
+    for (let i = 1; i <= 4; i++) await seedVideo(t.setup, { title: `P${i}` });
+    const ids = await idsByTitle();
+    await views(ids.get('P1')!, 3, '2026-05-25');
+    await views(ids.get('P1')!, 3, '2026-06-14');
+    await views(ids.get('P2')!, 8, '2026-05-20');
+    await views(ids.get('P3')!, 4);
+    await views(ids.get('P4')!, 99, '2026-04-01');
+    await addRow({ title: 'Popular', kind: 'popular', minItems: 1 });
+    const [row] = await published();
+    expect((await resolve(row!)).cards.map((c) => c.title)).toEqual([]);
+    await views(ids.get('P3')!, 2, '2026-06-10');
+    await views(ids.get('P4')!, 7, '2026-06-11');
+    const cards = (await resolve(row!)).cards;
+    expect(cards).toHaveLength(4);
+    expect(cards.slice(0, 2).map((c) => c.title)).toEqual(['P2', 'P4']);
+  });
+
+  it('Popular includes series scored by the views of their episodes', async () => {
+    await clean();
+    const series = await seedSeries(t.setup, { series: { title: 'Nile' }, seasonSizes: [2] });
+    const solo1 = await seedVideo(t.setup, { title: 'Solo one' });
+    const solo2 = await seedVideo(t.setup, { title: 'Solo two' });
+    const episodeIds = await t.setup
+      .execute(sql`SELECT e.video_id FROM episodes e JOIN seasons sn ON sn.id = e.season_id WHERE sn.series_id = ${series.id}::uuid`)
+      .then((r) => (r.rows as { video_id: string }[]).map((x) => x.video_id));
+    await views(episodeIds[0]!, 4);
+    await views(episodeIds[1]!, 4);
+    await views(solo1.id, 6);
+    await views(solo2.id, 5);
+    await addRow({ title: 'Popular', kind: 'popular', minItems: 1 });
+    const [row] = await published();
+    const cards = (await resolve(row!)).cards;
+    expect(cards.map((c) => `${c.kind}:${c.title}`)).toEqual(['series:Nile', 'video:Solo one', 'video:Solo two']);
+  });
+
+  it('with Fall back to newest, thin Popular shows the newest titles under the fallback title', async () => {
+    await clean();
+    for (let i = 1; i <= 3; i++) await seedVideo(t.setup, { title: `N${i}`, publishedAt: new Date(`2026-05-0${i}`) });
+    await addRow({ title: 'Popular', kind: 'popular', minItems: 1, fallbackToNewest: true, fallbackTitle: 'Newly added' });
+    const [row] = await published();
+    expect(row!.fallbackToNewest).toBe(true);
+    const resolved = await resolve(row!);
+    expect(resolved.cards.map((c) => c.title)).toEqual(['N3', 'N2', 'N1']);
+    expect(resolved.title).toBe('Newly added');
+  });
+
+  it('uses Newly added when the fallback title is blank, and hides the row when the option is off', async () => {
+    await clean();
+    await seedVideo(t.setup, { title: 'Only' });
+    await addRow({ title: 'Popular', kind: 'popular', minItems: 1, fallbackToNewest: true });
+    await addRow({ title: 'Popular off', kind: 'popular', minItems: 1 });
+    const [on, off] = await published();
+    expect((await resolve(on!)).title).toBe('Newly added');
+    const hidden = await resolve(off!);
+    expect(hidden.cards).toEqual([]);
+    expect(hidden.title).toBeUndefined();
+  });
+
+  it('a real Popular row keeps its own title', async () => {
+    await clean();
+    for (let i = 1; i <= 3; i++) await seedVideo(t.setup, { title: `K${i}` });
+    const ids = await idsByTitle();
+    for (const id of ids.values()) await views(id, 6);
+    await addRow({ title: 'Most watched', kind: 'popular', minItems: 1, fallbackToNewest: true });
+    const [row] = await published();
+    const resolved = await resolve(row!);
+    expect(resolved.cards).toHaveLength(3);
+    expect(resolved.title).toBeUndefined();
+  });
+
+  it('kids see only kids safe titles in a Popular fallback', async () => {
+    await clean();
+    await seedVideo(t.setup, { title: 'Kid', kidsSafe: true });
+    await seedVideo(t.setup, { title: 'Adult', kidsSafe: false });
+    await addRow({ title: 'Popular', kind: 'popular', minItems: 1, fallbackToNewest: true });
+    const [row] = await published(kids);
+    expect((await resolve(row!, kids)).cards.map((c) => c.title)).toEqual(['Kid']);
   });
 
   it('every row kind in automatic mode carries its View all target', async () => {
     await clean();
     const farm = await seedCategory(t.setup, 'Farming');
     await fill(farm, 1, 'F');
-    const [seen] = await t.setup.execute(sql`SELECT id FROM videos LIMIT 1`).then((r) => r.rows as { id: string }[]);
-    await t.setup.insert(videoDailyStats).values({ videoId: seen!.id, day: '2026-06-12', views: 3 });
+    await fill(farm, 2, 'G');
+    const seenRows = await t.setup.execute(sql`SELECT id FROM videos LIMIT 3`).then((r) => r.rows as { id: string }[]);
+    const seen = seenRows[0]!;
+    for (const v of seenRows) await t.setup.insert(videoDailyStats).values({ videoId: v.id, day: '2026-06-12', views: 6 });
     await addRow({ title: 'New', kind: 'recently_added' });
     await addRow({ title: 'Trending', kind: 'popular' });
     await addRow({ title: 'Farming', kind: 'category', categoryId: farm.id });

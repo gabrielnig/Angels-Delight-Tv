@@ -463,17 +463,19 @@ export async function relatedTitles(
 export const POPULAR_WINDOW_DAYS = 30;
 
 /**
- * Videos ordered by views over the last 30 days (from the nightly rollup in video_daily_stats). With
+ * Titles ordered by views over the last 30 days (from the nightly rollup in video_daily_stats). A series is scored by the
+ * views of its episodes. `minViews` drops titles under it (1 keeps every title that was watched at all). With
  * `fallbackToNewest` a catalog without any stats still returns something, for the no results page (M06-S05).
  */
 export async function popularTitles(
   tx: Tx,
   ctx: CatalogContext,
   audience: Audience,
-  options: { limit: number; fallbackToNewest?: boolean; windowDays?: number },
+  options: { limit: number; fallbackToNewest?: boolean; windowDays?: number; minViews?: number },
 ): Promise<TitleCard[]> {
   const now = ctx.now();
   const windowDays = options.windowDays ?? POPULAR_WINDOW_DAYS;
+  const minViews = Math.max(1, options.minViews ?? 1);
   const limit = Math.min(Math.max(options.limit, 1), MAX_PAGE_SIZE);
   const result = await tx.execute(sql`
     WITH ${titlesCte(audience, now, false)}
@@ -481,13 +483,15 @@ export async function popularTitles(
     FROM titles t ${POSTER_JOIN}
     LEFT JOIN LATERAL (
       SELECT sum(d.views) AS views FROM video_daily_stats d
-      WHERE d.video_id = t.id AND d.day >= (${now}::timestamptz)::date - ${windowDays}::int
+      WHERE d.day >= (${now}::timestamptz)::date - ${windowDays}::int
+        AND ((t.kind = 'video' AND d.video_id = t.id)
+          OR (t.kind = 'series' AND d.video_id IN (
+            SELECT e.video_id FROM seasons sn JOIN episodes e ON e.season_id = sn.id WHERE sn.series_id = t.id)))
     ) pv ON true
-    WHERE t.kind = 'video'
     ORDER BY coalesce(pv.views, 0) DESC, t.sort_at DESC, t.id DESC
     LIMIT ${limit}`);
   const rows = rowsOf<CardRow & { recent_views: string }>(result);
-  const popular = rows.filter((row) => Number(row.recent_views) > 0);
+  const popular = rows.filter((row) => Number(row.recent_views) >= minViews);
   const chosen = popular.length > 0 || !options.fallbackToNewest ? popular : rows;
   return chosen.map((row) => toCard(row, ctx.mediaOrigin));
 }

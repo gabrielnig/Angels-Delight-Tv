@@ -15,7 +15,7 @@ import {
   type RowDescriptor,
 } from '@ad/catalog';
 import { annotateCards, type TitleCardDto } from './annotate';
-import { catalogContext, rulesOf, shared, type ViewerContext } from './context';
+import { audienceKey, catalogContext, rulesOf, shared, type ViewerContext } from './context';
 import { loadMyList } from './my-list';
 import { videoPlayTarget, seriesPlayTarget, type PlayTarget } from './play-target';
 import { audienceOf, loadOwnedProfile } from './profiles';
@@ -101,7 +101,7 @@ export async function getGuestHome(
   input: { cursor?: string } = {},
 ): Promise<HomeDto> {
   return ctx.db.transaction((tx) =>
-    buildHome(tx, ctx, { kids: audience.kids }, null, input.cursor),
+    buildHome(tx, ctx, { kids: audience.kids, maxRank: audience.maxRank }, null, input.cursor),
   );
 }
 
@@ -118,8 +118,11 @@ async function buildHome(
   const rowRules = {
     trendingWindowDays: rules.trendingWindowDays,
     autoCategoryMax: rules.autoCategoryMax,
+    popularWindowDays: rules.popularWindowDays,
+    popularMinViews: rules.popularMinViews,
+    popularMinTitles: rules.popularMinTitles,
   };
-  const descriptors = await shared(ctx, ['home-rows', audience.kids], async () =>
+  const descriptors = await shared(ctx, ['home-rows', audienceKey(audience)], async () =>
     expandRows(tx, catalog, audience, await listPublishedRows(tx, audience), rowRules),
   );
   const configured = profile ? await configuredRowKinds(tx) : new Set<string>();
@@ -150,14 +153,14 @@ async function buildHome(
       if (personalRow) rows.push(personalRow);
       continue;
     }
-    const resolved = await shared(ctx, ['home-row', audience.kids, descriptor.id], () =>
+    const resolved = await shared(ctx, ['home-row', audienceKey(audience), descriptor.id], () =>
       resolveRow(tx, catalog, audience, descriptor, rowRules),
     );
     if (resolved.cards.length === 0) continue;
     rows.push({
       id: descriptor.id,
       kind: descriptor.kind as TitleRow['kind'],
-      title: descriptor.title,
+      title: resolved.title ?? descriptor.title,
       items: await annotateCards(tx, profile?.id ?? null, resolved.cards),
       viewAll: resolved.viewAll,
     });

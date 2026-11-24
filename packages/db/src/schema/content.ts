@@ -412,6 +412,9 @@ export const rows = pgTable(
     viewAllUrl: text('view_all_url'),
     /** Fewer live titles than this hides the row. */
     minItems: smallint('min_items').notNull().default(1),
+    /** Popular rows only: with thin data show the newest titles under `fallbackTitle` (M44-S08). */
+    fallbackToNewest: boolean('fallback_to_newest').notNull().default(false),
+    fallbackTitle: text('fallback_title'),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
   },
@@ -424,6 +427,7 @@ export const rows = pgTable(
     check('rows_max_items_range', sql`${t.maxItems} BETWEEN 1 AND 50`),
     check('rows_view_all_mode', sql`${t.viewAllMode} IN ('auto', 'custom', 'none')`),
     check('rows_min_items_range', sql`${t.minItems} BETWEEN 1 AND 20`),
+    check('rows_fallback_title_length', sql`char_length(coalesce(${t.fallbackTitle}, '')) <= 80`),
     // Made DEFERRABLE INITIALLY DEFERRED by a hand-written migration so a reorder is one transaction.
     unique('rows_position_uniq').on(t.position),
   ],

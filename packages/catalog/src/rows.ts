@@ -21,10 +21,18 @@ export interface RowDescriptor {
   /** Fewer live titles than this hides the row. */
   minItems: number;
   maxItems: number;
+  /** Popular rows only: show the newest titles when too few qualify (M44-S08). */
+  fallbackToNewest: boolean;
+  /** The row title while it shows the fallback. Blank means "Newly added". */
+  fallbackTitle: string | null;
 }
+
+export const DEFAULT_FALLBACK_TITLE = 'Newly added';
 
 export interface ResolvedRow {
   cards: TitleCard[];
+  /** Set when the row shows under another title than its own, the Popular fallback. */
+  title?: string;
   /** Where View all goes, or null for none (M41-S08). */
   viewAll: ViewAllTarget | null;
 }
@@ -33,9 +41,19 @@ export interface ResolvedRow {
 export interface RowRules {
   trendingWindowDays: number;
   autoCategoryMax: number;
+  /** Popular counts views over this many days, needs `popularMinViews` per title and `popularMinTitles` titles (M44-S08). */
+  popularWindowDays: number;
+  popularMinViews: number;
+  popularMinTitles: number;
 }
 
-const DEFAULT_ROW_RULES: RowRules = { trendingWindowDays: 7, autoCategoryMax: 6 };
+const DEFAULT_ROW_RULES: RowRules = {
+  trendingWindowDays: 7,
+  autoCategoryMax: 6,
+  popularWindowDays: 30,
+  popularMinViews: 5,
+  popularMinTitles: 3,
+};
 
 const HERO_MAX_ITEMS = 5;
 
@@ -43,7 +61,7 @@ const HERO_MAX_ITEMS = 5;
 export async function listPublishedRows(tx: Tx, audience: Audience): Promise<RowDescriptor[]> {
   const result = await tx.execute(sql`
     SELECT r.id, r.title, r.kind, c.slug AS category_slug, r.series_id, sr.slug AS series_slug, r.slug,
-      r.view_all_mode, r.view_all_url, r.min_items, r.max_items
+      r.view_all_mode, r.view_all_url, r.min_items, r.max_items, r.fallback_to_newest, r.fallback_title
     FROM rows r
     LEFT JOIN categories c ON c.id = r.category_id AND c.is_visible
     LEFT JOIN series sr ON sr.id = r.series_id
@@ -61,6 +79,8 @@ export async function listPublishedRows(tx: Tx, audience: Audience): Promise<Row
     view_all_url: string | null;
     min_items: number;
     max_items: number;
+    fallback_to_newest: boolean;
+    fallback_title: string | null;
   }>(result).map((row) => ({
     id: row.id,
     title: row.title,
@@ -73,6 +93,8 @@ export async function listPublishedRows(tx: Tx, audience: Audience): Promise<Row
     viewAllUrl: row.view_all_url,
     minItems: row.min_items,
     maxItems: row.max_items,
+    fallbackToNewest: row.fallback_to_newest,
+    fallbackTitle: row.fallback_title,
   }));
 }
 
@@ -182,7 +204,13 @@ export async function resolveRow(
   row: RowDescriptor,
   rules: RowRules = DEFAULT_ROW_RULES,
 ): Promise<ResolvedRow> {
-  const cards = await resolveCards(tx, ctx, audience, row, rules);
+  let title: string | undefined;
+  let cards: TitleCard[];
+  if (row.kind === 'popular') {
+    const popular = await popularCards(tx, ctx, audience, row, rules);
+    cards = popular.cards;
+    if (popular.fellBack) title = row.fallbackTitle?.trim() || DEFAULT_FALLBACK_TITLE;
+  } else cards = await resolveCards(tx, ctx, audience, row, rules);
   // Under its minimum a row is hidden, and Trending never borrows titles from New (M41-S05 AC2).
   const shown = cards.length >= Math.max(1, row.minItems) ? cards : [];
   const viewAll = resolveViewAll({
@@ -193,7 +221,33 @@ export async function resolveRow(
     seriesSlug: row.seriesSlug,
     rowSlug: row.slug,
   });
-  return { cards: shown, viewAll: shown.length > 0 ? viewAll : null };
+  return {
+    cards: shown,
+    ...(shown.length > 0 && title ? { title } : {}),
+    viewAll: shown.length > 0 ? viewAll : null,
+  };
+}
+
+/**
+ * Popular (M44-S08): titles with enough views over 30 days, series included. With fewer than three, the row is
+ * hidden, or with Fall back to newest it shows the newest titles under its fallback title.
+ */
+async function popularCards(
+  tx: Tx,
+  ctx: CatalogContext,
+  audience: Audience,
+  row: RowDescriptor,
+  rules: RowRules,
+): Promise<{ cards: TitleCard[]; fellBack: boolean }> {
+  const qualified = await popularTitles(tx, ctx, audience, {
+    limit: row.maxItems,
+    windowDays: rules.popularWindowDays,
+    minViews: rules.popularMinViews,
+  });
+  if (qualified.length >= rules.popularMinTitles) return { cards: qualified, fellBack: false };
+  if (!row.fallbackToNewest) return { cards: [], fellBack: false };
+  const newest = await listTitles(tx, ctx, audience, { sort: 'newest', limit: row.maxItems });
+  return { cards: newest.items, fellBack: true };
 }
 
 async function resolveCards(
@@ -228,10 +282,7 @@ async function resolveCards(
         await listTitles(tx, ctx, audience, { sort: 'newest', kind: 'series', limit: row.maxItems })
       ).items;
     case 'popular':
-      return popularTitles(tx, ctx, audience, {
-        limit: row.maxItems,
-        windowDays: rules.trendingWindowDays,
-      });
+      return (await popularCards(tx, ctx, audience, row, rules)).cards;
     case 'trending':
       return trendingTitles(tx, ctx, audience, { kind: 'trending', limit: row.maxItems });
     case 'top_ten':
