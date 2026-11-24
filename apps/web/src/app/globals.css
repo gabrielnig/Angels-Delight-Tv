@@ -486,6 +486,28 @@ a {
     grid-template-columns: repeat(5, minmax(0, 1fr));
   }
 }
+@media (min-width: 1920px) {
+  .web-grid {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
+}
+/* List page loading: skeleton cards fill grid cells, and the region holds the height of two rows. */
+.web-grid .ad-skelcard {
+  flex: 1 1 auto;
+}
+.web-list-skeleton {
+  min-height: 70vh;
+}
+.web-list-skeleton__title {
+  display: block;
+  height: var(--text-h2);
+  margin-block-end: var(--space-2);
+}
+.web-list-skeleton__count {
+  display: block;
+  height: var(--text-body);
+  margin-block: var(--space-4);
+}
 .web-grid-more {
   display: flex;
   justify-content: center;
