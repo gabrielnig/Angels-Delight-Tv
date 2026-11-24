@@ -1802,3 +1802,15 @@ Decision: `video.preview` catches every error and records `failed` or `skipped` 
 - Options: Detect always; detect only on request; no detection and a required choice
 - Why: A wrong guess is cheap to fix when it is flagged for review, and a required choice would block uploads for editors who do not know the label.
 - Reversible: Yes
+
+## D-329 Popular counts series, looks back 30 days, needs 5 views a title and 3 titles, and can fall back to newest (lane L5a)
+- Decision: `popularTitles` includes series, scored by the views of their episodes. Popular counts the last 30 days, a title needs 5 views, and the row needs 3 titles. A Popular section can tick "Fall back to newest": with fewer than 3 qualifying titles it shows the newest titles under its own fallback title (default "Newly added", up to 80 characters) instead of hiding. Columns `rows.fallback_to_newest` and `rows.fallback_title` (migration `0053_row_popular_fallback.sql`). The home type `smart` keeps meaning Popular, with a default minimum of 3. New types `trending`, `top_ten` and `most_liked` have a default minimum of 5. Values live in settings (`trending.popular_*`), not in code.
+- Options: keep 7 days and hide when thin; always fall back; a per row fallback tick.
+- Why: a new site has few views, and a hidden row looks broken while a faked one misleads. The tick lets the client choose, with honest words for the title.
+- Reversible: yes, the columns are additive and the tick defaults off.
+
+## D-330 Shared catalog caches are keyed by audience tier, and trending rules come from settings (lane L5a)
+- Decision: the viewer `shared()` cache keys use `audienceKey` (`kids`, or `rank-N`) instead of only `audience.kids`, so a guest or profile with a lower maturity ceiling never reads rows cached for a higher one. The guest home now passes the guest ceiling too. Settings `trending.min_titles`, `trending.min_site_plays`, `trending.max_age_hours`, `trending.top_ten_size`, `trending.popular_window_days`, `trending.popular_min_views`, `trending.popular_min_titles` (admin tier, private) feed the viewer through an optional `ViewerContext.loadRules`, memoised for 60 seconds in the web runtime. The launch layout is Continue learning, My List, Trending now (min 5), Newly added, Browse by subject, Series.
+- Options: leave keys on kids only and filter after reading (rejected, leaks counts and costs a query); read settings on every request.
+- Why: the old key was a real leak between audience tiers once ranks existed, and a 60 second memo matches the catalog cache window.
+- Reversible: yes.

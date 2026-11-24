@@ -96,3 +96,17 @@ Skipped and kept as Could. It needs VAPID keys, a service worker push handler, a
 - Decision D-318.
 - Known gaps: the "Showing saved list" offline note for My List is not built. `messages-coverage.test.ts` also lists three `sponsor.*` keys from another lane as unused.
 - Tests: `my-list.int.test.ts`, `progress.int.test.ts`, `api.int.test.ts`, `MyListControls.test.tsx`, `MyListGrid.test.tsx`, `Cards.test.tsx`, `ContinueRow.test.tsx`.
+
+## Slice 4b (merged by L5a earlier: title page rating)
+- `RatingControl` and `TitleRating` on the title page (PRs 304, 310, 318), the ratings rollup (311) and trending data (315). Services were already merged by the L5 service lane.
+
+## Slice 6 (L5a: ranked rows, Popular, settings, System page, analytics; branch l5a-s4-ranked-rows)
+- Rows: `RankedRow` (`components/home/RankedRow.tsx`) draws `trending`, `top_ten` and `most_liked`. Top 10 is an `<ol>` with hidden numerals and spoken "Number N". `Row` takes `ordered`, `VideoCard` and `SeriesCard` take `rank`. `HomeRow.kind` carries the row kind to the client.
+- Popular: series included, 30 days, 5 views, 3 titles, fallback to newest (D-329). `RowRules` gains `popularWindowDays`, `popularMinViews`, `popularMinTitles` and `trending`. `ResolvedRow.title` is set on fallback and `buildHome` uses it.
+- Cache: `audienceKey` in `packages/viewer/src/context.ts`, used by every `shared()` key in `home.ts` and `browse.ts` (D-330). Guest home passes `maxRank`.
+- Settings: `trending.*` keys in the theme registry, read by `settingsRules` in `server/viewer/runtime.ts` through `ViewerContext.loadRules` and `loadedRules`.
+- Admin: home types `trending`, `top_ten`, `most_liked`, `fallbackToNewest` and `fallbackTitle` in `packages/catalog/src/admin/home.ts`, fixtures in `lib/data/admin/home-rules.ts`, `home-clean.ts`, `HomeCuration` picker (10 types with a hint each), `SectionEditor` fallback tick and title. Launch seed is in `launchHomeConfig` (Trending now, Newly added).
+- System page: `trendingRefreshedAt` on `SystemService`, "Trending last refreshed" and a warning past 3 hours, job kind `engagement` for `ratings.rollup` and `trending.refresh`.
+- Analytics: `ratingTotals` and `positiveShare` in `packages/analytics`, Top titles columns Likes, Love, Not for me, Positive share (sortable, "Under 10 ratings") in `TopTitlesTable`, and four CSV columns.
+- Migration `0053_row_popular_fallback.sql`.
+- Not done: refreshing trending right after the nightly rollup, Most liked on the series card, seed-demo ranks, an admin filter by maturity.
