@@ -14,6 +14,7 @@ export default defineConfig({
     './src/schema/outbox.ts',
     './src/schema/exports.ts',
     './src/schema/pipeline.ts',
+    './src/schema/sponsors.ts',
     './src/schema/platform.ts',
     './src/schema/viewer.ts',
   ],

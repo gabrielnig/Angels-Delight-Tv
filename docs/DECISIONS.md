@@ -1489,4 +1489,8 @@ Per video tri state, site default (Super admin), Admin changes it with a reason 
 - Decision: `heroFallbackCount` 5, `popularMinItems` 4, `trendingWindowDays` 7, `autoCategoryMinItems` 4, `autoCategoryMax` 6 and `allSeriesMinItems` 2 are `ViewerRules` defaults. `home.view_all_label` ("View all") and `home.continue_title` ("Continue learning") are public text settings.
 - Options: all of it as settings, all of it as constants.
 - Why: counts and thresholds protect Home from looking empty and rarely change, so they stay rules with a context override. Words the client may want to change are settings.
+## D-276 Sponsors store an explicit active status, and contact and notes live in a private table (lane L9, L9-D22)
+- Decision: the stored sponsor status is draft, active, paused or archived. A sponsor needs a stored state that means "approved to run", so `active` is added to the plan list, and live, scheduled and ended stay derived from the dates. Contact and internal notes sit in `sponsor_private` (staff only) instead of columns on `sponsors`, because live sponsor rows are readable by anonymous visitors.
+- Options: keep the plan columns on `sponsors` and hide them with column grants, a separate private table.
+- Why: column grants cannot depend on the actor role, so a staff only table with its own policy is the simplest way to make leaks impossible.
 - Reversible: yes.

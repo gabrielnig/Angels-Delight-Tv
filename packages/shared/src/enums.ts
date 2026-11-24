@@ -52,7 +52,7 @@ export const MATURITY_RANKS = [0, 1, 2, 3, 4] as const;
 export const MATURITY_DEFAULT_LABELS = ['G', 'PG', '12', '15', '18'] as const;
 export const TOKEN_PURPOSES = ['verify_email', 'reset_password', 'change_email'] as const;
 export const THEME_STATUSES = ['draft', 'published', 'archived'] as const;
-export const ASSET_PURPOSES = ['logo', 'favicon', 'thumbnail', 'hero', 'series_art'] as const;
+export const ASSET_PURPOSES = ['logo', 'favicon', 'thumbnail', 'hero', 'series_art', 'sponsor'] as const;
 export const ASSET_STATUSES = ['processing', 'ready', 'failed'] as const;
 
 export type AccountRole = (typeof ACCOUNT_ROLES)[number];

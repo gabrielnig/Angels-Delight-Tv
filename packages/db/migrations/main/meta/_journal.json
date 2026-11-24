@@ -274,6 +274,13 @@
       "when": 1795537159787,
       "tag": "0038_maturity_ranks",
       "breakpoints": true
+    },
+    {
+      "idx": 39,
+      "version": "7",
+      "when": 1795700000000,
+      "tag": "0039_sponsors",
+      "breakpoints": true
     }
   ]
 }
