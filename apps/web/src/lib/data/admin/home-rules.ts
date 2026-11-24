@@ -387,6 +387,17 @@ export const ADD_TYPE_HINTS: Record<
   all_series: 'Series cards, newest first.',
 };
 
+/** Names in the Add section dialog, a little fuller than the list labels (S97 state 3). */
+export const ADD_TYPE_LABELS: Record<keyof typeof ADD_TYPE_HINTS, string> = {
+  manual: 'Manual list',
+  category: 'Category',
+  newest: 'New',
+  smart: 'Trending (most watched)',
+  series: 'Series (one series)',
+  each_category: 'Each category (automatic)',
+  all_series: 'All series (automatic)',
+};
+
 const KIND_OF: Record<HomeRowType, RowKind> = {
   manual: 'curated',
   category: 'category',

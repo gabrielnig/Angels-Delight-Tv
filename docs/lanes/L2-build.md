@@ -12,7 +12,8 @@ Plan `docs/plan/v2/L2-home.md`, review `docs/reviews/v2/L2-review.md`, rulings `
 | 4 | Row View all, snap, gap compensation, skeleton height | merged | 302 |
 | 5 | Row link and preview migrations, row resolution | merged | 322 |
 | 6 | Browse list pages (new, trending, series, row/[slug]) | merged | 329 |
-| 6b | List page loading skeleton, 5 and 6 across grid | this PR | |
+| 6b | List page loading skeleton, 5 and 6 across grid | merged | 333 |
+| 7 | Admin sections editor | this PR | |
 
 ## Exists
 
@@ -30,3 +31,10 @@ Plan `docs/plan/v2/L2-home.md`, review `docs/reviews/v2/L2-review.md`, rulings `
 
 - Commits 71b5d54 and 5df08b4 (other lanes) silently reverted slice 1 files. Check `git diff origin/main` of your own files before relying on them.
 - The mobile hero scrim differs from R36 stops on purpose (D in DECISIONS, measured).
+
+## Slice 7 notes
+
+- Admin Home screen is split: `HomeCuration.tsx` (toolbar, hero titles, preview, add dialog), `HomeSections.tsx` (list, rename in place, drag and keyboard reorder, live region), `SectionEditor.tsx` (name, View all, minimum, Kids, removal), `ViewAllField.tsx`, `ManualTitles.tsx`.
+- `apps/web/src/lib/data/admin/home-clean.ts` rebuilds the config on save and now keeps `slug`, `viewAllMode`, `viewAllUrl`, `minItems`, `kidsVisible` (the old inline copy dropped them).
+- Helpers in `home-rules.ts`: `viewAllSummary`, `viewAllOpens`, `duplicateNameNote`, `ADD_TYPE_LABELS`, `ADD_TYPE_HINTS`.
+- Tabs Hero slots and Sections, and Restore launch defaults from S97 arrive with slices 8 and 10.

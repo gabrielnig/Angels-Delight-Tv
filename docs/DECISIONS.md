@@ -1654,3 +1654,7 @@ Decision: the View all list pages keep the shared `.web-grid` (2, 3, 4, 5 across
 - Options: popover everywhere, a page everywhere, polling with Data saver exempt.
 - Why: popovers are hostile at 360 px (plan 4.5), the page works without script, and Data saver users keep their data.
 - Reversible: yes.
+
+## D-303 The Add section dialog offers the seven addable types, and Save draft stays open when a link is invalid (lane L2, M41-S06, S07)
+
+Decision: the dialog lists Manual list, Category, New, Trending, Series, Each category and All series. Continue learning and My List are built in and are not offered, so they cannot be added twice. A bad custom View all link blocks Publish and shows its message under the field, but Save draft still works so an editor never loses half finished work. Options: list all nine types and refuse two with an error, or block Save draft as well. Why: refusing after a choice is worse than not offering it, and a draft is not visible to viewers. Reversible: yes, UI only.
