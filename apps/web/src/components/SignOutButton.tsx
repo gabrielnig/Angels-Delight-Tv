@@ -1,5 +1,6 @@
 'use client';
 
+import { useT } from '../lib/i18n/provider';
 import { useRouter } from 'next/navigation';
 import type { ReactNode } from 'react';
 import { Button, type ButtonVariant } from '@ad/ui';
@@ -14,12 +15,14 @@ import { requestSignOut } from '../lib/pwa/sign-out';
 export function SignOutButton({
   variant = 'ghost',
   className,
-  children = 'Sign out',
+  children,
 }: {
   variant?: ButtonVariant | 'plain';
   className?: string;
   children?: ReactNode;
 }) {
+  const msg = useT();
+  const label = children ?? msg('cards.signOut');
   const router = useRouter();
   async function signOut() {
     await requestSignOut({
@@ -34,13 +37,13 @@ export function SignOutButton({
   if (variant === 'plain') {
     return (
       <button type="button" className={className} onClick={() => void signOut()}>
-        {children}
+        {label}
       </button>
     );
   }
   return (
     <Button variant={variant} className={className} onClick={() => void signOut()}>
-      {children}
+      {label}
     </Button>
   );
 }

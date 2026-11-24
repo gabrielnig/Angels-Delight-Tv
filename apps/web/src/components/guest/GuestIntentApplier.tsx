@@ -1,7 +1,7 @@
 'use client';
 
+import { useT } from '../../lib/i18n/provider';
 import { useEffect, useRef } from 'react';
-import { msg } from '@ad/shared/messages';
 import { useToast } from '@ad/ui';
 import { useProfileId } from '../../lib/profile-context';
 import { takeIntent } from '../../lib/guest/intent';
@@ -12,6 +12,7 @@ import { useListToggle } from '../../lib/pwa/useListToggle';
  * they picked (M44-S04). A like without a value is dropped, there is nothing to replay.
  */
 export function GuestIntentApplier() {
+  const msg = useT();
   const toggle = useListToggle();
   const toast = useToast();
   const profileId = useProfileId();
@@ -40,15 +41,11 @@ export function GuestIntentApplier() {
       .then((outcome) =>
         toast.show({
           message:
-            outcome === 'queued'
-              ? 'Saved on this device. It will sync when you are back online.'
-              : msg('guest.myList.added'),
+            outcome === 'queued' ? msg('guest.savedOnThisDevice') : msg('guest.myList.added'),
           variant: 'success',
         }),
       )
-      .catch(() =>
-        toast.show({ message: 'We could not update My List. Try again.', variant: 'error' }),
-      );
-  }, [toggle, toast, profileId]);
+      .catch(() => toast.show({ message: msg('guest.updateFailed'), variant: 'error' }));
+  }, [toggle, toast, profileId, msg]);
   return null;
 }

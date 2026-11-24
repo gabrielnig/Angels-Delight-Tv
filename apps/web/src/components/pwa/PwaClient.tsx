@@ -1,5 +1,6 @@
 'use client';
 
+import { useT } from '../../lib/i18n/provider';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import { createWriteQueue } from '@/lib/pwa/write-queue';
@@ -25,6 +26,7 @@ export function PwaClient({
   platformName: string;
   profileId?: string | null;
 }) {
+  const msg = useT();
   const pathname = usePathname();
   const router = useRouter();
   const handle = useRef<RegisterHandle | null>(null);
@@ -78,7 +80,7 @@ export function PwaClient({
       <InstallPrompt platformName={platformName} />
       {updated ? (
         <div className="pwa-toast" role="status">
-          Updated
+          {msg('pwa.updated')}
         </div>
       ) : null}
     </>
