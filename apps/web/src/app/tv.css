@@ -1,0 +1,78 @@
+/*
+ * TV mode (M49-S15). Every rule is scoped to html[data-tv], so with TV mode off nothing here applies.
+ * The layout sets the attribute from the ad_tv cookie or a TV user agent.
+ */
+html[data-tv] {
+  --tv-safe-x: 5vw;
+  --tv-safe-y: 5vh;
+  --cards-visible: 4.3;
+  font-size: 125%;
+  scroll-behavior: auto;
+}
+
+@media (min-width: 1920px) {
+  html[data-tv] {
+    font-size: 150%;
+  }
+}
+
+/* Overscan: keep content and captions inside the safe area. */
+html[data-tv] body {
+  padding: var(--tv-safe-y) var(--tv-safe-x);
+}
+
+/* A remote has no pointer. */
+html[data-tv] *,
+html[data-tv] a,
+html[data-tv] button {
+  cursor: none;
+}
+
+/* Rows show 4.3 cards so the next one peeks in. */
+html[data-tv] .ad-row__viewport,
+html[data-tv] .ad-skelrow {
+  --cards-visible: 4.3;
+}
+
+/* Focus: a thick ring that does not rely on the tile or card rules. */
+html[data-tv] :focus-visible {
+  outline: 4px solid var(--color-focus-ring);
+  outline-offset: 4px;
+}
+
+html[data-tv] .ad-card__link:focus-visible .ad-card__thumb,
+html[data-tv] .ad-tile:focus-visible .ad-tile__avatar {
+  outline: 4px solid var(--color-focus-ring);
+  outline-offset: 4px;
+}
+
+@media (forced-colors: active) {
+  html[data-tv] :focus-visible,
+  html[data-tv] .ad-card__link:focus-visible .ad-card__thumb,
+  html[data-tv] .ad-tile:focus-visible .ad-tile__avatar {
+    outline-color: Highlight;
+  }
+}
+
+/* Room for the scaled tile so the row does not clip it. */
+html[data-tv] .ad-row__viewport {
+  padding-block: var(--space-4);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  html[data-tv] .ad-card__link:focus-visible .ad-card__thumb,
+  html[data-tv] .ad-tile:focus-visible .ad-tile__avatar {
+    transform: scale(1.1);
+    transition: transform var(--motion-fast) var(--ease-standard);
+  }
+}
+
+/* Hover only effects and previews are off. Focus reveals the same content. */
+html[data-tv] [data-preview],
+html[data-tv] .ad-card__peek:not(:focus-within) {
+  display: none;
+}
+
+html[data-tv] .ad-card:hover .ad-card__action {
+  transition-delay: 0ms;
+}

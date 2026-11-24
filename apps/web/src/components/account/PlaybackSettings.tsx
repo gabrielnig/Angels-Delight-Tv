@@ -20,6 +20,8 @@ import { Button, Modal } from '@ad/ui';
 import { savePlaybackAction } from '../../app/actions';
 import type { PlaybackSettings } from '../../lib/data';
 import { KIDS_LOCKED } from '../../lib/playback-lock';
+import { readTvPreference, setTvPreference } from '../../lib/tv/client';
+import type { TvPreference } from '../../lib/tv/detect';
 import { AcctIcon } from './icons';
 import { InlineToast } from './InlineToast';
 
@@ -146,11 +148,13 @@ export function PlaybackSettingsForm({
   const [failed, setFailed] = useState<Partial<PlaybackSettings> | null>(null);
   const [resetOpen, setResetOpen] = useState(false);
   const [deviceSaver, setDeviceSaver] = useState(false);
+  const [tvPref, setTvPref] = useState<TvPreference>('auto');
   const dismiss = useCallback(() => setSaved(false), []);
   useEffect(() => {
     const connection = (navigator as Navigator & { connection?: { saveData?: boolean } })
       .connection;
     setDeviceSaver(connection?.saveData === true);
+    setTvPref(readTvPreference());
   }, []);
 
   async function apply(requested: Partial<PlaybackSettings>) {
@@ -445,6 +449,28 @@ export function PlaybackSettingsForm({
             {msg('account.playback.reset')}
           </Button>
         </div>
+        <h2 className="acct-h2">This device</h2>
+        <Row
+          id={id('tv')}
+          label="TV mode"
+          hint="Larger text and a thick focus ring for a remote control. Saved on this device only."
+        >
+          {(ids) => (
+            <Choice
+              ids={ids}
+              value={tvPref}
+              onChange={(v) => {
+                const next = v as TvPreference;
+                setTvPref(next);
+                setTvPreference(next);
+              }}
+            >
+              <option value="auto">Automatic</option>
+              <option value="on">On</option>
+              <option value="off">Off</option>
+            </Choice>
+          )}
+        </Row>
       </form>
       <Modal
         open={resetOpen}
