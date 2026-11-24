@@ -17,17 +17,7 @@ import { and, desc, eq, inArray, isNull, ne, sql } from 'drizzle-orm';
 import { AccountService, formatDate } from './accounts';
 import { emailHash, maskEmail, normalizeEmail } from './identifiers';
 import { findAccountByEmailHash, isUniqueViolation } from './lookup';
-import {
-  base32Decode,
-  base32Encode,
-  generateRecoveryCodes,
-  generateTotpSecret,
-  hashRecoveryCode,
-  normalizeRecoveryCode,
-  otpauthUri,
-  qrSvg,
-  verifyTotp,
-} from './totp';
+import { MfaCore } from './mfa-core';
 import {
   generateInviteCode,
   inviteCodeHash,
@@ -273,74 +263,42 @@ export class StaffService extends AccountService {
   // Second factor
   // ---------------------------------------------------------------------------------------------
 
-  private mfaKey(accountId: string): string {
-    return `mfa:${accountId}`;
+  private mfaCore?: MfaCore;
+  private get mfa(): MfaCore {
+    this.mfaCore ??= new MfaCore({
+      db: this.deps.db,
+      keys: this.deps.keys,
+      lockouts: this.deps.lockouts,
+      pepper: this.deps.pepper,
+      now: () => this.now(),
+    });
+    return this.mfaCore;
   }
 
-  private async mfaLockCheck(accountId: string): Promise<void> {
-    const lock = await this.closed(() => this.deps.lockouts.status(this.mfaKey(accountId)));
-    if (lock.locked) throw new RateLimited(lock.retryAfterSeconds);
-  }
-
-  private async mfaFailed(
-    accountId: string,
-    role: string,
-    meta: RequestMeta,
-    field = 'code',
-  ): Promise<never> {
-    await this.closed(() =>
-      this.deps.lockouts.registerFailure(this.mfaKey(accountId), LOCKOUT_POLICIES.mfaCode),
-    );
-    await this.audit('admin.mfa_failed', 'failure', meta, { accountId, role });
-    throw new FieldErrors({ [field]: 'That code is not right' });
+  private mfaFailed(accountId: string, role: string, meta: RequestMeta) {
+    return {
+      onFailure: () => this.audit('admin.mfa_failed', 'failure', meta, { accountId, role }),
+    };
   }
 
   /** Checks an authenticator code, with lockout, one step of drift and replay protection. */
-  private async checkTotp(
+  private checkTotp(
     accountId: string,
     role: string,
     code: string,
     meta: RequestMeta,
     options: { requireConfirmed: boolean },
   ): Promise<{ factorId: string; step: number }> {
-    await this.mfaLockCheck(accountId);
-    const [factor] = await this.deps.db
-      .select()
-      .from(schema.mfaFactors)
-      .where(eq(schema.mfaFactors.accountId, accountId));
-    if (!factor || (options.requireConfirmed && !factor.confirmedAt)) {
-      return this.mfaFailed(accountId, role, meta);
-    }
-    const secret = base32Decode(
-      await this.deps.keys.open(accountId, 'totp_secret', factor.secretEnc),
-    );
-    const result = verifyTotp(secret, code, this.now().getTime(), {
-      lastUsedStep: factor.lastUsedStep,
+    return this.mfa.verifyCode(accountId, code, {
+      ...this.mfaFailed(accountId, role, meta),
+      requireConfirmed: options.requireConfirmed,
     });
-    if (!result.ok) return this.mfaFailed(accountId, role, meta);
-    const claimed = await this.deps.db
-      .update(schema.mfaFactors)
-      .set({ lastUsedStep: result.step })
-      .where(
-        and(
-          eq(schema.mfaFactors.id, factor.id),
-          sql`(${schema.mfaFactors.lastUsedStep} IS NULL OR ${schema.mfaFactors.lastUsedStep} < ${result.step})`,
-        ),
-      )
-      .returning({ id: schema.mfaFactors.id });
-    if (claimed.length === 0) return this.mfaFailed(accountId, role, meta);
-    await this.closed(() => this.deps.lockouts.clear(this.mfaKey(accountId)));
-    return { factorId: factor.id, step: result.step };
   }
 
   /** True once the second factor was confirmed, so the sign in page knows whether to enrol or ask for a code. */
   async twoFactorConfirmed(actor: Actor): Promise<boolean> {
     const account = await this.staffAccount(actor);
-    const [factor] = await this.deps.db
-      .select({ confirmedAt: schema.mfaFactors.confirmedAt })
-      .from(schema.mfaFactors)
-      .where(eq(schema.mfaFactors.accountId, account.id));
-    return Boolean(factor?.confirmedAt);
+    return this.mfa.isConfirmed(account.id);
   }
 
   async beginEnrolment(
@@ -348,21 +306,10 @@ export class StaffService extends AccountService {
     _meta: RequestMeta,
   ): Promise<{ secret: string; uri: string; qrSvg: string }> {
     const account = await this.staffAccount(actor);
-    const [existing] = await this.deps.db
-      .select({ confirmedAt: schema.mfaFactors.confirmedAt })
-      .from(schema.mfaFactors)
-      .where(eq(schema.mfaFactors.accountId, account.id));
-    if (existing?.confirmedAt) throw new Conflict('Two factor sign in is already set up');
-    const secret = generateTotpSecret();
-    const base32 = base32Encode(secret);
-    const secretEnc = await this.deps.keys.seal(account.id, 'totp_secret', base32);
-    await this.deps.db.delete(schema.mfaFactors).where(eq(schema.mfaFactors.accountId, account.id));
-    await this.deps.db
-      .insert(schema.mfaFactors)
-      .values({ accountId: account.id, type: 'totp', secretEnc });
+    if (await this.mfa.isConfirmed(account.id))
+      throw new Conflict('Two factor sign in is already set up');
     const email = await this.deps.keys.open(account.id, 'email', account.emailEnc!);
-    const uri = otpauthUri({ secret, account: email, issuer: this.cfg.issuerName });
-    return { secret: base32, uri, qrSvg: await qrSvg(uri) };
+    return this.mfa.beginEnrolment(account.id, this.cfg.issuerName, email);
   }
 
   async confirmEnrolment(
@@ -371,14 +318,11 @@ export class StaffService extends AccountService {
     meta: RequestMeta,
   ): Promise<{ recoveryCodes: string[]; session: { token: string; id: string } }> {
     const account = await this.staffAccount(actor);
-    const { factorId } = await this.checkTotp(account.id, account.role, input.code, meta, {
+    await this.checkTotp(account.id, account.role, input.code, meta, {
       requireConfirmed: false,
     });
-    await this.deps.db
-      .update(schema.mfaFactors)
-      .set({ confirmedAt: this.now() })
-      .where(eq(schema.mfaFactors.id, factorId));
-    const recoveryCodes = await this.replaceRecoveryCodes(account.id);
+    await this.mfa.confirm(account.id);
+    const recoveryCodes = await this.mfa.replaceRecoveryCodes(account.id);
     await this.deps.sessions.revoke(actor.sessionId);
     const session = await this.deps.sessions.create({
       accountId: account.id,
@@ -392,20 +336,6 @@ export class StaffService extends AccountService {
       role: account.role,
     });
     return { recoveryCodes, session: { token: session.token, id: session.session.id } };
-  }
-
-  private async replaceRecoveryCodes(accountId: string): Promise<string[]> {
-    const codes = generateRecoveryCodes(10);
-    await this.deps.db
-      .delete(schema.mfaRecoveryCodes)
-      .where(eq(schema.mfaRecoveryCodes.accountId, accountId));
-    await this.deps.db.insert(schema.mfaRecoveryCodes).values(
-      codes.map((code) => ({
-        accountId,
-        codeHash: Buffer.from(hashRecoveryCode(this.deps.pepper, code)),
-      })),
-    );
-    return codes;
   }
 
   async verifyMfa(
@@ -430,42 +360,18 @@ export class StaffService extends AccountService {
     meta: RequestMeta,
   ): Promise<{ remaining: number; session: { token: string; id: string } }> {
     const account = await this.staffAccount(actor);
-    await this.mfaLockCheck(account.id);
-    const code = normalizeRecoveryCode(input.code);
-    const claimed = code
-      ? await this.deps.db
-          .update(schema.mfaRecoveryCodes)
-          .set({ usedAt: this.now() })
-          .where(
-            and(
-              eq(schema.mfaRecoveryCodes.accountId, account.id),
-              eq(
-                schema.mfaRecoveryCodes.codeHash,
-                Buffer.from(hashRecoveryCode(this.deps.pepper, code)),
-              ),
-              isNull(schema.mfaRecoveryCodes.usedAt),
-            ),
-          )
-          .returning({ id: schema.mfaRecoveryCodes.id })
-      : [];
-    if (claimed.length === 0) return this.mfaFailed(account.id, account.role, meta);
-    await this.closed(() => this.deps.lockouts.clear(this.mfaKey(account.id)));
-    const unused = await this.deps.db
-      .select({ id: schema.mfaRecoveryCodes.id })
-      .from(schema.mfaRecoveryCodes)
-      .where(
-        and(
-          eq(schema.mfaRecoveryCodes.accountId, account.id),
-          isNull(schema.mfaRecoveryCodes.usedAt),
-        ),
-      );
+    const { remaining } = await this.mfa.claimRecoveryCode(
+      account.id,
+      input.code,
+      this.mfaFailed(account.id, account.role, meta),
+    );
     const session = await this.deps.sessions.promoteToStaff(actor.sessionId);
     await this.audit('admin.login', 'success', meta, {
       accountId: account.id,
       role: account.role,
       metadata: { mfa: 'recovery' },
     });
-    return { remaining: unused.length, session: { token: session.token, id: session.session.id } };
+    return { remaining, session: { token: session.token, id: session.session.id } };
   }
 
   async regenerateRecoveryCodes(
@@ -475,7 +381,7 @@ export class StaffService extends AccountService {
   ): Promise<string[]> {
     const account = await this.staffAccount(actor);
     await this.checkTotp(account.id, account.role, input.code, meta, { requireConfirmed: true });
-    const codes = await this.replaceRecoveryCodes(account.id);
+    const codes = await this.mfa.replaceRecoveryCodes(account.id);
     await this.audit('admin.recovery_codes_regenerated', 'success', meta, {
       accountId: account.id,
       role: account.role,
@@ -524,10 +430,7 @@ export class StaffService extends AccountService {
       },
     );
     if (!target || !isStaffRole(target.role)) throw new NotFound();
-    await this.deps.db.delete(schema.mfaFactors).where(eq(schema.mfaFactors.accountId, target.id));
-    await this.deps.db
-      .delete(schema.mfaRecoveryCodes)
-      .where(eq(schema.mfaRecoveryCodes.accountId, target.id));
+    await this.mfa.removeAll(target.id);
     await this.deps.sessions.revokeAll(target.id);
     await this.deps.audit.record({
       action: 'admin.mfa_reset',

@@ -5,6 +5,7 @@ export * from './hibp';
 export * from './identifiers';
 export * from './keys';
 export * from './lookup';
+export * from './mfa-core';
 export * from './password';
 export * from './pending';
 export * from './policy';
