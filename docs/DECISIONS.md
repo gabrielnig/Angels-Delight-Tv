@@ -1192,3 +1192,45 @@ Per video tri state, site default (Super admin), Admin changes it with a reason 
 - Options: latin only, latin plus ext, drop DM Sans and Poppins, fall back to Inter for the missing letters.
 - Why: it is the only way to render the letters in the brand fonts that have the subset, and the fallback costs about 95 KB only when a glyph needs it.
 - Reversible: yes. The layout still passes no language, so the language rule waits for the languages lane to wire it.
+
+## D-226 Light default stays, Night preset is a Could (lane L8, DEC-L8-01)
+- Decision: Keep the light off-white default. A Night preset is a later Could story (M47-S16), gated by the contrast gate.
+- Options: Dark default, light default, light with a Night preset.
+- Why: The owner brief and the design system are light first, and every colour is a token so a preset is cheap.
+- Reversible: yes.
+
+## D-227 Button sizes 2, 2.5 and 3 rem with a 44px hit area (lane L8, DEC-L8-02)
+- Decision: Visual heights come from size tokens. A before element keeps the tap area at 44px on fine pointers and coarse pointers get a 44px minimum.
+- Options: 32px buttons as is, 44 only, tokens plus a hit area.
+- Why: It meets the audit sizes and the 44px rule together.
+- Reversible: yes.
+
+## D-228 Nav heights stay 3.5 and 4.25 rem, solid after a 40px sentinel (lane L8, DEC-L8-04)
+- Decision: Heights are unchanged. A 40px sentinel and IntersectionObserver replace the scroll listener, with a solid fallback.
+- Options: Audit heights of 3 and 4 rem, keep.
+- Why: The 44px controls need the height, and the threshold follows the audit.
+- Reversible: yes.
+
+## D-229 Type scale follows the docs, hero is a clamp (lane L8, DEC-L8-05)
+- Decision: Below 960 h1 to lead are 28, 24, 20, 18 and 17. From 960 they are 40, 32, 24, 20 and 18. The hero is clamp(2rem, 5vw, 3.5rem).
+- Options: Keep single values, adopt the docs, adopt only the audit values.
+- Why: Mobile first, 360px baseline, and tokens are reassigned instead of component overrides.
+- Reversible: yes.
+
+## D-230 Rows use proximity scroll snap and a hover card that fits the gutter (lane L8, DEC-L8-06 and DEC-L8-07)
+- Decision: Rows keep scroll-snap proximity. The hover card scales the thumbnail, origin left on the first item and right on the last, and is off below a 600px row where the growth would exceed the gutter.
+- Options: Mandatory snap, measured last visible origin, CSS only.
+- Why: Mandatory snap traps short rows and fights the scale. CSS only avoids layout measuring on hover.
+- Reversible: yes.
+
+## D-231 Rails widen to 120rem at 1920, text keeps 90rem (lane L8, DEC-L8-11)
+- Decision: --content-max is 120rem from 1920 and --prose-max stays 90rem for text pages.
+- Options: One cap.
+- Why: Six columns at 1440 would be too small.
+- Reversible: yes.
+
+## D-232 Nav fade is linear with the colour flip at 35 percent, scrim holds 70 percent, seek rail follows L4 (lane L8, DEC-L8-13 to DEC-L8-16)
+- Decision: The nav fade is linear and text, underline and ring flip as one step at 35 percent (70 ms in, 130 ms out). The nav scrim holds 0.85 to 70 percent of the bar. The seek rail and buffer are L4's #6A6E78 and #9CA0AA, with a separate card progress rail token.
+- Options: Eased fade, linear scrim, plan buffer value #9A9FAB.
+- Why: Linear keeps the worst frame at 3.98:1, the hold keeps white text above 4.5:1, and L4 landed the rail values first with tests.
+- Reversible: yes.

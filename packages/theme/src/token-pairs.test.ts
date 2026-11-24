@@ -51,6 +51,10 @@ const PAIRS: [string, string, number, string][] = [
   ['sidebar-muted', 'sidebar-hover', 4.5, 'hovered sidebar item'],
   ['player-ink', 'player-bg', 4.5, 'player text'],
   ['player-muted', 'player-bg', 4.5, 'player timestamps'],
+  ['player-rail', 'player-bg', 3, 'seek rail on the player (R34)'],
+  ['accent', 'player-rail', 3, 'played fill on the seek rail'],
+  ['accent', 'card-progress-rail', 3, 'card progress fill on its dark rail'],
+  ['bar-disabled-ink', 'bar-disabled-bg', 4.5, 'disabled action on the bulk bar (R38)'],
 ];
 
 const THEMES: Record<string, ThemeValues> = {
@@ -83,5 +87,43 @@ describe.each(Object.entries(THEMES))('token pairs, %s theme', (_name, theme) =>
     const ratio = contrastRatio(color(fg)!, color(bg)!);
     expect(ratio, `${fg} on ${bg}`).not.toBeNull();
     expect(ratio!).toBeGreaterThanOrEqual(min);
+  });
+});
+
+// Pairs that involve a translucent layer. Worst case: the layer sits over a pure white image.
+function composite(rgb: [number, number, number], alpha: number): string {
+  const channel = (c: number) => Math.round(c * alpha + 255 * (1 - alpha));
+  return `#${rgb
+    .map((c) => channel(c).toString(16).padStart(2, '0'))
+    .join('')
+    .toUpperCase()}`;
+}
+const SCRIM: [number, number, number] = [14, 15, 19];
+
+describe('translucent layer pairs over a white image (R12, R35, R36)', () => {
+  it('white text on the hero More info chip is at least 4.5', () => {
+    expect(contrastRatio('#FFFFFF', composite(SCRIM, 0.6))!).toBeGreaterThanOrEqual(4.5);
+  });
+
+  it('white text at the lightest alpha the title zone allows (0.57) is at least 4.5', () => {
+    expect(contrastRatio('#FFFFFF', composite(SCRIM, 0.57))!).toBeGreaterThanOrEqual(4.5);
+  });
+
+  it('the hero hold stop and the nav hold keep white text above 4.5', () => {
+    expect(contrastRatio('#FFFFFF', composite(SCRIM, 0.85))!).toBeGreaterThanOrEqual(4.5);
+    // Nav text band ends at alpha 0.595 on the 56px bar (R35).
+    expect(contrastRatio('#FFFFFF', composite(SCRIM, 0.595))!).toBeGreaterThanOrEqual(4.5);
+  });
+
+  it('the accent focus ring on the hold stop (0.85) is at least 3', () => {
+    expect(
+      contrastRatio(fixed['--color-focus-ring-dark']!, composite(SCRIM, 0.85))!,
+    ).toBeGreaterThanOrEqual(3);
+  });
+
+  it('only large text may sit on the 0.45 mid stop', () => {
+    const ratio = contrastRatio('#FFFFFF', composite(SCRIM, 0.45))!;
+    expect(ratio).toBeGreaterThanOrEqual(3);
+    expect(ratio).toBeLessThan(4.5);
   });
 });
