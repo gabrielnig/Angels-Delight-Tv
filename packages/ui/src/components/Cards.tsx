@@ -2,6 +2,7 @@
 
 import { useState, type ReactNode } from 'react';
 import { Badge } from './Badge';
+import { ContinueMenu, type ContinueMenuLabels } from './ContinueMenu';
 import { IconButton } from './Button';
 import { cx } from './cx';
 import { formatClock, spokenLength } from './format';
@@ -327,7 +328,12 @@ export interface ContinueCardProps extends Omit<VideoCardProps, 'inList' | 'onTo
   /** 0 to 100. Leave undefined when the position is unknown. */
   progressPercent?: number;
   timeLeftLabel?: string;
+  /** "Next: E4" for a next-up episode. Replaces the progress bar. */
+  nextLabel?: string;
   onRemove?: () => void;
+  /** With `titleHref` and `menuLabels` the remove button becomes a menu (M44-S15). */
+  titleHref?: string;
+  menuLabels?: ContinueMenuLabels;
 }
 
 export function ContinueCard({
@@ -337,7 +343,10 @@ export function ContinueCard({
   thumbnail,
   progressPercent,
   timeLeftLabel,
+  nextLabel,
   onRemove,
+  titleHref,
+  menuLabels,
   priority,
   className,
 }: ContinueCardProps) {
@@ -353,6 +362,11 @@ export function ContinueCard({
           <span className="ad-card__badge" aria-hidden="true">
             <Badge variant="duration">{formatClock(durationSeconds)}</Badge>
           </span>
+          {nextLabel ? (
+            <span className="ad-card__next" aria-hidden="true">
+              <Badge variant="accent">{nextLabel}</Badge>
+            </span>
+          ) : null}
           {known ? (
             <span className="ad-card__progress" aria-hidden="true">
               <ProgressBar value={rounded} label="Watched" tone="accent" size="sm" />
@@ -362,6 +376,7 @@ export function ContinueCard({
         <span className="ad-card__title">{title}</span>
         <span className="ad-sr-only">
           , {spokenLength(durationSeconds)}
+          {nextLabel ? `, ${nextLabel}` : ''}
           {known ? `, ${rounded} percent watched` : ''}
           {timeLeftLabel ? `, ${timeLeftLabel}` : ''}
         </span>
@@ -371,7 +386,9 @@ export function ContinueCard({
           </span>
         ) : null}
       </Link>
-      {onRemove ? (
+      {onRemove && titleHref && menuLabels ? (
+        <ContinueMenu title={title} titleHref={titleHref} labels={menuLabels} onRemove={onRemove} />
+      ) : onRemove ? (
         <IconButton
           className="ad-card__action ad-card__action--always"
           variant="on-dark"

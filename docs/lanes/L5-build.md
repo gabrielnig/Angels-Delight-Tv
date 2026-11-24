@@ -86,3 +86,13 @@ Scoped tests: `TEST_DATABASE_ADMIN_URL=postgres://postgres:postgres@localhost:54
 - Web: `/account/notifications` page, `NotificationSettings`, AccountNav entry, `GET` and `POST /unsubscribe/notices` (`server/viewer/unsubscribe.ts`).
 - Tests: `packages/queue/src/viewer-digest.int.test.ts`, `outbox.int.test.ts`, `packages/mailer/src/templates.test.ts`, `mailer.test.ts`, `apps/worker/src/mail-runtime.int.test.ts`, `notices.int.test.ts`, `packages/viewer/src/notices.int.test.ts`, `api-notices.int.test.ts`, `unsubscribe.test.ts`, `NotificationSettings.test.tsx`, `AccountNav.test.tsx`.
 - Known gap: `packages/config/src/env-example.test.ts` already fails on main for other lanes' variables (`DEV_PSEUDO_LOCALE`, `TRANSLATE_*`), not touched here.
+
+## Slice 9 (web push)
+Skipped and kept as Could. It needs VAPID keys, a service worker push handler, a subscription table with its own purge rules and an opt in flow per device, which is not cheap. The bell, the page and the email digest cover the need. No code or tables were added for it.
+
+## Slice 10 (Continue learning polish, My List filter and sort; branch l5b-s10-polish)
+- Server: `listMyList` and `loadMyList` take `filter` and `sort`; `countMyList` also returns `started` and `notStarted`; `ContinueWatchingItem.episodeLabel` ("S1 E4"). The `myListQuery` schema validates both (422 on junk).
+- Web: `MyListControls` (link pills, state in the URL), filtered empty states, `loadMoreMyListAction(cursor, options)`, `Library.myList(ctx, cursor, options)` with `counts`. `ContinueCard` takes `nextLabel`, `titleHref` and `menuLabels`; the new `ContinueMenu` is a real `role="menu"`. `ContinueRow` defaults its title to `guest.continue.title` (Continue learning).
+- Decision D-318.
+- Known gaps: the "Showing saved list" offline note for My List is not built. `messages-coverage.test.ts` also lists three `sponsor.*` keys from another lane as unused.
+- Tests: `my-list.int.test.ts`, `progress.int.test.ts`, `api.int.test.ts`, `MyListControls.test.tsx`, `MyListGrid.test.tsx`, `Cards.test.tsx`, `ContinueRow.test.tsx`.

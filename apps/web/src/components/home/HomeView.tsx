@@ -1,3 +1,4 @@
+import { msg } from '@ad/shared/messages';
 import { Fragment } from 'react';
 import { Row, SkeletonRegion, SkeletonRow } from '@ad/ui';
 import {
@@ -104,7 +105,7 @@ export async function HomeView({
             <ContinueRow items={continueResult.value} />
           ) : null
         ) : (
-          <RowError title="Continue watching" kind="continue" load={reloadContinueRowAction} />
+          <RowError title={msg('guest.continue.title')} kind="continue" load={reloadContinueRowAction} />
         )}
         {listResult.ok ? (
           listResult.value.items.length > 0 ? (

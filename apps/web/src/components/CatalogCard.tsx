@@ -146,18 +146,24 @@ export function CatalogCard({
   );
 }
 
+/** "E4" from the episode number, or the tail of the server label. */
+function nextEpisodeLabel(video: VideoSummary, progress: Progress): string {
+  if (video.series) return `E${video.series.episode}`;
+  return progress.episodeLabel?.split(' ').pop() ?? '';
+}
+
 type RowItem = { video: VideoSummary; progress: Progress };
 
 export function ContinueRow({
   items,
   remove = removeContinueAction,
   restore = restoreContinueAction,
-  title = 'Continue watching',
+  title = msg('guest.continue.title'),
 }: {
   items: RowItem[];
   remove?: (videoId: string) => Promise<void>;
   restore?: (videoId: string) => Promise<void>;
-  /** The row heading. Visitors see Continue learning. */
+  /** The row heading from the curated descriptor. Defaults to Continue learning (R14). */
   title?: string;
 }) {
   const [hidden, setHidden] = useState<Set<string>>(new Set());
@@ -168,10 +174,10 @@ export function ContinueRow({
     try {
       await remove(video.id);
       toast.show({
-        message: 'Removed from Continue watching.',
+        message: msg('engage.continue.removed', { row: title }),
         variant: 'info',
         action: {
-          label: 'Undo',
+          label: msg('engage.continue.undo'),
           onClick: () => {
             setHidden((current) => {
               const next = new Set(current);
@@ -204,7 +210,20 @@ export function ContinueRow({
           durationSeconds={video.durationSeconds}
           thumbnail={video.thumbnail}
           progressPercent={progress.durationSeconds > 0 ? percent(progress) : undefined}
-          timeLeftLabel={timeLeftLabel(progress)}
+          timeLeftLabel={
+            progress.nextUp ? msg('engage.continue.startsAtBeginning') : timeLeftLabel(progress)
+          }
+          nextLabel={
+            progress.nextUp
+              ? msg('engage.continue.next', { episode: nextEpisodeLabel(video, progress) })
+              : undefined
+          }
+          titleHref={video.series ? `/series/${video.series.slug}` : `/title/${video.slug}`}
+          menuLabels={{
+            more: msg('engage.continue.more', { title: '{title}' }),
+            remove: msg('engage.continue.remove'),
+            goToTitle: msg('engage.continue.goToTitle'),
+          }}
           onRemove={() => void onRemove(video)}
         />
       ))}

@@ -437,6 +437,7 @@ describe.skipIf(!process.env.TEST_DATABASE_ADMIN_URL)('watch progress', () => {
         positionMs: sec(50),
         durationMs: sec(100),
         nextUp: false,
+        episodeLabel: null,
         resumeFromMs: sec(47),
       });
     });
@@ -556,7 +557,7 @@ describe.skipIf(!process.env.TEST_DATABASE_ADMIN_URL)('watch progress', () => {
       const items = await row();
 
       expect(items).toHaveLength(1);
-      expect(items[0]).toMatchObject({ nextUp: false, positionMs: sec(40) });
+      expect(items[0]).toMatchObject({ nextUp: false, positionMs: sec(40), episodeLabel: 'S1 E2' });
       expect(items[0]?.video.id).toBe(series.episodes[1]!.id);
     });
 
@@ -567,7 +568,12 @@ describe.skipIf(!process.env.TEST_DATABASE_ADMIN_URL)('watch progress', () => {
       const items = await row();
 
       expect(items).toHaveLength(1);
-      expect(items[0]).toMatchObject({ nextUp: true, positionMs: 0, resumeFromMs: 0 });
+      expect(items[0]).toMatchObject({
+        nextUp: true,
+        positionMs: 0,
+        resumeFromMs: 0,
+        episodeLabel: 'S1 E4',
+      });
       expect(items[0]?.video.id).toBe(series.episodes[3]!.id);
       expect(items[0]?.video.episode).toMatchObject({ number: 4 });
     });

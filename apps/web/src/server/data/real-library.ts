@@ -45,17 +45,30 @@ export class RealLibrary implements LibraryRepository {
   async myList(
     ctx: ViewerContext,
     cursor?: string,
-  ): Promise<Page<CatalogItem> & { hiddenCount: number }> {
+    options: Parameters<LibraryRepository['myList']>[2] = {},
+  ): ReturnType<LibraryRepository['myList']> {
     const actor = viewerActor(ctx.accountId);
     const [page, counts] = await Promise.all([
-      listMyList(this.service, actor, { profileId: ctx.profileId, limit: PAGE_SIZE, cursor }),
+      listMyList(this.service, actor, {
+        profileId: ctx.profileId,
+        limit: PAGE_SIZE,
+        cursor,
+        filter: options.filter,
+        sort: options.sort,
+      }),
       countMyList(this.service, actor, { profileId: ctx.profileId }),
     ]);
     return {
       items: page.items.map((item) => cardToItem(item.card)),
-      total: counts.visible,
+      total:
+        options.filter === 'started'
+          ? counts.started
+          : options.filter === 'not_started'
+            ? counts.notStarted
+            : counts.visible,
       nextCursor: page.nextCursor,
       hiddenCount: counts.hidden,
+      counts: { all: counts.visible, started: counts.started, notStarted: counts.notStarted },
     };
   }
 
@@ -93,6 +106,8 @@ export class RealLibrary implements LibraryRepository {
         positionSeconds: Math.round(item.positionMs / 1000),
         durationSeconds: Math.round(item.durationMs / 1000),
         updatedAt: item.updatedAt,
+        nextUp: item.nextUp,
+        episodeLabel: item.episodeLabel,
       },
     }));
   }

@@ -95,6 +95,8 @@ export const removeProgressBody = z.object({ profileId: id, videoId: id });
 export const myListQuery = profileIdQuery.extend({
   limit: z.coerce.number().int().min(1).max(60).optional(),
   cursor: cursor.optional(),
+  filter: z.enum(['all', 'started', 'not_started']).optional(),
+  sort: z.enum(['newest', 'oldest', 'az', 'za']).optional(),
 });
 export const myListAddBody = z.object({
   profileId: id,

@@ -413,3 +413,61 @@ describe('card maturity chip (M44-S13)', () => {
     expect(screen.getByRole('link')).toHaveAccessibleName(/Rated 12/);
   });
 });
+
+describe('ContinueCard polish (M44-S15)', () => {
+  it('shows a Next badge and no progress bar for a next-up episode', () => {
+    const { container } = render(
+      <ContinueCard {...base} nextLabel="Next: E4" timeLeftLabel="Starts at the beginning" />,
+    );
+    expect(screen.getAllByText('Next: E4').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('Starts at the beginning').length).toBeGreaterThan(0);
+    expect(container.querySelector('.ad-card__progress')).toBeNull();
+  });
+
+  it('opens a menu with Remove from row and Go to title page, with a 44px kebab', async () => {
+    const onRemove = vi.fn();
+    render(
+      <ContinueCard
+        {...base}
+        progressPercent={20}
+        onRemove={onRemove}
+        titleHref="/title/save-data"
+        menuLabels={{ more: 'More for {title}', remove: 'Remove from row', goToTitle: 'Go to title page' }}
+      />,
+    );
+    const kebab = screen.getByRole('button', { name: 'More for How to save money on data' });
+    expect(kebab).toHaveAttribute('aria-haspopup', 'menu');
+    expect(kebab).toHaveAttribute('aria-expanded', 'false');
+    await userEvent.click(kebab);
+    expect(screen.getByRole('menu')).toBeInTheDocument();
+    expect(screen.getByRole('menuitem', { name: 'Go to title page' })).toHaveAttribute(
+      'href',
+      '/title/save-data',
+    );
+    await userEvent.click(screen.getByRole('menuitem', { name: 'Remove from row' }));
+    expect(onRemove).toHaveBeenCalledTimes(1);
+    expect(screen.queryByRole('menu')).toBeNull();
+  });
+
+  it('moves with arrow keys, closes on Escape and returns focus to the kebab', async () => {
+    render(
+      <ContinueCard
+        {...base}
+        onRemove={() => {}}
+        titleHref="/title/save-data"
+        menuLabels={{ more: 'More for {title}', remove: 'Remove from row', goToTitle: 'Go to title page' }}
+      />,
+    );
+    const kebab = screen.getByRole('button', { name: /More for/ });
+    kebab.focus();
+    await userEvent.keyboard('{Enter}');
+    expect(screen.getByRole('menuitem', { name: 'Remove from row' })).toHaveFocus();
+    await userEvent.keyboard('{ArrowDown}');
+    expect(screen.getByRole('menuitem', { name: 'Go to title page' })).toHaveFocus();
+    await userEvent.keyboard('{ArrowDown}');
+    expect(screen.getByRole('menuitem', { name: 'Remove from row' })).toHaveFocus();
+    await userEvent.keyboard('{Escape}');
+    expect(screen.queryByRole('menu')).toBeNull();
+    expect(kebab).toHaveFocus();
+  });
+});

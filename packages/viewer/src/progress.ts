@@ -57,12 +57,18 @@ export interface ContinueWatchingItem {
   resumeFromMs: number;
   /** True when the card is the next episode after a finished one (shown as "Next: E4"). */
   nextUp: boolean;
+  /** "S1 E4" for an episode, null for a standalone video. */
+  episodeLabel: string | null;
   /** The video whose progress record backs this card. Pass it to removeProgress for "Remove from row". */
   progressVideoId: string;
   updatedAt: string;
 }
 
 const HISTORY_SCAN_LIMIT = 200;
+
+function episodeLabelOf(card: VideoCard): string | null {
+  return card.episode ? `S${card.episode.seasonNumber} E${card.episode.number}` : null;
+}
 
 export function isFinished(rules: ViewerRules, positionMs: number, durationMs: number): boolean {
   return (
@@ -443,6 +449,7 @@ export async function loadContinueWatching(
         durationMs: row.durationMs,
         resumeFromMs: resumeInfo(rules, row).resumeFromMs,
         nextUp: false,
+        episodeLabel: episodeLabelOf(card),
         progressVideoId: row.videoId,
         updatedAt: row.updatedAt.toISOString(),
       });
@@ -464,6 +471,7 @@ export async function loadContinueWatching(
         durationMs: next.durationMs,
         resumeFromMs: 0,
         nextUp: true,
+        episodeLabel: episodeLabelOf(next),
         progressVideoId: row.videoId,
         updatedAt: row.updatedAt.toISOString(),
       });

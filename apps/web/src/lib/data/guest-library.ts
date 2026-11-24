@@ -24,7 +24,7 @@ export const guestLibrary: LibraryRepository = {
 export function forGuests(inner: LibraryRepository): LibraryRepository {
   const pick = (ctx: { guest?: true }) => (ctx.guest ? guestLibrary : inner);
   return {
-    myList: (ctx, cursor) => pick(ctx).myList(ctx, cursor),
+    myList: (ctx, cursor, options) => pick(ctx).myList(ctx, cursor, options),
     myListIds: (ctx) => pick(ctx).myListIds(ctx),
     addToList: (ctx, key) => pick(ctx).addToList(ctx, key),
     removeFromList: (ctx, key) => pick(ctx).removeFromList(ctx, key),

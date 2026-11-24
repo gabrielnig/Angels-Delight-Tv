@@ -22,6 +22,18 @@ type ViewerTx = Parameters<Parameters<ViewerContext['db']['transaction']>[0]>[0]
 
 export const MY_LIST_FULL_MESSAGE = 'My List is full';
 
+export type MyListFilter = 'all' | 'started' | 'not_started';
+export type MyListSort = 'newest' | 'oldest' | 'az' | 'za';
+
+/** A saved title counts as started once a progress row passes the minimum or is finished, for the video or any episode. */
+function startedSql(minProgressMs: number) {
+  return sql`EXISTS (SELECT 1 FROM watch_progress wp
+    WHERE wp.profile_id = ml.profile_id AND (wp.completed OR wp.position_ms >= ${minProgressMs})
+      AND (wp.video_id = ml.video_id OR wp.video_id IN (
+        SELECT ep.video_id FROM seasons sn JOIN episodes ep ON ep.season_id = sn.id
+        WHERE sn.series_id = ml.series_id)))`;
+}
+
 export interface MyListItem {
   card: TitleCardDto;
   addedAt: string;
@@ -125,7 +137,13 @@ function isMyListCursor(value: unknown): value is MyListCursor {
 export async function listMyList(
   ctx: ViewerContext,
   actor: Actor,
-  input: { profileId: string; limit?: number; cursor?: string },
+  input: {
+    profileId: string;
+    limit?: number;
+    cursor?: string;
+    filter?: MyListFilter;
+    sort?: MyListSort;
+  },
 ): Promise<Page<MyListItem>> {
   return withAccount(ctx.db, actor, async (tx) =>
     loadMyList(tx, ctx, await loadOwnedProfile(tx, actor, input.profileId), input),
@@ -137,27 +155,45 @@ export async function loadMyList(
   tx: ViewerTx,
   ctx: ViewerContext,
   profile: Pick<typeof profiles.$inferSelect, 'id' | 'isKids' | 'maxMaturityRank'>,
-  input: { limit?: number; cursor?: string },
+  input: { limit?: number; cursor?: string; filter?: MyListFilter; sort?: MyListSort },
 ): Promise<Page<MyListItem>> {
   const limit = clampLimit(input.limit, PAGE_SIZE, MAX_PAGE_SIZE);
   const cursor = input.cursor === undefined ? null : decodeCursor(input.cursor, isMyListCursor);
   const now = clockOf(ctx);
   const audience = audienceOf(profile);
+  const sort = input.sort ?? 'newest';
+  const filter = input.filter ?? 'all';
+  const byTitle = sort === 'az' || sort === 'za';
+  const ascending = sort === 'oldest' || sort === 'az';
+  const keyExpr = byTitle
+    ? sql`ad_unaccent(lower(coalesce(v.title, s.title)))`
+    : sql`ml.added_at`;
+  const keyCast = byTitle ? sql`text` : sql`timestamptz`;
+  const compare = ascending ? sql`>` : sql`<`;
   const after = cursor
-    ? sql` AND (ml.added_at, ml.id) < (${cursor.k}::timestamptz, ${cursor.i}::uuid)`
+    ? sql` AND (${keyExpr}, ml.id) ${compare} (${cursor.k}::${keyCast}, ${cursor.i}::uuid)`
     : sql``;
+  const started = startedSql(rulesOf(ctx).minProgressMs);
+  const filterSql =
+    filter === 'started'
+      ? sql` AND ${started}`
+      : filter === 'not_started'
+        ? sql` AND NOT ${started}`
+        : sql``;
+  const order = ascending ? sql`ASC` : sql`DESC`;
   const result = await tx.execute(sql`
-    SELECT ml.id, ml.added_at::text AS added_at_text, ml.video_id, ml.series_id
+    SELECT ml.id, ${keyExpr}::text AS key_text, ml.added_at::text AS added_at_text, ml.video_id, ml.series_id
     FROM my_list ml
     LEFT JOIN videos v ON v.id = ml.video_id
     LEFT JOIN series s ON s.id = ml.series_id
     WHERE ml.profile_id = ${profile.id}::uuid
       AND ((ml.video_id IS NOT NULL AND v.kind = 'standalone' AND ${liveVideoSql('v', audience, now)})
-        OR (ml.series_id IS NOT NULL AND ${liveSeriesSql('s', audience, now)}))${after}
-    ORDER BY ml.added_at DESC, ml.id DESC
+        OR (ml.series_id IS NOT NULL AND ${liveSeriesSql('s', audience, now)}))${filterSql}${after}
+    ORDER BY ${keyExpr} ${order}, ml.id ${order}
     LIMIT ${limit + 1}`);
   const rows = rowsOf<{
     id: string;
+    key_text: string;
     added_at_text: string;
     video_id: string | null;
     series_id: string | null;
@@ -180,7 +216,7 @@ export async function loadMyList(
   return {
     items,
     nextCursor:
-      rows.length > limit && last ? encodeCursor({ k: last.added_at_text, i: last.id }) : null,
+      rows.length > limit && last ? encodeCursor({ k: byTitle ? last.key_text : last.added_at_text, i: last.id }) : null,
   };
 }
 
@@ -189,6 +225,9 @@ export interface MyListCounts {
   visible: number;
   /** Saved titles kept but not shown, for example grown-up titles on a kids profile (M10-S03). */
   hidden: number;
+  /** Visible titles with real watching behind them, for the filter chips (S128). */
+  started: number;
+  notStarted: number;
 }
 
 export async function countMyList(
@@ -203,13 +242,25 @@ export async function countMyList(
     const result = await tx.execute(sql`
       SELECT count(*)::int AS saved,
         count(*) FILTER (WHERE (ml.video_id IS NOT NULL AND v.kind = 'standalone' AND ${liveVideoSql('v', audience, now)})
-          OR (ml.series_id IS NOT NULL AND ${liveSeriesSql('s', audience, now)}))::int AS visible
+          OR (ml.series_id IS NOT NULL AND ${liveSeriesSql('s', audience, now)}))::int AS visible,
+        count(*) FILTER (WHERE ((ml.video_id IS NOT NULL AND v.kind = 'standalone' AND ${liveVideoSql('v', audience, now)})
+          OR (ml.series_id IS NOT NULL AND ${liveSeriesSql('s', audience, now)}))
+          AND ${startedSql(rulesOf(ctx).minProgressMs)})::int AS started
       FROM my_list ml
       LEFT JOIN videos v ON v.id = ml.video_id
       LEFT JOIN series s ON s.id = ml.series_id
       WHERE ml.profile_id = ${profile.id}::uuid`);
-    const row = rowsOf<{ saved: number; visible: number }>(result)[0] ?? { saved: 0, visible: 0 };
-    return { visible: row.visible, hidden: row.saved - row.visible };
+    const row = rowsOf<{ saved: number; visible: number; started: number }>(result)[0] ?? {
+      saved: 0,
+      visible: 0,
+      started: 0,
+    };
+    return {
+      visible: row.visible,
+      hidden: row.saved - row.visible,
+      started: row.started,
+      notStarted: row.visible - row.started,
+    };
   });
 }
 
