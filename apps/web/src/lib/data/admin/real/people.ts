@@ -1,4 +1,5 @@
 import 'server-only';
+import { runUserBulk, undoUserBulk, userBulkFor } from '../user-bulk';
 import { writeAudit } from '@ad/audit';
 import { schema } from '@ad/db';
 import { withAccount } from '@ad/db';
@@ -168,6 +169,14 @@ export const realPeopleService: PeopleService = {
       return staffFailure(error);
     }
     return changeStatus(actor, id, 'active', '');
+  },
+  async bulkUsers(actor, ids, action, bulkId) {
+    need(actor, 'users.bulk');
+    return runUserBulk(userBulkFor(realPeopleService, actor), actor.accountId, ids, action, bulkId);
+  },
+  async undoUsers(actor, undo) {
+    need(actor, 'users.bulk');
+    return undoUserBulk(userBulkFor(realPeopleService, actor), actor.accountId, undo);
   },
   async revokeSessions(actor, id, reason) {
     try {

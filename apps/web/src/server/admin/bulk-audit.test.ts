@@ -31,6 +31,21 @@ describe('recordBulk', () => {
     expect(items.every((r) => r.actorAccountId === 'acc-1' && r.outcome === 'success')).toBe(true);
   });
 
+  it('keeps the shared reason on the summary row', async () => {
+    const { rows, write } = fake();
+    await recordBulk(write, actor, {
+      action: 'user.bulk_suspend',
+      label: 'Suspend accounts',
+      targetType: 'user',
+      bulkId: 'b',
+      ids: ['a'],
+      outcome: { ...emptyOutcome('b'), succeeded: ['a'] },
+      reason: 'Abuse reports',
+      itemRows: false,
+    });
+    expect(rows[0]?.extra).toMatchObject({ reason: 'Abuse reports' });
+  });
+
   it('caps the id list in the summary at 50', async () => {
     const { rows, write } = fake();
     const ids = Array.from({ length: 120 }, (_, i) => `id-${i}`);

@@ -181,6 +181,29 @@ describe.skipIf(!integrationEnabled())('real people service', () => {
     expect((await auditFor(kemi.id))[0]).toMatchObject({ action: 'user.sessions_revoked' });
   });
 
+  it('bulk support actions are admin only, skip the actor and keep going after a skip', async () => {
+    const a = await viewer('Bulk A', 'bulk.a@example.com');
+    const b = await viewer('Bulk B', 'bulk.b@example.com');
+    await expect(
+      realPeopleService.bulkUsers(editor, [a.id], { type: 'suspend', reason: 'forged' }, 'x'),
+    ).rejects.toThrow();
+    expect((await realPeopleService.user(admin, a.id)).status).toBe('active');
+    const out = await realPeopleService.bulkUsers(
+      admin,
+      [a.id, b.id, admin.accountId],
+      { type: 'suspend', reason: 'Abuse reports' },
+      'bulk-1',
+    );
+    expect(out.succeeded).toEqual([a.id, b.id]);
+    expect(out.skipped).toEqual([
+      { id: admin.accountId, reason: 'You cannot do this to your own account.' },
+    ]);
+    expect((await realPeopleService.user(admin, a.id)).status).toBe('suspended');
+    const undone = await realPeopleService.undoUsers(admin, out.undo!);
+    expect(undone.succeeded.sort()).toEqual([a.id, b.id].sort());
+    expect((await realPeopleService.user(admin, a.id)).status).toBe('active');
+  });
+
   describe('staff, invites and roles behind a recent password confirmation', () => {
     it('lists staff with names and two factor state, and starts with no invites', async () => {
       const result = await realPeopleService.staff(boss);
