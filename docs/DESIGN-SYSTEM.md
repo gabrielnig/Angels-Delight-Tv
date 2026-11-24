@@ -90,6 +90,9 @@ All tokens are CSS custom properties on `:root`. Admin theme settings write over
 | `--color-danger` / `-tint` | `#B42318` / `#FDECEA` | Fixed | Error and destructive |
 | `--color-warning` / `-tint` | `#8A5A00` / `#FFF3D6` | Fixed | Warning |
 | `--color-info` / `-tint` | `#1F6FB5` / `#E3F1FF` | Fixed | Info |
+| `--color-info-ink` | `#14568F` | Fixed | Text on info tint (6.63:1) |
+| `--color-success-ink` | `#14532D` | Fixed | Text on success tint (7.99:1) |
+| `--color-warning-ink` | `#5E3D00` | Fixed | Text on warning tint (8.88:1) |
 | `--color-sidebar-bg` | `#17181C` | Fixed | Admin sidebar |
 | `--color-sidebar-ink` / `-muted` | `#FFFFFF` / `#A9AEB9` | Fixed | Sidebar text |
 | `--color-sidebar-hover` / `-active` | `#23252B` / `#2E3138` | Fixed | Sidebar item states |
