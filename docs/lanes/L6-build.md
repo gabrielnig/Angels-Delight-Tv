@@ -8,7 +8,8 @@ Plan: `docs/plan/v2/L6-discovery.md`. Rulings: `docs/plan/v2/RULINGS.md`. Review
 |---|---|---|---|
 | 1 | Sitemap and robots line | merged | #283 |
 | 2 | Structured data (JSON-LD), kids only noindex | merged | #292 |
-| 3 | Share images and metadata | in review | |
+| 3 | Share images and metadata | merged | #296 |
+| 4 | Discovery tab, settings, robots and layout metadata | in review | |
 
 ## Slice 1 (sitemap)
 
@@ -32,3 +33,12 @@ Plan: `docs/plan/v2/L6-discovery.md`. Rulings: `docs/plan/v2/RULINGS.md`. Review
 - `apps/web/src/lib/seo/og-image.ts`: geometry, `SCRIM_STOPS`, `scrimAlphaAt`, `scrimCss`, `TITLE_ZONE`, `truncateTitle`, `pickPosterUrl`, `chooseOgImage`.
 - `apps/web/src/server/seo/og-render.tsx` (`renderOgJpeg`, ImageResponse then sharp jpeg under 300 KB), `og-handler.ts` (`createOgHandler`), `og-data.tsx` wiring, route `app/og/[kind]/[slug]/route.ts` (D-280). The default image is `/brand-icons/placeholder-og.png` until the admin Discovery slice wires `seo.defaultSocialAssetId` into `defaultImageUrl`.
 - Message key `og.freeToWatch`. Tests: `pnpm vitest run apps/web/src/lib/seo apps/web/src/server/seo`.
+
+## Slice 4 (Discovery settings)
+
+- `packages/theme/src/settings-discovery.ts`: `DISCOVERY_DEFS`, `SHARE_CHANNELS`, keys `seo.site_description`, `seo.default_social_image_url`, `seo.share_text_template`, `seo.indexing`, `seo.share_channels`, `consent.notice_enabled`, `consent.notice_text`, `consent.notice_version`. Group `discovery`.
+- Admin: `components/admin/site/DiscoveryTab.tsx`, `FormActions.tsx` (moved out of the view, now has `blocked`). Tab id `discovery`.
+- Reader: `lib/site/seo-settings.ts` (`resolveSeoSettings`, `shareText`), `server/seo/seo-settings.ts` (`getSeoSettings`, never throws). Used by `app/layout.tsx`, `app/robots.ts` (async, `lib/seo/robots-rules.ts`) and the share image default.
+- Not built: social image upload (a link for now, D-281). The synonyms editor and misses report join this tab in the search slice.
+- Known: `apps/web/src/app/layout.test.tsx` first test fails on main since the locale work (`next/headers` mock lacks `cookies`); not caused by L6.
+- Tests: `pnpm vitest run packages/theme/src/settings-discovery.test.ts apps/web/src/components/admin/site apps/web/src/lib/site apps/web/src/lib/seo apps/web/src/app/robots.test.ts apps/web/src/app/layout.test.tsx`.

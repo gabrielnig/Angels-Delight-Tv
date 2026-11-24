@@ -1,8 +1,8 @@
 import 'server-only';
 import { msg } from '@ad/shared/messages';
 import { getCatalog } from '../../lib/data';
-import { PLACEHOLDER_OG } from '../../lib/seo/og-image';
 import { getRootTheme } from '../../lib/theme/root';
+import { getSeoSettings } from './seo-settings';
 import { createOgHandler } from './og-handler';
 import { renderOgJpeg } from './og-render';
 
@@ -21,7 +21,7 @@ export const ogHandler = createOgHandler({
   preview: (slug, kind) => getCatalog().publicPreview(slug, kind),
   siteName: async () => (await getRootTheme()).platformName,
   freeLine: () => msg('og.freeToWatch'),
-  defaultImageUrl: async () => PLACEHOLDER_OG,
+  defaultImageUrl: async () => (await getSeoSettings()).socialImageUrl,
   fetchPoster,
   render: renderOgJpeg,
 });

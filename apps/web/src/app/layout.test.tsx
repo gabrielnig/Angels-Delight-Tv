@@ -2,6 +2,14 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const getRootTheme = vi.fn();
+const seo = vi.hoisted(() => ({
+  value: {
+    description: 'Free learning videos for everyone.',
+    socialImageUrl: '/brand-icons/placeholder-og.png',
+    indexing: true,
+  },
+}));
+vi.mock('../server/seo/seo-settings', () => ({ getSeoSettings: async () => seo.value }));
 vi.mock('../lib/theme/root', () => ({ getRootTheme: (nonce?: string) => getRootTheme(nonce) }));
 vi.mock('next/headers', () => ({
   headers: async () => new Headers({ 'x-nonce': 'abc123' }),
@@ -40,6 +48,11 @@ describe('root layout', () => {
   beforeEach(() => {
     getRootTheme.mockReset();
     getRootTheme.mockResolvedValue(theme);
+    seo.value = {
+      description: 'Free learning videos for everyone.',
+      socialImageUrl: '/brand-icons/placeholder-og.png',
+      indexing: true,
+    };
   });
 
   it('injects the published theme with the request nonce and keeps the PWA client and web vitals', async () => {
@@ -60,5 +73,23 @@ describe('root layout', () => {
     expect(metadata.icons).toMatchObject({ icon: [{ url: '/brand-icons/favicon-32.png' }] });
     expect(metadata.openGraph?.images).toEqual(['/brand-icons/placeholder-og.png']);
     expect(metadata.title).toEqual({ default: 'Sister V TV', template: '%s | Sister V TV' });
+  });
+
+  it('uses the configured description and social image for every page (M45-S05)', async () => {
+    seo.value = {
+      description: 'Lessons for every family',
+      socialImageUrl: 'https://cdn.test/og.jpg',
+      indexing: true,
+    };
+    const metadata = await generateMetadata();
+    expect(metadata.description).toBe('Lessons for every family');
+    expect(metadata.openGraph?.images).toEqual(['https://cdn.test/og.jpg']);
+    expect(metadata.openGraph?.description).toBe('Lessons for every family');
+    expect(metadata.robots).toBeUndefined();
+  });
+
+  it('asks for noindex on every page when indexing is off', async () => {
+    seo.value = { ...seo.value, indexing: false };
+    expect((await generateMetadata()).robots).toEqual({ index: false, follow: false });
   });
 });

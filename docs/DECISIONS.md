@@ -1530,3 +1530,9 @@ Per video tri state, site default (Super admin), Admin changes it with a reason 
 - Options: keep the 50, 65, 80 stops and shrink the text, restart the full interval after a hold.
 - Why: Chromium measurements in packages/ui/test/hero-text-zone.test.ts showed a two line title on a 360 wide phone sits at about 77 percent of the hero height, so the earlier stops left it at alpha 0.08 and contrast 1.2 over white art. The test now guards 4.5 to 1 and alpha above 0.57 at 360, 390 and 1360.
 - Reversible: yes, by the scrim tokens.
+
+## D-283 Discovery settings: social image is a link for now, robots follow the indexing switch (M45-S05) (lane L6)
+- Decision: Site description, social image link, share text, indexing, share channels (WhatsApp, Facebook and X on, Email off, Copy link always on) and the storage notice text, switch and version are registry settings in a Discovery tab. The social image is an https link or a site path, not an upload, because the brand image uploader has no social purpose yet. Description falls back to the tagline then a neutral line. robots.txt and a noindex tag close the whole site when indexing is off or the environment is not production.
+- Options: Upload through a new brand image purpose, a link
+- Why: A link ships now and works with any hosted image. An upload is a small follow up on LogoUploader. Staging must never be indexed even when someone forgets the switch.
+- Reversible: Yes

@@ -9,21 +9,27 @@ import { PwaClient } from '../components/pwa/PwaClient';
 import { selectFonts } from '../lib/fonts';
 import { getLocale } from '../lib/i18n/server';
 import { getRootTheme } from '../lib/theme/root';
+import { getSeoSettings } from '../server/seo/seo-settings';
 import { localeInfo } from '@ad/shared/messages';
 import { Providers } from './providers';
 
 export async function generateMetadata(): Promise<Metadata> {
-  const { platformName } = await getRootTheme();
+  const [{ platformName }, seo] = await Promise.all([getRootTheme(), getSeoSettings()]);
   const origin = process.env.APP_ORIGIN;
   return {
     ...(origin ? { metadataBase: new URL(origin) } : {}),
     title: { default: platformName, template: `%s | ${platformName}` },
-    description: 'Free learning videos for everyone.',
+    description: seo.description,
+    ...(seo.indexing ? {} : { robots: { index: false, follow: false } }),
     icons: {
       icon: [{ url: '/brand-icons/favicon-32.png', sizes: '32x32', type: 'image/png' }],
       apple: '/brand-icons/apple-touch-icon.png',
     },
-    openGraph: { siteName: platformName, images: ['/brand-icons/placeholder-og.png'] },
+    openGraph: {
+      siteName: platformName,
+      description: seo.description,
+      images: [seo.socialImageUrl],
+    },
     appleWebApp: { capable: true, title: platformName, statusBarStyle: 'default' },
   };
 }
@@ -39,7 +45,11 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
   const locale = await getLocale();
   const fonts = selectFonts(theme.injection.fontKey, locale);
   return (
-    <html lang={localeInfo(locale)?.htmlLang ?? 'en-NG'} className={fonts.classNames} style={fonts.variables as CSSProperties}>
+    <html
+      lang={localeInfo(locale)?.htmlLang ?? 'en-NG'}
+      className={fonts.classNames}
+      style={fonts.variables as CSSProperties}
+    >
       <head>
         <style {...theme.styleProps} />
       </head>
