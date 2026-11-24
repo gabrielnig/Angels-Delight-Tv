@@ -5,10 +5,15 @@ export const GUEST_INTENT_KEY = 'ad:guest:intent:v1';
 export const GUEST_INTENT_MAX_AGE_MS = 30 * 60 * 1000;
 
 export type IntentKind = 'my-list' | 'like';
+export type IntentRating = -1 | 1 | 2;
 export interface GuestIntent {
   kind: IntentKind;
   itemKey: string;
+  /** The rating a visitor picked before signing in. Only a like carries one (M44-S04). */
+  value?: IntentRating;
 }
+
+const RATINGS: readonly unknown[] = [-1, 1, 2];
 
 const KINDS: readonly string[] = ['my-list', 'like'];
 const ITEM_KEY = /^(video|series):[A-Za-z0-9_-]{1,64}$/;
@@ -33,7 +38,11 @@ export function saveIntent(
 ): void {
   if (!store || !ITEM_KEY.test(intent.itemKey)) return;
   try {
-    store.setItem(GUEST_INTENT_KEY, JSON.stringify({ v: 1, ...intent, t: now }));
+    const value = intent.kind === 'like' && RATINGS.includes(intent.value) ? intent.value : undefined;
+    store.setItem(
+      GUEST_INTENT_KEY,
+      JSON.stringify({ v: 1, kind: intent.kind, itemKey: intent.itemKey, value, t: now }),
+    );
   } catch {
     // Not remembered. The visitor can save again after signing in.
   }
@@ -63,7 +72,13 @@ export function takeIntent(
     remove(store);
     return null;
   }
-  const value = parsed as { v?: unknown; kind?: unknown; itemKey?: unknown; t?: unknown };
+  const value = parsed as {
+    v?: unknown;
+    kind?: unknown;
+    itemKey?: unknown;
+    value?: unknown;
+    t?: unknown;
+  };
   const valid =
     value !== null &&
     typeof value === 'object' &&
@@ -85,5 +100,7 @@ export function takeIntent(
   }
   if (!kinds.includes(kind)) return null;
   remove(store);
-  return { kind, itemKey: value.itemKey as string };
+  const intent: GuestIntent = { kind, itemKey: value.itemKey as string };
+  if (kind === 'like' && RATINGS.includes(value.value)) intent.value = value.value as IntentRating;
+  return intent;
 }

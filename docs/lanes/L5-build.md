@@ -42,3 +42,8 @@ Scoped tests: `TEST_DATABASE_ADMIN_URL=postgres://postgres:postgres@localhost:54
 - NOT done: `popularTitles` still the old video only function (series in Popular, `fallbackTitle`), shared cache key by audience tier, `RankedRow` component and HomeView mapping, HomeCuration type picker, SystemView "Trending last refreshed", default launch seed rows, `trending.*` settings keys, refresh after the nightly rollup.
 
 ## Slice 11 (partial): DATA-MODEL My List cap now says 500 (matches `DEFAULT_RULES.maxMyListItems`).
+
+## Slice 4c (merged by L5a): guest like replay
+- `GuestIntent` has an optional `value` (-1, 1, 2) kept only for a like; a bad value is dropped on read. `TitleRating` remembers the tapped value and passes it to `SignInToSaveDialog`.
+- `GuestIntentApplier` now takes both kinds. A like with a value is replayed through `PUT /api/ratings` for the active profile (toast "Rating saved" or the error text). A like with no value is dropped.
+- Tests: `apps/web/src/lib/guest/intent.test.ts`, `components/guest/GuestIntentApplier.test.tsx`, `components/engage/TitleRating.test.tsx`.

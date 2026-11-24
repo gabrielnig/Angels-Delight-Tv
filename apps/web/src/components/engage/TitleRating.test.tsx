@@ -44,4 +44,18 @@ describe('TitleRating', () => {
     expect(await screen.findByRole('dialog')).toBeInTheDocument();
     expect(fetchMock).not.toHaveBeenCalled();
   });
+
+  it('remembers the chosen value for after sign in', async () => {
+    localStorage.clear();
+    vi.stubGlobal('fetch', vi.fn());
+    wrap(<TitleRating guest={{ signUpOpen: true, next: '/title/a', itemKey: 'video:v1' }} />);
+    await userEvent.click(screen.getByRole('button', { name: 'Love this' }));
+    const dialog = await screen.findByRole('dialog');
+    await userEvent.click(within(dialog).getAllByRole('link')[0]!);
+    expect(JSON.parse(localStorage.getItem('ad:guest:intent:v1')!)).toMatchObject({
+      kind: 'like',
+      itemKey: 'video:v1',
+      value: 2,
+    });
+  });
 });
