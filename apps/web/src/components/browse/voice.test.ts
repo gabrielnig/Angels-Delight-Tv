@@ -55,7 +55,7 @@ describe('voice search copy and rules', () => {
 
   it('never uses dashes or a promise about what the browser vendor does', () => {
     for (const code of ['not-allowed', 'no-speech', 'network', 'other']) {
-      expect(voiceErrorMessage(code)).not.toMatch(/[–—]/);
+      expect(voiceErrorMessage(code)).not.toMatch(new RegExp(`[${String.fromCharCode(0x2013, 0x2014)}]`));
     }
   });
 
