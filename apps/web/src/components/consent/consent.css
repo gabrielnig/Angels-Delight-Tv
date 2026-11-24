@@ -1,0 +1,151 @@
+/* Storage notice (S138, DESIGN-SYSTEM 11.13). Layer 30, below modals (40) and toasts (50). Phones sit above the tab
+   bar, 600 to 1023 spans the width, 1024 and wider is bottom right so the bottom left toast never meets it. */
+.ad-notice {
+  position: fixed;
+  z-index: var(--z-overlay);
+  left: var(--space-4);
+  right: var(--space-4);
+  bottom: calc(var(--tabbar-height) + env(safe-area-inset-bottom) + var(--space-2));
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: var(--space-2) var(--space-4);
+  padding: var(--space-4) var(--space-5);
+  background: var(--color-surface);
+  color: var(--color-ink);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-3);
+  animation: ad-notice-in var(--motion-fast) linear;
+}
+
+@keyframes ad-notice-in {
+  from {
+    opacity: 0;
+  }
+}
+
+.ad-notice__text {
+  grid-column: 1 / -1;
+  margin: 0;
+  font-size: var(--text-small);
+  line-height: 1.5;
+}
+
+.ad-notice__link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  font-size: var(--text-small);
+  color: var(--color-primary);
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.ad-notice__button {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+@media (min-width: 600px) {
+  .ad-notice {
+    left: var(--space-6);
+    right: var(--space-6);
+    grid-template-columns: 1fr auto auto;
+  }
+  .ad-notice__text {
+    grid-column: 1;
+    grid-row: 1;
+  }
+  .ad-notice__link {
+    grid-row: 1;
+  }
+}
+
+/* The tab bar is hidden from 960. */
+@media (min-width: 960px) {
+  .ad-notice {
+    bottom: var(--space-6);
+  }
+}
+
+@media (min-width: 1024px) {
+  .ad-notice {
+    left: auto;
+    right: var(--space-6);
+    width: 27.5rem;
+    max-width: calc(100vw - 3rem);
+    grid-template-columns: 1fr auto;
+  }
+  .ad-notice__text {
+    grid-column: 1 / -1;
+    grid-row: auto;
+  }
+  .ad-notice__link {
+    grid-row: auto;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ad-notice {
+    animation: none;
+  }
+}
+
+/* Privacy page storage list (S138 state 8) */
+.ad-storage {
+  display: grid;
+  gap: var(--space-4);
+  margin-top: var(--space-8);
+  scroll-margin-top: var(--space-8);
+}
+
+.ad-storage__heading {
+  margin: 0;
+  font-size: var(--text-h3);
+}
+
+.ad-storage__intro {
+  margin: 0;
+  max-width: 40rem;
+  color: var(--color-muted);
+}
+
+.ad-storage__scroll {
+  overflow-x: auto;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+.ad-storage__table {
+  width: 100%;
+  min-width: 40rem;
+  border-collapse: collapse;
+  font-size: var(--text-small);
+  text-align: left;
+}
+
+.ad-storage__table thead th {
+  height: 2.5rem;
+  padding: 0 var(--space-4);
+  background: var(--color-surface-sunken);
+  color: var(--color-ink);
+  font-size: var(--text-micro);
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.ad-storage__table tbody th,
+.ad-storage__table td {
+  padding: var(--space-4);
+  vertical-align: top;
+  border-top: 1px solid var(--color-border);
+}
+
+.ad-storage__name {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
