@@ -11,6 +11,9 @@ export type RowState = 'ready' | 'loading' | 'error';
 
 export function Row({
   title,
+  viewAllHref,
+  viewAllLabel = 'View all',
+  viewAllExternal = false,
   seeAllHref,
   state = 'ready',
   onRetry,
@@ -20,6 +23,12 @@ export function Row({
   className,
 }: {
   title: string;
+  /** Where View all goes. Leave out for no link (M41-S08). */
+  viewAllHref?: string;
+  viewAllLabel?: string;
+  /** An https link to another site: marked, and opened with rel noopener noreferrer. */
+  viewAllExternal?: boolean;
+  /** Deprecated alias of viewAllHref. */
   seeAllHref?: string;
   state?: RowState;
   onRetry?: () => void;
@@ -30,6 +39,7 @@ export function Row({
   className?: string;
 }) {
   const headingId = useId();
+  const allHref = viewAllHref ?? seeAllHref;
   const listRef = useRef<HTMLUListElement>(null);
   const [edges, setEdges] = useState({ prev: false, next: false });
   const items = Children.toArray(children);
@@ -76,9 +86,15 @@ export function Row({
         <h2 id={headingId} className="ad-row__title">
           {title}
         </h2>
-        {seeAllHref && state === 'ready' ? (
-          <Link href={seeAllHref} className="ad-row__all" aria-label={`See all ${title}`}>
-            See all
+        {allHref && state === 'ready' ? (
+          <Link
+            href={allHref}
+            className="ad-row__all"
+            aria-label={`${viewAllLabel} ${title}${viewAllExternal ? ", opens another site" : ""}`}
+            {...(viewAllExternal ? { rel: 'noopener noreferrer', target: '_blank' } : {})}
+          >
+            {viewAllLabel}
+            {viewAllExternal ? <span className="ad-sr-only"> (opens another site)</span> : null}
           </Link>
         ) : null}
       </div>

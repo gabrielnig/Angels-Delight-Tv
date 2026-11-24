@@ -35,7 +35,7 @@ describe('Row', () => {
         {cards}
       </Row>,
     );
-    expect(screen.getByRole('link', { name: 'See all Health' })).toHaveAttribute(
+    expect(screen.getByRole('link', { name: 'View all Health' })).toHaveAttribute(
       'href',
       '/browse/health',
     );
@@ -134,5 +134,53 @@ describe('Row', () => {
     expect(screen.getByRole('alert')).toHaveTextContent('Could not load this row.');
     await userEvent.setup().click(screen.getByRole('button', { name: 'Try again' }));
     expect(onRetry).toHaveBeenCalled();
+  });
+
+  it('renders View all with the label prop, always in the DOM and focusable', () => {
+    render(
+      <Row title="Health" viewAllHref="/browse/health" viewAllLabel="See everything">
+        {cards}
+      </Row>,
+    );
+    const link = screen.getByRole('link', { name: 'See everything Health' });
+    expect(link).toHaveAttribute('href', '/browse/health');
+    expect(link).toHaveTextContent('See everything');
+    link.focus();
+    expect(link).toHaveFocus();
+  });
+
+  it('defaults the label to View all', () => {
+    render(
+      <Row title="New this week" viewAllHref="/browse/new">
+        {cards}
+      </Row>,
+    );
+    expect(screen.getByRole('link', { name: 'View all New this week' })).toBeInTheDocument();
+  });
+
+  it('marks an external link and opens it safely', () => {
+    render(
+      <Row title="Partner" viewAllHref="https://example.org/x" viewAllExternal>
+        {cards}
+      </Row>,
+    );
+    const link = screen.getByRole('link', { name: /View all Partner/ });
+    expect(link).toHaveAttribute('rel', 'noopener noreferrer');
+    expect(link).toHaveAttribute('target', '_blank');
+    expect(link).toHaveTextContent('opens another site');
+  });
+
+  it('draws no link without a target', () => {
+    render(<Row title="Continue learning">{cards}</Row>);
+    expect(screen.queryByRole('link', { name: /View all/ })).toBeNull();
+  });
+
+  it('still accepts the old seeAllHref prop as View all', () => {
+    render(
+      <Row title="Health" seeAllHref="/browse/health">
+        {cards}
+      </Row>,
+    );
+    expect(screen.getByRole('link', { name: 'View all Health' })).toBeInTheDocument();
   });
 });
