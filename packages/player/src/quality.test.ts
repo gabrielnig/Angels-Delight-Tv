@@ -4,6 +4,7 @@ import {
   detectLowData,
   effectiveCap,
   pickStartHeight,
+  readNetworkHints,
   type QualityState,
 } from './quality';
 
@@ -15,6 +16,18 @@ describe('detectLowData', () => {
     expect(detectLowData({ effectiveType: 'slow-2g' })).toBe(true);
     expect(detectLowData({ effectiveType: '2g' })).toBe(true);
     expect(detectLowData({ effectiveType: '3g' })).toBe(true);
+  });
+  it('is true for a downlink under 1.5 Mbps and false at or above it', () => {
+    expect(detectLowData({ downlink: 1.2 })).toBe(true);
+    expect(detectLowData({ downlink: 1.5 })).toBe(false);
+    expect(detectLowData({ downlink: 0 })).toBe(false);
+    expect(detectLowData({ effectiveType: '4g', downlink: 8 })).toBe(false);
+  });
+  it('reads the downlink from the Network Information API', () => {
+    expect(
+      readNetworkHints({ connection: { saveData: false, effectiveType: '4g', downlink: 0.9 } }),
+    ).toEqual({ saveData: false, effectiveType: '4g', downlink: 0.9 });
+    expect(readNetworkHints({})).toEqual({});
   });
   it('is false for 4g and unknown', () => {
     expect(detectLowData({ effectiveType: '4g' })).toBe(false);

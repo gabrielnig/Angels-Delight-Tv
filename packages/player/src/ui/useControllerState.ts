@@ -37,6 +37,8 @@ export const IDLE_STATE: PlayerState = {
   marker: null,
   chapter: null,
   autoplayNext: false,
+  hint: null,
+  retries: 0,
   announce: '',
 };
 

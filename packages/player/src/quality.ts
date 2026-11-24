@@ -1,26 +1,34 @@
 export interface NetworkHints {
   saveData?: boolean;
   effectiveType?: string;
+  /** Estimated Mbps from the Network Information API. */
+  downlink?: number;
 }
 
 const SLOW_TYPES = new Set(['slow-2g', '2g', '3g']);
+const SLOW_DOWNLINK_MBPS = 1.5;
 
 /** M25 low-data defaults: Save-Data header or a slow effective connection type. */
 export function detectLowData(hints: NetworkHints | undefined | null): boolean {
   if (!hints) return false;
   if (hints.saveData) return true;
-  return hints.effectiveType !== undefined && SLOW_TYPES.has(hints.effectiveType);
+  if (hints.effectiveType !== undefined && SLOW_TYPES.has(hints.effectiveType)) return true;
+  return hints.downlink !== undefined && hints.downlink > 0 && hints.downlink < SLOW_DOWNLINK_MBPS;
 }
 
 /** Read hints from the Network Information API where it exists. */
 export function readNetworkHints(
   nav: unknown = typeof navigator === 'undefined' ? undefined : navigator,
 ): NetworkHints {
-  const conn = (nav as { connection?: { saveData?: boolean; effectiveType?: string } } | undefined)
-    ?.connection;
+  const conn = (
+    nav as
+      | { connection?: { saveData?: boolean; effectiveType?: string; downlink?: number } }
+      | undefined
+  )?.connection;
   const hints: NetworkHints = {};
   if (conn?.saveData !== undefined) hints.saveData = conn.saveData;
   if (conn?.effectiveType !== undefined) hints.effectiveType = conn.effectiveType;
+  if (typeof conn?.downlink === 'number') hints.downlink = conn.downlink;
   return hints;
 }
 

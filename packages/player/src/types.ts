@@ -58,6 +58,10 @@ export interface PlayerQualityState {
   dataSaver: boolean;
 }
 
+export interface PlayerHint {
+  kind: 'locked-quality' | 'data-saver';
+}
+
 export interface PlayerState {
   phase: PlayerPhase;
   playing: boolean;
@@ -84,6 +88,10 @@ export interface PlayerState {
   marker: ActiveMarker | null;
   /** The chapter the viewer is in, or null before the first one or with no chapters. */
   chapter: ActiveChapter | null;
+  /** A one sentence, one action hint about a slow connection, never blaming the viewer (L4-11). */
+  hint: PlayerHint | null;
+  /** Retries in a row since the last time playback ran. The reference line shows from the third. */
+  retries: number;
   /** Autoplay next is on for this viewer. The Settings switch changes it at once, so the end screen follows. */
   autoplayNext: boolean;
   /** Text for the polite live region. */

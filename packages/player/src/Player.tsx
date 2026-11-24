@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { PlayerController } from './controller';
 import type { NetworkMonitor, PageEvents, PlayerEngine } from './engine';
 import type { CaptionStyle } from './captionStyle';
+import { makeReference } from './reference';
 import { readBandwidthSeed, saveBandwidth } from './bandwidth';
 import { createPlayerEngine } from './hlsEngine';
 import type { ProgressSink } from './progress';
@@ -111,10 +112,6 @@ const browserPage: PageEvents = {
   },
 };
 
-function shortReference(): string {
-  return Date.now().toString(36).slice(-6).toUpperCase();
-}
-
 /**
  * The player: a video element, hls.js (or native HLS), the controller and the custom controls.
  * Everything with side effects (sessions, progress, preferences, navigation) comes in through props.
@@ -122,7 +119,7 @@ function shortReference(): string {
 export function Player(props: PlayerProps) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const [controller, setController] = useState<PlayerController | null>(null);
-  const reference = useMemo(shortReference, []);
+  const reference = useMemo(() => makeReference(), []);
   const latest = useRef(props);
   latest.current = props;
   const { videoId, profileId, appOrigin, initialSession } = props;
