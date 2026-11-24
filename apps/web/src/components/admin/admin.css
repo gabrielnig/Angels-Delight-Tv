@@ -1508,6 +1508,7 @@
 }
 .adm-table__check .adm-check {
   justify-content: center;
+  min-width: var(--touch-target);
 }
 .adm-vcell {
   display: flex;
@@ -1566,6 +1567,17 @@
 }
 .adm-vcard--plain {
   grid-template-columns: auto 1fr;
+}
+.adm-vcard > .adm-check {
+  min-width: var(--touch-target);
+  justify-content: center;
+}
+.adm-vcard > .adm-check span {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
 }
 .adm-vcard.is-selected {
   background: var(--color-primary-tint);

@@ -61,3 +61,16 @@ describe('bulk bar css (L3-03, R30, R33, R38)', () => {
     expect(bulk).toMatch(/\.adm-bulk-report__item \{[^}]*min-height:\s*var\(--touch-target\)/);
   });
 });
+
+describe('table tick cells are 44px wide on desktop too', () => {
+  it('keeps the touch target width', () => {
+    expect(block('.adm-table__check .adm-check')).toContain('min-width: var(--touch-target)');
+  });
+});
+
+describe('stacked card tick shows only the box', () => {
+  it('hides the tick label text visually', () => {
+    expect(block('.adm-vcard > .adm-check span')).toContain('clip-path: inset(50%)');
+    expect(block('.adm-vcard > .adm-check')).toContain('min-width: var(--touch-target)');
+  });
+});
