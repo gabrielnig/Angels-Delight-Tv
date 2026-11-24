@@ -41,3 +41,21 @@ describe('list page skeleton geometry', () => {
     expect(css.slice(start, css.indexOf('}', start))).toMatch(/flex:\s*1 1 auto/);
   });
 });
+
+describe('kids rows (R11)', () => {
+  const kidsAt = (minWidth?: number) => {
+    const opener = minWidth === undefined ? '' : `@media (min-width: ${minWidth}px) {\\s*`;
+    const re = new RegExp(`${opener}\\.web-shell\\[data-kids='true'\\] \\{\\s*--cards-visible:\\s*([\\d.]+);`);
+    return re.exec(css)?.[1] ?? null;
+  };
+
+  it('shows 2.3 cards on a phone, not 2.1, so the next card still peeks', () => {
+    expect(kidsAt()).toBe('2.3');
+  });
+
+  it('keeps larger cards than the adult rows from 600 px up', () => {
+    expect(Number(kidsAt(600))).toBeLessThan(3.3);
+    expect(Number(kidsAt(960))).toBeLessThan(4.3);
+    expect(Number(kidsAt(1280))).toBeLessThan(5.3);
+  });
+});

@@ -256,6 +256,7 @@ a {
 
 .web-hero-skeleton {
   aspect-ratio: var(--ratio-hero-mobile);
+  max-height: 85vh;
   background: var(--color-surface-sunken);
 }
 
@@ -270,9 +271,9 @@ a {
   padding: 0 var(--page-gutter);
 }
 
-/* Kids shell: larger cards, so fewer per row. */
+/* Kids shell: larger cards, so fewer per row from 600 px. Phones use 2.3 like the adult rows (R11). */
 .web-shell[data-kids='true'] {
-  --cards-visible: 2.1;
+  --cards-visible: 2.3;
 }
 
 @media (min-width: 600px) {
