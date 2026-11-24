@@ -29,7 +29,7 @@ Plan: `docs/plan/v2/L10-account-and-reach.md` (section 12 wins), rulings R24, R3
 2. (done, S8)
 3. (done, S9)
 4. (done, S10)
-5. Docs: M49 stories, MODULES, BUILD-PLAN, SCREEN-ARCHITECTURE, SECURITY, CLIENT-INPUTS, not now notes (offline downloads, passkeys), decisions D-L10-03 to D-L10-15.
+5. (done, S11, PR 361) Docs and decisions D-320 to D-327. Left: the 16 exact edits to existing M01 to M35 stories in plan section 5.1, and the L4 player wiring for TV keys.
 Owner follow up: the `.claude` skill grep edit for the Google mark (plan 12.2) is not done because the shell must not write there.
 
 ## Scoped tests
