@@ -179,4 +179,105 @@ describe('playback handlers', () => {
       expect((await handlers.key(new Request('https://app/k?pt=t'), VID)).status).toBe(403);
     });
   });
+
+  describe('guest sessions (M40-S02, M40-S03)', () => {
+    function guestSetup(
+      over: {
+        play?: boolean;
+        guest?: { guestId: string; kids: boolean; setCookie?: string } | null;
+      } = {},
+    ) {
+      const calls: unknown[][] = [];
+      const mints: boolean[] = [];
+      const service = {
+        startSession: async (...a: unknown[]) => (calls.push(['session', ...a]), { token: 't' }),
+        startGuestSession: async (...a: unknown[]) => (calls.push(['guest', ...a]), { token: 'g' }),
+      };
+      const handlers = createPlaybackHandlers({
+        service: service as never,
+        getViewer: async (r) => {
+          if (!r.headers.get('cookie')?.includes('acct')) throw new Unauthorized();
+          return { accountId: 'a', profileId: 'p' };
+        },
+        getActor: async (r) => {
+          if (!r.headers.get('cookie')?.includes('acct')) throw new Unauthorized();
+          return { accountId: 'a', role: 'editor' };
+        },
+        assertSameOrigin: (r) => {
+          if (r.headers.get('origin') === 'https://evil.example')
+            throw new Forbidden('Cross site request');
+        },
+        clientIp: () => '9.9.9.9',
+        guestPlayEnabled: async () => over.play ?? true,
+        getGuest: async (_r, o) => {
+          mints.push(o.mint);
+          return over.guest === undefined ? { guestId: 'gid', kids: false } : over.guest;
+        },
+      });
+      return { handlers, calls, mints };
+    }
+    const post = (headers: Record<string, string> = {}) =>
+      new Request('https://app/x', { method: 'POST', headers, body: '{}' });
+
+    it('mints a guest session when there is no account and sets the cookie once', async () => {
+      const { handlers, calls, mints } = guestSetup({
+        guest: { guestId: 'gid', kids: false, setCookie: '__Host-ad_guest=v; Path=/' },
+      });
+      const res = await handlers.session(post(), VID);
+      expect(res.status).toBe(200);
+      expect(res.headers.getSetCookie()).toEqual(['__Host-ad_guest=v; Path=/']);
+      expect(mints).toEqual([true]);
+      expect(calls[0]).toEqual(['guest', { guestId: 'gid', kids: false, ip: '9.9.9.9' }, VID]);
+    });
+
+    it('sets no cookie when the guest cookie already verified', async () => {
+      const { handlers } = guestSetup();
+      const res = await handlers.session(post(), VID);
+      expect(res.status).toBe(200);
+      expect(res.headers.getSetCookie()).toEqual([]);
+    });
+
+    it('lets a valid account session win over a guest cookie', async () => {
+      const { handlers, calls } = guestSetup();
+      const res = await handlers.session(post({ cookie: 'acct' }), VID);
+      expect(res.status).toBe(200);
+      expect(calls[0]?.[0]).toBe('session');
+      expect(res.headers.getSetCookie()).toEqual([]);
+    });
+
+    it('answers 401 and mints nothing when guest play is off', async () => {
+      const { handlers, calls, mints } = guestSetup({ play: false });
+      const res = await handlers.session(post(), VID);
+      expect(res.status).toBe(401);
+      expect(calls).toEqual([]);
+      expect(mints).toEqual([]);
+    });
+
+    it('refuses a cross origin guest POST before any cookie is read or set', async () => {
+      const { handlers, calls, mints } = guestSetup();
+      const res = await handlers.session(post({ origin: 'https://evil.example' }), VID);
+      expect(res.status).toBe(403);
+      expect(calls).toEqual([]);
+      expect(mints).toEqual([]);
+    });
+
+    it('never gives a guest a preview', async () => {
+      const { handlers, calls } = guestSetup();
+      const res = await handlers.session(
+        new Request('https://app/x', { method: 'POST', body: '{"preview":true}' }),
+        VID,
+      );
+      expect(res.status).toBe(401);
+      expect(calls).toEqual([]);
+    });
+
+    it('ignores a profile id sent by a guest', async () => {
+      const { handlers, calls } = guestSetup();
+      await handlers.session(
+        new Request('https://app/x', { method: 'POST', body: '{"profileId":"p9"}' }),
+        VID,
+      );
+      expect(JSON.stringify(calls[0])).not.toContain('p9');
+    });
+  });
 });

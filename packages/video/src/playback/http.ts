@@ -1,15 +1,29 @@
 import { errorResponse, jsonResponse } from '../http/respond';
 import type { PlaybackService } from './service';
-import type { AccountRole } from '@ad/shared';
+import { Unauthorized, type AccountRole } from '@ad/shared';
 
 export interface PlaybackHttpDeps {
-  service: Pick<PlaybackService, 'startSession' | 'startPreview' | 'master' | 'variant' | 'key'>;
+  service: Pick<
+    PlaybackService,
+    'startSession' | 'startGuestSession' | 'startPreview' | 'master' | 'variant' | 'key'
+  >;
   /** The signed in viewer and active profile, or throws Unauthorized. Owned by the auth lane. */
   getViewer(
     request: Request,
   ): Promise<{ accountId: string; profileId: string; kidsLocked?: boolean }>;
   /** The signed in admin or editor, or throws Unauthorized. */
   getActor(request: Request): Promise<{ accountId: string; role: AccountRole }>;
+  /**
+   * The guest for a request with no account. With `mint` the id is created when the cookie is absent or invalid
+   * and `setCookie` carries the header to send, only then. Returns null when `mint` is false and there is no
+   * valid guest cookie. Absent means guests are not supported and an anonymous session is a plain 401.
+   */
+  getGuest?(
+    request: Request,
+    options: { mint: boolean },
+  ): Promise<{ guestId: string; kids: boolean; setCookie?: string } | null>;
+  /** The emergency switch `features.guest_play` (D-G9). Defaults to off when `getGuest` is absent. */
+  guestPlayEnabled?(): Promise<boolean>;
   assertSameOrigin?(request: Request): void;
   /** Client address after trusted proxy handling. */
   clientIp(request: Request): string;
@@ -89,7 +103,24 @@ export function createPlaybackHandlers(deps: PlaybackHttpDeps) {
           const actor = await deps.getActor(request);
           return jsonResponse(await deps.service.startPreview(actor, videoId));
         }
-        const viewer = await deps.getViewer(request);
+        let viewer: Awaited<ReturnType<typeof deps.getViewer>>;
+        try {
+          viewer = await deps.getViewer(request);
+        } catch (error) {
+          if (!(error instanceof Unauthorized) || !deps.getGuest || !deps.guestPlayEnabled)
+            throw error;
+          if (!(await deps.guestPlayEnabled())) throw error;
+          // The same origin check above ran first, so a cross site POST never reads or sets the guest cookie.
+          const guest = await deps.getGuest(request, { mint: true });
+          if (!guest) throw error;
+          const info = await deps.service.startGuestSession(
+            { guestId: guest.guestId, kids: guest.kids, ip: deps.clientIp(request) },
+            videoId,
+          );
+          const response = jsonResponse(info);
+          if (guest.setCookie) response.headers.append('set-cookie', guest.setCookie);
+          return response;
+        }
         // The player names the active profile. Ownership is checked in the service against the account.
         const profileId = typeof body.profileId === 'string' ? body.profileId : viewer.profileId;
         return jsonResponse(

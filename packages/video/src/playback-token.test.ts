@@ -1,3 +1,4 @@
+import { hmacSha256 } from '@ad/shared';
 import { describe, expect, it } from 'vitest';
 import { issuePlaybackToken, secretRing, verifyPlaybackToken } from './playback-token';
 
@@ -74,5 +75,80 @@ describe('playback tokens', () => {
     });
     const result = verifyPlaybackToken(ring, token, { now: () => now });
     expect(result).toMatchObject({ ok: true, claims: { pid: null, pv: true, exp: now + 3600 } });
+  });
+
+  it('issues guest tokens with the guest id as aid, no profile and gst set', () => {
+    const ring = secretRing(k(1));
+    const token = issuePlaybackToken(ring, {
+      videoId: base.videoId,
+      accountId: 'guestid',
+      guest: true,
+      now: () => now,
+    });
+    const result = verifyPlaybackToken(ring, token, { now: () => now });
+    expect(result).toMatchObject({
+      ok: true,
+      claims: { pid: null, aid: 'guestid', gst: true, exp: now + 1800 },
+    });
+    if (result.ok) {
+      expect(result.claims.pv).toBeUndefined();
+      expect(result.claims.kd).toBeUndefined();
+    }
+  });
+
+  it('marks kids mode guest tokens with kd', () => {
+    const ring = secretRing(k(1));
+    const token = issuePlaybackToken(ring, {
+      videoId: base.videoId,
+      accountId: 'guestid',
+      guest: true,
+      kids: true,
+      now: () => now,
+    });
+    expect(verifyPlaybackToken(ring, token, { now: () => now })).toMatchObject({
+      ok: true,
+      claims: { gst: true, kd: true },
+    });
+  });
+
+  it('never issues a guest preview token and rejects one with both gst and pv', () => {
+    const ring = secretRing(k(1));
+    expect(() =>
+      issuePlaybackToken(ring, {
+        videoId: base.videoId,
+        accountId: 'g',
+        guest: true,
+        preview: true,
+      }),
+    ).toThrow();
+    const payload = Buffer.from(
+      JSON.stringify({
+        vid: 'v',
+        pid: null,
+        aid: 'g',
+        iat: now,
+        exp: now + 100,
+        n: 'n',
+        gst: true,
+        pv: true,
+      }),
+    ).toString('base64url');
+    // Sign it properly so only the claim rule can refuse it.
+    const real = issuePlaybackToken(ring, { ...base, now: () => now });
+    const [v, kid] = real.split('.');
+    const head = `${v}.${kid}.${payload}`;
+
+    const mac = Buffer.from(hmacSha256(k(1), head)).toString('base64url');
+    expect(verifyPlaybackToken(ring, `${head}.${mac}`, { now: () => now })).toEqual({
+      ok: false,
+      reason: 'invalid',
+    });
+  });
+
+  it('still verifies a token issued before the guest claims existed', () => {
+    const ring = secretRing(k(1));
+    const token = issuePlaybackToken(ring, { ...base, now: () => now });
+    const result = verifyPlaybackToken(ring, token, { now: () => now });
+    expect(result.ok && result.claims.gst).toBeUndefined();
   });
 });
