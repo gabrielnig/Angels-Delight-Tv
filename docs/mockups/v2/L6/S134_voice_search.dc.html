@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Angels Delight TV Voice search states</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+<style>
+:root{--color-bg:#F5F5F2;--color-surface:#FFFFFF;--color-ink:#1A1C22;--color-muted:#5B606B;--color-border:#DEDDD6;--color-primary:#1F6FB5;--color-accent:#FFC93C;--color-on-primary:#FFFFFF;--color-on-accent:#1A1C22;--color-primary-hover:#1B5F9C;--color-primary-tint:#E3F1FF;--color-border-strong:#8A8D94;--color-surface-sunken:#ECEAE3;--color-focus-ring:#1F6FB5;--color-focus-ring-dark:#FFC93C;--color-success:#1E7A46;--color-success-tint:#E4F4EA;--color-danger:#B42318;--color-danger-tint:#FDECEA;--color-danger-ink:#8F1D13;--color-warning:#8A5A00;--color-warning-tint:#FFF3D6;--color-info-tint:#E3F1FF;--color-sidebar-bg:#17181C;--color-sidebar-muted:#A9AEB9;--color-sidebar-active:#2E3138;--color-player-bg:#0E0F13;--color-player-muted:#B4B8C2;--color-player-rail:#3A3D46;--color-scrim-bottom:rgba(14,15,19,0.85);--color-switch-off:#6E7179;--color-tile-sky:#E3F1FF;--color-tile-mint:#DDF3EA;--color-tile-lemon:#FFF3C9;--color-tile-peach:#FFE3DA;--color-tile-lavender:#ECE4FF;--color-avatar-mint:#BFE3D0;--font-sans:'Inter',system-ui,-apple-system,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;--font-display:'Space Grotesk',var(--font-sans);--radius-xs:4px;--radius-sm:8px;--radius-md:12px;--radius-lg:16px;--shadow-1:0 1px 2px rgba(26,28,34,.08);--shadow-2:0 4px 12px rgba(26,28,34,.12);--shadow-3:0 12px 32px rgba(26,28,34,.18);--shadow-up:0 -4px 12px rgba(26,28,34,.08)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--color-bg);font-family:var(--font-sans);color:var(--color-ink);font-size:16px;line-height:1.5}
+a{color:inherit;text-decoration:none}
+h1,h2,h3,h4{font-family:var(--font-display);margin:0;letter-spacing:-0.01em;color:var(--color-ink)}
+p{margin:0}
+button{font-family:inherit}
+.stband{background:#E9E8E1;border-top:1px solid var(--color-border);border-bottom:1px solid var(--color-border);padding:10px 48px;display:flex;gap:12px;align-items:center;font-size:13px}
+.stband b{white-space:nowrap;background:var(--color-ink);color:#fff;border-radius:4px;padding:3px 8px;font-weight:600}
+.m .stband{padding:10px 16px;align-items:flex-start;line-height:1.4}
+.row{display:flex;gap:16px;align-items:center}
+.col{display:flex;flex-direction:column}
+.wrap{flex-wrap:wrap}
+.muted{color:var(--color-muted)}
+.small{font-size:14px;line-height:1.5}
+.cap{font-size:13px;line-height:1.4}
+.btn{height:44px;min-width:44px;padding:0 20px;border-radius:var(--radius-sm);border:1px solid transparent;font:600 15px var(--font-sans);display:inline-flex;align-items:center;justify-content:center;gap:8px;cursor:pointer;white-space:nowrap}
+.pri{background:var(--color-primary);color:var(--color-on-primary)}
+.sec{background:var(--color-surface);color:var(--color-ink);border-color:var(--color-border-strong)}
+.ghost{background:transparent;color:var(--color-primary);padding:0 12px}
+.dng{background:var(--color-surface);color:var(--color-danger);border-color:var(--color-danger)}
+.acc{background:var(--color-accent);color:var(--color-on-accent)}
+.lnk{color:var(--color-primary);font-weight:600;text-decoration:underline;text-underline-offset:3px}
+.tlink{display:inline-flex;align-items:center;min-height:44px}
+.foc{outline:3px solid var(--color-focus-ring);outline-offset:2px}
+.focd{outline:3px solid var(--color-focus-ring-dark);outline-offset:2px}
+.ib{width:44px;height:44px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;background:var(--color-surface);color:var(--color-ink);flex:0 0 auto;border:0}
+.nav{display:flex;align-items:center;justify-content:space-between;padding:12px 48px;background:var(--color-bg);gap:16px}
+.nav .links{display:flex;gap:8px;font-size:15px;color:var(--color-muted)}
+.nav .links a{min-height:44px;padding:0 10px;display:inline-flex;align-items:center}
+.nav .links a.on{color:var(--color-ink);font-weight:600;box-shadow:inset 0 -3px 0 var(--color-primary)}
+.brand{display:flex;align-items:center;gap:10px;font-family:var(--font-display);font-weight:700;font-size:20px;white-space:nowrap}
+.me{display:inline-flex;align-items:center;gap:10px;height:44px;padding:0 14px 0 6px;border-radius:22px;background:var(--color-surface);font-size:14px;flex:0 0 auto}
+.av{width:32px;height:32px;border-radius:50%;background:var(--color-avatar-mint);display:inline-flex;align-items:center;justify-content:center;font-weight:600;font-size:15px;flex:0 0 auto}
+.fld{position:relative;display:flex;align-items:center;gap:4px;height:48px;background:var(--color-surface);border:1px solid var(--color-border-strong);border-radius:var(--radius-sm);padding:0 2px 0 12px;font-size:16px;min-width:0;width:100%}
+.fld.f{border:2px solid var(--color-primary);outline:3px solid var(--color-focus-ring);outline-offset:2px;padding-left:11px}
+.fld .tx{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fld .prog{position:absolute;left:0;right:0;bottom:0;height:3px;background:var(--color-surface-sunken);border-radius:0 0 6px 6px;overflow:hidden}
+.fld .prog i{display:block;height:3px;width:40%;background:var(--color-primary)}
+.fld .caret{display:inline-block;width:2px;height:20px;background:var(--color-ink);vertical-align:middle;margin-left:1px}
+.vb{width:44px;height:44px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;background:transparent;color:var(--color-ink);flex:0 0 auto;position:relative}
+.vb.on{background:var(--color-primary);color:var(--color-on-primary)}
+.vb.on.pulse:before,.vb.on.pulse:after{content:"";position:absolute;inset:0;border-radius:50%;border:2px solid var(--color-primary);animation:pulse 1.4s ease-out infinite}
+.vb.on.pulse:after{animation-delay:.7s}
+.vb.on.ring{box-shadow:0 0 0 3px var(--color-surface),0 0 0 6px var(--color-primary)}
+@keyframes pulse{from{transform:scale(1);opacity:.7}to{transform:scale(1.9);opacity:0}}
+@media (prefers-reduced-motion:reduce){.vb.on.pulse:before,.vb.on.pulse:after{animation:none;opacity:0}}
+.chip{display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:0 18px;border-radius:999px;background:var(--color-surface);border:1px solid var(--color-border-strong);font-size:14px;font-weight:600;white-space:nowrap;color:var(--color-ink)}
+.chip.on{background:var(--color-primary);border-color:var(--color-primary);color:var(--color-on-primary)}
+.chip small{font-size:13px;font-weight:500;color:var(--color-muted)}
+.bdg{display:inline-flex;align-items:center;gap:6px;height:24px;padding:0 10px;border-radius:var(--radius-xs);font-size:13px;font-weight:600;white-space:nowrap}
+.b-ok{background:var(--color-success-tint);color:var(--color-success)}.b-info{background:var(--color-primary-tint);color:#174F83}.b-warn{background:var(--color-warning-tint);color:var(--color-warning)}.b-bad{background:var(--color-danger-tint);color:var(--color-danger)}.b-neu{background:var(--color-surface-sunken);color:#3F434C}
+.card{background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-md);padding:24px}
+.skel{background:var(--color-surface-sunken);border-radius:8px}
+@media (prefers-reduced-motion:no-preference){.skel{background:linear-gradient(90deg,var(--color-surface-sunken) 0%,var(--color-bg) 50%,var(--color-surface-sunken) 100%);background-size:200% 100%;animation:sh 1.4s linear infinite}}
+@keyframes sh{from{background-position:200% 0}to{background-position:-200% 0}}
+.banner{display:flex;align-items:flex-start;gap:12px;padding:12px 16px;border-radius:var(--radius-sm);font-size:14px;line-height:1.45;border:1px solid}
+.banner.warn{background:var(--color-warning-tint);color:#5E3D00;border-color:#E8C777}
+.banner.err{background:var(--color-danger-tint);color:var(--color-danger-ink);border-color:#F0B4AE}
+.banner.ok{background:var(--color-success-tint);color:#14532D;border-color:#A9D8BC}
+.banner.info{background:var(--color-primary-tint);color:#12263A;border-color:#9CC8EE}
+.banner .grow{flex:1;min-width:0}
+.toast{display:flex;gap:12px;align-items:center;background:var(--color-ink);color:#fff;border-radius:var(--radius-sm);padding:6px 6px 6px 16px;font-size:14px;min-height:48px;box-shadow:var(--shadow-2)}
+.toast .tk{color:#7BE0A0}
+.vc{display:flex;flex-direction:column;gap:8px;min-width:0}
+.vc .th{position:relative;aspect-ratio:16/9;border-radius:var(--radius-sm);overflow:hidden}
+.vc .th svg.art{position:absolute;inset:0;width:100%;height:100%}
+.vc .tt{font-size:14px;font-weight:600;line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.vc .mt{font-size:13px;color:var(--color-muted);margin-top:-4px}
+.vc .ty{position:absolute;left:8px;top:8px;display:inline-flex;align-items:center;gap:4px;height:22px;padding:0 8px;border-radius:var(--radius-xs);background:var(--color-ink);color:#fff;font-size:12px;font-weight:600}
+.vc .du{position:absolute;right:8px;bottom:8px;height:22px;padding:0 6px;border-radius:var(--radius-xs);background:var(--color-ink);color:#fff;font-size:12px;font-weight:600;display:inline-flex;align-items:center;font-variant-numeric:tabular-nums}
+.vc.foc2 .th{outline:3px solid var(--color-focus-ring);outline-offset:2px}
+.vc.ser .th{box-shadow:6px 6px 0 -1px var(--color-border),10px 10px 0 -2px var(--color-border-strong);margin-right:10px;margin-bottom:10px}
+.grid{display:grid;gap:24px}
+.m .grid{gap:16px}
+.pop{position:absolute;background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-md);box-shadow:var(--shadow-2);z-index:30}
+.opt{display:flex;align-items:center;gap:12px;min-height:48px;padding:0 12px;border-radius:var(--radius-sm);font-size:16px}
+.opt .k{margin-left:auto;font-size:13px;color:var(--color-muted)}
+.opt.act{background:var(--color-primary-tint);outline:3px solid var(--color-focus-ring);outline-offset:2px}
+.frame{position:relative;overflow:hidden}
+.scrimbg{position:absolute;inset:0;background:rgba(26,28,34,.6)}
+.dlg{background:var(--color-surface);border-radius:var(--radius-lg);padding:24px;box-shadow:var(--shadow-3);display:flex;flex-direction:column;gap:14px}
+.sheet{background:var(--color-surface);border-radius:var(--radius-lg) var(--radius-lg) 0 0;padding:8px 16px 20px;box-shadow:var(--shadow-3);display:flex;flex-direction:column;gap:6px}
+.handle{width:40px;height:4px;border-radius:2px;background:var(--color-border-strong);margin:4px auto 8px}
+.li{display:flex;align-items:center;gap:14px;min-height:48px;padding:0 12px;border-radius:var(--radius-sm);font-size:16px;font-weight:500}
+.li .k{margin-left:auto;color:var(--color-muted)}
+.inp{height:44px;width:100%;border:1px solid var(--color-border-strong);border-radius:var(--radius-sm);padding:0 12px;font:16px var(--font-sans);background:var(--color-surface);color:var(--color-ink);display:flex;align-items:center;gap:8px}
+.inp.err{border:2px solid var(--color-danger)}
+.lab{font-size:14px;font-weight:600;display:block;margin-bottom:6px}
+.hint{font-size:13px;color:var(--color-muted);margin-top:6px}
+.errt{color:var(--color-danger);font-size:13px;display:flex;gap:6px;align-items:flex-start;margin-top:6px;font-weight:500}
+.sw{flex:0 0 auto;width:48px;height:28px;border-radius:14px;position:relative;background:var(--color-switch-off)}
+.sw i{position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:11px;background:#fff}
+.sw.on{background:var(--color-primary)}.sw.on i{left:23px}
+.foot{display:flex;justify-content:space-between;padding:20px 48px;border-top:1px solid var(--color-border);font-size:14px;color:var(--color-muted);align-items:center;gap:16px}
+.foot .fl{display:flex;gap:24px}
+.m .foot{flex-direction:column;align-items:flex-start;padding:16px}
+.m .foot .fl{gap:16px;flex-wrap:wrap}
+.tabbar{display:flex;background:var(--color-surface);border-top:1px solid var(--color-border)}
+.tabbar span{flex:1;height:56px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-size:12px;font-weight:500;color:var(--color-muted);border-top:3px solid transparent}
+.tabbar span.on{color:var(--color-primary);font-weight:600;border-top-color:var(--color-primary)}
+.mtop{height:56px;display:flex;align-items:center;justify-content:space-between;padding:0 8px 0 16px;background:var(--color-bg);border-bottom:1px solid var(--color-border);gap:8px}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.note{font-size:13px;color:var(--color-muted);line-height:1.45}
+.mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13px}
+
+</style>
+</helmet>
+<div style="width:1360px;background:var(--color-bg);overflow:hidden">
+<div class="stband"><b>State 1 of 6</b><span>First use: one line disclosure with Continue and Cancel, remembered after Continue</span></div>
+<div class="frame" style="height:400px;background:var(--color-bg)"><header class="nav"><div class="row" style="gap:32px;min-width:0"><div class="brand"><svg width="28" height="28" viewBox="0 0 28 28" aria-hidden="true"><circle cx="14" cy="14" r="13" fill="#FFC93C"/><path d="M11 8.5v11l9-5.5z" fill="#1A1C22"/></svg><span>Angels Delight TV</span></div><nav class="links" aria-label="Primary"><a href="#" class=on>Home</a><a href="#">Browse</a><a href="#">My List</a></nav></div><div class="row" style="gap:12px"><div style="width:480px"><div class="fld f" role="combobox" aria-expanded="false"><span class="muted" style="display:flex;width:24px;justify-content:center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:0 0 auto"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg></span><span class="tx muted">Search videos</span><span class="vb" role="button" aria-label="Search by voice" aria-pressed="false"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:0 0 auto"><path d="M12 2a3 3 0 00-3 3v7a3 3 0 006 0V5a3 3 0 00-3-3z"/><path d="M19 10v2a7 7 0 01-14 0v-2"/><path d="M12 19v3"/></svg></span></div></div><span class="me"><span class="av">C</span>Chinedu</span></div></header><div class="scrimbg"></div><div style="position:absolute;left:0;right:0;top:120px;display:flex;justify-content:center"><div class="dlg" role="dialog" aria-modal="true" aria-label="Use your voice to search?" style="width:440px"><h3 style="font-size:20px">Use your voice to search?</h3><p class="muted" style="font-size:15px">Your browser may send what you say to its speech service. We do not keep it.</p><p class="note">We will not ask again on this device.</p><div class="row" style="gap:12px;justify-content:flex-end;flex-wrap:wrap"><a class="btn sec" href="#">Cancel</a><a class="btn pri foc" href="#">Continue</a></div></div></div></div>
+<div class="stband"><b>State 2 of 6</b><span>Listening: toggle on with aria-pressed, a pulse around the microphone</span></div>
+<header class="nav"><div class="row" style="gap:32px;min-width:0"><div class="brand"><svg width="28" height="28" viewBox="0 0 28 28" aria-hidden="true"><circle cx="14" cy="14" r="13" fill="#FFC93C"/><path d="M11 8.5v11l9-5.5z" fill="#1A1C22"/></svg><span>Angels Delight TV</span></div><nav class="links" aria-label="Primary"><a href="#" class=on>Home</a><a href="#">Browse</a><a href="#">My List</a></nav></div><div class="row" style="gap:12px"><div style="width:480px"><div class="fld f" role="combobox" aria-expanded="false"><span class="muted" style="display:flex;width:24px;justify-content:center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:0 0 auto"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg></span><span class="tx muted">Listening</span><span class="vb on pulse" role="button" aria-label="Search by voice" aria-pressed="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:0 0 auto"><path d="M12 2a3 3 0 00-3 3v7a3 3 0 006 0V5a3 3 0 00-3-3z"/><path d="M19 10v2a7 7 0 01-14 0v-2"/><path d="M12 19v3"/></svg></span></div></div><span class="me"><span class="av">C</span>Chinedu</span></div></header><div class="col" style="align-items:center;text-align:center;gap:10px;padding:40px 48px"><p class="small" style="font-weight:600">Listening</p><p class="muted small">Say a subject or a title. Press Escape to stop.</p><a class="btn sec" href="#">Stop listening</a></div>
+<div class="stband"><b>State 3 of 6</b><span>Listening with reduced motion: the pulse becomes a static ring</span></div>
+<header class="nav"><div class="row" style="gap:32px;min-width:0"><div class="brand"><svg width="28" height="28" viewBox="0 0 28 28" aria-hidden="true"><circle cx="14" cy="14" r="13" fill="#FFC93C"/><path d="M11 8.5v11l9-5.5z" fill="#1A1C22"/></svg><span>Angels Delight TV</span></div><nav class="links" aria-label="Primary"><a href="#" class=on>Home</a><a href="#">Browse</a><a href="#">My List</a></nav></div><div class="row" style="gap:12px"><div style="width:480px"><div class="fld f" role="combobox" aria-expanded="false"><span class="muted" style="display:flex;width:24px;justify-content:center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:0 0 auto"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg></span><span class="tx muted">Listening</span><span class="vb on ring" role="button" aria-label="Search by voice" aria-pressed="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:0 0 auto"><path d="M12 2a3 3 0 00-3 3v7a3 3 0 006 0V5a3 3 0 00-3-3z"/><path d="M19 10v2a7 7 0 01-14 0v-2"/><path d="M12 19v3"/></svg></span></div></div><span class="me"><span class="av">C</span>Chinedu</span></div></header><div class="col" style="align-items:center;text-align:center;gap:10px;padding:40px 48px"><p class="small" style="font-weight:600">Listening</p><p class="muted small">Reduced motion is on, so the microphone shows a still ring instead of a pulse.</p><a class="btn sec" href="#">Stop listening</a></div>
+<div class="stband"><b>State 4 of 6</b><span>Interim result: words fill the box, the search starts 600 ms after speech ends</span></div>
+<header class="nav"><div class="row" style="gap:32px;min-width:0"><div class="brand"><svg width="28" height="28" viewBox="0 0 28 28" aria-hidden="true"><circle cx="14" cy="14" r="13" fill="#FFC93C"/><path d="M11 8.5v11l9-5.5z" fill="#1A1C22"/></svg><span>Angels Delight TV</span></div><nav class="links" aria-label="Primary"><a href="#" class=on>Home</a><a href="#">Browse</a><a href="#">My List</a></nav></div><div class="row" style="gap:12px"><div style="width:480px"><div class="fld f" role="combobox" aria-expanded="false"><span class="muted" style="display:flex;width:24px;justify-content:center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:0 0 auto"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg></span><span class="tx">how to save mon<span class=caret></span></span><span class="vb on pulse" role="button" aria-label="Search by voice" aria-pressed="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:0 0 auto"><path d="M12 2a3 3 0 00-3 3v7a3 3 0 006 0V5a3 3 0 00-3-3z"/><path d="M19 10v2a7 7 0 01-14 0v-2"/><path d="M12 19v3"/></svg></span></div></div><span class="me"><span class="av">C</span>Chinedu</span></div></header><div class="col" style="align-items:center;text-align:center;gap:10px;padding:40px 48px"><p class="small" style="font-weight:600">Listening</p><p class="muted small">The words fill the box as you speak. Search starts 600 ms after you stop.</p><a class="btn sec" href="#">Stop listening</a></div>
+<div class="stband"><b>State 5 of 6</b><span>Errors: permission denied, no speech, no connection, each in plain words</span></div>
+<header class="nav"><div class="row" style="gap:32px;min-width:0"><div class="brand"><svg width="28" height="28" viewBox="0 0 28 28" aria-hidden="true"><circle cx="14" cy="14" r="13" fill="#FFC93C"/><path d="M11 8.5v11l9-5.5z" fill="#1A1C22"/></svg><span>Angels Delight TV</span></div><nav class="links" aria-label="Primary"><a href="#" class=on>Home</a><a href="#">Browse</a><a href="#">My List</a></nav></div><div class="row" style="gap:12px"><div style="width:480px"><div class="fld f" role="combobox" aria-expanded="false"><span class="muted" style="display:flex;width:24px;justify-content:center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:0 0 auto"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg></span><span class="tx muted">Search videos</span><span class="vb" role="button" aria-label="Search by voice" aria-pressed="false"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:0 0 auto"><path d="M12 2a3 3 0 00-3 3v7a3 3 0 006 0V5a3 3 0 00-3-3z"/><path d="M19 10v2a7 7 0 01-14 0v-2"/><path d="M12 19v3"/></svg></span></div></div><span class="me"><span class="av">C</span>Chinedu</span></div></header><div style="padding:20px 48px 32px;max-width:760px"><div role="alert" class="banner err" style="margin-bottom:12px"><span><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:0 0 auto"><circle cx="12" cy="12" r="9"/><path d="M12 7v6M12 16v.5"/></svg></span><span class="grow">Microphone access is off. Allow it in your browser settings, or type your search.</span></div><div role="alert" class="banner err" style="margin-bottom:12px"><span><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:0 0 auto"><circle cx="12" cy="12" r="9"/><path d="M12 7v6M12 16v.5"/></svg></span><span class="grow">We did not hear anything. Tap the microphone and try again.</span></div><div role="alert" class="banner err" style="margin-bottom:12px"><span><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:0 0 auto"><circle cx="12" cy="12" r="9"/><path d="M12 7v6M12 16v.5"/></svg></span><span class="grow">Voice search needs a connection. Check your data or Wi-Fi, or type your search.</span></div><p class="note">Each message appears under the search box and the button returns to idle. Typing always works.</p></div>
+<div class="stband"><b>State 6 of 6</b><span>Hidden: unsupported browser, Data saver, Kids profile</span></div>
+<header class="nav"><div class="row" style="gap:32px;min-width:0"><div class="brand"><svg width="28" height="28" viewBox="0 0 28 28" aria-hidden="true"><circle cx="14" cy="14" r="13" fill="#FFC93C"/><path d="M11 8.5v11l9-5.5z" fill="#1A1C22"/></svg><span>Angels Delight TV</span></div><nav class="links" aria-label="Primary"><a href="#" class=on>Home</a><a href="#">Browse</a><a href="#">My List</a></nav></div><div class="row" style="gap:12px"><div style="width:480px"><div class="fld f" role="combobox" aria-expanded="false"><span class="muted" style="display:flex;width:24px;justify-content:center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:0 0 auto"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg></span><span class="tx muted">Search videos</span></div></div><span class="me"><span class="av">C</span>Chinedu</span></div></header><div style="padding:16px 48px 8px"><p class="small" style="font-weight:600;margin-bottom:8px">Browser without speech support: no button, nothing to explain</p><div class="fld" role="combobox" aria-expanded="false"><span class="muted" style="display:flex;width:24px;justify-content:center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:0 0 auto"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg></span><span class="tx muted">Search videos</span></div></div><div style="padding:16px 48px 8px"><p class="small" style="font-weight:600;margin-bottom:8px">Data saver on: voice button hidden to save data</p><div class="fld" role="combobox" aria-expanded="false"><span class="muted" style="display:flex;width:24px;justify-content:center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:0 0 auto"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg></span><span class="tx muted">Search videos</span></div></div><div style="padding:16px 48px 8px"><p class="small" style="font-weight:600;margin-bottom:8px">Kids profile: voice button hidden</p><div class="fld" role="combobox" aria-expanded="false"><span class="muted" style="display:flex;width:24px;justify-content:center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:0 0 auto"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg></span><span class="tx muted">Search videos</span></div></div><div style="height:24px"></div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1360,"height":2600}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>
