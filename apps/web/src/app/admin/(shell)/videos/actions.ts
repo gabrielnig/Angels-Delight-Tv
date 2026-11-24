@@ -3,7 +3,8 @@
 import { revalidatePath } from 'next/cache';
 import { videoService } from '@/lib/data/admin/services';
 import { requireActionActor } from '@/lib/data/admin/session-next';
-import { MAX_BULK_CALL, MAX_SELECTION, newBulkId, toOutcome, type BulkUndo } from '@/lib/data/admin/bulk';
+import { MAX_BULK_CALL, MAX_SELECTION, newBulkId, toOutcome, type BulkOutcome, type BulkUndo } from '@/lib/data/admin/bulk';
+import { runCleanupMany } from '@/lib/data/admin/encode-bulk';
 import { runVideoBulk, undoVideoBulk } from '@/lib/data/admin/video-bulk';
 import type { BulkAction, BulkResult, VideoQuery } from '@/lib/data/admin/video-queries';
 import { auditBulkRun } from '@/server/admin/bulk-run';
@@ -112,4 +113,37 @@ function bulkLabel(action: BulkAction): string {
     case 'captions_available':
       return 'Captions for viewers';
   }
+}
+
+/** Retries failed encodes, oldest failure first. Editors may retry (encode.retry). */
+export async function bulkRetryEncodesAction(
+  ids: string[],
+  bulkId: string = newBulkId(),
+): Promise<BulkOutcome> {
+  const actor = await requireActionActor('/admin/encoding');
+  const used = ids.slice(0, MAX_BULK_CALL);
+  const outcome = toOutcome(await videoService.retryEncodeMany(actor, used, bulkId), bulkId);
+  await auditBulkRun(
+    { accountId: actor.accountId, role: actor.role },
+    { action: 'video.bulk_retry', label: 'Retry encodes', targetType: 'video', bulkId, ids: used, outcome },
+  );
+  revalidatePath('/admin', 'layout');
+  return outcome;
+}
+
+/** Removes leftover files of the chosen failed encodes. Originals and captions are never touched. */
+export async function bulkCleanupFailedAction(
+  ids: string[],
+  bulkId: string = newBulkId(),
+): Promise<BulkOutcome> {
+  const actor = await requireActionActor('/admin/encoding/failed');
+  const used = ids.slice(0, MAX_BULK_CALL);
+  const done = await runCleanupMany((id) => videoService.cleanupFailed(actor, id), used);
+  const outcome = toOutcome({ succeeded: done.succeeded, failed: done.failed }, bulkId);
+  await auditBulkRun(
+    { accountId: actor.accountId, role: actor.role },
+    { action: 'video.bulk_cleanup', label: 'Clean up failed encodes', targetType: 'video', bulkId, ids: used, outcome },
+  );
+  revalidatePath('/admin', 'layout');
+  return outcome;
 }

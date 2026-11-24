@@ -5,6 +5,7 @@ import {
   purgeVideo,
   restoreVideo,
   retryEncode,
+  retryEncodeMany,
   schedulePublish,
   validateVideoPatch,
 } from './video-commands';
@@ -141,6 +142,33 @@ describe('retryEncode', () => {
       progress: 0,
     });
     expect(retryEncode(get(store, 'vid_sky'), NOW).ok).toBe(false);
+  });
+});
+
+describe('retryEncodeMany (L3-09)', () => {
+  const failed = (id: string, updatedAt: string, over: Record<string, unknown> = {}) =>
+    ({ id, status: 'failed', failure: { reason: 'x' }, progress: 50, updatedAt, deletedAt: null, ...over }) as never;
+
+  it('retries failed rows oldest failure first and skips the others with a reason', () => {
+    const videos = [
+      failed('new', '2026-11-17T10:00:00Z'),
+      failed('old', '2026-11-15T10:00:00Z'),
+      { id: 'ok', status: 'ready', deletedAt: null, updatedAt: '2026-11-16T10:00:00Z' } as never,
+    ];
+    const out = retryEncodeMany(videos, ['new', 'old', 'ok', 'missing'], NOW);
+    expect(out.succeeded).toEqual(['old', 'new']);
+    expect(out.skipped).toEqual([{ id: 'ok', reason: 'Not failed any more.' }]);
+    expect(out.failed).toEqual([{ id: 'missing', reason: 'That video no longer exists.', retryable: false }]);
+    expect(videos.map((v) => (v as unknown as { status: string }).status)).toEqual(['encoding', 'encoding', 'ready']);
+  });
+
+  it('skips a row whose original file was removed', () => {
+    const videos = [failed('gone', '2026-11-15T10:00:00Z')];
+    const out = retryEncodeMany(videos, ['gone'], NOW, (id) => id !== 'gone');
+    expect(out.succeeded).toEqual([]);
+    expect(out.skipped).toEqual([
+      { id: 'gone', reason: 'The original file was removed. Replace the file instead.' },
+    ]);
   });
 });
 

@@ -2,12 +2,19 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { formatRelative } from '@/lib/admin/format';
+import { describeOutcome, mergeOutcomes, newBulkId, type BulkOutcome } from '@/lib/data/admin/bulk';
 import type { VideoRecord } from '@/lib/data/admin/types';
 import type { CommandResult } from '@/lib/data/admin/video-commands';
 import { Badge } from './Badge';
+import { BulkBar } from './bulk/BulkBar';
+import { BulkReport } from './bulk/BulkReport';
+import { useBulkRun } from './bulk/useBulkRun';
+import { useSelection } from './bulk/useSelection';
 import { Button } from './Button';
+import { ConfirmDialog } from './Dialog';
+import { Checkbox } from './fields';
 import { ProgressBar } from './ProgressBar';
 import { Banner, EmptyState } from './states';
 import { useToast } from './Toast';
@@ -30,16 +37,42 @@ export function EncodingQueue({
   jobs,
   now,
   retry,
+  retryMany,
 }: {
   jobs: VideoRecord[];
   now: number;
   retry: (id: string) => Promise<CommandResult>;
+  retryMany: (ids: string[], bulkId: string) => Promise<BulkOutcome>;
 }) {
   const router = useRouter();
   const toast = useToast();
   const [paused, setPaused] = useState(false);
   const [offline, setOffline] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
+  const failedIds = useMemo(() => jobs.filter((j) => j.status === 'failed').map((j) => j.id), [jobs]);
+  const sel = useSelection(failedIds);
+  const [confirm, setConfirm] = useState(false);
+  const [outcome, setOutcome] = useState<BulkOutcome | null>(null);
+  const runner = useBulkRun(useCallback((chunk, bulkId) => retryMany(chunk, bulkId), [retryMany]));
+  const titleOf = (id: string) => jobs.find((j) => j.id === id)?.title ?? id;
+
+  async function retrySelected(ids: string[], prior?: BulkOutcome) {
+    setConfirm(false);
+    const result = await runner.start(ids, prior?.bulkId ?? newBulkId());
+    const merged = prior ? mergeOutcomes(prior, result) : result;
+    if (merged.interrupted && merged.succeeded.length === 0 && merged.failed.length === 0) {
+      toast.show({ tone: 'danger', message: 'Retry did not work. Nothing was changed. Try again.' });
+      return;
+    }
+    setOutcome(merged);
+    sel.clear();
+    if (merged.succeeded.length > 0)
+      toast.show({
+        tone: 'success',
+        message: `${merged.succeeded.length} ${merged.succeeded.length === 1 ? 'is' : 'are'} back in the queue.`,
+      });
+    router.refresh();
+  }
 
   useEffect(() => {
     if (paused) return;
@@ -97,6 +130,30 @@ export function EncodingQueue({
           </Button>
         </div>
       )}
+      {outcome ? (
+        <BulkReport
+          label="Retry"
+          outcome={outcome}
+          itemLabel={titleOf}
+          itemHref={(id) => `/admin/videos/${id}`}
+          onDismiss={() => setOutcome(null)}
+          onRetry={(ids) => void retrySelected(ids, outcome)}
+        />
+      ) : null}
+      {sel.count > 0 ? (
+        <BulkBar
+          count={sel.count}
+          onClear={sel.clear}
+          actions={[
+            {
+              id: 'retry',
+              label: `Retry ${sel.count} failed`,
+              variant: 'primary',
+              onClick: () => setConfirm(true),
+            },
+          ]}
+        />
+      ) : null}
       {jobs.length === 0 ? (
         <div className="adm-card">
           <EmptyState
@@ -109,6 +166,15 @@ export function EncodingQueue({
         <ul className="adm-card adm-list" aria-label="Encoding jobs">
           {jobs.map((video) => (
             <li key={video.id} style={{ alignItems: 'flex-start' }}>
+              {video.status === 'failed' ? (
+                <Checkbox
+                  label={`Select ${video.title}`}
+                  checked={sel.isSelected(video.id)}
+                  onChange={() => sel.toggle(video.id)}
+                />
+              ) : (
+                <span className="adm-select-spacer" aria-hidden="true" />
+              )}
               <div className="adm-list__main" style={{ display: 'grid', gap: 'var(--space-2)' }}>
                 <Link className="adm-list__title" href={`/admin/videos/${video.id}`}>
                   {video.title}
@@ -151,6 +217,15 @@ export function EncodingQueue({
           ))}
         </ul>
       )}
+      <ConfirmDialog
+        open={confirm}
+        title={`Retry ${sel.count} ${sel.count === 1 ? 'encode' : 'encodes'}?`}
+        consequence="They are queued oldest failure first and run one after another, so the last one can take a while."
+        confirmLabel={`Retry ${sel.count}`}
+        busy={runner.running}
+        onClose={() => setConfirm(false)}
+        onConfirm={() => void retrySelected([...sel.selected])}
+      />
     </div>
   );
 }

@@ -1,6 +1,7 @@
 import 'server-only';
 import {
   bulkAdminVideos,
+  retryAdminVideos,
   setCaptionsAvailability,
   createPosterUpload,
   getPosterAssetStatus,
@@ -187,6 +188,21 @@ export const realVideoService: VideoService = {
   async retryEncode(actor, id) {
     need(actor, 'video.edit');
     return retryAdminVideo(await context(), catalogActor(actor), id, adminRuntime().enqueue);
+  },
+  async retryEncodeMany(actor, ids, bulkId) {
+    need(actor, 'encode.retry');
+    const done = await retryAdminVideos(
+      await context(),
+      catalogActor(actor),
+      ids,
+      adminRuntime().enqueue,
+      bulkId,
+    );
+    return {
+      succeeded: done.succeeded,
+      failed: done.failed.map((f) => ({ ...f, retryable: !/no longer exists/.test(f.reason) })),
+      skipped: done.skipped,
+    };
   },
   async trashed(actor) {
     need(actor, 'video.restore');

@@ -6,6 +6,8 @@ import { can } from '@/lib/admin/can';
 import { videoService } from '@/lib/data/admin/services';
 import { requireActor } from '@/lib/data/admin/session-next';
 import {
+  bulkCleanupFailedAction,
+  bulkRetryEncodesAction,
   cleanupAllFailedAction,
   cleanupFailedAction,
   retryEncodeAction,
@@ -35,6 +37,8 @@ export default async function FailedEncodesPage() {
         retry={retryEncodeAction}
         cleanup={cleanupFailedAction}
         cleanupAll={cleanupAllFailedAction}
+        retryMany={bulkRetryEncodesAction}
+        cleanupMany={bulkCleanupFailedAction}
       />
     </>
   );
