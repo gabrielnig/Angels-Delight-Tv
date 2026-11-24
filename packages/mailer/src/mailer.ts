@@ -328,4 +328,23 @@ export class Mailer {
       linkUrl: this.url('/admin/exports'),
     });
   }
+
+  sendDonationReceipt(input: {
+    to: string;
+    reference: string;
+    amount: string;
+    date: string;
+    orgName: string;
+    donorName?: string;
+    taxNote?: string;
+  }) {
+    return this.deliverWithId(input.to, 'donation_receipt', {
+      reference: input.reference,
+      amount: input.amount,
+      date: input.date,
+      orgName: input.orgName,
+      donorName: input.donorName ?? '',
+      taxNote: input.taxNote ?? '',
+    });
+  }
 }

@@ -16,7 +16,8 @@ export type OutboxKind =
   | 'staff_export_ready'
   | 'staff_export_failed'
   | 'viewer_digest_daily'
-  | 'viewer_digest_weekly';
+  | 'viewer_digest_weekly'
+  | 'donation_receipt';
 
 export type OutboxVars = Record<string, string | number>;
 
@@ -44,6 +45,15 @@ export interface OutboxMailer {
     period: 'day' | 'week';
     lines: string[];
     unsubscribeToken: string;
+  }): Promise<{ messageId: string } | null>;
+  sendDonationReceipt(input: {
+    to: string;
+    reference: string;
+    amount: string;
+    date: string;
+    orgName: string;
+    donorName?: string;
+    taxNote?: string;
   }): Promise<{ messageId: string } | null>;
 }
 
@@ -201,6 +211,16 @@ function dispatch(
         period: kind === 'viewer_digest_weekly' ? 'week' : 'day',
         lines: String(vars.lines ?? '').split('\n'),
         unsubscribeToken: signUnsubscribeToken(kek, String(vars.accountId ?? ''), now),
+      });
+    case 'donation_receipt':
+      return mailer.sendDonationReceipt({
+        to,
+        reference: String(vars.reference ?? ''),
+        amount: String(vars.amount ?? ''),
+        date: String(vars.date ?? ''),
+        orgName: String(vars.orgName ?? ''),
+        donorName: String(vars.donorName ?? '') || undefined,
+        taxNote: String(vars.taxNote ?? '') || undefined,
       });
     default:
       throw Object.assign(new Error(`Unknown outbox kind ${String(kind)}`), {
