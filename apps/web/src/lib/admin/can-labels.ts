@@ -45,4 +45,7 @@ export const ACTION_LABELS: Record<AdminAction, string> = {
   'sponsor.manage': 'Create and edit sponsor drafts',
   'sponsor.activate': 'Take sponsors live, pause and archive them',
   'sponsor.report.export': 'Export sponsor reports',
+  'donation.view': 'See donations',
+  'donation.export': 'Export donations',
+  'donation.resolve': 'Settle a gift that needs review',
 };
