@@ -100,7 +100,9 @@ describe('Row', () => {
       getPropertyValue: (name: string) => (name === '--cards-visible' ? '5.3' : ''),
       columnGap: '12px',
     };
-    const spy = vi.spyOn(window, 'getComputedStyle').mockReturnValue(style as unknown as CSSStyleDeclaration);
+    const spy = vi
+      .spyOn(window, 'getComputedStyle')
+      .mockReturnValue(style as unknown as CSSStyleDeclaration);
     try {
       await userEvent.setup().click(screen.getByRole('button', { name: 'Next titles' }));
     } finally {

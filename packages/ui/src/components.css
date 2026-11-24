@@ -1917,27 +1917,84 @@
 }
 
 .ad-nav {
+  --nav-ink: var(--color-player-ink);
+  --nav-underline: var(--color-focus-ring-dark);
+  --nav-ring: var(--color-focus-ring-dark);
   position: sticky;
   top: 0;
   z-index: var(--z-nav);
   height: var(--nav-height);
-  transition: background-color var(--motion-base) var(--ease-standard);
+  color: var(--nav-ink);
+  /* Solid to clear: the colours flip at 35 percent of the reverse fade (R35). */
+  transition: color 1ms linear calc(var(--motion-base) * 0.65);
+}
+
+/* Two layers fade against each other. Linear, so time equals progress and the
+   colour flip never lands inside a low contrast frame. */
+.ad-nav::before,
+.ad-nav::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  transition: opacity var(--motion-base) linear;
+}
+
+.ad-nav::before {
+  background: var(--color-surface);
+  box-shadow: var(--shadow-1);
+  opacity: 0;
+}
+
+.ad-nav::after {
+  opacity: 1;
+  background: linear-gradient(
+    to bottom,
+    rgba(var(--scrim-rgb), var(--scrim-hero-start)) 0,
+    rgba(var(--scrim-rgb), var(--scrim-hero-start)) var(--nav-scrim-hold),
+    rgba(var(--scrim-rgb), 0) 100%
+  );
 }
 
 .ad-nav[data-surface='solid'] {
-  background: var(--color-surface);
-  color: var(--color-ink);
-  box-shadow: var(--shadow-1);
+  --nav-ink: var(--color-ink);
+  --nav-underline: var(--color-primary);
+  --nav-ring: var(--color-focus-ring);
+  /* Clear to solid: the colours flip at 35 percent of the fade. */
+  transition-delay: calc(var(--motion-base) * 0.35);
 }
 
-.ad-nav[data-surface='clear'] {
+.ad-nav[data-surface='solid']::before {
+  opacity: 1;
+}
+
+.ad-nav[data-surface='solid']::after {
+  opacity: 0;
+}
+
+/* A hero page keeps the overlap in both states so content never jumps. */
+.ad-nav[data-hero='true'] {
   margin-bottom: calc(var(--nav-height) * -1);
-  background: linear-gradient(to bottom, var(--color-scrim-top), var(--color-scrim-bottom));
-  color: var(--color-player-ink);
 }
 
-.ad-nav[data-surface='clear'] :focus-visible {
-  outline-color: var(--color-focus-ring-dark);
+.ad-nav :focus-visible {
+  outline-color: var(--nav-ring);
+}
+
+/* The soft skin paints its own header (account screens). */
+.ad-nav[data-skin='soft']::before,
+.ad-nav[data-skin='soft']::after {
+  display: none;
+}
+
+.ad-nav__sentinel {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 1px;
+  height: 40px;
+  pointer-events: none;
 }
 
 .ad-nav__inner {
@@ -1983,7 +2040,6 @@
   display: inline-flex;
   align-items: center;
   min-height: var(--touch-target);
-  border-bottom: 3px solid transparent;
   color: inherit;
   font-weight: var(--weight-semibold);
   text-decoration: none;
@@ -1996,11 +2052,8 @@
 }
 
 .ad-nav__link[aria-current='page'] {
-  border-bottom-color: var(--color-primary);
-}
-
-.ad-nav[data-surface='clear'] .ad-nav__link[aria-current='page'] {
-  border-bottom-color: var(--color-accent);
+  box-shadow: inset 0 -3px 0 var(--nav-underline);
+  font-weight: var(--weight-semibold);
 }
 
 .ad-nav__tools {
@@ -2102,7 +2155,7 @@
   display: none;
 }
 
-.ad-nav[data-back='true'] {
+.ad-nav[data-back='true']::before {
   background: var(--color-bg);
   box-shadow: none;
 }
@@ -2115,7 +2168,7 @@
   .ad-nav[data-back='true'] .ad-nav__brand img {
     display: inline-flex;
   }
-  .ad-nav[data-back='true'] {
+  .ad-nav[data-back='true']::before {
     background: var(--color-surface);
     box-shadow: var(--shadow-1);
   }

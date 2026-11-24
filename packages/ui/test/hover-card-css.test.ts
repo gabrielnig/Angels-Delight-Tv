@@ -6,7 +6,8 @@ import { repoRoot, scanCss } from './css-scan';
 const read = (p: string) => readFileSync(resolve(repoRoot, p), 'utf8');
 const css = read('packages/ui/src/components.css');
 const rules = scanCss(css);
-const flat = (b?: string) => (b ?? '').replace(/\s+/g, ' ').replace(/\( /g, '(').replace(/ \)/g, ')');
+const flat = (b?: string) =>
+  (b ?? '').replace(/\s+/g, ' ').replace(/\( /g, '(').replace(/ \)/g, ')');
 const find = (selector: string, at?: RegExp) =>
   rules.find(
     (r) =>
@@ -25,7 +26,9 @@ describe('hover card (R10, M47-S03)', () => {
 
   it('scale is --card-scale over 250ms with the strong ease out', () => {
     const base = find('.ad-card__thumb', /container row \(min-width: 600px\)/);
-    expect(flat(base?.body)).toMatch(/transition: transform var\(--motion-hover\) var\(--ease-out-strong\)/);
+    expect(flat(base?.body)).toMatch(
+      /transition: transform var\(--motion-hover\) var\(--ease-out-strong\)/,
+    );
     const hover = find('.ad-card:hover .ad-card__thumb', HOVER);
     expect(hover?.body).toMatch(/transform:\s*scale\(var\(--card-scale\)\)/);
     expect(css).not.toMatch(/translateY\(-4px\)/);
@@ -38,8 +41,12 @@ describe('hover card (R10, M47-S03)', () => {
 
   it('first item grows from the left, last from the right, others from the centre', () => {
     expect(find('.ad-card__thumb')?.body).toMatch(/transform-origin:\s*center/);
-    expect(find('.ad-row__item:first-child .ad-card__thumb')?.body).toMatch(/transform-origin:\s*left center/);
-    expect(find('.ad-row__item:last-child .ad-card__thumb')?.body).toMatch(/transform-origin:\s*right center/);
+    expect(find('.ad-row__item:first-child .ad-card__thumb')?.body).toMatch(
+      /transform-origin:\s*left center/,
+    );
+    expect(find('.ad-row__item:last-child .ad-card__thumb')?.body).toMatch(
+      /transform-origin:\s*right center/,
+    );
   });
 
   it('the raised item sits above its neighbours', () => {

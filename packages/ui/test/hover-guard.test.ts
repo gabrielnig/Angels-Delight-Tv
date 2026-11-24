@@ -33,7 +33,11 @@ describe('hover guard (M47-S02, R31)', () => {
   it('hover rules that move, scale or reveal need (hover: hover) and (pointer: fine)', () => {
     const bad = rules
       .filter((r) => /\b(transform|scale|translate|opacity|visibility)\s*:/.test(r.body))
-      .filter((r) => !/:\s*none\b/.test(r.body.replace(/transition[^;]*;/g, '')) || /transform:\s*(?!none)/.test(r.body))
+      .filter(
+        (r) =>
+          !/:\s*none\b/.test(r.body.replace(/transition[^;]*;/g, '')) ||
+          /transform:\s*(?!none)/.test(r.body),
+      )
       .filter((r) => !r.at.some((a) => /prefers-reduced-motion:\s*reduce/.test(a)))
       .filter((r) => !mediaIncludesFine(r.at))
       .map(label);
