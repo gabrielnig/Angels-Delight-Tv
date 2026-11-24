@@ -416,6 +416,17 @@ describe.skipIf(!integrationEnabled())('account overview, email change and delet
         href: '/browse',
         dedupeKey: 'purge-1',
       });
+      // A linked Google identity keeps a keyed email hash and a masked address, and sign in events keep a device.
+      await h.dbs.admin.db.insert(schema.accountIdentities).values({
+        accountId: m.id,
+        provider: 'google',
+        subject: `purge-sub-${m.id}`,
+        emailHash: Buffer.from('hash'),
+        emailHint: 'p***@gmail.com',
+      });
+      await h.dbs.admin.db
+        .insert(schema.loginEvents)
+        .values({ accountId: m.id, outcome: 'success', country: 'NG', userAgent: 'purge test' });
       await auth.deleteAccount(actor, { password: m.password, confirmation: 'DELETE' }, h.meta);
       await h.settle();
       const before = h.mailsTo(m.email);
@@ -449,6 +460,8 @@ describe.skipIf(!integrationEnabled())('account overview, email change and delet
         schema.mfaRecoveryCodes,
         schema.dataExports,
         schema.viewerNotificationPrefs,
+        schema.accountIdentities,
+        schema.loginEvents,
       ]) {
         expect(
           await h.dbs.admin.db.select().from(table).where(eq(table.accountId, m.id)),

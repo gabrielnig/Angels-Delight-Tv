@@ -232,6 +232,8 @@ PII inventory:
 | Notification choices and digest address | `viewer_notification_prefs` | Owner-only RLS. The address is sealed with the field key (D-129) and cleared when the account email changes or the person unsubscribes. Deleted at account purge. Exported without the address |
 | Push subscriptions | not built (Could, M44-S16) | If built: endpoint and keys per device, generic payload, removed on sign out and at purge |
 | Country | `view_events.country` | Coarse, from the CDN header |
+| Sign in events | `login_events` | Country, time, outcome, short user agent and keyed device hash. Never an address. Owner-only RLS. Kept 90 days, deleted at account purge |
+| Linked Google identity | `account_identities` | Provider subject, keyed email hash, masked address hint. Owner-only RLS. Deleted at account purge |
 
 Design (adapting baseline section 3):
 1. Each account gets a random 256-bit DEK at signup. It is wrapped with `FIELD_KEK` and stored in the separate `ad_keys` database (`user_keys`).
