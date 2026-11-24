@@ -14,7 +14,8 @@ Plan `docs/plan/v2/L2-home.md`, review `docs/reviews/v2/L2-review.md`, rulings `
 | 6 | Browse list pages (new, trending, series, row/[slug]) | merged | 329 |
 | 6b | List page loading skeleton, 5 and 6 across grid | merged | 333 |
 | 7 | Admin sections editor | merged | 341 |
-| 8 | Launch default rows and the apply tool | this PR | |
+| 8 | Launch default rows and the apply tool | merged | 345 |
+| 9 | Preview clip schema, queue and worker job | this PR | |
 
 ## Exists
 
@@ -46,3 +47,12 @@ Plan `docs/plan/v2/L2-home.md`, review `docs/reviews/v2/L2-review.md`, rulings `
 - `packages/launch/src/apply.ts`: step `home` through `ApplyDeps.home` (`HomeSeeder`), wired in `cli/apply.ts`. `client.json` block `home` (`seedDefaults`, `continueTitle`, `newTitle`, `trendingTitle`); `continueTitle` also writes setting `home.continue_title`.
 - Admin screen: Restore launch defaults button (toolbar and empty state) puts the launch set in the draft with a confirm, nothing is saved until the editor saves. Web copy in `home-rules.ts` `launchHome`, kept equal by `home-parity.test.ts`.
 - Viewer fallback title for the personal row is now Continue learning.
+
+## Slice 9 notes
+
+- Migration `0050_video_previews.sql` (columns `preview_*` on `videos`, checks, partial index `videos_preview_sweep`), schema in `packages/db/src/schema/content.ts`.
+- `packages/video/src/preview.ts` (pure: `planPreview`, `previewArgs`, `previewKey`, constants), `preview-sweep.ts` (`sweepPreviews`), `VideoPipeline.previewClip`, `queuePreview`, `sweepPreviews`. The clip job never fails the video; it records `skipped` or `failed` with a plain note.
+- Queues `video.preview` and `video.preview_sweep` (hourly at :20 Lagos, `PREVIEW_CRON_SCHEDULES`), registered by `apps/worker/src/preview-handlers.ts`, wired in `main.ts`.
+- Thumbnails success queues a clip (state `queued`) unless the mode is `off`. Failed encode cleanup removes the clip. Purge already removes `cap/{prefix}/`.
+- Scoped tests: `packages/video/src/preview.test.ts`, `packages/video/src/encode/preview.int.test.ts` (needs ffmpeg and `TEST_DATABASE_ADMIN_URL`), `packages/video/src/preview-sweep.int.test.ts`, `packages/db/src/video-previews.int.test.ts`, `apps/worker/src/preview-handlers.test.ts`.
+- The `cap/` prefix is public and unsigned (sprites use it the same way), so slice 11 can use `${origin}/${previewKey}` without signing.

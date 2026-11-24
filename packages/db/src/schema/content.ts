@@ -125,6 +125,17 @@ export const videos = pgTable(
     failureMessage: text('failure_message'),
     /** Key in the media bucket of the seek preview map (WebVTT pointing at sprite sheets). Null when none. */
     spriteKey: text('sprite_key'),
+    /** Home hero preview clip (M41). Key is in the media bucket under cap/, null until a clip is ready. */
+    previewKey: text('preview_key'),
+    /** none (not tried), queued, ready, failed or skipped (too short, too dark, original gone). */
+    previewState: text('preview_state').notNull().default('none'),
+    /** auto picks a segment, picked uses `previewStartMs`, off never shows a clip. */
+    previewMode: text('preview_mode').notNull().default('auto'),
+    previewStartMs: integer('preview_start_ms'),
+    previewBytes: integer('preview_bytes'),
+    /** Plain reason shown to editors when the state is failed or skipped. */
+    previewNote: text('preview_note'),
+    previewUpdatedAt: timestamptz('preview_updated_at'),
     /** Free tags set by editors. Shown on the admin edit screen only. */
     tags: text('tags')
       .array()
@@ -162,6 +173,15 @@ export const videos = pgTable(
     check(
       'videos_captions_off_has_reason',
       sql`${t.captionsEnabled} IS DISTINCT FROM false OR coalesce(char_length(${t.captionsOffReason}), 0) >= 5`,
+    ),
+    check(
+      'videos_preview_state_known',
+      sql`${t.previewState} IN ('none', 'queued', 'ready', 'failed', 'skipped')`,
+    ),
+    check('videos_preview_mode_known', sql`${t.previewMode} IN ('auto', 'picked', 'off')`),
+    check(
+      'videos_preview_numbers',
+      sql`(${t.previewStartMs} IS NULL OR ${t.previewStartMs} >= 0) AND (${t.previewBytes} IS NULL OR ${t.previewBytes} >= 0)`,
     ),
     check('videos_tags_count', sql`cardinality(${t.tags}) <= 10`),
     check('videos_title_length', sql`char_length(${t.title}) BETWEEN 1 AND 200`),

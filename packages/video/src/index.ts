@@ -16,5 +16,7 @@ export * from './playback';
 export * from './lifecycle';
 export * from './image';
 export * from './sprite';
+export * from './preview';
+export * from './preview-sweep';
 export * from './notices';
 export * from './markers';

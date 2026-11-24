@@ -1703,3 +1703,7 @@ Decision: the `home` step of `launch:apply` publishes the six launch sections on
 - Options: a full consent banner now; no guard; Lighthouse in CI only.
 - Why: nothing identified or third party exists, so a banner would have nothing to ask, and the guard keeps it that way.
 - Reversible: yes.
+
+## D-312 Hero preview clips: a failure is a state on the video, not a failed job (lane L2, M41-S10)
+
+Decision: `video.preview` catches every error and records `failed` or `skipped` with a plain note on the video, and the job itself ends successfully. The clip is scored on a frame 3 seconds in, a dark or plain video is `skipped`, a missing original is `skipped`, an oversize clip is retried once at crf 31 and then `failed`. Queued state is written when the job is queued, so the hourly sweep never queues a video twice. Options: let the job fail and retry through pg-boss, or fail the video. Why: a clip is decoration, so it must never mark a video failed, and retrying a deterministic failure only burns encoder time. Editors can retry by hand (slice 10). Reversible: yes.
