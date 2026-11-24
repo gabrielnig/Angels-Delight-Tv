@@ -583,7 +583,21 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
-  flex: 0 0 calc((100% - (var(--cards-visible) - 1) * var(--card-gap)) / var(--cards-visible));
+  /* The same basis as .ad-row__item, so the row does not shift when content arrives. */
+  flex: 0 0
+    var(
+      --row-card-width,
+      calc((100% - (var(--cards-visible) - 1) * var(--card-gap)) / var(--cards-visible))
+    );
+  min-width: 0;
+}
+
+.ad-skelcard__title {
+  height: calc(var(--text-small) * var(--leading-snug));
+}
+
+.ad-skelcard__meta {
+  height: calc(var(--text-caption) * var(--leading-snug));
 }
 
 .ad-skelcard__thumb {
@@ -595,6 +609,7 @@
 .ad-skelrow {
   display: flex;
   gap: var(--card-gap);
+  padding: var(--space-1) var(--page-gutter);
   overflow: hidden;
 }
 

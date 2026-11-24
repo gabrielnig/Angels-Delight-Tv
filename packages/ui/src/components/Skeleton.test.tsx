@@ -38,9 +38,11 @@ describe('SkeletonRegion', () => {
 });
 
 describe('SkeletonCard', () => {
-  it('is a 16 by 9 box with two text bars', () => {
+  it('is a 16 by 9 box, two title bars and one meta bar like the real card', () => {
     const { container } = render(<SkeletonCard />);
-    expect(container.querySelectorAll('.ad-skeleton').length).toBe(3);
+    expect(container.querySelectorAll('.ad-skeleton').length).toBe(4);
+    expect(container.querySelectorAll('.ad-skelcard__title')).toHaveLength(2);
+    expect(container.querySelectorAll('.ad-skelcard__meta')).toHaveLength(1);
     expect(container.firstElementChild).toHaveAttribute('aria-hidden', 'true');
   });
 });
