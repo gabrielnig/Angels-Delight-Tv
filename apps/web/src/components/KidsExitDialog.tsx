@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { Button, Modal, PasswordField } from '@ad/ui';
 import { checkKidsPasswordAction } from '../app/actions';
+import { useT } from '../lib/i18n/provider';
 
 type Check = (
   password: string,
@@ -24,6 +25,7 @@ export function KidsExitDialog({
   onUnlocked: () => void;
   check?: Check;
 }) {
+  const msg = useT();
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | undefined>();
   const [locked, setLocked] = useState(false);
@@ -32,7 +34,7 @@ export function KidsExitDialog({
   async function submit(event: React.FormEvent) {
     event.preventDefault();
     if (!password) {
-      setError('Enter your account password.');
+      setError(msg('kidsExit.enterPassword'));
       return;
     }
     setBusy(true);
@@ -44,14 +46,12 @@ export function KidsExitDialog({
         onUnlocked();
       } else if (result.reason === 'locked') {
         setLocked(true);
-        setError(`Too many tries. Try again in ${result.minutes} minutes.`);
+        setError(msg('kidsExit.locked', { minutes: result.minutes }));
       } else {
-        setError(
-          `That password is not right. Check it and try again. You have ${result.triesLeft} ${result.triesLeft === 1 ? 'try' : 'tries'} left.`,
-        );
+        setError(msg('kidsExit.wrong', { count: result.triesLeft }));
       }
     } catch {
-      setError('We could not check that. Check your data or Wi-Fi, then try again.');
+      setError(msg('kidsExit.network'));
     } finally {
       setBusy(false);
     }
@@ -65,23 +65,23 @@ export function KidsExitDialog({
         setError(undefined);
         onClose();
       }}
-      title="Leave Kids mode"
+      title={msg('kidsExit.title')}
       dismissOnScrim={false}
       footer={
         <>
           <Button variant="secondary" onClick={onClose}>
-            Cancel
+            {msg('kidsExit.cancel')}
           </Button>
           <Button type="submit" form="kids-exit-form" loading={busy} disabled={locked}>
-            {busy ? 'Checking' : 'Continue'}
+            {busy ? msg('kidsExit.checking') : msg('kidsExit.continue')}
           </Button>
         </>
       }
     >
       <form id="kids-exit-form" onSubmit={submit} noValidate>
-        <p className="web-muted">Enter your account password to switch to an adult profile.</p>
+        <p className="web-muted">{msg('kidsExit.intro')}</p>
         <PasswordField
-          label="Account password (required)"
+          label={msg('kidsExit.password')}
           value={password}
           onChange={(event) => setPassword(event.target.value)}
           mode="current"

@@ -13,3 +13,6 @@ export function pickNamespaces<T>(
   }
   return Object.fromEntries(Object.entries(catalog).filter(([k]) => wanted.has(k.split('.')[0]!)));
 }
+
+/** Namespaces the root layout sends to every client component. Grows with each extraction wave. */
+export const CLIENT_NAMESPACES = ['nav', 'kidsExit', 'guest', 'language'] as const;

@@ -46,3 +46,9 @@ Scoped tests only: `pnpm vitest run <file>`.
 - Most font work was already merged by L8 (vietnamese subsets, `selectFonts(key, lang)`, coverage manifest and NFD aware tests with Hausa and naira). This slice adds `--leading-marks` and the `:lang(yo|ig|ha|pcm)` rules in `packages/ui/src/tokens.css` and `components.css`, Inter right after Space Grotesk and Lora in `packages/theme/src/css.ts`, and the cue stack `var(--font-sans), Inter, sans-serif` in `player.css`. DESIGN-SYSTEM 5.3 has the rule.
 - Tests: `packages/ui/test/lang-marks.test.ts`, `packages/player/src/captions-css.test.ts`, `packages/theme/src/css.test.ts`.
 - Not added: a fontkit based checker (the L8 manifest script covers it), the theme editor Fixed group entry for the new token.
+
+## Slice 7 (waves, in progress)
+- Wave A1 (shell chrome): `ViewerChrome`, `GuestChrome`, `Shell`, `KidsExitDialog` moved to keys `nav.*` and `kidsExit.*` and added to the D-158 lint list. Client components call `const msg = useT()` (so the literal key rule and the coverage test still see `msg('key')`); server components use `await getTranslator(await getLocale())`.
+- Root layout now mounts `I18nProvider` with `CLIENT_NAMESPACES` (`lib/i18n/namespaces.ts`). Add a namespace there when a wave moves client copy.
+- Test: `apps/web/src/lib/i18n/pseudo-render.test.tsx` renders wave components in the pseudo catalog.
+- Left for later waves: strings that live inside `@ad/ui` components (TopNav aria labels, SiteFooter, States), home rows, cards, hero, browse, search, title, account, auth, profiles, player menus.

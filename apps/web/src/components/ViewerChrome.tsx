@@ -7,6 +7,7 @@ import { signOutAction } from '../app/actions';
 import { clearServiceWorkerCaches } from '../lib/pwa/purge';
 import { requestSignOut } from '../lib/pwa/sign-out';
 import { useSearchShortcut } from './browse/useSearchShortcut';
+import { useT } from '../lib/i18n/provider';
 import { ProfileIdProvider } from '../lib/profile-context';
 import { KidsExitDialog } from './KidsExitDialog';
 import { GuestIntentApplier } from './guest/GuestIntentApplier';
@@ -30,24 +31,26 @@ export interface ChromeProps {
   children: ReactNode;
 }
 
-const LINKS = [
-  { label: 'Home', href: '/' },
-  { label: 'Browse', href: '/browse' },
-  { label: 'My List', href: '/my-list' },
+type Msg = ReturnType<typeof useT>;
+
+const links = (msg: Msg) => [
+  { label: msg('nav.home'), href: '/' },
+  { label: msg('nav.browse'), href: '/browse' },
+  { label: msg('nav.myList'), href: '/my-list' },
 ];
 
-const SOFT_LINKS = [
-  { label: 'Home', href: '/' },
-  { label: 'Subjects', href: '/browse' },
-  { label: 'New', href: '/browse?sort=newest' },
-  { label: 'My List', href: '/my-list' },
+const softLinks = (msg: Msg) => [
+  { label: msg('nav.home'), href: '/' },
+  { label: msg('nav.subjects'), href: '/browse' },
+  { label: msg('nav.new'), href: '/browse?sort=newest' },
+  { label: msg('nav.myList'), href: '/my-list' },
 ];
 
-const TABS = [
-  { label: 'Home', href: '/', icon: 'home' as const },
-  { label: 'Browse', href: '/browse', icon: 'grid' as const },
-  { label: 'Search', href: '/search', icon: 'search' as const },
-  { label: 'My List', href: '/my-list', icon: 'list' as const },
+const tabs = (msg: Msg) => [
+  { label: msg('nav.home'), href: '/', icon: 'home' as const },
+  { label: msg('nav.browse'), href: '/browse', icon: 'grid' as const },
+  { label: msg('nav.search'), href: '/search', icon: 'search' as const },
+  { label: msg('nav.myList'), href: '/my-list', icon: 'list' as const },
 ];
 
 export function ViewerChrome({
@@ -64,6 +67,7 @@ export function ViewerChrome({
   languagePicker,
   children,
 }: ChromeProps) {
+  const msg = useT();
   const pathname = usePathname();
   const router = useRouter();
   const [exitOpen, setExitOpen] = useState(false);
@@ -73,13 +77,13 @@ export function ViewerChrome({
   const detail = pathname.startsWith('/title/');
 
   const menu: MenuItem[] = [
-    { label: 'Switch profile', href: '/profiles?switch=1' },
-    { label: 'Manage profiles', href: '/profiles/manage' },
-    { label: 'Account', href: '/account' },
-    { label: 'Playback settings', href: '/settings/playback' },
-    { label: 'Help', href: '/help' },
+    { label: msg('nav.menu.switchProfile'), href: '/profiles?switch=1' },
+    { label: msg('nav.menu.manageProfiles'), href: '/profiles/manage' },
+    { label: msg('nav.menu.account'), href: '/account' },
+    { label: msg('nav.menu.playback'), href: '/settings/playback' },
+    { label: msg('nav.menu.help'), href: '/help' },
     {
-      label: 'Sign out',
+      label: msg('nav.menu.signOut'),
       onSelect: () =>
         startTransition(async () => {
           await requestSignOut({
@@ -106,7 +110,7 @@ export function ViewerChrome({
       >
         <TopNav
           brand={{ name: platformName, href: '/', logoUrl }}
-          links={skin === 'soft' ? SOFT_LINKS : LINKS}
+          links={skin === 'soft' ? softLinks(msg) : links(msg)}
           currentPath={pathname}
           profileName={profileName}
           profileAvatarId={profileAvatarId}
@@ -127,7 +131,7 @@ export function ViewerChrome({
           links={footerLinks}
           supportEmail={skin === 'soft' ? supportEmail : undefined}
         />
-        {detail ? null : <BottomTabBar tabs={TABS} currentPath={pathname} />}
+        {detail ? null : <BottomTabBar tabs={tabs(msg)} currentPath={pathname} />}
         {kids ? (
           <KidsExitDialog
             open={exitOpen}

@@ -25,6 +25,11 @@ vi.mock('../server/guest/guest-settings', () => ({
   guestPlayEnabled: async () => mocks.guestPlay,
 }));
 vi.mock('../server/guest/guest-view', () => ({ currentGuestAudience: async () => mocks.audience }));
+vi.mock('../lib/i18n/picker-data', () => ({ pickerData: async () => null }));
+vi.mock('../lib/i18n/server', async () => {
+  const { msg } = await import('@ad/shared/messages');
+  return { getLocale: async () => 'en', getTranslator: async () => msg };
+});
 vi.mock('./ViewerChrome', () => ({ ViewerChrome: () => <p>viewer chrome</p> }));
 
 import { AppShell } from './Shell';
