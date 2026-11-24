@@ -1518,3 +1518,9 @@ Per video tri state, site default (Super admin), Admin changes it with a reason 
 - Options: Hand made image per title, generate from the poster, metadata file convention
 - Why: WhatsApp drops previews over about 300 KB, and a handler lets us 404 drafts and fall back. Signed urls are never used so old shares keep working.
 - Reversible: Yes
+
+## D-281 Admin writers keep accepting suitability but map it onto a rank, publishing needs a rating, raising a profile limit needs the password (lane L5)
+- Decision: the legacy `suitability` input maps to a rank (kids and everyone 0, older 3) so older callers keep working. Publishing a video or series is blocked until it has a rank. A profile limit can be lowered freely and raised only with the account password, sharing the kids exit attempt bucket. Playback sessions and key requests re-check the limit.
+- Options: remove suitability at once, default new videos to a middle rank, allow raising without a password.
+- Why: no title is rated G by accident, a child cannot raise their own limit, and old UI paths keep working until the UI slice replaces them.
+- Reversible: yes.
