@@ -1258,3 +1258,9 @@ Per video tri state, site default (Super admin), Admin changes it with a reason 
 - Options: send positions to the server for a joined response, or ids only.
 - Why: Positions are the private part. Ids only keeps the device the owner of what was watched and keeps the batch route cacheable and simple.
 - Reversible: yes.
+
+## D-237 History import is a signed in, limited, account-wins write (lane L1)
+- Decision: `POST /api/progress/import` (`importGuestProgress` in `@ad/viewer`) takes `{ profileId, items: [{ videoId, positionMs, finished, updatedAt }] }`, at most 100, and is a normal personal route: session required (401 for guests), same origin required, the profile must belong to the account (404 otherwise), and it spends the existing `progress` bucket. The server takes duration from the video, drops anything that is not a published video in the profile's audience, drops positions under the start threshold, clamps positions, and replaces a future timestamp with now. A video the profile already has progress for is never overwritten (the account wins), done with `ON CONFLICT DO NOTHING`. The prompt (`ImportPrompt`) shows after sign in when the device holds history, once per visit, never for a kids profile, and the device copy is removed only after the server accepted it; Not now keeps it. The one write is inside `withAccount`, so row level security still applies.
+- Options: merge by newest timestamp, or let existing account progress win.
+- Why: A newest-wins merge would let a stale device overwrite a place the person reached on another device. Account wins is the safe default and loses nothing the device still holds.
+- Reversible: yes.
