@@ -1196,6 +1196,7 @@ As the owner, I want each role limited to what it needs, so that mistakes and ab
 - Edge: permissions are checked on the server for every action and again in the UI only for display.
 - Error: unknown role defaults to no access.
 - Empty: not applicable.
+- Edge: the matrix includes caption.availability, caption.approve_bulk, series.delete, users.bulk and roles.bulk (M42).
 
 ### M12-S05 Invite an admin user (Must)
 As a Super admin, I want to invite someone by email with a role, so that they can help manage the platform.
@@ -1461,6 +1462,7 @@ As an admin, I want to see which videos need caption review, so that none slip t
 - Edge: sorted by oldest waiting first.
 - Error: load failure shows retry.
 - Empty: "No captions waiting. Nice work."
+- AC4: Given the list, When I select tracks, Then I can bulk approve eligible ones (Admin role), filter by 'never edited', and see the Cues column right aligned over its values (M42-S01, M42-S08).
 
 ### M15-S04 Review screen layout (Must)
 As an admin, I want to watch the video and read the captions side by side, so that I can check accuracy.
@@ -1497,6 +1499,7 @@ As an admin, I want to approve a track, so that viewers can see it.
 - Edge: approver name and time are shown on the track.
 - Error: publish failure leaves the state unchanged and shows an error.
 - Empty: not applicable.
+- Edge: bulk approval skips tracks with validation warnings and asks for an acknowledgement when auto captions were never edited (M42-S08).
 
 ### M15-S08 Reject or regenerate (Should)
 As an admin, I want to reject poor captions and try again, so that I can improve them.
@@ -1588,9 +1591,10 @@ As an admin, I want deleted videos recoverable for a while, so that mistakes are
 - AC1: Given I delete a video, When confirmed, Then it moves to Trash for 30 days, is unpublished at once, and an Undo toast shows for 10 seconds.
 - AC2: Given the Trash view, When I choose Restore, Then it returns as Draft.
 - AC3: Given 30 days pass, When the cleanup job runs, Then renditions and source are deleted from R2 and the record is purged.
-- Edge: Super admin can Delete forever with a typed confirmation.
+- Edge: an Admin or Super admin can Delete forever with a typed confirmation (the word delete for one video, the count for several, M42-S13).
 - Error: R2 deletion failure retries and alerts.
 - Empty: "Trash is empty".
+- AC4: Given selected videos in Trash, When I choose Restore or Delete forever, Then it applies to all with a result per video (M42-S13).
 
 ### M16-S07 Video detail status panel (Must)
 As an admin, I want one status panel per video, so that I see what is left to do.
@@ -2485,6 +2489,217 @@ As a viewer, I want preview thumbnails on the seek bar, so that I can find a mom
 - Empty: not applicable.
 
 ---
+
+## M42 Admin polish and bulk operations
+
+### M42-S01 One table alignment rule and padded containers (Must)
+As an admin, I want columns lined up the same way on every screen, so that I can scan figures and never see text touching a box edge.
+- AC1: Given any admin table, When it renders, Then quantity columns (counts, sizes, durations, percentages, days left, rows) have a right aligned header and right aligned cells with tabular numerals, and text, dates and status columns are left aligned.
+- AC2: Given the Captions table, When it renders, Then the Cues header sits directly above the right aligned values.
+- AC3: Given the Encoding queue and Failed encodes lists, When they render, Then text, bars and banners keep the card padding and never touch the card border.
+- AC4: Given a phone width, When a table has more than four columns, Then it scrolls sideways with the first column fixed, or becomes stacked cards (Captions, Trash, Users), and nothing is clipped.
+- Edge: a numeric column that sometimes shows words ("Working", "None") right aligns the words too.
+- Error: not applicable.
+- Empty: empty tables keep the card padding around the empty state.
+
+### M42-S02 Breadcrumbs line up and fit (Must)
+As an admin or viewer, I want the trail above the page title to read as one tidy line, so that I know where I am.
+- AC1: Given any page with a breadcrumb, When it renders, Then every crumb, link or current page, sits on the same line at the same height.
+- AC2: Given a very long title as the last crumb, When shown on desktop, Then it is cut with an ellipsis (full text on hover and for screen readers) and the heading below is not pushed down.
+- AC3: Given a phone width, When a page has two or more crumbs, Then only the parent shows, as a back link of at least 44px, and the full trail stays available to screen readers.
+- AC4: Given every admin page, When tested, Then the trail starts with Admin linking to `/admin` and the last crumb is not a link.
+- Edge: the viewer title page uses the same component.
+- Error: not applicable.
+- Empty: a page with one crumb shows it as the current page.
+
+### M42-S03 Select rows and see what is selected (Must)
+As an admin, I want to select rows and see a bar with the count and the actions that fit, so that I can change many things in one go.
+- AC1: Given a list with bulk actions, When I tick rows, Then a bar shows "N selected", announces the count to screen readers and lists only the actions my role may use; actions I may not use are disabled with the reason.
+- AC2: Given I tick the header box, When the page is selected, Then only the rows on the page are selected.
+- AC3: Given a phone width, When rows are selected, Then the bar sits at the bottom with the main action visible and the rest under More.
+- AC4: Given live updates (Encoding), When the list refreshes, Then my selection is kept, and rows that disappeared are dropped from it.
+- Edge: Clear empties the selection and moves focus back to the list.
+- Error: not applicable.
+- Empty: no selection means no bar.
+
+### M42-S04 Results report and retry failed (Must)
+As an admin, I want to see what worked and what did not after a bulk action, so that nothing fails silently.
+- AC1: Given a run where every item worked, When it ends, Then a toast says "Action: N done."
+- AC2: Given some items failed or were skipped, When it ends, Then a panel lists each with the plain reason and the counts of done, failed and skipped.
+- AC3: Given retryable failures (network, timeout, busy), When I press "Retry the N that failed", Then only those run again and the panel updates; failures such as permission or not ready are not offered for retry.
+- AC4: Given the connection drops partway, When it happens, Then the panel says how many were done before it dropped and offers Continue.
+- Edge: Copy list puts titles and reasons on the clipboard.
+- Error: a run that fails before changing anything says "Nothing was changed" and keeps my selection.
+- Empty: not applicable.
+
+### M42-S05 Progress for large selections (Should)
+As an admin, I want to see progress when I change many items, so that I know it is working.
+- AC1: Given more than 25 items, When the action runs, Then it runs in chunks of 25 and shows "Done 50 of 120" with a progress bar.
+- AC2: Given I press Cancel, When a chunk is in progress, Then the run stops after that chunk and the report says how many were done.
+- AC3: Given I go offline, When a chunk cannot be sent, Then the run pauses with a note and resumes when I am back online.
+- Edge: the server never accepts more than 200 ids in one call.
+- Error: a failed chunk is reported with its ids.
+- Empty: not applicable.
+
+### M42-S06 Select across pages (Should)
+As an admin, I want to apply a safe change to everything that matches my filter, so that I do not tick page after page.
+- AC1: Given a full page is selected and more rows match, When I choose "Select all N that match", Then up to 500 matching items are selected and the bar says so.
+- AC2: Given the action is publish, trash, delete forever, approve captions, or any user, staff or series delete, When rows match across pages, Then the option is not offered.
+- AC3: Given the filter changes, When I change it, Then the selection clears.
+- Edge: if more than 500 match, the bar says the first 500 are used.
+- Error: items that changed since the filter ran are reported per item.
+- Empty: not applicable.
+
+### M42-S07 Undo for reversible bulk actions (Should)
+As an admin, I want a short Undo after a bulk change, so that a slip costs nothing.
+- AC1: Given a reversible action completed, When the toast shows, Then Undo is available for 10 seconds.
+- AC2: Given I press Undo, When it runs, Then only the items still in the state the action left them in are reverted, and the result is reported like any bulk run.
+- AC3: Given an action that cannot be undone (approve captions, delete forever, retry encodes, staff changes), When it completes, Then no Undo is shown and the confirm dialog said so.
+- Edge: Undo is checked against the same permissions as the action.
+- Error: items that cannot be reverted are listed.
+- Empty: not applicable.
+
+### M42-S08 Bulk approve captions (Must)
+As an admin, I want to approve many caption tracks at once, so that a backlog does not take hours, without letting unchecked text through by accident.
+- AC1: Given selected tracks, When I open Approve, Then I see how many will be approved and how many will be skipped (failed, still generating, none, already approved, or with warnings), each with its reason.
+- AC2: Given some tracks were made by the computer and never opened or edited, When I confirm, Then the dialog warns that auto captions can get names, places and numbers wrong, offers "Show those first", and needs a tick before it approves them.
+- AC3: Given I confirm, When it runs, Then each track is approved through the normal approval (version stored, VTT published, audit row) and a failure on one leaves only that track unchanged.
+- AC4: Given an Editor, When they select tracks, Then bulk approve is disabled with "Only an admin can approve captions in bulk" while single approval still works.
+- Edge: tracks with validation warnings are never bulk approved; they are opened one at a time.
+- Error: a publish failure lists that track with the reason and a Retry.
+- Empty: no eligible tracks disables the button and says why.
+
+### M42-S09 Bulk retry encodes (Must)
+As an admin, I want to retry all failed encodes at once, so that a bad night does not need many clicks.
+- AC1: Given failed jobs on Encoding or Failed encodes, When I select them and press Retry, Then each job with its original file goes back in the queue, oldest failure first.
+- AC2: Given a job whose original file was removed, When included, Then it is skipped with "Replace the file instead".
+- AC3: Given the confirm dialog, When shown, Then it says the jobs run one after another.
+- AC4: Given Failed encodes, When rows have leftover files, Then Clean up works on the selection as well as on all.
+- Edge: running and queued jobs have no checkbox.
+- Error: a job that cannot be queued is listed with its reason.
+- Empty: with no failed jobs the bar and checkboxes do not appear.
+
+### M42-S10 Bulk actions on viewer accounts (Should)
+As an admin, I want to handle several viewer accounts at once, so that support is quick when many people have the same problem.
+- AC1: Given selected accounts, When I choose Suspend, Then I enter one reason (3 or more characters) that is saved on every account and audit row.
+- AC2: Given selected accounts, When I choose Reinstate, Force sign out or Resend verification, Then it runs on each with a confirm that states the count.
+- AC3: Given accounts already verified, already suspended, or emailed in the last hour, When included, Then they are skipped with that reason.
+- AC4: Given my own account is in the list, When I try to select it, Then it cannot be selected.
+- Edge: at most 50 accounts per run; no bulk delete.
+- Error: per account failures are listed.
+- Empty: no matching accounts shows "No users match." and no checkboxes.
+
+### M42-S11 Bulk actions on staff and invites (Should)
+As a Super admin, I want to change several staff roles or resend invites together, so that onboarding a team is quick, with safeguards.
+- AC1: Given selected Editors and Admins, When I change their role to Editor or Admin and confirm with re-authentication, Then each changes and is audited with the old and new role.
+- AC2: Given the batch includes me or a Super admin, or the new role is Super admin, When I try, Then it is refused with the reason and nothing changes.
+- AC3: Given I disable several staff, When I confirm, Then it is all or nothing, their admin sessions end at once, and a batch that would leave no Super admin is refused with "There must be at least one Super admin".
+- AC4: Given pending invites, When I choose Resend, Then each pending invite not sent in the last hour is resent (at most 20), and accepted or revoked ones are skipped.
+- Edge: moving anyone to or from Super admin is only possible one at a time.
+- Error: a failed email is listed for that invite.
+- Empty: only the Super admin listed means no checkboxes.
+
+### M42-S12 Bulk actions on series (Should)
+As an admin, I want to publish, unpublish or delete several series at once, so that housekeeping is quick.
+- AC1: Given selected series, When I publish or unpublish, Then each follows the series visibility rule and failures list their reason; Undo is offered.
+- AC2: Given selected series, When I delete, Then I must type the count, the dialog says the videos stay as single videos, and no Undo is offered.
+- AC3: Given an Editor, When they select series, Then Delete is disabled with "Only an admin can delete a series".
+- Edge: delete is page scope only.
+- Error: per series failures are listed.
+- Empty: "No series yet."
+
+### M42-S13 Restore and delete forever in bulk from Trash (Must)
+As an admin, I want to restore or permanently delete many trashed videos, so that Trash does not pile up.
+- AC1: Given selected videos in Trash, When I choose Restore, Then they return as Draft with an Undo for 10 seconds that moves them back.
+- AC2: Given selected videos, When I choose Delete forever, Then I must type the count to enable the button, and each video is queued for deletion with a result per video.
+- AC3: Given an Editor, When they open Trash, Then they can restore but Delete forever is disabled with "Only an admin can delete forever".
+- Edge: single Delete forever asks for the word "delete".
+- Error: a storage failure on one video retries in the background and is shown as "Queued" with a note.
+- Empty: "Trash is empty."
+
+### M42-S14 Upload many files with shared details (Must)
+As an admin, I want to set category, series and suitability once for a batch of uploads, so that I do not edit every draft.
+- AC1: Given the upload screen, When I add files, Then a details form for all files is shown with Category, Series (with optional numbering in file order), Suitability and Tags.
+- AC2: Given I register files, When each draft is created, Then it has the shared details already set.
+- AC3: Given I change the shared details, When more files are added, Then new files use the new details and finished ones keep theirs.
+- Edge: replacing a failed file never shows the form.
+- Error: an invalid choice is explained next to the field and the file waits.
+- Empty: before any file is added the form is collapsed with its summary.
+
+### M42-S15 Override details per file (Should)
+As an admin, I want to change one file's details without losing the shared ones, so that exceptions are easy.
+- AC1: Given files in the batch, When the override table shows, Then each row has Title, Category, Series and episode, Suitability and Reset.
+- AC2: Given I change a cell, When it differs from the shared value, Then it shows a Custom badge and later changes to the shared form do not overwrite it.
+- AC3: Given I press Reset, When pressed, Then the cell returns to the shared value.
+- Edge: after a file is registered its cells are read only.
+- Error: an empty title is not accepted.
+- Empty: no files means no table.
+
+### M42-S16 Publish later on upload (Could)
+As an admin, I want a batch to publish itself when it is ready, so that I am not waiting by the screen.
+- AC1: Given I choose "Publish when ready" with an optional not before time, When the video's last blocker clears, Then it publishes if the time has passed and the publish checklist passes.
+- AC2: Given captions are not approved, When the time comes, Then the video stays a draft and I get a notice saying why; the caption gate is never skipped.
+- AC3: Given I publish by hand, When it happens, Then the intent is cleared.
+- Edge: the video editor shows "Will publish when ready" with Cancel.
+- Error: a failed automatic publish leaves a draft and a notice.
+- Empty: the default is Keep as draft.
+
+### M42-S17 Captions available switch per video (Must)
+As an admin, I want to choose whether viewers get captions on a video, so that a title where captions do not fit can go out without them.
+- AC1: Given a video, When I open "Captions for viewers", Then I can choose Follow site default (it shows what that is now), On, or Off.
+- AC2: Given I choose Off, When I save, Then I must give a reason of 5 or more characters, viewers get no caption tracks and no CC button for it, and an audit row records the reason.
+- AC3: Given Off, When the video is published, Then the caption gate counts it as satisfied and the video publishes without approved captions.
+- AC4: Given On or Follow with captions in place, When I switch back, Then approved tracks are offered again without reprocessing.
+- Edge: Editors see the switch disabled with "Only an admin can change this".
+- Error: save failure keeps the old value and shows retry.
+- Empty: not applicable.
+
+### M42-S18 Site default for captions (Should)
+As a Super admin, I want one site wide default for caption availability, so that I do not set it on every video.
+- AC1: Given Site settings, When I open "Captions are available to viewers by default", Then I see On (the default) or Off, changeable only by a Super admin.
+- AC2: Given the default is Off, When a video follows the default, Then viewers get no captions for it, and videos set to On still do.
+- AC3: Given I change it, When saved, Then an audit row records the old and new value and the Videos list shows the effective state per video.
+- Edge: changing the default does not touch videos set explicitly.
+- Error: save failure keeps the old value.
+- Empty: not applicable.
+
+### M42-S19 Captions available in bulk (Should)
+As an admin, I want to switch captions on or off for many videos, so that a whole season is quick to set.
+- AC1: Given selected videos, When I choose Captions for viewers and then On, Off or Follow site default, Then it applies to each with a report; Off asks for one reason applied to all.
+- AC2: Given I select all that match my filter, When I use this action, Then up to 500 are changed, because the change is reversible; Undo restores each video's previous value.
+- AC3: Given an Editor, When they select videos, Then the action is disabled with the reason.
+- Edge: videos in Trash are not included.
+- Error: per video failures are listed.
+- Empty: not applicable.
+
+### M42-S20 Viewer CC follows availability and is remembered per profile (Must)
+As a viewer, I want the CC button only when there are captions, and my choice remembered, so that it just works.
+- AC1: Given captions are switched off or there is no approved track, When the player loads, Then there is no CC button and the C key does nothing.
+- AC2: Given I turn captions on for my profile, When I watch another video that has captions, Then they are on, on every device I use that profile on.
+- AC3: Given I watch a video without captions, When I move on, Then my saved choice is unchanged.
+- AC4: Given a kids profile, When a video has captions, Then they start on; with none, nothing shows.
+- Edge: title cards hide the CC badge when captions are switched off.
+- Error: a caption file failing to load shows the existing toast and playback continues.
+- Empty: not applicable.
+
+### M42-S21 Videos list bulk gaps (Must)
+As an admin, I want the Videos bulk bar to meet the same rules as every other list, so that big clean ups are safe.
+- AC1: Given 5 or more videos are selected, When I choose Move to Trash, Then I must type the count.
+- AC2: Given Publish, When I choose it, Then a confirm shows the count and the first blocker for any video that is not ready, before anything changes.
+- AC3: Given I choose Remove from category, When it runs, Then it removes where present and reports the rest as skipped.
+- AC4: Given a partial result, When shown, Then I can retry the failed ones (M16-S09 AC2).
+- Edge: Add and Remove category, Set suitability and Captions for viewers allow Select all that match.
+- Error: a thrown error says "Nothing was changed".
+- Empty: not applicable.
+
+### M42-S22 Bulk actions are audited (Must)
+As the owner, I want every bulk action in the audit log, so that I can answer who changed what.
+- AC1: Given any bulk run, When it finishes, Then one `bulk.run` row records the action, the actor, the counts and the first 50 ids, and every changed item has its normal audit row carrying the same bulk id.
+- AC2: Given a denied or forged run, When the server refuses, Then an audit row with outcome denied is written.
+- AC3: Given the Audit log screen, When I search a bulk id, Then I see the summary and its item rows.
+- Edge: the summary never stores reasons typed for individual accounts beyond the shared reason; email addresses are masked as everywhere else.
+- Error: if the summary cannot be written the action still completes and the failure is logged and alerted (M24).
+- Empty: not applicable.
 
 ## M40 Guest access
 

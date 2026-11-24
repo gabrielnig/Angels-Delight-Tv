@@ -82,7 +82,10 @@ export function UsersTableClient({
     const result = await runner.start(list, prior?.bulkId ?? newBulkId());
     const merged = prior ? mergeOutcomes(prior, result) : result;
     if (merged.interrupted && merged.succeeded.length === 0 && merged.failed.length === 0) {
-      toast.show({ tone: 'danger', message: `${labelOf(action)} did not work. Nothing was changed. Try again.` });
+      toast.show({
+        tone: 'danger',
+        message: `${labelOf(action)} did not work. Nothing was changed. Try again.`,
+      });
       return;
     }
     setOutcome(merged);
@@ -92,7 +95,9 @@ export function UsersTableClient({
       toast.show({
         tone: 'success',
         message: describeOutcome(labelOf(action), merged),
-        ...(payload ? { actionLabel: 'Undo', durationMs: 10000, onAction: () => void doUndo(payload) } : {}),
+        ...(payload
+          ? { actionLabel: 'Undo', durationMs: 10000, onAction: () => void doUndo(payload) }
+          : {}),
       });
     }
     router.refresh();
@@ -150,6 +155,7 @@ export function UsersTableClient({
                   <Checkbox
                     label="Select all on this page"
                     checked={sel.allOnPage}
+                    mixed={sel.someOnPage && !sel.allOnPage}
                     onChange={sel.togglePage}
                   />
                 </th>
@@ -245,7 +251,12 @@ export function UsersTableClient({
         onClose={() => setDialog(null)}
         onConfirm={() => void run({ type: 'suspend', reason: reason.trim() }, [...sel.selected])}
       >
-        <TextField label="Reason" value={reason} hint="At least 3 characters." onChange={(e) => setReason(e.target.value)} />
+        <TextField
+          label="Reason"
+          value={reason}
+          hint="At least 3 characters."
+          onChange={(e) => setReason(e.target.value)}
+        />
       </ConfirmDialog>
       <ConfirmDialog
         open={dialog === 'sign_out'}
@@ -257,7 +268,12 @@ export function UsersTableClient({
         onClose={() => setDialog(null)}
         onConfirm={() => void run({ type: 'sign_out', reason: reason.trim() }, [...sel.selected])}
       >
-        <TextField label="Reason" value={reason} hint="At least 3 characters." onChange={(e) => setReason(e.target.value)} />
+        <TextField
+          label="Reason"
+          value={reason}
+          hint="At least 3 characters."
+          onChange={(e) => setReason(e.target.value)}
+        />
       </ConfirmDialog>
     </>
   );

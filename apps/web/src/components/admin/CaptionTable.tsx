@@ -7,12 +7,7 @@ import type { AccountRole } from '@ad/shared';
 import { can } from '@/lib/admin/can';
 import { formatRelative } from '@/lib/admin/format';
 import { planBulkApprove } from '@/lib/data/admin/caption-commands';
-import {
-  describeOutcome,
-  mergeOutcomes,
-  newBulkId,
-  type BulkOutcome,
-} from '@/lib/data/admin/bulk';
+import { describeOutcome, mergeOutcomes, newBulkId, type BulkOutcome } from '@/lib/data/admin/bulk';
 import type { CaptionRow } from '@/lib/data/admin/services';
 import { CaptionBadge } from './Badge';
 import { BulkBar, type BulkBarAction } from './bulk/BulkBar';
@@ -83,7 +78,10 @@ export function CaptionTable({
       withSkips.succeeded.length === 0 &&
       withSkips.failed.length === 0;
     if (nothingHappened) {
-      toast.show({ tone: 'danger', message: 'Approve did not work. Nothing was changed. Try again.' });
+      toast.show({
+        tone: 'danger',
+        message: 'Approve did not work. Nothing was changed. Try again.',
+      });
       return;
     }
     setOutcome(withSkips);
@@ -153,6 +151,7 @@ export function CaptionTable({
                 <Checkbox
                   label="Select all on this page"
                   checked={sel.allOnPage}
+                  mixed={sel.someOnPage && !sel.allOnPage}
                   onChange={sel.togglePage}
                 />
               </th>
@@ -170,7 +169,10 @@ export function CaptionTable({
           </thead>
           <tbody>
             {rows.map((row) => (
-              <tr key={row.videoId} className={sel.isSelected(row.videoId) ? 'is-selected' : undefined}>
+              <tr
+                key={row.videoId}
+                className={sel.isSelected(row.videoId) ? 'is-selected' : undefined}
+              >
                 <td className="adm-table__check">
                   <Checkbox
                     label={`Select ${row.title}`}

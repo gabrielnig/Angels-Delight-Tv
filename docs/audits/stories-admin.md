@@ -126,3 +126,18 @@ Super admin: the role exists since lane f1 (D-128), the rows reserved for it are
 ## Open gaps
 
 - No tamper evident audit chain (M20-S05, a Could).
+
+Lane L3 additions (M42, Must and Should only; browser checks recorded in docs/lanes/L3-build.md):
+
+| Story | Priority | Status | Evidence | Gap |
+|---|---|---|---|---|
+| M42-S01 One table alignment rule | Should | done with test | tables.test.ts; admin-css.test.ts | |
+| M42-S08 Bulk approve captions | Should | done with test | caption-commands.test.ts; CaptionTable.test.tsx | |
+| M42-S09 Bulk retry encodes | Should | done with test | EncodingBulk.test.tsx; video-commands tests | |
+| M42-S13 Bulk Trash restore and delete forever | Should | done with test | TrashList.test.tsx; video-bulk.test.ts | |
+| M42-S12 Series bulk | Should | done with test | SeriesList.test.tsx; series-bulk.test.ts | |
+| M42-S10 Viewer account bulk | Should | done with test | UsersTableClient tests; user-bulk.test.ts | |
+| M42-S11 Staff role bulk | Should | done with test | RolesInvites.test.tsx; staff-bulk.test.ts | |
+| M42-S14 Upload shared details | Should | done with test | upload-details.test.ts; UploadScreen.test.tsx | |
+| M42-S15 Per file overrides | Should | done with test | UploadOverrides.test.tsx; UploadScreen.test.tsx | |
+| M42-S16 Publish later on upload | Could | not built | | Not audited, Could |

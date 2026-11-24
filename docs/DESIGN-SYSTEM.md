@@ -542,6 +542,21 @@ Accessibility: card is an `<a>` with accessible name "Title, 4 minutes". Actions
 - Mobile: tables become stacked cards (title, status badge, two key facts, actions menu). No horizontal scrolling for critical tasks. If a wide table must exist, make the first column sticky.
 - States: loading (skeleton rows), empty (11.20), error (11.21 inside the table body with Retry), row selected (primary tint plus tick), row action loading (spinner in action button), disabled actions (explain in a tooltip on focus).
 - Accessibility: real `<table>`, `<th scope>`, caption or `aria-label`, action menus are buttons with `aria-haspopup="menu"`.
+- Alignment (M42-S01): quantity columns (counts, sizes, durations, percentages, rows) use `adm-num`, which right aligns the header and the cells with tabular numerals. Text, dates and status stay left.
+- Phones (M42): Captions, Trash and Users become stacked `adm-cards`. Other wide tables keep `adm-table--sticky` with a fixed first column.
+
+### 11.16a Bulk bar and results panel (admin)
+
+- The bulk bar appears when one or more rows are selected: count ("3 selected"), the actions, Clear. It sits in the page flow above the table and is sticky on phones. Every control is 44px.
+- The header tick is a tri state checkbox: unchecked, checked, mixed (`aria-checked="mixed"`) when only some rows are selected.
+- Secondary actions live in a "More" menu (`aria-haspopup="menu"`). Destructive actions that need a typed count or a reason are never the primary button.
+- Progress shows as `role="progressbar"` with `aria-valuenow`, `aria-valuemin`, `aria-valuemax` and a text line ("12 of 40 done"). It is announced politely, never as an infinite spinner.
+- The results panel lists done, failed (with the reason per item) and skipped, offers Retry for retryable failures, and an Undo toast of 10 seconds where undo applies.
+- States: idle, selected, running, done, partly failed, interrupted (Continue), disabled with a reason.
+
+### 11.16b Breadcrumb
+
+- One `Breadcrumbs` component in `@ad/ui` for admin and viewer pages. The current page truncates at 40 characters on desktop and phones show only the parent link. The current item has `aria-current="page"`.
 
 ### 11.17 Upload dropzone and queue lane
 

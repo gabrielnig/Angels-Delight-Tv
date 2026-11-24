@@ -45,6 +45,18 @@ const tick = (id: string) =>
   userEvent.click(screen.getAllByRole('checkbox', { name: `Select Gone ${id}` })[0]!);
 
 describe('TrashList bulk', () => {
+  it('the header tick is mixed for a partial selection and checked for all', async () => {
+    setup([trashed('a'), trashed('b')]);
+    const head = () =>
+      screen.getAllByRole('checkbox').find((b) => /select all/i.test(b.getAttribute('aria-label') ?? b.parentElement?.textContent ?? '')) as HTMLInputElement;
+    expect(head().indeterminate).toBe(false);
+    await tick('a');
+    expect(head().indeterminate).toBe(true);
+    await tick('b');
+    expect(head().indeterminate).toBe(false);
+    expect(head().checked).toBe(true);
+  });
+
   it('Delete forever stays disabled until the count is typed', async () => {
     const { purgeMany } = setup([trashed('a'), trashed('b'), trashed('c')]);
     for (const id of ['a', 'b', 'c']) await tick(id);
