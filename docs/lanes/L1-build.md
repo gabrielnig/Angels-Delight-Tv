@@ -14,8 +14,8 @@ Plan: `docs/plan/v2/L1-guest-access.md`. Rulings: `docs/plan/v2/RULINGS.md` (the
 | 6 | Guest audience, Kids mode, settings | merged | #263 |
 | 7 | My List explainer, return intent | merged | #264 |
 | 8 | Guest Continue learning | merged | #265 |
-| 9 | History import | on PR | see below |
-| 10 | Abuse protection, Turnstile escalation | todo | |
+| 9 | History import | merged | #266 |
+| 10 | Abuse protection, Turnstile escalation | on PR | see below |
 | 11 | Robots, journeys, documents | todo | |
 
 ## Slice 1 (guest identity and playback)
@@ -118,3 +118,11 @@ Deviations: no `guest` prop on the shared `TopNav` (D-208). The sticky Play bar 
 - `packages/viewer/src/progress-import.ts` `importGuestProgress`, `MAX_IMPORT_ITEMS`. `api.progress.import` and `/api/progress/import`.
 - Client: `lib/guest/import.ts` (`buildImportItems`, `runImport`), `ImportPrompt` mounted in `ViewerChrome`.
 - Heads up: `messages-coverage.test.ts` fails on `main` for three `player.skip.*` keys that are not mine (L4). Dynamic `msg()` keys are not seen by that test, so write literal keys.
+
+## Slice 10 (Abuse protection)
+
+- `server/guest/challenge.ts` (`createGuestChallenge`, `GUEST_CHALLENGE_POLICY`, `TURNSTILE_HEADER`), `PlaybackHttpDeps.guestChallenge`, `ChallengeRequired` in `@ad/shared`.
+- Player: `solveChallenge` option and `SessionError('challenge')`. Web: `GuestChallenge`, `useGuestChallenge`, `WatchClient` prop `challengeSiteKey`.
+- DEPLOYMENT.md: guest session rate rule, Workers free plan note, Turnstile note.
+- Not tested end to end with a real limiter store; the pieces are covered by unit tests with fakes.
+- The older `guest.ip` playback buckets (`play-session-guest-ip`, `play-key-ip`) still use the address as subject, as `keyIp` did before. Hashing them is a follow up.
