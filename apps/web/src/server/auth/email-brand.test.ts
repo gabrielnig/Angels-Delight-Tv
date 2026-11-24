@@ -1,5 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { LogoUploader, MemoryAssetStore, MemorySettingsStore, MemoryThemeStore, SettingsService, ThemeService, DEFAULT_THEME } from '@ad/theme';
+import {
+  LogoUploader,
+  MemoryAssetStore,
+  MemorySettingsStore,
+  MemoryThemeStore,
+  SettingsService,
+  ThemeService,
+  DEFAULT_THEME,
+} from '@ad/theme';
 import { createLogger } from '@ad/shared';
 import { emailBrandFrom } from './email-brand';
 
@@ -42,15 +50,28 @@ describe('emailBrandFrom', () => {
         ],
       }),
     };
-    const theme = { getPublished: async () => ({ ...(await r.theme.getPublished()), logoAssetId: 'logo-1' }) };
-    const brand = await emailBrandFrom({ ...r, theme, logos } as never, 'https://media.example.org/');
+    const theme = {
+      getPublished: async () => ({ ...(await r.theme.getPublished()), logoAssetId: 'logo-1' }),
+    };
+    const brand = await emailBrandFrom(
+      { ...r, theme, logos } as never,
+      'https://media.example.org/',
+    );
     expect(brand.logoUrl).toBe('https://media.example.org/img/logo-1/400-bbbbbbbb.webp');
   });
 
   it('never throws, an unreadable theme gives the plain default', async () => {
     const broken = {
-      theme: { getPublished: async () => { throw new Error('down'); } },
-      settings: { get: async () => { throw new Error('down'); } },
+      theme: {
+        getPublished: async () => {
+          throw new Error('down');
+        },
+      },
+      settings: {
+        get: async () => {
+          throw new Error('down');
+        },
+      },
       logos: { get: async () => null },
       logger,
     };

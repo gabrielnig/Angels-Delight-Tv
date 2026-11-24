@@ -89,6 +89,8 @@ const webShape = {
   TRUSTED_PROXY_MODE: z.enum(['none', 'cloudflare']).default('none'),
   EDGE_TOKEN_MODE: z.enum(['off', 'worker']).optional(),
   DEV_SKIP_MFA: bool.default(false),
+  /** Viewer two step verification (M49). Off is an emergency switch: confirmed factors are then not asked for. */
+  VIEWER_MFA_ENABLED: bool.default(true),
   /** Development only: every string is wrapped in the pseudo locale for layout and font QA (M46). Rejected in production. */
   DEV_PSEUDO_LOCALE: bool.default(false),
   /** Kill switch for the service worker (M25-S02). Off serves a worker that clears caches and unregisters. */

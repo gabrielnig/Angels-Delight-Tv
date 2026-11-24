@@ -20,6 +20,9 @@ function setup(
     pendingDeletionActor: async () => actor,
     setPending: async () => undefined,
     readPending: async () => null,
+    setTwoStepPending: async () => undefined,
+    readTwoStepPending: async () => null,
+    clearTwoStepPending: async () => undefined,
   };
   const list = vi.fn(async () => [
     {

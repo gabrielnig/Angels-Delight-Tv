@@ -13,6 +13,7 @@ import {
   type PlaybackSettings,
   type ProfileInput,
   type SignUpResult,
+  type TwoStepResult,
   type Suggestion,
 } from '../lib/data';
 import { currentAccountId, getSession, sessionCookieNames } from '../lib/session';
@@ -103,6 +104,34 @@ export async function signUpAction(input: {
 export async function verifyEmailAction(input: { code: string }): Promise<CodeResult> {
   const result = await getAuth().verifyEmail(input);
   if (result.ok) (await cookies()).delete(sessionCookieNames.fixture);
+  return result;
+}
+
+/** Finishes a viewer sign in with an authenticator code (M49-S02). Sets the same cookies as a password sign in. */
+export async function verifyTwoStepAction(input: {
+  code: string;
+  next?: string;
+}): Promise<TwoStepResult> {
+  return finishTwoStep(await getAuth().verifyTwoStep(input));
+}
+
+export async function verifyRecoveryAction(input: {
+  code: string;
+  next?: string;
+}): Promise<TwoStepResult> {
+  return finishTwoStep(await getAuth().verifyRecovery(input));
+}
+
+async function finishTwoStep(result: TwoStepResult): Promise<TwoStepResult> {
+  if (!result.ok) return result;
+  const jar = await cookies();
+  jar.delete(sessionCookieNames.fixture);
+  await setAccountHint(jar);
+  if (alwaysAskFromCookie(jar.get(ALWAYS_ASK_COOKIE)?.value)) {
+    jar.delete(sessionCookieNames.profile);
+    if (realDataEnabled()) await cookieProfileIo().clearActive();
+    else jar.set(sessionCookieNames.fixture, 'noprofile', cookieOptions);
+  }
   return result;
 }
 

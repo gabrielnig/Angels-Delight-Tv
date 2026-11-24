@@ -39,7 +39,11 @@ export function SignUpForm({
   const [touched, setTouched] = useState({ email: false, password: false, invite: false });
   const [submitted, setSubmitted] = useState(false);
   const [busy, setBusy] = useState(false);
-  const [banner, setBanner] = useState<{ text: string; tone: 'danger' | 'warning'; icon?: 'clock' } | null>(null);
+  const [banner, setBanner] = useState<{
+    text: string;
+    tone: 'danger' | 'warning';
+    icon?: 'clock';
+  } | null>(null);
   const [serverField, setServerField] = useState<{ email?: string; password?: string }>({});
 
   const checks = evaluatePassword(password, 2);
@@ -90,7 +94,10 @@ export function SignUpForm({
       else if (result.reason === 'network')
         setBanner({ text: SIGN_UP_NETWORK_MESSAGE, tone: 'danger' });
       else if (result.reason === 'invite_required')
-        setBanner({ text: 'That invite code is not valid. Check it and try again.', tone: 'danger' });
+        setBanner({
+          text: 'That invite code is not valid. Check it and try again.',
+          tone: 'danger',
+        });
       else if (result.reason === 'invalid_email')
         setServerField({ email: 'Enter your full email, for example name@example.com.' });
       else setServerField({ password: 'Use at least 10 characters.' });

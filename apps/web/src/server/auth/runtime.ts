@@ -1,9 +1,11 @@
 import 'server-only';
 import {
+  type AuthDeps,
   KeyService,
   PasswordHasher,
   SessionService,
   StaffService,
+  ViewerMfaService,
   isPasswordBreached,
 } from '@ad/auth';
 import { type WebEnv, loadWebEnv } from '@ad/config';
@@ -19,6 +21,7 @@ import { createLogger } from '@ad/shared';
 export interface AuthRuntime {
   env: WebEnv;
   staff: StaffService;
+  viewerMfa: ViewerMfaService;
   sessions: SessionService;
   keys: KeyService;
   limiter: RateLimiter;
@@ -81,7 +84,7 @@ function build(env: WebEnv): AuthRuntime {
       brand: async () => emailBrandFrom(await themeRuntime(), env.MEDIA_ORIGIN),
     },
   );
-  const staff = new StaffService({
+  const deps: AuthDeps = {
     db,
     keys,
     sessions,
@@ -92,7 +95,11 @@ function build(env: WebEnv): AuthRuntime {
     mailer,
     pepper: env.EMAIL_HASH_PEPPER,
     kek: env.FIELD_KEK,
-    config: { supportEmail, devSkipMfa: env.DEV_SKIP_MFA },
+    config: {
+      supportEmail,
+      devSkipMfa: env.DEV_SKIP_MFA,
+      viewerMfaEnabled: env.VIEWER_MFA_ENABLED,
+    },
     signUpPolicy: async () => ({
       open: await (await themeRuntime()).settings.get('features.signups_open'),
     }),
@@ -101,10 +108,13 @@ function build(env: WebEnv): AuthRuntime {
         onUnavailable: (e) => logger.warn('hibp unavailable', { e: String(e) }),
       }),
     logger,
-  });
+  };
+  const staff = new StaffService(deps);
+  const viewerMfa = new ViewerMfaService(deps);
   return {
     env,
     staff,
+    viewerMfa,
     sessions,
     keys,
     limiter,

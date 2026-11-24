@@ -165,7 +165,9 @@ describe('SignUpForm', () => {
     await user.type(screen.getByLabelText(/^Password \(required\)/), 'blue mango river sunrise');
     await user.click(screen.getByRole('button', { name: 'Create account' }));
     expect(
-      await screen.findByText('Too many accounts were created from this connection. Try again in 15 minutes.'),
+      await screen.findByText(
+        'Too many accounts were created from this connection. Try again in 15 minutes.',
+      ),
     ).toBeInTheDocument();
     expect(screen.getByLabelText(/^Email/)).toHaveValue('chioma@example.com');
   });

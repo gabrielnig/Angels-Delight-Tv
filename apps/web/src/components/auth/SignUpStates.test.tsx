@@ -49,7 +49,9 @@ describe('S02 typing, password too short', () => {
     setup();
     await user.type(email(), 'chioma.okafor@gmail.com');
     await user.type(password(), 'lagos2026');
-    await waitFor(() => expect(meter().querySelector('.auth-meter__word')).toHaveTextContent('Weak'));
+    await waitFor(() =>
+      expect(meter().querySelector('.auth-meter__word')).toHaveTextContent('Weak'),
+    );
     expect(segmentsOn()).toBe(2);
     expect(meter()).toHaveAttribute('aria-label', 'Password strength: Weak');
     await user.tab();
@@ -65,7 +67,9 @@ describe('S02 strong password', () => {
     const user = userEvent.setup();
     setup();
     await user.type(password(), 'blue mango river sunrise');
-    await waitFor(() => expect(meter().querySelector('.auth-meter__word')).toHaveTextContent('Strong'));
+    await waitFor(() =>
+      expect(meter().querySelector('.auth-meter__word')).toHaveTextContent('Strong'),
+    );
     expect(segmentsOn()).toBe(4);
     expect(meter()).toHaveAttribute('data-tone', 'success');
     const items = [...document.querySelectorAll('.auth-checklist li')];
@@ -80,7 +84,9 @@ describe('S02 strong password', () => {
     const user = userEvent.setup();
     setup();
     await user.type(password(), 'abcdefghijkl');
-    await waitFor(() => expect(meter().querySelector('.auth-meter__word')).toHaveTextContent('Okay'));
+    await waitFor(() =>
+      expect(meter().querySelector('.auth-meter__word')).toHaveTextContent('Okay'),
+    );
     expect(segmentsOn()).toBe(3);
     const hint = document.querySelectorAll('.auth-checklist li')[2];
     expect(hint).not.toHaveAttribute('data-met', 'true');
@@ -94,7 +100,9 @@ describe('S02 email not valid', () => {
     setup();
     await user.type(email(), 'chioma.okafor@gmail');
     await user.tab();
-    expect(screen.getByText('Enter your full email, for example name@example.com.')).toBeInTheDocument();
+    expect(
+      screen.getByText('Enter your full email, for example name@example.com.'),
+    ).toBeInTheDocument();
     expect(email()).toHaveAttribute('aria-invalid', 'true');
   });
 });
@@ -142,7 +150,9 @@ describe('S02 invite only variant', () => {
     setup({ inviteOnly: true });
     const invite = screen.getByLabelText(/^Invite code \(required\)/);
     expect(screen.getByText('Sign up is by invitation for now.')).toHaveClass('auth-field__hint');
-    expect(invite.compareDocumentPosition(password()) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(
+      invite.compareDocumentPosition(password()) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
     expect(email().compareDocumentPosition(invite) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(screen.queryByRole('status')).toBeNull();
   });

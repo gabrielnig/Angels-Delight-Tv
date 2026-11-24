@@ -1,17 +1,20 @@
 import 'server-only';
-import { readPending, signPending } from '@ad/auth';
+import { PENDING_MFA_SECONDS, readPending, readPendingMfa, signPending } from '@ad/auth';
 import { type AccountViewerSource, RealAccountRepository } from './account-repo';
 import { type GatewayIo, RealAuthGateway } from './gateway';
 import { authRuntime } from './runtime';
 import { turnstileFromEnv, verifyTurnstile } from './turnstile';
 import {
   clearSessionCookie,
+  clearTwoStepCookie,
   getSession,
   readPendingCookie,
   readSessionToken,
+  readTwoStepCookie,
   requestMeta,
   setPendingCookie,
   setSessionCookie,
+  setTwoStepCookie,
 } from './session';
 
 const PENDING_SECONDS = 30 * 60;
@@ -43,6 +46,13 @@ export function requestIo(): GatewayIo {
     async readPending() {
       return readPending(authRuntime().pepper, await readPendingCookie())?.email ?? null;
     },
+    setTwoStepPending: (token) => setTwoStepCookie(token, PENDING_MFA_SECONDS),
+    async readTwoStepPending() {
+      const token = await readTwoStepCookie();
+      if (!token) return null;
+      return readPendingMfa(authRuntime().pepper, token, Date.now()) ? token : null;
+    },
+    clearTwoStepPending: clearTwoStepCookie,
   };
 }
 
@@ -52,6 +62,7 @@ export const createRealAuth = () => {
     authRuntime().staff,
     requestIo(),
     keys ? (token, ip) => verifyTurnstile(keys, token, ip) : undefined,
+    authRuntime().viewerMfa,
   );
 };
 

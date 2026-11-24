@@ -8,6 +8,7 @@ import {
   pendingCookieOptions,
   sessionCookieName,
   sessionCookieOptions,
+  twoStepCookieName,
 } from './cookies';
 import { buildMeta, sameOriginOr403 } from './request';
 import { authRuntime } from './runtime';
@@ -56,6 +57,20 @@ export async function setPendingCookie(value: string, maxAge: number): Promise<v
 
 export async function readPendingCookie(): Promise<string | undefined> {
   return (await cookies()).get(pendingCookieName(authRuntime().secureCookies))?.value;
+}
+
+export async function setTwoStepCookie(value: string, maxAge: number): Promise<void> {
+  const secure = authRuntime().secureCookies;
+  (await cookies()).set(twoStepCookieName(secure), value, pendingCookieOptions(secure, maxAge));
+}
+
+export async function readTwoStepCookie(): Promise<string | undefined> {
+  return (await cookies()).get(twoStepCookieName(authRuntime().secureCookies))?.value;
+}
+
+export async function clearTwoStepCookie(): Promise<void> {
+  const secure = authRuntime().secureCookies;
+  (await cookies()).set(twoStepCookieName(secure), '', pendingCookieOptions(secure, 0));
 }
 
 export const getSession = cache(async (): Promise<SessionContext | null> => {

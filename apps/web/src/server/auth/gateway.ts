@@ -3,13 +3,14 @@ import {
   AccountUnavailable,
   type RequestMeta,
   type StaffService,
+  type ViewerMfaService,
   FieldErrors,
   InviteRequired,
   InvalidCredentials,
   TokenRejected,
 } from '@ad/auth';
 import { RateLimited } from '@ad/shared';
-import type { AuthGateway } from '../../lib/data/types';
+import type { AuthGateway, TwoStepResult } from '../../lib/data/types';
 import type { SessionCookieKind } from './cookies';
 import { safeViewerNext } from './next-param';
 
@@ -24,6 +25,10 @@ export interface GatewayIo {
   pendingDeletionActor(): Promise<Actor | null>;
   setPending(email: string): Promise<void>;
   readPending(): Promise<string | null>;
+  /** The signed note that a password was right and a code is still needed (M49-S02). Not a session. */
+  setTwoStepPending(token: string): Promise<void>;
+  readTwoStepPending(): Promise<string | null>;
+  clearTwoStepPending(): Promise<void>;
 }
 
 type Service = Pick<
@@ -40,6 +45,8 @@ type Service = Pick<
   | 'triesLeft'
 >;
 
+type Mfa = Pick<ViewerMfaService, 'completeSignIn' | 'completeRecovery'>;
+
 const minutes = (seconds: number) => Math.max(1, Math.ceil(seconds / 60));
 
 /** Real implementation of the viewer UI's AuthGateway on top of the auth services (modules M01 and M02). */
@@ -52,6 +59,7 @@ export class RealAuthGateway implements AuthGateway {
     private readonly service: Service,
     private readonly io: GatewayIo,
     private readonly challenge?: (token: string | undefined, ip: string | null) => Promise<boolean>,
+    private readonly mfa: Mfa = service as unknown as Mfa,
   ) {}
 
   private async checkPassed(token: string | undefined): Promise<boolean> {
@@ -72,6 +80,17 @@ export class RealAuthGateway implements AuthGateway {
         return { ok: true as const, next: '/verify-email' };
       }
       if (result.status === 'use_admin_login') return { ok: true as const, next: '/admin/login' };
+      if (result.status === 'mfa_required') {
+        await this.io.setTwoStepPending(result.pendingToken);
+        const next = input.next ? safeViewerNext(input.next) : null;
+        return {
+          ok: true as const,
+          next:
+            next && next !== '/profiles'
+              ? `/sign-in/verify?next=${encodeURIComponent(next)}`
+              : '/sign-in/verify',
+        };
+      }
       if (result.status === 'pending_deletion') {
         await this.io.setSession(result.session.token, 'viewer');
         return { ok: true as const, next: '/account/deletion' };
@@ -92,6 +111,52 @@ export class RealAuthGateway implements AuthGateway {
       if (error instanceof AccountUnavailable)
         return { ok: false as const, reason: 'unavailable' as const };
       return { ok: false as const, reason: 'network' as const };
+    }
+  }
+
+  async hasTwoStepPending() {
+    return (await this.io.readTwoStepPending()) !== null;
+  }
+
+  verifyTwoStep(input: { code: string; next?: string }): Promise<TwoStepResult> {
+    return this.completeTwoStep(input, (token, meta) =>
+      this.mfa.completeSignIn(token, { code: input.code }, meta),
+    );
+  }
+
+  verifyRecovery(input: { code: string; next?: string }): Promise<TwoStepResult> {
+    return this.completeTwoStep(input, (token, meta) =>
+      this.mfa.completeRecovery(token, { code: input.code }, meta),
+    );
+  }
+
+  private async completeTwoStep(
+    input: { next?: string },
+    run: (
+      token: string,
+      meta: RequestMeta,
+    ) => Promise<{ status: 'signed_in' | 'pending_deletion'; session: { token: string } }>,
+  ): Promise<TwoStepResult> {
+    const token = await this.io.readTwoStepPending();
+    if (!token) return { ok: false, reason: 'expired' };
+    try {
+      const result = await run(token, await this.io.meta());
+      await this.io.setSession(result.session.token, 'viewer');
+      await this.io.clearTwoStepPending();
+      return {
+        ok: true,
+        next:
+          result.status === 'pending_deletion' ? '/account/deletion' : safeViewerNext(input.next),
+      };
+    } catch (error) {
+      if (error instanceof RateLimited)
+        return { ok: false, reason: 'locked', minutes: minutes(error.retryAfterSeconds) };
+      if (error instanceof InvalidCredentials) {
+        await this.io.clearTwoStepPending();
+        return { ok: false, reason: 'expired' };
+      }
+      if (error instanceof FieldErrors) return { ok: false, reason: 'wrong' };
+      return { ok: false, reason: 'network' };
     }
   }
 

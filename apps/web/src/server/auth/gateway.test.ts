@@ -23,6 +23,9 @@ function setup(service: Record<string, unknown>, extra: Partial<GatewayIo> = {})
     setPending: vi.fn(async () => undefined),
     readPending: vi.fn(async () => 'me@example.org'),
     pendingDeletionActor: vi.fn(async () => null),
+    setTwoStepPending: vi.fn(async () => undefined),
+    readTwoStepPending: vi.fn(async () => 'PENDING'),
+    clearTwoStepPending: vi.fn(async () => undefined),
     ...extra,
   };
   return { gateway: new RealAuthGateway(service as never, io), io };
@@ -167,7 +170,11 @@ describe('RealAuthGateway.signUp invite codes', () => {
   it('passes the invite code to the service', async () => {
     const signUp = vi.fn(async (_input: unknown) => ({ email: 'a@b.co', emailSent: true }));
     const { gateway } = setup({ signUp });
-    await gateway.signUp({ email: 'a@b.co', password: 'river-lantern-42-mango', inviteCode: 'K7QM-3WTD-RB' });
+    await gateway.signUp({
+      email: 'a@b.co',
+      password: 'river-lantern-42-mango',
+      inviteCode: 'K7QM-3WTD-RB',
+    });
     expect(signUp.mock.calls[0]?.[0]).toMatchObject({ inviteCode: 'K7QM-3WTD-RB' });
   });
 
@@ -178,7 +185,11 @@ describe('RealAuthGateway.signUp invite codes', () => {
       },
     });
     expect(
-      await gateway.signUp({ email: 'a@b.co', password: 'river-lantern-42-mango', inviteCode: 'x' }),
+      await gateway.signUp({
+        email: 'a@b.co',
+        password: 'river-lantern-42-mango',
+        inviteCode: 'x',
+      }),
     ).toEqual({ ok: false, reason: 'invite_required' });
   });
 });
@@ -373,5 +384,110 @@ describe('RealAuthGateway with a Turnstile check', () => {
   it('does nothing extra when no check is configured', async () => {
     const { gateway } = setup(signedIn);
     expect((await gateway.signIn({ email: 'a@b.co', password: 'x' })).ok).toBe(true);
+  });
+});
+
+describe('RealAuthGateway two step sign in (M49)', () => {
+  const signedIn = {
+    status: 'signed_in',
+    accountId: 'a1',
+    session: { token: 'T2', id: 's2' },
+  };
+
+  it('keeps the pending note in a cookie, opens no session and sends next through the challenge', async () => {
+    const { gateway, io } = setup({
+      signIn: async () => ({ status: 'mfa_required', accountId: 'a1', pendingToken: 'P1' }),
+    });
+    expect(await gateway.signIn({ email: 'a@b.co', password: 'x', next: '/browse' })).toEqual({
+      ok: true,
+      next: '/sign-in/verify?next=%2Fbrowse',
+    });
+    expect(io.setTwoStepPending).toHaveBeenCalledWith('P1');
+    expect(io.setSession).not.toHaveBeenCalled();
+  });
+
+  it('drops an unsafe next before it travels', async () => {
+    const { gateway } = setup({
+      signIn: async () => ({ status: 'mfa_required', accountId: 'a1', pendingToken: 'P1' }),
+    });
+    expect(
+      await gateway.signIn({ email: 'a@b.co', password: 'x', next: '//evil.example' }),
+    ).toEqual({
+      ok: true,
+      next: '/sign-in/verify',
+    });
+  });
+
+  it('opens the session after a good code, clears the note and follows next', async () => {
+    const completeSignIn = vi.fn(async () => signedIn);
+    const { gateway, io } = setup({ completeSignIn });
+    expect(await gateway.verifyTwoStep({ code: '123456', next: '/browse' })).toEqual({
+      ok: true,
+      next: '/browse',
+    });
+    expect(completeSignIn).toHaveBeenCalledWith('PENDING', { code: '123456' }, expect.anything());
+    expect(io.setSession).toHaveBeenCalledWith('T2', 'viewer');
+    expect(io.clearTwoStepPending).toHaveBeenCalled();
+  });
+
+  it('sends an account waiting to be deleted to the cancel screen', async () => {
+    const { gateway } = setup({
+      completeSignIn: async () => ({ ...signedIn, status: 'pending_deletion' }),
+    });
+    expect(await gateway.verifyTwoStep({ code: '123456', next: '/browse' })).toEqual({
+      ok: true,
+      next: '/account/deletion',
+    });
+  });
+
+  it('reports a wrong code, a lock and an expired sign in without a session', async () => {
+    const wrong = setup({
+      completeSignIn: async () => {
+        throw new FieldErrors({ code: 'x' });
+      },
+    });
+    expect(await wrong.gateway.verifyTwoStep({ code: '000000' })).toEqual({
+      ok: false,
+      reason: 'wrong',
+    });
+    const locked = setup({
+      completeSignIn: async () => {
+        throw new RateLimited(600);
+      },
+    });
+    expect(await locked.gateway.verifyTwoStep({ code: '000000' })).toEqual({
+      ok: false,
+      reason: 'locked',
+      minutes: 10,
+    });
+    const expired = setup({
+      completeSignIn: async () => {
+        throw new InvalidCredentials();
+      },
+    });
+    expect(await expired.gateway.verifyTwoStep({ code: '000000' })).toEqual({
+      ok: false,
+      reason: 'expired',
+    });
+    expect(wrong.io.setSession).not.toHaveBeenCalled();
+  });
+
+  it('says expired at once when no pending note exists', async () => {
+    const { gateway } = setup({}, { readTwoStepPending: vi.fn(async () => null) });
+    expect(await gateway.verifyTwoStep({ code: '123456' })).toEqual({
+      ok: false,
+      reason: 'expired',
+    });
+    expect(await gateway.hasTwoStepPending()).toBe(false);
+  });
+
+  it('signs in with a recovery code too', async () => {
+    const completeRecovery = vi.fn(async () => ({ ...signedIn, remaining: 4 }));
+    const { gateway, io } = setup({ completeRecovery });
+    expect(await gateway.verifyRecovery({ code: 'abcde-fghij' })).toEqual({
+      ok: true,
+      next: '/profiles',
+    });
+    expect(io.setSession).toHaveBeenCalledWith('T2', 'viewer');
   });
 });
