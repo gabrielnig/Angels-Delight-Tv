@@ -190,3 +190,18 @@ describe('trending queue (L5, M44-S07)', () => {
     });
   });
 });
+
+describe('notice queues (L5, M44-S12)', () => {
+  it('defines notices.fanout every 10 minutes and notices.prune nightly, both Lagos time', () => {
+    expect(QUEUE_DEFINITIONS['notices.fanout']).toMatchObject({
+      concurrency: 1,
+      retryLimit: 3,
+      retryDelaySeconds: 30,
+      expireInSeconds: 300,
+    });
+    expect(QUEUE_DEFINITIONS['notices.prune']).toMatchObject({ concurrency: 1, retryLimit: 2, expireInSeconds: 600 });
+    expect(parsePayload('notices.fanout', {})).toEqual({});
+    expect(ENGAGE_CRON_SCHEDULES).toContainEqual({ queue: 'notices.fanout', cron: '*/10 * * * *', timezone: 'Africa/Lagos' });
+    expect(ENGAGE_CRON_SCHEDULES).toContainEqual({ queue: 'notices.prune', cron: '40 3 * * *', timezone: 'Africa/Lagos' });
+  });
+});

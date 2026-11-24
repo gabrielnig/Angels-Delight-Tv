@@ -134,6 +134,8 @@ export const videos = pgTable(
     suitability: text('suitability'),
     /** Maturity rank 0 (G) to 4 (18). Null only for rows not yet rated. kidsSafe is kept equal to rank 0 by trigger (L5). */
     maturityRank: smallint('maturity_rank'),
+    /** Set by the notices fanout when viewers were told about this video. Null means not yet announced (L5, M44-S12). */
+    announcedAt: timestamptz('announced_at'),
     /** Set when an admin published without approved captions. Audited at the same time. */
     captionOverrideReason: text('caption_override_reason'),
     /** Captions for viewers: null follows the site default, true offers them, false offers none (L3, D-184). */
