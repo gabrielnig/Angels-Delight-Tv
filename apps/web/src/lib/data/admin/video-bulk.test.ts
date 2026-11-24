@@ -5,6 +5,7 @@ import {
   planUndo,
   runVideoBulk,
   snapshotOf,
+  undoRestoreVideos,
   undoVideoBulk,
   type VideoSnapshot,
 } from './video-bulk';
@@ -185,5 +186,15 @@ describe('runVideoBulk and undoVideoBulk', () => {
     const undone = await undoVideoBulk(service as never, actor, out.undo!);
     expect(undone.succeeded).toEqual(['a']);
     expect(calls.at(-1)).toBe('unpublish:a');
+  });
+
+  it('undo of a restore puts videos back in Trash only while they are still drafts', async () => {
+    const { service, state, calls } = makeService();
+    state.b!.publishState = 'published';
+    const undone = await undoRestoreVideos(service as never, actor, ['a', 'b', 'gone']);
+    expect(undone.succeeded).toEqual(['a']);
+    expect(calls.at(-1)).toBe('trash:a');
+    expect(state.b!.deleted).toBeUndefined();
+    expect(undone.failed.map((f) => f.id)).toEqual(['b', 'gone']);
   });
 });

@@ -119,3 +119,24 @@ export function toOutcome(
     undo: result.undo,
   };
 }
+
+/**
+ * Runs an operation over ids one at a time. A failure never stops the rest. A thrown error is reported as
+ * retryable, a returned error is not (the same call would fail the same way).
+ */
+export async function runEach(
+  ids: readonly string[],
+  operation: (id: string) => Promise<{ ok: true } | { ok: false; error: string }>,
+): Promise<{ succeeded: string[]; failed: BulkIssue[]; skipped: BulkIssue[] }> {
+  const out = { succeeded: [] as string[], failed: [] as BulkIssue[], skipped: [] as BulkIssue[] };
+  for (const id of new Set(ids)) {
+    try {
+      const done = await operation(id);
+      if (done.ok) out.succeeded.push(id);
+      else out.failed.push({ id, reason: done.error, retryable: false });
+    } catch {
+      out.failed.push({ id, reason: 'That did not work. Try again.', retryable: true });
+    }
+  }
+  return out;
+}

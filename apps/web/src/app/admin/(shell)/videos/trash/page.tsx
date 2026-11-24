@@ -5,14 +5,23 @@ import { TrashList } from '@/components/admin/TrashList';
 import { can } from '@/lib/admin/can';
 import { videoService } from '@/lib/data/admin/services';
 import { requireActor } from '@/lib/data/admin/session-next';
-import { purgeVideoAction, restoreVideoAction } from '../actions';
+import {
+  bulkPurgeVideosAction,
+  bulkRestoreVideosAction,
+  purgeVideoAction,
+  restoreVideoAction,
+  undoBulkRestoreAction,
+} from '../actions';
 
 export const metadata: Metadata = { title: 'Trash' };
 
 export default async function TrashPage() {
   const actor = await requireActor('/admin/videos/trash');
   if (!can(actor.role, 'video.restore')) forbidden();
-  const videos = await videoService.trashed(actor);
+  // Oldest deleted first, so the ones closest to being removed are at the top. 200 rows at most.
+  const videos = (await videoService.trashed(actor))
+    .sort((a, b) => Date.parse(a.deletedAt ?? '') - Date.parse(b.deletedAt ?? ''))
+    .slice(0, 200);
   return (
     <>
       <PageHeader
@@ -30,6 +39,9 @@ export default async function TrashPage() {
         now={Date.now()}
         restore={restoreVideoAction}
         purge={purgeVideoAction}
+        restoreMany={bulkRestoreVideosAction}
+        purgeMany={bulkPurgeVideosAction}
+        undoRestore={undoBulkRestoreAction}
       />
     </>
   );

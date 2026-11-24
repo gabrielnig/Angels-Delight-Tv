@@ -14,6 +14,8 @@ import {
   restoreVideo,
   retryEncode,
   retryEncodeMany,
+  restoreMany,
+  purgeMany,
   schedulePublish,
   validateVideoPatch,
 } from './video-commands';
@@ -151,6 +153,9 @@ export interface VideoService {
   retryEncode(actor: AdminActor, id: string): Promise<CommandResult>;
   /** Retries many failed videos, oldest failure first. Each id succeeds, is skipped or fails alone. */
   retryEncodeMany(actor: AdminActor, ids: string[], bulkId?: string): Promise<BulkParts>;
+  restoreMany(actor: AdminActor, ids: string[]): Promise<BulkParts>;
+  /** Admin only. Each id is queued for deletion alone. */
+  purgeMany(actor: AdminActor, ids: string[]): Promise<BulkParts>;
   trashed(actor: AdminActor): Promise<VideoRecord[]>;
   restore(actor: AdminActor, id: string): Promise<CommandResult>;
   purge(actor: AdminActor, id: string): Promise<CommandResult>;
@@ -280,6 +285,12 @@ const fixtureVideoService: VideoService = {
   },
   async purge(actor, id) {
     return purgeVideo(getStore().videos, id, actor.role);
+  },
+  async restoreMany(actor, ids) {
+    return restoreMany(getStore().videos, ids, actor.role);
+  },
+  async purgeMany(actor, ids) {
+    return purgeMany(getStore().videos, ids, actor.role);
   },
   async createFromUpload(actor, input) {
     need(actor, 'video.upload');

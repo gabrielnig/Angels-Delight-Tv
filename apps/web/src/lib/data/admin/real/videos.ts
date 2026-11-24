@@ -25,6 +25,7 @@ import { can } from '@/lib/admin/can';
 import { checkPosterUpload } from '@/lib/admin/poster-upload';
 import { validatePosterChoice } from '@/lib/admin/poster-rules';
 import type { VideoService } from '../services';
+import { runEach } from '../bulk';
 import { validateVideoPatch } from '../video-commands';
 import { adminRuntime } from '@/server/admin/runtime';
 import { asResult, catalogActor, context, need, toRecord, toRecords } from './shared';
@@ -223,6 +224,12 @@ export const realVideoService: VideoService = {
     return asResult(() =>
       requestPurgeAdminVideo(ctx, catalogActor(actor), id, adminRuntime().enqueue),
     );
+  },
+  async restoreMany(actor, ids) {
+    return runEach(ids, (id) => realVideoService.restore(actor, id));
+  },
+  async purgeMany(actor, ids) {
+    return runEach(ids, (id) => realVideoService.purge(actor, id));
   },
   async createFromUpload() {
     // Real uploads create their own draft video through the upload API (lane D), never from the screen.
