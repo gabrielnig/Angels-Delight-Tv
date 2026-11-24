@@ -45,6 +45,8 @@ interface Props {
   actions: EditorActions;
   /** Where "Preview as viewer" goes. The viewer lane owns the route. */
   viewerHref: string;
+  /** One line about the skip markers and chapters, or null when none are set (M43-S04). */
+  markersSummary?: string | null;
 }
 
 interface FormState {
@@ -71,7 +73,15 @@ const toForm = (video: VideoRecord): FormState => ({
 
 const same = (a: FormState, b: FormState) => JSON.stringify(a) === JSON.stringify(b);
 
-export function VideoEditor({ video, categories, series, role, actions, viewerHref }: Props) {
+export function VideoEditor({
+  video,
+  categories,
+  series,
+  role,
+  actions,
+  viewerHref,
+  markersSummary = null,
+}: Props) {
   const router = useRouter();
   const toast = useToast();
   const [saved, setSaved] = useState<FormState>(() => toForm(video));
@@ -315,6 +325,19 @@ export function VideoEditor({ video, categories, series, role, actions, viewerHr
           <Checklist items={checklist} />
           <LinkButton href={`/admin/videos/${video.id}/poster`} variant="secondary" icon="image">
             {video.posterId ? 'Change poster' : 'Choose poster'}
+          </LinkButton>
+        </Card>
+
+        <Card title="Skip and chapters">
+          <p className="adm-list__sub">
+            {markersSummary ?? 'Not set. Viewers cannot skip anything yet.'}
+          </p>
+          <LinkButton
+            href={`/admin/videos/${video.id}/markers`}
+            variant="secondary"
+            aria-label={markersSummary ? 'Edit skip and chapters' : 'Set up skip and chapters'}
+          >
+            {markersSummary ? 'Edit' : 'Set up skip and chapters'}
           </LinkButton>
         </Card>
 

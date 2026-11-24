@@ -1,6 +1,6 @@
 import { schema, type Database } from '@ad/db';
 import { Forbidden, NotFound, isStaffRole, isUuid, type Actor } from '@ad/shared';
-import { asc, eq } from 'drizzle-orm';
+import { and, asc, eq, ne } from 'drizzle-orm';
 import type { AuditSink } from '../captions/service';
 import {
   validateChapters,
@@ -10,7 +10,7 @@ import {
   type MarkerKind,
 } from './validate';
 
-const { videoMarkers, videoChapters, videos } = schema;
+const { videoMarkers, videoChapters, videos, episodes, seasons } = schema;
 
 export interface MarkerServiceDeps {
   db: Database;
@@ -63,6 +63,43 @@ export class MarkerService {
       .limit(1);
     if (!video) throw new NotFound('Video not found');
     return { ...(await this.read(videoId)), durationMs: video.durationMs };
+  }
+
+  /**
+   * The other episodes of the same series with their markers, for "Copy from another episode" (M43-S04).
+   * A standalone video has none. Chapters are not copied, only skip windows.
+   */
+  async siblings(
+    actor: Actor,
+    videoId: string,
+  ): Promise<{ id: string; title: string; label: string; markers: MarkerInput[] }[]> {
+    if (!isStaffRole(actor.role)) throw new Forbidden('Only editors and admins edit skip markers');
+    if (!isUuid(videoId)) throw new NotFound('Video not found');
+    const [own] = await this.db
+      .select({ seriesId: seasons.seriesId })
+      .from(episodes)
+      .innerJoin(seasons, eq(seasons.id, episodes.seasonId))
+      .where(eq(episodes.videoId, videoId))
+      .limit(1);
+    if (!own) return [];
+    const rows = await this.db
+      .select({
+        id: videos.id,
+        title: videos.title,
+        season: seasons.number,
+        number: episodes.number,
+      })
+      .from(episodes)
+      .innerJoin(seasons, eq(seasons.id, episodes.seasonId))
+      .innerJoin(videos, eq(videos.id, episodes.videoId))
+      .where(and(eq(seasons.seriesId, own.seriesId), ne(episodes.videoId, videoId)))
+      .orderBy(asc(seasons.number), asc(episodes.number));
+    const out = [];
+    for (const row of rows) {
+      const { markers } = await this.read(row.id);
+      out.push({ id: row.id, title: row.title, label: `S${row.season} E${row.number}`, markers });
+    }
+    return out;
   }
 
   /**

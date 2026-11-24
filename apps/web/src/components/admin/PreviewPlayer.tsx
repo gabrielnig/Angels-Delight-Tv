@@ -1,6 +1,6 @@
 'use client';
 
-import { Player, type CaptionTrack, type ProgressSink } from '@ad/player';
+import { Player, type CaptionTrack, type PlayerController, type ProgressSink } from '@ad/player';
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 import { createPreviewSessionProvider } from '@/lib/admin/preview-session';
@@ -16,10 +16,13 @@ export function PreviewPlayer({
   video,
   captions,
   backHref,
+  onReady,
 }: {
   video: { id: string; title: string; durationSeconds: number; posterUrl: string | null };
   captions: CaptionTrack[];
   backHref: string;
+  /** Gives the editor the controller so it can read the time and seek (marker editor). */
+  onReady?: (controller: PlayerController | null) => void;
 }) {
   const [origin, setOrigin] = useState<string | null>(null);
   useEffect(() => setOrigin(window.location.origin), []);
@@ -43,6 +46,7 @@ export function PreviewPlayer({
             appOrigin={origin}
             sessionProvider={sessionProvider}
             progressSink={noProgress}
+            {...(onReady ? { onController: onReady } : {})}
             captions={captions}
             resume={{
               urlT: null,

@@ -57,6 +57,8 @@ export interface PlayerProps {
   autoplay?: boolean;
   countdownSeconds?: number;
   dataSaverMaxHeight?: number;
+  /** Hands the controller to the host once it exists, and null when it is gone. The marker editor reads the time from it. */
+  onController?: (controller: PlayerController | null) => void;
   /** Test seam: supply an engine instead of hls.js. */
   createEngine?: (video: HTMLVideoElement) => Promise<PlayerEngine>;
   /** Test seam: supply network and page event sources. */
@@ -181,6 +183,7 @@ export function Player(props: PlayerProps) {
       created = c;
       c.start();
       setController(c);
+      latest.current.onController?.(c);
     })();
 
     return () => {
@@ -188,6 +191,7 @@ export function Player(props: PlayerProps) {
       created?.dispose();
       tokens?.dispose();
       setController(null);
+      latest.current.onController?.(null);
     };
   }, [videoId, profileId, appOrigin, initialSession]);
 

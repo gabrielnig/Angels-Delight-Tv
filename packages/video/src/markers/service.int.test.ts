@@ -153,6 +153,38 @@ describe.skipIf(!integrationEnabled())('MarkerService against Postgres', () => {
     expect(rows).toHaveLength(0);
   });
 
+  it('lists the other episodes of the same series with their markers, and none for a standalone video', async () => {
+    const [series] = await t.db
+      .insert(schema.series)
+      .values({ slug: 'colours', title: 'Colours' })
+      .returning();
+    const [season] = await t.db
+      .insert(schema.seasons)
+      .values({ seriesId: series!.id, number: 1 })
+      .returning();
+    const make = async (n: number) => {
+      const row = makeVideo({
+        kind: 'episode',
+        status: 'ready',
+        publishState: 'published',
+        durationMs: 300_000,
+        title: `Episode ${n}`,
+      });
+      await t.db.insert(schema.videos).values(row);
+      await t.db.insert(schema.episodes).values({ seasonId: season!.id, videoId: row.id, number: n });
+      return row.id;
+    };
+    const one = await make(1);
+    const two = await make(2);
+    await service.replace(editor, two, { markers: [intro], chapters: [] });
+    const list = await service.siblings(editor, one);
+    expect(list).toEqual([
+      { id: two, title: 'Episode 2', label: 'S1 E2', markers: [intro] },
+    ]);
+    expect(await service.siblings(editor, await video())).toEqual([]);
+    await expect(service.siblings(viewer, one)).rejects.toBeInstanceOf(Forbidden);
+  });
+
   it('is a not found for a video that does not exist', async () => {
     await expect(
       service.replace(editor, '0190aaaa-0000-7000-8000-000000000000', { markers: [], chapters: [] }),
