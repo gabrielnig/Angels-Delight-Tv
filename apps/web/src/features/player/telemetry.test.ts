@@ -34,6 +34,18 @@ describe('watch telemetry (M08-S30)', () => {
     expect(events).toContainEqual({ kind: 'error', code: 'player.network', videoId: VIDEO });
   });
 
+  it('sends a skip event with kind, from and to and no identity', () => {
+    const { t, events } = setup();
+    t.onSkip?.('intro', 12_000, 48_000);
+    expect(events).toContainEqual({
+      kind: 'skip',
+      videoId: VIDEO,
+      skipKind: 'intro',
+      fromMs: 12_000,
+      toMs: 48_000,
+    });
+  });
+
   it('keeps the highest rendition the viewer reached', () => {
     const { t, events } = setup();
     t.setHeight(360);

@@ -5,6 +5,7 @@ export const ACTION_LABELS: Record<AdminAction, string> = {
   'admin.access': 'Open the admin area',
   'video.upload': 'Upload videos',
   'video.edit': 'Edit video details',
+  'video.markers': 'Edit skip markers and chapters',
   'video.publish': 'Publish and schedule videos',
   'video.restore': 'Restore videos from Trash',
   'video.delete': 'Move videos to Trash',

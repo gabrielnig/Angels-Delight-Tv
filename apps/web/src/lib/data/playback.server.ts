@@ -1,5 +1,5 @@
 import 'server-only';
-import { DrizzlePlaybackStore } from '@ad/video';
+import { DrizzlePlaybackStore, MarkerService } from '@ad/video';
 import { redirect } from 'next/navigation';
 import { realDataEnabled } from '../../server/data/mode';
 import { accountViewerData } from '../../server/data/real-data';
@@ -30,6 +30,7 @@ export function getPlaybackData(): PlaybackData {
           (accountId, profileId) => accountViewerData().playback(accountId, profileId),
           (videoId) => new DrizzlePlaybackStore(viewerRuntime().ctx.db).captions(videoId),
           (videoId) => new DrizzlePlaybackStore(viewerRuntime().ctx.db).spriteKey(videoId),
+          (videoId) => new MarkerService({ db: viewerRuntime().ctx.db }).getPublished(videoId),
         )
       : createFixturePlaybackData();
     instanceIsReal = real;

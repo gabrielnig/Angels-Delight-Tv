@@ -1,5 +1,7 @@
 import {
   DEFAULT_PREFERENCES,
+  normalizeChapters,
+  normalizeMarkers,
   normalizeCaptionStyle,
   type CaptionTrack,
   type RelatedItem,
@@ -7,6 +9,7 @@ import {
 import { findTitle } from '@ad/catalog';
 import { withAccount } from '@ad/db';
 import { isUuid, NotFound } from '@ad/shared';
+import type { PublishedExtras } from '@ad/video';
 import {
   catalogContext,
   getTitleDetail,
@@ -67,6 +70,11 @@ export class RealPlaybackData implements PlaybackData {
     ) => Promise<ApprovedCaptionRow[]> = async () => [],
     /** Key of the seek preview map under the media origin, or null. */
     private readonly spriteFor: (videoId: string) => Promise<string | null> = async () => null,
+    /** Skip windows and chapters. Takes no viewer, so guests and accounts share it (M43, R01). */
+    private readonly extrasFor: (videoId: string) => Promise<PublishedExtras> = async () => ({
+      markers: {},
+      chapters: [],
+    }),
   ) {}
 
   private async detail(
@@ -148,8 +156,27 @@ export class RealPlaybackData implements PlaybackData {
       status: 'approved',
     }));
     const spriteKey = await this.spriteFor(videoId);
+    const extras = await this.extrasFor(videoId);
+    const duration = data.video.durationSeconds;
+    const toSeconds = (ms: number) => ms / 1000;
+    // Windows and chapters past the duration are dropped here, so a re-cut video never breaks the page.
+    const markers = normalizeMarkers(
+      Object.fromEntries(
+        Object.entries(extras.markers).map(([kind, w]) => [
+          kind,
+          { start: toSeconds(w.startMs), end: w.endMs === null ? null : toSeconds(w.endMs) },
+        ]),
+      ),
+      duration,
+    );
+    const chapters = normalizeChapters(
+      extras.chapters.map((c) => ({ start: toSeconds(c.startMs), title: c.title })),
+      duration,
+    );
     return {
       ...data,
+      markers,
+      chapters,
       captions,
       ...(spriteKey ? { spriteUrl: `${origin}/${spriteKey}` } : {}),
     };

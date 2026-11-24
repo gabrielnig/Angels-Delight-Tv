@@ -34,6 +34,8 @@ export function createWatchTelemetry(options: {
     onEnded: () => safe(() => tracker.onEnded()),
     onHide: () => safe(() => tracker.onHide()),
     setHeight: (h) => safe(() => tracker.setHeight(h)),
+    onSkip: (skipKind, fromMs, toMs) =>
+      safe(() => client.track({ kind: 'skip', videoId, skipKind, fromMs, toMs })),
     onError: (code) => {
       if (!CODE.test(code)) return;
       safe(() => client.track({ kind: 'error', code, videoId }));

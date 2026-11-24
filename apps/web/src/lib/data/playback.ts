@@ -1,6 +1,8 @@
 import type {
   CaptionStyle,
   CaptionTrack,
+  PlayerChapter,
+  PlayerMarkers,
   PlayerPreferences,
   RelatedItem,
   UpNextItem,
@@ -65,6 +67,9 @@ export interface WatchData {
   captions: CaptionTrack[];
   /** Seek preview map. Absent when the video has no sprite sheets. */
   spriteUrl?: string;
+  /** Skip windows in seconds (M43). Empty object when none. */
+  markers?: PlayerMarkers;
+  chapters?: PlayerChapter[];
   saved: { positionSeconds: number; finished: boolean } | null;
   next: NextVideo | null;
   upNext: UpNextTileData[];

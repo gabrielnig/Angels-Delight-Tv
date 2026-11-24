@@ -46,6 +46,17 @@ function video(
   };
 }
 
+/** Seeded skip windows and chapters for the demo video, so the Skip button and chapters can be tried by hand. */
+const DEMO_EXTRAS: Record<string, Pick<WatchData, 'markers' | 'chapters'>> = {
+  'v-rain': {
+    markers: { intro: { start: 5, end: 20 } },
+    chapters: [
+      { start: 0, title: 'Why it rains' },
+      { start: 12, title: 'Clouds form' },
+    ],
+  },
+};
+
 const CATALOG: Array<{ video: WatchVideo; captions: CaptionTrack[] }> = [
   {
     video: video('v-plants', 'How Plants Make Their Own Food', 'Science Made Simple', 24),
@@ -146,9 +157,12 @@ export function createFixturePlaybackData(): PlaybackData {
         .slice(0, 4)
         .map((t) => ({ id: t.id, title: t.title, href: t.href }));
 
+      const extras = DEMO_EXTRAS[entry.video.id];
       const data: WatchData = {
         video: entry.video,
         captions: entry.captions,
+        markers: extras?.markers ?? {},
+        chapters: extras?.chapters ?? [],
         saved: saved[entry.video.id] ?? null,
         next: nextEntry
           ? {

@@ -93,3 +93,27 @@ describe('normalizeSearchQuery', () => {
     expect(normalizeSearchQuery('   ')).toBeNull();
   });
 });
+
+describe('skip event (M43)', () => {
+  const skip = { kind: 'skip', videoId, skipKind: 'intro', fromMs: 12_000, toMs: 48_000 };
+
+  it('accepts a player skip event', () => {
+    const result = parseBatch({ v: 1, events: [skip, { ...skip, skipKind: 'next', toMs: 12_000 }] });
+    expect(result.ok && result.events).toHaveLength(2);
+  });
+
+  it('rejects an unknown skip kind', () => {
+    const result = parseBatch({ v: 1, events: [{ ...skip, skipKind: 'outro' }] });
+    expect(result.ok && result.events).toHaveLength(0);
+    expect(result.ok && result.rejected).toBe(1);
+  });
+
+  it('rejects a negative position and stray keys', () => {
+    const result = parseBatch({
+      v: 1,
+      events: [{ ...skip, fromMs: -1 }, { ...skip, email: 'a@b.co' }],
+    });
+    expect(result.ok && result.events).toHaveLength(0);
+  });
+});
+
