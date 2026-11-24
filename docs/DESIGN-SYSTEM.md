@@ -488,6 +488,7 @@ Accessibility: card is an `<a>` with accessible name "Title, 4 minutes". Actions
 ### 11.13 Toast
 
 - Position: bottom centre on mobile above the tab bar, bottom left on desktop. Max one visible, queue others. Width up to 360, `--radius-sm`, `--shadow-2`.
+- Storage notice: the notice sits bottom right on desktop (1024 px and wider) and above the tab bar on phones, on the overlay layer (30, below modal 40 and toast 50). A toast never overlaps it: below 1024 px and on phones the toast lifts above the notice by the notice height plus 12 px (`--notice-h`, 0 when the notice is hidden).
 - Variants: success (success tint, tick icon), info (info tint, info icon), warning, error (danger tint, error icon). Always icon plus text. Optional action (Undo, Retry) as a Ghost button.
 - Timing: info and success auto dismiss at 5s (range 4 to 6s) and pause on hover and focus. Error toasts persist until dismissed. Close button 44px.
 - Accessibility: container `role="status"` `aria-live="polite"`, errors use `role="alert"`. Never the only place an error is shown for a form field. Do not steal focus. Under reduced motion, no slide, fade only.
