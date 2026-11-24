@@ -190,6 +190,8 @@ export function restoreVideo(videos: VideoRecord[], id: string, role: AccountRol
   const video = videos.find((v) => v.id === id && v.deletedAt !== null);
   if (!video) return { ok: false, error: 'That video is not in Trash.' };
   video.deletedAt = null;
+  // A restored video never goes straight back in front of viewers (M16-S06 AC2).
+  video.publishState = 'draft';
   return { ok: true };
 }
 
@@ -199,6 +201,28 @@ export function purgeVideo(videos: VideoRecord[], id: string, role: AccountRole)
   if (index < 0) return { ok: false, error: 'That video is not in Trash.' };
   videos.splice(index, 1);
   return { ok: true };
+}
+
+type ManyResult = { succeeded: string[]; failed: BulkIssue[]; skipped: BulkIssue[] };
+
+function eachId(ids: readonly string[], one: (id: string) => CommandResult): ManyResult {
+  const out: ManyResult = { succeeded: [], failed: [], skipped: [] };
+  for (const id of new Set(ids)) {
+    const done = one(id);
+    if (done.ok) out.succeeded.push(id);
+    else out.failed.push({ id, reason: done.error, retryable: false });
+  }
+  return out;
+}
+
+/** Restores many videos from Trash as Drafts. Each id succeeds or fails alone. */
+export function restoreMany(videos: VideoRecord[], ids: readonly string[], role: AccountRole): ManyResult {
+  return eachId(ids, (id) => restoreVideo(videos, id, role));
+}
+
+/** Deletes many videos forever. Admin only, per id. Each id succeeds or fails alone. */
+export function purgeMany(videos: VideoRecord[], ids: readonly string[], role: AccountRole): ManyResult {
+  return eachId(ids, (id) => purgeVideo(videos, id, role));
 }
 
 export function retryEncode(video: VideoRecord, now: number): CommandResult {

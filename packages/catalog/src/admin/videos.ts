@@ -656,7 +656,7 @@ export async function restoreAdminVideo(
     return await withAccount(ctx.db, actor, async (tx) => {
       const [row] = await tx
         .update(videos)
-        .set({ deletedAt: null })
+        .set({ deletedAt: null, publishState: 'draft' })
         .where(and(eq(videos.id, id), sql`${videos.deletedAt} IS NOT NULL`))
         .returning({ title: videos.title });
       if (!row) return fail('That video is not in Trash.');

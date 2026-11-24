@@ -251,3 +251,29 @@ export async function undoVideoBulk(
   }
   return out;
 }
+
+/**
+ * Undo for a bulk restore: moves the restored videos back to Trash. Compare and set: a video that is no
+ * longer a draft (someone published it) or is gone is left alone and reported.
+ */
+export async function undoRestoreVideos(
+  service: BulkVideoService,
+  actor: AdminActor,
+  ids: readonly string[],
+): Promise<BulkResult> {
+  const current = await snapshots(service, actor, ids);
+  const out: BulkResult = { succeeded: [], failed: [] };
+  const back: string[] = [];
+  for (const id of ids) {
+    if (current[id] === undefined) out.failed.push({ id, reason: 'That video no longer exists.' });
+    else if (current[id]!.publishState !== 'draft')
+      out.failed.push({ id, reason: 'Changed since it was restored, so it was left alone.' });
+    else back.push(id);
+  }
+  if (back.length) {
+    const r = await service.bulk(actor, back, { type: 'trash' });
+    out.succeeded.push(...r.succeeded);
+    out.failed.push(...r.failed);
+  }
+  return out;
+}

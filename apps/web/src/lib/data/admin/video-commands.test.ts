@@ -2,7 +2,9 @@ import { describe, expect, it } from 'vitest';
 import {
   applyCaptionsAvailability,
   daysLeftInTrash,
+  purgeMany,
   purgeVideo,
+  restoreMany,
   restoreVideo,
   retryEncode,
   retryEncodeMany,
@@ -142,6 +144,40 @@ describe('retryEncode', () => {
       progress: 0,
     });
     expect(retryEncode(get(store, 'vid_sky'), NOW).ok).toBe(false);
+  });
+});
+
+describe('restoreMany and purgeMany (L3-10)', () => {
+  const trashed = () => {
+    const store = seedStore(NOW);
+    const ids = store.videos.filter((v) => v.deletedAt !== null).map((v) => v.id);
+    return { store, ids };
+  };
+
+  it('restoreMany returns each to Draft and fails ids that are not in Trash', () => {
+    const { store, ids } = trashed();
+    const out = restoreMany(store.videos, [...ids, 'vid_sky'], 'editor');
+    expect(out.succeeded).toEqual(ids);
+    expect(out.failed).toEqual([{ id: 'vid_sky', reason: 'That video is not in Trash.', retryable: false }]);
+    for (const id of ids) expect(get(store, id).deletedAt).toBeNull();
+    for (const id of ids) expect(get(store, id).publishState).toBe('draft');
+  });
+
+  it('purgeMany refuses below admin for every id', () => {
+    const { store, ids } = trashed();
+    const out = purgeMany(store.videos, ids, 'editor');
+    expect(out.succeeded).toEqual([]);
+    expect(out.failed.map((f) => f.reason)).toEqual(ids.map(() => 'Only an admin can delete forever.'));
+    expect(store.videos.filter((v) => ids.includes(v.id))).toHaveLength(ids.length);
+  });
+
+  it('purgeMany leaves videos not in Trash as failed with a reason and removes the rest', () => {
+    const { store, ids } = trashed();
+    const out = purgeMany(store.videos, [...ids, 'vid_sky'], 'admin');
+    expect(out.succeeded).toEqual(ids);
+    expect(out.failed).toEqual([{ id: 'vid_sky', reason: 'That video is not in Trash.', retryable: false }]);
+    expect(store.videos.some((v) => ids.includes(v.id))).toBe(false);
+    expect(get(store, 'vid_sky')).toBeTruthy();
   });
 });
 

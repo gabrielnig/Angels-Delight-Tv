@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  runEach,
   MAX_BULK_CALL,
   MAX_SELECTION,
   capSelection,
@@ -14,6 +15,21 @@ import {
 } from './bulk';
 
 const ids = (n: number) => Array.from({ length: n }, (_, i) => `id-${i}`);
+
+describe('runEach', () => {
+  it('runs one id at a time, keeps going after a failure and marks thrown errors retryable', async () => {
+    const out = await runEach(['a', 'b', 'c', 'a'], async (id) => {
+      if (id === 'b') return { ok: false as const, error: 'Nope.' };
+      if (id === 'c') throw new Error('db down');
+      return { ok: true as const };
+    });
+    expect(out.succeeded).toEqual(['a']);
+    expect(out.failed).toEqual([
+      { id: 'b', reason: 'Nope.', retryable: false },
+      { id: 'c', reason: 'That did not work. Try again.', retryable: true },
+    ]);
+  });
+});
 
 describe('bulk helpers', () => {
   it('limits are the documented ones', () => {

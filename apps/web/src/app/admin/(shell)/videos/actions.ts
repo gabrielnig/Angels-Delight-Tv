@@ -5,7 +5,7 @@ import { videoService } from '@/lib/data/admin/services';
 import { requireActionActor } from '@/lib/data/admin/session-next';
 import { MAX_BULK_CALL, MAX_SELECTION, newBulkId, toOutcome, type BulkOutcome, type BulkUndo } from '@/lib/data/admin/bulk';
 import { runCleanupMany } from '@/lib/data/admin/encode-bulk';
-import { runVideoBulk, undoVideoBulk } from '@/lib/data/admin/video-bulk';
+import { runVideoBulk, undoRestoreVideos, undoVideoBulk } from '@/lib/data/admin/video-bulk';
 import type { BulkAction, BulkResult, VideoQuery } from '@/lib/data/admin/video-queries';
 import { auditBulkRun } from '@/server/admin/bulk-run';
 import type { CleanupResult } from '@/lib/data/admin/types';
@@ -143,6 +143,54 @@ export async function bulkCleanupFailedAction(
   await auditBulkRun(
     { accountId: actor.accountId, role: actor.role },
     { action: 'video.bulk_cleanup', label: 'Clean up failed encodes', targetType: 'video', bulkId, ids: used, outcome },
+  );
+  revalidatePath('/admin', 'layout');
+  return outcome;
+}
+
+/** Restores videos from Trash as Drafts. The outcome carries an undo that moves them back. */
+export async function bulkRestoreVideosAction(
+  ids: string[],
+  bulkId: string = newBulkId(),
+): Promise<BulkOutcome> {
+  const actor = await requireActionActor('/admin/videos/trash');
+  const used = ids.slice(0, MAX_BULK_CALL);
+  const done = await videoService.restoreMany(actor, used);
+  const outcome = toOutcome(
+    {
+      ...done,
+      undo: done.succeeded.length
+        ? { label: 'Restore. Undo moves the videos back to Trash.', payload: done.succeeded }
+        : undefined,
+    },
+    bulkId,
+  );
+  await auditBulkRun(
+    { accountId: actor.accountId, role: actor.role },
+    { action: 'video.bulk_restore', label: 'Restore from Trash', targetType: 'video', bulkId, ids: used, outcome },
+  );
+  revalidatePath('/admin', 'layout');
+  return outcome;
+}
+
+export async function undoBulkRestoreAction(ids: string[]): Promise<BulkResult> {
+  const actor = await requireActionActor('/admin/videos/trash');
+  const result = await undoRestoreVideos(videoService, actor, ids.slice(0, MAX_BULK_CALL));
+  revalidatePath('/admin', 'layout');
+  return result;
+}
+
+/** Queues each chosen video for deletion forever. Admin only. No undo. */
+export async function bulkPurgeVideosAction(
+  ids: string[],
+  bulkId: string = newBulkId(),
+): Promise<BulkOutcome> {
+  const actor = await requireActionActor('/admin/videos/trash');
+  const used = ids.slice(0, MAX_BULK_CALL);
+  const outcome = toOutcome(await videoService.purgeMany(actor, used), bulkId);
+  await auditBulkRun(
+    { accountId: actor.accountId, role: actor.role },
+    { action: 'video.bulk_purge', label: 'Delete forever', targetType: 'video', bulkId, ids: used, outcome },
   );
   revalidatePath('/admin', 'layout');
   return outcome;
