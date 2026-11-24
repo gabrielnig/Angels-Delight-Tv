@@ -95,6 +95,20 @@ describe.skipIf(!integrationEnabled())('FailedEncodeService against Postgres', (
     expect(ids).not.toContain(trashed.id);
   });
 
+  it('also removes a hero preview clip and forgets it, so Retry makes a fresh one (M41)', async () => {
+    const video = await failed();
+    const key = `cap/${video.mediaPrefix}/preview/0-aabbccdd.mp4`;
+    await media.put(key, new Uint8Array(50));
+    await t.db
+      .update(schema.videos)
+      .set({ previewKey: key, previewState: 'ready', previewBytes: 50 })
+      .where(eq(schema.videos.id, video.id));
+    await service.cleanup(video.id);
+    expect(await media.head(key)).toBeNull();
+    const [row] = await t.db.select().from(schema.videos).where(eq(schema.videos.id, video.id));
+    expect(row).toMatchObject({ previewKey: null, previewState: 'none', previewBytes: null });
+  });
+
   it('removes partial output, resets renditions and keeps the original, captions and the failure', async () => {
     const video = await failed();
     const out = await service.cleanup(video.id);

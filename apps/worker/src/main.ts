@@ -14,6 +14,7 @@ import { registerMailHandlers } from './mail';
 import { registerMaintenanceHandlers } from './maintenance';
 import { buildMonetizationDeps } from './monetization';
 import { registerMonetizationHandlers } from './monetization-handlers';
+import { registerPreviewHandlers } from './preview-handlers';
 import {
   buildExportDeps,
   buildTranslateDeps,
@@ -47,6 +48,11 @@ async function main(): Promise<void> {
       await registerVideoHandlers(queueBoss, video);
       await registerMaintenanceHandlers(queueBoss, {
         ...buildMaintenanceDeps(env, db, logger),
+        mirror: video.mirror,
+        logger,
+      });
+      await registerPreviewHandlers(queueBoss, {
+        pipeline: video.pipeline,
         mirror: video.mirror,
         logger,
       });

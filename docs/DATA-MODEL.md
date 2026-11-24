@@ -234,6 +234,13 @@ Index `(updated_at)` for cleanup. Consumed with one atomic `INSERT ... ON CONFLI
 | `hero_asset_id` | uuid | yes | | FK `assets` ON DELETE SET NULL |
 | `failure_code` | text | yes | | Machine code for `failed` |
 | `failure_message` | text | yes | | Readable, sanitized |
+| `preview_key` | text | yes | | Hero preview clip in the media bucket, `cap/{media_prefix}/preview/{start_ms}-{sha8}.mp4`, content hashed (migration 0050) |
+| `preview_state` | text | no | `none` | `none`, `queued`, `ready`, `failed` or `skipped` |
+| `preview_mode` | text | no | `auto` | `auto`, `picked` or `off` |
+| `preview_start_ms` | integer | yes | | Where the clip starts, at least 0 |
+| `preview_bytes` | integer | yes | | Size of the clip, at least 0 |
+| `preview_note` | text | yes | | Plain reason shown to editors when `failed` or `skipped` |
+| `preview_updated_at` | timestamptz | yes | | |
 | `tags` | text[] | no | `{}` | At most 10. Editor tags, admin only |
 | `suitability` | text | yes | | Legacy, read only after migration 0038. `everyone`, `kids` or `older`. `kids_safe` is true for `kids` and `everyone` |
 | `maturity_rank` | smallint | yes | | 0 (G) to 4 (18), null until rated. A trigger keeps `kids_safe` equal to `rank = 0` while a rank is set (migration 0038) |
@@ -649,5 +656,6 @@ The schema in `packages/db/src/schema` is the source of truth. These changes wer
 | 0038 | `videos.maturity_rank`, `series.maturity_rank` (smallint 0 to 4, checks), `profiles.max_maturity_rank` (smallint, default 4, kids profiles forced to 0 by trigger), backfill (kids safe 0, older 3, the rest 2), triggers `videos_sync_kids_safe` and `series_sync_kids_safe` (`kids_safe` follows rank 0). Additive. |
 | 0039 | Sponsors (M48): enums `sponsor_status` (draft, active, paused, archived) and `sponsor_slot`, `asset_purpose` gains `sponsor`. Tables `sponsors` (name 1 to 80, optional schedule with `ends_at > starts_at`), `sponsor_private` (staff only: encrypted contact, notes), `sponsor_creatives` (headline 1 to 60, body to 140, cta 1 to 24, `destination_url` https only to 500, weight 1 to 10), `sponsor_placements` (creative, slot), `sponsor_daily_stats` (day, creative, slot, impressions, clicks, daily reach; sponsor key restricts delete, creative has no key so numbers outlive it). `sponsor_effective()` and the view `sponsor_effective_status` derive scheduled, live and ended from the dates. RLS forced on all five: staff (editor, admin, super admin) full access, everyone else reads only live sponsors, their active creatives and placements, never `sponsor_private` or the stats. Counters are written only through the SECURITY DEFINER `sponsor_stats_bump()`. |
 | 0049 | Donations (M48): enums `donation_kind` (one_time, monthly) and `donation_status` (pending, succeeded, failed, abandoned, refunded, needs_review). Tables `donations` (unique `reference`, positive `amount_minor`, currency NGN or USD, encrypted donor email, name and message, `donor_email_hash`, optional account, `site_mode` test or live, `paid_at`, `receipt_sent_at`) and `payment_events` (unique `(provider, event_key)`, encrypted payload emptied after the retention days, `processed_at`, `outcome`, `attempts`). RLS forced on both: admins read all donations, a signed in donor reads their own, editors and guests read none; the worker role has full access. Web writes events only through the SECURITY DEFINER `payment_event_insert()`, which returns null for a repeat. |
+| 0050 | `videos` gains the hero preview columns `preview_key`, `preview_state` (none, queued, ready, failed, skipped), `preview_mode` (auto, picked, off), `preview_start_ms`, `preview_bytes`, `preview_note`, `preview_updated_at`, three checks and the partial index `videos_preview_sweep` (M41) |
 
 Row level security summary additions: `search_history` is on and forced like `watch_progress`. `admin_invites`, `auth_lockouts`, `verification_codes`, `site_daily_stats`, `analytics_counters` and `slug_redirects` have no policies and are reached only by their own modules.

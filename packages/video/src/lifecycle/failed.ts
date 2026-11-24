@@ -34,7 +34,11 @@ export interface FailedEncodeRow {
 /** Where a failed encode leaves partial files. Captions and the original are not touched. */
 function leftoverLocations(video: { id: string; mediaPrefix: string }) {
   return {
-    media: [`v/${video.mediaPrefix}/`, `cap/${video.mediaPrefix}/sprites/`],
+    media: [
+      `v/${video.mediaPrefix}/`,
+      `cap/${video.mediaPrefix}/sprites/`,
+      `cap/${video.mediaPrefix}/preview/`,
+    ],
     originals: [`templates/${video.id}/`],
   };
 }
@@ -110,7 +114,15 @@ export class FailedEncodeService {
     await db.delete(renditions).where(eq(renditions.videoId, videoId));
     await db
       .update(videos)
-      .set({ spriteKey: null, updatedAt: new Date() })
+      .set({
+        spriteKey: null,
+        previewKey: null,
+        previewState: 'none',
+        previewBytes: null,
+        previewStartMs: null,
+        previewNote: null,
+        updatedAt: new Date(),
+      })
       .where(eq(videos.id, videoId));
     this.logger.info('failed encode cleaned', { videoId, files, bytes });
     return { removedFiles: files, freedBytes: bytes };

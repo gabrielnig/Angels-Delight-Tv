@@ -6,6 +6,7 @@ import {
   EXPORT_CRON_SCHEDULES,
   MAIL_CRON_SCHEDULES,
   MAINTENANCE_CRON_SCHEDULES,
+  PREVIEW_CRON_SCHEDULES,
   QUEUES,
   QUEUE_DEFINITIONS,
   parsePayload,
@@ -257,6 +258,42 @@ describe('donation and sponsor queues (L9, M48)', () => {
       { queue: 'donations.reconcile', cron: '*/30 * * * *', timezone: 'Africa/Lagos' },
       { queue: 'donations.prune_events', cron: '20 3 * * *', timezone: 'Africa/Lagos' },
       { queue: 'sponsors.reach_prune', cron: '50 3 * * *', timezone: 'Africa/Lagos' },
+    ]);
+  });
+});
+
+describe('hero preview queues (M41-S11)', () => {
+  const videoId = '0192f0a0-0000-7000-8000-0000000000aa';
+
+  it('defines video.preview as one at a time, two retries, 10 minutes', () => {
+    expect(QUEUE_DEFINITIONS['video.preview']).toMatchObject({
+      concurrency: 1,
+      retryLimit: 2,
+      retryDelaySeconds: 60,
+      retryBackoff: true,
+      expireInSeconds: 600,
+    });
+  });
+
+  it('takes a video id, an optional mode and an optional start, and nothing else', () => {
+    expect(parsePayload('video.preview', { videoId })).toEqual({ videoId });
+    expect(parsePayload('video.preview', { videoId, mode: 'picked', startMs: 12_300 })).toMatchObject({
+      mode: 'picked',
+      startMs: 12_300,
+    });
+    expect(() => parsePayload('video.preview', { videoId, mode: 'off' })).toThrow();
+    expect(() => parsePayload('video.preview', { videoId, startMs: -1 })).toThrow();
+    expect(() => parsePayload('video.preview', { videoId, startMs: 1.5 })).toThrow();
+    expect(() => parsePayload('video.preview', { videoId, extra: 1 })).toThrow();
+    expect(() => parsePayload('video.preview', {})).toThrow();
+  });
+
+  it('sweeps for missing clips once an hour in Lagos time, with no payload', () => {
+    expect(QUEUE_DEFINITIONS['video.preview_sweep']).toMatchObject({ concurrency: 1, retryLimit: 2 });
+    expect(parsePayload('video.preview_sweep', {})).toEqual({});
+    expect(() => parsePayload('video.preview_sweep', { videoId })).toThrow();
+    expect(PREVIEW_CRON_SCHEDULES).toEqual([
+      { queue: 'video.preview_sweep', cron: '20 * * * *', timezone: 'Africa/Lagos' },
     ]);
   });
 });

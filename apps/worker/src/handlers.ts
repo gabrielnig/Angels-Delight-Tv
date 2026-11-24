@@ -18,7 +18,10 @@ import type {
 } from '@ad/video';
 
 export interface VideoHandlerDeps {
-  pipeline: Pick<VideoPipeline, 'probe' | 'encode' | 'thumbnails' | 'rewrapKey' | 'failVideo'>;
+  pipeline: Pick<
+    VideoPipeline,
+    'probe' | 'encode' | 'thumbnails' | 'rewrapKey' | 'failVideo' | 'previewClip' | 'sweepPreviews'
+  >;
   captions: Pick<CaptionGenerator, 'generate'>;
   images: Pick<ImageService, 'process' | 'failRecut'>;
   lifecycle: Pick<LifecycleService, 'purge' | 'enqueueExpired'>;

@@ -18,6 +18,16 @@ import {
   parseMediaPlaylist,
   type MasterRung,
 } from '../playlist';
+import {
+  PREVIEW_CRF,
+  PREVIEW_MAX_BYTES,
+  PREVIEW_RETRY_CRF,
+  planPreview,
+  previewArgs,
+  previewKey,
+  previewScoreOffsetMs,
+} from '../preview';
+import { sweepPreviews } from '../preview-sweep';
 import { buildSpriteVtt, planSprite, spriteArgs } from '../sprite';
 import { parseFfprobe, validateProbe, type ProbeLimits, type ProbeResult } from '../probe';
 import {
@@ -56,6 +66,8 @@ export interface PipelineDeps {
   ladder?: () => Promise<RungSpec[]>;
   /** Seek preview sprites are on unless `enabled` says otherwise. */
   sprites?: { enabled?: () => Promise<boolean> };
+  /** Hero preview clip limits. `maxBytes` exists so tests can force the oversize path. */
+  preview?: { maxBytes?: number };
   logger?: Logger;
 }
 
@@ -602,6 +614,143 @@ export class VideoPipeline {
         }
       },
     );
+    await this.queuePreview(videoId);
+  }
+
+  /** Marks a video as waiting for its hero clip and queues the job. Best effort, a failure only logs. */
+  async queuePreview(videoId: string, payload: { mode?: 'auto' | 'picked'; startMs?: number } = {}): Promise<void> {
+    try {
+      const video = await this.mustLoad(videoId);
+      if (video.previewMode === 'off') return;
+      await this.deps.db
+        .update(videos)
+        .set({ previewState: 'queued', updatedAt: new Date() })
+        .where(eq(videos.id, videoId));
+      await this.deps.producer.enqueue('video.preview', { videoId, ...payload });
+    } catch (error) {
+      this.logger.warn('preview job not queued', { videoId, err: error });
+    }
+  }
+
+  /** Hourly backfill: queues clips for published videos that have none. Returns how many were queued. */
+  sweepPreviews(limit?: number): Promise<number> {
+    return sweepPreviews({ db: this.deps.db, producer: this.deps.producer }, limit);
+  }
+
+  private async setPreview(videoId: string, fields: Partial<typeof videos.$inferInsert>): Promise<void> {
+    await this.deps.db
+      .update(videos)
+      .set({ previewUpdatedAt: new Date(), updatedAt: new Date(), ...fields })
+      .where(eq(videos.id, videoId));
+  }
+
+  /**
+   * `video.preview`: a six second silent clip for the Home hero (M41). It never fails the video. A clip that cannot
+   * be made leaves the state `skipped` (nothing wrong with the video) or `failed` (a plain note for the editor), and
+   * the hero falls back to the poster. A recut writes a new content hashed file, updates the row, then removes the old one.
+   */
+  async previewClip(
+    videoId: string,
+    opts: { mode?: 'auto' | 'picked'; startMs?: number } = {},
+    progress: ProgressFn,
+  ): Promise<void> {
+    const video = await this.mustLoad(videoId);
+    const mode = opts.mode ?? (video.previewMode === 'picked' ? 'picked' : 'auto');
+    if (video.previewMode === 'off') return;
+    const requestedStart = opts.startMs ?? video.previewStartMs ?? undefined;
+    const maxBytes = this.deps.preview?.maxBytes ?? PREVIEW_MAX_BYTES;
+    try {
+      await progress('Making preview', 5);
+      const outcome = await withScratch(
+        this.deps.scratch,
+        `preview-${videoId}`,
+        video.originalBytes ?? 0,
+        async (dir) => {
+          const { path, container, probe } = await this.fetchSource(videoId, dir);
+          const plan = planPreview({ durationMs: probe.durationMs, mode, startMs: requestedStart });
+          if (plan.kind === 'skip') return { skip: plan.reason } as const;
+
+          let startMs = plan.startMs;
+          if (mode !== 'picked' || plan.candidates.length > 1) {
+            const middle = (plan.candidates.length - 1) / 2;
+            const scored: { start: number; score: number | null; index: number }[] = [];
+            for (const [index, start] of plan.candidates.entries()) {
+              const at = Math.min(start + previewScoreOffsetMs, Math.max(probe.durationMs / 1000 - 0.5, 0) * 1000);
+              const frame = await this.extractFrame(dir, path, container, at / 1000, `preview-${index}`);
+              scored.push({ start, score: await scoreOrNull(frame), index });
+            }
+            scored.sort(
+              (a, b) =>
+                (b.score ?? -1) - (a.score ?? -1) ||
+                Math.abs(a.index - middle) - Math.abs(b.index - middle) ||
+                a.index - b.index,
+            );
+            const best = scored[0]!;
+            if (best.score === null || best.score < LOW_FRAME_SCORE)
+              return { skip: 'The video looks too dark or plain for a clip' } as const;
+            startMs = best.start;
+          }
+
+          await progress('Making preview', 40);
+          const output = join(dir, 'preview.mp4');
+          let bytes: Buffer | null = null;
+          for (const crf of [PREVIEW_CRF, PREVIEW_RETRY_CRF]) {
+            const result = await this.runner.run(
+              this.ffmpegPath(),
+              previewArgs({ input: path, container, startMs, lengthMs: plan.lengthMs, output, crf }),
+              { timeoutMs: 5 * 60_000, niceness: this.deps.ffmpeg?.niceness ?? 10 },
+            );
+            if (result.code !== 0)
+              throw new PipelineError('encode_failed', `preview: ${result.stderr.slice(0, 300)}`);
+            const made = await readFile(output);
+            if (made.length <= maxBytes) {
+              bytes = made;
+              break;
+            }
+          }
+          if (!bytes) return { fail: 'The clip came out too large' } as const;
+          return { bytes, startMs } as const;
+        },
+      );
+
+      if ('skip' in outcome) {
+        await this.setPreview(videoId, { previewState: 'skipped', previewNote: outcome.skip });
+        return;
+      }
+      if ('fail' in outcome) {
+        await this.setPreview(videoId, { previewState: 'failed', previewNote: outcome.fail });
+        return;
+      }
+      await progress('Saving preview', 85);
+      const key = previewKey(video.mediaPrefix, outcome.startMs, outcome.bytes);
+      await this.deps.media.put(key, outcome.bytes, { contentType: 'video/mp4', cacheControl: SEGMENT_CACHE });
+      await this.setPreview(videoId, {
+        previewKey: key,
+        previewState: 'ready',
+        previewStartMs: outcome.startMs,
+        previewBytes: outcome.bytes.length,
+        previewNote: null,
+      });
+      if (video.previewKey && video.previewKey !== key)
+        await this.deps.media.delete(video.previewKey).catch((error: unknown) => {
+          this.logger.warn('old preview not removed', { videoId, err: error });
+        });
+      await progress('Done', 100);
+    } catch (error) {
+      const failure = toPipelineError(error);
+      if (failure.code === 'upload_incomplete') {
+        await this.setPreview(videoId, {
+          previewState: 'skipped',
+          previewNote: 'The original file is no longer stored',
+        });
+        return;
+      }
+      this.logger.warn('preview clip failed', { videoId, err: error });
+      await this.setPreview(videoId, {
+        previewState: 'failed',
+        previewNote: 'The clip could not be made. Try again later',
+      });
+    }
   }
 
   private async extractFrame(

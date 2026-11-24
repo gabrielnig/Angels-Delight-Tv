@@ -5,6 +5,8 @@ export const QUEUES = {
   videoProbe: 'video.probe',
   videoEncode: 'video.encode',
   videoThumbnails: 'video.thumbnails',
+  videoPreview: 'video.preview',
+  videoPreviewSweep: 'video.preview_sweep',
   captionGenerate: 'caption.generate',
   captionTranslate: 'caption.translate',
   imageProcess: 'image.process',
@@ -59,6 +61,21 @@ export const QUEUE_DEFINITIONS: Record<QueueName, QueueDefinition> = {
     retryBackoff: true,
     expireInSeconds: 3 * 3600,
     heartbeatSeconds: 300,
+  },
+  // Home hero preview clip (M41): one at a time, it is a short encode. The sweep backfills the existing catalog.
+  'video.preview': {
+    concurrency: 1,
+    retryLimit: 2,
+    retryDelaySeconds: 60,
+    retryBackoff: true,
+    expireInSeconds: 10 * 60,
+  },
+  'video.preview_sweep': {
+    concurrency: 1,
+    retryLimit: 2,
+    retryDelaySeconds: 300,
+    retryBackoff: true,
+    expireInSeconds: 10 * 60,
   },
   'video.thumbnails': {
     concurrency: 2,
@@ -262,6 +279,13 @@ const PAYLOADS = {
   'video.probe': videoPayload,
   'video.encode': videoPayload,
   'video.thumbnails': videoPayload,
+  'video.preview': z.strictObject({
+    videoId: uuid,
+    mode: z.enum(['auto', 'picked']).optional(),
+    startMs: z.number().int().min(0).max(86_400_000).optional(),
+    ...tracking,
+  }),
+  'video.preview_sweep': z.strictObject({}),
   'caption.generate': z.strictObject({
     videoId: uuid,
     mode: z.enum(['transcribe', 'align']).default('transcribe'),
@@ -325,6 +349,11 @@ export const MAINTENANCE_CRON_SCHEDULES: CronEntry[] = [
   { queue: 'analytics.prune', cron: '0 3 1 * *', timezone: 'Africa/Lagos' },
   { queue: 'audit.prune', cron: '30 3 1 * *', timezone: 'Africa/Lagos' },
   { queue: 'auth.login_events_prune', cron: '45 3 * * *', timezone: 'Africa/Lagos' },
+];
+
+/** Backfills hero preview clips for videos that have none (M41, plan 4.3). Batches are small so it never crowds the encoder. */
+export const PREVIEW_CRON_SCHEDULES: CronEntry[] = [
+  { queue: 'video.preview_sweep', cron: '20 * * * *', timezone: 'Africa/Lagos' },
 ];
 
 /** Mail jobs (M15-S01, M21-S03). The outbox drain also queues "at once" notices, so those leave within a minute. */
