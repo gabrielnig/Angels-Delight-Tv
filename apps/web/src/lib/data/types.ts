@@ -233,7 +233,31 @@ export type PublicPreview =
   | { type: 'series'; item: SeriesSummary }
   | { type: 'redirect'; to: string };
 
+/** One title in Viewing activity (M49-S09). Mirrors `ActivityItem` in @ad/viewer. */
+export interface ActivityEntry {
+  videoId: string;
+  title: string;
+  seriesTitle: string | null;
+  episodeLabel: string | null;
+  slug: string;
+  posterUrl: string | null;
+  posterAlt: string | null;
+  /** ISO time of the last watch. */
+  watchedAt: string;
+  completed: boolean;
+  progressPct: number;
+}
+
+export interface ActivityPageData {
+  items: ActivityEntry[];
+  nextCursor: string | null;
+}
+
 export interface LibraryRepository {
+  /** Titles the profile in `ctx` watched, newest first (M49-S09). */
+  activity(ctx: ViewerContext, cursor?: string): Promise<ActivityPageData>;
+  removeActivity(ctx: ViewerContext, videoId: string): Promise<void>;
+  clearActivity(ctx: ViewerContext): Promise<{ cleared: number }>;
   myList(ctx: ViewerContext, cursor?: string): Promise<Page<CatalogItem> & { hiddenCount: number }>;
   myListIds(ctx: ViewerContext): Promise<string[]>;
   addToList(ctx: ViewerContext, itemKey: string): Promise<void>;

@@ -19,12 +19,14 @@ describe('AccountNav (S27 to S31)', () => {
       'Overview',
       'Security',
       'Playback settings',
+      'Viewing activity',
       'Data and privacy',
     ]);
     expect(screen.getAllByRole('link').map((a) => a.textContent)).toEqual([
       'Overview',
       'Security',
       'Playback settings',
+      'Viewing activity',
       'Data and privacy',
     ]);
   });

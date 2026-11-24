@@ -350,6 +350,31 @@ export async function regenerateRecoveryAction(input: { password: string }) {
   return getAccount().regenerateRecoveryCodes(await currentAccountId(), input);
 }
 
+// ---- Viewing activity (M49-S09, S10) ----
+
+/** Activity is an adults only screen: a Kids profile in use cannot reach any of these (D-L10-08). */
+async function activityContext(profileId: string) {
+  const { session } = await context();
+  if (session.profile?.kids) throw new Error('Adults only');
+  return { accountId: session.accountId, profileId, audience: 'adult' as const };
+}
+
+export async function loadActivityAction(profileId: string, cursor?: string) {
+  return getLibrary().activity(await activityContext(profileId), cursor);
+}
+
+export async function removeActivityAction(profileId: string, videoId: string) {
+  await getLibrary().removeActivity(await activityContext(profileId), videoId);
+}
+
+export async function restoreActivityAction(profileId: string, videoId: string) {
+  await getLibrary().restoreContinue(await activityContext(profileId), videoId);
+}
+
+export async function clearActivityAction(profileId: string) {
+  return getLibrary().clearActivity(await activityContext(profileId));
+}
+
 export async function revokeDeviceAction(id: string) {
   await getAccount().revokeDevice(await currentAccountId(), id);
 }

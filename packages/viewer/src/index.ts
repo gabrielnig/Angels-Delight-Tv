@@ -13,3 +13,4 @@ export * from './browse';
 export * from './search';
 export * from './guest';
 export * from './ratings';
+export * from './activity';

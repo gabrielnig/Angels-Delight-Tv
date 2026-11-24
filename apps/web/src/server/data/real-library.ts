@@ -1,5 +1,8 @@
 import {
   addToMyList,
+  clearActivity,
+  listActivity,
+  removeActivity,
   continueWatching,
   countMyList,
   getProgress,
@@ -92,6 +95,24 @@ export class RealLibrary implements LibraryRepository {
         updatedAt: item.updatedAt,
       },
     }));
+  }
+
+  async activity(ctx: ViewerContext, cursor?: string) {
+    return listActivity(this.service, viewerActor(ctx.accountId), {
+      profileId: ctx.profileId,
+      cursor,
+    });
+  }
+
+  async removeActivity(ctx: ViewerContext, videoId: string): Promise<void> {
+    await removeActivity(this.service, viewerActor(ctx.accountId), {
+      profileId: ctx.profileId,
+      videoId,
+    });
+  }
+
+  async clearActivity(ctx: ViewerContext) {
+    return clearActivity(this.service, viewerActor(ctx.accountId), { profileId: ctx.profileId });
   }
 
   async removeFromContinue(ctx: ViewerContext, videoId: string): Promise<void> {
