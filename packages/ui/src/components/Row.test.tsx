@@ -65,6 +65,29 @@ describe('Row', () => {
     expect(list.scrollBy).toHaveBeenCalledWith({ left: 640, behavior: 'smooth' });
   });
 
+  it('pages without smooth scrolling when reduced motion matches', async () => {
+    const original = window.matchMedia;
+    window.matchMedia = ((query: string) => ({
+      matches: query === '(prefers-reduced-motion: reduce)',
+      media: query,
+      addEventListener: () => {},
+      removeEventListener: () => {},
+    })) as unknown as typeof window.matchMedia;
+    try {
+      render(<Row title="Health">{cards}</Row>);
+      const list = screen.getByRole('list');
+      setScroll(list, { scrollLeft: 0, scrollWidth: 2000, clientWidth: 800 });
+      Object.defineProperty(list.firstElementChild as HTMLElement, 'offsetWidth', {
+        configurable: true,
+        value: 160,
+      });
+      await userEvent.setup().click(screen.getByRole('button', { name: 'Next titles' }));
+      expect(list.scrollBy).toHaveBeenCalledWith({ left: 640, behavior: 'auto' });
+    } finally {
+      window.matchMedia = original;
+    }
+  });
+
   it('hides the whole row when empty', () => {
     const { container } = render(<Row title="Continue watching" />);
     expect(container.firstChild).toBeNull();

@@ -58,7 +58,8 @@ export function Row({
     if (!list) return;
     const card = (list.firstElementChild as HTMLElement | null)?.offsetWidth ?? 0;
     const distance = Math.max(card, list.clientWidth - card);
-    list.scrollBy({ left: direction * distance, behavior: 'smooth' });
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    list.scrollBy({ left: direction * distance, behavior: reduce ? 'auto' : 'smooth' });
   }
 
   if (state === 'ready' && items.length === 0 && !empty) return null;
