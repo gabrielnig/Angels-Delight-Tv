@@ -1554,3 +1554,9 @@ Per video tri state, site default (Super admin), Admin changes it with a reason 
 - Options: Meilisearch or Typesense, Postgres
 - Why: A free tier host with one datastore and a catalog under 10,000 titles. The kids rule holds because a correction is only used when the audience filtered search finds results.
 - Reversible: Yes, behind searchTitles
+
+## D-287 Trending is an hourly stored snapshot filtered at read time, and thin data hides the row instead of faking it (lane L5, M44)
+- Decision: `title_scores` holds the top 60 trending and popular titles, refreshed hourly from raw view events (7 Lagos days, decay 0.8, one viewer at most 3 plays per title per day, completions add one, a series scores as its episodes). Each read filters for visibility, kids and the maturity limit. Trending needs 5 qualifying titles and 50 plays, Top 10 needs 10 titles, Popular needs 3 titles with 5 views, and a snapshot older than 3 hours counts as empty.
+- Options: compute per request, always fill the row with newest titles, a per profile snapshot.
+- Why: honest rows on a new site, no per profile data in the snapshot, and one cheap read per audience.
+- Reversible: yes.
