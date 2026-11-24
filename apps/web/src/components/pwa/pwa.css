@@ -138,6 +138,25 @@
   padding: var(--space-16) var(--page-gutter);
 }
 
+.pwa-offline__banner {
+  width: 100%;
+  padding: var(--space-3) var(--space-4);
+  background: var(--color-warning-tint);
+  color: var(--color-ink);
+  border-radius: var(--radius-sm);
+}
+
+.pwa-offline .ad-error {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-4);
+}
+
+.pwa-offline .pwa-offline__banner {
+  color: var(--color-ink);
+}
+
 .pwa-offline h1 {
   margin: 0;
   font-family: var(--font-display);

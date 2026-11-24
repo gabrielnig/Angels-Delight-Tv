@@ -1,28 +1,25 @@
-import { ButtonLink, ErrorState } from '@ad/ui';
+import { Suspense } from 'react';
 import { AppShell } from '../components/Shell';
+import { ErrorPage } from '../components/errors/ErrorPage';
+import { NotFoundSuggestions, SuggestionsSkeleton } from '../components/errors/NotFoundSuggestions';
 
-export const metadata = { title: 'Page not found' };
+export const metadata = { title: 'Page not found', robots: { index: false, follow: false } };
 
-/** Screen 29. Works signed in or out. */
+/** S139 state 1. One action (R39), a search field and popular titles. Browse stays in the header. */
 export default function NotFound() {
   return (
     <AppShell>
-      <div className="web-page">
-        <ErrorState
-          variant="page"
-          icon="search"
-          title="We could not find that page"
-          description="It may have moved or the link may be wrong."
-          actions={
-            <>
-              <ButtonLink href="/">Back to Home</ButtonLink>
-              <ButtonLink href="/search" variant="secondary">
-                Search
-              </ButtonLink>
-            </>
-          }
-        />
-      </div>
+      <ErrorPage
+        code="404"
+        title="We could not find that page"
+        description="The link may be old, or the page may have moved."
+        search
+        action={{ label: 'Back to Home', href: '/' }}
+      >
+        <Suspense fallback={<SuggestionsSkeleton />}>
+          <NotFoundSuggestions heading="Popular right now" />
+        </Suspense>
+      </ErrorPage>
     </AppShell>
   );
 }

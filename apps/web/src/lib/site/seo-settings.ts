@@ -15,6 +15,7 @@ export interface SeoSettings {
   noticeEnabled: boolean;
   noticeText: string;
   noticeVersion: number;
+  supportEmail: string;
 }
 
 /** Description: the Discovery tab text, then the tagline, then a neutral line. Image: the setting, then the placeholder. */
@@ -32,6 +33,7 @@ export function resolveSeoSettings(values: ResolvedSettings): SeoSettings {
     noticeEnabled: values['consent.notice_enabled'],
     noticeText: values['consent.notice_text'],
     noticeVersion: values['consent.notice_version'],
+    supportEmail: values['platform.support_email'],
   };
 }
 

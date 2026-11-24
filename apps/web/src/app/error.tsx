@@ -1,17 +1,19 @@
 'use client';
 
 import { useEffect } from 'react';
+import { useSupportEmail } from '../components/account/AccountSupport';
+import { ErrorPage } from '../components/errors/ErrorPage';
 import { getAnalyticsClient } from '../lib/analytics/browser';
-import '../components/pwa/pwa.css';
 
-/** Route level error screen. The digest is the server log reference (M24-S01 AC2). Raw messages are never shown. */
-export default function ErrorPage({
+/** Route level error screen (S139 state 4). The digest is the server log reference (M24-S01 AC2). Raw messages are never shown. */
+export default function ErrorRoute({
   error,
   reset,
 }: {
   error: Error & { digest?: string };
   reset: () => void;
 }) {
+  const supportEmail = useSupportEmail();
   useEffect(() => {
     try {
       getAnalyticsClient().track({ kind: 'error', code: 'app.render' });
@@ -21,16 +23,12 @@ export default function ErrorPage({
   }, [error]);
 
   return (
-    <main className="pwa-offline">
-      <h1>Something went wrong</h1>
-      <p>Please try again. If it keeps happening, tell us the reference below.</p>
-      {error.digest ? <p>Reference: {error.digest}</p> : null}
-      <button type="button" className="pwa-btn pwa-btn--primary" onClick={reset}>
-        Try again
-      </button>
-      <a className="pwa-btn" href="/">
-        Back to Home
-      </a>
-    </main>
+    <ErrorPage
+      title="Something went wrong on our side"
+      description="Try again in a moment. Your list and history are safe."
+      supportEmail={supportEmail}
+      {...(error.digest ? { reference: error.digest } : {})}
+      action={{ label: 'Try again', onClick: reset }}
+    />
   );
 }

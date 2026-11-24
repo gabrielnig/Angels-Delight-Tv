@@ -4,6 +4,7 @@ import type { CSSProperties, ReactNode } from 'react';
 import '@ad/ui/tokens.css';
 import '@ad/ui/components.css';
 import './globals.css';
+import { AccountSupportProvider } from '../components/account/AccountSupport';
 import { StorageNotice } from '../components/consent/StorageNotice';
 import { WebVitals } from '../components/observability/WebVitals';
 import { PwaClient } from '../components/pwa/PwaClient';
@@ -60,7 +61,9 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
       </head>
       <body>
         <I18nProvider locale={locale} catalog={catalog}>
-          <Providers>{children}</Providers>
+          <AccountSupportProvider email={seo.supportEmail}>
+            <Providers>{children}</Providers>
+          </AccountSupportProvider>
         </I18nProvider>
         <StorageNotice enabled={seo.noticeEnabled} text={seo.noticeText} version={seo.noticeVersion} />
         <PwaClient platformName={theme.platformName} />

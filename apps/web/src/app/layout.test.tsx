@@ -10,6 +10,7 @@ const seo = vi.hoisted(() => ({
     noticeEnabled: true,
     noticeText: 'We keep a few small files on your device.',
     noticeVersion: 2,
+    supportEmail: 'help@example.org',
   },
 }));
 vi.mock('../server/seo/seo-settings', () => ({ getSeoSettings: async () => seo.value }));
@@ -22,6 +23,13 @@ vi.mock('next/headers', () => ({
 vi.mock('../lib/i18n/server', () => ({
   getLocale: async () => 'en',
   loadCatalog: async () => ({ nav: {} }),
+}));
+vi.mock('../components/account/AccountSupport', () => ({
+  AccountSupportProvider: ({ email, children }: { email: string; children: React.ReactNode }) => (
+    <div data-testid="support" data-email={email}>
+      {children}
+    </div>
+  ),
 }));
 vi.mock('../components/consent/StorageNotice', () => ({
   StorageNotice: (props: { enabled: boolean; text: string; version: number }) => (
@@ -71,6 +79,7 @@ describe('root layout', () => {
       noticeEnabled: true,
       noticeText: 'We keep a few small files on your device.',
       noticeVersion: 2,
+      supportEmail: 'help@example.org',
     };
   });
 
@@ -84,6 +93,11 @@ describe('root layout', () => {
     expect(html).toContain('<main>Page</main>');
     expect(html).toContain('data-testid="pwa"');
     expect(html).toContain('data-testid="vitals"');
+  });
+
+  it('gives error pages the configured support email', async () => {
+    const html = renderToStaticMarkup(await RootLayout({ children: <main>Page</main> }));
+    expect(html).toContain('data-email="help@example.org"');
   });
 
   it('mounts the storage notice once with the configured text and version (M45-S11)', async () => {
@@ -109,6 +123,7 @@ describe('root layout', () => {
       noticeEnabled: true,
       noticeText: '',
       noticeVersion: 1,
+      supportEmail: '',
     };
     const metadata = await generateMetadata();
     expect(metadata.description).toBe('Lessons for every family');
