@@ -9,3 +9,5 @@ export * from './webhook';
 export * from './jobs';
 export * from './seal';
 export * from './receipt';
+export * from './donor';
+export * from './receipt-token';
