@@ -3,6 +3,7 @@ import { notFound, permanentRedirect } from 'next/navigation';
 import { Badge } from '@ad/ui';
 import { AppShell } from '../../../../components/Shell';
 import { PublicSeries } from '../../../../components/title/TitleView';
+import { GuestEpisodeProgress } from '../../../../components/guest/GuestEpisodeProgress';
 import { EpisodeList } from '../../../../components/title/EpisodeList';
 import { TitleActions } from '../../../../components/title/TitleActions';
 import { pickSeason, seasonRows } from '../../../../components/title/series-rows';
@@ -94,10 +95,17 @@ export default async function SeriesPage({
           />
         ) : null}
         <p className="web-title__desc">{series.description}</p>
-        <EpisodeList
-          seasons={rows}
-          initialSeason={pickSeason(seasons, query.season, next.season)}
-        />
+        {guest ? (
+          <GuestEpisodeProgress
+            seasons={rows}
+            initialSeason={pickSeason(seasons, query.season, next.season)}
+          />
+        ) : (
+          <EpisodeList
+            seasons={rows}
+            initialSeason={pickSeason(seasons, query.season, next.season)}
+          />
+        )}
       </div>
     </AppShell>
   );

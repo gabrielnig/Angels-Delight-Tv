@@ -12,6 +12,7 @@ import { reloadContinueRowAction, reloadMyListRowAction } from '../../app/action
 import { itemHref, itemKey, metaLine, timeLeftLabel } from '../../lib/format';
 import { CatalogCard, ContinueRow } from '../CatalogCard';
 import { RowError } from '../RowError';
+import { GuestContinueRow } from '../guest/GuestContinueRow';
 import { HomeEmpty } from './HomeEmpty';
 import { HomeHero } from './HomeHero';
 import { HomeRowsLoader } from './HomeRowsLoader';
@@ -94,6 +95,7 @@ export async function HomeView({
         dataSaver={dataSaver}
       />
       <div className="web-wide web-stack web-rows">
+        {ctx.guest ? <GuestContinueRow /> : null}
         {continueResult.ok ? (
           continueResult.value.length > 0 ? (
             <ContinueRow items={continueResult.value} />
