@@ -701,6 +701,7 @@ Voice: warm, clear, respectful, like a good teacher. Plain English a secondary s
 Rules
 1. Short sentences. One idea each. Aim for under 20 words in UI text and under 12 for buttons and labels.
 2. Active voice. Talk to "you". Say "we" for the platform.
+2a. Empty and error states carry one headline, one sentence of help (under 20 words) and one action with a verb first label. An error says what happened and what to do next, and shows any reference code only in small text under the action. No exclamation marks, dashes or emoji (`packages/ui/src/copy-rules.test.ts`).
 3. Say what the button does: "Save changes", "Delete video", "Send a new code". Never "Submit", "OK", "Click here".
 4. Sentence case. No exclamation marks except real celebration (rare). No ALL CAPS.
 5. Errors: what happened, what to do. No blame, no codes as the message. "That password is too short. Use at least 10 characters."

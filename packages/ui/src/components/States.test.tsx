@@ -56,4 +56,30 @@ describe('ErrorState', () => {
     expect(screen.queryByRole('heading')).toBeNull();
     expect(screen.getByRole('alert')).toHaveTextContent('Search is not working right now.');
   });
+
+  it('an empty state shows at most one primary action', () => {
+    const { container } = render(
+      <EmptyState
+        title="Your list is empty."
+        description="Tap the plus on any video to save it for later."
+        action={{ label: 'Browse videos', href: '/browse' }}
+      />,
+    );
+    expect(container.querySelectorAll('a, button')).toHaveLength(1);
+    expect(container.querySelector('h2')).toHaveTextContent('Your list is empty.');
+  });
+
+  it('an error shows one retry action and keeps the reference in small text', () => {
+    const { container } = render(
+      <ErrorState
+        title="We could not play this video."
+        description="Try again, or use another browser or device."
+        onRetry={() => {}}
+        reference="E-1042"
+      />,
+    );
+    expect(container.querySelectorAll('button')).toHaveLength(1);
+    expect(container.querySelector('.ad-state__ref')).toHaveTextContent('Reference: E-1042');
+    expect(container.querySelector('.ad-state__title')).not.toHaveTextContent('E-1042');
+  });
 });
