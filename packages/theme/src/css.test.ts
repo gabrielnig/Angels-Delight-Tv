@@ -31,6 +31,11 @@ describe('buildThemeVariables', () => {
     }
   });
 
+  it('display stacks name Inter as the per glyph fallback (R23)', () => {
+    expect(buildThemeVariables({ ...DEFAULT_THEME, fontKey: 'space-grotesk' })['--font-display']).toMatch(/^"Space Grotesk", Inter, /);
+    expect(buildThemeVariables({ ...DEFAULT_THEME, fontKey: 'lora' })['--font-display']).toMatch(/^"Lora", Inter, /);
+  });
+
   it('uses Space Grotesk for headings only and keeps Inter for body text (D-162)', () => {
     const vars = buildThemeVariables(DEFAULT_THEME);
     expect(vars['--font-display']).toMatch(/^"Space Grotesk", /);

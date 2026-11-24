@@ -2643,3 +2643,25 @@
     display: none;
   }
 }
+
+/* Marks safe typography for Yoruba, Igbo, Hausa and Pidgin (M46, R23). */
+:lang(yo) :is(h1, h2, h3, h4),
+:lang(ig) :is(h1, h2, h3, h4),
+:lang(ha) :is(h1, h2, h3, h4),
+:lang(pcm) :is(h1, h2, h3, h4) {
+  line-height: var(--leading-marks);
+}
+
+:lang(yo) :is(.ad-badge, .ad-pill),
+:lang(ig) :is(.ad-badge, .ad-pill),
+:lang(ha) :is(.ad-badge, .ad-pill),
+:lang(pcm) :is(.ad-badge, .ad-pill) {
+  letter-spacing: 0;
+}
+
+:lang(yo) :is(.ad-card__title, .ad-hero__title),
+:lang(ig) :is(.ad-card__title, .ad-hero__title),
+:lang(ha) :is(.ad-card__title, .ad-hero__title),
+:lang(pcm) :is(.ad-card__title, .ad-hero__title) {
+  padding-block: 0.1em;
+}

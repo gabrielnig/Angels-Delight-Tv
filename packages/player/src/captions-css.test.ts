@@ -17,6 +17,10 @@ describe('caption styling (M11-S06)', () => {
     expect(cue).toContain('--color-player-control-bg');
   });
 
+  it('cue font stack ends with Inter so marks and Hausa letters never fall to a system face (R23)', () => {
+    expect(cue).toMatch(/font-family:\s*var\(--font-sans\),\s*Inter/);
+  });
+
   it('lifts captions above the control bar while the controls show', () => {
     expect(css).toMatch(
       /\.adp\[data-controls='visible'\] \.adp-video::-webkit-media-text-track-container\s*\{\s*transform: translateY\(-/,

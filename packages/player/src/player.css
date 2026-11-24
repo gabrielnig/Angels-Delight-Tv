@@ -43,7 +43,7 @@
   color: var(--adp-cap-fg, var(--color-player-ink));
   background: var(--adp-cap-bg, var(--color-player-control-bg));
   text-shadow: var(--adp-cue-edge, none);
-  font-family: var(--font-sans);
+  font-family: var(--font-sans), Inter, sans-serif;
   font-size: var(--adp-cap-size, 20px);
   line-height: var(--leading-snug);
 }

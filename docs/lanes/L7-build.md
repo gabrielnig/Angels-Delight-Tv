@@ -41,3 +41,8 @@ Scoped tests only: `pnpm vitest run <file>`.
 - `lib/i18n/set-language.ts` (`setLanguage`, tested) and `app/actions-language.ts` (`setLanguageAction`). `components/i18n/LanguagePickerHost.tsx`.
 - `ProfileForm` language options come from `content.ui_languages` (prop `languages`).
 - Not done here: the player `t` prop moves to wave D of slice 7. Design review was a self check against the skill list (tokens only, 44px, hover guarded, no motion); no screenshot pass.
+
+## Slice 6
+- Most font work was already merged by L8 (vietnamese subsets, `selectFonts(key, lang)`, coverage manifest and NFD aware tests with Hausa and naira). This slice adds `--leading-marks` and the `:lang(yo|ig|ha|pcm)` rules in `packages/ui/src/tokens.css` and `components.css`, Inter right after Space Grotesk and Lora in `packages/theme/src/css.ts`, and the cue stack `var(--font-sans), Inter, sans-serif` in `player.css`. DESIGN-SYSTEM 5.3 has the rule.
+- Tests: `packages/ui/test/lang-marks.test.ts`, `packages/player/src/captions-css.test.ts`, `packages/theme/src/css.test.ts`.
+- Not added: a fontkit based checker (the L8 manifest script covers it), the theme editor Fixed group entry for the new token.
