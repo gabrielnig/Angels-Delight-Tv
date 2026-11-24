@@ -134,3 +134,70 @@ describe('VideoEditor', () => {
     expect(screen.getByRole('link', { name: 'Set up skip and chapters' })).toBeInTheDocument();
   });
 });
+
+describe('VideoEditor captions for viewers (L3-05)', () => {
+  const withCaptions = (role: 'admin' | 'editor', over: Record<string, unknown> = {}, siteDefault = true) => {
+    const setCaptions = vi.fn(async () => ({ ok: true as const }));
+    render(
+      <VideoEditor
+        video={{ ...get('vid_safe_online'), ...over }}
+        categories={store.categories}
+        series={store.series}
+        role={role}
+        actions={
+          {
+            update: vi.fn(),
+            publish: vi.fn(),
+            unpublish: vi.fn(),
+            retryEncode: vi.fn(),
+            bulk: vi.fn(),
+            setCaptions,
+          } as never
+        }
+        captionsDefault={siteDefault}
+        viewerHref="/watch/x"
+      />,
+    );
+    return setCaptions;
+  };
+
+  it('shows the captions switch with the site default named', () => {
+    withCaptions('admin', {}, false);
+    const group = screen.getByRole('group', { name: 'Captions for viewers' });
+    expect(group).toHaveTextContent('Follow site default (currently off)');
+    expect(screen.getByRole('radio', { name: /Follow site default/ })).toBeChecked();
+    expect(screen.getByRole('radio', { name: 'On' })).toBeInTheDocument();
+    expect(screen.getByRole('radio', { name: 'Off' })).toBeInTheDocument();
+  });
+
+  it('On saves without a reason', async () => {
+    const setCaptions = withCaptions('admin');
+    await userEvent.click(screen.getByRole('radio', { name: 'On' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Save captions setting' }));
+    await waitFor(() => expect(setCaptions).toHaveBeenCalledWith(true, undefined));
+  });
+
+  it('Off asks for a reason and cannot save without it', async () => {
+    const setCaptions = withCaptions('admin');
+    await userEvent.click(screen.getByRole('radio', { name: 'Off' }));
+    const save = screen.getByRole('button', { name: /Save captions setting/ });
+    expect(save).toHaveAttribute('aria-disabled', 'true');
+    await userEvent.type(screen.getByLabelText('Why are captions off?'), 'abc');
+    expect(save).toHaveAttribute('aria-disabled', 'true');
+    await userEvent.type(screen.getByLabelText('Why are captions off?'), 'def');
+    await userEvent.click(save);
+    await waitFor(() => expect(setCaptions).toHaveBeenCalledWith(false, 'abcdef'));
+  });
+
+  it('shows the saved reason when captions are off', () => {
+    withCaptions('admin', { captionsEnabled: false, captionsOffReason: 'Sign language video' });
+    expect(screen.getByRole('radio', { name: 'Off' })).toBeChecked();
+    expect(screen.getByLabelText('Why are captions off?')).toHaveValue('Sign language video');
+  });
+
+  it('an editor sees the switch disabled with a reason', () => {
+    withCaptions('editor');
+    for (const radio of screen.getAllByRole('radio')) expect(radio).toBeDisabled();
+    expect(screen.getByText('Only an Admin can change this.')).toBeInTheDocument();
+  });
+});

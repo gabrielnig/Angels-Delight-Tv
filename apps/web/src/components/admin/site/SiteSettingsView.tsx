@@ -47,6 +47,7 @@ const FLAG_KEYS: SettingKey[] = [
   'features.autoplay_hero',
   'features.data_saver_default',
   'features.require_approved_captions',
+  'features.captions_default_available',
 ];
 
 const NUMBER_RULES: Partial<Record<SettingKey, NumberRule>> = {

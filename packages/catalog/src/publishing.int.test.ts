@@ -129,6 +129,28 @@ describe.skipIf(!integrationEnabled())('publishing', () => {
     expect(r.publishState).toBe('published');
   });
 
+  it('a video with captions switched off publishes without approved captions', async () => {
+    const v = await draft({ captionsEnabled: false, captionsOffReason: 'Sign language video' });
+    expect((await publish(ctxFor(true), editor, 'video', v.id)).publishState).toBe('published');
+  });
+
+  it('a video following a site default of off publishes without approved captions', async () => {
+    const v = await draft();
+    const ctx = { ...ctxFor(true), captionsDefaultAvailable: false };
+    expect((await publish(ctx, editor, 'video', v.id)).publishState).toBe('published');
+  });
+
+  it('the gate still blocks when captions are on and unapproved', async () => {
+    const own = await draft({ captionsEnabled: true });
+    await expect(publish({ ...ctxFor(true), captionsDefaultAvailable: false }, editor, 'video', own.id)).rejects.toMatchObject({
+      fields: { checklist: ['Approve captions'] },
+    });
+    const followed = await draft();
+    await expect(publish({ ...ctxFor(true), captionsDefaultAvailable: true }, editor, 'video', followed.id)).rejects.toMatchObject({
+      fields: { checklist: ['Approve captions'] },
+    });
+  });
+
   it('accepts approved captions', async () => {
     const v = await draft();
     const trackId = uuidv7();

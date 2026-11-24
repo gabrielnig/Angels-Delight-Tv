@@ -237,6 +237,8 @@ Index `(updated_at)` for cleanup. Consumed with one atomic `INSERT ... ON CONFLI
 | `tags` | text[] | no | `{}` | At most 10. Editor tags, admin only |
 | `suitability` | text | yes | | `everyone`, `kids` or `older`. `kids_safe` is true for `kids` and `everyone` |
 | `caption_override_reason` | text | yes | | Set when an admin published without approved captions |
+| `captions_enabled` | boolean | yes | | Captions for viewers: null follows the site default (`features.captions_default_available`), true offers them, false offers none (migration 0037) |
+| `captions_off_reason` | text | yes | | Why captions are off. Check `videos_captions_off_has_reason` requires 5 or more characters while `captions_enabled` is false |
 | `poster_focus` | jsonb | yes | | `{x, y, zoom}` in percent (zoom 100 to 200) chosen in the poster picker |
 | `created_by` | uuid | yes | | FK `accounts` ON DELETE SET NULL |
 | `created_at`, `updated_at` | timestamptz | no | `now()` | |
@@ -610,5 +612,6 @@ The schema in `packages/db/src/schema` is the source of truth. These changes wer
 | 0032 | New table `email_outbox` (`kind`, `recipient_id` without a foreign key, sealed `to_enc`, `vars`, `status` queued, sending, sent or failed, `attempts` 0 to 20, `next_attempt_at`, `locked_until`, `provider_message_id`, `last_error`, unique partial `dedupe_key`). `admin_notices.emailed_at`. `staff_notification_prefs.email_frequency` (immediate, hourly, daily) and `address_enc` (sealed copy of the staff address, cleared by a trigger when `accounts.email_enc` changes). `active_staff_ids()` (SECURITY DEFINER, ids of active editors, admins and Super admins). Grants for `ad_worker` on `email_outbox`, `admin_notices` and `staff_notification_prefs`. See D-129. |
 | 0033 | New table `staff_exports` (`requester_id` cascade, `kind` audit or analytics, `params`, `scope` all or content, `status` queued, running, ready or failed, `row_count`, `bytes`, `file_key`, `error`, `expires_at`). Row level security: owner only for `ad_app`, all rows for `ad_worker`. |
 | 0034 | `assets` gains `placeholder_blur` (a webp data url under 1 KB, check `length < 1024`) and `candidate_score` (smallint 0 to 100 for poster frames cut from a video). Both are nullable, so older rows are unchanged. |
+| 0037 | `videos.captions_enabled` (boolean, null follows the site default) and `videos.captions_off_reason` (text), check `videos_captions_off_has_reason` (a reason of 5 or more characters while captions are off). Additive, no backfill. |
 
 Row level security summary additions: `search_history` is on and forced like `watch_progress`. `admin_invites`, `auth_lockouts`, `verification_codes`, `site_daily_stats`, `analytics_counters` and `slug_redirects` have no policies and are reached only by their own modules.

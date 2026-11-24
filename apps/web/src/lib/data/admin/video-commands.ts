@@ -120,6 +120,31 @@ export function schedulePublish(
   return { ok: true };
 }
 
+const MIN_CAPTIONS_OFF_REASON = 5;
+
+/**
+ * Fixture twin of the catalog's `setCaptionsAvailability`: Admin only, Off needs a reason of 5 or more
+ * characters (it satisfies the publish gate), back on or default clears the reason (D-184).
+ */
+export function applyCaptionsAvailability(
+  video: VideoRecord,
+  role: AccountRole,
+  value: boolean | null,
+  reason?: string,
+): CommandResult {
+  if (!can(role, 'caption.availability')) return { ok: false, error: 'Only an Admin can change this.' };
+  const trimmed = (reason ?? '').trim();
+  if (value === false && trimmed.length < MIN_CAPTIONS_OFF_REASON)
+    return {
+      ok: false,
+      error: `Give a reason of at least ${MIN_CAPTIONS_OFF_REASON} characters for switching captions off.`,
+    };
+  video.captionsEnabled = value;
+  video.captionsOffReason = value === false ? trimmed : null;
+  video.updatedAt = new Date().toISOString();
+  return { ok: true };
+}
+
 const TRASH_DAYS = 30;
 
 export function daysLeftInTrash(deletedAt: string, now: number): number {

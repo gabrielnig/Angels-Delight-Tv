@@ -2,7 +2,7 @@ import { schema, withAccount, type Database } from '@ad/db';
 import { and, eq } from 'drizzle-orm';
 import type { PlayableVideo, PlaybackStore, PublicCaption } from './service';
 
-const { videos, profiles, videoKeys, captionTracks, captions } = schema;
+const { videos, profiles, videoKeys, captionTracks, captions, settings } = schema;
 
 export class DrizzlePlaybackStore implements PlaybackStore {
   constructor(private readonly db: Database) {}
@@ -54,7 +54,21 @@ export class DrizzlePlaybackStore implements PlaybackStore {
     return row?.key ?? null;
   }
 
+  /** Captions offered to viewers. Empty when the video's switch, or the site default it follows, is off (D-184). */
   async captions(videoId: string): Promise<PublicCaption[]> {
+    const [own] = await this.db
+      .select({ enabled: videos.captionsEnabled })
+      .from(videos)
+      .where(eq(videos.id, videoId))
+      .limit(1);
+    if (own && own.enabled === false) return [];
+    if (!own || own.enabled === null) {
+      const [site] = await this.db
+        .select({ value: settings.value })
+        .from(settings)
+        .where(eq(settings.key, 'features.captions_default_available'));
+      if (site && site.value === false) return [];
+    }
     const rows = await this.db
       .select({
         language: captionTracks.language,

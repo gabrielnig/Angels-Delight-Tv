@@ -49,6 +49,17 @@ async function load(actor: AdminActor): Promise<SiteSettingsDto> {
   };
 }
 
+/** The site default for captions, readable by any staff member. A failed read means the safe default, on. */
+export async function captionsDefaultAvailable(actor: AdminActor): Promise<boolean> {
+  if (!can(actor.role, 'admin.access')) return true;
+  try {
+    const { settings } = await themeRuntime();
+    return (await settings.get('features.captions_default_available')) !== false;
+  } catch {
+    return true;
+  }
+}
+
 export const siteSettingsAdmin = {
   load: (actor: AdminActor) => toResult(async () => (guard(actor), load(actor))),
 

@@ -101,6 +101,14 @@ export async function readRequireApprovedCaptions(db: Database): Promise<boolean
   return row ? row.value !== false : true;
 }
 
+export async function readCaptionsDefaultAvailable(db: Database): Promise<boolean> {
+  const [row] = await db
+    .select({ value: schema.settings.value })
+    .from(schema.settings)
+    .where(eq(schema.settings.key, 'features.captions_default_available'));
+  return row ? row.value !== false : true;
+}
+
 export function titleCaseFromEmail(email: string): string {
   const local = email.split('@')[0] ?? 'Staff';
   const words = local.split(/[._-]+/).filter(Boolean);
@@ -169,7 +177,11 @@ function build(): AdminRuntime {
     db: () => getServices().db,
     async ctx() {
       const db = getServices().db;
-      return { db, requireApprovedCaptions: await readRequireApprovedCaptions(db) };
+      return {
+        db,
+        requireApprovedCaptions: await readRequireApprovedCaptions(db),
+        captionsDefaultAvailable: await readCaptionsDefaultAvailable(db),
+      };
     },
     enqueue: (async (...args: Parameters<JobProducer['enqueue']>) =>
       (await getProducer()).enqueue(...args)) as JobProducer['enqueue'],

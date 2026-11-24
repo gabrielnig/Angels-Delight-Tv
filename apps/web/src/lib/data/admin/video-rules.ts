@@ -44,7 +44,11 @@ export function adminStatusOf(video: VideoRecord): AdminVideoStatus {
   if (video.publishState === 'published') return 'published';
   if (video.publishState === 'scheduled') return 'scheduled';
   if (!video.title.trim()) return 'draft';
-  if (video.captionState !== 'approved' && !video.captionOverrideReason) {
+  if (
+    video.captionState !== 'approved' &&
+    !video.captionOverrideReason &&
+    video.captionsEnabled !== false
+  ) {
     return video.publishState === 'draft' && video.captionState === 'none' && !video.description
       ? 'draft'
       : 'needs_captions';
@@ -68,7 +72,8 @@ export function publishChecklist(
   const captionsOk =
     !rules.requireApprovedCaptions ||
     video.captionState === 'approved' ||
-    Boolean(video.captionOverrideReason);
+    Boolean(video.captionOverrideReason) ||
+    video.captionsEnabled === false;
   const detailsOk =
     video.title.trim().length > 0 && video.description.trim().length >= MIN_DESCRIPTION_LENGTH;
 

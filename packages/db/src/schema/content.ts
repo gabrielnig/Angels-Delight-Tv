@@ -134,6 +134,10 @@ export const videos = pgTable(
     suitability: text('suitability'),
     /** Set when an admin published without approved captions. Audited at the same time. */
     captionOverrideReason: text('caption_override_reason'),
+    /** Captions for viewers: null follows the site default, true offers them, false offers none (L3, D-184). */
+    captionsEnabled: boolean('captions_enabled'),
+    /** Why captions were switched off. Required while `captionsEnabled` is false. */
+    captionsOffReason: text('captions_off_reason'),
     /** Poster crop chosen in the poster picker: focus x and y in percent, zoom from 100 to 200 percent. */
     posterFocus: jsonb('poster_focus').$type<{ x: number; y: number; zoom: number }>(),
     createdBy: uuid('created_by').references(() => accounts.id, { onDelete: 'set null' }),
@@ -149,6 +153,10 @@ export const videos = pgTable(
     check(
       'videos_suitability_known',
       sql`${t.suitability} IS NULL OR ${t.suitability} IN ('everyone', 'kids', 'older')`,
+    ),
+    check(
+      'videos_captions_off_has_reason',
+      sql`${t.captionsEnabled} IS DISTINCT FROM false OR coalesce(char_length(${t.captionsOffReason}), 0) >= 5`,
     ),
     check('videos_tags_count', sql`cardinality(${t.tags}) <= 10`),
     check('videos_title_length', sql`char_length(${t.title}) BETWEEN 1 AND 200`),

@@ -35,6 +35,8 @@ export interface EditorActions {
   unpublish(): Promise<CommandResult>;
   retryEncode(): Promise<CommandResult>;
   bulk(action: BulkAction): Promise<BulkResult>;
+  /** Captions for viewers (Admin only): null follows the site default. */
+  setCaptions?(value: boolean | null, reason?: string): Promise<CommandResult>;
 }
 
 interface Props {
@@ -43,6 +45,8 @@ interface Props {
   series: SeriesRecord[];
   role: AccountRole;
   actions: EditorActions;
+  /** What "Follow site default" means right now. */
+  captionsDefault?: boolean;
   /** Where "Preview as viewer" goes. The viewer lane owns the route. */
   viewerHref: string;
   /** One line about the skip markers and chapters, or null when none are set (M43-S04). */
@@ -81,6 +85,7 @@ export function VideoEditor({
   actions,
   viewerHref,
   markersSummary = null,
+  captionsDefault = true,
 }: Props) {
   const router = useRouter();
   const toast = useToast();
@@ -92,6 +97,21 @@ export function VideoEditor({
   const [unpublishOpen, setUnpublishOpen] = useState(false);
   const [trashOpen, setTrashOpen] = useState(false);
   const [retrying, setRetrying] = useState(false);
+  const savedCaptions = video.captionsEnabled ?? null;
+  const [captionsChoice, setCaptionsChoice] = useState<boolean | null>(savedCaptions);
+  const [captionsReason, setCaptionsReason] = useState(video.captionsOffReason ?? '');
+  const [captionsSaving, setCaptionsSaving] = useState(false);
+  const canSwitchCaptions = can(role, 'caption.availability');
+  const captionsDirty =
+    captionsChoice !== savedCaptions ||
+    (captionsChoice === false && captionsReason.trim() !== (video.captionsOffReason ?? ''));
+  const captionsBlocker = !canSwitchCaptions
+    ? 'Only an Admin can change this.'
+    : !captionsDirty
+      ? 'Nothing has changed.'
+      : captionsChoice === false && captionsReason.trim().length < 5
+        ? 'Give a reason of at least 5 characters.'
+        : undefined;
 
   const dirty = !same(form, saved);
   const status = adminStatusOf(video);
@@ -340,6 +360,67 @@ export function VideoEditor({
             {markersSummary ? 'Edit' : 'Set up skip and chapters'}
           </LinkButton>
         </Card>
+        {actions.setCaptions ? (
+          <Card title="Captions for viewers">
+            <fieldset className="adm-fieldset" disabled={!canSwitchCaptions}>
+              <legend className="adm-sr">Captions for viewers</legend>
+              {(
+                [
+                  [null, `Follow site default (currently ${captionsDefault ? 'on' : 'off'})`],
+                  [true, 'On'],
+                  [false, 'Off'],
+                ] as const
+              ).map(([value, label]) => (
+                <label key={String(value)} className="adm-check">
+                  <input
+                    type="radio"
+                    name="captions-switch"
+                    checked={captionsChoice === value}
+                    disabled={!canSwitchCaptions}
+                    onChange={() => setCaptionsChoice(value)}
+                  />
+                  <span>{label}</span>
+                </label>
+              ))}
+            </fieldset>
+            {captionsChoice === false ? (
+              <TextField
+                label="Why are captions off?"
+                hint="Off lets this video publish without approved captions. The reason is saved in the audit log."
+                value={captionsReason}
+                disabled={!canSwitchCaptions}
+                onChange={(e) => setCaptionsReason(e.target.value)}
+              />
+            ) : null}
+            {!canSwitchCaptions ? <p className="adm-muted">Only an Admin can change this.</p> : null}
+            <Button
+              variant="secondary"
+              loading={captionsSaving}
+              disabledReason={captionsBlocker}
+              onClick={async () => {
+                setCaptionsSaving(true);
+                try {
+                  const result = await actions.setCaptions!(
+                    captionsChoice,
+                    captionsChoice === false ? captionsReason.trim() : undefined,
+                  );
+                  toast.show(
+                    result.ok
+                      ? { tone: 'success', message: 'Captions setting saved.' }
+                      : { tone: 'danger', message: result.error },
+                  );
+                  router.refresh();
+                } catch {
+                  toast.show({ tone: 'danger', message: 'Could not save. Nothing was changed. Try again.' });
+                } finally {
+                  setCaptionsSaving(false);
+                }
+              }}
+            >
+              Save captions setting
+            </Button>
+          </Card>
+        ) : null}
 
         <Card title="How viewers see it">
           <div className="adm-preview">
