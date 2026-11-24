@@ -8,6 +8,8 @@ import { readBandwidthSeed, saveBandwidth } from './bandwidth';
 import { createPlayerEngine } from './hlsEngine';
 import type { ProgressSink } from './progress';
 import { readNetworkHints, type NetworkHints } from './quality';
+import type { PlayerChapter } from './chapters';
+import type { PlayerMarkers } from './markers';
 import type { ResumeInput } from './resume';
 import { TokenManager, type PlaybackSession, type SessionProvider } from './token';
 import type {
@@ -37,6 +39,9 @@ export interface PlayerProps {
   /** Seek preview map (WebVTT of sprite tiles). Fetched on first hover, never with Data saver. */
   spriteUrl?: string | null;
   resume?: Omit<ResumeInput, 'rewind' | 'minSaved'>;
+  /** Skip windows and chapters in seconds. They arrive with the page (M43). */
+  markers?: PlayerMarkers;
+  chapters?: PlayerChapter[];
   preferences?: Partial<PlayerPreferences>;
   onPreferencesChange?: (preferences: PlayerPreferences) => void;
   next?: UpNextItem | null;
@@ -158,6 +163,8 @@ export function Player(props: PlayerProps) {
         ...(p.preferences ? { preferences: p.preferences } : {}),
         ...(p.captions ? { captions: p.captions } : {}),
         ...(p.resume ? { resume: p.resume } : {}),
+        ...(p.markers ? { markers: p.markers } : {}),
+        ...(p.chapters ? { chapters: p.chapters } : {}),
         ...(p.next !== undefined ? { upNext: p.next } : {}),
         ...(p.metrics ? { metrics: p.metrics } : {}),
         ...(p.telemetry ? { telemetry: p.telemetry } : {}),
@@ -197,6 +204,7 @@ export function Player(props: PlayerProps) {
       {...(props.onSignIn ? { onSignIn: props.onSignIn } : {})}
       reference={reference}
       spriteUrl={props.spriteUrl ?? null}
+      {...(props.chapters ? { chapters: props.chapters } : {})}
       autoplayNext={props.preferences?.autoplayNext ?? false}
       {...(props.countdownSeconds ? { countdownSeconds: props.countdownSeconds } : {})}
     />

@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState, type KeyboardEvent, type PointerEvent } from 'react';
+import { chapterAt, chapterTicks, normalizeChapters, type PlayerChapter } from '../chapters';
 import { formatClock, seekValueText } from '../format';
 import { SpriteLoader, findTile, type SpriteTile } from '../sprite';
 
@@ -11,12 +12,14 @@ export interface SeekBarProps {
   onSeek(seconds: number): void;
   /** Seek preview map. Leave it out (null) with Data saver on: nothing is downloaded (M08-S29). */
   spriteUrl?: string | null | undefined;
+  /** Chapters (M43): gaps in the rail, the title in the tooltip and in aria-valuetext. */
+  chapters?: readonly PlayerChapter[] | undefined;
   /** Test seam. */
   fetcher?: (url: string) => Promise<Response>;
 }
 
 /**
- * Seek slider. 4px rail growing to 8px on hover or touch, with a 32px tall hit area so a thumb
+ * Seek slider. 5px rail growing to 8px on hover, drag and focus, with a 44px tall hit area so a thumb
  * does not need precision (M08-S09). Left and Right are handled by the player keyboard map.
  */
 export function SeekBar({
@@ -25,6 +28,7 @@ export function SeekBar({
   bufferedEnd,
   onSeek,
   spriteUrl,
+  chapters,
   fetcher,
 }: SeekBarProps) {
   const ref = useRef<HTMLDivElement>(null);
@@ -84,12 +88,18 @@ export function SeekBar({
     if (e.key === 'ArrowRight') onSeek(currentTime + 5);
   };
 
+  const list = normalizeChapters(chapters, duration);
+  const ticks = chapterTicks(list, duration);
+  const hoverChapter = hover ? chapterAt(list, hover.t) : null;
+  const currentChapter = chapterAt(list, currentTime);
   const tile = hover ? findTile(tiles, hover.t) : null;
   const railWidth = ref.current?.getBoundingClientRect().width ?? 0;
   const half = tile ? tile.width / 2 : 0;
+  // Without a preview tile the tip is as wide as its chapter title, up to 160px (see .adp-seek__tip-chapter).
+  const tipHalf = half > 0 ? half : hoverChapter ? 80 : 0;
   const tipLeft = hover
-    ? railWidth > 0 && half > 0
-      ? Math.min(Math.max(hover.x, half), railWidth - half)
+    ? railWidth > 0 && tipHalf > 0
+      ? Math.min(Math.max(hover.x, tipHalf), railWidth - tipHalf)
       : hover.x
     : 0;
   const played = known ? Math.min(100, (currentTime / duration) * 100) : 0;
@@ -106,7 +116,11 @@ export function SeekBar({
       aria-valuemin={0}
       aria-valuemax={known ? Math.round(duration) : 0}
       aria-valuenow={Math.round(currentTime)}
-      aria-valuetext={seekValueText(currentTime, duration)}
+      aria-valuetext={
+        currentChapter
+          ? `${seekValueText(currentTime, duration)}, chapter ${currentChapter.title}`
+          : seekValueText(currentTime, duration)
+      }
       data-dragging={dragging || undefined}
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
@@ -120,6 +134,14 @@ export function SeekBar({
           <div className="adp-seek__buffered" style={{ width: `${buffered}%` }} />
           <div className="adp-seek__played" style={{ width: `${played}%` }} />
         </div>
+        {ticks.map((fraction) => (
+          <span
+            key={fraction}
+            className="adp-seek__tick"
+            style={{ left: `${fraction * 100}%` }}
+            aria-hidden="true"
+          />
+        ))}
         <div className="adp-seek__thumb" style={{ left: `${played}%` }} />
       </div>
       {hover ? (
@@ -141,6 +163,7 @@ export function SeekBar({
               />
             </div>
           ) : null}
+          {hoverChapter ? <span className="adp-seek__tip-chapter">{hoverChapter.title}</span> : null}
           {formatClock(hover.t)}
         </div>
       ) : null}

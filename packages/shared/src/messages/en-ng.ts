@@ -77,6 +77,7 @@ export const EN_NG = {
   'player.volume': 'Volume',
   'player.captions': 'Captions',
   'player.settings': 'Settings',
+  'player.chapters': 'Chapters',
   'player.menu.speed': 'Speed',
   'player.menu.quality': 'Quality',
   'player.pip': 'Picture in picture',
