@@ -6,7 +6,8 @@ Plan: `docs/plan/v2/L6-discovery.md`. Rulings: `docs/plan/v2/RULINGS.md`. Review
 
 | # | Slice | State | PR |
 |---|---|---|---|
-| 1 | Sitemap and robots line | in review | |
+| 1 | Sitemap and robots line | merged | #283 |
+| 2 | Structured data (JSON-LD), kids only noindex | in review | |
 
 ## Slice 1 (sitemap)
 
@@ -15,3 +16,12 @@ Plan: `docs/plan/v2/L6-discovery.md`. Rulings: `docs/plan/v2/RULINGS.md`. Review
 - `apps/web/src/server/seo/sitemap-handlers.ts`: `createSitemapHandlers({ load, origin })` with `index` and `chunk`. Wired in `sitemap-data.ts`, routes `app/sitemap.xml/route.ts` and `app/sitemaps/[id]/route.ts` (D-268).
 - `robots.ts` names `${APP_ORIGIN}/sitemap.xml` whenever the origin is set.
 - Scoped tests: `pnpm vitest run apps/web/src/lib/seo apps/web/src/server/seo apps/web/src/app/robots.test.ts packages/catalog/src/sitemap.int.test.ts` (the last needs `TEST_DATABASE_ADMIN_URL`).
+
+## Slice 2 (structured data)
+
+- `apps/web/src/lib/seo/jsonld.ts`: pure builders `videoObject`, `tvSeries`, `breadcrumbList`, `webSiteJsonLd`, `organizationJsonLd`, `isoDuration`, `serializeJsonLd` (escapes `<`, `>`, `&`, line separators).
+- `apps/web/src/lib/seo/page-jsonld.ts`: page level blocks `titlePageJsonLd`, `seriesPageJsonLd`, `homePageJsonLd`, `categoryPageJsonLd`, `thumbnailUrls`. Empty without an absolute origin.
+- `apps/web/src/components/seo/JsonLd.tsx`: server component, one script per block, null blocks skipped.
+- `apps/web/src/server/seo/page-seo.ts`: `siteOrigin()` (APP_ORIGIN), `titleIndexable(kind, slug)` over `isKidsOnlyTitle` in `@ad/catalog`.
+- `previewMetadata` takes `indexable`; false gives `robots: { index: false, follow: false }`. Missing titles get the same.
+- Decision D-278. Tests: `pnpm vitest run apps/web/src/lib/seo apps/web/src/components/seo apps/web/src/app/page.test.tsx "apps/web/src/app/(viewer)/title/[slug]/page.test.tsx" "apps/web/src/app/(viewer)/series/[slug]/page.test.tsx"` and `packages/catalog/src/sitemap.int.test.ts` (DB).

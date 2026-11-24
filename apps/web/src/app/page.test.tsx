@@ -25,6 +25,8 @@ vi.mock('../server/guest/guest-settings', () => ({
 vi.mock('../server/guest/guest-view', () => ({
   currentGuestAudience: async () => 'adult',
 }));
+vi.mock('../lib/theme/root', () => ({ getRootTheme: async () => ({ platformName: 'ADTV' }) }));
+vi.mock('../server/seo/page-seo', () => ({ siteOrigin: () => 'https://example.test' }));
 vi.mock('../server/auth/turnstile-site', () => ({ turnstileSiteKey: () => undefined }));
 vi.mock('../components/Shell', () => ({
   AppShell: ({ children }: { children: React.ReactNode }) => <>{children}</>,
@@ -60,5 +62,17 @@ describe('root page', () => {
     mocks.guestPlay = false;
     render(await RootPage());
     expect(screen.getByText('sign in card')).toBeInTheDocument();
+  });
+
+  it('a guest Home carries the WebSite and Organization structured data (M45-S02)', async () => {
+    const { container } = render(await RootPage());
+    const blocks = [...container.querySelectorAll('script[type="application/ld+json"]')].map((el) =>
+      JSON.parse(el.textContent ?? ''),
+    );
+    expect(blocks.map((b) => b['@type'])).toEqual(['WebSite', 'Organization']);
+    expect(blocks[0].name).toBe('ADTV');
+    expect(blocks[0].potentialAction.target).toBe(
+      'https://example.test/search?q={search_term_string}',
+    );
   });
 });

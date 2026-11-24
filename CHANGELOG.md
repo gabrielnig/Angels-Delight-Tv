@@ -7,6 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 ## [Unreleased]
 
 ### Added
+- Lane L6 structured data (M45-S02): `VideoObject`, `TVSeries`, `BreadcrumbList`, `WebSite` with a search action and `Organization` as escaped JSON-LD on title, series, category and guest Home pages; kids only titles carry `noindex` and no structured data (R26); `isKidsOnlyTitle` in `@ad/catalog`.
 - Lane L6 sitemap (M45-S01): `/sitemap.xml` and `/sitemaps/<n>.xml` route handlers over `listSitemapRows` (published titles, series, categories, real lastmod, kids only titles left out), the Sitemap line in robots.txt, 503 with Retry-After on failure.
 - Lane L8 design system tuning (M47): fractional row columns that follow the row container, one gutter clamp, mobile first type scale, 250 ms hover and 0 ms press tokens, button size tokens with a 44px hit area, a 1.25 hover card with an enter only delay, a nav that turns solid from a sentinel with a linear fade, a hero with a 10 s rotation and crossfade, skeletons that match real cards, vietnamese font subsets and an Inter fallback, and guard tests for hover, focus, touch targets, reduced motion, copy, fonts and decision ids.
 - Lane K1 viewer integration: real catalog, library, profiles, account stats, playback settings, data export, theme, analytics identity and `/api/progress` sink wired into `apps/web`, with fixtures kept behind `VIEWER_FIXTURES=on`, migration 0014 and a real services Playwright smoke.

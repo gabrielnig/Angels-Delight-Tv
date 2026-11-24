@@ -8,7 +8,10 @@ import { EpisodeList } from '../../../../components/title/EpisodeList';
 import { TitleActions } from '../../../../components/title/TitleActions';
 import { pickSeason, seasonRows } from '../../../../components/title/series-rows';
 import { getCatalog, getLibrary } from '../../../../lib/data';
+import { JsonLd } from '../../../../components/seo/JsonLd';
 import { previewMetadata } from '../../../../lib/seo';
+import { seriesPageJsonLd } from '../../../../lib/seo/page-jsonld';
+import { siteOrigin, titleIndexable } from '../../../../server/seo/page-seo';
 import { getRootTheme } from '../../../../lib/theme/root';
 import { itemKey } from '../../../../lib/format';
 import { primaryAction } from '../../../../lib/title-cta';
@@ -21,9 +24,14 @@ type Params = { params: Promise<{ slug: string }> };
 export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const { slug } = await params;
   const preview = await getCatalog().publicPreview(slug, 'series');
-  if (!preview || preview.type !== 'series') return { title: 'Series not found' };
+  if (!preview || preview.type !== 'series') {
+    return { title: 'Series not found', robots: { index: false, follow: false } };
+  }
   const { item } = preview;
-  const { platformName } = await getRootTheme();
+  const [{ platformName }, indexable] = await Promise.all([
+    getRootTheme(),
+    titleIndexable('series', item.slug),
+  ]);
   return previewMetadata({
     kind: 'series',
     title: item.title,
@@ -31,6 +39,7 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
     path: `/series/${item.slug}`,
     siteName: platformName,
     thumbnail: item.thumbnail,
+    indexable,
   });
 }
 
@@ -72,8 +81,12 @@ export default async function SeriesPage({
   const guest =
     viewer.kind === 'guest' ? { signUpOpen: (await getSite().content()).signUpOpen } : null;
   const inList = guest ? false : (await getLibrary().myListIds(ctx)).includes(itemKey(series));
+  const indexable = await titleIndexable('series', series.slug);
   return (
     <AppShell>
+      {indexable ? (
+        <JsonLd data={seriesPageJsonLd({ origin: siteOrigin(), series, seasons })} />
+      ) : null}
       <div className="web-page web-title">
         <h1 className="web-title__name">{series.title}</h1>
         <p className="web-title__meta">

@@ -7,6 +7,8 @@ const mocks = vi.hoisted(() => ({
   viewer: { kind: 'guest', ctx: { guest: true, profileId: 'none', kids: false } } as unknown,
   guestPlay: true,
   title: vi.fn(),
+  preview: vi.fn(),
+  indexable: true,
   myListIds: vi.fn(async () => []),
 }));
 vi.mock('next/navigation', () => ({
@@ -25,19 +27,19 @@ vi.mock('../../../../lib/data', () => ({
   getSite: () => ({ content: async () => ({ signUpOpen: true }) }),
   getCatalog: () => ({
     title: mocks.title,
-    publicPreview: async () => ({
-      type: 'video',
-      item: { title: 'Preview', description: 'd', durationSeconds: 60, categoryName: 'Science' },
-    }),
+    publicPreview: (...args: unknown[]) => mocks.preview(...args),
   }),
   getLibrary: () => ({ myListIds: mocks.myListIds }),
 }));
-vi.mock('../../../../lib/seo', () => ({ previewMetadata: () => ({}) }));
+vi.mock('../../../../server/seo/page-seo', () => ({
+  siteOrigin: () => 'https://example.test',
+  titleIndexable: async () => mocks.indexable,
+}));
 vi.mock('../../../../lib/theme/root', () => ({
   getRootTheme: async () => ({ platformName: 'x' }),
 }));
 
-import TitlePage from './page';
+import TitlePage, { generateMetadata } from './page';
 
 const detail = {
   video: {
@@ -66,6 +68,11 @@ describe('title page for a guest', () => {
     mocks.viewer = { kind: 'guest', ctx: { guest: true, profileId: 'none', kids: false } };
     mocks.guestPlay = true;
     mocks.title.mockResolvedValue(detail);
+    mocks.preview.mockResolvedValue({
+      type: 'video',
+      item: { title: 'Preview', description: 'd', durationSeconds: 60, categoryName: 'Science' },
+    });
+    mocks.indexable = true;
     mocks.myListIds.mockClear();
   });
 
@@ -85,5 +92,61 @@ describe('title page for a guest', () => {
     await page();
     expect(screen.getByRole('link', { name: 'Sign in to watch' })).toBeInTheDocument();
     expect(mocks.title).not.toHaveBeenCalled();
+  });
+});
+
+describe('title page search engine rules (M45-S02, R26)', () => {
+  const params = { params: Promise.resolve({ slug: 'rain' }) };
+  beforeEach(() => {
+    mocks.viewer = { kind: 'guest', ctx: { guest: true, profileId: 'none', kids: false } };
+    mocks.guestPlay = true;
+    mocks.title.mockResolvedValue(detail);
+    mocks.preview.mockResolvedValue({
+      type: 'video',
+      item: {
+        slug: 'rain',
+        title: 'Rain',
+        description: 'd',
+        durationSeconds: 60,
+        categoryName: 'Science',
+      },
+    });
+    mocks.indexable = true;
+  });
+
+  it('an unpublished or missing title asks not to be indexed', async () => {
+    mocks.preview.mockResolvedValue(null);
+    expect((await generateMetadata(params)).robots).toEqual({ index: false, follow: false });
+  });
+
+  it('a kids only title asks not to be indexed', async () => {
+    mocks.indexable = false;
+    expect((await generateMetadata(params)).robots).toEqual({ index: false, follow: false });
+  });
+
+  it('a title for everyone leaves robots alone', async () => {
+    expect((await generateMetadata(params)).robots).toBeUndefined();
+  });
+
+  it('renders a breadcrumb and a video object as structured data', async () => {
+    mocks.title.mockResolvedValue({
+      ...detail,
+      video: {
+        ...detail.video,
+        publishedAt: '2026-01-01T00:00:00.000Z',
+        thumbnail: { src: '/p.webp' },
+      },
+    });
+    const { container } = await page();
+    const types = [...container.querySelectorAll('script[type="application/ld+json"]')].map(
+      (el) => JSON.parse(el.textContent ?? '')['@type'],
+    );
+    expect(types).toEqual(['VideoObject', 'BreadcrumbList']);
+  });
+
+  it('renders no structured data for a kids only title', async () => {
+    mocks.indexable = false;
+    const { container } = await page();
+    expect(container.querySelector('script[type="application/ld+json"]')).toBeNull();
   });
 });
