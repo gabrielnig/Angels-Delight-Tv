@@ -10,7 +10,8 @@ Plan: `docs/plan/v2/L6-discovery.md`. Rulings: `docs/plan/v2/RULINGS.md`. Review
 | 2 | Structured data (JSON-LD), kids only noindex | merged | #292 |
 | 3 | Share images and metadata | merged | #296 |
 | 4 | Discovery tab, settings, robots and layout metadata | merged | #305 |
-| 5 | Share menu | in review | |
+| 5 | Share menu | merged | #308 |
+| 6a | Search core: migration 0043, corrections, synonyms, subjects, misses | in review | |
 
 ## Slice 1 (sitemap)
 
@@ -49,3 +50,11 @@ Plan: `docs/plan/v2/L6-discovery.md`. Rulings: `docs/plan/v2/RULINGS.md`. Review
 - `components/share/ShareMenu.tsx` (`title`, `text`, `channels`, `kind`), `share-links.ts` (`shareHref`, `withChannelTag`, `CHANNEL_TAGS`), `share.css`. `TitleActions` takes `share`, `kids`, `kind` and renders it. `shareConfig(title)` in `server/seo/page-seo.ts` reads the admin channels and text. Title and series pages pass them; kids get no Share.
 - Not done: the analytics `share` channel event (waits for slice 12 posture guard), share from the player end card (Could).
 - Tests: `pnpm vitest run apps/web/src/components/share apps/web/src/components/title "apps/web/src/app/(viewer)"`.
+
+## Slice 6a (search core)
+
+- Migration `packages/db/migrations/main/0043_search_quality.sql` (hand written, journal entry added) and Drizzle tables in `packages/db/src/schema/search.ts`: `search_terms`, `search_synonyms` (neutral seed), `search_misses`. No snapshot file was generated for 0043.
+- `packages/catalog/src/search-synonyms.ts`: `parseSynonymGroups` (line numbered errors), `expansionsFor` (cap `MAX_EXPANSIONS` 8), `buildTsQueries`, `loadSynonymGroups`. `searchTitles` now expands synonyms (exact matches rank above) and only fuzzy matches titles when every word has 5 or more characters.
+- `packages/catalog/src/search-quality.ts`: `refreshSearchTerms(Safe)`, `correctQuery`, `searchWithCorrection` (`showingFor`, `didYouMean`), `searchSubjects`, `replaceSynonymGroups`, `listSynonymGroups`, `recordMiss`, `pruneMisses`, `listMisses`. `publish` and `unpublish` refresh the word list.
+- Left for 6b: the viewer service and API (`subjects`, `showingFor`, `didYouMean`, miss logging on empty results, guests), the search UI states, the synonyms editor and misses report in the Discovery tab, pruning misses in the worker.
+- Tests: `pnpm vitest run packages/catalog/src/search-synonyms.test.ts packages/catalog/src/search-quality.int.test.ts packages/catalog/src/titles.int.test.ts packages/catalog/src/publishing.int.test.ts packages/db/src/schema.int.test.ts` (DB for the int files).

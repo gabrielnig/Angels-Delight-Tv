@@ -12,6 +12,7 @@ import {
   isAdminRole,
 } from '@ad/shared';
 import { rowsOf } from './sql';
+import { refreshSearchTermsSafe } from './search-quality';
 import type { Tx } from './types';
 
 /** Context for the editor side of publishing. Settings (M29) feed `requireApprovedCaptions`. */
@@ -200,6 +201,7 @@ export async function publish(
       publishAt: scheduling ? input.publishAt! : null,
       publishedAt: scheduling ? undefined : (current.publishedAt ?? now),
     });
+    await refreshSearchTermsSafe(tx);
     if (override && target === 'video')
       await tx
         .update(videos)
@@ -239,6 +241,7 @@ export async function unpublish(
       publishState: 'unpublished',
       publishAt: null,
     });
+    await refreshSearchTermsSafe(tx);
     await writeAudit(tx, {
       action: `${target}.unpublish`,
       outcome: 'success',

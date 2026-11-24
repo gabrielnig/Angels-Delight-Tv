@@ -1,4 +1,4 @@
-import { eq } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 import { captions, captionTracks, videoKeys, videos } from '@ad/db';
 import { uuidv7 } from '@ad/shared';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
@@ -60,6 +60,13 @@ describe.skipIf(!integrationEnabled())('publishing', () => {
     const r = await publish(ctxFor(), editor, 'video', v.id);
     expect(r.publishState).toBe('published');
     expect(r.publishedAt).toBe(NOW.toISOString());
+  });
+
+  it('adds the words of a published title to the did you mean list (M45-S07)', async () => {
+    const v = await draft({ title: 'Xylophone basics' });
+    await publish(ctxFor(), editor, 'video', v.id);
+    const found = await t.setup.execute(sql`SELECT term FROM search_terms WHERE term = 'xylophone'`);
+    expect((found as { rows: unknown[] }).rows).toHaveLength(1);
   });
 
   it('blocks publishing when the encrypted video has no HLS key (M31-S02)', async () => {

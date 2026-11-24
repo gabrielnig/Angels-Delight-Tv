@@ -2,6 +2,7 @@ import { sql, type SQL } from 'drizzle-orm';
 import { artworkFromRow, type ArtworkDto, type ArtworkRow } from './artwork';
 import { clampLimit, decodeCursor, encodeCursor } from './cursor';
 import { rowsOf, uuidList } from './sql';
+import { loadSynonymGroups, buildTsQueries } from './search-synonyms';
 import type { Audience, CatalogContext, Page, Tx, TitleKind, TitleRef } from './types';
 import { liveSeriesSql, liveVideoSql } from './visibility';
 
@@ -278,7 +279,7 @@ export async function listTitles(
   };
 }
 
-function categoryHasLiveTitle(audience: Audience, now: Date): SQL {
+export function categoryHasLiveTitleSql(audience: Audience, now: Date): SQL {
   return sql`(EXISTS (SELECT 1 FROM video_categories cvc JOIN videos cv ON cv.id = cvc.video_id
       WHERE cvc.category_id = c.id AND cv.kind = 'standalone' AND ${liveVideoSql('cv', audience, now)})
     OR EXISTS (SELECT 1 FROM series_categories csc JOIN series cs ON cs.id = csc.series_id
@@ -294,7 +295,7 @@ export async function listCategories(
   const result = await tx.execute(sql`
     SELECT c.id, c.slug, c.name::text AS name, c.description
     FROM categories c
-    WHERE c.is_visible AND ${categoryHasLiveTitle(audience, ctx.now())}
+    WHERE c.is_visible AND ${categoryHasLiveTitleSql(audience, ctx.now())}
     ORDER BY c.position, c.name`);
   return rowsOf<CategoryDto>(result);
 }
@@ -309,7 +310,7 @@ export interface SearchPage extends Page<TitleCard> {
   total: number;
 }
 
-function searchTokens(query: string): string[] {
+export function searchTokens(query: string): string[] {
   return [...query.matchAll(/[\p{L}\p{N}]+/gu)].map((match) => match[0]).slice(0, 8);
 }
 
@@ -340,17 +341,21 @@ export async function searchTitles(
   const norm = tokens.join(' ');
   if (norm.length < MIN_QUERY_LENGTH) return { items: [], nextCursor: null, total: 0 };
   const offset = input.cursor === undefined ? 0 : decodeCursor(input.cursor, isOffsetCursor).o;
-  const tsquery = tokens.map((token) => `${token}:*`).join(' & ');
+  const { expanded, exact } = buildTsQueries(tokens, await loadSynonymGroups(tx));
   const now = ctx.now();
+  // Words of four characters or fewer match exactly: fuzzy matching on them is noise (M45-S07 AC2).
+  const fuzzy = tokens.every((token) => [...token].length >= 5);
 
   const result = await tx.execute(sql`
     WITH ${titlesCte(audience, now, true)},
-    q AS (SELECT to_tsquery('simple', ad_unaccent(${tsquery})) AS tsq, ad_unaccent(lower(${norm}::text)) AS norm)
+    q AS (SELECT to_tsquery('simple', ad_unaccent(${expanded})) AS tsq,
+      to_tsquery('simple', ad_unaccent(${exact})) AS exact_tsq,
+      ad_unaccent(lower(${norm}::text)) AS norm)
     SELECT ${CARD_COLUMNS}, count(*) OVER () AS total
     FROM titles t CROSS JOIN q ${POSTER_JOIN}
-    WHERE t.doc @@ q.tsq OR q.norm <% t.title_key OR strpos(t.category_text, q.norm) > 0
+    WHERE t.doc @@ q.tsq OR (${fuzzy}::boolean AND q.norm <% t.title_key) OR strpos(t.category_text, q.norm) > 0
     ORDER BY
-      round((ts_rank_cd(t.doc, q.tsq) + 0.6 * word_similarity(q.norm, t.title_key)
+      round((ts_rank_cd(t.doc, q.exact_tsq) + 0.1 * ts_rank_cd(t.doc, q.tsq) + 0.6 * word_similarity(q.norm, t.title_key)
         + CASE WHEN strpos(t.category_text, q.norm) > 0 THEN 0.3 ELSE 0 END)::numeric, 4) DESC,
       CASE WHEN t.kind = 'video' THEN coalesce((SELECT sum(d.views) FROM video_daily_stats d
         WHERE d.video_id = t.id AND d.day >= (${now}::timestamptz)::date - 30), 0) ELSE 0 END DESC,
@@ -398,7 +403,7 @@ export async function suggestTitles(
   const categoryRows = rowsOf<{ name: string; slug: string }>(
     await tx.execute(sql`
       SELECT c.name::text AS name, c.slug FROM categories c
-      WHERE c.is_visible AND ${categoryHasLiveTitle(audience, now)}
+      WHERE c.is_visible AND ${categoryHasLiveTitleSql(audience, now)}
         AND (starts_with(ad_unaccent(lower(c.name)), ${normSql}) OR strpos(ad_unaccent(lower(c.name)), ' ' || ${normSql}) > 0)
       ORDER BY c.position, c.name
       LIMIT ${MAX_SUGGESTIONS}`),

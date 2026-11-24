@@ -12,3 +12,5 @@ export * from './seed-demo';
 export * from './admin';
 export * from './cache';
 export * from './sitemap';
+export * from './search-synonyms';
+export * from './search-quality';
