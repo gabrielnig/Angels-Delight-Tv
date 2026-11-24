@@ -2842,8 +2842,15 @@
   box-shadow: var(--shadow-3);
   animation: ad-bell-in var(--motion-fast) var(--ease-enter);
 }
-.ad-bell__popover:focus {
-  outline: none;
+.ad-bell__popover:focus-visible {
+  outline: 3px solid var(--color-focus-ring);
+  outline-offset: 2px;
+}
+
+@media (forced-colors: active) {
+  .ad-bell__popover:focus-visible {
+    outline-color: Highlight;
+  }
 }
 @keyframes ad-bell-in {
   from {

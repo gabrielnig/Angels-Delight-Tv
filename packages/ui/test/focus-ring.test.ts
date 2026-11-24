@@ -37,6 +37,19 @@ describe('focus rings (M47-S06, R37)', () => {
     expect(ring[0]?.body).toMatch(/box-shadow:\s*none/);
   });
 
+  it('the bell popover draws the offset focus outline and keeps it in forced colors', () => {
+    const ring = find('.ad-bell__popover:focus-visible').filter((r) => r.at.length === 0);
+    expect(ring).toHaveLength(1);
+    expect(ring[0]?.body).toMatch(/outline:\s*3px solid var\(--color-focus-ring\)/);
+    expect(ring[0]?.body).toMatch(/outline-offset:\s*2px/);
+    const forced = uiRules.filter(
+      (r) =>
+        r.at.some((a) => /forced-colors:\s*active/.test(a)) &&
+        r.selector.includes('.ad-bell__popover:focus-visible'),
+    );
+    expect(forced[0]?.body).toMatch(/outline-color:\s*Highlight/);
+  });
+
   it('tile and card rings survive forced colors', () => {
     const forced = (sel: string) =>
       uiRules.filter(
