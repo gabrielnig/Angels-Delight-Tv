@@ -10,8 +10,10 @@ is meant to be reachable only from the worker on the private network.
 import json
 import os
 import re
+import sys
 import tempfile
 import threading
+import traceback
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import parse_qs, urlparse
 
@@ -97,7 +99,8 @@ def make_handler(state):
                     return
                 result = state.transcriber.transcribe(path, language)
                 self._send(200, result)
-            except Exception:  # never leak internals to the caller
+            except Exception:  # never leak internals to the caller, but tell the operator what broke
+                print("transcription failed:\n" + traceback.format_exc(), file=sys.stderr, flush=True)
                 self._send(500, {"error": "transcription failed"})
             finally:
                 if path and os.path.exists(path):

@@ -1,3 +1,5 @@
+import contextlib
+import io
 import json
 import threading
 import time
@@ -83,6 +85,15 @@ class ServerTest(unittest.TestCase):
         status, _, body = request(base, "POST", "/transcribe", b"abc", {"Content-Type": "audio/wav"})
         self.assertEqual(status, 500)
         self.assertNotIn(b"secret", body)
+
+    def test_logs_the_error_type_for_the_operator_but_not_to_the_caller(self):
+        base = self.start(FakeTranscriber(fail=True))
+        captured = io.StringIO()
+        with contextlib.redirect_stderr(captured):
+            status, _, body = request(base, "POST", "/transcribe", b"abc", {"Content-Type": "audio/wav"})
+        self.assertEqual(status, 500)
+        self.assertIn("RuntimeError", captured.getvalue())
+        self.assertNotIn(b"RuntimeError", body)
 
     def test_one_job_at_a_time_and_health_stays_responsive(self):
         base = self.start(FakeTranscriber(delay=0.6))

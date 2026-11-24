@@ -877,3 +877,8 @@ Format: decision, options considered, why, reversible or not. Newest first. Deci
 - Decision: `@ad/ui` gets a `./theme` export pointing at `src/theme.ts`. `packages/launch` and `packages/theme` take their runtime values from it instead of the `@ad/ui` barrel. A guard test fails if a runtime import of the barrel comes back.
 - Options: add a tsconfig with the automatic JSX runtime to the tools image (tsx ignores files under node_modules unless the config includes them, and it keeps React in the image for no reason), or split the barrel.
 - Why: found on the first real `apply` on the VPS, which crashed with "React is not defined" from `AvatarArt.tsx`. The tools only need colour and font keys, so they should not load any component. Reversible: yes.
+
+## D-167 The whisper image installs requests and logs why a transcription failed (lane w3)
+- Decision: `requests` is pinned in `apps/whisper/requirements.txt`, and the whisper server prints the traceback of a failed transcription to its own log. The caller still only sees "transcription failed".
+- Options: pin an older huggingface_hub that still pulls requests in, or install requests directly.
+- Why: found on the first real caption run on the VPS. faster-whisper 1.1.1 imports requests when it loads, the image did not have it, every caption job failed with a bare 500 and the service log said nothing. Reversible: yes.
