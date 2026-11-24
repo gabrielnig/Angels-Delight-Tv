@@ -2245,7 +2245,7 @@
   z-index: var(--z-nav);
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  height: calc(3.5rem + env(safe-area-inset-bottom));
+  height: calc(var(--tabbar-height) + env(safe-area-inset-bottom));
   padding-bottom: env(safe-area-inset-bottom);
   background: var(--color-surface);
   border-top: 1px solid var(--color-border);
@@ -2253,6 +2253,7 @@
 
 .ad-tabbar__item {
   display: flex;
+  min-height: var(--touch-target);
   flex-direction: column;
   align-items: center;
   justify-content: center;
@@ -2281,7 +2282,7 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
-  padding: var(--space-8) var(--page-gutter) calc(var(--space-8) + 4rem);
+  padding: var(--space-8) var(--page-gutter) calc(var(--space-8) + var(--tabbar-height) + env(safe-area-inset-bottom));
   color: var(--color-muted);
   font-size: var(--text-small);
 }
