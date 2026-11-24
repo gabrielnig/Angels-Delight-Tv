@@ -69,6 +69,8 @@ const MAIN_TABLES = [
   'staff_exports',
   'staff_notification_prefs',
   'theme_settings',
+  'title_rating_stats',
+  'title_ratings',
   'translation_usage',
   'ui_missing_keys',
   'ui_translations',

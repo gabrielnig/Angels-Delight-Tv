@@ -7,6 +7,7 @@ export default defineConfig({
     './src/schema/auth.ts',
     './src/schema/captions.ts',
     './src/schema/content.ts',
+    './src/schema/engage.ts',
     './src/schema/enums.ts',
     './src/schema/i18n.ts',
     './src/schema/identity.ts',
