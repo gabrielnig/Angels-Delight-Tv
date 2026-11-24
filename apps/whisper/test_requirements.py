@@ -16,6 +16,15 @@ class RequirementsTest(unittest.TestCase):
         self.assertIn("requests", self.names())
         self.assertIn("faster-whisper", self.names())
 
+    def test_av_is_pinned_to_a_release_that_still_accepts_metadata_errors(self):
+        # faster-whisper 1.1.1 calls av.open(..., metadata_errors="ignore"). PyAV 19 removed that argument, so an
+        # unpinned install made every transcription fail with a TypeError on the first real caption run.
+        path = os.path.join(os.path.dirname(__file__), "requirements.txt")
+        with open(path, encoding="utf-8") as handle:
+            pins = {line.split("==")[0].strip().lower(): line.split("==")[1].strip() for line in handle if "==" in line}
+        self.assertIn("av", pins)
+        self.assertEqual(pins["av"].split(".")[0], "13")
+
 
 if __name__ == "__main__":
     unittest.main()
