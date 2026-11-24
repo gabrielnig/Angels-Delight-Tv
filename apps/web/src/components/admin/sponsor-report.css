@@ -1,0 +1,50 @@
+.spr-tiles {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--space-3);
+}
+.spr-tile {
+  padding: var(--space-4);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+}
+.spr-tile__value {
+  display: block;
+  font-size: var(--text-h3, 1.5rem);
+  font-weight: 700;
+}
+.spr-tile__label {
+  color: var(--color-muted);
+  font-size: var(--text-small);
+}
+.spr-scroll {
+  overflow-x: auto;
+}
+.spr-note {
+  color: var(--color-muted);
+  font-size: var(--text-small);
+}
+@media (min-width: 768px) {
+  .spr-tiles {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+/* Print: only the report. The admin shell, filters and buttons are hidden. */
+@media print {
+  .adm-side,
+  .adm-top,
+  .adm-skip,
+  .adm-scrim,
+  .spr-noprint {
+    display: none !important;
+  }
+  .adm-main,
+  .adm-content {
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+  .spr-tile {
+    break-inside: avoid;
+  }
+}

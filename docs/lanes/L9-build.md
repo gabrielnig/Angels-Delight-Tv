@@ -18,6 +18,9 @@ Scoped tests only: `pnpm vitest run <file>`. DB tests need `pg_ctlcluster 16 mai
   Note: `@ad/sponsors` is declared in `apps/web/package.json` and the lockfile on main. A checkout that reports "Cannot find module '@ad/sponsors'" needs `pnpm install --frozen-lockfile`.
   Tests: `packages/ui/src/sponsor-tokens.test.ts`, `components/sponsor/*.test.*`, `TitleView.test.tsx`, `server/sponsors/{surface,seen,click}.test.ts`.
 
+- Slice 6 sponsor report (M48-S10 to S12): `report.ts` (sums, zero filled Lagos days, by creative and placement, daily reach labelled and never summed, 400 day limit, `parseReportRange`), `csv.ts` (escaping, formula neutralising, fixed header, no personal columns), `SponsorReportService` (editor reads, admin exports, audited, 10,000 row cap), `createPgReportStore`, pages `/admin/sponsors/[id]/report`, `/print` and `/csv`, print stylesheet hiding the shell. D-299: CSV inline, so the `staff_exports` kind and worker job from the plan are not used.
+  Tests: `packages/sponsors/src/{report,csv}.test.ts`, `admin/report-service.test.ts`, `apps/web/src/server/sponsors/report-store.int.test.ts`, `components/admin/SponsorReportView.test.tsx`.
+
 ## Paystack facts verified on 2026-11-24 (plan [VERIFY] items)
 Sources: paystack.com/docs/payments/webhooks, paystack.com/docs/api/transaction, support.paystack.com (transaction charges, USD).
 - Webhook signature: header `x-paystack-signature`, HMAC SHA512 of the raw body keyed with the secret key. Confirmed. Respond 200. Retries: live mode every 3 minutes for 4 tries then hourly for 72 hours, test mode hourly for 72 hours. The docs page does not list source IPs, so the code never relies on IPs.
