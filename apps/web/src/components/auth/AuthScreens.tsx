@@ -9,10 +9,13 @@ import {
   signInAction,
   signUpAction,
   verifyEmailAction,
+  verifyRecoveryAction,
+  verifyTwoStepAction,
 } from '../../app/actions';
 import { ForgotPasswordForm, ResetPasswordForm } from './RecoveryForms';
 import { SignInForm } from './SignInForm';
 import { SignUpForm } from './SignUpForm';
+import { TwoStepForm } from './TwoStepForm';
 import { VerifyEmailForm } from './VerifyEmailForm';
 
 /** Client wrappers that connect each form to its server action and the router. */
@@ -75,6 +78,22 @@ export function VerifyScreen({ maskedEmail }: { maskedEmail: string }) {
       onSubmit={verifyEmailAction}
       onResend={resendCodeAction}
       onDone={(destination) => {
+        router.push(destination);
+        router.refresh();
+      }}
+    />
+  );
+}
+
+export function TwoStepScreen({ next, supportEmail }: { next?: string; supportEmail?: string }) {
+  const router = useRouter();
+  return (
+    <TwoStepForm
+      supportEmail={supportEmail}
+      onVerify={(code) => verifyTwoStepAction({ code, next })}
+      onRecover={(code) => verifyRecoveryAction({ code, next })}
+      onDone={(destination) => {
+        clearServiceWorkerCaches(navigator);
         router.push(destination);
         router.refresh();
       }}

@@ -1,4 +1,4 @@
-import type { AuthGateway } from '../types';
+import type { AuthGateway, TwoStepResult } from '../types';
 
 /**
  * Fixture auth rules, for demos and tests only. The real gateway comes from lane B.
@@ -29,6 +29,21 @@ export class FixtureAuth implements AuthGateway {
     if (code === '000000') return { ok: false as const, reason: 'wrong' as const };
     if (code === '111111') return { ok: false as const, reason: 'expired' as const };
     return { ok: true as const, next: '/profiles' };
+  }
+
+  async verifyTwoStep({ code, next }: { code: string; next?: string }): Promise<TwoStepResult> {
+    if (code === '000000') return { ok: false, reason: 'wrong' };
+    if (code === '111111') return { ok: false, reason: 'expired' };
+    if (code === '222222') return { ok: false, reason: 'locked', minutes: 15 };
+    return { ok: true, next: safeNext(next) };
+  }
+
+  async verifyRecovery(input: { code: string; next?: string }): Promise<TwoStepResult> {
+    return this.verifyTwoStep(input);
+  }
+
+  async hasTwoStepPending() {
+    return true;
   }
 
   /** Fixture sessions already carry an email, so the screen falls back to the session. */

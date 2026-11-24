@@ -8,6 +8,11 @@ export function pendingCookieName(secure: boolean): string {
   return secure ? '__Host-ad_pv' : 'ad_pv';
 }
 
+/** The signed note that a viewer password was right and a code is still needed. Not a session (M49-S02). */
+export function twoStepCookieName(secure: boolean): string {
+  return secure ? '__Host-ad_mv' : 'ad_mv';
+}
+
 export interface CookieOptions {
   httpOnly: true;
   secure: boolean;

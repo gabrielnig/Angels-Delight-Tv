@@ -4,6 +4,7 @@ import {
   pendingCookieOptions,
   sessionCookieName,
   sessionCookieOptions,
+  twoStepCookieName,
 } from './cookies';
 
 describe('session cookie', () => {
@@ -54,5 +55,12 @@ describe('pending verification cookie', () => {
       maxAge: 1800,
       secure: true,
     });
+  });
+});
+
+describe('two step pending cookie', () => {
+  it('uses the host prefix when cookies are secure', () => {
+    expect(twoStepCookieName(true)).toBe('__Host-ad_mv');
+    expect(twoStepCookieName(false)).toBe('ad_mv');
   });
 });

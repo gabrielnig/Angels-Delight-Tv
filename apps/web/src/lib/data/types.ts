@@ -273,6 +273,12 @@ export type SignUpResult =
         | 'check_required';
     };
 
+/** The second step of a viewer sign in (M49-S02). One problem each, and a session only on success. */
+export type TwoStepResult =
+  | { ok: true; next: string }
+  | { ok: false; reason: 'wrong' | 'expired' | 'network' }
+  | { ok: false; reason: 'locked'; minutes: number };
+
 export interface AuthGateway {
   signIn(input: {
     email: string;
@@ -287,6 +293,12 @@ export interface AuthGateway {
     challengeToken?: string;
   }): Promise<SignUpResult>;
   verifyEmail(input: { code: string }): Promise<CodeResult>;
+  /** The authenticator code step after a correct password (M49-S02). */
+  verifyTwoStep(input: { code: string; next?: string }): Promise<TwoStepResult>;
+  /** The same step with a single use recovery code (M49-S03). */
+  verifyRecovery(input: { code: string; next?: string }): Promise<TwoStepResult>;
+  /** True while a correct password is waiting for its code, so the challenge page knows whether to show. */
+  hasTwoStepPending(): Promise<boolean>;
   /** The address waiting for a verification code (set by sign up or sign in), or null. */
   pendingEmail(): Promise<string | null>;
   resendCode(): Promise<{ ok: true } | { ok: false; reason: 'resend_limit' | 'network' }>;

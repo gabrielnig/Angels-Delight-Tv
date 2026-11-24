@@ -25,7 +25,10 @@ describe('S01 default state', () => {
     setup();
     expect(screen.getByPlaceholderText('name@example.com')).toBeInTheDocument();
     expect(screen.getByPlaceholderText('Your password')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Show password' })).toHaveAttribute('aria-pressed', 'false');
+    expect(screen.getByRole('button', { name: 'Show password' })).toHaveAttribute(
+      'aria-pressed',
+      'false',
+    );
     const forgot = screen.getByRole('link', { name: 'Forgot your password?' });
     expect(forgot).toHaveClass('auth-link');
     expect(forgot.parentElement).toHaveClass('auth-forgot');
@@ -42,7 +45,10 @@ describe('S01 default state', () => {
     expect(field).toHaveAttribute('type', 'password');
     await user.click(screen.getByRole('button', { name: 'Show password' }));
     expect(field).toHaveAttribute('type', 'text');
-    expect(screen.getByRole('button', { name: 'Hide password' })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByRole('button', { name: 'Hide password' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
   });
 
   it('warns when Caps Lock is on while typing a password', () => {
@@ -59,7 +65,9 @@ describe('S01 wrong email or password', () => {
   it('shows the generic danger banner and marks only the password field, with no inline message', async () => {
     await submitWith({ ok: false, reason: 'invalid' });
     const banner = await screen.findByRole('alert');
-    expect(banner).toHaveTextContent('That email or password is not right. Check them and try again.');
+    expect(banner).toHaveTextContent(
+      'That email or password is not right. Check them and try again.',
+    );
     expect(banner).toHaveClass('auth-banner');
     expect(banner).toHaveAttribute('data-tone', 'danger');
     expect(screen.getByLabelText('Password')).toHaveAttribute('aria-invalid', 'true');
@@ -90,7 +98,9 @@ describe('S01 network error', () => {
   it('shows the unreachable message in a danger banner and keeps the values', async () => {
     await submitWith({ ok: false, reason: 'network' });
     const banner = await screen.findByRole('alert');
-    expect(banner).toHaveTextContent('We could not reach the server. Check your data or Wi-Fi, then try again.');
+    expect(banner).toHaveTextContent(
+      'We could not reach the server. Check your data or Wi-Fi, then try again.',
+    );
     expect(banner).toHaveAttribute('data-tone', 'danger');
     expect(screen.getByLabelText('Password')).toHaveValue('some-password');
   });
@@ -98,7 +108,10 @@ describe('S01 network error', () => {
 
 describe('S01 after password reset and session expired', () => {
   it('shows the reset notice as a success status', () => {
-    setup({ notice: 'Your password was changed. Sign in with your new password.', noticeTone: 'success' });
+    setup({
+      notice: 'Your password was changed. Sign in with your new password.',
+      noticeTone: 'success',
+    });
     const status = screen.getByRole('status');
     expect(status).toHaveAttribute('data-tone', 'success');
     expect(status).toHaveTextContent('Your password was changed. Sign in with your new password.');

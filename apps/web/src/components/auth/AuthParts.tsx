@@ -142,7 +142,8 @@ export function AuthField({
   const errorId = `${inputId}-error`;
   const isInvalid = Boolean(error) || Boolean(invalid);
   const describedBy =
-    [describedByProp, hint ? hintId : null, error ? errorId : null].filter(Boolean).join(' ') || undefined;
+    [describedByProp, hint ? hintId : null, error ? errorId : null].filter(Boolean).join(' ') ||
+    undefined;
   return (
     <div className="auth-field" data-invalid={isInvalid ? 'true' : undefined}>
       <label className="auth-field__label" htmlFor={inputId}>
@@ -190,8 +191,12 @@ export function meterView(password: string, score: number): MeterView {
   }
   const result = evaluatePassword(password, score);
   if (result.label === 'Okay') return { word: 'Okay', segments: 3, tone: 'info', label: 'Okay' };
-  if (result.label === 'Strong') return { word: 'Strong', segments: 4, tone: 'success', label: 'Strong' };
-  const segments = result.label === 'Too short' ? Math.min(2, Math.ceil(password.length / 5)) : Math.max(1, Math.min(2, result.segments));
+  if (result.label === 'Strong')
+    return { word: 'Strong', segments: 4, tone: 'success', label: 'Strong' };
+  const segments =
+    result.label === 'Too short'
+      ? Math.min(2, Math.ceil(password.length / 5))
+      : Math.max(1, Math.min(2, result.segments));
   return { word: 'Weak', segments, tone: 'warning', label: 'Weak' };
 }
 
@@ -211,7 +216,10 @@ function Rule({ met, children, hint }: { met?: boolean; children: string; hint?:
   );
 }
 
-interface AuthPasswordFieldProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'type' | 'value' | 'onChange' | 'id'> {
+interface AuthPasswordFieldProps extends Omit<
+  InputHTMLAttributes<HTMLInputElement>,
+  'type' | 'value' | 'onChange' | 'id'
+> {
   label: string;
   value: string;
   onChange: (event: ChangeEvent<HTMLInputElement>) => void;

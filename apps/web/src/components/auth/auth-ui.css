@@ -716,3 +716,10 @@
     text-decoration-thickness: 2px;
   }
 }
+
+/* Recovery code entry: the fixed monospace face keeps look alike characters apart (R38). */
+.auth-input--mono {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+}

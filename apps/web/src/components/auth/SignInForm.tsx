@@ -117,9 +117,13 @@ export function SignInForm({
           That email or password is not right. Check them and try again.
         </AuthBanner>
       ) : null}
-      {problem?.kind === 'network' ? <AuthBanner tone="danger">{NETWORK_MESSAGE}</AuthBanner> : null}
+      {problem?.kind === 'network' ? (
+        <AuthBanner tone="danger">{NETWORK_MESSAGE}</AuthBanner>
+      ) : null}
       {problem?.kind === 'unavailable' ? (
-        <AuthBanner tone="warning">Sign in is temporarily unavailable. Try again in a moment.</AuthBanner>
+        <AuthBanner tone="warning">
+          Sign in is temporarily unavailable. Try again in a moment.
+        </AuthBanner>
       ) : null}
       {problem?.kind === 'rate_limited' ? (
         <AuthBanner tone="warning" icon="clock">
@@ -132,7 +136,9 @@ export function SignInForm({
           <Link href="/forgot-password">Reset your password</Link> if you cannot remember it.
         </AuthBanner>
       ) : null}
-      {problem?.kind === 'checking' ? <AuthBanner tone="info">{CHECK_RUNNING_MESSAGE}</AuthBanner> : null}
+      {problem?.kind === 'checking' ? (
+        <AuthBanner tone="info">{CHECK_RUNNING_MESSAGE}</AuthBanner>
+      ) : null}
       {problem?.kind === 'check' ? (
         <AuthBanner tone="info" title="One more step">
           Too many attempts from this connection. Complete the check below, then try again.

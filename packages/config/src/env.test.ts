@@ -413,3 +413,14 @@ describe('Paystack variables (M48)', () => {
     ]);
   });
 });
+
+describe('viewer two step switch (M49)', () => {
+  it('defaults to on', () => {
+    expect(loadWebEnv(devWeb).VIEWER_MFA_ENABLED).toBe(true);
+  });
+
+  it('can be switched off as an emergency measure, also in production', () => {
+    expect(loadWebEnv({ ...devWeb, VIEWER_MFA_ENABLED: 'false' }).VIEWER_MFA_ENABLED).toBe(false);
+    expect(loadWebEnv({ ...prodWeb, VIEWER_MFA_ENABLED: 'false' }).VIEWER_MFA_ENABLED).toBe(false);
+  });
+});
