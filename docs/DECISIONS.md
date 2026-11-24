@@ -1680,3 +1680,9 @@ Decision: the `home` step of `launch:apply` publishes the six launch sections on
 - Options: Publish on approve; per video switch only; one rule with a separate switch
 - Why: Machine drafts that a human approved should still wait for an explicit go live, and a bad language must be removable in one setting. The publish gate for the spoken language track is a separate change (slice 16).
 - Reversible: Yes
+
+## D-308 Voice search is built, off for Kids and Data saver, and asks once before the browser listens (lane L6, M45)
+- Decision: the search box shows a microphone only when the browser has speech recognition, the profile is not Kids and Data saver is off. The first press asks once ("Your browser may send what you say to its speech service. We do not store what you say."), remembered under `ad:voice:ok`. It listens in Nigerian English and falls back to US English, fills the box with interim words and searches 600 ms after the last final result. Errors use plain words and typing always works.
+- Options: leave voice out (it is a Could); start listening on the first press without asking.
+- Why: it was cheap on top of the search box, and the browser vendor may process the audio, so a short question is the honest minimum.
+- Reversible: yes, remove the button from `SearchBox`.
