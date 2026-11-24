@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { forbidden, notFound } from 'next/navigation';
 import { NotFound } from '@ad/shared';
 import { Badge } from '@/components/admin/Badge';
+import { LinkButton } from '@/components/admin/Button';
 import { CreativesEditor } from '@/components/admin/CreativesEditor';
 import { PageHeader } from '@/components/admin/PageHeader';
 import { SponsorForm } from '@/components/admin/SponsorForm';
@@ -39,7 +40,14 @@ export default async function SponsorPage({ params }: { params: Promise<{ id: st
         crumbs={[{ label: 'Admin', href: '/admin' }, { label: 'Sponsors', href: '/admin/sponsors' }, { label: sponsor.name }]}
         title={sponsor.name}
         lead={undefined}
-        actions={<Badge tone={badge.tone}>{badge.label}</Badge>}
+        actions={
+          <>
+            <Badge tone={badge.tone}>{badge.label}</Badge>
+            <LinkButton href={`/admin/sponsors/${id}/report`} variant="secondary">
+              Report
+            </LinkButton>
+          </>
+        }
       />
       <div className="adm-stack">
         <SponsorStatusPanel

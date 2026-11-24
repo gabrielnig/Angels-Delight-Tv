@@ -2,13 +2,14 @@ import 'server-only';
 import { createHash } from 'node:crypto';
 import { decryptAesGcm, encryptAesGcm, uuidv7, type Actor } from '@ad/shared';
 import { schema, withAccount } from '@ad/db';
-import { SponsorAdminService } from '@ad/sponsors';
+import { SponsorAdminService, SponsorReportService } from '@ad/sponsors';
 import { themeRuntime } from '@/lib/data/admin/theme-runtime';
 import { checkSponsorImage, type SponsorImageKind } from '@/lib/admin/sponsor-image';
 import type { AdminActor } from '@/lib/data/admin/types';
 import { adminRuntime } from '../admin/runtime';
 import { getServices } from '@/lib/runtime/services';
 import { createPgSponsorStore } from './pg-store';
+import { createPgReportStore } from './report-store';
 
 const AAD = new TextEncoder().encode('sponsor_private');
 
@@ -79,4 +80,12 @@ export async function uploadSponsorImage(
   );
   await rt.enqueue('image.process', { assetId });
   return { ok: true, assetId };
+}
+
+/** The sponsor report service for one staff member. Every read runs as that person (row level security). */
+export function sponsorReports(actor: AdminActor): SponsorReportService {
+  const rt = adminRuntime();
+  return new SponsorReportService({
+    store: createPgReportStore(rt.db(), { accountId: actor.accountId, role: actor.role }),
+  });
 }

@@ -1632,3 +1632,9 @@ Per video tri state, site default (Super admin), Admin changes it with a reason 
 ## D-298 List pages reuse the card grid and reserve 70vh while loading (lane L2, M41-S08)
 
 Decision: the View all list pages keep the shared `.web-grid` (2, 3, 4, 5 across, and 6 from 1920) and their skeleton uses the same grid with ten card shapes inside a region that holds `min-height: 70vh`. Options: a separate list grid with its own columns, or a fixed pixel height. Why: one grid means one set of columns to test, and 70vh covers two rows of cards at every width so the footer does not jump when cards arrive. Reversible: yes, CSS only.
+
+## D-299 Sponsor report CSV is built inline, no staff_exports kind (lane L9)
+- Decision: The sponsor CSV is generated in the request and returned at once, admin only, audited as `sponsor.report.export`, refused above 10,000 rows and above 400 days. No `sponsor` kind is added to `staff_exports` and no export worker job runs.
+- Options: Add the `sponsor` kind to `staff_exports` and queue every export, build it inline with a size cap.
+- Why: The data is one row per day, creative and placement, so even 400 days of ten creatives is far under the cap. Inline needs no migration, no stored file and no expiry to manage. The plan's queue step stays available if a range ever outgrows the cap.
+- Reversible: Yes. Adding the kind and routing large ranges to the queue later changes only the route.

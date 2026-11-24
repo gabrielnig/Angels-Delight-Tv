@@ -7,6 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 ## [Unreleased]
 
 ### Added
+- Lane L9 sponsor report (M48): per sponsor impressions, clicks, click rate and daily reach for any range up to 400 days, with an admin only CSV download and a print page.
 - Lane L9 sponsor placements (M48): labelled sponsor card on Home, title pages and around the player, with a skippable card before a video, frequency caps in a cookie, viewable impression counting and staff clicks left out of reports. Off until the master switch is on, never shown to kids.
 - Lane L6 search core (M45-S07 to S09): migration 0043 (`search_terms`, `search_synonyms`, `search_misses`), typo correction with a word list, synonym groups with a cap of 8 and exact matches first, subjects, anonymous misses with 90 day pruning, exact matching for short words.
 - Lane L6 share menu (M45-S06): `ShareMenu` with native share, Copy link, and admin chosen WhatsApp, Facebook, X and Email links, hidden for kids, bottom sheet under 600 px, literal `share.*` messages.
