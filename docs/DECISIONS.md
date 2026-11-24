@@ -1306,3 +1306,9 @@ Per video tri state, site default (Super admin), Admin changes it with a reason 
 - Options: always show the button on Safari, ship with no flag and no spike, build Chromecast now.
 - Why: R16 says AirPlay stays hidden until it works on a real iPhone and a Mac with an Apple TV, and the spike notes in docs/spikes/airplay.md say what to check and when to drop the engine switch.
 - Reversible: yes.
+
+## D-245 Audio track switching is a documented stub until a second spoken language exists (lane L4)
+- Decision: the Audio row in the Settings menu stays built but hidden (it shows only with more than one track). No engine or controller audio code is added now.
+- Options: build track events and `selectAudio` now, remove the Audio row.
+- Why: there is no second spoken language at launch, so the code would be untested against real streams. The row is already in place, so the later work is small.
+- Reversible: yes.
