@@ -312,6 +312,16 @@ describe('worker maintenance and fake whisper', () => {
   });
 });
 
+describe('DEV_PSEUDO_LOCALE', () => {
+  it('is off by default, allowed in development and rejected in production', () => {
+    expect(loadWebEnv(devWeb).DEV_PSEUDO_LOCALE).toBe(false);
+    expect(loadWebEnv({ ...devWeb, DEV_PSEUDO_LOCALE: 'true' }).DEV_PSEUDO_LOCALE).toBe(true);
+    expect(failureNames(() => loadWebEnv({ ...prodWeb, DEV_PSEUDO_LOCALE: 'true' }))).toEqual([
+      'DEV_PSEUDO_LOCALE',
+    ]);
+  });
+});
+
 describe('loadMigrateEnv', () => {
   it('needs only the owner database url', () => {
     const env = loadMigrateEnv({ DATABASE_URL_MIGRATE: 'postgres://ad_migrator:dev@localhost/ad' });
