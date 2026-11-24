@@ -1,5 +1,7 @@
 import {
   addToMyList,
+  getRatings,
+  setRating,
   browse,
   clearRecentSearches,
   continueWatching,
@@ -46,6 +48,8 @@ import {
   myListAddBody,
   myListQuery,
   myListRemoveBody,
+  ratingBody,
+  ratingQuery,
   profileIdQuery,
   progressQuery,
   recentSearchDelete,
@@ -442,6 +446,24 @@ export function createViewerApi(rt: ViewerRuntime) {
       },
       { mutating: true },
     ),
+
+    ratings: {
+      get: guard(async (req, actor) => {
+        const q = parseWith(ratingQuery, queryObject(req));
+        const found = await getRatings(rt.ctx, actor, {
+          profileId: q.profileId,
+          targets: [{ kind: q.kind, id: q.id }],
+        });
+        return json({ value: found.get(q.id) ?? null });
+      }),
+      set: guard(
+        async (req, actor) => {
+          const body = parseWith(ratingBody, await readJson(req));
+          return json(await setRating(rt.ctx, actor, body));
+        },
+        { mutating: true },
+      ),
+    },
 
     myList: {
       list: guard(async (req, actor) => {

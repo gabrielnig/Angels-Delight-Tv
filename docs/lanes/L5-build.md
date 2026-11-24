@@ -21,3 +21,9 @@ Scoped tests: `TEST_DATABASE_ADMIN_URL=postgres://postgres:postgres@localhost:54
 - Migration `0042_title_ratings.sql`: `title_ratings` (owner RLS, `title_ratings_not_kids` trigger), `title_rating_stats`, `title_rating_aggregate()` for `ad_worker`, definer read policies for the migrator role on profiles and title_ratings. Schema in `packages/db/src/schema/engage.ts` (also added to `drizzle.config.ts`).
 - `packages/viewer/src/ratings.ts`: `setRating`, `getRatings`, `ratingsFor`, `listMyRatings`, `RatingValue`. Bucket `engage`. `TitleCardDto` gains `rating` and `mostLiked`.
 - Tests: `packages/db/src/ratings.int.test.ts`, `packages/viewer/src/ratings.int.test.ts`.
+
+## Slice 4 (ratings API and control, partly done)
+- `PUT` and `GET /api/ratings` (`api.ratings.set`, `api.ratings.get`, schemas `ratingBody`, `ratingQuery`). Test: `apps/web/src/server/viewer/api-ratings.int.test.ts`.
+- Icons `thumbUp`, `thumbDown`, `heart`, `bell`, `sort`, `filter` (`packages/ui/src/components/Icon.test.tsx`). Message keys `engage.rating.*`.
+- `apps/web/src/components/engage/RatingControl.tsx` (labelled group, aria-pressed, optimistic, Undo, rollback, guest ask, unavailable). Test: `RatingControl.test.tsx`. CSS block at the end of `packages/ui/src/components.css`.
+- NOT done: mounting RatingControl in TitleView and TitleActions (needs profile id and rating from the title DTO), guest replay of the like intent (L1 `GuestIntentApplier` only replays my-list, the intent has no value), card hover actions cluster and rating chip, MostLikedLabel, `Cards.test.tsx` focus-within peek.

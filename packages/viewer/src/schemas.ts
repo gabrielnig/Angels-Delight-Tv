@@ -97,6 +97,16 @@ export const myListAddBody = z.object({
   target: titleRef,
   restoreAddedAt: z.string().max(40).optional(),
 });
+export const ratingBody = z.object({
+  profileId: id,
+  target: titleRef,
+  /** -1 Not for me, 1 Like, 2 Love, null clears. */
+  value: z.union([z.literal(-1), z.literal(1), z.literal(2), z.null()]),
+});
+export const ratingQuery = profileIdQuery.extend({
+  kind: z.enum(['video', 'series']),
+  id,
+});
 export const myListRemoveBody = z.object({ profileId: id, target: titleRef });
 
 /**
