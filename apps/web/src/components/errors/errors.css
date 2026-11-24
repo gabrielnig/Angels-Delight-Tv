@@ -1,0 +1,89 @@
+/* Error pages (S139, R39). Tokens only. */
+.ad-errorpage {
+  display: grid;
+  gap: var(--space-8);
+}
+
+.ad-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-8) var(--space-4);
+  text-align: center;
+}
+
+.ad-error__code {
+  margin: 0;
+  color: var(--color-muted);
+  font-family: var(--font-display);
+  font-size: var(--text-h2);
+  font-weight: var(--weight-bold);
+}
+
+.ad-error__title {
+  margin: 0;
+  color: var(--color-ink);
+  font-family: var(--font-display);
+  font-size: var(--text-h3);
+  font-weight: var(--weight-bold);
+  line-height: var(--leading-tight);
+}
+
+.ad-error__text {
+  max-width: 30rem;
+  margin: 0;
+  color: var(--color-muted);
+}
+
+.ad-error__small {
+  max-width: 30rem;
+  margin: 0;
+  color: var(--color-muted);
+  font-size: var(--text-small);
+}
+
+.ad-error__mono {
+  font-family: var(--font-mono);
+  color: var(--color-ink);
+  overflow-wrap: anywhere;
+  user-select: all;
+}
+
+.ad-error__search {
+  width: min(100%, 24rem);
+}
+
+.ad-error__search .ad-input {
+  width: 100%;
+}
+
+.ad-error__actions {
+  display: flex;
+  justify-content: center;
+  margin-top: var(--space-2);
+}
+
+.ad-error-sk-row {
+  display: flex;
+  gap: var(--space-2);
+  overflow: hidden;
+}
+
+.ad-error-sk {
+  flex: 0 0 calc(100% / 2.3);
+  aspect-ratio: 16 / 9;
+  border-radius: var(--radius-sm);
+}
+
+@media (min-width: 600px) {
+  .ad-error-sk {
+    flex-basis: calc(100% / 3.3);
+  }
+}
+
+@media (min-width: 960px) {
+  .ad-error-sk {
+    flex-basis: calc(100% / 4.3);
+  }
+}
