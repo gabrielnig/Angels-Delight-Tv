@@ -13,7 +13,7 @@ export default async function PlaybackPage() {
   const copy = ACCOUNT_PAGES['/settings/playback']!;
   return (
     <AccountFrame title={copy.title} lead={copy.lead}>
-      <PlaybackSettingsForm initial={initial} kids={profile.kids} />
+      <PlaybackSettingsForm initial={initial} kids={profile.kids} profileName={profile.name} />
     </AccountFrame>
   );
 }

@@ -9,8 +9,14 @@ import {
   type CSSProperties,
   type ReactNode,
 } from 'react';
-import { captionStyleVars, normalizeCaptionStyle } from '@ad/player';
-import { Button } from '@ad/ui';
+import {
+  captionColorAllowed,
+  captionStyleVars,
+  DEFAULT_CAPTION_STYLE,
+  normalizeCaptionStyle,
+} from '@ad/player';
+import { msg } from '@ad/shared/messages';
+import { Button, Modal } from '@ad/ui';
 import { savePlaybackAction } from '../../app/actions';
 import type { PlaybackSettings } from '../../lib/data';
 import { KIDS_LOCKED } from '../../lib/playback-lock';
@@ -26,16 +32,29 @@ const SPEEDS: [number, string][] = [
   [2, '2x'],
 ];
 
+/** The caption fields of the settings under the names the player's style uses. */
+function normalizeCaptionStyleInput(v: PlaybackSettings) {
+  return {
+    size: v.captionSize,
+    background: v.captionBackground,
+    contrast: v.captionContrast,
+    edge: v.captionEdge,
+    color: v.captionColor,
+  };
+}
+
 function Row({
   label,
   hint,
   children,
   id,
+  extra,
 }: {
   label: string;
   hint: string;
   children: (ids: { label: string; hint: string }) => ReactNode;
   id: string;
+  extra?: ReactNode;
 }) {
   return (
     <div className="acct-setting">
@@ -46,6 +65,7 @@ function Row({
         <span id={`${id}-h`} className="acct-muted acct-small">
           {hint}
         </span>
+        {extra}
       </div>
       {children({ label: `${id}-l`, hint: `${id}-h` })}
     </div>
@@ -112,18 +132,39 @@ export function PlaybackSettingsForm({
   initial,
   save = savePlaybackAction,
   kids = false,
+  profileName,
 }: {
   initial: PlaybackSettings;
   save?: (patch: Partial<PlaybackSettings>) => Promise<unknown>;
   kids?: boolean;
+  /** Shown in the heading so a shared device makes clear whose settings these are. */
+  profileName?: string;
 }) {
   const base = useId();
   const [values, setValues] = useState(initial);
   const [saved, setSaved] = useState(false);
   const [failed, setFailed] = useState<Partial<PlaybackSettings> | null>(null);
+  const [resetOpen, setResetOpen] = useState(false);
+  const [deviceSaver, setDeviceSaver] = useState(false);
   const dismiss = useCallback(() => setSaved(false), []);
+  useEffect(() => {
+    const connection = (navigator as Navigator & { connection?: { saveData?: boolean } })
+      .connection;
+    setDeviceSaver(connection?.saveData === true);
+  }, []);
 
-  async function apply(patch: Partial<PlaybackSettings>) {
+  async function apply(requested: Partial<PlaybackSettings>) {
+    // Moving to a clear background or standard contrast would leave yellow failing contrast, so colour goes
+    // back to white in the same save and the server never has to refuse it.
+    const patch = { ...requested };
+    if (patch.captionColor === undefined) {
+      const after = { ...values, ...patch };
+      if (
+        after.captionColor === 'yellow' &&
+        !captionColorAllowed(normalizeCaptionStyleInput(after))
+      )
+        patch.captionColor = 'white';
+    }
     const previous = Object.fromEntries(
       Object.keys(patch).map((k) => [k, values[k as keyof PlaybackSettings]]),
     ) as Partial<PlaybackSettings>;
@@ -139,12 +180,17 @@ export function PlaybackSettingsForm({
     }
   }
 
-  const preview = normalizeCaptionStyle({
-    size: values.captionSize,
-    background: values.captionBackground,
-    contrast: values.captionContrast,
-    edge: values.captionEdge,
-  });
+  const preview = normalizeCaptionStyle(normalizeCaptionStyleInput(values));
+  const yellowRefused = !captionColorAllowed(
+    normalizeCaptionStyleInput({ ...values, captionColor: 'yellow' }),
+  );
+  const resetPatch: Partial<PlaybackSettings> = {
+    captionSize: DEFAULT_CAPTION_STYLE.size,
+    captionBackground: DEFAULT_CAPTION_STYLE.background,
+    captionEdge: DEFAULT_CAPTION_STYLE.edge,
+    captionColor: DEFAULT_CAPTION_STYLE.color,
+    captionContrast: DEFAULT_CAPTION_STYLE.contrast,
+  };
   // The strict CSP blocks the inline style attribute in server HTML, so the caption variables are also set
   // through the CSSOM after hydration, which the policy allows.
   const previewRef = useRef<HTMLDivElement>(null);
@@ -181,6 +227,9 @@ export function PlaybackSettingsForm({
         </div>
       ) : null}
       {saved && !failed ? <InlineToast message="Saved" onDismiss={dismiss} /> : null}
+      {profileName ? (
+        <h2 className="acct-h2">{msg('account.playback.heading', { name: profileName })}</h2>
+      ) : null}
       <form className="acct-card acct-settings" onSubmit={(event) => event.preventDefault()}>
         <Row
           id={id('next')}
@@ -220,6 +269,17 @@ export function PlaybackSettingsForm({
             locked('dataSaver')
               ? 'Set by your parent account.'
               : 'Data saver keeps video at 480p or lower to use less data. About 20 MB per minute.'
+          }
+          extra={
+            <>
+              <span className="acct-muted acct-small">{msg('account.playback.saverExtra')}</span>
+              {deviceSaver ? (
+                <span className="acct-muted acct-small" role="status">
+                  <strong>{msg('account.playback.saverDevice')}</strong>{' '}
+                  {msg('account.playback.saverDeviceHint')}
+                </span>
+              ) : null}
+            </>
           }
         >
           {(ids) => (
@@ -333,6 +393,28 @@ export function PlaybackSettingsForm({
           )}
         </Row>
         <Row
+          id={id('colour')}
+          label={msg('account.playback.colour')}
+          hint={
+            yellowRefused
+              ? msg('account.playback.yellowRefused')
+              : msg('account.playback.colourHint')
+          }
+        >
+          {(ids) => (
+            <Choice
+              ids={ids}
+              value={values.captionColor}
+              onChange={(v) => void apply({ captionColor: v as PlaybackSettings['captionColor'] })}
+            >
+              <option value="white">{msg('account.playback.colourWhite')}</option>
+              <option value="yellow" disabled={yellowRefused}>
+                {msg('account.playback.colourYellow')}
+              </option>
+            </Choice>
+          )}
+        </Row>
+        <Row
           id={id('contrast')}
           label="High contrast captions"
           hint="Yellow or white text on black, easier to read."
@@ -358,7 +440,36 @@ export function PlaybackSettingsForm({
             <span className="web-caption-preview__text">Plants make food using sunlight.</span>
           </div>
         </div>
+        <div className="acct-setting" data-block>
+          <Button variant="secondary" onClick={() => setResetOpen(true)}>
+            {msg('account.playback.reset')}
+          </Button>
+        </div>
       </form>
+      <Modal
+        open={resetOpen}
+        onClose={() => setResetOpen(false)}
+        title={msg('account.playback.resetTitle')}
+        className="acct-dialog"
+        hideClose
+        footer={
+          <>
+            <Button variant="secondary" onClick={() => setResetOpen(false)}>
+              {msg('account.playback.resetCancel')}
+            </Button>
+            <Button
+              onClick={() => {
+                setResetOpen(false);
+                void apply(resetPatch);
+              }}
+            >
+              {msg('account.playback.resetConfirm')}
+            </Button>
+          </>
+        }
+      >
+        <p className="acct-muted">{msg('account.playback.resetLead')}</p>
+      </Modal>
     </>
   );
 }

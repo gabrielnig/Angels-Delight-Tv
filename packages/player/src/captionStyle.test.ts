@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
   CAPTION_BACKGROUNDS,
+  CAPTION_COLORS,
+  captionColorAllowed,
   CAPTION_EDGES,
   CAPTION_SIZES,
   DEFAULT_CAPTION_STYLE,
@@ -101,5 +103,49 @@ describe('caption styling (M11-S03)', () => {
     expect(effectiveEdge({ ...DEFAULT_CAPTION_STYLE, background: 'dark', edge: 'none' })).toBe(
       'none',
     );
+  });
+});
+
+describe('caption colour (L10 M49-S11)', () => {
+  it('offers white and yellow and defaults to white', () => {
+    expect(CAPTION_COLORS).toEqual(['white', 'yellow']);
+    expect(DEFAULT_CAPTION_STYLE.color).toBe('white');
+    expect(normalizeCaptionStyle({ size: 'large' }).color).toBe('white');
+  });
+
+  it('normalises an unknown colour to white', () => {
+    expect(normalizeCaptionStyle({ color: 'pink' }).color).toBe('white');
+    expect(normalizeCaptionStyle({ color: 'yellow' }).color).toBe('yellow');
+  });
+
+  it('draws yellow text on a backed caption and keeps white as the default', () => {
+    const yellow = { ...DEFAULT_CAPTION_STYLE, color: 'yellow' as const };
+    expect(captionStyleVars(yellow)['--adp-cap-fg']).toBe('#ffe600');
+    expect(captionStyleVars(DEFAULT_CAPTION_STYLE)['--adp-cap-fg']).toBe('#ffffff');
+  });
+
+  it('meets 4.5 to 1 for yellow on every background fill it is allowed with', () => {
+    for (const background of ['dark', 'solid'] as const) {
+      const { fg, bg } = resolveCaptionColors({
+        ...DEFAULT_CAPTION_STYLE,
+        color: 'yellow',
+        background,
+      });
+      expect(contrastRatio(fg, bg)).toBeGreaterThanOrEqual(4.5);
+    }
+  });
+
+  it('refuses yellow with no background when contrast is standard', () => {
+    const style = {
+      ...DEFAULT_CAPTION_STYLE,
+      color: 'yellow' as const,
+      background: 'none' as const,
+    };
+    expect(captionColorAllowed(style)).toBe(false);
+    expect(captionColorAllowed({ ...style, background: 'dark' })).toBe(true);
+    expect(captionColorAllowed({ ...style, contrast: 'high' })).toBe(true);
+    expect(captionColorAllowed({ ...style, color: 'white' })).toBe(true);
+    // The player falls back to white rather than draw a failing combination.
+    expect(normalizeCaptionStyle(style).color).toBe('white');
   });
 });

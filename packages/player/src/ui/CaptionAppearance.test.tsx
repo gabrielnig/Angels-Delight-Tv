@@ -84,7 +84,13 @@ describe('CaptionAppearance (L4-07)', () => {
     render(
       <Harness
         onChange={onChange}
-        initial={{ size: 'xlarge', background: 'solid', contrast: 'high', edge: 'outline' }}
+        initial={{
+          size: 'xlarge',
+          background: 'solid',
+          contrast: 'high',
+          edge: 'outline',
+          color: 'white',
+        }}
       />,
     );
     await user.click(screen.getByRole('menuitem', { name: 'Reset to default' }));

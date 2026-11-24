@@ -113,4 +113,22 @@ export const L10_MESSAGES = {
   'account.history.mfaFailed': 'Wrong code',
   'account.history.locked': 'Blocked after too many tries',
   'account.history.newDevice': 'New device',
+
+  // Playback settings (M49-S11)
+  'account.playback.heading': 'Settings for {name}',
+  'account.playback.saverExtra': 'Data saver also means fewer Home previews and a slower hero.',
+  'account.playback.saverDevice': 'This device is on Data saver',
+  'account.playback.saverDeviceHint':
+    'Your browser asked for less data. That applies on this device whatever your profile says.',
+  'account.playback.colour': 'Caption colour',
+  'account.playback.colourHint': 'White is easiest on most pictures.',
+  'account.playback.colourWhite': 'White',
+  'account.playback.colourYellow': 'Yellow',
+  'account.playback.yellowRefused': 'Yellow needs a dark or solid background, or high contrast.',
+  'account.playback.reset': 'Reset to defaults',
+  'account.playback.resetTitle': 'Reset caption settings?',
+  'account.playback.resetLead':
+    'Size, background, edge, colour and contrast go back to the defaults. Your other settings stay as they are.',
+  'account.playback.resetConfirm': 'Reset captions',
+  'account.playback.resetCancel': 'Cancel',
 } as const;

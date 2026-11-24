@@ -170,6 +170,47 @@ describe.skipIf(!integrationEnabled())('account viewer data', () => {
       ).rejects.toThrow();
     });
 
+    it('saves and reads captionColor, and defaults it to white', async () => {
+      const u = await h.makeUser();
+      expect((await data.playback(u.accountId, u.profileId)).captionColor).toBe('white');
+      const saved = await data.savePlayback(u.accountId, u.profileId, { captionColor: 'yellow' });
+      expect(saved.captionColor).toBe('yellow');
+      expect((await data.playback(u.accountId, u.profileId)).captionColor).toBe('yellow');
+    });
+
+    it('rejects an unknown colour and yellow with no background on standard contrast', async () => {
+      const u = await h.makeUser();
+      await expect(
+        data.savePlayback(u.accountId, u.profileId, { captionColor: 'pink' as never }),
+      ).rejects.toThrow();
+      await expect(
+        data.savePlayback(u.accountId, u.profileId, {
+          captionBackground: 'none',
+          captionColor: 'yellow',
+        }),
+      ).rejects.toThrow();
+      await data.savePlayback(u.accountId, u.profileId, { captionBackground: 'none' });
+      await expect(
+        data.savePlayback(u.accountId, u.profileId, { captionColor: 'yellow' }),
+      ).rejects.toThrow();
+      await expect(
+        data.savePlayback(u.accountId, u.profileId, {
+          captionBackground: 'none',
+          captionColor: 'white',
+        }),
+      ).resolves.toMatchObject({ captionColor: 'white' });
+    });
+
+    it('ignores unknown keys in a patch', async () => {
+      const u = await h.makeUser();
+      const saved = await data.savePlayback(u.accountId, u.profileId, {
+        quality: '480',
+        nonsense: 'x',
+      } as never);
+      expect(saved.quality).toBe('480');
+      expect(saved).not.toHaveProperty('nonsense');
+    });
+
     it('rejects values outside the allowed sets', async () => {
       const u = await h.makeUser();
       await expect(

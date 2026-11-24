@@ -1,3 +1,4 @@
+import { captionColorAllowed } from '@ad/player';
 import { myList, profiles, series, videos, watchProgress, withAccount } from '@ad/db';
 import { constantTimeEqual, hmacSha256, NotFound, ValidationFailed } from '@ad/shared';
 import { loadOwnedProfile, type ViewerContext as ServiceContext } from '@ad/viewer';
@@ -16,6 +17,7 @@ export const DEFAULT_PLAYBACK: PlaybackSettings = {
   captionBackground: 'dark',
   captionContrast: 'standard',
   captionEdge: 'shadow',
+  captionColor: 'white',
   captionLanguage: 'en',
 };
 
@@ -25,6 +27,7 @@ const CAPTION_SIZES = ['small', 'medium', 'large', 'xlarge'] as const;
 const CAPTION_BACKGROUNDS = ['none', 'dark', 'solid'] as const;
 const CAPTION_CONTRASTS = ['standard', 'high'] as const;
 const CAPTION_EDGES = ['none', 'shadow', 'outline'] as const;
+const CAPTION_COLORS = ['white', 'yellow'] as const;
 const LANGUAGE_CODE = /^[a-z]{2,3}(-[A-Za-z0-9]{2,8}){0,2}$/;
 const EXPORT_TOKEN_SECONDS = 10 * 60;
 const LAGOS_OFFSET_MS = 60 * 60 * 1000;
@@ -94,6 +97,7 @@ function readPrefs(row: {
       DEFAULT_PLAYBACK.captionContrast,
     ),
     captionEdge: pick(stored.captionEdge, CAPTION_EDGES, DEFAULT_PLAYBACK.captionEdge),
+    captionColor: pick(stored.captionColor, CAPTION_COLORS, DEFAULT_PLAYBACK.captionColor),
     captionLanguage:
       typeof stored.captionLanguage === 'string' && LANGUAGE_CODE.test(stored.captionLanguage)
         ? stored.captionLanguage
@@ -137,6 +141,8 @@ function validatePatch(patch: Partial<PlaybackSettings>): void {
     bad.captionContrast = ['Pick a listed contrast'];
   if (patch.captionEdge !== undefined && !CAPTION_EDGES.includes(patch.captionEdge))
     bad.captionEdge = ['Pick a listed edge'];
+  if (patch.captionColor !== undefined && !CAPTION_COLORS.includes(patch.captionColor))
+    bad.captionColor = ['Pick a listed colour'];
   if (
     patch.captionLanguage !== undefined &&
     (typeof patch.captionLanguage !== 'string' || !LANGUAGE_CODE.test(patch.captionLanguage))
@@ -212,6 +218,18 @@ export class AccountViewerData {
       const updatedRow = await loadOwnedProfile(tx, actor, profileId);
       const current = readPrefs(updatedRow);
       const next: PlaybackSettings = { ...current, ...patch };
+      if (
+        !captionColorAllowed({
+          size: next.captionSize,
+          background: next.captionBackground,
+          contrast: next.captionContrast,
+          edge: next.captionEdge,
+          color: next.captionColor,
+        })
+      )
+        throw new ValidationFailed({
+          captionColor: ['Yellow needs a dark or solid background, or high contrast'],
+        });
       const [updated] = await tx
         .update(profiles)
         .set({
@@ -227,6 +245,7 @@ export class AccountViewerData {
             captionBackground: next.captionBackground,
             captionContrast: next.captionContrast,
             captionEdge: next.captionEdge,
+            captionColor: next.captionColor,
             captionLanguage: next.captionLanguage,
           },
         })

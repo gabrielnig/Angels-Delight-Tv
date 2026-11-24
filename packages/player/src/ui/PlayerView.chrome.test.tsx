@@ -256,7 +256,15 @@ describe('PlayerView chrome', () => {
     it('applies the chosen size, background and colours to the player', () => {
       const { region } = setup(
         {},
-        { captionStyle: { size: 'xlarge', background: 'solid', contrast: 'high', edge: 'shadow' } },
+        {
+          captionStyle: {
+            size: 'xlarge',
+            background: 'solid',
+            contrast: 'high',
+            edge: 'shadow',
+            color: 'white',
+          },
+        },
       );
       expect(region.style.getPropertyValue('--adp-cap-size')).toBe('34px');
       expect(region.style.getPropertyValue('--adp-cap-bg')).toBe('#000000');

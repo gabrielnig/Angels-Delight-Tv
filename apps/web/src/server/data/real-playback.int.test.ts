@@ -105,7 +105,11 @@ describe.skipIf(!integrationEnabled())('real playback data', () => {
     });
     expect(data.saved).toEqual({ positionSeconds: 90, finished: false });
     expect(data.inMyList).toBe(true);
-    expect(data.next).toMatchObject({ id: other.id, title: 'Up next one', href: `/watch/${other.id}` });
+    expect(data.next).toMatchObject({
+      id: other.id,
+      title: 'Up next one',
+      href: `/watch/${other.id}`,
+    });
     expect(data.upNext.map((t) => [t.title, t.href, t.durationLabel])).toEqual([
       ['Up next one', `/watch/${other.id}`, '1 min 30 sec'],
     ]);
@@ -116,7 +120,13 @@ describe.skipIf(!integrationEnabled())('real playback data', () => {
       rate: 1,
       captionsOn: true,
     });
-    expect(data.captionStyle).toEqual({ size: 'medium', background: 'dark', contrast: 'standard', edge: 'shadow' });
+    expect(data.captionStyle).toEqual({
+      size: 'medium',
+      background: 'dark',
+      contrast: 'standard',
+      edge: 'shadow',
+      color: 'white',
+    });
   });
 
   it('has no saved position for a video that was not watched and uses the profile settings', async () => {
@@ -295,7 +305,11 @@ describe.skipIf(!integrationEnabled())('real playback data', () => {
     const guest = { profileId: 'none', kids: false, guest: true as const };
 
     async function withMarkers() {
-      const v = await seedVideo(h.db.setup, { title: 'Marked', durationMs: 300_000, kidsSafe: true });
+      const v = await seedVideo(h.db.setup, {
+        title: 'Marked',
+        durationMs: 300_000,
+        kidsSafe: true,
+      });
       await h.db.setup.insert(schema.videoMarkers).values([
         { videoId: v.id, kind: 'intro', startMs: 12_000, endMs: 48_000 },
         { videoId: v.id, kind: 'credits', startMs: 240_000 },
@@ -343,7 +357,11 @@ describe.skipIf(!integrationEnabled())('real playback data', () => {
 
     it('drops a marker that falls past the duration instead of failing the page', async () => {
       const u = await h.makeUser();
-      const v = await seedVideo(h.db.setup, { title: 'Shortened', durationMs: 100_000, kidsSafe: true });
+      const v = await seedVideo(h.db.setup, {
+        title: 'Shortened',
+        durationMs: 100_000,
+        kidsSafe: true,
+      });
       await h.db.setup.insert(schema.videoMarkers).values([
         { videoId: v.id, kind: 'intro', startMs: 5_000, endMs: 20_000 },
         { videoId: v.id, kind: 'recap', startMs: 150_000, endMs: 170_000 },
@@ -362,9 +380,21 @@ describe.skipIf(!integrationEnabled())('real playback data', () => {
   describe('standalone Up next (M08-S13 AC4)', () => {
     async function pair(title: string, kidsSafeOther = true) {
       const cat = await seedCategory(h.db.setup, `Cat ${title}`);
-      const a = await seedVideo(h.db.setup, { title: `${title} A`, durationMs: 120_000, kidsSafe: true });
-      const b = await seedVideo(h.db.setup, { title: `${title} B`, durationMs: 90_000, kidsSafe: kidsSafeOther });
-      const c = await seedVideo(h.db.setup, { title: `${title} C`, durationMs: 60_000, kidsSafe: true });
+      const a = await seedVideo(h.db.setup, {
+        title: `${title} A`,
+        durationMs: 120_000,
+        kidsSafe: true,
+      });
+      const b = await seedVideo(h.db.setup, {
+        title: `${title} B`,
+        durationMs: 90_000,
+        kidsSafe: kidsSafeOther,
+      });
+      const c = await seedVideo(h.db.setup, {
+        title: `${title} C`,
+        durationMs: 60_000,
+        kidsSafe: true,
+      });
       for (const v of [a, b, c]) await categorize(h.db.setup, { videoId: v.id }, cat.id);
       return { a, b, c };
     }
@@ -408,7 +438,11 @@ describe.skipIf(!integrationEnabled())('real playback data', () => {
 
     it('gives no next title when none qualifies', async () => {
       const u = await h.makeUser();
-      const lone = await seedVideo(h.db.setup, { title: 'Lonely', durationMs: 60_000, kidsSafe: true });
+      const lone = await seedVideo(h.db.setup, {
+        title: 'Lonely',
+        durationMs: 60_000,
+        kidsSafe: true,
+      });
       const res = await playback.getWatchData(lone.id, adult(u));
       if (res.status !== 'ok') throw new Error(res.status);
       expect(res.data.next).toBeNull();
@@ -416,7 +450,11 @@ describe.skipIf(!integrationEnabled())('real playback data', () => {
 
     it('gives a guest the candidates so the device can skip finished titles', async () => {
       const { a } = await pair('Guest');
-      const res = await playback.getWatchData(a.id, { profileId: 'none', kids: false, guest: true });
+      const res = await playback.getWatchData(a.id, {
+        profileId: 'none',
+        kids: false,
+        guest: true,
+      });
       if (res.status !== 'ok') throw new Error(res.status);
       expect(res.data.next).not.toBeNull();
       expect((res.data.nextCandidates ?? []).length).toBeGreaterThanOrEqual(2);

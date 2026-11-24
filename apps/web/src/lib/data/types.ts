@@ -435,6 +435,8 @@ export interface PlaybackSettings {
   captionBackground: 'none' | 'dark' | 'solid';
   captionContrast: 'standard' | 'high';
   captionEdge: 'none' | 'shadow' | 'outline';
+  /** Caption text colour. Yellow needs a background or high contrast (M49-S11). */
+  captionColor: 'white' | 'yellow';
   /** Default caption language, a code such as en or yo. */
   captionLanguage: string;
 }
