@@ -334,14 +334,16 @@ Each specification lists purpose, layout regions, components, data needed, state
 
 - **Purpose.** Discover and resume.
 - **Layout regions.** Header, hero banner (poster art, scrim, title, one line description, Play or Resume, More info, rotation dots), rows (Continue Watching, My List, curated rows), footer.
-- **Components.** Hero, row with arrows (desktop hover), title card (poster 16:9, title, duration, progress bar), See all card, skeletons, inline row error.
+- **Components.** Hero (still first, optional muted preview clip, dots with progress fill, Pause, arrows), row with arrows (desktop hover) and a View all link, title card (poster 16:9, title, duration, progress bar), hover card (mouse only, 300 ms), skeletons, inline row error.
 - **Data.** Hero slots, rows and items from curation, personal rows, progress per item, kids filter.
 - **States.** Loading (hero and 2 rows skeleton, others lazy), empty catalog ("New videos are on the way"), partial row failure, error card, offline banner with cached shell. Kids Home with larger cards and kid only content.
 - **Responsive.** Rows peek next card. Mobile gets bottom tab bar. Hero becomes poster on top with text below on xs for legibility.
 - **Nav in.** Picker, logo, tab bar. **Out.** Title detail, Series page, Watch (Continue Watching tap), Browse (See all), Search.
-- **Stories.** M05-S01 to M05-S08, M09-S01, M10-S04, M17-S05, M35-S01.
+- **Stories.** M05-S01 to M05-S08, M09-S01, M10-S04, M17-S05, M35-S01, M41-S01 to M41-S15.
 
 ### Screen 16. Browse by category (`/browse`, `/browse/[slug]`)
+
+List pages behind View all (M41-S09): `/browse/new` (newest first, Load more, length filter), `/browse/trending` (top 50 of the last 7 days in rank order), `/browse/series` (every live series) and `/browse/row/[slug]` (a manual section in the editor's order). They share the grid (2 across on phones, up to 6 from 1920 px), a loading skeleton with reserved height, an empty and an error state with Retry, and the not found page for an unknown slug. The words new, trending, series and row cannot be category slugs.
 
 - **Purpose.** Explore by subject.
 - **Layout.** Category chips (scrollable, solid fill when active), sort and duration filter bar, grid of cards (2 columns xs, up to 5 xl) with "Show more".
@@ -545,9 +547,9 @@ Each specification lists purpose, layout regions, components, data needed, state
 
 ### Screen 55. Home curation (`/admin/home`)
 
-- **Layout.** Left: hero slots (up to 5) and row list (drag and keyboard reorder, visibility toggle, type, count). Selecting a row opens its editor (type, name, title list). Right: live preview with desktop and mobile toggle and kids toggle. Toolbar: Unsaved changes, Save draft, Publish changes, Restore previous.
-- **States.** Skipped unpublished titles (warning icon), row limit reached, preview failure, empty.
-- **Stories.** M17-S01 to M17-S07, M05-S05.
+- **Layout.** Left: hero slots (up to 5, each with Headline, Description and Button label and a clip chip) and the sections list (inline rename, drag and keyboard reorder, visibility toggle, type, View all setting, minimum titles, kids visible, Add section, Restore launch defaults). Selecting a section opens its editor (type, name, View all field, title list). The video editor has a Home preview card (Automatic, Pick a segment, Off, Retry). Right: live preview with desktop and mobile toggle and kids toggle. Toolbar: Unsaved changes, Save draft, Publish changes, Restore previous.
+- **States.** Skipped unpublished titles (warning icon), section limit reached, save error with Retry, invalid name or custom link, preview failure, empty ("No sections yet").
+- **Stories.** M17-S01 to M17-S07, M05-S05, M41-S04, M41-S06 to M41-S08, M41-S13, M41-S16, M41-S17, M41-S20.
 
 ### Screens 56 and 57. Theme settings and history
 

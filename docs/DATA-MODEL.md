@@ -354,6 +354,8 @@ Kids browsing shows a category only if it contains at least one visible kids-saf
 
 ### 5.7 `rows` and `row_items` (home page curation)
 
+Home settings (Site settings, group `home`): `features.autoplay_hero` (default on), `home.hero_interval_seconds` (5 to 20, default 10), `home.hero_max_loops` (0 to 5, default 2, 0 never stops), `home.hero_previews` (default on), `home.hero_previews_unknown_connection` (default off), `home.hero_fallback_count` (1 to 5, default 5, not public), `home.view_all_label` (default View all) and `home.continue_title` (default Continue learning).
+
 `rows`:
 
 | Column | Type | Null | Default | Notes |
@@ -365,10 +367,14 @@ Kids browsing shows a category only if it contains at least one visible kids-saf
 | `position` | integer | no | | `UNIQUE (position) DEFERRABLE INITIALLY DEFERRED`, reorder in one transaction |
 | `is_published` | boolean | no | false | |
 | `kids_visible` | boolean | no | false | Row appears on kids profiles, items are still filtered by `kids_safe` |
+| `slug` | text | yes | | Address of a manual section, `/browse/row/{slug}`. Unique when set, kept when the section is renamed (0046) |
+| `view_all_mode` | text | no | `auto` | `auto`, `custom` or `none`. Custom needs `view_all_url` |
+| `view_all_url` | text | yes | | A path on this site or an https link, at most 300 characters |
+| `min_items` | smallint | no | 1 | Fewer live titles than this hides the row. 1 to 20 |
 | `max_items` | smallint | no | 20 | `CHECK (max_items BETWEEN 1 AND 50)` |
 | `created_at`, `updated_at` | timestamptz | no | `now()` | |
 
-`row_items`: `id`, `row_id` (FK CASCADE), `position` int, `video_id` (FK CASCADE, nullable), `series_id` (FK CASCADE, nullable). Constraints: `CHECK (num_nonnulls(video_id, series_id) = 1)`; `UNIQUE (row_id, position) DEFERRABLE INITIALLY DEFERRED`; `UNIQUE (row_id, video_id) WHERE video_id IS NOT NULL`; `UNIQUE (row_id, series_id) WHERE series_id IS NOT NULL`. Index `(row_id, position)`.
+`row_items`: `id`, `row_id` (FK CASCADE), `position` int, `video_id` (FK CASCADE, nullable), `series_id` (FK CASCADE, nullable), `hero_headline`, `hero_blurb`, `hero_button_label` (text, nullable, 80 characters each, used only on `hero` rows, a blank falls back to the title's own text). Constraints: `CHECK (num_nonnulls(video_id, series_id) = 1)`; `UNIQUE (row_id, position) DEFERRABLE INITIALLY DEFERRED`; `UNIQUE (row_id, video_id) WHERE video_id IS NOT NULL`; `UNIQUE (row_id, series_id) WHERE series_id IS NOT NULL`. Index `(row_id, position)`.
 
 Kinds `continue_watching`, `my_list`, `recently_added` and `popular` have no `row_items`. They are computed per profile or globally. `popular` reads `video_daily_stats`.
 
@@ -653,6 +659,8 @@ The schema in `packages/db/src/schema` is the source of truth. These changes wer
 | 0051 | `viewer_notices.rank` (highest maturity rank in the notice), `notice_digest_candidates()` and `viewer_notices_unsubscribe()` (SECURITY DEFINER), trigger `accounts_forget_viewer_address` (clears the sealed digest address when `accounts.email_enc` changes), `ad_worker` SELECT on `email_suppressions`. |
 | 0055 | `GRANT DELETE ON viewer_notification_prefs TO ad_app` so the account purge removes the notification choices and the sealed digest address. |
 | 0048 | New tables `viewer_notices` and `viewer_notification_prefs` (section 7.2c), `videos.announced_at` with launch backfill, kids trigger, `notice_followers()` and `notice_video_audience()`. |
+| 0046 | `rows` gains `slug` (unique when set), `view_all_mode` (auto, custom, none), `view_all_url` and `min_items` (1 to 20), with checks. `row_items` gains `hero_headline`, `hero_blurb` and `hero_button_label` (80 characters each). Existing Trending rows get `min_items` 4, existing manual rows get a slug, and categories named new, trending, series or row are renamed and can no longer be created (M41). |
+| 0045 | `row_kind` gains `each_category` and `all_series` (M41). |
 | 0044 | `row_kind` gains `trending`, `top_ten` and `most_liked`. New table `title_scores` (section 7.2b). |
 | 0042 | New tables `title_ratings` (owner RLS, kids trigger, `title_rating_aggregate()` for the worker) and `title_rating_stats` (section 7.2a). Policies `profiles_definer_read` and `title_ratings_definer_read` for the migrator role so SECURITY DEFINER triggers can read. |
 | 0038 | `videos.maturity_rank`, `series.maturity_rank` (smallint 0 to 4, checks), `profiles.max_maturity_rank` (smallint, default 4, kids profiles forced to 0 by trigger), backfill (kids safe 0, older 3, the rest 2), triggers `videos_sync_kids_safe` and `series_sync_kids_safe` (`kids_safe` follows rank 0). Additive. |

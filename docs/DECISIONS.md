@@ -1856,3 +1856,45 @@ Decision: `video.preview` catches every error and records `failed` or `skipped` 
 - Options: Read accounts.locale as is; add a nullable column; ignore accounts.locale
 - Why: A new nullable column needs a migration and a backfill for little gain, and reading en as chosen would hide the visitor's cookie on every sign in.
 - Reversible: Yes
+
+## D-338 With no hero titles chosen, Home rotates the five newest live titles that have artwork (lane L2, L2-D03, M41-S03)
+- Decision: With no hero titles chosen, Home rotates the five newest live titles that have artwork.
+- Options: Show nothing, show the newest one title, or show the newest five. The code showed one title and the admin said it showed none.
+- Why: A hero with one slide never rotates and a missing hero looks unfinished. Five newest keeps the top of Home alive on a new site. Titles with artwork sort first, and the count is the setting `home.hero_fallback_count`.
+- Reversible: Yes, by that setting.
+
+## D-339 Hero preview clips are six seconds, 854 px, H.264 without audio, and editors can choose Automatic, a picked start or Off (lane L2, L2-D04, L2-D06, M41-S12, S13)
+- Decision: Hero preview clips are six seconds, 854 px, H.264 without audio, and editors can choose Automatic, a picked start or Off.
+- Options: WebM or AV1, ten seconds, 480p or 720p, and an own upload. Own upload stays a Could item.
+- Why: H.264 plays on every phone, six seconds at 854 px stays near 600 KB, and no audio track means no mute control is needed. The worker makes the clip so editors upload nothing extra, and the override covers a bad automatic pick.
+- Reversible: Yes, a recut sweep changes the spec.
+
+## D-340 The hero clip plays only on a fast link with Data saver off, and an unknown connection is not eligible (lane L2, L2-D05, R13, M41-S11)
+- Decision: The hero clip plays only on a fast link with Data saver off, and an unknown connection is not eligible.
+- Options: Also play when the browser cannot say how fast the link is, or play on every connection.
+- Why: Safari and Firefox do not expose the connection, and a wrong guess costs a viewer data. The clip needs a fast type with at least 5 Mbps, no reduced motion and a visible tab, and it is re-checked when the connection changes. `home.hero_previews_unknown_connection` lets the owner opt in.
+- Reversible: Yes, by the setting.
+
+## D-341 The hover card is a portal opened after 300 ms for a mouse, and there is no video in it (lane L2, L2-D11, M41-S14)
+- Decision: The hover card is a portal opened after 300 ms for a mouse, and there is no video in it.
+- Options: Keep the inline peek and scale the thumbnail, or a portal card. The scaled thumbnail was cut off by the row.
+- Why: A card in the body cannot be clipped by the row, follows the card rectangle, grows from the row edge for the first and last card, and opens only for a mouse on a device that can hover. Touch and keyboard focus keep the usual card actions. 300 ms replaces 500 ms and 400 ms.
+- Reversible: Yes, by the tokens.
+
+## D-342 Rows show 2.3, 3.3, 4.3, 5.3 and 6.3 cards, and kids phones show 2.3 too (lane L2, L2-D12, R11)
+- Decision: Rows show 2.3, 3.3, 4.3, 5.3 and 6.3 cards, and kids phones show 2.3 too.
+- Options: Add a 1920 step or stop at 5.3, and keep 2.1 for kids on phones or use 2.3.
+- Why: A fraction keeps the next card visible at every width. 2.1 left a sliver that looks like a bug, so kids phones use the same 2.3. Kids rows stay larger than adult rows from 600 px.
+- Reversible: Yes, by the tokens.
+
+## D-343 The hero holds at most five slides and stops after two loops (lane L2, L2-D14, M41-S02)
+- Decision: The hero holds at most five slides and stops after two loops.
+- Options: Six slides as DESIGN-SYSTEM said, or five as M17 and the code say.
+- Why: Five matches the admin limit and the data used by each extra still. Stopping after two loops (`home.hero_max_loops`, 0 never) keeps an idle tab from loading clips for ever.
+- Reversible: Yes, by the setting.
+
+## D-344 Hero slide text is stored per title on the hero row and kept as typed until save (lane L2, M41-S16)
+- Decision: Hero slide text is stored per title on the hero row and kept as typed until save.
+- Options: Store text on the video, or on the hero row item. Trim on every keystroke or on save.
+- Why: The text belongs to one slide of one layout, not to the video, so it lives on the row item and goes with Publish and Restore previous. Trimming while typing removed the space between words, so it trims on save and the catalog write.
+- Reversible: Yes.

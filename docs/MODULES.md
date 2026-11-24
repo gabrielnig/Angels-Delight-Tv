@@ -48,6 +48,7 @@ Related documents: `docs/PRD.md` (why), `docs/USER-STORIES.md` (what, per module
 | M35 | Kids mode and content suitability | Viewer | [READY] |
 | M36 | Artwork and thumbnails | Admin and backend | [READY] |
 | M40 | Guest access | Viewer and backend | [READY] |
+| M41 | Home hero, rows and sections | Viewer and admin | [READY] |
 | M42 | Admin polish and bulk operations | Admin | [READY] |
 | M44 | Engagement (ratings, trending, notifications, graded maturity) | Viewer | [CLIENT] |
 | M45 | Discovery, SEO, consent and search | Viewer and admin | [READY] |
@@ -55,7 +56,7 @@ Related documents: `docs/PRD.md` (why), `docs/USER-STORIES.md` (what, per module
 | M48 | Sponsors and donations | Viewer and admin | [CLIENT] |
 | M49 | Account security, activity and reach | Viewer and backend | [READY] |
 
-39 modules in total. M01 to M26 follow the planned set. M27 to M36 are modules found while breaking the brief down: they own behaviour that would otherwise be spread across several modules with nobody responsible.
+40 modules in total. M41 owns the Home hero carousel, preview clips, row defaults, sections and View all links. M01 to M26 follow the planned set. M27 to M36 are modules found while breaking the brief down: they own behaviour that would otherwise be spread across several modules with nobody responsible.
 
 ## 2. Dependency overview
 
@@ -67,7 +68,7 @@ Reading order for building (earlier items unblock later ones):
 4. M04 Catalog, M16 Content management, M36 Artwork.
 5. M13 Upload, M14 Encoding worker, M15 Caption pipeline.
 6. M08 Player, M11 Captions viewer, M09 Continue Watching, M10 My List.
-7. M05 Home, M06 Browse and search, M07 Title detail, M17 Curation, M28 Publishing.
+7. M05 Home, M41 Home hero and sections, M06 Browse and search, M07 Title detail, M17 Curation, M28 Publishing.
 8. M18 Theme, M29 Site configuration, M26 Legal pages, M25 PWA, M19 Analytics, M20 Audit log, M21 Email, M27 Users overview, M32 Data lifecycle, M35 Kids mode, M34 Accessibility (applied throughout).
 
 ## 3. Module details
@@ -159,7 +160,7 @@ Each module lists: purpose, responsibilities, data owned, dependencies, client i
 **Responsibilities.**
 - Hero banner (featured title with Play and More info).
 - Rows from M17 curation plus personal rows (Continue Watching, My List).
-- Horizontal scrolling rows, 5 cards visible on desktop, swipe on touch, arrow buttons and keyboard on desktop.
+- Horizontal scrolling rows, 5.3 cards visible on desktop, swipe on touch, arrow buttons and keyboard on desktop (hero, preview clips, sections and View all are in M41).
 - Lazy loading of rows below the fold, skeletons, empty and error states.
 - Kids profile home with filtered content.
 
@@ -776,6 +777,18 @@ Each module lists: purpose, responsibilities, data owned, dependencies, client i
 
 **Notes.** Kids-only titles are never indexed or placed in the sitemap (R26). Every new cookie or storage key needs a row in `STORAGE_INVENTORY` (`apps/web/src/lib/consent/inventory.ts`). Plan and stories: `docs/plan/v2/L6-discovery.md`. Build notes: `docs/lanes/L6-build.md`.
 
+### M41 Home hero, rows and sections [READY]
+
+**Area.** Viewer and admin.
+
+**Purpose.** The Home hero carousel (still first, optional muted preview clip), launch default rows, admin created and named sections with a View all link each, the list pages behind View all, the hover card, and the admin controls for hero slots and preview clips.
+
+**Data owned.** Row `slug`, `view_all_mode`, `view_all_url`, `min_items` and `kids_visible`; hero slide text on `row_items`; preview columns on `videos`.
+
+**Dependencies.** M04, M05, M09, M14, M17, M25, M30, M36.
+
+**Notes.** Plan: `docs/plan/v2/L2-home.md`. Stories: M41-S01 to S20. Nothing here needs client input; the row names, the default top row title and the preview switches are settings.
+
 ### M42 Admin polish and bulk operations [READY]
 
 **Area.** Admin.
@@ -822,7 +835,7 @@ Each module lists: purpose, responsibilities, data owned, dependencies, client i
 
 ## 4. Readiness summary
 
-**Counts.** [READY] modules (28): M01, M02, M03, M04, M06, M07, M08, M09, M10, M11, M12, M13, M14, M16, M17, M19, M20, M23, M24, M25, M27, M28, M30, M31, M34, M35, M36, M40. [CLIENT] modules (10): M05, M15, M18, M21, M22, M26, M29, M32, M33, M48. Total 38.
+**Counts.** [READY] modules (29): M01, M02, M03, M04, M06, M07, M08, M09, M10, M11, M12, M13, M14, M16, M17, M19, M20, M23, M24, M25, M27, M28, M30, M31, M34, M35, M36, M40, M41. [CLIENT] modules (10): M05, M15, M18, M21, M22, M26, M29, M32, M33, M48. Total 39.
 
 **What the [CLIENT] modules wait on:**
 

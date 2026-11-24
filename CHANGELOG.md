@@ -131,3 +131,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - Slice 7 and 8: adult profiles get a notification bell, a `/notifications` page, per account choices at `/account/notifications` and an opt in daily or weekly email digest with one click unsubscribe. New episode and new video notices are made by a worker job and kept 60 days. Kids profiles get none.
 - Slice 10: My List has Started and Not started filters and four sorts kept in the URL. Continue learning cards show Next: E4 for a next up episode, a menu with Remove from row and Undo, and take the row title from the curated descriptor.
 - Slice 11: the data export now lists ratings, notices and notification choices (never the sealed address), and account purge also removes the notification choices. Web push stays a Could and is not built.
+
+### Lane L2: Home hero, rows and sections (M41)
+
+- The Home hero rotates every 10 seconds by default with a Pause control, holds on hover and focus, and stops under reduced motion, Data saver or after two loops. With no hero titles chosen the five newest titles with artwork rotate.
+- Admins create, rename, reorder and remove sections, give each a View all setting (automatic, custom or none) and a minimum, and restore the launch layout. New default rows are seeded once by the apply tool.
+- View all opens four list pages under `/browse` (new, trending, series and a manual section).
+- A worker makes a six second muted clip for each video. Editors choose Automatic, a start point or Off, and write a headline, description and button label for each hero slide. The clip plays only on a fast link with Data saver off and motion allowed.
+- Mouse users get a hover card after 300 ms. Rows show 2.3 to 6.3 cards, and the loading skeleton matches the hero.
