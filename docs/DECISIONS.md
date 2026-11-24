@@ -1312,3 +1312,9 @@ Per video tri state, site default (Super admin), Admin changes it with a reason 
 - Options: build track events and `selectAudio` now, remove the Audio row.
 - Why: there is no second spoken language at launch, so the code would be untested against real streams. The row is already in place, so the later work is small.
 - Reversible: yes.
+
+## D-246 Locale model and selection without a URL prefix (lane L7)
+- Decision: Locales are the codes en, yo, ig, ha and pcm. The locale comes from ?lang=, then profile, account, the ad_locale cookie, Accept-Language, then the site default. No URL prefix.
+- Options: URL prefix per locale, cookie and header only.
+- Why: Guests are first class and there is no SEO work yet, so a prefix would touch every route for no viewer benefit. Reversible later with redirects from the cookie.
+- Reversible: yes
