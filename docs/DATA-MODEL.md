@@ -452,6 +452,12 @@ The position a viewer had before "Remove from row" (M09-S07), kept so Undo works
 
 Constraints: `CHECK (num_nonnulls(video_id, series_id) = 1)`; `UNIQUE (profile_id, video_id) WHERE video_id IS NOT NULL`; `UNIQUE (profile_id, series_id) WHERE series_id IS NOT NULL`. Index `(profile_id, added_at DESC, id)`. RLS identical to `watch_progress`. Max 200 items per profile (service check).
 
+### 7.2a `title_ratings` and `title_rating_stats` (migration 0042)
+
+`title_ratings`: `profile_id` (FK `profiles` CASCADE), `video_id` or `series_id` (FK CASCADE, exactly one, a series is rated as a whole), `value` smallint in (-1 Not for me, 1 Like, 2 Love), `rated_at`, `updated_at`. One row per profile and title (partial unique indexes like `my_list`). RLS on and forced, policy `title_ratings_owner` with `owns_profile(profile_id)`. Trigger `title_ratings_not_kids` refuses a kids profile. `title_rating_aggregate()` (SECURITY DEFINER, EXECUTE for `ad_worker` only) returns counts per title with no profile id.
+
+`title_rating_stats`: `video_id` or `series_id` (exactly one, unique), `dislikes`, `likes`, `loves`, `most_liked`, `updated_at`. No RLS, no profile data. `ad_app` SELECT, `ad_worker` full DML. Written by the ratings rollup.
+
 ### 7.3 `view_events` and `video_daily_stats`
 
 `view_events`:
@@ -625,6 +631,7 @@ The schema in `packages/db/src/schema` is the source of truth. These changes wer
 | 0033 | New table `staff_exports` (`requester_id` cascade, `kind` audit or analytics, `params`, `scope` all or content, `status` queued, running, ready or failed, `row_count`, `bytes`, `file_key`, `error`, `expires_at`). Row level security: owner only for `ad_app`, all rows for `ad_worker`. |
 | 0034 | `assets` gains `placeholder_blur` (a webp data url under 1 KB, check `length < 1024`) and `candidate_score` (smallint 0 to 100 for poster frames cut from a video). Both are nullable, so older rows are unchanged. |
 | 0037 | `videos.captions_enabled` (boolean, null follows the site default) and `videos.captions_off_reason` (text), check `videos_captions_off_has_reason` (a reason of 5 or more characters while captions are off). Additive, no backfill. |
+| 0042 | New tables `title_ratings` (owner RLS, kids trigger, `title_rating_aggregate()` for the worker) and `title_rating_stats` (section 7.2a). Policies `profiles_definer_read` and `title_ratings_definer_read` for the migrator role so SECURITY DEFINER triggers can read. |
 | 0038 | `videos.maturity_rank`, `series.maturity_rank` (smallint 0 to 4, checks), `profiles.max_maturity_rank` (smallint, default 4, kids profiles forced to 0 by trigger), backfill (kids safe 0, older 3, the rest 2), triggers `videos_sync_kids_safe` and `series_sync_kids_safe` (`kids_safe` follows rank 0). Additive. |
 | 0039 | Sponsors (M48): enums `sponsor_status` (draft, active, paused, archived) and `sponsor_slot`, `asset_purpose` gains `sponsor`. Tables `sponsors` (name 1 to 80, optional schedule with `ends_at > starts_at`), `sponsor_private` (staff only: encrypted contact, notes), `sponsor_creatives` (headline 1 to 60, body to 140, cta 1 to 24, `destination_url` https only to 500, weight 1 to 10), `sponsor_placements` (creative, slot), `sponsor_daily_stats` (day, creative, slot, impressions, clicks, daily reach; sponsor key restricts delete, creative has no key so numbers outlive it). `sponsor_effective()` and the view `sponsor_effective_status` derive scheduled, live and ended from the dates. RLS forced on all five: staff (editor, admin, super admin) full access, everyone else reads only live sponsors, their active creatives and placements, never `sponsor_private` or the stats. Counters are written only through the SECURITY DEFINER `sponsor_stats_bump()`. |
 

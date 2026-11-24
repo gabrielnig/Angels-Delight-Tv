@@ -1536,3 +1536,9 @@ Per video tri state, site default (Super admin), Admin changes it with a reason 
 - Options: Upload through a new brand image purpose, a link
 - Why: A link ships now and works with any hosted image. An upload is a small follow up on LogoUploader. Staging must never be indexed even when someone forgets the switch.
 - Reversible: Yes
+
+## D-284 Ratings are per profile, three levels, never for kids, and an episode is rated through its series (lane L5, M44)
+- Decision: `title_ratings` stores -1, 1 and 2 per profile and title with owner RLS, a database trigger that refuses kids profiles, and a SECURITY DEFINER aggregate function that gives the worker counts without profile ids. Rating writes spend a new `engage` bucket (60 per minute per account). Episode ids are refused with a 422.
+- Options: per account ratings, allow kids to rate, give the worker read access to the table.
+- Why: SECURITY.md section 12 forbids personalisation signals for kids, and the worker only needs totals.
+- Reversible: yes.

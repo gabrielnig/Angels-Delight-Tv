@@ -16,3 +16,8 @@ Scoped tests: `TEST_DATABASE_ADMIN_URL=postgres://postgres:postgres@localhost:54
 - Settings: `maturity.labels`, `maturity.guest_max_rank` (default 2). Guest audience carries `maxRank`.
 - Tests: `packages/catalog/src/admin/videos.int.test.ts`, `series-maturity.int.test.ts`, `packages/catalog/src/publishing.int.test.ts`, `packages/viewer/src/profiles.int.test.ts`, `maturity-matrix.int.test.ts`, `packages/video/src/playback/service.test.ts`, `packages/theme/src/settings-registry.test.ts`.
 - NOT done yet (UI wiring): VideoEditor and PublishDialog Maturity select, bulk menu, SeriesEditor control, ProfileForm select with password step, TitleView badge, card peek chip, seed-demo ranks, guest playback ceiling, the web route key matrix test.
+
+## Slice 3 (ratings data and service)
+- Migration `0042_title_ratings.sql`: `title_ratings` (owner RLS, `title_ratings_not_kids` trigger), `title_rating_stats`, `title_rating_aggregate()` for `ad_worker`, definer read policies for the migrator role on profiles and title_ratings. Schema in `packages/db/src/schema/engage.ts` (also added to `drizzle.config.ts`).
+- `packages/viewer/src/ratings.ts`: `setRating`, `getRatings`, `ratingsFor`, `listMyRatings`, `RatingValue`. Bucket `engage`. `TitleCardDto` gains `rating` and `mostLiked`.
+- Tests: `packages/db/src/ratings.int.test.ts`, `packages/viewer/src/ratings.int.test.ts`.
