@@ -34,6 +34,8 @@ export const IDLE_STATE: PlayerState = {
   upNext: { tile: false, countdown: null, cancelled: false },
   hasAudio: true,
   backOnline: false,
+  marker: null,
+  chapter: null,
   announce: '',
 };
 

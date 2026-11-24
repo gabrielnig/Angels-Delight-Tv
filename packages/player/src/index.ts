@@ -19,6 +19,21 @@ export {
   resolveKeyUrl,
   withNativeToken,
 } from './token';
+export {
+  activeMarker,
+  normalizeMarkers,
+  type ActiveMarker,
+  type MarkerKind,
+  type MarkerWindow,
+  type PlayerMarkers,
+} from './markers';
+export {
+  chapterAt,
+  chapterTicks,
+  normalizeChapters,
+  type ActiveChapter,
+  type PlayerChapter,
+} from './chapters';
 export { computeStartPosition, type ResumeInput, type ResumeResult } from './resume';
 export {
   buildQualityMenu,

@@ -85,3 +85,39 @@ describe('SHORTCUT_HELP', () => {
     expect(SHORTCUT_HELP.every((r) => r.keys.length > 0)).toBe(true);
   });
 });
+
+describe('skip and theatre shortcuts (M43)', () => {
+  it('maps S to skip only while a skip window is active', () => {
+    expect(resolveShortcut({ key: 's' }, { hasNext: false, hasSkip: true })).toEqual({
+      type: 'skip',
+    });
+    expect(resolveShortcut({ key: 'S' }, { hasNext: false, hasSkip: true })).toEqual({
+      type: 'skip',
+    });
+    expect(resolveShortcut({ key: 's' }, { hasNext: false, hasSkip: false })).toBeNull();
+    expect(resolveShortcut({ key: 's' }, { hasNext: false })).toBeNull();
+  });
+
+  it('maps T to theatre only when theatre is available', () => {
+    expect(resolveShortcut({ key: 't' }, { hasNext: false, hasTheatre: true })).toEqual({
+      type: 'theatre',
+    });
+    expect(resolveShortcut({ key: 't' }, { hasNext: false, hasTheatre: false })).toBeNull();
+    expect(resolveShortcut({ key: 'T' }, { hasNext: false })).toBeNull();
+  });
+
+  it('still ignores S from editable targets and with modifiers', () => {
+    const input = document.createElement('input');
+    expect(
+      resolveShortcut({ key: 's', target: input }, { hasNext: false, hasSkip: true }),
+    ).toBeNull();
+    expect(
+      resolveShortcut({ key: 's', ctrlKey: true }, { hasNext: false, hasSkip: true }),
+    ).toBeNull();
+  });
+
+  it('lists S and T in the help rows', () => {
+    const rows = SHORTCUT_HELP.filter((r) => r.keys.includes('S') || r.keys.includes('T'));
+    expect(rows.map((r) => r.action)).toEqual(['Skip intro, recap or credits', 'Theatre mode']);
+  });
+});

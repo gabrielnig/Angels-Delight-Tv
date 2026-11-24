@@ -7,7 +7,9 @@ import type {
   PlayerEngine,
   PlayerMedia,
 } from './engine';
+import { chapterAt, normalizeChapters, type PlayerChapter } from './chapters';
 import type { ShortcutAction } from './keyboard';
+import { activeMarker, type MarkerKind, type PlayerMarkers } from './markers';
 import { ProgressReporter, type ProgressSink } from './progress';
 import {
   buildQualityMenu,
@@ -51,6 +53,9 @@ export interface PlayerControllerOptions {
   captions?: CaptionTrack[];
   resume?: Omit<ResumeInput, 'rewind' | 'minSaved'>;
   upNext?: UpNextItem | null;
+  /** Skip windows in seconds (M43). They arrive with the page, never as a separate request. */
+  markers?: PlayerMarkers;
+  chapters?: PlayerChapter[];
   network?: NetworkMonitor;
   page?: PageEvents;
   hints?: NetworkHints;
@@ -171,6 +176,8 @@ export class PlayerController {
       toast: null,
       upNext: { tile: false, countdown: null, cancelled: false },
       hasAudio: true,
+      marker: null,
+      chapter: null,
       backOnline: false,
       announce: '',
     };
@@ -261,6 +268,11 @@ export class PlayerController {
       );
     }
     this.initialStart = resume.start;
+    this.startPending = resume.start > 0;
+    if (this.o.markers || this.o.chapters) {
+      const patch = this.extrasAt(resume.start, Number.NaN);
+      if (Object.keys(patch).length > 0) this.set(patch);
+    }
 
     if (this.network && !this.network.isOnline()) {
       this.setError('offline');
@@ -330,6 +342,7 @@ export class PlayerController {
     const d = media.duration;
     const max = Number.isFinite(d) ? d : Infinity;
     const t = Math.min(Math.max(0, seconds), max);
+    this.startPending = false;
     media.currentTime = t;
     this.watchSeek(t, 0);
     this.reporter.update(t, d);
@@ -556,6 +569,9 @@ export class PlayerController {
       case 'speed-step':
         this.stepRate(action.direction);
         break;
+      case 'skip':
+        this.skip();
+        break;
       case 'next':
         this.playNext();
         break;
@@ -639,7 +655,77 @@ export class PlayerController {
       bufferedEnd: this.bufferedEnd(),
       volume: media.volume,
       muted: media.muted,
+      ...this.extrasAt(this.markerTime(), media.duration),
     });
+  }
+
+  /**
+   * Marker and chapter for a time. Returns only the fields that changed, so the state keeps its object
+   * identity on ticks inside the same window and the view does not render for them (M43).
+   */
+  private extrasAt(time: number, duration: number): Partial<PlayerState> {
+    const patch: Partial<PlayerState> = {};
+    if (!Number.isFinite(time)) return patch;
+    for (const kind of [...this.skipped]) {
+      const start = this.o.markers?.[kind]?.start;
+      if (start !== undefined && time < start) this.skipped.delete(kind);
+    }
+    let marker = activeMarker(this.o.markers, time, duration, !!this.o.upNext);
+    if (marker && this.skipped.has(marker.kind)) marker = null;
+    const current = this.state.marker;
+    if (marker?.kind !== current?.kind || marker?.nextLesson !== current?.nextLesson) {
+      patch.marker = marker;
+      if (marker)
+        patch.announce = msg('player.announce.skipAvailable', { label: this.skipLabel(marker) });
+    }
+    const chapter = chapterAt(normalizeChapters(this.o.chapters, duration), time);
+    if (
+      chapter?.index !== this.state.chapter?.index ||
+      chapter?.title !== this.state.chapter?.title
+    ) {
+      patch.chapter = chapter;
+    }
+    return patch;
+  }
+
+  private skipLabel(marker: { kind: MarkerKind; nextLesson: boolean }): string {
+    if (marker.nextLesson) return msg('player.skip.next');
+    return msg(`player.skip.${marker.kind}` as 'player.skip.intro');
+  }
+
+  private skipped = new Set<MarkerKind>();
+
+  /** True from start until the element reaches the resume point or the viewer seeks. */
+  private startPending = false;
+
+  /** While the engine is still seeking to the resume point the element reads 0, which must not clear the button. */
+  private markerTime(): number {
+    const t = this.o.media.currentTime;
+    if (!this.startPending) return t;
+    if (t > 0 || this.initialStart <= 0) {
+      this.startPending = false;
+      return t;
+    }
+    return this.initialStart;
+  }
+
+  /** Skips the active window (M43-S01, S02). Credits with a next title play it, otherwise seek to the end. */
+  skip(): void {
+    const marker = this.state.marker;
+    if (!marker) return;
+    const from = this.o.media.currentTime;
+    this.skipped.add(marker.kind);
+    this.set({ marker: null });
+    if (marker.nextLesson && this.o.upNext) {
+      this.tell((t) => t.onSkip?.('next', Math.round(from * 1000), Math.round(from * 1000)));
+      this.playNext();
+      return;
+    }
+    this.tell((t) =>
+      t.onSkip?.(marker.kind, Math.round(from * 1000), Math.round(marker.skipTo * 1000)),
+    );
+    this.seekTo(marker.skipTo);
+    if (!this.state.playing && !this.o.media.ended) this.play();
   }
 
   private syncProgress(): void {
