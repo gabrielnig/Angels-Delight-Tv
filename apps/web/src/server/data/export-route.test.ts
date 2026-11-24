@@ -5,6 +5,13 @@ const file = {
   exportedAt: '2026-06-15T12:00:00.000Z',
   account: { email: 'a@b.c', memberSince: 'x' },
   profiles: [],
+  notificationPrefs: {
+    bell: true,
+    newEpisodes: true,
+    newVideos: true,
+    emailFrequency: 'off',
+    emailConsentedAt: null,
+  },
 };
 
 function setup(

@@ -443,6 +443,12 @@ Correct `type`, `inputmode`, `autocomplete` and `enterkeyhint` on every field. M
 
 ### 11.5 Cards
 
+#### Continue learning card (M44-S23)
+
+- Adds a Next badge ("Next: E4") top left for a next up episode, with no progress bar and the meta line "Starts at the beginning". Otherwise the 4px progress rail and "12 min left" stay.
+- The close button is replaced by a three dot menu button (44px, on hover and focus on a fine pointer, always visible on touch) that opens a `role="menu"` with Remove from row and Go to title page. Arrow keys move, Home and End jump, Enter activates, Escape closes and returns focus to the button. Remove shows a toast with Undo for 6 seconds.
+- The row heading comes from the curated descriptor and defaults to Continue learning.
+
 #### Video card (16:9)
 
 - Anatomy: thumbnail (16:9, `--radius-sm`), duration badge bottom right (micro text on `--color-player-control-bg`), title (2 lines max, `--text-small` semibold) below, optional meta line (category, length) in muted caption.
@@ -611,6 +617,7 @@ Follows UI standard section 4.
 
 - Shape: `--radius-xs`, 24px tall, 8px padding, 12px (use 13 caption) semibold, icon optional at 16px.
 - Variants (all icon or word plus colour): Neutral (surface sunken, ink), Info (info tint, info text), Success (Published), Warning (Needs review, Scheduled), Danger (Failed), Accent (New: `--color-accent` with `--color-on-accent`), Kids (primary tint, ink, shield icon), Duration (on `--color-player-control-bg`, white).
+- Maturity badge and Most liked (M44): the maturity badge is Neutral with the rating text, hidden for G on cards and always shown on the title page. Most liked uses Info with an icon and the words "Most liked". Colour is never the only signal.
 - Admin statuses: Draft, Uploading, Processing, Needs captions, Ready, Scheduled, Published, Failed. Each has an icon plus text.
 - States: static, not interactive. If a badge is a filter, it is a pill (11.11).
 - Accessibility: text carries meaning, never colour alone. Duration badge text "4:12" has a visually hidden "4 minutes 12 seconds" in the card name.
@@ -675,6 +682,21 @@ Types: inline field error (11.2), banner (page level, danger tint, icon, message
 - Collapse: below `md` the sidebar becomes an off canvas drawer opened by a menu button in a 56px top bar. Between `md` and `lg` it may collapse to icons with tooltips.
 - Header in the work area: breadcrumb, H1, page actions on the right (primary action on the far right). Work area is `--color-bg` with surface panels.
 - Counts (Needs captions: 3) are badges in the sidebar, text plus number.
+
+### 11.27 Rating control
+
+- Three icon buttons in a group: Not for me, I like this, Love this. 44px targets, `aria-pressed`, one selected at most, pressing the selected one clears it with an Undo toast. Label text shows from 960px.
+- Hidden for kids profiles and for guests it opens the Sign in to save dialog. Motion uses opacity and transform only and is instant under reduced motion.
+
+### 11.28 Notification bell and list
+
+- The bell is a 44px icon button at the right of the top bar. The unread count is a text badge capped at 99 with a spoken label such as "3 unread notifications". It is not rendered for guests or kids profiles.
+- Desktop opens a popover (focus moves in, Tab stays inside, Escape closes and returns focus). Phones link to the `/notifications` page. The list shows an unread mark with the words "Unread" for screen readers, a title, a short body and a time (Today, 9:14 am or Yesterday). Mark all as read is one button.
+- Empty: "Nothing new". Error: inline retry. Data saver fetches the count only when the bell opens.
+
+### 11.29 Ranked row
+
+- A Top 10 row is an ordered list. The numeral uses `var(--font-display)` at a size from the type scale on a scrim, and the skeleton reserves its width. Hidden when fewer than 10 titles qualify.
 
 ### 11.26 Auth screens
 

@@ -110,3 +110,8 @@ Skipped and kept as Could. It needs VAPID keys, a service worker push handler, a
 - Analytics: `ratingTotals` and `positiveShare` in `packages/analytics`, Top titles columns Likes, Love, Not for me, Positive share (sortable, "Under 10 ratings") in `TopTitlesTable`, and four CSV columns.
 - Migration `0053_row_popular_fallback.sql`.
 - Not done: refreshing trending right after the nightly rollup, Most liked on the series card, seed-demo ranks, an admin filter by maturity.
+## Slice 11 (docs, export, purge; branch l5b-s11-docs)
+- Docs: M44 stories (S01 to S25) appended to USER-STORIES, 22 of the 24 edits to existing stories applied (M16-S09 has no suitability wording and M02-S04 has no account navigation list, so those two were left), M44 module row and section, SCREEN-ARCHITECTURE routes, SECURITY (capability, rate, PII and kids rules), DESIGN-SYSTEM (continue card, 11.27 to 11.29, badges), CLIENT-INPUTS (`maturity.labels`, `maturity.guest_max_rank`), CHANGELOG, DATA-MODEL row 0055.
+- Export: the existing single JSON file gains per profile `ratings` and `notices` and an account level `notificationPrefs` (the sealed address is never included). The plan named `ratings.json` and `notices.json`; one file was kept because the export is one signed download.
+- Purge: found that `viewer_notification_prefs` survived account purge (the account row stays as deleted). Migration 0055 grants `ad_app` DELETE and `purgeOne` now deletes the row. The purge test asserts no prefs, notices or ratings remain. No push table exists, so nothing to purge there.
+- Tests: `real-account-data.int.test.ts`, `account.int.test.ts`, `export-route.test.ts`; doc guards `design-doc-sync`, `l10-doc-sync`, `monetization-doc-sync` pass.

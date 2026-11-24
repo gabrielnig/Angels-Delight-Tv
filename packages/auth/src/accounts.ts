@@ -1405,6 +1405,10 @@ export class AccountService {
       await tx.delete(schema.emailTokens).where(eq(schema.emailTokens.accountId, accountId));
       await tx.delete(schema.consents).where(eq(schema.consents.accountId, accountId));
       await tx.delete(schema.dataExports).where(eq(schema.dataExports.accountId, accountId));
+      // The sealed digest address and the notification choices go with the person (M44).
+      await tx
+        .delete(schema.viewerNotificationPrefs)
+        .where(eq(schema.viewerNotificationPrefs.accountId, accountId));
       await tx.delete(schema.mfaFactors).where(eq(schema.mfaFactors.accountId, accountId));
       await tx
         .delete(schema.mfaRecoveryCodes)

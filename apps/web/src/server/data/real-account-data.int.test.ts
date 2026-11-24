@@ -1,4 +1,5 @@
-import { saveProgress, addToMyList } from '@ad/viewer';
+import { sql } from 'drizzle-orm';
+import { saveProgress, addToMyList, saveAddress, setPrefs, setRating } from '@ad/viewer';
 import {
   createHarness,
   integrationEnabled,
@@ -23,6 +24,47 @@ describe.skipIf(!integrationEnabled())('account viewer data', () => {
   });
   afterAll(async () => {
     await h?.drop();
+  });
+
+  describe('export of ratings and notifications (M44)', () => {
+    it('includes this profile ratings, its notices and the account notification choices, never the sealed address', async () => {
+      const u = await h.makeUser();
+      const rated = await seedVideo(h.db.setup, { title: 'Rated one' });
+      h.setNow(NOW);
+      await setRating(h.ctx, u.actor, {
+        profileId: u.profileId,
+        target: { kind: 'video', id: rated.id },
+        value: 2,
+      });
+      await h.db.setup.execute(sql`
+        INSERT INTO viewer_notices (profile_id, kind, title, href, dedupe_key)
+        VALUES (${u.profileId}::uuid, 'new_video', 'Fresh video', '/browse', 'export-1')`);
+      await setPrefs(h.ctx, u.actor, { profileId: u.profileId, newVideos: false });
+      await saveAddress(h.ctx, u.actor, {
+        profileId: u.profileId,
+        sealedAddress: Buffer.from('sealed-bytes'),
+      });
+
+      const file = await data.buildExport(u.accountId, { email: 'x@example.com', memberSince: 'now' });
+      const mine = file.profiles.find((p) => p.name !== '' && p.kids === false)!;
+
+      expect(mine.ratings).toEqual([
+        expect.objectContaining({ title: 'Rated one', slug: rated.slug, value: 2 }),
+      ]);
+      expect(mine.notices).toEqual([
+        expect.objectContaining({ title: 'Fresh video', kind: 'new_video', read: false }),
+      ]);
+      expect(file.notificationPrefs).toMatchObject({
+        bell: true,
+        newEpisodes: true,
+        newVideos: false,
+        emailFrequency: 'off',
+      });
+      expect(JSON.stringify(file)).not.toMatch(/sealed|addressEnc|address_enc/i);
+      const kids = file.profiles.find((p) => p.kids)!;
+      expect(kids.ratings).toEqual([]);
+      expect(kids.notices).toEqual([]);
+    });
   });
 
   describe('stats', () => {

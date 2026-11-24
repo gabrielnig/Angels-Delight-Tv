@@ -124,3 +124,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 ### Lane L6: Discovery (M45)
 
 - Slice 6b: search results now show corrected spelling, did you mean, and subject matches; empty searches are logged anonymously as misses and pruned after 90 days by the nightly job.
+
+### Lane L5: Engagement (M44), notifications, Continue learning and My List
+
+- Slice 7 and 8: adult profiles get a notification bell, a `/notifications` page, per account choices at `/account/notifications` and an opt in daily or weekly email digest with one click unsubscribe. New episode and new video notices are made by a worker job and kept 60 days. Kids profiles get none.
+- Slice 10: My List has Started and Not started filters and four sorts kept in the URL. Continue learning cards show Next: E4 for a next up episode, a menu with Remove from row and Undo, and take the row title from the curated descriptor.
+- Slice 11: the data export now lists ratings, notices and notification choices (never the sealed address), and account purge also removes the notification choices. Web push stays a Could and is not built.
