@@ -17,7 +17,8 @@ Plan: `docs/plan/v2/L6-discovery.md`. Rulings: `docs/plan/v2/RULINGS.md`. Review
 | 8 | Error pages (S139), one action each (R39) | merged | #339 |
 | 9 | Discovery tab: synonyms editor with error lines, empty search report | merged | #342 |
 | 10 | Kids only titles: share image noindex header, sitemap category fix; social image contrast already tested | merged | #344 |
-| 11 | Voice search (S134, Could) | in review | |
+| 11 | Voice search (S134, Could) | merged | #347 (dash fix #349) |
+| 12 | Analytics posture guard and performance budget checks | in review | |
 
 ## Slice 1 (sitemap)
 
@@ -101,3 +102,11 @@ Plan: `docs/plan/v2/L6-discovery.md`. Rulings: `docs/plan/v2/RULINGS.md`. Review
 - `SearchBox` shows it unless the profile is Kids or Data saver is on, or the browser cannot listen. Words fill the box, a final result searches after 600 ms, typing cancels the search.
 - `ad:voice:ok` has a row in the storage inventory (the inventory test caught it).
 - Tests: `pnpm vitest run apps/web/src/components/browse apps/web/src/lib/consent`.
+
+## Slice 12 (analytics posture, performance budget)
+
+- `lib/consent/guard.ts`: `canUse(category)` (only necessary and functional), `privacySignalOn`, `allowEvent`, `OPTIONAL_EVENT_KINDS` (`search`, `share`). `lib/analytics/browser.ts` drops those events under Global Privacy Control or Do Not Track; playback health, errors and vitals always go.
+- `lib/analytics/posture.test.ts` also fails if a script is loaded from an origin that is not on its list (today only Cloudflare Turnstile, named in SECURITY.md) or if analytics code touches device storage or cookies. Adding a tracker means a decision, an entry in that list and a real choice banner.
+- `lib/perf/budget.ts` (budgets, `jsViolations`, `routeSizesFromManifest`, `parseImages`, `imageViolations`, `fontViolations`, `fontPreloadsFromHtml`) and `scripts/perf-budget.ts` (`pnpm perf:budget`, optional `--base URL /path ...` to check page HTML). The font test proves at most four preloaded font files for every theme font and language.
+- Known gaps for the script against live HTML: several images are sized only by CSS (title poster, hero), so the HTML check reports them. LCP, CLS and INP are measured in the browser, not here.
+- Tests: `pnpm vitest run apps/web/src/lib/consent apps/web/src/lib/analytics apps/web/src/lib/perf`.
