@@ -1,4 +1,4 @@
-/** Committed baseline catalogs per locale. Empty until a native speaker has reviewed text (D-247). */
+/** Committed baseline catalogs per locale. Empty until a native speaker has reviewed text (D-268). */
 import ha from './locales/ha.json';
 import ig from './locales/ig.json';
 import pcm from './locales/pcm.json';
