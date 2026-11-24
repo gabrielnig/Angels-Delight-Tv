@@ -13,6 +13,7 @@ import {
   purgeVideo,
   restoreVideo,
   retryEncode,
+  retryEncodeMany,
   schedulePublish,
   validateVideoPatch,
 } from './video-commands';
@@ -148,6 +149,8 @@ export interface VideoService {
     assetId: string,
   ): Promise<{ status: 'processing' | 'ready' | 'failed' }>;
   retryEncode(actor: AdminActor, id: string): Promise<CommandResult>;
+  /** Retries many failed videos, oldest failure first. Each id succeeds, is skipped or fails alone. */
+  retryEncodeMany(actor: AdminActor, ids: string[], bulkId?: string): Promise<BulkParts>;
   trashed(actor: AdminActor): Promise<VideoRecord[]>;
   restore(actor: AdminActor, id: string): Promise<CommandResult>;
   purge(actor: AdminActor, id: string): Promise<CommandResult>;
@@ -261,6 +264,10 @@ const fixtureVideoService: VideoService = {
     const video = getStore().videos.find((v) => v.id === id);
     if (!video) throw new NotFound('Video not found');
     return retryEncode(video, Date.now());
+  },
+  async retryEncodeMany(actor, ids) {
+    need(actor, 'encode.retry');
+    return retryEncodeMany(getStore().videos, ids, Date.now());
   },
   async trashed(actor) {
     need(actor, 'video.restore');
@@ -395,6 +402,12 @@ export interface CaptionRow {
   warnings: number;
   /** Automatic captions nobody has opened or edited. */
   untouchedAuto: boolean;
+}
+
+export interface BulkParts {
+  succeeded: string[];
+  failed: BulkIssue[];
+  skipped: BulkIssue[];
 }
 
 export interface ApproveManyResult {

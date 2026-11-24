@@ -37,6 +37,8 @@ function setup(rows: FailedEncodeRecord[], role: 'admin' | 'editor' = 'admin') {
       retry={retry}
       cleanup={cleanup}
       cleanupAll={cleanupAll}
+      retryMany={vi.fn()}
+      cleanupMany={vi.fn()}
     />,
   );
   return { retry, cleanup, cleanupAll };

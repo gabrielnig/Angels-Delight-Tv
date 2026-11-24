@@ -1,5 +1,5 @@
 import { setCaptionsAvailabilityMany } from './captions-availability';
-import { and, eq, sql } from 'drizzle-orm';
+import { and, eq, inArray, sql } from 'drizzle-orm';
 import { assets, categories, videoCategories, videos, withAccount } from '@ad/db';
 import { writeAudit } from '../audit';
 import {
@@ -892,6 +892,7 @@ export async function retryAdminVideo(
   actor: Actor,
   id: string,
   enqueue: Enqueue,
+  bulkId?: string,
 ): Promise<CommandResult> {
   assertStaff(actor);
   if (!isUuid(id)) throw new NotFound('Video not found');
@@ -912,12 +913,64 @@ export async function retryAdminVideo(
       targetType: 'video',
       targetId: id,
       summary: `Retried processing for ${video.title}`,
+      ...(bulkId ? { extra: { bulkId } } : {}),
     });
     return video.durationMs ? ('video.encode' as const) : ('video.probe' as const);
   });
   if (typeof queue !== 'string') return queue;
   await enqueue(queue, { videoId: id }, { createdBy: actor.accountId });
   return OK;
+}
+
+const NO_SOURCE = 'The original file was removed. Replace the file instead.';
+
+/**
+ * Retries many failed videos, oldest failure first so they are worked through in the order they broke
+ * (the queue runs one at a time). Each id succeeds, is skipped with a reason, or fails alone.
+ */
+export async function retryAdminVideos(
+  ctx: AdminContext,
+  actor: Actor,
+  ids: readonly string[],
+  enqueue: Enqueue,
+  bulkId?: string,
+): Promise<{
+  succeeded: string[];
+  failed: Array<{ id: string; reason: string }>;
+  skipped: Array<{ id: string; reason: string }>;
+}> {
+  assertStaff(actor);
+  const out = {
+    succeeded: [] as string[],
+    failed: [] as Array<{ id: string; reason: string }>,
+    skipped: [] as Array<{ id: string; reason: string }>,
+  };
+  const unique = [...new Set(ids)];
+  const valid = unique.filter(isUuid);
+  for (const id of unique) if (!isUuid(id)) out.failed.push({ id, reason: 'That video no longer exists.' });
+  const found = valid.length
+    ? await withAccount(ctx.db, actor, (tx: Tx) =>
+        tx
+          .select({ id: videos.id, updatedAt: videos.updatedAt })
+          .from(videos)
+          .where(and(inArray(videos.id, valid), sql`${videos.deletedAt} IS NULL`)),
+      )
+    : [];
+  const known = new Set(found.map((v) => v.id));
+  for (const id of valid) if (!known.has(id)) out.failed.push({ id, reason: 'That video no longer exists.' });
+  found.sort((a, b) => a.updatedAt.getTime() - b.updatedAt.getTime());
+  for (const { id } of found) {
+    try {
+      const done = await retryAdminVideo(ctx, actor, id, enqueue, bulkId);
+      if (done.ok) out.succeeded.push(id);
+      else if (/source file was removed/.test(done.error)) out.skipped.push({ id, reason: NO_SOURCE });
+      else if (/Only failed videos/.test(done.error)) out.skipped.push({ id, reason: 'Not failed any more.' });
+      else out.failed.push({ id, reason: done.error });
+    } catch (error) {
+      out.failed.push({ id, reason: reasonOf(error) });
+    }
+  }
+  return out;
 }
 
 /** Delete forever (admin only): records the decision, then queues the job that removes files and the row. */

@@ -1,3 +1,4 @@
+import type { BulkIssue } from './bulk';
 import type { AccountRole } from '@ad/shared';
 import { can } from '@/lib/admin/can';
 import type { Suitability, VideoRecord } from './types';
@@ -143,6 +144,37 @@ export function applyCaptionsAvailability(
   video.captionsOffReason = value === false ? trimmed : null;
   video.updatedAt = new Date().toISOString();
   return { ok: true };
+}
+
+export const NO_ORIGINAL = 'The original file was removed. Replace the file instead.';
+
+/**
+ * Retries many failed videos, oldest failure first so the queue works through them in the order they broke
+ * (L3-D10). A video that is not failed any more, or has lost its original file, is skipped with a reason.
+ */
+export function retryEncodeMany(
+  videos: VideoRecord[],
+  ids: readonly string[],
+  now: number,
+  hasOriginal: (id: string) => boolean = () => true,
+): { succeeded: string[]; failed: BulkIssue[]; skipped: BulkIssue[] } {
+  const out = { succeeded: [] as string[], failed: [] as BulkIssue[], skipped: [] as BulkIssue[] };
+  const found: VideoRecord[] = [];
+  for (const id of new Set(ids)) {
+    const video = videos.find((v) => v.id === id && v.deletedAt === null);
+    if (video) found.push(video);
+    else out.failed.push({ id, reason: 'That video no longer exists.', retryable: false });
+  }
+  found.sort((a, b) => Date.parse(a.updatedAt) - Date.parse(b.updatedAt));
+  for (const video of found) {
+    if (video.status !== 'failed') out.skipped.push({ id: video.id, reason: 'Not failed any more.' });
+    else if (!hasOriginal(video.id)) out.skipped.push({ id: video.id, reason: NO_ORIGINAL });
+    else {
+      retryEncode(video, now);
+      out.succeeded.push(video.id);
+    }
+  }
+  return out;
 }
 
 const TRASH_DAYS = 30;

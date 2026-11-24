@@ -10,7 +10,9 @@ import {
   type ViewerTestDb,
 } from '../testing';
 import type { AdminContext } from './types';
-import { listAdminVideos, requestPurgeAdminVideo, retryAdminVideo } from './videos';
+import { listAdminVideos, requestPurgeAdminVideo, retryAdminVideo, retryAdminVideos } from './videos';
+import { sql } from 'drizzle-orm';
+import { uuidv7 } from '@ad/shared';
 
 describe.skipIf(!integrationEnabled())('admin retry and purge requests', () => {
   let t: ViewerTestDb;
@@ -73,6 +75,37 @@ describe.skipIf(!integrationEnabled())('admin retry and purge requests', () => {
       ok: false,
       error: 'The source file was removed. Replace the file instead.',
     });
+  });
+
+  it('bulk retry goes oldest failure first, audits each job with the bulk id and skips what cannot be retried', async () => {
+    const newer = await seedVideo(t.setup, {
+      status: 'failed', publishState: 'draft', originalKey: 'originals/n/source.mp4',
+      updatedAt: new Date('2026-06-02T10:00:00Z'),
+    });
+    const older = await seedVideo(t.setup, {
+      status: 'failed', publishState: 'draft', originalKey: 'originals/o/source.mp4',
+      updatedAt: new Date('2026-06-01T10:00:00Z'),
+    });
+    const noSource = await seedVideo(t.setup, { status: 'failed', publishState: 'draft', originalKey: null });
+    const fine = await seedVideo(t.setup);
+    const before = sent.length;
+    const out = await retryAdminVideos(ctx, editor, [newer.id, older.id, noSource.id, fine.id, uuidv7()], enqueue, 'bulk-9');
+    expect(out.succeeded).toEqual([older.id, newer.id]);
+    expect(sent.slice(before).map((s) => (s.payload as { videoId: string }).videoId)).toEqual([older.id, newer.id]);
+    expect(out.skipped).toEqual([
+      { id: noSource.id, reason: 'The original file was removed. Replace the file instead.' },
+      { id: fine.id, reason: 'Not failed any more.' },
+    ]);
+    expect(out.failed).toHaveLength(1);
+    const audit = await t.setup.execute(
+      sql`select metadata from audit_log where target_id = ${older.id} and action = 'video.retry'`,
+    );
+    expect(JSON.stringify(audit.rows[0])).toContain('bulk-9');
+  });
+
+  it('bulk retry refuses a viewer', async () => {
+    const viewer: Actor = { accountId: (await seedAccount(t.setup)).id, role: 'viewer' };
+    await expect(retryAdminVideos(ctx, viewer, [uuidv7()], enqueue)).rejects.toThrow();
   });
 
   it('purge is admin only, needs the video to be in Trash, and queues the purge job', async () => {
