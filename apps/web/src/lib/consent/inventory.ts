@@ -201,6 +201,15 @@ export const STORAGE_INVENTORY: readonly StorageItem[] = [
     needle: 'ad-recent-searches',
   }),
   row({
+    name: 'ad:voice:ok',
+    store: 'local',
+    purpose: 'Remembers that you agreed to use your voice to search.',
+    kept: () => 'Until you clear it',
+    type: 'functional',
+    source: `${WEB}/components/browse/voice.ts`,
+    needle: 'ad:voice:ok',
+  }),
+  row({
     name: 'ad.player.prefs.<profile>',
     store: 'local',
     purpose: 'Remembers your volume, speed, captions and quality choices for each profile.',
