@@ -52,7 +52,7 @@ a {
 
 .web-page {
   width: 100%;
-  max-width: var(--content-max);
+  max-width: var(--prose-max);
   margin: 0 auto;
   padding: var(--space-6) var(--page-gutter);
 }

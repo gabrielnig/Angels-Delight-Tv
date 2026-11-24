@@ -613,7 +613,7 @@
   background: var(--color-accent);
 }
 .ad-progress[data-tone='accent'] .ad-progress__rail {
-  background: var(--color-player-rail);
+  background: var(--color-card-progress-rail);
 }
 .ad-progress[data-tone='success'] .ad-progress__fill {
   background: var(--color-success);
@@ -930,12 +930,12 @@
 .ad-avatar[data-size='120'] {
   width: 7.5rem;
   height: 7.5rem;
-  font-size: var(--text-hero);
+  font-size: var(--avatar-initial-120);
 }
 .ad-avatar[data-size='160'] {
   width: 10rem;
   height: 10rem;
-  font-size: var(--text-hero);
+  font-size: var(--avatar-initial-160);
 }
 
 .ad-avatar__art {
@@ -1645,7 +1645,7 @@
   margin: 0;
   max-width: 20ch;
   font-family: var(--font-display);
-  font-size: var(--text-h2);
+  font-size: var(--text-hero);
   font-weight: var(--weight-bold);
   line-height: var(--leading-tight);
 }
@@ -1761,9 +1761,6 @@
   .ad-hero__content {
     max-width: 40rem;
     padding: var(--space-8) var(--page-gutter) var(--space-16);
-  }
-  .ad-hero__title {
-    font-size: var(--text-hero);
   }
   .ad-hero__actions {
     flex-direction: row;
