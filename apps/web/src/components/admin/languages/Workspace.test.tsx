@@ -114,6 +114,17 @@ describe('Workspace', () => {
     await userEvent.click(screen.getByRole('button', { name: /approve 1/i }));
     expect(await screen.findByText(/skipped 1/i)).toBeTruthy();
   });
+  it('report keeps the order given (most hit first) and links each key to the workspace row', async () => {
+    setup({ missingHits: [{ key: 'nav.browse', hits: 90, lastSeen: '2026-11-20' }, { key: 'nav.home', hits: 40, lastSeen: '2026-11-19' }] });
+    await userEvent.click(screen.getByRole('tab', { name: /Viewer hits/ }));
+    const links = screen.getAllByRole('link');
+    expect(links.map((l) => l.textContent)).toEqual(['nav.browse', 'nav.home']);
+    expect(links[0]!.getAttribute('href')).toBe('?q=nav.browse');
+  });
+  it('opens on the search from the link', () => {
+    setup({ initialQuery: 'browse', initialTab: 'all' });
+    expect(screen.getAllByTestId(/^row-/)).toHaveLength(1);
+  });
   it('shows the missing key tab when hits are given', () => {
     setup({ missingHits: [{ key: 'nav.home', hits: 40, lastSeen: '2026-11-20' }] });
     expect(screen.getByRole('tab', { name: /Viewer hits/ })).toBeTruthy();

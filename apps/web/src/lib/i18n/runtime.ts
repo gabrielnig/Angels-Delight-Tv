@@ -1,16 +1,28 @@
 import 'server-only';
 import { writeAudit } from '@ad/audit';
-import { CatalogCache, DbStore, MemoryStore, TranslationService, type TranslationStore } from '@ad/i18n';
+import {
+  CatalogCache,
+  DbMissingStore,
+  DbStore,
+  MemoryMissing,
+  MemoryStore,
+  MissingKeySink,
+  TranslationService,
+  type MissingReportRow,
+  type TranslationStore,
+} from '@ad/i18n';
 import { BASELINES, EN_NG, type CatalogShape, type DbRow, type LocaleCode } from '@ad/shared/messages';
 import type { Actor } from '@ad/shared';
 import { realDataEnabled } from '../../server/data/mode';
 import { themeRuntime } from '../data/admin/theme-runtime';
-import { registerCatalogOverlay } from './server';
+import { currentEnabledLocales, registerCatalogOverlay, registerMissingSink } from './server';
 
 interface Runtime {
   storeFor(actor?: Actor): TranslationStore;
   cache: CatalogCache;
   audit(entry: Parameters<typeof writeAudit>[1]): Promise<void>;
+  missing(actor: Actor): { list(locale: string): Promise<MissingReportRow[]> };
+  sink: MissingKeySink;
 }
 
 const KEY = Symbol.for('ad.i18n.runtime');
@@ -20,10 +32,24 @@ async function create(): Promise<Runtime> {
     const [{ loadWebEnv }, { createDb, createPool }] = await Promise.all([import('@ad/config'), import('@ad/db')]);
     const db = createDb(createPool(loadWebEnv().DATABASE_URL, { applicationName: 'ad-web-i18n' }));
     const cache = new CatalogCache(new DbStore(db));
-    return { storeFor: (actor) => new DbStore(db, actor), cache, audit: (entry) => writeAudit(db, entry) };
+    const missing = new DbMissingStore(db);
+    return {
+      storeFor: (actor) => new DbStore(db, actor),
+      cache,
+      audit: (entry) => writeAudit(db, entry),
+      missing: (actor) => new DbMissingStore(db, actor),
+      sink: new MissingKeySink({ flush: (rows) => missing.flush(rows), enabled: currentEnabledLocales }),
+    };
   }
   const memory = new MemoryStore();
-  return { storeFor: () => memory, cache: new CatalogCache(memory), audit: async () => {} };
+  const seen = new MemoryMissing();
+  return {
+    storeFor: () => memory,
+    cache: new CatalogCache(memory),
+    audit: async () => {},
+    missing: () => seen,
+    sink: new MissingKeySink({ flush: (rows) => seen.flush(rows), enabled: currentEnabledLocales }),
+  };
 }
 
 export function i18nRuntime(): Promise<Runtime> {
@@ -33,6 +59,7 @@ export function i18nRuntime(): Promise<Runtime> {
       const approved = await rt.cache.approved(locale);
       return new Map([...approved].map(([k, v]) => [k, v as DbRow]));
     });
+    registerMissingSink((locale, key, ctx) => rt.sink.record(locale, key, ctx));
     return rt;
   }));
 }

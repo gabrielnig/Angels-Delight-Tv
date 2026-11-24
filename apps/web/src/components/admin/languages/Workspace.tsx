@@ -23,6 +23,8 @@ export function Workspace({
   onSave,
   onApprove,
   missingHits,
+  initialQuery = '',
+  initialTab = 'missing',
 }: {
   locale: { code: string; endonym: string; englishName: string };
   rows: WorkspaceRow[];
@@ -31,9 +33,11 @@ export function Workspace({
   onApprove: (keys: string[]) => Promise<{ approved: number; skipped: { key: string; reason: string }[] }>;
   /** Keys viewers hit in English, most hit first. Adds the Viewer hits tab. */
   missingHits?: MissingHit[];
+  initialQuery?: string;
+  initialTab?: string;
 }) {
-  const [tab, setTab] = useState('missing');
-  const [q, setQ] = useState('');
+  const [tab, setTab] = useState(initialTab);
+  const [q, setQ] = useState(initialQuery);
   const [area, setArea] = useState('');
   const [picked, setPicked] = useState<Set<string>>(new Set());
   const [note, setNote] = useState<string>();
@@ -81,7 +85,7 @@ export function Workspace({
           <ol className="adm-lang-hits">
             {missingHits.map((h) => (
               <li key={h.key}>
-                <code>{h.key}</code> {`${h.hits} hits, last seen ${h.lastSeen}`}
+                <a href={`?q=${encodeURIComponent(h.key)}`}>{h.key}</a> {`${h.hits} hits, last seen ${h.lastSeen}`}
               </li>
             ))}
           </ol>

@@ -32,3 +32,10 @@ export async function workspaceData(actor: Actor, locale: Exclude<LocaleCode, 'e
     rows: await rt.storeFor(actor).list(locale),
   });
 }
+
+/** Keys viewers hit in English, most hit first, for the Viewer hits tab. */
+export async function missingReport(actor: Actor, locale: string) {
+  const rt = await i18nRuntime();
+  const rows = await rt.missing(actor).list(locale);
+  return rows.map((r) => ({ key: r.key, hits: r.hits, lastSeen: r.lastSeen.toISOString().slice(0, 10) }));
+}

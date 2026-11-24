@@ -16,11 +16,13 @@ export function WorkspaceScreen({
   rows,
   canApprove,
   missingHits,
+  initialQuery,
 }: {
   locale: { code: string; endonym: string; englishName: string };
   rows: WorkspaceRow[];
   canApprove: boolean;
   missingHits?: MissingHit[];
+  initialQuery?: string;
 }) {
   const router = useRouter();
   const [importing, setImporting] = useState(false);
@@ -42,6 +44,8 @@ export function WorkspaceScreen({
         rows={rows}
         canApprove={canApprove}
         missingHits={missingHits}
+        initialQuery={initialQuery}
+        initialTab={initialQuery ? 'all' : 'missing'}
         onSave={async (key, text) => {
           const result = await saveTranslationAction(locale.code, key, text);
           if (result.ok) router.refresh();

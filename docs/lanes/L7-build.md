@@ -68,3 +68,8 @@ Scoped tests only: `pnpm vitest run <file>`.
 - Code: `lib/i18n/admin-data.ts` (pure builders), `lib/i18n/admin-queries.ts`, `components/admin/languages/*`, `app/admin/(shell)/languages/actions.ts`. The "Viewer hits" tab is built in `Workspace` (prop `missingHits`) and fed in slice 11.
 - Tests: `apps/web/src/components/admin/languages/*.test.tsx`, `apps/web/src/lib/i18n/admin-data.test.ts`.
 - Not done: mockup pixel pass and mobile review (self checked: admin tokens, 44px switch and checkbox, icon plus word status); plan name `languages.fixture.ts` is replaced by the memory runtime in fixture mode.
+
+## Slice 11 (missing key sink and report)
+- `packages/i18n/src/missing.ts`: `MissingKeySink` (batched, flush once a minute per process, bots and prefetch ignored, only enabled non default locales, 500 pending cap, failed flush keeps hits), `DbMissingStore` (writes through `record_missing_key`, `list(locale)` for staff), `MemoryMissing`.
+- Web: the sink is registered by `lib/i18n/runtime.ts`; `getTranslator` passes user agent and prefetch hints; `getLocale` refreshes the enabled list the sink uses. Workspace "Viewer hits" tab lists keys by hits and links each key to its row (`?q=`).
+- Tests: `packages/i18n/src/missing.test.ts`, `missing.int.test.ts`, `Workspace.test.tsx`.

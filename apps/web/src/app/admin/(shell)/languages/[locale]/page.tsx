@@ -4,19 +4,26 @@ import { WorkspaceScreen } from '@/components/admin/languages/WorkspaceScreen';
 import { PageHeader } from '@/components/admin/PageHeader';
 import { can } from '@/lib/admin/can';
 import { requireActor } from '@/lib/data/admin/session-next';
-import { workspaceData } from '@/lib/i18n/admin-queries';
+import { missingReport, workspaceData } from '@/lib/i18n/admin-queries';
 import { localeInfo } from '@ad/shared/messages';
 
 export const metadata: Metadata = { title: 'Translate' };
 export const dynamic = 'force-dynamic';
 
-export default async function WorkspacePage({ params }: { params: Promise<{ locale: string }> }) {
+export default async function WorkspacePage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ locale: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
   const { locale } = await params;
+  const { q } = await searchParams;
   const info = localeInfo(locale);
   if (!info || info.source) notFound();
   const actor = await requireActor(`/admin/languages/${locale}`);
   if (!can(actor.role, 'i18n.edit')) forbidden();
-  const rows = await workspaceData(actor, info.code as 'yo');
+  const [rows, hits] = await Promise.all([workspaceData(actor, info.code as 'yo'), missingReport(actor, info.code)]);
   return (
     <>
       <PageHeader
@@ -28,6 +35,8 @@ export default async function WorkspacePage({ params }: { params: Promise<{ loca
         locale={{ code: info.code, endonym: info.endonym, englishName: info.englishName }}
         rows={rows}
         canApprove={can(actor.role, 'i18n.approve')}
+        missingHits={hits}
+        initialQuery={typeof q === 'string' ? q : undefined}
       />
     </>
   );
