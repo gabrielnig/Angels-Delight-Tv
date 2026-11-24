@@ -24,6 +24,8 @@ import { createLogger } from '@ad/shared';
 import { getActor, getViewer } from '../auth/request-actor';
 import { authRuntime } from '../auth/runtime';
 import { activeProfileKey } from '../viewer/runtime';
+import { turnstileFromEnv, verifyTurnstile } from '../auth/turnstile';
+import { createGuestChallenge } from '../guest/challenge';
 import { guestAudienceFromRequest } from '../guest/guest-audience';
 import { guestSetCookie } from '../guest/guest-cookie';
 import { resolveGuest } from '../guest/resolve-guest';
@@ -70,6 +72,7 @@ function build(): VideoApi {
   });
 
   const guestSecret = activeProfileKey(env.PLAYBACK_TOKEN_SECRET);
+  const turnstileKeys = turnstileFromEnv(env);
   const local = env.STORAGE_DRIVER === 'local' && env.NODE_ENV !== 'production';
 
   return createVideoApi({
@@ -96,6 +99,15 @@ function build(): VideoApi {
       mediaOrigin: env.MEDIA_ORIGIN,
     }),
     guest: {
+      ...(turnstileKeys
+        ? {
+            challenge: createGuestChallenge({
+              limiter: auth.limiter,
+              secret: guestSecret,
+              verify: (token, ip) => verifyTurnstile(turnstileKeys, token, ip),
+            }),
+          }
+        : {}),
       playEnabled: async () => (await themeRuntime()).settings.get('features.guest_play'),
       getGuest: async (request, { mint }) => {
         const resolved = resolveGuest(request, {

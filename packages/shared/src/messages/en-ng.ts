@@ -133,6 +133,9 @@ export const EN_NG = {
     'Ask a grown-up to sign in so you can keep a list that follows you on every device.',
   'guest.myList.added': 'Added to My List',
   'guest.continue.title': 'Continue learning',
+  'guest.challenge.title': 'One quick check',
+  'guest.challenge.body': 'Please confirm you are a person to keep watching.',
+  'guest.challenge.cancel': 'Cancel',
   'guest.import.title': 'Add what you watched here?',
   'guest.import.body':
     'This device remembers where you stopped in some videos. Add them to your history so they follow you on every device.',

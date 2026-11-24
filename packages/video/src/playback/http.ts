@@ -1,6 +1,6 @@
 import { errorResponse, jsonResponse } from '../http/respond';
 import type { PlaybackService } from './service';
-import { Unauthorized, type AccountRole } from '@ad/shared';
+import { ChallengeRequired, RateLimited, Unauthorized, type AccountRole } from '@ad/shared';
 
 export interface PlaybackHttpDeps {
   service: Pick<
@@ -24,6 +24,16 @@ export interface PlaybackHttpDeps {
   ): Promise<{ guestId: string; kids: boolean; setCookie?: string } | null>;
   /** The emergency switch `features.guest_play` (D-G9). Defaults to off when `getGuest` is absent. */
   guestPlayEnabled?(): Promise<boolean>;
+  /**
+   * Escalation for visitors with no account (M40-S11). After enough refusals from one address, a new guest
+   * session needs a human check. `required` and `recordDenial` must never throw into the request: an
+   * implementation fails open, because the rate limits above it already fail closed.
+   */
+  guestChallenge?: {
+    required(ip: string): Promise<boolean>;
+    verify(request: Request, ip: string): Promise<boolean>;
+    recordDenial(ip: string): Promise<void>;
+  };
   assertSameOrigin?(request: Request): void;
   /** Client address after trusted proxy handling. */
   clientIp(request: Request): string;
@@ -67,6 +77,14 @@ export function createPlaybackHandlers(deps: PlaybackHttpDeps) {
     }
   }
 
+  async function recordDenial(request: Request) {
+    try {
+      await deps.guestChallenge?.recordDenial(deps.clientIp(request));
+    } catch {
+      // Counting is best effort and never changes the answer.
+    }
+  }
+
   const DENIED = new Set([401, 403, 429]);
   async function audited(
     route: 'key' | 'master' | 'variant',
@@ -82,6 +100,8 @@ export function createPlaybackHandlers(deps: PlaybackHttpDeps) {
         // A log failure never changes the answer.
       }
     }
+    // A plain 401 is an expired token, not abuse. A refusal or a limit counts toward the challenge.
+    if (response.status === 403 || response.status === 429) await recordDenial(request);
     return response;
   }
 
@@ -111,12 +131,22 @@ export function createPlaybackHandlers(deps: PlaybackHttpDeps) {
             throw error;
           if (!(await deps.guestPlayEnabled())) throw error;
           // The same origin check above ran first, so a cross site POST never reads or sets the guest cookie.
+          const ip = deps.clientIp(request);
+          const challenge = deps.guestChallenge;
+          if (challenge && (await challenge.required(ip)) && !(await challenge.verify(request, ip)))
+            throw new ChallengeRequired();
           const guest = await deps.getGuest(request, { mint: true });
           if (!guest) throw error;
-          const info = await deps.service.startGuestSession(
-            { guestId: guest.guestId, kids: guest.kids, ip: deps.clientIp(request) },
-            videoId,
-          );
+          let info: Awaited<ReturnType<typeof deps.service.startGuestSession>>;
+          try {
+            info = await deps.service.startGuestSession(
+              { guestId: guest.guestId, kids: guest.kids, ip },
+              videoId,
+            );
+          } catch (failure) {
+            if (failure instanceof RateLimited) await recordDenial(request);
+            throw failure;
+          }
           const response = jsonResponse(info);
           if (guest.setCookie) response.headers.append('set-cookie', guest.setCookie);
           return response;

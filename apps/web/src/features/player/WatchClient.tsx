@@ -13,7 +13,11 @@ import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { msg } from '@ad/shared/messages';
 import type { ProgressTransport, PlaybackTransport, WatchData } from '@/lib/data/playback';
-import { createGuestProgressSink, firstUnfinished, readGuestProgress } from '@/lib/guest/progress-store';
+import {
+  createGuestProgressSink,
+  firstUnfinished,
+  readGuestProgress,
+} from '@/lib/guest/progress-store';
 import {
   createFixtureSessionProvider,
   createLocalProgressSink,
@@ -42,6 +46,7 @@ import {
   watchPath,
 } from './routes';
 import { useOnline } from './useOnline';
+import { useGuestChallenge } from './useGuestChallenge';
 import { WatchActions } from './WatchActions';
 
 export interface WatchClientProps {
@@ -50,6 +55,8 @@ export interface WatchClientProps {
   viewer: { profileId: string; kids: boolean; guest?: true };
   /** Whether the Sign in to save dialog offers Create account. Only read for guests. */
   signUpOpen?: boolean;
+  /** The Turnstile site key. With it a visitor can pass the check when the server asks for one (M40-S11). */
+  challengeSiteKey?: string;
   transport: PlaybackTransport;
   /** Where progress goes when it differs from the session transport. Real viewer data always posts to /api/progress. */
   progressTransport?: ProgressTransport;
@@ -109,7 +116,9 @@ export function WatchClient({
   prefsSync: prefsSyncProp,
   testing,
   signUpOpen,
+  challengeSiteKey,
 }: WatchClientProps) {
+  const challenge = useGuestChallenge(viewer.guest ? challengeSiteKey : undefined);
   const router = useRouter();
   const playerBox = useRef<HTMLDivElement>(null);
   const [theatre, setTheatre] = useState(false);
@@ -141,8 +150,9 @@ export function WatchClient({
     return createHttpSessionProvider({
       appOrigin: origin,
       ...(isGuest ? {} : { profileId: viewer.profileId }),
+      ...(challenge.solve ? { solveChallenge: challenge.solve } : {}),
     });
-  }, [origin, transport, viewer.profileId, isGuest]);
+  }, [origin, transport, viewer.profileId, isGuest, challenge.solve]);
 
   const progressSink = useMemo(
     () =>
@@ -321,6 +331,7 @@ export function WatchClient({
         )}
       </div>
       {children}
+      {challenge.element}
       <WatchActions
         videoId={video.id}
         title={video.title}

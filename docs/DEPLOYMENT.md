@@ -49,6 +49,7 @@ DNS and zone:
 4. Create an Origin CA certificate for `<APP_DOMAIN>`, install the cert and key on the VPS under `/opt/angelsdelight/caddy/` (mode 600).
 5. Email DNS for the sending provider: SPF, DKIM, DMARC records. Verify with `pnpm dns:check` (see LAUNCH-RUNBOOK step 1).
 6. Rate limiting rule (free plan allows a small number): throttle `POST /api/auth/*` per IP.
+6a. Guest playback (M40): add a second rate limiting rule, or spend the one rule on a combined expression, for `POST /api/play/*/session` per IP, for example 60 requests per minute, action Managed Challenge. The app already limits guest sessions per guest id (20 a minute) and per network (120 a minute) and, when Turnstile is configured, asks for a check after 3 refusals from one network in 10 minutes. The Cloudflare rule is the outer wall that stops a flood before it reaches the VPS. Visitors behind one mobile network share an address, so keep the number generous.
 7. Do not proxy any video traffic from the VPS. The media domain serves from R2 only.
 
 R2 setup:
@@ -79,11 +80,11 @@ Media domain with signed URLs (default, `EDGE_TOKEN_MODE=worker`):
 2. Attach the Worker to the custom domain `<MEDIA_DOMAIN>` (Worker Custom Domain). Do not also attach a public R2 custom domain to the bucket.
 3. The Worker verifies `exp` and `sig`, strips them for the cache key, honours `Range`, and caches with `public, max-age=31536000, immutable`.
 4. Cache rule for the host: eligible for cache, query string ignored in the cache key.
-5. Budget: the free Workers plan allows 100,000 requests per day, about 1,200 plays per day. Move to the paid plan (about 5 USD per month) before that.
+5. Budget: the free Workers plan allows 100,000 requests per day, about 1,200 plays per day. Move to the paid plan (about 5 USD per month) before that. Guest playback opens the player to anyone with the link, so expect traffic to reach this ceiling sooner than with sign in only. Guest segment URLs live 20 minutes (`limits.guest_segment_minutes`, 5 to 120), shorter than the 2 hours of a signed in viewer, so a copied link stops working quickly.
 
 Fallback or dev-like mode (`EDGE_TOKEN_MODE=off`): attach a public R2 custom domain to `ad-media`, same cache rule. Use only temporarily, since segment URLs are then unsigned (still encrypted, key endpoint still gated).
 
-Turnstile (optional): create a widget for `<APP_DOMAIN>` and set the two env vars.
+Turnstile (optional): create a widget for `<APP_DOMAIN>` and set the two env vars. With keys set, a visitor without an account who triggers 3 refusals from one network in 10 minutes is asked for a check before the next playback session (M40). Without keys that escalation is off and only the limits apply.
 
 ## 4. Production compose
 

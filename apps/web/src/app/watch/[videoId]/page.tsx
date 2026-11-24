@@ -16,6 +16,7 @@ import { WatchClient } from '@/features/player/WatchClient';
 import { WatchDetails } from '@/features/player/WatchDetails';
 import '@/features/player/watch.css';
 import { getSite } from '@/lib/data';
+import { turnstileSiteKey } from '@/server/auth/turnstile-site';
 
 interface PageProps {
   params: Promise<{ videoId: string }>;
@@ -66,6 +67,7 @@ export default async function WatchPage({ params, searchParams }: PageProps) {
         <WatchClient
           data={data}
           viewer={viewer}
+          challengeSiteKey={viewer.guest ? turnstileSiteKey() : undefined}
           signUpOpen={viewer.guest ? (await getSite().content()).signUpOpen : undefined}
           transport={getTransport()}
           progressTransport={getProgressTransport(viewer)}
