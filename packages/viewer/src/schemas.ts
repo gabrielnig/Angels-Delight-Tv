@@ -129,3 +129,18 @@ export const titlesBatchQuery = z.object({
     .min(1)
     .max(20 * 37 + 40),
 });
+
+export const noticesQuery = profileIdQuery.extend({
+  limit: z.coerce.number().int().min(1).max(50).optional(),
+  cursor: cursor.optional(),
+});
+export const noticesReadBody = z.object({
+  profileId: id,
+  ids: z.union([z.literal('all'), z.array(id).min(1).max(100)]),
+});
+export const notificationPrefsBody = z.object({
+  profileId: id,
+  bell: z.boolean().optional(),
+  newEpisodes: z.boolean().optional(),
+  newVideos: z.boolean().optional(),
+});

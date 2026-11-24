@@ -23,6 +23,11 @@ import {
   importGuestProgress,
   listBrowseCategories,
   listMyList,
+  listNotices,
+  countUnread,
+  markRead,
+  getPrefs,
+  setPrefs,
   listProfiles,
   removeFromMyList,
   removeProgress,
@@ -48,6 +53,9 @@ import {
   myListAddBody,
   myListQuery,
   myListRemoveBody,
+  noticesQuery,
+  noticesReadBody,
+  notificationPrefsBody,
   ratingBody,
   ratingQuery,
   profileIdQuery,
@@ -460,6 +468,40 @@ export function createViewerApi(rt: ViewerRuntime) {
         async (req, actor) => {
           const body = parseWith(ratingBody, await readJson(req));
           return json(await setRating(rt.ctx, actor, body));
+        },
+        { mutating: true },
+      ),
+    },
+
+    /** The viewer bell and /notifications (M44-S11). Kids profiles get 403, and a zero count without a table read. */
+    notices: {
+      list: guard(async (req, actor) => {
+        const q = parseWith(noticesQuery, queryObject(req));
+        return json(await listNotices(rt.ctx, actor, q));
+      }),
+      count: guard(async (req, actor) => {
+        const q = parseWith(profileIdQuery, queryObject(req));
+        return json({ count: await countUnread(rt.ctx, actor, q) });
+      }),
+      markRead: guard(
+        async (req, actor) => {
+          const body = parseWith(noticesReadBody, await readJson(req));
+          return json(await markRead(rt.ctx, actor, body));
+        },
+        { mutating: true },
+      ),
+    },
+
+    /** Account notification choices (M44-S14). Adults only, the same kids rule as the notices. */
+    notificationPrefs: {
+      get: guard(async (req, actor) => {
+        const q = parseWith(profileIdQuery, queryObject(req));
+        return json(await getPrefs(rt.ctx, actor, q));
+      }),
+      set: guard(
+        async (req, actor) => {
+          const body = parseWith(notificationPrefsBody, await readJson(req));
+          return json(await setPrefs(rt.ctx, actor, body));
         },
         { mutating: true },
       ),

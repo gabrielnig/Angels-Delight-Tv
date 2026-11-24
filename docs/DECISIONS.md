@@ -1649,4 +1649,8 @@ Decision: the View all list pages keep the shared `.web-grid` (2, 3, 4, 5 across
 - Decision: the 404, removed video and series, server error, root error and offline pages each show exactly one action (Back to Home, Back to Home, Try again, Reload the page, Try again). The reference and the support email are plain text. A search field and popular titles sit beside the message and are not actions. The Report link of M45-S14 AC3 is dropped, so the story is reworded.
 - Options: keep a Report link that replaces Try again; a mailto link as a second action.
 - Why: R39 allows one action, and Try again recovers more viewers than a prefilled email.
+## D-302 The bell is a link on phones and a popover from 960 px, and the count is never polled under Data saver (lane L5, M44-S11)
+- Decision: `ViewerBell` renders an anchor to `/notifications` until a `min-width: 960px` match, then a button that opens a dialog popover (latest 10, Escape and click outside close it, focus returns to the bell). The count is fetched on route change and every 5 minutes while the tab is visible, and skipped under Data saver (fetched when opened). The count route answers `{count: 0}` for a kids profile, all other notice routes answer 403.
+- Options: popover everywhere, a page everywhere, polling with Data saver exempt.
+- Why: popovers are hostile at 360 px (plan 4.5), the page works without script, and Data saver users keep their data.
 - Reversible: yes.
