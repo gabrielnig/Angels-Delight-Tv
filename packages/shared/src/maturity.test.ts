@@ -32,7 +32,7 @@ describe('parseMaturityLabels', () => {
     expect(parseMaturityLabels('G,,12,15,18')).toBeNull();
     expect(parseMaturityLabels('G,PG,12,15,ADULT')).toBeNull();
     expect(parseMaturityLabels('G,PG,PG,15,18')).toBeNull();
-    expect(parseMaturityLabels('G,PG,12,15,–18')).toBeNull();
+    expect(parseMaturityLabels('G,PG,12,15,\u201318')).toBeNull();
   });
 });
 

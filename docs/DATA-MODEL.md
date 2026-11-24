@@ -235,7 +235,8 @@ Index `(updated_at)` for cleanup. Consumed with one atomic `INSERT ... ON CONFLI
 | `failure_code` | text | yes | | Machine code for `failed` |
 | `failure_message` | text | yes | | Readable, sanitized |
 | `tags` | text[] | no | `{}` | At most 10. Editor tags, admin only |
-| `suitability` | text | yes | | `everyone`, `kids` or `older`. `kids_safe` is true for `kids` and `everyone` |
+| `suitability` | text | yes | | Legacy, read only after migration 0038. `everyone`, `kids` or `older`. `kids_safe` is true for `kids` and `everyone` |
+| `maturity_rank` | smallint | yes | | 0 (G) to 4 (18), null until rated. A trigger keeps `kids_safe` equal to `rank = 0` while a rank is set (migration 0038) |
 | `caption_override_reason` | text | yes | | Set when an admin published without approved captions |
 | `captions_enabled` | boolean | yes | | Captions for viewers: null follows the site default (`features.captions_default_available`), true offers them, false offers none (migration 0037) |
 | `captions_off_reason` | text | yes | | Why captions are off. Check `videos_captions_off_has_reason` requires 5 or more characters while `captions_enabled` is false |
@@ -613,5 +614,6 @@ The schema in `packages/db/src/schema` is the source of truth. These changes wer
 | 0033 | New table `staff_exports` (`requester_id` cascade, `kind` audit or analytics, `params`, `scope` all or content, `status` queued, running, ready or failed, `row_count`, `bytes`, `file_key`, `error`, `expires_at`). Row level security: owner only for `ad_app`, all rows for `ad_worker`. |
 | 0034 | `assets` gains `placeholder_blur` (a webp data url under 1 KB, check `length < 1024`) and `candidate_score` (smallint 0 to 100 for poster frames cut from a video). Both are nullable, so older rows are unchanged. |
 | 0037 | `videos.captions_enabled` (boolean, null follows the site default) and `videos.captions_off_reason` (text), check `videos_captions_off_has_reason` (a reason of 5 or more characters while captions are off). Additive, no backfill. |
+| 0038 | `videos.maturity_rank`, `series.maturity_rank` (smallint 0 to 4, checks), `profiles.max_maturity_rank` (smallint, default 4, kids profiles forced to 0 by trigger), backfill (kids safe 0, older 3, the rest 2), triggers `videos_sync_kids_safe` and `series_sync_kids_safe` (`kids_safe` follows rank 0). Additive. |
 
 Row level security summary additions: `search_history` is on and forced like `watch_progress`. `admin_invites`, `auth_lockouts`, `verification_codes`, `site_daily_stats`, `analytics_counters` and `slug_redirects` have no policies and are reached only by their own modules.
