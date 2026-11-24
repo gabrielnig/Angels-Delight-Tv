@@ -73,3 +73,14 @@ Scoped tests only: `pnpm vitest run <file>`.
 - `packages/i18n/src/missing.ts`: `MissingKeySink` (batched, flush once a minute per process, bots and prefetch ignored, only enabled non default locales, 500 pending cap, failed flush keeps hits), `DbMissingStore` (writes through `record_missing_key`, `list(locale)` for staff), `MemoryMissing`.
 - Web: the sink is registered by `lib/i18n/runtime.ts`; `getTranslator` passes user agent and prefetch hints; `getLocale` refreshes the enabled list the sink uses. Workspace "Viewer hits" tab lists keys by hits and links each key to its row (`?q=`).
 - Tests: `packages/i18n/src/missing.test.ts`, `missing.int.test.ts`, `Workspace.test.tsx`.
+
+## Slice 12 (translation adapter) and 12b (usage cap)
+- `packages/video/src/captions/translate`: `Translator` interface, `translateTexts` (batches of 20, cue by cue fallback), glossary (`applyGlossary`), `GoogleTranslator`, `FakeTranslator`, usage cap. `apps/worker/src/translator.ts` `chooseTranslator(env, usage?)`: provider none refuses every job, `google` is always wrapped by `withUsageCap`, no usage store means not configured.
+- 12b: `withUsageCap`, `DbUsageStore`, `MemoryUsageStore`, `monthStart` in `usage.ts`. D-292. Not built: NLLB, LLM adapter and the `apps/translate` sidecar (D-289, ruling R23).
+- Tests: `pnpm vitest run packages/video/src/captions/translate apps/worker/src/translator.test.ts`, int: `usage.int.test.ts` with `TEST_DATABASE_ADMIN_URL`.
+
+## Slice 13 (caption.translate)
+- Queue `caption.translate` (payload `videoId`, `targetLanguage`, `sourceCaptionId?`, `mode new|retranslate`). `CaptionTranslator` in `packages/video/src/captions/translator-job.ts` (`reflowCueText`). `ensureTrack` takes `{kind, published, isDefault}`; `storeRevision` takes `sourceCaptionId` and `sourceSha256`.
+- `CaptionService`: `requestTranslation`, `estimateTranslation`, `translationState` (computed Source changed). Deps `translation` (capability of the engine) and `captionLanguages` (`content.languages`). The web wiring of those two deps comes with the admin caption screens (slice 15).
+- Worker: `translate-handlers.ts` (`registerTranslateHandlers`), `runtime.ts` `buildTranslateDeps`, notifier `translationReady` and `translationFailed`. Setting `translation.glossary` added to the registry.
+- Tests: `pnpm vitest run apps/worker/src/translate-handlers.test.ts packages/queue/src/definitions.test.ts`; int: `translator-job.int.test.ts`, `service-translate.int.test.ts`, `apps/worker/src/notifier.int.test.ts`.
