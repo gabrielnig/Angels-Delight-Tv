@@ -1664,3 +1664,9 @@ Decision: the dialog lists Manual list, Category, New, Trending, Series, Each ca
 - Options: edit one group at a time; allow saving from an empty editor after a failed load; import from a file.
 - Why: the list is small, a whole list replace is simple to reason about, and the textarea is already a paste import.
 - Reversible: yes.
+
+## D-305 Maturity UI: rating asked inside the publish dialog, password step inline, meaning text only for default labels (lane L5, M44)
+- Decision: the video editor has one Maturity rating select that replaces Suitability and sends `maturityRank`. A video with only a legacy suitability shows the rank it maps to (kids and everyone 0, older 3). The publish dialog asks for a missing rating inline, keeps Publish enabled, explains on press, saves the rating and then publishes. The bulk menu action is Set maturity rating (all or nothing, undo restores each previous rank). The series editor saves the series rank and offers Apply to all N episodes behind a confirm that names how many change. The profile form shows Allow titles rated up to, disabled at G for kids, and raising it uses the same inline account password field as the PIN and the Kids exit, lowering needs none. The plain meaning (all ages, ages 12 and up) shows only beside the default labels, a site that renames the labels shows its own words. Guest playback refuses a title above `maturity.guest_max_rank` at session start and again at key time, Kids mode stays at 0.
+- Options: leave publish disabled until rated, a separate password dialog as in the mockup, hardcode the meaning text, check the guest ceiling only when listing.
+- Why: the mockup keeps Publish pressable with an error beside the field, one inline password field is already how profile changes ask for it and keeps one code path, renamed labels would contradict a fixed meaning, and a listing only check would leave a shared guest url playable after the ceiling is lowered.
+- Reversible: yes.

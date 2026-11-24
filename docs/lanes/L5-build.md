@@ -68,3 +68,12 @@ Scoped tests: `TEST_DATABASE_ADMIN_URL=postgres://postgres:postgres@localhost:54
 - Copy: `packages/shared/src/messages/l5-messages.ts` (spread into `EN_NG`). CSS block at the end of `packages/ui/src/components.css`.
 - Tests: `apps/web/src/server/viewer/api-notices.int.test.ts`, `components/notices/*.test.ts(x)`, `components/ViewerChrome.test.tsx`.
 - NOT done in 8a: settings page, email prefs and digest (8b). Episode notice body ("Episodes 6, 7 and 8 are ready") is empty for now.
+
+## Slice 5 (merged by L5a): maturity UI wiring
+- Guest ceiling: `PlaybackDeps.guestMaxRank` (number or function), wired to `maturity.guest_max_rank` in `server/video/runtime.ts`. `startGuestSession` and the guest branch of `key` refuse above it, Kids mode guests are 0. Tests in `packages/video/src/playback/service.test.ts`.
+- Labels: `lib/maturity-context.tsx` (`MaturityLabelsProvider`, `useMaturityLabels`, `useMaturityLabel`), `server/maturity-labels.ts` reads `maturity.labels`. Provided by `AppShell` and the admin shell layout.
+- Admin data: `VideoRecord.maturityRank`, `SeriesRecord.maturityRank`, `VideoPatch.maturityRank`, bulk action `{ type: 'maturity', value }` with undo, checklist key `maturity` ("Choose a maturity rating."), `SeriesPatch.maturityRank` and `applyToEpisodes` in the fixtures. `ConfirmDialog` takes `cancelLabel`.
+- Admin UI: `VideoEditor` select, `PublishDialog` inline rating (`maturity` prop), `VideosList` Set maturity rating, `SeriesEditor` select with Apply to all episodes confirm.
+- Viewer: `TitleCard.maturityRank` (catalog SQL), `CatalogItem.maturityRank`, peek chip `.ad-card__rated` (G draws none), spoken "Rated 15" in the link name, `MaturityBadge` and `MostLikedLabel` in the TitleView meta line. `ProfileForm` select (`ProfileInput.maxMaturityRank`, real and fixture update).
+- Tests: `apps/web/src/lib/data/admin/{video-rules,video-bulk,video-queries,video-commands,collection-commands}.test.ts`, `components/admin/{VideoEditor,PublishDialog,VideosList,SeriesEditor}.test.tsx`, `components/profiles/ProfileForm.test.tsx`, `components/CatalogCard.test.tsx`, `components/title/TitleView.test.tsx`, `packages/catalog/src/titles.int.test.ts`, `packages/ui/src/components/Cards.test.tsx`.
+- Not done: seed-demo ranks, the web route key matrix test, a maturity filter on the admin videos list, Most liked on the series card.
