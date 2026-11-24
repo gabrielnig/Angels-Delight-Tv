@@ -1246,3 +1246,9 @@ Per video tri state, site default (Super admin), Admin changes it with a reason 
 - Options: sign the cookie (it would stop a child changing it no more than the toggle does), or keep it plain as a convenience.
 - Why: R17 says anyone using the device can turn it off, so a lock would promise something the design does not give. Unsigned keeps the page cacheable per cookie value and removes a secret from the page render path.
 - Reversible: yes.
+
+## D-235 A save a visitor asked for is remembered on the device for 30 minutes (lane L1)
+- Decision: When a visitor follows Sign in or Create account from the Sign in to save dialog, the wish (`my-list` or `like` with an item key) is written to `ad:guest:intent:v1` in localStorage with a timestamp. It lives 30 minutes, holds one wish (the latest), and is validated on read (version, kind, item key shape, age); anything else is deleted and ignored. After sign in, `GuestIntentApplier` (inside the signed in chrome) takes a `my-list` intent once, adds the item through the normal My List path (so the offline queue still applies) and says "Added to My List". A `like` intent is left in place for the likes owner (L5). Not now stores nothing. `/my-list` for a guest shows an explainer with Sign in, Create account and Browse, and no data is read; in Kids mode it shows the grown-up note with no account links (R17). Every return path stays a same origin path (`safeNext`), pinned by a test.
+- Options: carry the item in the sign in URL, or keep it in the device.
+- Why: The URL is logged and shared, and a longer `next` is one more thing to validate. The device copy is private, expires, and cannot be used to add anything the visitor did not ask for, because only a validated key from this app is accepted.
+- Reversible: yes.
