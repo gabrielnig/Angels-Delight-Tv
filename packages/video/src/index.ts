@@ -17,3 +17,4 @@ export * from './lifecycle';
 export * from './image';
 export * from './sprite';
 export * from './notices';
+export * from './markers';

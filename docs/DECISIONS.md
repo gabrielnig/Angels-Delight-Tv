@@ -1059,3 +1059,20 @@ Four ids were used twice by parallel lanes. They are never renumbered because la
 - Options: same 2 hours, 20 minutes, 5 minutes.
 - Why: Shrinks the window a shared guest url works. D-120 proved the player recovers from an expired url by minting a new session, which a guest can do because the cookie is there. The address limit is generous because mobile networks share addresses.
 - Reversible: yes, a setting.
+## D-198 Skip markers and chapters live in two tables, not a jsonb column (lane L4)
+- Decision: `video_markers` (one row per kind) and `video_chapters` (ordered by `start_ms`), both cascading from `videos`. Migration 0036, additive.
+- Options: tables, or a jsonb column on `videos`.
+- Why: the database enforces kind, ordering and uniqueness, each save is audited, deletes cascade and the query by video is trivial.
+- Reversible: yes, drop both tables. Nothing else references them.
+
+## D-199 A credits marker may have no end, intro and recap need one (lane L4)
+- Decision: a null `end_ms` on credits means "to the end of the video". Intro and recap must have an end, at least 3 seconds after the start.
+- Options: always require an end, or allow null on credits.
+- Why: a replaced video of another length never leaves a stale credits window.
+- Reversible: yes.
+
+## D-200 Marker and chapter edits apply to published videos at once (lane L4)
+- Decision: saving markers and chapters takes effect for viewers immediately, with no republish step. `MarkerService.getPublished(videoId)` takes no viewer, so guests and accounts use the same call.
+- Options: require a republish, or apply at once.
+- Why: corrections are small and frequent and the data is display only. Skip only seeks forward, so a bad marker never hides content.
+- Reversible: yes.

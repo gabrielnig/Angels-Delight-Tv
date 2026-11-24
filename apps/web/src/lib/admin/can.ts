@@ -9,6 +9,7 @@ const MATRIX = {
   'admin.access': 'editor',
   'video.upload': 'editor',
   'video.edit': 'editor',
+  'video.markers': 'editor',
   'video.publish': 'editor',
   'video.restore': 'editor',
   'video.delete': 'admin',

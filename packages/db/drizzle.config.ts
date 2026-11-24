@@ -10,6 +10,7 @@ export default defineConfig({
     './src/schema/enums.ts',
     './src/schema/identity.ts',
     './src/schema/notices.ts',
+    './src/schema/markers.ts',
     './src/schema/outbox.ts',
     './src/schema/exports.ts',
     './src/schema/pipeline.ts',
