@@ -177,3 +177,24 @@ describe('Mailer staff mail', () => {
     expect((error as MailDeliveryError).cause).toMatchObject({ responseCode: 550 });
   });
 });
+
+describe('Mailer viewer digest (M44-S15)', () => {
+  it('sends the digest with the unsubscribe headers and an unsubscribe link on the app origin', async () => {
+    const transport = new MemoryTransport();
+    const mailer = new Mailer(transport, settings);
+    const sent = await mailer.sendViewerDigest({ to: 'a@example.com', period: 'day', lines: ['5 new videos'], unsubscribeToken: 'tok.sig' });
+    expect(sent?.messageId).toBeTruthy();
+    const [mail] = transport.outbox;
+    expect(mail?.headers?.['List-Unsubscribe']).toBe('<https://tv.example.org/unsubscribe/notices?token=tok.sig>');
+    expect(mail?.headers?.['List-Unsubscribe-Post']).toBe('List-Unsubscribe=One-Click');
+    expect(mail?.text).toContain('https://tv.example.org/notifications');
+  });
+
+  it('skips a suppressed address, because the digest is not essential mail', async () => {
+    const transport = new MemoryTransport();
+    const mailer = new Mailer(transport, { ...settings, isSuppressed: async () => true });
+    const sent = await mailer.sendViewerDigest({ to: 'a@example.com', period: 'week', lines: ['x'], unsubscribeToken: 't' });
+    expect(sent).toBeNull();
+    expect(transport.outbox).toHaveLength(0);
+  });
+});

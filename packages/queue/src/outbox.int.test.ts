@@ -11,6 +11,7 @@ import {
   pruneOutbox,
   type OutboxMailer,
 } from './outbox';
+import { verifyUnsubscribeToken } from './viewer-digest';
 
 const kek = new Uint8Array(randomBytes(32));
 const T0 = new Date('2026-06-01T10:00:00Z');
@@ -37,6 +38,7 @@ function fakeMailer(behaviour: (call: Call, n: number) => Promise<void> | void =
     sendStaffSummary: record('summary'),
     sendStaffExportReady: record('ready'),
     sendStaffExportFailed: record('failed'),
+    sendViewerDigest: record('digest'),
   };
   return { mailer, calls };
 }
@@ -256,5 +258,30 @@ describe.skipIf(!integrationEnabled())('email outbox', () => {
     expect(
       await t.db.execute(sql`select count(*)::int as n from email_outbox where status = 'sent'`),
     ).toBeTruthy();
+  });
+});
+
+describe.skipIf(!integrationEnabled())('email outbox viewer digest (M44-S15)', () => {
+  let t: TestDatabase;
+  beforeAll(async () => {
+    t = await createTestDatabase();
+  });
+  afterAll(async () => {
+    await t?.drop();
+  });
+
+  it('sends a stored digest with its lines and an unsubscribe token that opens for that account only', async () => {
+    const account = '0194a000-0000-7000-8000-0000000000aa';
+    await enqueueEmail(t.db, kek, {
+      kind: 'viewer_digest_weekly',
+      to: 'v@example.org',
+      vars: { period: 'week', lines: 'One\nTwo', accountId: account },
+      now: T0,
+    });
+    const { mailer, calls } = fakeMailer();
+    await drainOutbox({ db: t.db, kek, mailer, now: later(5) });
+    expect(calls[0]).toMatchObject({ method: 'digest', to: 'v@example.org' });
+    expect(calls[0]?.input).toMatchObject({ period: 'week', lines: ['One', 'Two'] });
+    expect(verifyUnsubscribeToken(kek, String(calls[0]?.input.unsubscribeToken), later(5))).toBe(account);
   });
 });

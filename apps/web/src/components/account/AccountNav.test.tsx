@@ -19,6 +19,7 @@ describe('AccountNav (S27 to S31)', () => {
       'Overview',
       'Security',
       'Playback settings',
+      'Notifications',
       'Viewing activity',
       'Data and privacy',
     ]);
@@ -26,6 +27,7 @@ describe('AccountNav (S27 to S31)', () => {
       'Overview',
       'Security',
       'Playback settings',
+      'Notifications',
       'Viewing activity',
       'Data and privacy',
     ]);

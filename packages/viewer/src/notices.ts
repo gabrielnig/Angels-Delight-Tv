@@ -36,6 +36,8 @@ export interface NotificationPrefs {
   emailFrequency: 'off' | 'daily' | 'weekly';
   /** The address the digest goes to with the middle hidden, or null while email is off. */
   addressMasked: string | null;
+  /** True when a sealed address is stored. False while email is on means the page should seal it again. */
+  hasAddress: boolean;
   consentedAt: string | null;
 }
 
@@ -161,6 +163,7 @@ function toPrefs(row: typeof viewerNotificationPrefs.$inferSelect | undefined): 
     newVideos: row?.newVideos ?? true,
     emailFrequency: (row?.emailFrequency as NotificationPrefs['emailFrequency'] | undefined) ?? 'off',
     addressMasked: null,
+    hasAddress: Boolean(row?.addressEnc),
     consentedAt: row?.addressConsentedAt?.toISOString() ?? null,
   };
 }
@@ -214,5 +217,74 @@ export async function setPrefs(
       })
       .returning();
     return toPrefs(row);
+  });
+}
+
+export interface EmailChange {
+  profileId: string;
+  frequency: NotificationPrefs['emailFrequency'];
+  /** The explicit tick that email is wanted (consent, NDPA). Needed to switch on. */
+  confirm?: boolean;
+  /** The account address sealed by the caller with the field key (D-129). Needed to switch on. */
+  sealedAddress?: Uint8Array;
+}
+
+/**
+ * Switches the digest email Off, Daily or Weekly. On needs the confirmation and a sealed address and records the
+ * consent time once. Off clears the address and the consent. Adults only.
+ */
+export async function setEmail(
+  ctx: ViewerContext,
+  actor: Actor,
+  input: EmailChange,
+): Promise<NotificationPrefs> {
+  if (!['off', 'daily', 'weekly'].includes(input.frequency))
+    throw new ValidationFailed({ frequency: ['Choose Off, Daily or Weekly'] });
+  if (input.frequency !== 'off') {
+    const errors: Record<string, string[]> = {};
+    if (input.confirm !== true) errors.confirm = ['Confirm that you want these emails'];
+    if (!input.sealedAddress || input.sealedAddress.length === 0) errors.address = ['We could not read your email address'];
+    if (Object.keys(errors).length > 0) throw new ValidationFailed(errors);
+  }
+  return withAccount(ctx.db, actor, async (tx) => {
+    await adultProfile(tx, actor, input.profileId);
+    const now = ctx.now?.() ?? new Date();
+    const [existing] = await tx
+      .select()
+      .from(viewerNotificationPrefs)
+      .where(eq(viewerNotificationPrefs.accountId, actor.accountId));
+    const on = input.frequency !== 'off';
+    const values = {
+      emailFrequency: input.frequency,
+      addressEnc: on ? Buffer.from(input.sealedAddress as Uint8Array) : null,
+      addressConsentedAt: on ? (existing?.addressConsentedAt ?? now) : null,
+      updatedAt: now,
+    };
+    const [row] = await tx
+      .insert(viewerNotificationPrefs)
+      .values({ accountId: actor.accountId, ...values })
+      .onConflictDoUpdate({ target: viewerNotificationPrefs.accountId, set: values })
+      .returning();
+    return toPrefs(row);
+  });
+}
+
+/** Seals the address again after an account email change cleared it. Does nothing while email is off. */
+export async function saveAddress(
+  ctx: ViewerContext,
+  actor: Actor,
+  input: { profileId: string; sealedAddress: Uint8Array },
+): Promise<void> {
+  await withAccount(ctx.db, actor, async (tx) => {
+    await adultProfile(tx, actor, input.profileId);
+    await tx
+      .update(viewerNotificationPrefs)
+      .set({ addressEnc: Buffer.from(input.sealedAddress) })
+      .where(
+        and(
+          eq(viewerNotificationPrefs.accountId, actor.accountId),
+          sql`${viewerNotificationPrefs.emailFrequency} <> 'off'`,
+        ),
+      );
   });
 }

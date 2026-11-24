@@ -118,12 +118,15 @@ export const viewerNotices = pgTable(
     seriesId: uuid('series_id').references(() => series.id, { onDelete: 'cascade' }),
     videoId: uuid('video_id').references(() => videos.id, { onDelete: 'cascade' }),
     itemCount: integer('item_count').notNull().default(1),
+    /** The highest maturity rank among the titles in the notice. The email digest compares it with the primary profile limit. */
+    rank: smallint('rank').notNull().default(4),
     dedupeKey: text('dedupe_key').notNull(),
     createdAt: createdAt(),
     readAt: timestamptz('read_at'),
     emailedAt: timestamptz('emailed_at'),
   },
   (t) => [
+    check('viewer_notices_rank_range', sql`${t.rank} BETWEEN 0 AND 4`),
     check('viewer_notices_kind_known', sql`${t.kind} IN ('new_episode', 'new_video')`),
     uniqueIndex('viewer_notices_dedupe_uniq').on(t.profileId, t.dedupeKey),
     index('viewer_notices_profile_created_idx').on(t.profileId, t.createdAt.desc()),

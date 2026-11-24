@@ -23,6 +23,11 @@ export const ACCOUNT_PAGES: Record<string, AccountPageCopy> = {
     lead: msg('account.playback.lead'),
     errorTitle: msg('account.playback.error'),
   },
+  '/account/notifications': {
+    title: msg('engage.notify.title'),
+    lead: msg('engage.notify.lead'),
+    errorTitle: msg('engage.notify.loadFailed'),
+  },
   '/account/activity': {
     title: msg('account.activity.title'),
     lead: msg('account.activity.lead'),

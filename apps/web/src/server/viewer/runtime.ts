@@ -1,6 +1,7 @@
 import { catalogCache } from '@ad/catalog';
 import 'server-only';
-import { PasswordHasher } from '@ad/auth';
+import { PasswordHasher, maskEmail } from '@ad/auth';
+import { sealViewerAddress } from '@ad/queue';
 import { accounts, withAccount } from '@ad/db';
 import { type BucketPolicy } from '@ad/security';
 import { VIEWER_RATE_POLICIES, type NameCipher, type ViewerContext } from '@ad/viewer';
@@ -85,6 +86,21 @@ function build(): ViewerRuntime {
       set: (sessionId, accountId, profileId, kidsLocked) =>
         auth.sessions.setProfile(sessionId, accountId, profileId, kidsLocked),
       clear: (sessionId, accountId) => auth.sessions.clearKidsLock(sessionId, accountId),
+    },
+    async sealAddress(actor) {
+      try {
+        const info = await auth.staff.getOverview({
+          accountId: actor.accountId,
+          role: 'viewer',
+          sessionId: '',
+        });
+        return {
+          sealed: sealViewerAddress(services.env.FIELD_KEK, actor.accountId, info.email),
+          masked: maskEmail(info.email),
+        };
+      } catch {
+        return null;
+      }
     },
     async guestAudience(request) {
       const settings = (await themeRuntime()).settings;

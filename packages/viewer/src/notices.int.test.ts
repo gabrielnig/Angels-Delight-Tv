@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { sql } from 'drizzle-orm';
-import { countUnread, getPrefs, listNotices, markRead, setPrefs } from './notices';
+import { countUnread, getPrefs, listNotices, markRead, saveAddress, setEmail, setPrefs } from './notices';
 import { createHarness, type ViewerHarness } from './testing';
 
 describe.skipIf(!process.env.TEST_DATABASE_ADMIN_URL)('viewer notices service (M44-S11, S14, S17)', () => {
@@ -79,6 +79,7 @@ describe.skipIf(!process.env.TEST_DATABASE_ADMIN_URL)('viewer notices service (M
       newVideos: true,
       emailFrequency: 'off',
       addressMasked: null,
+      hasAddress: false,
       consentedAt: null,
     });
     const saved = await setPrefs(h.ctx, u.actor, { profileId: u.profileId, newVideos: false });
@@ -86,5 +87,54 @@ describe.skipIf(!process.env.TEST_DATABASE_ADMIN_URL)('viewer notices service (M
     const again = await setPrefs(h.ctx, u.actor, { profileId: u.profileId, bell: false });
     expect(again).toMatchObject({ bell: false, newVideos: false });
     await expect(setPrefs(h.ctx, u.actor, { profileId: u.profileId, bell: 'yes' as unknown as boolean })).rejects.toMatchObject({ status: 422 });
+  });
+
+  describe('email choice (M44-S14, S15)', () => {
+    const sealed = () => new Uint8Array([1, 2, 3, 4]);
+    const row = async (accountId: string) =>
+      (await h.db.setup.execute(sql`SELECT email_frequency, address_enc, address_consented_at FROM viewer_notification_prefs WHERE account_id = ${accountId}::uuid`)).rows[0] as
+        | { email_frequency: string; address_enc: Buffer | null; address_consented_at: Date | null }
+        | undefined;
+
+    it('switching email on needs the confirmation and a sealed address, and records the consent time', async () => {
+      const u = await h.makeUser();
+      await expect(setEmail(h.ctx, u.actor, { profileId: u.profileId, frequency: 'daily', sealedAddress: sealed() })).rejects.toMatchObject({ status: 422 });
+      await expect(setEmail(h.ctx, u.actor, { profileId: u.profileId, frequency: 'daily', confirm: true })).rejects.toMatchObject({ status: 422 });
+      const saved = await setEmail(h.ctx, u.actor, { profileId: u.profileId, frequency: 'daily', confirm: true, sealedAddress: sealed() });
+      expect(saved).toMatchObject({ emailFrequency: 'daily', hasAddress: true });
+      expect(saved.consentedAt).toBeTruthy();
+      const stored = await row(u.accountId);
+      expect(stored?.address_enc?.length).toBe(4);
+    });
+
+    it('changing between daily and weekly keeps the first consent time', async () => {
+      const u = await h.makeUser();
+      const first = await setEmail(h.ctx, u.actor, { profileId: u.profileId, frequency: 'daily', confirm: true, sealedAddress: sealed() });
+      const second = await setEmail(h.ctx, u.actor, { profileId: u.profileId, frequency: 'weekly', confirm: true, sealedAddress: sealed() });
+      expect(second.emailFrequency).toBe('weekly');
+      expect(second.consentedAt).toBe(first.consentedAt);
+    });
+
+    it('switching off clears the address and the consent', async () => {
+      const u = await h.makeUser();
+      await setEmail(h.ctx, u.actor, { profileId: u.profileId, frequency: 'weekly', confirm: true, sealedAddress: sealed() });
+      const off = await setEmail(h.ctx, u.actor, { profileId: u.profileId, frequency: 'off' });
+      expect(off).toMatchObject({ emailFrequency: 'off', hasAddress: false, consentedAt: null });
+      const stored = await row(u.accountId);
+      expect(stored).toMatchObject({ email_frequency: 'off', address_enc: null, address_consented_at: null });
+    });
+
+    it('saveAddress re-seals only while email is on, and a kids profile cannot change email', async () => {
+      const u = await h.makeUser();
+      await saveAddress(h.ctx, u.actor, { profileId: u.profileId, sealedAddress: sealed() });
+      expect((await row(u.accountId))?.address_enc ?? null).toBeNull();
+      await setEmail(h.ctx, u.actor, { profileId: u.profileId, frequency: 'daily', confirm: true, sealedAddress: sealed() });
+      await h.db.setup.execute(sql`UPDATE viewer_notification_prefs SET address_enc = NULL WHERE account_id = ${u.accountId}::uuid`);
+      expect((await getPrefs(h.ctx, u.actor, { profileId: u.profileId })).hasAddress).toBe(false);
+      await saveAddress(h.ctx, u.actor, { profileId: u.profileId, sealedAddress: new Uint8Array([9, 9]) });
+      expect((await getPrefs(h.ctx, u.actor, { profileId: u.profileId })).hasAddress).toBe(true);
+      await expect(setEmail(h.ctx, u.actor, { profileId: u.kidsProfileId, frequency: 'off' })).rejects.toMatchObject({ status: 403 });
+      await expect(setEmail(h.ctx, u.actor, { profileId: u.profileId, frequency: 'hourly' as never })).rejects.toMatchObject({ status: 422 });
+    });
   });
 });

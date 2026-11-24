@@ -6,3 +6,4 @@ export * from './worker';
 export * from './heartbeat';
 export * from './outbox';
 export * from './digest';
+export * from './viewer-digest';

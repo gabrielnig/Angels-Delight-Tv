@@ -27,7 +27,10 @@ import {
   countUnread,
   markRead,
   getPrefs,
+  saveAddress,
+  setEmail,
   setPrefs,
+  type NotificationPrefs,
   listProfiles,
   removeFromMyList,
   removeProgress,
@@ -119,6 +122,8 @@ export interface ViewerRuntime {
   lock: KidsLockStore;
   /** What a guest is shown: the device Kids mode choice, else the site default. Absent means general (M40). */
   guestAudience?(request: Request): Promise<{ kids: boolean; maxRank?: number }>;
+  /** The account email sealed for the digest (D-129) and masked for display. Absent means email cannot be switched on. */
+  sealAddress?(actor: Actor): Promise<{ sealed: Uint8Array; masked: string } | null>;
   /** Client address after trusted proxy handling, for guest limits. Absent means one shared bucket (dev only). */
   clientIp?(request: Request): string;
 }
@@ -231,6 +236,25 @@ export function createViewerApi(rt: ViewerRuntime) {
     if (!isUuid(value)) throw new NotFound('Not found');
     return value;
   };
+
+  /**
+   * Fills the masked address from the account email while the digest is on, and seals the address again when an
+   * account email change cleared the stored copy (M44-S14 AC3).
+   */
+  async function withAddress(
+    actor: Actor,
+    profileId: string,
+    prefs: NotificationPrefs,
+  ): Promise<NotificationPrefs> {
+    if (prefs.emailFrequency === 'off' || !rt.sealAddress) return prefs;
+    const address = await rt.sealAddress(actor);
+    if (!address) return prefs;
+    if (!prefs.hasAddress) {
+      await saveAddress(rt.ctx, actor, { profileId, sealedAddress: address.sealed });
+      return { ...prefs, hasAddress: true, addressMasked: address.masked };
+    }
+    return { ...prefs, addressMasked: address.masked };
+  }
 
   return {
     profiles: {
@@ -496,12 +520,25 @@ export function createViewerApi(rt: ViewerRuntime) {
     notificationPrefs: {
       get: guard(async (req, actor) => {
         const q = parseWith(profileIdQuery, queryObject(req));
-        return json(await getPrefs(rt.ctx, actor, q));
+        return json(await withAddress(actor, q.profileId, await getPrefs(rt.ctx, actor, q)));
       }),
       set: guard(
         async (req, actor) => {
-          const body = parseWith(notificationPrefsBody, await readJson(req));
-          return json(await setPrefs(rt.ctx, actor, body));
+          const { email, ...body } = parseWith(notificationPrefsBody, await readJson(req));
+          let prefs = await setPrefs(rt.ctx, actor, body);
+          if (email) {
+            const wanted = email.frequency !== 'off';
+            const address = wanted ? await rt.sealAddress?.(actor) : null;
+            if (wanted && !address)
+              throw new ValidationFailed({ address: ['We could not read your email address'] });
+            prefs = await setEmail(rt.ctx, actor, {
+              profileId: body.profileId,
+              frequency: email.frequency as NotificationPrefs['emailFrequency'],
+              confirm: email.confirm,
+              sealedAddress: address?.sealed,
+            });
+          }
+          return json(await withAddress(actor, body.profileId, prefs));
         },
         { mutating: true },
       ),

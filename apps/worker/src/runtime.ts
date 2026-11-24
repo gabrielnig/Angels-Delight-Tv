@@ -1,9 +1,10 @@
 import { makeNotifier } from './notifier';
 import { runNightlyRollup } from '@ad/analytics';
 import { pruneMisses } from '@ad/catalog';
+import { emailHash, normalizeEmail } from '@ad/auth';
 import type { WorkerEnv } from '@ad/config';
 import { Mailer, transportFromSmtpUrl, type MailTransport } from '@ad/mailer';
-import { createDb, createPool, type Database } from '@ad/db';
+import { createDb, createPool, schema, type Database } from '@ad/db';
 import {
   DrizzleJobMirror,
   JobProducer,
@@ -26,6 +27,7 @@ import {
   VideoPipeline,
   keyring,
 } from '@ad/video';
+import { eq } from 'drizzle-orm';
 import type { PgBoss } from 'pg-boss';
 import type { VideoHandlerDeps } from './handlers';
 import { chooseTranscriber } from './transcriber';
@@ -119,7 +121,8 @@ export function buildVideoHandlerDeps(
  * outbox does the retrying, with its own waits.
  */
 export function buildMailDeps(
-  env: Pick<WorkerEnv, 'FIELD_KEK' | 'SMTP_URL' | 'EMAIL_FROM' | 'SUPPORT_EMAIL' | 'APP_ORIGIN'>,
+  env: Pick<WorkerEnv, 'FIELD_KEK' | 'SMTP_URL' | 'EMAIL_FROM' | 'SUPPORT_EMAIL' | 'APP_ORIGIN'> &
+    Partial<Pick<WorkerEnv, 'EMAIL_HASH_PEPPER'>>,
   db: Database,
   options: { transport?: MailTransport } = {},
 ): Omit<MailDeps, 'mirror' | 'logger'> {
@@ -132,6 +135,19 @@ export function buildMailDeps(
     appOrigin: env.APP_ORIGIN,
     supportEmail,
     brand: async () => ({ appName: String(await readSetting(db, 'platform.name')) }),
+    // Bounced and complained addresses get no viewer digest (M44-S15). Without a pepper nothing is held back.
+    isSuppressed: async (address) => {
+      const pepper = env.EMAIL_HASH_PEPPER;
+      const normalized = normalizeEmail(address);
+      if (!pepper || !normalized) return false;
+      const key = Buffer.from(emailHash(normalized, pepper)).toString('hex');
+      const rows = await db
+        .select({ key: schema.emailSuppressions.emailHash })
+        .from(schema.emailSuppressions)
+        .where(eq(schema.emailSuppressions.emailHash, key))
+        .limit(1);
+      return rows.length > 0;
+    },
   });
   return {
     queueImmediate: () => queueImmediateNotices({ db, kek }),

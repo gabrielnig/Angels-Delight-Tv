@@ -1,6 +1,6 @@
 import { ConfigError, loadWorkerEnv } from '@ad/config';
 import { createLogger } from '@ad/shared';
-import { DrizzleHeartbeatStore, startHeartbeat } from '@ad/queue';
+import { DrizzleHeartbeatStore, buildViewerDigests, startHeartbeat } from '@ad/queue';
 import type { PgBoss } from 'pg-boss';
 import { bootWorker } from './boot';
 import { registerVideoHandlers } from './handlers';
@@ -67,6 +67,7 @@ async function main(): Promise<void> {
         refreshTrending: () => refreshTrending(db, new Date()),
         fanoutNotices: () => fanoutNotices(db, new Date()),
         pruneNotices: () => pruneNotices(db, new Date()),
+        buildViewerDigests: () => buildViewerDigests({ db, kek: env.FIELD_KEK }),
         mirror: video.mirror,
         logger,
       });

@@ -14,6 +14,7 @@ export interface EngageDeps {
   refreshTrending(): Promise<{ trending: number; popular: number }>;
   fanoutNotices(): Promise<{ claimed: number; notices: number }>;
   pruneNotices(): Promise<{ deleted: number }>;
+  buildViewerDigests(): Promise<{ queued: number }>;
   mirror: JobMirror;
   logger: Logger;
 }
@@ -60,6 +61,16 @@ export async function registerEngageHandlers(boss: BossLike, deps: EngageDeps): 
     async handle() {
       const result = await deps.pruneNotices();
       logger.info('notices pruned', result);
+    },
+  });
+
+  await registerWorker(boss, {
+    mirror,
+    logger,
+    queue: QUEUES.noticesDigest,
+    async handle() {
+      const result = await deps.buildViewerDigests();
+      logger.info('viewer digests queued', result);
     },
   });
 

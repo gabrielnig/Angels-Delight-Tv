@@ -202,3 +202,38 @@ describe('every template (M21-S01 AC3)', () => {
     expect(out.subject + out.text).not.toMatch(/\p{Extended_Pictographic}/u);
   });
 });
+
+describe('viewer_digest template (M44-S15)', () => {
+  const vars = {
+    period: 'day',
+    count: 3,
+    lines: ['3 new episodes of Everyday Science', '5 new videos', 'New episode of Money Skills'].join('\n'),
+    linkUrl: 'https://tv.example.org/notifications',
+    unsubscribeUrl: 'https://tv.example.org/unsubscribe/notices?token=abc.def',
+  };
+
+  it('renders html and text under 30 KB with the lines, the unsubscribe link and no tracking pixel', () => {
+    const mail = renderTemplate('viewer_digest', vars, brand);
+    expect(mail.subject).toContain('Angels Delight TV');
+    expect(mail.text).toContain('3 new episodes of Everyday Science');
+    expect(mail.text).toContain(vars.unsubscribeUrl);
+    expect(mail.html).toContain(vars.unsubscribeUrl);
+    expect(Buffer.byteLength(mail.html)).toBeLessThan(30 * 1024);
+    expect(mail.html).not.toMatch(/<img/i);
+    expect(mail.html + mail.text).not.toContain('undefined');
+  });
+
+  it('carries the List-Unsubscribe headers for one click unsubscribe', () => {
+    const mail = renderTemplate('viewer_digest', vars, brand);
+    expect(mail.headers).toEqual({
+      'List-Unsubscribe': `<${vars.unsubscribeUrl}>`,
+      'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
+    });
+  });
+
+  it('says week for a weekly digest, and refuses a missing unsubscribe link or a non web link', () => {
+    expect(renderTemplate('viewer_digest', { ...vars, period: 'week' }, brand).subject).toContain('this week');
+    expect(() => renderTemplate('viewer_digest', { ...vars, unsubscribeUrl: '' }, brand)).toThrow(TemplateError);
+    expect(() => renderTemplate('viewer_digest', { ...vars, unsubscribeUrl: 'javascript:alert(1)' }, brand)).toThrow(TemplateError);
+  });
+});
