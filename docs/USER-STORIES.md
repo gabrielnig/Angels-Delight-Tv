@@ -443,18 +443,19 @@ As a viewer on a slow network, I want catalog pages to respond quickly, so that 
 ### M05-S01 Hero banner (Must)
 As a viewer, I want a featured title at the top of Home, so that I see something worth watching at once.
 - AC1: Given Home loads, When a hero is configured, Then I see poster art, title, a one-line description, a Play (or Resume) button and a More info button.
-- AC2: Given multiple hero titles are set, When I wait, Then they rotate every 10 seconds with visible dots and a Pause control, and rotation stops when reduced motion is on.
+- AC2: Given multiple hero titles are set, When I wait, Then they rotate every 10 seconds (site setting) with visible dots and a Pause control, and rotation stops under reduced motion or Data saver. See M41-S02.
 - AC3: Given I tap Play, When the title is a series, Then it plays the next unwatched episode for my profile.
+- AC4: Given a fast connection, Data saver off and no reduced motion, When a slide with a ready clip is shown, Then an optional muted preview clip may play over the still. See M41-S11.
 - Edge: text over the image keeps WCAG contrast through a gradient scrim.
 - Error: if the hero image fails to load, a solid theme colour with the title still shows.
-- Empty: with no hero configured, the newest published title is used.
+- Empty: with no hero configured, the 5 newest published titles rotate as the hero (M41-S03).
 
 ### M05-S02 Horizontal rows (Must)
 As a viewer, I want rows of titles I can scroll sideways, so that I can scan many titles quickly.
-- AC1: Given a desktop at 1280 px or wider, When a row renders, Then 5 cards are visible with a partial peek of the next.
+- AC1: Given a desktop at 1280 px or wider, When a row renders, Then 5.3 cards are visible so the next card peeks (2.3 on phones, 3.3 from 600 px, 4.3 from 960 px, 6.3 from 1920 px).
 - AC2: Given a touch device, When I swipe the row, Then it scrolls with momentum and snaps to cards, and the page does not scroll vertically while I swipe horizontally.
-- AC3: Given a desktop, When I hover the row, Then previous and next arrows appear, and Left and Right arrows scroll when a card is focused.
-- AC4: Given a row has more than 20 items, When I reach the end, Then a "See all" card opens the category or list page.
+- AC3: Given a desktop with a mouse, When I hover the row, Then previous and next arrows appear, and Left and Right arrows scroll when a card is focused.
+- AC4: Given a row has a View all target, When I hover the row (or on touch), Then a View all link shows beside the heading and opens the section list page (M41-S08, M41-S09).
 - Edge: the row types Trending now, Top 10 and Most liked follow the same card and arrow rules (M44-S07, S09, S10).
 - Edge: row heading is a real heading (h2) and cards are in a list for screen readers.
 - Error: a row that fails shows an inline "Could not load this row. Retry" while other rows still render.
@@ -463,7 +464,7 @@ As a viewer, I want rows of titles I can scroll sideways, so that I can scan man
 ### M05-S03 Title cards (Must)
 As a viewer, I want each card to show poster, title and duration, so that I can choose.
 - AC1: Given a card renders, When I look at it, Then I see a 16:9 poster, title (two lines max), duration, and a progress bar if started.
-- AC2: Given a card is hovered on desktop, When 400 ms pass, Then a lightweight overlay shows description, the maturity label (unless G), a Most liked label when earned, and quick actions (Play, My List, rating) with no video preview (data friendly). The overlay is also shown on keyboard focus, and the controls sit outside the aria-hidden text.
+- AC2: Given a hover capable device with a fine pointer, When I rest on a card for 300 ms, Then a hover card shows title, length, subject, description, the maturity label (unless G), a Most liked label when earned, and quick actions (Play, My List, rating, More info), with no video preview (data friendly). Keyboard focus shows the card actions but does not open it (M41-S14).
 - AC3: Given a touch device, When I tap a card, Then it opens the Title detail page.
 - Edge: Data saver loads the smallest poster (320 px).
 - Error: missing poster shows a branded placeholder with the title text.
@@ -479,7 +480,7 @@ As a viewer on mobile data, I want below-the-fold rows to load only when needed,
 
 ### M05-S05 Personal rows first (Must)
 As a viewer, I want Continue Watching and My List at the top, so that my own things are one tap away.
-- AC1: Given I have Continue Watching items, When Home loads, Then the Continue Watching row is first below the hero (or above it on mobile per curation setting).
+- AC1: Given I have Continue Watching items, When Home loads, Then the Continue learning row (title configurable) is first below the hero (or above it on mobile per curation setting).
 - AC2: Given My List has items, When Home loads, Then My List row follows.
 - AC3: Given the editor moved these rows in curation (M17), When Home loads, Then the configured order applies.
 - Edge: rows are hidden when empty (no empty headings).
@@ -493,7 +494,7 @@ As a child, I want a simple Home with big cards, so that I can find videos on my
 - AC1: Given a kids profile, When Home loads, Then only kid titles appear and the hero comes from kid titles.
 - AC2: Given the profile, When the header renders, Then it shows no search suggestions of adult titles and no account link.
 - AC3: Given Kids mode is on for a guest, When Home loads, Then AC1 applies and the header shows only the logo mark (M40-S09).
-- Edge: cards are larger on kids Home (3 per row on mobile).
+- Edge: cards are larger on kids Home from 600 px, and 2.3 per row on mobile like the adult rows (R11).
 - Error: same as adult Home, retry per row.
 - Empty: see M35-S01.
 
@@ -1647,17 +1648,18 @@ As an admin, I want a dashboard when I sign in, so that I see what needs attenti
 
 ### M17-S01 Choose hero titles (Must)
 As an editor, I want to pick the featured title, so that Home highlights what matters.
-- AC1: Given `/admin/home`, When I choose up to 5 published titles for the hero, Then they are saved with order and shown with rotation on Home.
+- AC1: Given `/admin/home`, When I choose up to 5 published titles for the hero, Then they are saved with order and shown with rotation on Home (10 seconds by default).
 - AC2: Given a hero title is unpublished, When viewers load Home, Then it is skipped automatically.
-- Edge: each hero slot can override the headline text and button label (80 chars).
+- Edge: each hero slot can override the headline, description and button label (80 chars), see M41-S16.
 - Error: more than 5 shows a limit message.
-- Empty: with none chosen, the newest title is used (preview shows this).
+- Empty: with none chosen, the 5 newest titles are used (the preview shows this).
 
 ### M17-S02 Create and order rows (Must)
 As an editor, I want to build and reorder rows, so that Home tells the story I want.
-- AC1: Given I add a row, When I choose a type (Manual list, Category, Newest, Series, Most watched this week) and a name, Then it appears in the list. Row types also include Trending now, Top 10 and Most liked (M44-S10).
+- AC1: Given I add a row, When I choose a type (Manual list, Category, New, Trending, Series, Each category, All series) and a name, Then it appears in the list. Row types also include Trending now, Top 10 and Most liked (M44-S10).
 - AC2: Given rows, When I drag one (or use Move up and Move down buttons), Then the order saves and the preview updates.
 - AC3: Given I hide a row, When saved, Then it disappears from Home but is kept.
+- AC4: Given a section, When I open its View all setting, Then I can choose Automatic, Custom link or None (M41-S08).
 - Edge: maximum 12 rows to protect performance.
 - Error: save failure keeps local order with retry.
 - Empty: "No rows yet" with a Create row button.
@@ -1691,7 +1693,7 @@ As an editor, I want rows that fill themselves, so that Home stays fresh with li
 - AC1: Given a Newest row, When new titles publish, Then the row includes them automatically (limit 20).
 - AC2: Given Trending now, When refreshed hourly, Then top titles by weighted plays of the last 7 Lagos days appear (M44-S07).
 - Edge: tie break by newer publish date.
-- Error: thin data hides the row, and Popular may fall back to newest when ticked (M44-S08).
+- Error: with fewer than 4 titles with views the row is hidden and does not repeat New (M41-S05). Popular may fall back to newest when ticked (M44-S08).
 - Empty: not applicable.
 
 ### M17-S07 Publish curation changes (Should)
@@ -2119,7 +2121,7 @@ As Tobi, I want the site to open fast on repeat visits, so that I do not waste d
 
 ### M25-S03 Data saver mode (Must)
 As Tobi, I want a Data saver setting, so that I use less of my bundle.
-- AC1: Given Data saver is on, When I watch, Then quality is capped at 360p, hero rotation and hover previews are off, posters load at 320 px, and next episode is not prefetched.
+- AC1: Given Data saver is on, When I watch, Then quality is capped at 360p, hero rotation and hero preview clips are off, posters load at 320 px, and next episode is not prefetched.
 - AC2: Given the browser sends Save-Data, When I first visit, Then Data saver defaults to on and I am told once.
 - AC3: Given I toggle it in the player menu or settings, When changed, Then it applies at once and persists for the profile.
 - AC4: Given Data saver is on, When I browse, Then the notification count is fetched only when I open the bell (M44-S11).
@@ -2484,6 +2486,7 @@ As an admin, I want to control how a hero image is cropped, so that faces and te
 - AC1: Given the hero crop tool, When I move a focus point, Then the 21 by 9 and 16 by 9 crops follow it with a preview.
 - AC2: Given overlay text, When shown, Then a safe area guide is displayed.
 - Edge: saved focus applies to all variants.
+- Edge: the focus point also positions the preview clip crop (object-position).
 - Error: not applicable.
 - Empty: not applicable.
 
@@ -2880,7 +2883,7 @@ As a guest on a shared device, I want to clear what this device remembers, so th
 
 ## Coverage summary
 
-Total stories: 289. Must: 188. Should: 80. Could: 21.
+Total stories: 309. Must: 199. Should: 87. Could: 23.
 
 | Module | Stories |
 |---|---|
@@ -2921,6 +2924,7 @@ Total stories: 289. Must: 188. Should: 80. Could: 21.
 | M35 | 4 |
 | M36 | 4 |
 | M40 | 18 |
+| M41 | 20 |
 
 Modules with no viewer or admin screen of their own (M04, M22, M23, M24, M30, M31, M33) still carry stories because their behaviour is testable and has user visible effects.
 
@@ -3885,4 +3889,199 @@ As a viewer, I want my ratings and notices handled with care, so that I can trus
 - AC4: Given analytics, When counted, Then only totals per title are used and no rater is identifiable; kids profiles contribute no ratings.
 - Edge: deleting a profile deletes its ratings and notices.
 - Error: partial purge retries until complete (M32-S03).
+- Empty: not applicable.
+
+## M41 Home hero, rows and sections
+
+### M41-S01 Hero slides are still images first (Must)
+As a viewer, I want a large featured title with clear art, so that Home looks alive and I know what to watch.
+- AC1: Given Home loads, When the hero renders, Then each slide shows artwork, title, meta, a one line description, Play (or Continue with time left) and More info, and the first image loads with high priority.
+- AC2: Given a phone under 960 px, When the hero renders, Then the 4:5 art is used, and from 960 px the 16:9 art is used, both with a scrim that keeps text at 4.5:1.
+- AC3: Given the artwork fails to load, When the slide renders, Then a solid theme colour with the title and buttons still shows.
+- Edge: with one slide there are no dots, arrows or pause control.
+- Error: see AC3.
+- Empty: see M41-S03.
+
+### M41-S02 Hero advances by itself and can be controlled (Must)
+As a viewer, I want the hero to move on in about 10 seconds and let me stop it, so that I see more titles without losing control.
+- AC1: Given more than one slide and auto advance on, When 10 seconds pass (the site setting, 5 to 20), Then the next slide crossfades in over 350 ms, and the timer restarts when I use a dot, arrow or swipe.
+- AC2: Given I hover or focus inside the hero, or the tab is hidden, When time passes, Then the slide does not change.
+- AC3: Given I press Pause, When I look at the button, Then it reads "Resume rotation", the slide holds, and the region is announced politely; Resume restarts the timer.
+- AC4: Given reduced motion or Data saver is on, When Home loads, Then slides never advance by themselves, there is no crossfade, and dots and arrows still work.
+- AC5: Given the hero has looped through twice, When the third loop would start, Then rotation stops on the first slide (setting, 0 never stops).
+- AC6: Given the dots, When a slide is running, Then the current dot shows time left as a fill, and dots have a 44 px hit area and `aria-current`.
+- Edge: swipe left and right on touch changes slides with a 50 px threshold.
+- Error: not applicable.
+- Empty: not applicable.
+
+### M41-S03 Hero never empty (Must)
+As an admin, I want Home to look finished even if I have not picked hero titles, so that the site never shows a bare top.
+- AC1: Given no hero titles are chosen, When Home loads, Then the 5 newest live titles that have artwork rotate as the hero.
+- AC2: Given chosen hero titles are all unpublished, When Home loads, Then the same fallback applies; if some are live, only those show.
+- AC3: Given a kids profile, When the fallback is used, Then only kids safe titles show.
+- AC4: Given `/admin/home`, When no hero titles are chosen, Then the screen says "Home shows your 5 newest titles" and the preview lists them.
+- Edge: fewer than 5 live titles shows as many as exist; one title behaves as M41-S01 Edge.
+- Error: not applicable.
+- Empty: with no live titles at all, the empty catalog state of M05-S07 shows.
+
+### M41-S04 Sensible launch rows (Must)
+As the launch engineer, I want default sections seeded by the apply tool, so that Home is complete on day one.
+- AC1: Given an empty site, When `apply` runs, Then Home gets, in order, Continue learning, My List, New this week, Most watched this week, Browse by subject (a row per category) and Series, all visible and kids visible.
+- AC2: Given a published Home layout already exists, When `apply` runs again, Then nothing changes and the report says unchanged.
+- AC3: Given `home.seedDefaults` is false in the client config, When `apply` runs, Then the step is skipped.
+- AC4: Given `--dry-run`, When the step runs, Then it lists what would be created and changes nothing.
+- AC5: Given an admin presses "Restore launch defaults", When they confirm, Then the layout resets, the old one is kept as Previous, and an audit entry records it.
+- Edge: row titles come from the client config when present.
+- Error: a failure leaves the existing layout untouched and names the failing step.
+- Empty: not applicable.
+
+### M41-S05 Row types for learning (Must)
+As a viewer, I want rows for new videos, what is popular, each subject, series and my own progress, so that I find something quickly.
+- AC1: Given New, When Home loads, Then it lists the newest published titles (up to 20).
+- AC2: Given Trending, When at least 4 titles have views in the last 7 days, Then it lists the most viewed; with fewer, the row is hidden and does not copy New.
+- AC3: Given Browse by subject, When categories have at least 4 live titles, Then each shows as its own row in category order, at most 6, skipping a category that already has its own row.
+- AC4: Given Series, When at least 2 series are live, Then a row of series cards shows.
+- AC5: Given I have progress, When Home loads, Then "Continue learning" (title configurable) shows first below the hero.
+- Edge: rows with no items are never rendered; kids profiles only get kids safe titles in every row.
+- Error: one failing row shows an inline retry and the others render (M05-S02).
+- Empty: rows with nothing to show are left out.
+
+### M41-S06 Admin creates, names and removes sections (Must)
+As an admin, I want to add a section, give it a name and rename it later, so that Home says what I mean.
+- AC1: Given `/admin/home`, When I add a section and choose a type (Manual list, Category, New, Trending, Series, Each category, All series), Then I name it and it appears in the list.
+- AC2: Given a section, When I rename it inline, Then Enter saves, Escape cancels, an empty name is refused with "Give the section a name", and the name is at most 60 characters.
+- AC3: Given a section I made, When I delete it and confirm, Then it is removed (titles stay in the catalog); built in sections can only be hidden.
+- AC4: Given 12 sections exist, When I add another, Then I am told the limit and nothing is added.
+- Edge: names are trimmed and double spaces collapse; two sections may share a name but get different slugs.
+- Error: a failed save keeps my changes on screen with Retry.
+- Empty: "No sections yet" with a Create section button.
+
+### M41-S07 Admin reorders sections (Must)
+As an admin, I want to drag sections into order, so that the best rows come first.
+- AC1: Given the section list, When I drag a section, Then the order changes with a drop marker and a live region says "Moved New this week to position 2".
+- AC2: Given I use the keyboard, When I focus Move up or Move down, Then the section moves one place and focus stays on the same section.
+- AC3: Given I save and publish, When viewers load Home, Then the order is the one I set (personal rows follow M05-S05).
+- Edge: the live preview updates within 1 second.
+- Error: failed save keeps the local order with Retry.
+- Empty: not applicable.
+
+### M41-S08 View all link per section (Must)
+As an admin, I want each section to open a full list, so that viewers can see everything in it.
+- AC1: Given a section, When I open its View all setting, Then I can pick Automatic, Custom link or None, and Automatic shows the target in words, for example "Opens All New videos".
+- AC2: Given Custom, When I enter `/browse/farming` or `https://example.org/page`, Then it saves; `//x.com`, `http://` and `javascript:` are refused with "Use a path on this site or an https link".
+- AC3: Given Automatic, When Home loads, Then New opens `/browse/new`, Trending `/browse/trending`, a category `/browse/{slug}`, a series section `/series/{slug}`, a manual list `/browse/row/{slug}`, All series `/browse/series`.
+- AC4: Given a viewer on desktop, When they hover the row, Then "View all" fades in beside the title; on touch it is always visible; keyboard focus reveals it.
+- AC5: Given an external custom link, When it renders, Then it carries an external mark and opens with `rel="noopener noreferrer"`.
+- Edge: the label is a site setting (default "View all"); Continue learning has no View all.
+- Error: a broken target shows the normal not found page.
+- Empty: with None, no link renders.
+
+### M41-S09 List pages behind View all (Must)
+As a viewer, I want a page that lists everything in a section, so that I can browse without sideways scrolling.
+- AC1: Given `/browse/new`, When it loads, Then I see all published titles newest first with Load more and the length filter.
+- AC2: Given `/browse/trending`, When it loads, Then I see the top 50 for the last 7 days in rank order, with no sort control.
+- AC3: Given `/browse/series`, When it loads, Then I see every live series as cards.
+- AC4: Given `/browse/row/{slug}`, When the section is visible, Then I see its titles in the editor's order.
+- AC5: Given an unknown or hidden slug, or a row that is not kids visible on a kids profile, When I open it, Then I get the not found page.
+- Edge: `new`, `trending`, `series` and `row` cannot be category slugs.
+- Error: "Could not load this list. Try again." with Retry.
+- Empty: "Nothing here yet. See what is new." with a link to `/browse/new`.
+
+### M41-S10 Rows feel native (Must)
+As a viewer, I want rows that scroll like a real streaming app, so that browsing is smooth.
+- AC1: Given a row, When it renders, Then 2.3 cards show on a phone, 3.3 from 600 px, 4.3 from 960 px, 5.3 from 1280 px and 6.3 from 1920 px, so the next card peeks.
+- AC2: Given a phone, When I swipe, Then the row scrolls natively and snaps to a card.
+- AC3: Given a mouse, When I hover a row, Then previous and next arrows fade in at the thumbnail middle and scroll by whole cards; touch devices never show arrows.
+- AC4: Given keyboard focus on a card, When I press Left or Right, Then the row scrolls and focus follows.
+- Edge: arrows hide at the ends; reduced motion scrolls without smooth animation.
+- Error: see M05-S02.
+- Empty: see M05-S02.
+
+### M41-S11 Optional muted preview clip in the hero (Should)
+As a viewer on a fast connection, I want a short silent preview on the featured title, so that it feels like a trailer.
+- AC1: Given a fast connection, Data saver off, no reduced motion, a visible tab and a ready clip, When a slide has shown for 1.2 seconds, Then a muted 6 second clip fades in over the still and fades back at the end.
+- AC2: Given any condition fails or the connection type is unknown, When the slide shows, Then only the still shows and no clip is requested.
+- AC3: Given I press Pause or change slide, When the clip is playing, Then it pauses or unloads.
+- AC4: Given the clip errors or stalls for 2 seconds, When it happens, Then it is removed and the still stays.
+- AC5: Given the site setting for previews is off, When Home loads, Then no clip is ever requested.
+- Edge: the connection drops to slow while playing, so the clip stops.
+- Error: see AC4.
+- Empty: a title with no clip uses its still.
+
+### M41-S12 Worker generates preview clips (Should)
+As an admin, I want clips made for me, so that I upload nothing extra.
+- AC1: Given a video finished thumbnails, When the worker runs `video.preview`, Then a 6 second H.264 clip without audio, 854 px wide and at most 800 KB, is stored under `cap/{mediaPrefix}/preview/` and the video shows state ready.
+- AC2: Given the auto mode, When a segment is chosen, Then it avoids the first and last parts and prefers the best lit and sharpest of five candidates.
+- AC3: Given a black or very short video, When the job runs, Then the state is skipped and Home uses the still.
+- AC4: Given a published video with no clip, When the hourly sweep runs, Then up to 10 are queued.
+- Edge: a recut replaces the old file and deletes it.
+- Error: failure marks the clip failed with a plain reason and never fails the video.
+- Empty: not applicable.
+
+### M41-S13 Admin controls the preview clip (Should)
+As an admin, I want to choose or turn off a clip, so that the preview shows the right moment.
+- AC1: Given a video, When I open its Home preview card, Then I see the state (queued, ready, failed, skipped) and the choices Automatic, Pick a segment and Off.
+- AC2: Given Pick a segment, When I enter a start time and see its frame, Then Save queues a recut; starts beyond duration minus 6 seconds are refused.
+- AC3: Given Off, When I save, Then viewers get the still only, and the choice is audited.
+- AC4: Given failed, When I press Retry, Then the job runs again.
+- Edge: Editors may change it, Viewers may not.
+- Error: a failed recut keeps the old clip.
+- Empty: with no clip yet, the card says "A preview is made after the video is processed."
+
+### M41-S14 Hover card on mouse devices (Should)
+As a viewer with a mouse, I want a small card with details when I rest on a title, so that I can decide without opening it.
+- AC1: Given a hover capable device with a fine pointer, When I rest on a card for 300 ms, Then a card opens at 1.25 scale with title, length, subject, Play, My List and More info; passing over under 300 ms opens nothing.
+- AC2: Given the first or last visible card, When the card opens, Then it grows from the left or right edge so it stays on screen.
+- AC3: Given touch or keyboard focus, When I interact, Then no hover card opens (focus shows the usual actions).
+- AC4: Given Escape or leaving the card, When it happens, Then the card closes.
+- Edge: reduced motion shows the card without scale or fade; there is never a video in the card.
+- Error: not applicable.
+- Empty: not applicable.
+
+### M41-S15 Hero and rows states (Must)
+As a viewer, I want clear loading, empty, error and offline states for the hero and rows, so that the page never looks broken.
+- AC1: Given Home is loading, When the first paint happens, Then a skeleton with the exact hero ratio and two row skeletons show after 300 ms with no layout shift.
+- AC2: Given the hero data fails, When Home renders, Then a solid theme panel with the site name shows and the rows still load.
+- AC3: Given offline, When Home opens, Then the saved view shows with the offline banner and no clip is requested.
+- AC4: Given a kids profile, When Home loads, Then the hero and rows are kids safe and cards are larger from 600 px and use 2.3 per row on a phone like the adult rows (R11).
+- Edge: the paused and reduced motion states look intentional, not broken.
+- Error: see AC2 and M05-S08.
+- Empty: see M05-S07.
+
+### M41-S16 Hero slide text (Should)
+As an admin, I want to change a slide's headline, line and button label, so that a title is introduced my way.
+- AC1: Given a hero slot, When I enter a headline, a description or a button label (80 characters each), Then Home uses them for that slide.
+- AC2: Given they are blank, When Home loads, Then the title and its description are used.
+- Edge: Play on a series still plays the next unwatched episode.
+- Error: over 80 characters shows the limit.
+- Empty: not applicable.
+
+### M41-S17 Admin preview matches Home (Should)
+As an admin, I want the curation preview to show the hero fallback, clip badges and View all links, so that I trust what I publish.
+- AC1: Given the preview pane, When I change anything, Then it updates within 1 second for desktop and mobile widths.
+- AC2: Given no hero titles, When the preview renders, Then the fallback titles show with a note.
+- AC3: Given a section, When the preview renders, Then its View all text shows.
+- Edge: the preview never plays video.
+- Error: a preview failure does not block editing.
+- Empty: "Nothing to preview yet."
+
+### M41-S18 Upload your own clip (Could)
+As an admin, I want to upload a short clip instead of a generated one, so that I control the exact moment.
+- AC1: Given the Home preview card, When I upload an MP4 up to 8 MB and 15 seconds, Then the worker re encodes it with the standard settings and uses it.
+- Edge: the uploaded file is never served as is.
+- Error: a wrong type or too long file is refused with a plain message.
+- Empty: not applicable.
+
+### M41-S19 Viewer setting for previews (Could)
+As a viewer, I want to turn hero previews off on my profile, so that Home stays still.
+- AC1: Given Settings, When I switch Play previews off, Then no clip plays for that profile on any device.
+- Edge: Data saver on implies off.
+- Error: not applicable.
+- Empty: not applicable.
+
+### M41-S20 Restore launch defaults (Should)
+As an admin, I want a button that brings back the launch layout, so that I can undo experiments.
+- AC1: Given `/admin/home`, When I press Restore launch defaults and confirm, Then the draft becomes the seeded layout and Publish applies it.
+- Edge: the live layout stays until I publish.
+- Error: failure changes nothing.
 - Empty: not applicable.

@@ -43,12 +43,12 @@ Contents
 |---|---|
 | Transparent nav over hero, solid on scroll; artwork is the visual | Top nav is transparent over hero with a scrim, solid `--color-surface` after 40px scroll (11.8) |
 | Cards: 2:3 and 16:9, about 6 visible on desktop, about 2.5 on mobile with a peeking card | Our videos are 16:9. 5.3 visible from 1280 and 6.3 from 1920, 2.3 on mobile, so the next card always peeks (6, 10) |
-| Hover preview expands after a delay, costs data | No video preview. On hover a card scales to 1.25 after `--hover-card-delay` and shows title, length, subject and Play. Touch has none (11.5) |
+| Hover preview expands after a delay, costs data | No video preview. After `--hover-card-delay` a hover card opens at 1.25 scale in a portal with title, length, subject, Play, My List and More info. Touch and keyboard focus have none (11.5) |
 | Thin progress bar on Continue Watching | 4px rail, accent fill, on the card bottom (11.5) |
 | Continue Watching and My List first, resume button says Resume | Home order puts Continue Watching first for returning users; hero and detail button switch to "Continue" with time left (11.7, 12) |
 | Profile gate after sign in, kids flag, PIN optional | Profile picker tiles page, kids safe flag, no PIN in v1 (11.9) |
 | Skeleton placeholders, dark canvas hides gaps | Skeleton with matched geometry, shimmer left to right (11.14) |
-| Dense autoplay video heroes cost data | Hero is a still image. No autoplay anywhere on Home (11.7) |
+| Dense autoplay video heroes cost data | Hero is a still image first with an optional muted 6 second clip on fast connections with Data saver off and no reduced motion. No video in rows (11.7) |
 | YouTube data saver, quality control, double tap seek, speed menu | Data saver switch, quality menu, double tap 10s, speed menu (11.22, 13) |
 | Up next end card with countdown | Pastel up-next tiles, 5s countdown, cancellable (11.23) |
 | Apple: hero 3 to 8 items, alt text must include banner text | Hero carousel max 5 items, rotating by default with a Pause control, alt text includes any text in image (11.7) |
@@ -323,7 +323,7 @@ Rules:
 - Feedback under 400ms always. Nothing decorative runs longer than 400ms.
 - Shimmer: 1.4s linear loop, left to right. One shimmer per page region, not per element.
 - Hero crossfade 350ms. Auto rotate is on, 10 s per slide, paused by hover, focus, touch and the Pause control, off under reduced motion and Data saver.
-- **Reduced motion** (`prefers-reduced-motion: reduce`): durations become near zero (the tokens do this), no parallax, no scale on hover, no shimmer (use a static sunken fill), no hero rotation, no autoplay of anything, smooth scrolling off, up next countdown remains but without animated ring (number only). State changes still happen, only movement is removed.
+- **Reduced motion** (`prefers-reduced-motion: reduce`): durations become near zero (the tokens do this), no parallax, no scale on hover, no shimmer (use a static sunken fill), no hero rotation, no hero clip, no autoplay of anything, smooth scrolling off, up next countdown remains but without animated ring (number only). State changes still happen, only movement is removed.
 - Data saver on: also drop the slow transitions.
 - No flashing content. Nothing flashes more than 3 times per second.
 
@@ -458,7 +458,7 @@ Correct `type`, `inputmode`, `autocomplete` and `enterkeyhint` on every field. M
 | State | Look |
 |---|---|
 | Default | image, badge, title |
-| Hover (desktop, `hover: hover` and `pointer: fine`, row at least 600px wide) | after `--hover-card-delay` (enter only) the thumbnail scales to `--card-scale` 1.25 over `--motion-hover` with `--ease-out-strong`, shows title, length, subject and Play. Origin left for the first card, right for the last. No video preview |
+| Hover (desktop, `hover: hover` and `pointer: fine`) | after `--hover-card-delay` 300 ms (enter only) a hover card opens in a portal over the card at `--card-scale` 1.25, with title, length, subject, description, Play, My List, rating, More info and the maturity and Most liked marks. It grows from the left edge for the first fully visible card and from the right edge for the last, closes on Escape or 100 ms after the pointer leaves both, and one card is open at a time. Touch and keyboard focus never open it. Reduced motion draws it with no scale or fade. No video preview |
 | Focus | ring around the thumbnail, actions revealed |
 | Active | scale 0.98 |
 | Disabled | not used. Unavailable videos are not shown to viewers |
@@ -481,7 +481,7 @@ Accessibility: card is an `<a>` with accessible name "Title, 4 minutes". Actions
 
 ### 11.6 Rows with paging arrows and touch scroll
 
-- A row has a title (H4, left, linked "See all" on the right for category rows), and a horizontal scroller.
+- A row has a title (H4, left) and a View all link beside it when the section has a target (label is a site setting, default "View all"; revealed on row hover and focus for mouse, always visible at low emphasis on touch), and a horizontal scroller. Columns are 2.3, 3.3, 4.3, 5.3 and 6.3 cards from phone, 600, 960, 1280 and 1920 px, so the next card peeks.
 - Implementation: native `overflow-x: auto` with `scroll-snap-type: x proximity`, `scroll-padding` equal to the gutter, hidden scrollbar, `overscroll-behavior-x: contain`. Touch scroll is plain native swipe. Cards use `flex: 0 0 calc((100% - gaps) / var(--cards-visible))`.
 - Paging arrows (desktop with `hover: hover` and `pointer: fine` only): 44 by 44 circle buttons on the left and right edges, vertically centred on the thumbnails, `--color-surface` fill with `--shadow-2`, chevron icon. Visible when the row is hovered or focused within. Click scrolls by one visible page (minus one card for context). Hidden at the start or end. They are also keyboard focusable and have `aria-label` "Previous titles" and "Next titles".
 - Row is a `<section aria-labelledby>`, the list is `role="list"` or a real `<ul>`. Cards are tab stops, arrow keys are not hijacked in v1. After paging, focus stays on the arrow.
@@ -491,10 +491,10 @@ Accessibility: card is an `<a>` with accessible name "Title, 4 minutes". Actions
 
 ### 11.7 Hero banner
 
-- Content: still image, title (`--text-hero`), one to two line description, meta (category, length), primary action "Play" (or "Continue", with time left), secondary "More info". No autoplay video, no sound.
+- Content: still image, title (`--text-hero`), one to two line description, meta (category, length), primary action "Play" (or "Continue", with time left), secondary "More info". The still shows first. An optional muted 6 second clip (no audio track, decorative, `aria-hidden`) may fade in over it after 1.2 s only when the connection is fast, Data saver is off, reduced motion is off, the tab is visible and the slide is active; any error or a 2 s stall removes it. Editors may replace the headline, description and button label (80 characters each).
 - Layout mobile: 4:5 image, scrim at the bottom, text and buttons stacked inside at the bottom, buttons full width. Desktop: 16:9 up to a max height of 70vh, text block on the left at most 40 characters wide per line, `--color-scrim-bottom` and a left scrim.
-- Carousel: 1 to 5 items, dots indicator (44px hit area, current marked with accent fill plus `aria-current`), rotating by default (section 8), swipe on touch, arrows beside Pause on desktop.
-- States: loading (skeleton with the hero box, text bars), error (fall back to a solid `--color-primary` panel with title text), reduced motion (no crossfade, no parallax).
+- Carousel: 1 to 5 items, dots indicator (44px hit area, current marked with accent fill plus `aria-current`), rotating by default every 10 s (site setting 5 to 20), paused by hover, focus, hidden tab and the Pause control, stopped after two loops, swipe on touch, arrows beside Pause on desktop. With no hero titles chosen the 5 newest live titles with artwork rotate.
+- States: loading (skeleton with the same ratio and height cap as the slide), error (fall back to a solid `--color-primary` panel with title text), reduced motion (no crossfade, no parallax).
 - Text sits on scrim so white text reaches 4.5:1. Title is live text, not baked into the image. Alt text includes any baked text.
 - Resume logic: if the signed in profile has progress on the featured title, the primary button becomes "Continue" and shows "12 min left".
 
@@ -749,7 +749,7 @@ Mobile first
 Low data and slow network
 - Budget per page (compressed): initial JS under 170 KB, CSS under 40 KB, fonts one family subset under 60 KB, Home above the fold images under 200 KB. Each regression needs a note in the PR.
 - Server render pages. Ship little client JS. Split heavy parts (zxcvbn, theme editor, upload) so viewer pages do not load them.
-- Images: responsive `srcset`, WebP, lazy, dominant colour placeholder. No autoplay video, no GIFs, no hover preview clips. Hero is a still.
+- Images: responsive `srcset`, WebP, lazy, dominant colour placeholder. No GIFs and no preview clips in rows. The hero is a still, with the optional muted clip only under the eligibility rules (11.7).
 - Video: HLS adaptive. Start at 360 or 480p on cellular (Network Information API when present, otherwise after first segment timing). Quality menu shows approximate data use per minute. "Data saver" setting (profile level, default on for cellular) caps at 480p, disables autoplay next and prefetch, and loads smaller thumbnails. Never preload video on Home.
 - Prefetch only on strong intent (pointerdown, focus), and never in Data saver.
 - Cache app shell and fonts with a service worker. Pages already visited stay readable offline. Show a clear offline banner.
@@ -817,7 +817,7 @@ Don't
 - Don't use accent yellow as text or as the only edge on a light background.
 - Don't rely on colour alone for status, selection or errors.
 - Don't remove focus outlines. Don't use `outline: none` without a replacement.
-- Don't autoplay video or audio, add hover preview clips, or use heavy animated heroes.
+- Don't autoplay audio, add preview clips to rows, or use heavy animated heroes. The only video on Home is the optional muted hero clip under the eligibility rules (11.7).
 - Don't use infinite spinners for uploads or long tasks.
 - Don't use placeholders as labels.
 - Don't use hover as the only way to reach an action.
