@@ -79,6 +79,15 @@ describe('can(role, action)', () => {
     }
   });
 
+  it('gives Editors i18n.edit, Admins approve and publish, and Super admins the threshold override (M46)', () => {
+    expect(requiredRole('i18n.edit')).toBe('editor');
+    expect(requiredRole('i18n.approve')).toBe('admin');
+    expect(requiredRole('i18n.publish')).toBe('admin');
+    expect(requiredRole('i18n.override')).toBe('super_admin');
+    expect(can('viewer', 'i18n.edit')).toBe(false);
+    expect(can('editor', 'i18n.approve')).toBe(false);
+  });
+
   it('reserves the Super admin stories for super_admin (D-128)', () => {
     for (const action of [
       'roles.view',

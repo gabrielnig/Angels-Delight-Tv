@@ -52,3 +52,8 @@ Scoped tests only: `pnpm vitest run <file>`.
 - Root layout now mounts `I18nProvider` with `CLIENT_NAMESPACES` (`lib/i18n/namespaces.ts`). Add a namespace there when a wave moves client copy.
 - Test: `apps/web/src/lib/i18n/pseudo-render.test.tsx` renders wave components in the pseudo catalog.
 - Left for later waves: strings that live inside `@ad/ui` components (TopNav aria labels, SiteFooter, States), home rows, cards, hero, browse, search, title, account, auth, profiles, player menus.
+## Slice 8 (`@ad/i18n`)
+- `packages/i18n`: `summarize` and `hashText` (status.ts, core keys by prefix list `CORE_PREFIXES`), `TranslationStore` with `MemoryStore` and `DbStore(db, actor?)`, `CatalogCache` (version bump), `TranslationService` (save, approve, approveMany, publish with threshold and Super admin override, unpublish; audit and settings are injected).
+- Permissions in `apps/web/src/lib/admin/can.ts`: `i18n.edit` (editor), `i18n.approve` and `i18n.publish` (admin), `i18n.override` (super admin).
+- Tests: `pnpm vitest run packages/i18n` (the DbStore test needs `TEST_DATABASE_ADMIN_URL`).
+- Not wired yet: the web runtime that builds the service and registers the cache as the catalog overlay (done with the admin screens in slice 10).

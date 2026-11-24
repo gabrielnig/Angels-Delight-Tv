@@ -347,6 +347,18 @@ importers:
         specifier: ^4.23.15
         version: 4.23.15
 
+  packages/i18n:
+    dependencies:
+      '@ad/db':
+        specifier: workspace:*
+        version: link:../db
+      '@ad/shared':
+        specifier: workspace:*
+        version: link:../shared
+      drizzle-orm:
+        specifier: ^0.45.4
+        version: 0.45.4(@opentelemetry/api@1.10.0)(@types/pg@8.23.1)(pg@8.23.1)
+
   packages/launch:
     dependencies:
       '@ad/auth':

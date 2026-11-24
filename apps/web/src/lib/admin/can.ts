@@ -38,6 +38,10 @@ const MATRIX = {
   'audit.read': 'admin',
   'audit.security': 'super_admin',
   'audit.export': 'super_admin',
+  'i18n.edit': 'editor',
+  'i18n.approve': 'admin',
+  'i18n.publish': 'admin',
+  'i18n.override': 'super_admin',
   'system.view': 'admin',
   'system.jobs': 'super_admin',
 } as const satisfies Record<string, Exclude<AccountRole, 'viewer'>>;

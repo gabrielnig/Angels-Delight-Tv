@@ -34,6 +34,10 @@ export const ACTION_LABELS: Record<AdminAction, string> = {
   'audit.read': 'Read content actions in the audit log',
   'audit.security': 'Read security entries in the audit log',
   'audit.export': 'Export the audit log',
+  'i18n.edit': 'Edit translations as drafts',
+  'i18n.approve': 'Approve translations',
+  'i18n.publish': 'Publish or unpublish a language',
+  'i18n.override': 'Publish a language below the threshold',
   'system.view': 'See system health',
   'system.jobs': 'Retry or discard failed jobs',
 };
