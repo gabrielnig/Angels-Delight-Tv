@@ -146,3 +146,9 @@ export const TheatreIcon = (p: IconProps) => (
     <rect x="2.5" y="7" width="19" height="10" rx="2" />
   </Icon>
 );
+
+export const ChevronRightIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M9 6l6 6-6 6" />
+  </Icon>
+);

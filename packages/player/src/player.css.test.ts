@@ -160,3 +160,25 @@ describe('skip button and chapters (M43)', () => {
     expect(css).toMatch(/\.adp-skip:focus-visible,[\s\S]*?\{[^}]*box-shadow:\s*0 0 0 3px var\(--color-player-bg\)/);
   });
 });
+
+describe('settings menu (L4-07)', () => {
+  const rule = (selector: string) =>
+    new RegExp(`${selector.replace(/[.[\]()]/g, '\\$&')}\\s*\\{([^}]*)\\}`).exec(css)?.[1] ?? '';
+
+  it('draws the switch from tokens, with the knob moving by transform only', () => {
+    const track = rule('.adp-switch');
+    expect(track).toContain('var(--color-player-switch-off)');
+    expect(rule('.adp-switch[data-on]')).toContain('var(--color-accent)');
+    const knob = rule('.adp-switch__knob');
+    expect(knob).toMatch(/transition:\s*transform var\(--motion-fast\)/);
+    expect(knob).not.toMatch(/#[0-9a-fA-F]{3,8}\b/);
+  });
+
+  it('keeps every menu row at the 44 px touch target', () => {
+    expect(rule('.adp-menu__row')).toContain('min-height: var(--touch-target)');
+  });
+
+  it('keeps a toast inside a narrow player so it cannot overflow at 360 px', () => {
+    expect(rule('.adp-toast')).toMatch(/max-width:\s*calc\(100% - /);
+  });
+});

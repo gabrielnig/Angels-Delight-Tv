@@ -97,7 +97,7 @@ describe('PlayerView chrome', () => {
         return selector === ':focus-visible' ? true : original.call(this, selector);
       });
       const { region } = setup();
-      const button = screen.getByRole('button', { name: /^Speed/ });
+      const button = screen.getByRole('button', { name: 'Settings' });
       act(() => button.focus());
       act(() => void vi.advanceTimersByTime(10_000));
       expect(region.getAttribute('data-controls')).toBe('visible');

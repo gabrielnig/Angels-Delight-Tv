@@ -193,6 +193,7 @@ export class PlayerController {
       marker: null,
       chapter: null,
       backOnline: false,
+      autoplayNext: this.prefs.autoplayNext,
       announce: '',
     };
   }
@@ -452,6 +453,13 @@ export class PlayerController {
       this.selected = 'auto';
     this.o.engine.setQuality(this.selected, cap);
     this.set({ quality: this.qualityState() });
+    this.persist();
+  }
+
+  /** The Settings switch (R15). Saved with the other preferences and applied to this video's end at once. */
+  setAutoplayNext(on: boolean): void {
+    this.prefs.autoplayNext = on;
+    this.set({ autoplayNext: on });
     this.persist();
   }
 

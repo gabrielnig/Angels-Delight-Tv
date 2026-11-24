@@ -1288,3 +1288,9 @@ Per video tri state, site default (Super admin), Admin changes it with a reason 
 - Options: a free text or per profile countdown, always counting down, prefetching with Data saver on.
 - Why: one admin number is enough, an unattended screen should stop spending a viewer's data, and Data saver must mean nothing is fetched early.
 - Reversible: yes.
+
+## D-242 One Settings button holds speed, quality, autoplay, captions and shortcuts, and a kids profile cannot flip autoplay (lane L4, L4-07)
+- Decision: the separate Speed and Quality buttons are replaced by one Settings button on every screen size. Its rows show their current value and open a submenu for Speed and Quality (Audio appears only with more than one track). Autoplay next is a switch that saves through the same preference as the account page and changes the end screen at once. Caption appearance and, on desktop only, Keyboard shortcuts open from rows. On a kids profile the switch is shown but locked with "Set by a grown up", matching the account page lock.
+- Options: keep the loose buttons and add a gear, or one panel for everything.
+- Why: one predictable place, the same on phone and desktop, and the shortcuts dialog gets a visible entry point instead of only the question mark key.
+- Reversible: yes.

@@ -33,12 +33,12 @@ import {
   PipIcon,
   PlayIcon,
   SettingsIcon,
-  SpeedIcon,
   TheatreIcon,
   VolumeIcon,
 } from './icons';
 import { CaptionAppearance } from './CaptionAppearance';
-import { CaptionRows, ChapterRows, MenuShell, QualityRows, SpeedRows, type MenuId } from './Menus';
+import { CaptionRows, ChapterRows, MenuShell, type MenuId } from './Menus';
+import { SettingsMenu } from './SettingsMenu';
 import { ErrorOverlay, Spinner, Toast, UpNextTile, type OverlayLinks } from './Overlays';
 import { SeekBar } from './SeekBar';
 import { SkipButton } from './SkipButton';
@@ -52,6 +52,8 @@ export interface PlayerViewProps {
   posterUrl?: string | undefined;
   /** Caption size, background and contrast for this profile (M11-S03). */
   captionStyle?: CaptionStyle | undefined;
+  /** A kids profile follows its grown up's autoplay choice, so the switch is shown but cannot be changed. */
+  lockAutoplay?: boolean | undefined;
   /** Saves a changed caption style. Without it the Caption appearance entry is not offered. */
   onCaptionStyleChange?: ((style: CaptionStyle) => void) | undefined;
   videoRef?: Ref<HTMLVideoElement>;
@@ -340,8 +342,6 @@ export function PlayerView(props: PlayerViewProps) {
     }
   };
 
-  const speedLabel =
-    state.rate === 1 ? msg('player.menu.speed') : msg('player.speedRate', { rate: state.rate });
   const multiLanguage = tracks.length > 1;
   const time = useMemo(() => {
     const total = formatClock(state.duration);
@@ -494,7 +494,7 @@ export function PlayerView(props: PlayerViewProps) {
           stillWatching={state.upNext.stillWatching}
           onKeepWatching={() => controller?.keepWatching()}
           onStopAutoplay={() => controller?.stopAutoplay()}
-          autoplayNext={props.autoplayNext ?? false}
+          autoplayNext={controller ? state.autoplayNext : (props.autoplayNext ?? false)}
           onPlayNext={() => controller?.playNext()}
           onCancel={() => controller?.cancelCountdown()}
           onReplay={() => controller?.replay()}
@@ -685,94 +685,45 @@ export function PlayerView(props: PlayerViewProps) {
                 />
               </MenuShell>
             ) : null}
-            {menu === 'captionStyle' ? (
-              <CaptionAppearance
-                style={capStyle}
-                onChange={changeCaptionStyle}
-                onClose={closeMenu}
-              />
-            ) : null}
           </div>
         ) : null}
 
-        {!compact ? (
-          <div className="adp-anchor">
-            <button
-              type="button"
-              className="adp-ctl"
-              aria-haspopup="menu"
-              aria-expanded={menu === 'speed'}
-              aria-label={speedLabel}
-              onClick={toggleMenu('speed')}
-            >
-              <SpeedIcon />
-            </button>
-            {menu === 'speed' ? (
-              <MenuShell id="adp-menu-speed" label="Speed" onClose={closeMenu}>
-                <SpeedRows
-                  rate={state.rate}
-                  onSelect={(r) => {
-                    controller?.setRate(r);
-                    closeMenu();
-                  }}
-                />
-              </MenuShell>
-            ) : null}
-          </div>
-        ) : null}
-
-        {!compact && showQuality ? (
-          <div className="adp-anchor">
-            <button
-              type="button"
-              className="adp-ctl adp-ctl--text"
-              aria-haspopup="menu"
-              aria-expanded={menu === 'quality'}
-              aria-label={msg('player.qualityButton', { label: qualityMenu.buttonLabel })}
-              onClick={toggleMenu('quality')}
-            >
-              <SettingsIcon />
-              <span className="adp-ctl__label">{qualityMenu.buttonLabel}</span>
-            </button>
-            {menu === 'quality' ? (
-              <MenuShell
-                id="adp-menu-quality"
-                label="Quality"
-                onClose={closeMenu}
-                footer={dataSaverNote}
-              >
-                <QualityRows
-                  menu={qualityMenu}
-                  onSelect={(sel) => {
-                    controller?.selectQuality(sel);
-                    closeMenu();
-                  }}
-                />
-              </MenuShell>
-            ) : null}
-          </div>
-        ) : null}
-
-        {compact ? (
-          <div className="adp-anchor">
-            <button
-              type="button"
-              className="adp-ctl"
-              aria-haspopup="menu"
-              aria-expanded={menu === 'settings'}
-              aria-label={msg('player.settings')}
-              onClick={toggleMenu('settings')}
-            >
-              <SettingsIcon />
-            </button>
-            {menu === 'settings' ? (
-              <MenuShell
-                id="adp-menu-settings"
-                label="Settings"
-                onClose={closeMenu}
-                footer={dataSaverNote}
-              >
-                {chapterList.length > 0 ? (
+        <div className="adp-anchor">
+          <button
+            type="button"
+            className="adp-ctl"
+            aria-haspopup="menu"
+            aria-expanded={menu === 'settings'}
+            aria-label={msg('player.settings')}
+            onClick={toggleMenu('settings')}
+          >
+            <SettingsIcon />
+          </button>
+          {menu === 'settings' ? (
+            <SettingsMenu
+              rate={state.rate}
+              onRate={(r) => controller?.setRate(r)}
+              quality={showQuality ? qualityMenu : null}
+              onQuality={(sel) => controller?.selectQuality(sel)}
+              dataSaverNote={dataSaverNote}
+              autoplayNext={state.autoplayNext}
+              autoplayLocked={props.lockAutoplay}
+              onAutoplay={(on) => controller?.setAutoplayNext(on)}
+              onCaptionStyle={
+                props.onCaptionStyleChange && state.captions.available
+                  ? openCaptionStyle
+                  : undefined
+              }
+              onShortcuts={
+                compact
+                  ? undefined
+                  : () => {
+                      setMenu(null);
+                      setHelpOpen(true);
+                    }
+              }
+              chapters={
+                compact && chapterList.length > 0 ? (
                   <>
                     <p className="adp-menu__section">{msg('player.chapters')}</p>
                     <ChapterRows
@@ -784,32 +735,15 @@ export function PlayerView(props: PlayerViewProps) {
                       }}
                     />
                   </>
-                ) : null}
-                <p className="adp-menu__section">{msg('player.menu.speed')}</p>
-                <SpeedRows rate={state.rate} onSelect={(r) => controller?.setRate(r)} />
-                {showQuality ? (
-                  <>
-                    <p className="adp-menu__section">{msg('player.menu.quality')}</p>
-                    <QualityRows
-                      menu={qualityMenu}
-                      onSelect={(sel) => controller?.selectQuality(sel)}
-                    />
-                  </>
-                ) : null}
-                {props.onCaptionStyleChange && state.captions.available ? (
-                  <button
-                    type="button"
-                    role="menuitem"
-                    className="adp-menu__row"
-                    onClick={openCaptionStyle}
-                  >
-                    {msg('player.captionStyle.link')}
-                  </button>
-                ) : null}
-              </MenuShell>
-            ) : null}
-          </div>
-        ) : null}
+                ) : null
+              }
+              onClose={closeMenu}
+            />
+          ) : null}
+          {menu === 'captionStyle' ? (
+            <CaptionAppearance style={capStyle} onChange={changeCaptionStyle} onClose={closeMenu} />
+          ) : null}
+        </div>
 
         {pipSupported ? (
           <button

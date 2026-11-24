@@ -185,4 +185,35 @@ describe('up next and autoplay (L4-08)', () => {
       expect(c.getState().upNext.stillWatching).toBe(false);
     });
   });
+
+  describe('Autoplay next switch (L4-07)', () => {
+    it('starts from the saved preference', () => {
+      expect(setup().c.getState().autoplayNext).toBe(true);
+      expect(setup({ preferences: { autoplayNext: false } }).c.getState().autoplayNext).toBe(false);
+    });
+
+    it('setAutoplayNext updates the state and tells the host to save it', () => {
+      const onPreferencesChange = vi.fn();
+      const { c } = setup({ onPreferencesChange });
+      c.setAutoplayNext(false);
+      expect(c.getState().autoplayNext).toBe(false);
+      expect(onPreferencesChange).toHaveBeenLastCalledWith(
+        expect.objectContaining({ autoplayNext: false }),
+      );
+    });
+
+    it('turning it off stops the countdown from running at the end', () => {
+      const { c, media } = setup();
+      c.setAutoplayNext(false);
+      media.finish();
+      expect(c.getState().upNext.countdown).toBeNull();
+    });
+
+    it('turning it on during the video counts down at the end', () => {
+      const { c, media } = setup({ preferences: { autoplayNext: false } });
+      c.setAutoplayNext(true);
+      media.finish();
+      expect(c.getState().upNext.countdown).toBe(5);
+    });
+  });
 });

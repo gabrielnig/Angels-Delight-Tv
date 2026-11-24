@@ -77,7 +77,7 @@ describe('PlayerView', () => {
       expect(screen.getByRole('button', { name: 'Pause' })).toBeTruthy();
     });
 
-    it('keeps the tab order play, seek, time, volume, captions, speed, quality, full screen', () => {
+    it('keeps the tab order play, seek, time, volume, captions, settings, full screen', () => {
       const { engine } = setup({ captions: [en] });
       act(() => engine.emit({ type: 'levels', heights: [360, 480, 720] }));
       const names = [
@@ -92,9 +92,10 @@ describe('PlayerView', () => {
       const idx = (re: RegExp) => names.findIndex((n) => re.test(n));
       expect(idx(/^Time/)).toBeGreaterThan(idx(/^Volume/));
       expect(idx(/^Captions/)).toBeGreaterThan(idx(/^Time/));
-      expect(idx(/^Speed/)).toBeGreaterThan(idx(/^Captions/));
-      expect(idx(/^Quality/)).toBeGreaterThan(idx(/^Speed/));
-      expect(idx(/full screen/i)).toBeGreaterThan(idx(/^Quality/));
+      expect(idx(/^Settings/)).toBeGreaterThan(idx(/^Captions/));
+      expect(idx(/full screen/i)).toBeGreaterThan(idx(/^Settings/));
+      expect(idx(/^Speed/)).toBe(-1);
+      expect(idx(/^Quality/)).toBe(-1);
     });
 
     it('exposes the seek bar as a slider with spoken value text', () => {
@@ -248,10 +249,16 @@ describe('PlayerView', () => {
   });
 
   describe('menus', () => {
-    it('opens the speed menu as radio items, applies a choice and returns focus', async () => {
-      const { ui, media } = setup();
-      const button = screen.getByRole('button', { name: 'Speed' });
+    async function openSettings(ui: ReturnType<typeof userEvent.setup>) {
+      const button = screen.getByRole('button', { name: 'Settings' });
       await ui.click(button);
+      return button;
+    }
+
+    it('opens Speed from Settings as radio items, applies a choice and returns focus', async () => {
+      const { ui, media } = setup();
+      const button = await openSettings(ui);
+      await ui.click(screen.getByRole('menuitem', { name: 'Speed, Normal' }));
       const menu = screen.getByRole('menu', { name: 'Speed' });
       const rows = within(menu).getAllByRole('menuitemradio');
       expect(rows.map((r) => r.textContent)).toEqual([
@@ -271,10 +278,9 @@ describe('PlayerView', () => {
       expect(document.activeElement).toBe(button);
     });
 
-    it('closes a menu with Escape and returns focus to its button', async () => {
+    it('closes Settings with Escape and returns focus to its button', async () => {
       const { ui } = setup();
-      const button = screen.getByRole('button', { name: 'Speed' });
-      await ui.click(button);
+      const button = await openSettings(ui);
       await ui.keyboard('{Escape}');
       expect(screen.queryByRole('menu')).toBeNull();
       expect(document.activeElement).toBe(button);
@@ -282,7 +288,8 @@ describe('PlayerView', () => {
 
     it('moves between rows with the arrow keys', async () => {
       const { ui } = setup();
-      await ui.click(screen.getByRole('button', { name: 'Speed' }));
+      await openSettings(ui);
+      await ui.click(screen.getByRole('menuitem', { name: 'Speed, Normal' }));
       expect(document.activeElement?.textContent).toBe('Normal');
       await ui.keyboard('{ArrowDown}');
       expect(document.activeElement?.textContent).toBe('1.25x');
@@ -294,7 +301,8 @@ describe('PlayerView', () => {
         engine.emit({ type: 'levels', heights: [360, 480, 720] });
         engine.emit({ type: 'level', height: 720 });
       });
-      await ui.click(screen.getByRole('button', { name: 'Quality, Auto' }));
+      await openSettings(ui);
+      await ui.click(screen.getByRole('menuitem', { name: 'Quality, Auto' }));
       const menu = screen.getByRole('menu', { name: 'Quality' });
       const names = within(menu)
         .getAllByRole('menuitemradio')
@@ -302,7 +310,8 @@ describe('PlayerView', () => {
       expect(names).toEqual(['Auto, 720p now', '720p', '480p', '360p']);
       await ui.click(within(menu).getByRole('menuitemradio', { name: '480p' }));
       expect(engine.qualityCalls.at(-1)).toEqual({ selection: 480, cap: null });
-      expect(screen.getByRole('button', { name: 'Quality, 480p' })).toBeTruthy();
+      await openSettings(ui);
+      expect(screen.getByRole('menuitem', { name: 'Quality, 480p' })).toBeTruthy();
     });
 
     it('disables higher rungs under data saver and explains why', async () => {
@@ -311,7 +320,8 @@ describe('PlayerView', () => {
         { links: { playbackSettings: '/account/playback' } },
       );
       act(() => engine.emit({ type: 'levels', heights: [360, 480, 720] }));
-      await ui.click(screen.getByRole('button', { name: /^Quality/ }));
+      await openSettings(ui);
+      await ui.click(screen.getByRole('menuitem', { name: /^Quality/ }));
       const menu = screen.getByRole('menu', { name: 'Quality' });
       const high = within(menu).getByRole('menuitemradio', { name: /^720p/ });
       expect(high.getAttribute('aria-disabled')).toBe('true');
@@ -328,10 +338,11 @@ describe('PlayerView', () => {
       expect(engine.qualityCalls.at(-1)).toBeUndefined();
     });
 
-    it('hides the quality menu for a single rendition', () => {
-      const { engine } = setup();
+    it('hides the quality row for a single rendition', async () => {
+      const { ui, engine } = setup();
       act(() => engine.emit({ type: 'levels', heights: [360] }));
-      expect(screen.queryByRole('button', { name: /^Quality/ })).toBeNull();
+      await openSettings(ui);
+      expect(screen.queryByRole('menuitem', { name: /^Quality/ })).toBeNull();
     });
 
     it('shows a caption language menu only when several approved languages exist', async () => {
@@ -591,9 +602,11 @@ describe('PlayerView', () => {
       expect(screen.getByRole('button', { name: 'Mute' })).toBeTruthy();
       await ui.click(screen.getByRole('button', { name: 'Settings' }));
       const menu = screen.getByRole('menu', { name: 'Settings' });
-      expect(within(menu).getByText('Speed')).toBeTruthy();
-      expect(within(menu).getByText('Quality')).toBeTruthy();
-      await ui.click(within(menu).getByRole('menuitemradio', { name: '1.25x' }));
+      expect(within(menu).getByRole('menuitem', { name: 'Speed, Normal' })).toBeTruthy();
+      expect(within(menu).getByRole('menuitem', { name: 'Quality, Auto' })).toBeTruthy();
+      expect(within(menu).queryByRole('menuitem', { name: 'Keyboard shortcuts' })).toBeNull();
+      await ui.click(within(menu).getByRole('menuitem', { name: 'Speed, Normal' }));
+      await ui.click(screen.getByRole('menuitemradio', { name: '1.25x' }));
       expect(media.playbackRate).toBe(1.25);
     });
   });
@@ -671,11 +684,17 @@ describe('PlayerView', () => {
     });
 
     it('shows the picture in picture button only where supported and toasts a refusal', async () => {
-      Object.defineProperty(document, 'pictureInPictureEnabled', { value: false, configurable: true });
+      Object.defineProperty(document, 'pictureInPictureEnabled', {
+        value: false,
+        configurable: true,
+      });
       const first = setup();
       expect(screen.queryByRole('button', { name: 'Picture in picture' })).toBeNull();
       first.unmount();
-      Object.defineProperty(document, 'pictureInPictureEnabled', { value: true, configurable: true });
+      Object.defineProperty(document, 'pictureInPictureEnabled', {
+        value: true,
+        configurable: true,
+      });
       const { ui, controller, region } = setup();
       const video = region.querySelector('video') as HTMLVideoElement;
       video.requestPictureInPicture = vi.fn().mockRejectedValue(new Error('no'));
@@ -683,7 +702,10 @@ describe('PlayerView', () => {
       expect(controller.getState().toast?.message).toBe(
         'Picture in picture is not available right now',
       );
-      Object.defineProperty(document, 'pictureInPictureEnabled', { value: undefined, configurable: true });
+      Object.defineProperty(document, 'pictureInPictureEnabled', {
+        value: undefined,
+        configurable: true,
+      });
     });
 
     it('sets the lock screen title and handlers through the Media Session API', () => {
@@ -704,9 +726,9 @@ describe('PlayerView', () => {
       const { media } = setup();
       expect(typeof handlers.play).toBe('function');
       expect(typeof handlers.seekforward).toBe('function');
-      expect((navigator.mediaSession.metadata as unknown as { init: { title: string } }).init.title).toBe(
-        'How Rain Is Made',
-      );
+      expect(
+        (navigator.mediaSession.metadata as unknown as { init: { title: string } }).init.title,
+      ).toBe('How Rain Is Made');
       act(() => (handlers.seekforward as () => void)());
       expect(media.currentTime).toBeGreaterThan(0);
     });
