@@ -1,4 +1,4 @@
-import { Row, SkeletonRegion, SkeletonRow, type HeroItem } from '@ad/ui';
+import { Row, SkeletonRegion, SkeletonRow } from '@ad/ui';
 import {
   getCatalog,
   getLibrary,
@@ -9,34 +9,14 @@ import {
   type ViewerContext,
 } from '../../lib/data';
 import { reloadContinueRowAction, reloadMyListRowAction } from '../../app/actions';
-import { itemHref, itemKey, metaLine, timeLeftLabel } from '../../lib/format';
+import { itemKey } from '../../lib/format';
 import { CatalogCard, ContinueRow } from '../CatalogCard';
 import { RowError } from '../RowError';
 import { GuestContinueRow } from '../guest/GuestContinueRow';
 import { HomeEmpty } from './HomeEmpty';
 import { HomeHero } from './HomeHero';
+import { heroItems } from './hero-items';
 import { HomeRowsLoader } from './HomeRowsLoader';
-
-function heroItems(home: HomeData, progress: Map<string, Progress>): HeroItem[] {
-  return home.hero.map(({ item, blurb }) => {
-    const video = item.kind === 'video' ? item : null;
-    const resume = video ? progress.get(video.id) : undefined;
-    return {
-      id: item.kind === 'video' ? item.id : item.slug,
-      title: item.title,
-      description: blurb ?? item.description,
-      meta: metaLine(item),
-      playHref: video
-        ? `/watch/${video.id}${resume ? `?t=${Math.floor(resume.positionSeconds)}` : ''}`
-        : itemHref(item),
-      infoHref: itemHref(item),
-      resumeLabel:
-        resume && resume.positionSeconds < resume.durationSeconds * 0.95
-          ? timeLeftLabel(resume)
-          : undefined,
-    };
-  });
-}
 
 function cards(items: CatalogItem[], inList: Set<string>) {
   return items.map((item) => (
