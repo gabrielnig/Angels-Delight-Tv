@@ -313,4 +313,22 @@ describe.skipIf(!integrationEnabled())('admin home curation', () => {
     });
     expect(r.ok).toBe(false);
   });
+
+  it('publishes the new ranked types and the Popular fallback fields to the rows table', async () => {
+    const config: HomeConfig = {
+      heroIds: [],
+      rows: [
+        row('pop', 'smart', 'Popular', { fallbackToNewest: true, fallbackTitle: '  Newly   added ' }),
+        row('tr', 'trending', 'Trending now'),
+        row('tt', 'top_ten', 'Top 10'),
+        row('ml', 'most_liked', 'Most liked'),
+      ],
+    };
+    expect(await publishAdminHome(ctx, editor, config)).toEqual({ ok: true });
+    const rows = await published();
+    expect(rows.map((r) => r.kind)).toEqual(['popular', 'trending', 'top_ten', 'most_liked']);
+    expect(rows[0]).toMatchObject({ fallbackToNewest: true, fallbackTitle: 'Newly added' });
+    expect(rows[1]).toMatchObject({ fallbackToNewest: false, fallbackTitle: null });
+    expect(rows.map((r) => r.minItems)).toEqual([3, 5, 5, 5]);
+  });
 });

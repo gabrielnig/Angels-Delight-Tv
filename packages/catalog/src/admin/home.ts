@@ -23,6 +23,9 @@ export type HomeRowType =
   | 'newest'
   | 'series'
   | 'smart'
+  | 'trending'
+  | 'top_ten'
+  | 'most_liked'
   | 'each_category'
   | 'all_series'
   | 'continue_watching'
@@ -44,6 +47,9 @@ export interface HomeRowConfig {
   viewAllUrl?: string | null;
   minItems?: number;
   kidsVisible?: boolean;
+  /** Popular only: show the newest titles under fallbackTitle when too few qualify. */
+  fallbackToNewest?: boolean;
+  fallbackTitle?: string | null;
 }
 
 /** Optional words on a hero slide. Empty fields fall back to the title's own text. */
@@ -73,6 +79,7 @@ export const MAX_HERO = 5;
 export const MAX_ROWS = 12;
 export const MAX_ROW_TITLES = 20;
 export const MAX_ROW_NAME = 60;
+export const MAX_FALLBACK_TITLE = 80;
 export const MIN_ITEMS_RANGE = [1, 20] as const;
 const SERIES_ROW_MAX = 50;
 
@@ -146,9 +153,11 @@ export function launchHomeConfig(titles: LaunchHomeTitles = {}): HomeConfig {
   };
 }
 
-/** Titles a section needs before it shows. Trending and Each category need 4, All series 2 (M41-S05). */
+/** Titles a section needs before it shows. Popular needs 3, Trending, Top 10 and Most liked 5, Each category 4, All series 2 (M41-S05). */
 export function defaultMinItems(type: HomeRowType): number {
-  return type === 'smart' || type === 'each_category' ? 4 : type === 'all_series' ? 2 : 1;
+  if (type === 'trending' || type === 'top_ten' || type === 'most_liked') return 5;
+  if (type === 'smart') return 3;
+  return type === 'each_category' ? 4 : type === 'all_series' ? 2 : 1;
 }
 
 /** Names are trimmed and double spaces collapse (M41-S06 Edge). */
@@ -165,6 +174,8 @@ export function validateHomeConfig(config: HomeConfig): string | null {
     const name = cleanRowName(row.name);
     if (!name) return 'Give the section a name';
     if (name.length > MAX_ROW_NAME) return `Keep the name to ${MAX_ROW_NAME} characters`;
+    if ((row.fallbackTitle ?? '').trim().length > MAX_FALLBACK_TITLE)
+      return `Keep the fallback title to ${MAX_FALLBACK_TITLE} characters`;
     if (row.viewAllMode === 'custom' && viewAllUrlProblem(row.viewAllUrl ?? ''))
       return VIEW_ALL_URL_MESSAGE;
     if (
@@ -195,6 +206,9 @@ const KIND_OF: Record<HomeRowType, RowKind> = {
   newest: 'recently_added',
   series: 'curated',
   smart: 'popular',
+  trending: 'trending',
+  top_ten: 'top_ten',
+  most_liked: 'most_liked',
   each_category: 'each_category',
   all_series: 'all_series',
   continue_watching: 'continue_watching',
@@ -205,6 +219,9 @@ const TYPE_OF: Partial<Record<RowKind, HomeRowType>> = {
   category: 'category',
   recently_added: 'newest',
   popular: 'smart',
+  trending: 'trending',
+  top_ten: 'top_ten',
+  most_liked: 'most_liked',
   each_category: 'each_category',
   all_series: 'all_series',
   continue_watching: 'continue_watching',
@@ -267,6 +284,8 @@ async function configFromRows(tx: Tx): Promise<HomeConfig | null> {
       viewAllUrl: row.viewAllUrl,
       minItems: row.minItems,
       kidsVisible: row.kidsVisible,
+      fallbackToNewest: row.fallbackToNewest,
+      fallbackTitle: row.fallbackTitle,
     });
   }
   return config;
@@ -325,6 +344,8 @@ async function syncRows(tx: Tx, config: HomeConfig): Promise<void> {
     minItems: number;
     kidsVisible: boolean;
     heroText?: Record<string, HeroText>;
+    fallbackToNewest: boolean;
+    fallbackTitle: string | null;
   };
   const usedSlugs = new Set<string>();
   const slugFor = (row: HomeRowConfig): string | null => {
@@ -365,6 +386,8 @@ async function syncRows(tx: Tx, config: HomeConfig): Promise<void> {
       viewAllUrl: null,
       minItems: 1,
       kidsVisible: true,
+      fallbackToNewest: false,
+      fallbackTitle: null,
     });
 
   for (const row of config.rows) {
@@ -405,6 +428,9 @@ async function syncRows(tx: Tx, config: HomeConfig): Promise<void> {
       minItems: row.minItems ?? defaultMinItems(row.type),
       // Every row is filtered for the audience when it is read. The editor can still keep one from kids profiles.
       kidsVisible: row.kidsVisible ?? true,
+      fallbackToNewest: row.type === 'smart' && row.fallbackToNewest === true,
+      fallbackTitle:
+        row.type === 'smart' && row.fallbackToNewest ? cleanRowName(row.fallbackTitle ?? '') || null : null,
     });
   }
 
@@ -425,6 +451,8 @@ async function syncRows(tx: Tx, config: HomeConfig): Promise<void> {
       viewAllUrl: target.viewAllUrl,
       minItems: target.minItems,
       kidsVisible: target.kidsVisible,
+      fallbackToNewest: target.fallbackToNewest,
+      fallbackTitle: target.fallbackTitle,
       maxItems:
         target.kind === 'hero' ? MAX_HERO : target.seriesId ? SERIES_ROW_MAX : MAX_ROW_TITLES,
     };
