@@ -17,7 +17,8 @@ Plan `docs/plan/v2/L2-home.md`, review `docs/reviews/v2/L2-review.md`, rulings `
 | 8 | Launch default rows and the apply tool | merged | 345 |
 | 9 | Preview clip schema, queue and worker job | merged | 351 |
 | 10 | Admin hero slots: preview mode, slide text | merged | 357 |
-| 11 | Viewer preview delivery, slide text, live admin preview | this PR | |
+| 11 | Viewer preview delivery, slide text, live admin preview | merged | 367 |
+| 12 | Hover card (portal, 300 ms, mouse only) | this PR | |
 
 ## Exists
 
