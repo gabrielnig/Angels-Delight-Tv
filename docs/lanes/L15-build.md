@@ -34,11 +34,14 @@ Audit: `docs/audits/2026-11-25-share-audit.md`. Mockups S200 to S203 in `docs/mo
 
 | # | Slice | State | PR |
 |---|---|---|---|
-| 0 | Audit, mockups S200 to S203 and review | in review | |
+| 0 | Audit, mockups S200 to S203 and review (shipped with slice 4) | in review | |
 | 1 | Share targets, URL builders, canonical share url, settings extended | merged | #448 |
 | 2 | ShareSheet and ShareButton, wired into the title and series pages | merged | #452 |
 | 3 | Wire into hero, hover card, Continue card menu, watch page and end screen | in review | |
 | 4 | Share analytics event per channel | open | |
+| 2 | ShareSheet and ShareButton, wired into the title and series pages | in review | |
+| 3 | Wire into title, series, hero, hover card, card menu, watch, end screen | open | |
+| 4 | Share analytics event per channel | in review | |
 | 5 | Chromium layout tests, a11y, e2e | open | |
 | 6 | Docs | merged | #451 |
 
@@ -109,3 +112,11 @@ Test a kids only title and an unpublished title: the debugger must show the gene
 - Not done on purpose: touch devices have no hover card, so a plain card has no Share (the Continue menu, hero, title, series and watch pages cover touch). Series cards have no hover card.
 - Tests: `pnpm vitest run packages/ui/src/components/Cards.test.tsx packages/ui/src/components/Hero.test.tsx packages/player/src/ui/EndScreen.test.tsx apps/web/src/components/share apps/web/src/components/CatalogCard.test.tsx apps/web/src/components/ContinueRow.test.tsx apps/web/src/components/home/HomeHero.test.tsx apps/web/src/components/Shell.test.tsx apps/web/src/features/player`.
 - Known failures on main, not from this lane: `packages/ui/test/focus-ring.test.ts` and `hover-guard.test.ts` (help centre and TV css).
+
+### L15a slice 4
+
+- Event `share` in `@ad/analytics` (`shareEvent`, `SHARE_CHANNELS`): strict object `{ kind, channel, titleKind }`. No link, title, text or id, so a bad client cannot smuggle any. Ingest adds two daily counters: `share` keyed by channel and `share_title` keyed by `video` or `series`. No identity, same for kids audiences.
+- Web: `components/share/share-analytics.ts` `trackShare(channel, titleKind)` (fails silent), called by `ShareSheet` for a copy that worked, a chosen link, and More after the device menu returns. A cancelled device menu, a failed copy and an offline tap count nothing. The browser client already drops `share` under Global Privacy Control and Do Not Track (`lib/consent/guard.ts`).
+- No new storage, cookie or third party. Nothing to add to `STORAGE_INVENTORY`.
+- Not built: an admin report of the counters (the data is there for a later chart).
+- Tests: `pnpm vitest run packages/analytics/src/events.test.ts packages/analytics/src/ingest.test.ts apps/web/src/components/share apps/web/src/lib/consent/guard.test.ts`. `inventory.test.ts` fails on main for storage keys of other lanes.

@@ -168,6 +168,10 @@ export async function ingestBatch(input: IngestInput): Promise<IngestResult> {
         }
         return;
       }
+      case 'share':
+        await bump('share', event.channel);
+        await bump('share_title', event.titleKind);
+        return;
       case 'error':
         await bump('error', event.code);
         return;

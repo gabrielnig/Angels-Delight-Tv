@@ -136,6 +136,40 @@ describe('ingestBatch', () => {
     expect(deps.store.views).toHaveLength(0);
   });
 
+  it('counts a share by channel and title kind and stores nothing else (L15a)', async () => {
+    const deps = base();
+    await ingestBatch({
+      body: {
+        v: 1,
+        events: [
+          { kind: 'share', channel: 'whatsapp', titleKind: 'video' },
+          { kind: 'share', channel: 'whatsapp', titleKind: 'series' },
+          { kind: 'share', channel: 'copy', titleKind: 'video' },
+        ],
+      },
+      context: ctx(),
+      ...deps,
+      store: deps.store.store,
+    });
+    const keys = deps.store.bumps.map((b) => `${b.kind}:${b.key}`);
+    expect(keys.filter((k) => k === 'share:whatsapp')).toHaveLength(2);
+    expect(keys).toContain('share:copy');
+    expect(keys.filter((k) => k === 'share_title:video')).toHaveLength(2);
+    expect(keys).toContain('share_title:series');
+    expect(deps.store.views).toHaveLength(0);
+  });
+
+  it('counts a share for a kids audience without any identity', async () => {
+    const deps = base();
+    await ingestBatch({
+      body: { v: 1, events: [{ kind: 'share', channel: 'x', titleKind: 'video' }] },
+      context: ctx({ audience: 'kids' }),
+      ...deps,
+      store: deps.store.store,
+    });
+    expect(deps.store.bumps.map((b) => `${b.kind}:${b.key}`)).toContain('share:x');
+  });
+
   it('records only search text for empty results and normalises it', async () => {
     const deps = base();
     await ingestBatch({

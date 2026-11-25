@@ -2,7 +2,10 @@
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { trackShare } from './share-analytics';
 import { ShareSheet, type ShareSheetProps } from './ShareSheet';
+
+vi.mock('./share-analytics', () => ({ trackShare: vi.fn() }));
 
 const url = 'https://adtv.example/title/rivers';
 const base: ShareSheetProps = {
@@ -223,5 +226,39 @@ describe('ShareSheet (L15a slice 2)', () => {
     for (const el of screen.getAllByTestId('share-target')) {
       expect((el.textContent ?? '').trim().length).toBeGreaterThan(0);
     }
+  });
+
+  it('counts each chosen place once, anonymously, and not a failed copy or an offline tap (L15a slice 4)', async () => {
+    vi.mocked(trackShare).mockClear();
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    const first = setup({ kind: 'series' }, { writeText });
+    await first.user.click(screen.getByRole('button', { name: 'Copy link' }));
+    expect(trackShare).toHaveBeenCalledWith('copy', 'series');
+    const wa = screen.getByRole('link', { name: /WhatsApp/ });
+    wa.addEventListener('click', (e) => e.preventDefault());
+    await first.user.click(wa);
+    expect(trackShare).toHaveBeenCalledWith('whatsapp', 'series');
+    expect(trackShare).toHaveBeenCalledTimes(2);
+    first.view.unmount();
+
+    vi.mocked(trackShare).mockClear();
+    Object.assign(document, { execCommand: vi.fn().mockReturnValue(false) });
+    const failing = setup({}, { writeText: vi.fn().mockRejectedValue(new Error('no')) });
+    await failing.user.click(screen.getByRole('button', { name: 'Copy link' }));
+    expect(trackShare).not.toHaveBeenCalled();
+    failing.view.unmount();
+
+    setOnline(false);
+    const offline = setup();
+    await offline.user.click(screen.getByRole('button', { name: /WhatsApp/ }));
+    expect(trackShare).not.toHaveBeenCalled();
+    offline.view.unmount();
+    setOnline(true);
+
+    const share = vi.fn().mockResolvedValue(undefined);
+    Object.assign(navigator, { share });
+    const more = setup();
+    await more.user.click(screen.getByRole('button', { name: 'More' }));
+    expect(trackShare).toHaveBeenCalledWith('more', 'video');
   });
 });

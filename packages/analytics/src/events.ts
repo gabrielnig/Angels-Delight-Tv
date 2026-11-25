@@ -87,6 +87,26 @@ export const sponsorImpressionEvent = z.strictObject({
   impressionId: id,
 });
 
+/**
+ * Someone chose a place in the Share sheet (L15a). Only the place and whether it was a video or a series: no link,
+ * no title, no text, no id. Dropped on the device under Global Privacy Control or Do Not Track.
+ */
+export const SHARE_CHANNELS = [
+  'copy',
+  'whatsapp',
+  'facebook',
+  'x',
+  'telegram',
+  'email',
+  'sms',
+  'more',
+] as const;
+export const shareEvent = z.strictObject({
+  kind: z.literal('share'),
+  channel: z.enum(SHARE_CHANNELS),
+  titleKind: z.enum(['video', 'series']),
+});
+
 export const analyticsEvent = z.discriminatedUnion('kind', [
   viewStartEvent,
   progressEvent,
@@ -98,6 +118,7 @@ export const analyticsEvent = z.discriminatedUnion('kind', [
   rebufferEvent,
   skipEvent,
   sponsorImpressionEvent,
+  shareEvent,
 ]);
 export type AnalyticsEvent = z.infer<typeof analyticsEvent>;
 export type AnalyticsEventKind = AnalyticsEvent['kind'];
