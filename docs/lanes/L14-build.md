@@ -142,10 +142,20 @@ Helpers in `scripts/kb-recorder/helpers.ts`: `signInAs`, `goToScreen`, `clickByN
 
 Picture file names follow `<id>-<nn>-<name>-<desktop|mobile>.webp` (plan section 6.1). The media prefix is `../../media` by default for `content/help/en/<path>/<id>-<slug>.md`.
 
+### Demo stack
+
+Recording and checking run only against the isolated demo stack (D-362, D-379). Never against staging or production data.
+
+- Fixture mode (default, no database): `pnpm kb:stack fixture 3141` starts the web app on the in memory fixtures with `KB_DEMO=on`, a frozen server clock (`KB_DEMO_NOW`, default 10 Mar 2026 10:00 Lagos, preload `scripts/kb-recorder/demo/fixed-clock.cjs`) and the reset route. `pnpm kb:stack env` prints the environment.
+- Dataset: `apps/web/src/lib/data/admin/kb-demo/dataset.ts` (clearly fake names, `Demo` prefixes, sponsors and donors marked `(test)`, only example.com, example.net, example.org, example.test emails, round amounts, one video per status, a Part and Lesson series, users for each role). `checkDemoDataset` fails on anything real looking. `apply.ts` lays it over the fixture store.
+- Reset: the recorder calls `POST /api/kb-demo/reset` (header `x-kb-demo: reset`, local host only, 404 unless `KB_DEMO=on` on a development fixture build) before the warm up pass and before the recorded pass of every episode, so an episode that saves something never changes what the next one shows. It also clears markers, auth, theme and notice state. The browser clock is fixed to the same pinned time.
+- Origin guard: `pnpm kb:record` refuses any base URL that is not localhost, 127.0.0.1, [::1] or the demo host named in `KB_DEMO_HOST` (a reserved example name). `--no-reset` skips the reset for a plain dev server.
+- Real Postgres mode: `pnpm kb:stack real` prepares databases `ad_kb` and `ad_kb_keys`, migrations, the demo catalog and one admin, and writes `.env.kb-real`. Set `KB_2FA_CODE` for the sign in helper. The reset there is a rerun of the script. Partial: only one staff account is seeded and the demo overlay (sponsors, donations, fake staff names) applies to fixture mode only. `assertAllowedDatabase` refuses any database other than `ad_kb` and `ad_kb_keys` on localhost.
+
 ### Commands
 
 - `pnpm kb:record --episode <id> --profile desktop,mobile --out .kb-out` records one episode (see the spike note for the stack).
 
 ### Status
 
-Slice 1 of 9 done (episode framework). Later slices append here.
+Slices 1 (episode framework) and 2 (demo stack) done. Later slices append here.

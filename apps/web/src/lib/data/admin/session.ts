@@ -32,10 +32,17 @@ const ACCOUNTS: FixtureAccount[] = [
   { accountId: 'acc_viewer', email: 'viewer@example.test', name: 'Ada Viewer', role: 'viewer' },
 ];
 
+/** The knowledge base recording stack (KB_DEMO=on) shows clearly fake names (plan section 11.2). */
+const DEMO_NAMES: Record<string, string> = {
+  super_admin: 'Demo Owner',
+  admin: 'Demo Admin',
+  editor: 'Demo Editor',
+};
+
 const toActor = ({ accountId, role, name }: FixtureAccount): AdminActor => ({
   accountId,
   role,
-  name,
+  name: process.env.KB_DEMO === 'on' ? (DEMO_NAMES[role] ?? name) : name,
 });
 
 export type PasswordResult =
