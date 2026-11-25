@@ -659,6 +659,8 @@ Planned in `docs/plan/v2/L14-admin-knowledge-base.md`, mockups in `docs/mockups/
 | `/admin/help/[id]` | One article with video, steps and pictures |
 | `/admin/help/search` | Search results |
 | `/admin/help/videos/[id]` | Video page: player, transcript and the playlist of the path (no autoplay) |
+| `/admin/help/search` | Search results with marked words, role labels, empty state and a suggestion (GET form, works without script) |
+| `/admin/help/glossary` | Words explained: A to Z jump bar, filter, anchors by term, links to guides |
 | `/admin/help/media/[...path]` | Private video, caption and picture route (not a page). `img/...` pictures, `video/<id>/<file>` videos with Range |
 
 Entry points: a Help button in the top bar (drawer at md and up, bottom sheet on phones), a Help link in each page header, a Help item in the side menu.

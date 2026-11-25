@@ -13,6 +13,7 @@ import { clock } from './format';
 import { HiddenNote } from './HiddenNote';
 import { ProgressCard } from './ProgressCard';
 import { summarizeProgress, type ProgressRows } from '@/lib/data/admin/help-progress';
+import { SearchBox } from './SearchBox';
 import { SupportStrip } from './SupportStrip';
 
 const plural = (n: number, one: string, many = `${one}s`) => `${n} ${n === 1 ? one : many}`;
@@ -84,6 +85,11 @@ export function HelpHome({
         baseHref="/admin/help"
         roleLabel={HELP_ROLE_LABELS[role]}
       />
+      <SearchBox
+        action="/admin/help/search"
+        label="Search the help centre"
+        placeholder="For example: poster, captions, go live"
+      />
       {start ? (
         <section className="hlp-start" aria-labelledby="hlp-start-title">
           <p className="hlp-eyebrow">
@@ -138,6 +144,9 @@ export function HelpHome({
           <p className="adm-empty__help">New guides appear here as they are written.</p>
         </div>
       ) : null}
+      <p className="hlp-gloss-link">
+        <Icon name="book" size={16} /> <Link href="/admin/help/glossary">Words explained</Link>
+      </p>
       <SupportStrip contact={supportContact} />
     </div>
   );
