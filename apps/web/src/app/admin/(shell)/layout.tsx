@@ -18,6 +18,7 @@ import { maturityLabelsSetting } from '@/server/maturity-labels';
 import { MaturityLabelsProvider } from '@/lib/maturity-context';
 import { HelpMapProvider } from '@/components/admin/help/HelpMapProvider';
 import { getLibrary } from '@/server/help';
+import { helpPanelAction, markVideoWatchedAction } from './help/actions';
 
 export const dynamic = 'force-dynamic';
 
@@ -50,6 +51,7 @@ export default async function ShellLayout({ children }: { children: ReactNode })
               counts={counts}
               signOut={signOutAction}
               notices={feed ? { ...feed, markAllRead: markNoticesReadAction } : undefined}
+              help={{ load: helpPanelAction, onWatched: markVideoWatchedAction }}
             >
               {children}
             </AdminShell>
