@@ -73,7 +73,7 @@ const episode: Episode = {
       },
     },
     {
-      caption: 'Select a file that was not added and click **Remove**.',
+      caption: 'Select a file that was not added to remove it with **Remove**.',
       run: async (s) => {
         await s.click(
           s.page.getByRole('list', { name: 'Files that were not added' }).getByRole('button').first(),

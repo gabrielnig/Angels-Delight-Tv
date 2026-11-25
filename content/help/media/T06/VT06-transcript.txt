@@ -3,7 +3,7 @@ For everyone. 1 min 22 s.
 
 0:03  Go to the sign in page, "/admin/login".
 0:12  Type your email in the Email box.
-0:21  Type "not-the-password" in the Password box.
+0:21  Type "wrongpassword" in the Password box.
 0:32  Click Sign in.
       The pointer moves to Sign in.
 0:40  Check the Sign in heading and the message above the boxes.
