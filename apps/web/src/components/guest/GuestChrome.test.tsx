@@ -36,23 +36,49 @@ describe('GuestChrome (S81)', () => {
     expect(screen.getByRole('main')).toHaveAttribute('id', 'main');
   });
 
-  it('offers Home, Browse, My List and search in the main navigation', () => {
+  it('offers Home, Browse and My List in the main navigation and Search as an icon link', () => {
     chrome();
     const main = screen.getByRole('navigation', { name: 'Main' });
-    for (const name of ['Home', 'Browse', 'My List', 'Search'])
+    for (const name of ['Home', 'Browse', 'My List'])
       expect(within(main).getByRole('link', { name })).toBeInTheDocument();
+    const bar = screen.getByRole('banner');
+    expect(within(bar).getByRole('link', { name: 'Search' })).toHaveAttribute('href', '/search');
   });
 
-  it('shows Sign in and, only when sign up is open, Create account', () => {
+  it('has the phone skeleton: logo, search and one account icon, with no Sign in button label on the bar itself', () => {
+    chrome();
+    const tools = document.querySelector('.ad-nav__tools') as HTMLElement;
+    expect(within(tools).getByRole('link', { name: 'Search' })).toBeInTheDocument();
+    expect(within(tools).getByRole('button', { name: 'Account menu' })).toBeInTheDocument();
+    // The wide bar buttons live in the container phones hide.
+    const wide = tools.querySelector('.ad-nav__guest') as HTMLElement;
+    expect(within(wide).getByRole('link', { name: 'Sign in' })).toHaveAttribute('href', '/sign-in');
+  });
+
+  it('shows Sign in and, only when sign up is open, Create account in the account menu', async () => {
     const view = chrome();
-    expect(screen.getByRole('link', { name: 'Sign in' })).toHaveAttribute('href', '/sign-in');
-    expect(screen.getByRole('link', { name: 'Create account' })).toHaveAttribute(
+    await userEvent.click(screen.getByRole('button', { name: 'Account menu' }));
+    const menu = screen.getByRole('menu');
+    expect(within(menu).getByRole('menuitem', { name: 'Sign in' })).toHaveAttribute(
+      'href',
+      '/sign-in',
+    );
+    expect(within(menu).getByRole('menuitem', { name: 'Create account' })).toHaveAttribute(
       'href',
       '/sign-up',
     );
     view.unmount();
     chrome({ signUpOpen: false });
+    await userEvent.click(screen.getByRole('button', { name: 'Account menu' }));
+    expect(screen.queryByRole('menuitem', { name: 'Create account' })).toBeNull();
     expect(screen.queryByRole('link', { name: 'Create account' })).toBeNull();
+  });
+
+  it('hides the header and the tab bar on the watch page', () => {
+    nav.pathname = '/watch/how-rain-is-made';
+    chrome();
+    expect(screen.queryByRole('banner')).toBeNull();
+    expect(screen.queryByRole('navigation', { name: 'Primary' })).toBeNull();
   });
 
   it('has a Primary tab bar except on a title page', () => {
@@ -66,46 +92,44 @@ describe('GuestChrome (S81)', () => {
     expect(screen.queryByRole('navigation', { name: 'Primary' })).toBeNull();
   });
 
-  it('shows only the logo mark in Kids mode, labelled by the platform name', () => {
-    chrome({ kids: true });
-    expect(screen.getByRole('link', { name: /^Angels Delight TV/ })).toBeInTheDocument();
+  it('shows the logo mark and a Kids badge in Kids mode, labelled by the platform name, with no way to Create account', async () => {
+    chrome({ kids: true, setKidsMode: vi.fn() });
+    expect(screen.getByRole('link', { name: 'Angels Delight TV' })).toBeInTheDocument();
+    expect(screen.getByText('Kids')).toBeInTheDocument();
     expect(screen.queryByRole('link', { name: 'Create account' })).toBeNull();
     expect(screen.queryByRole('navigation', { name: 'Main' })).toBeNull();
+    await userEvent.click(screen.getByRole('button', { name: 'Account menu' }));
+    expect(screen.queryByRole('menuitem', { name: 'Create account' })).toBeNull();
+    expect(screen.queryByRole('menuitem', { name: 'Sign in' })).toBeNull();
   });
 
-  it('backs the header over the home hero so links stay readable', () => {
+  it('lets the bar sit clear over the home hero and solid elsewhere', () => {
     nav.pathname = '/';
-    const { container } = chrome();
-    expect(container.querySelector('header')).toHaveAttribute('data-over-hero', 'true');
-  });
-
-  it('has no hero backing on other pages', () => {
-    const { container } = chrome();
-    expect(container.querySelector('header')).not.toHaveAttribute('data-over-hero');
+    const view = chrome();
+    expect(screen.getByRole('banner')).toHaveAttribute('data-hero', 'true');
+    view.unmount();
+    nav.pathname = '/browse';
+    chrome();
+    expect(screen.getByRole('banner')).not.toHaveAttribute('data-hero');
+    expect(screen.getByRole('banner')).toHaveAttribute('data-surface', 'solid');
   });
 
   describe('Kids mode (R17)', () => {
-    it('has a Menu with a Kids mode switch and the help line', async () => {
+    it('has a Kids mode item and Help in the account menu', async () => {
       const setKidsMode = vi.fn().mockResolvedValue(undefined);
       chrome({ setKidsMode });
-      await userEvent.click(screen.getByRole('button', { name: 'Menu' }));
-      const toggle = screen.getByRole('switch', { name: 'Kids mode' });
-      expect(toggle).toHaveAttribute('aria-checked', 'false');
-      expect(
-        screen.getByText(
-          'Shows videos made for children. Anyone using this device can turn it off.',
-        ),
-      ).toBeInTheDocument();
-      await userEvent.click(toggle);
+      await userEvent.click(screen.getByRole('button', { name: 'Account menu' }));
+      expect(screen.getByRole('menuitem', { name: 'Help' })).toHaveAttribute('href', '/help');
+      await userEvent.click(screen.getByRole('menuitem', { name: 'Turn on Kids mode' }));
       expect(setKidsMode).toHaveBeenCalledWith(true);
     });
 
-    it('closes the menu with Escape and returns focus to the Menu button', async () => {
+    it('closes the menu with Escape and returns focus to the account button', async () => {
       chrome({ setKidsMode: vi.fn() });
-      const button = screen.getByRole('button', { name: 'Menu' });
+      const button = screen.getByRole('button', { name: 'Account menu' });
       await userEvent.click(button);
       await userEvent.keyboard('{Escape}');
-      expect(screen.queryByRole('switch')).toBeNull();
+      expect(screen.queryByRole('menu')).toBeNull();
       expect(button).toHaveFocus();
     });
 

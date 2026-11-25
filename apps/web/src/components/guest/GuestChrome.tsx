@@ -1,9 +1,9 @@
 'use client';
 
 import { usePathname, useRouter } from 'next/navigation';
-import { useEffect, useRef, useState, useTransition, type ReactNode } from 'react';
+import { useTransition, type ReactNode } from 'react';
 import { useT } from '../../lib/i18n/provider';
-import { BottomTabBar, Button, ButtonLink, Icon, Link, SiteFooter } from '@ad/ui';
+import { BottomTabBar, Button, ButtonLink, Link, SiteFooter, TopNav, type MenuItem } from '@ad/ui';
 import './guest.css';
 
 export interface GuestChromeProps {
@@ -35,10 +35,6 @@ const tabs = (msg: Msg) => [
   { label: msg('nav.myList'), href: '/my-list', icon: 'list' as const },
 ];
 
-function isCurrent(path: string, href: string): boolean {
-  return href === '/' ? path === '/' : path === href || path.startsWith(`${href}/`);
-}
-
 /** The header, tab bar and footer a visitor without an account sees (S81). */
 export function GuestChrome({
   platformName,
@@ -54,121 +50,68 @@ export function GuestChrome({
   const msg = useT();
   const pathname = usePathname();
   const router = useRouter();
-  const [menuOpen, setMenuOpen] = useState(false);
   const [pending, start] = useTransition();
-  const menuButton = useRef<HTMLButtonElement>(null);
-  const menu = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    if (!menuOpen) return;
-    const onKey = (event: KeyboardEvent) => {
-      if (event.key !== 'Escape') return;
-      setMenuOpen(false);
-      menuButton.current?.focus();
-    };
-    const onPointer = (event: MouseEvent) => {
-      const target = event.target as Node;
-      if (!menu.current?.contains(target) && !menuButton.current?.contains(target))
-        setMenuOpen(false);
-    };
-    document.addEventListener('keydown', onKey);
-    document.addEventListener('mousedown', onPointer);
-    return () => {
-      document.removeEventListener('keydown', onKey);
-      document.removeEventListener('mousedown', onPointer);
-    };
-  }, [menuOpen]);
   const changeKids = (next: boolean) =>
     start(async () => {
       await setKidsMode?.(next);
-      setMenuOpen(false);
       router.refresh();
     });
   const detail = pathname.startsWith('/title/');
+  // The player draws its own chrome: no header and no tab bar on /watch (S185).
+  const watching = pathname.startsWith('/watch');
+
+  // One account icon holds what the old bar spread over four controls. Kids mode shows only the switch and Help,
+  // so a child cannot reach Create account (S183 frame 4).
+  const menu: MenuItem[] = [
+    ...(kids ? [] : [{ label: msg('nav.signIn'), href: '/sign-in' }]),
+    ...(kids || !signUpOpen ? [] : [{ label: msg('nav.createAccount'), href: '/sign-up' }]),
+    ...(setKidsMode
+      ? [
+          {
+            label: kids ? msg('guest.kids.turnOff') : msg('guest.kids.turnOn'),
+            onSelect: () => changeKids(!kids),
+          },
+        ]
+      : []),
+    { label: msg('nav.menu.help'), href: '/help' },
+  ];
   return (
     <div className="web-shell" data-kids={kids ? 'true' : undefined} data-guest="true">
-      <a className="ad-skip" href="#main">
-        {msg('guest.nav.skip')}
-      </a>
-      <header className="web-guestbar" data-over-hero={pathname === '/' ? 'true' : undefined}>
-        <Link
-          href="/"
-          className="web-brand"
-          aria-label={kids ? platformName : `${platformName}, home`}
-        >
-          <span className="web-brand__logo" aria-hidden="true">
-            {logoUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={logoUrl} alt="" width={36} height={36} />
-            ) : (
-              <Icon name="play" size={16} filled />
-            )}
-          </span>
-          {kids ? null : <span className="web-brand__name">{platformName}</span>}
-        </Link>
-        {kids ? null : (
-          <>
-            <nav aria-label={msg('guest.nav.main')} className="web-guestbar__links">
-              {links(msg).map((link) => (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  className="web-guestbar__link"
-                  aria-current={isCurrent(pathname, link.href) ? 'page' : undefined}
-                >
-                  {link.label}
+      {watching ? (
+        <a className="ad-skip" href="#main">
+          {msg('guest.nav.skip')}
+        </a>
+      ) : (
+        <TopNav
+          brand={{ name: platformName, href: '/', logoUrl }}
+          links={links(msg)}
+          currentPath={pathname}
+          profileName=""
+          menu={menu}
+          guest
+          kids={kids}
+          kidsLabel={msg('nav.kidsBadge')}
+          accountLabel={msg('nav.accountMenu')}
+          searchLabel={msg('nav.search')}
+          overHero={pathname === '/'}
+          trailing={kids ? undefined : languagePicker}
+          guestActions={
+            kids ? undefined : (
+              <>
+                <Link href="/sign-in" className="ad-nav__link">
+                  {msg('nav.signIn')}
                 </Link>
-              ))}
-              <Link
-                href="/search"
-                className="web-guestbar__link web-guestbar__search"
-                aria-label={msg('nav.search')}
-              >
-                <Icon name="search" size={22} />
-              </Link>
-            </nav>
-            <div className="web-guestbar__account">
-              {languagePicker}
-              <Link href="/sign-in" className="web-guestbar__link">
-                {msg('guest.save.signIn')}
-              </Link>
-              {signUpOpen ? (
-                <ButtonLink href="/sign-up" size="sm">
-                  {msg('guest.save.createAccount')}
-                </ButtonLink>
-              ) : null}
-              {setKidsMode ? (
-                <div className="web-guestbar__menuwrap">
-                  <button
-                    ref={menuButton}
-                    type="button"
-                    className="web-guestbar__link"
-                    aria-haspopup="true"
-                    aria-expanded={menuOpen}
-                    onClick={() => setMenuOpen((open) => !open)}
-                  >
-                    {msg('guest.menu')}
-                  </button>
-                  {menuOpen ? (
-                    <div ref={menu} className="web-guestbar__menu">
-                      <button
-                        type="button"
-                        role="switch"
-                        aria-checked={kids}
-                        className="web-guestbar__switch"
-                        disabled={pending}
-                        onClick={() => changeKids(!kids)}
-                      >
-                        {msg('guest.kids.label')}
-                      </button>
-                      <p className="web-guestbar__help">{msg('guest.kids.help')}</p>
-                    </div>
-                  ) : null}
-                </div>
-              ) : null}
-            </div>
-          </>
-        )}
-      </header>
+                {signUpOpen ? (
+                  <ButtonLink href="/sign-up" size="sm">
+                    {msg('nav.createAccount')}
+                  </ButtonLink>
+                ) : null}
+              </>
+            )
+          }
+          onBack={detail ? () => router.back() : undefined}
+        />
+      )}
       <main id="main" className="web-main" tabIndex={-1}>
         {children}
       </main>
@@ -180,7 +123,7 @@ export function GuestChrome({
         </div>
       ) : null}
       <SiteFooter platformName={platformName} year={year} links={footerLinks} />
-      {detail || kids ? null : <BottomTabBar tabs={tabs(msg)} currentPath={pathname} />}
+      {detail || kids || watching ? null : <BottomTabBar tabs={tabs(msg)} currentPath={pathname} />}
     </div>
   );
 }

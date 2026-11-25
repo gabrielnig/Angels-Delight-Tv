@@ -65,3 +65,36 @@ describe('ViewerChrome bell slot (M44-S11, S17)', () => {
     expect(screen.queryByTestId('bell')).toBeNull();
   });
 });
+
+describe('ViewerChrome phone header (L12, S183)', () => {
+  it('marks the bar for a bell so the name can step aside, and not for a Kids profile', () => {
+    nav.pathname = '/browse';
+    const view = chrome();
+    expect(screen.getByRole('banner')).toHaveAttribute('data-bell', 'true');
+    view.unmount();
+    chrome(true);
+    expect(screen.getByRole('banner')).not.toHaveAttribute('data-bell');
+  });
+
+  it('shows the Kids word badge and the profile button named for a Kids profile', () => {
+    nav.pathname = '/browse';
+    chrome(true);
+    expect(screen.getByText('Kids')).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'Profile menu, Chidi, Kids profile' }),
+    ).toBeInTheDocument();
+  });
+
+  it('names the profile button for an adult with the profile name', () => {
+    nav.pathname = '/browse';
+    chrome();
+    expect(screen.getByRole('button', { name: 'Profile menu, Chidi' })).toBeInTheDocument();
+  });
+
+  it('draws no header and no tab bar on the watch page', () => {
+    nav.pathname = '/watch/how-rain-is-made';
+    chrome();
+    expect(screen.queryByRole('banner')).toBeNull();
+    expect(screen.queryByRole('navigation', { name: 'Primary' })).toBeNull();
+  });
+});

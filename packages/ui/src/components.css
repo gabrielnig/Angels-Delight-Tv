@@ -2247,6 +2247,7 @@
   --nav-ink: var(--color-player-ink);
   --nav-underline: var(--color-focus-ring-dark);
   --nav-ring: var(--color-focus-ring-dark);
+  --nav-fill: var(--color-player-border);
   position: sticky;
   top: 0;
   z-index: var(--z-nav);
@@ -2288,6 +2289,7 @@
   --nav-ink: var(--color-ink);
   --nav-underline: var(--color-primary);
   --nav-ring: var(--color-focus-ring);
+  --nav-fill: var(--color-surface-sunken);
   /* Clear to solid: the colours flip at 35 percent of the fade. */
   transition-delay: calc(var(--motion-base) * 0.35);
 }
@@ -2327,7 +2329,7 @@
 .ad-nav__inner {
   display: flex;
   align-items: center;
-  gap: var(--space-4);
+  gap: var(--space-2);
   height: 100%;
   max-width: var(--content-max);
   margin: 0 auto;
@@ -2338,6 +2340,8 @@
   display: inline-flex;
   align-items: center;
   gap: var(--space-2);
+  flex: 0 1 auto;
+  min-width: var(--touch-target);
   min-height: var(--touch-target);
   color: inherit;
   font-family: var(--font-display);
@@ -2347,6 +2351,7 @@
 }
 
 .ad-nav__logo {
+  flex: none;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -2355,6 +2360,48 @@
   border-radius: var(--radius-circle);
   background: var(--color-accent);
   color: var(--color-on-accent);
+}
+
+/* The name is the one thing that gives way: it clips with an ellipsis and never wraps, steps down under 400 px,
+   hides under 400 px when the bell is there and under 340 px always. The link keeps its aria-label (S184). */
+.ad-nav__name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (max-width: 399px) {
+  .ad-nav__brand {
+    font-size: var(--text-small);
+  }
+  .ad-nav[data-bell='true'] .ad-nav__name {
+    display: none;
+  }
+}
+
+@media (max-width: 339px) {
+  .ad-nav__name {
+    display: none;
+  }
+}
+
+.ad-nav__kids {
+  display: inline-flex;
+  align-items: center;
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: 8rem;
+  height: 1.5rem;
+  padding: 0 var(--space-2);
+  overflow: hidden;
+  border-radius: var(--radius-xs);
+  background: var(--color-accent);
+  color: var(--color-on-accent);
+  font-size: var(--text-caption);
+  font-weight: var(--weight-bold);
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .ad-nav__links {
@@ -2390,8 +2437,41 @@
   margin-left: auto;
 }
 
+.ad-nav__tools {
+  flex: none;
+}
+
 .ad-nav__tools .ad-iconbtn {
   color: inherit;
+}
+
+.ad-nav__tools .ad-iconbtn:active,
+.ad-nav__avatar:active {
+  background: var(--nav-fill);
+  transition-duration: var(--motion-press);
+}
+
+@media (hover: hover) {
+  .ad-nav__tools .ad-iconbtn:hover,
+  .ad-nav__avatar:hover {
+    background: var(--nav-fill);
+  }
+}
+
+/* Sign in and Create account sit in the bar from 960 px. Phones reach both through the account icon. */
+.ad-nav__guest {
+  display: none;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.ad-nav__person {
+  display: grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  border: 2px solid currentColor;
+  border-radius: var(--radius-circle);
 }
 
 .ad-nav__account {
@@ -2454,8 +2534,17 @@
   }
 }
 
+@media (min-width: 600px) {
+  .ad-nav__inner {
+    gap: var(--space-4);
+  }
+}
+
 @media (min-width: 960px) {
   .ad-nav__links {
+    display: flex;
+  }
+  .ad-nav__guest {
     display: flex;
   }
 }

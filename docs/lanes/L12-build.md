@@ -1,0 +1,23 @@
+# Lane L12 build: the mobile header
+
+Source: mockups `docs/mockups/v2/L12/S182` to `S185`, review `docs/reviews/v2/L12-review.md`, decisions D-356 and D-374.
+
+## Slices
+
+| Slice | State | Notes |
+|---|---|---|
+| 1 Header | built | `TopNav` gained `guest`, `kidsLabel`, `hasBell`, `guestActions`, `accountLabel`, `searchLabel`, `profileMenuLabel`. `GuestChrome` now renders `TopNav`. Header and tab bar skip /watch. |
+| 2 Account sheet | not started | |
+| 3 Tab bar | not started | |
+| 4 Scrim token and docs | not started | |
+| 5 Review and production build | not started | |
+
+## Tests (scoped)
+
+- `pnpm vitest run packages/ui/src/components/TopNav.test.tsx packages/ui/test/nav-css.test.ts packages/ui/test/topnav-width.test.ts`
+- `pnpm vitest run apps/web/src/components/guest/GuestChrome.test.tsx apps/web/src/components/ViewerChrome.test.tsx`
+- The width test needs Chromium (`/opt/pw-browsers` or `E2E_CHROMIUM_PATH`) and skips without it.
+
+## Gaps
+
+- The account menu is still the popover until slice 2 turns it into a bottom sheet.
