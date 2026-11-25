@@ -26,4 +26,9 @@ describe('browse filters (M06-S02)', () => {
       { label: 'A to Z', removeHref: '/browse?length=short' },
     ]);
   });
+
+  it('keeps old links working: the three length values in saved URLs still parse', () => {
+    for (const v of ['short', 'medium', 'long']) expect(parseLength(v)).toBe(v);
+    expect(browseHref('/browse', 'medium', 'newest')).toBe('/browse?length=medium');
+  });
 });
