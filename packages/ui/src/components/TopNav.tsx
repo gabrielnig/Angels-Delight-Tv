@@ -61,6 +61,11 @@ export function TopNav({
   profileMenuLabel,
   searchLabel = 'Search',
   sheet,
+  skipLabel = 'Skip to main content',
+  mainNavLabel = 'Main',
+  backLabel = 'Back',
+  switchProfileLabel = 'Switch profile',
+  exitKidsLabel = 'Exit kids mode',
 }: {
   brand: { name: string; href: string; logoUrl?: string };
   links: NavLink[];
@@ -94,6 +99,14 @@ export function TopNav({
   searchLabel?: string;
   /** Describes the account bottom sheet. Without it the menu is a popover at every width (11.12). */
   sheet?: AccountSheet;
+  /** The words below default to English. Pass the translated text from the message catalog. */
+  skipLabel?: string;
+  /** Accessible name of the main links landmark. */
+  mainNavLabel?: string;
+  backLabel?: string;
+  /** Kids profile menu rows. */
+  switchProfileLabel?: string;
+  exitKidsLabel?: string;
 }) {
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
@@ -224,8 +237,8 @@ export function TopNav({
   const items: MenuItem[] =
     kids && !guest
       ? [
-          { label: 'Switch profile', href: switchHref },
-          { label: 'Exit kids mode', onSelect: onExitKids },
+          { label: switchProfileLabel, href: switchHref },
+          { label: exitKidsLabel, onSelect: onExitKids },
         ]
       : menu;
   const solid = !overHero || scrolled;
@@ -233,7 +246,7 @@ export function TopNav({
   return (
     <>
       <a className="ad-skip" href="#main">
-        Skip to main content
+        {skipLabel}
       </a>
       {overHero ? (
         <span ref={sentinelRef} className="ad-nav__sentinel" data-nav-sentinel aria-hidden="true" />
@@ -250,7 +263,7 @@ export function TopNav({
       >
         <div className="ad-nav__inner">
           {onBack ? (
-            <button type="button" className="ad-nav__back" aria-label="Back" onClick={onBack}>
+            <button type="button" className="ad-nav__back" aria-label={backLabel} onClick={onBack}>
               <Icon name="back" size={24} />
             </button>
           ) : null}
@@ -271,7 +284,7 @@ export function TopNav({
           {kids ? <span className="ad-nav__kids">{kidsLabel}</span> : null}
 
           {kids ? null : (
-            <nav aria-label="Main" className="ad-nav__links">
+            <nav aria-label={mainNavLabel} className="ad-nav__links">
               {links.map((link) => {
                 const current = isCurrentPath(currentPath, link.href);
                 return (

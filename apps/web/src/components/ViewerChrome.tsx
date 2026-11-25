@@ -115,6 +115,11 @@ export function ViewerChrome({
           {watching ? null : (
             <TopNav
               brand={{ name: platformName, href: '/', logoUrl }}
+              skipLabel={msg('nav.skip')}
+              mainNavLabel={msg('guest.nav.main')}
+              backLabel={msg('nav.back')}
+              switchProfileLabel={msg('nav.menu.switchProfile')}
+              exitKidsLabel={msg('nav.menu.exitKids')}
               links={skin === 'soft' ? softLinks(msg) : links(msg)}
               currentPath={pathname}
               profileName={profileName}
