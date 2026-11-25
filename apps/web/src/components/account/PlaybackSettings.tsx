@@ -234,11 +234,11 @@ export function PlaybackSettingsForm({
       <form className="acct-card acct-settings" onSubmit={(event) => event.preventDefault()}>
         <Row
           id={id('next')}
-          label="Autoplay next episode"
+          label="Autoplay next video"
           hint={
             locked('autoplayNext')
               ? msg('account.setByYourParent')
-              : msg('account.startTheNextEpisode')
+              : msg('account.startTheNextVideo')
           }
         >
           {(ids) => (

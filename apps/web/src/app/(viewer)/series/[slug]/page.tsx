@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { notFound, permanentRedirect } from 'next/navigation';
 import { Badge } from '@ad/ui';
+import { groupCount, resolveSeriesLabels } from '@ad/shared/series-labels';
 import { AppShell } from '../../../../components/Shell';
 import { PublicSeries } from '../../../../components/title/TitleView';
 import { GuestEpisodeProgress } from '../../../../components/guest/GuestEpisodeProgress';
@@ -66,6 +67,7 @@ export default async function SeriesPage({
           title={item.title}
           description={item.description}
           episodes={item.episodeCount}
+          labels={item.labels}
           category={item.categoryName}
           thumbnail={item.thumbnail}
         />
@@ -79,6 +81,7 @@ export default async function SeriesPage({
   const { series, seasons, next } = detail;
   const nextVideo = seasons.flatMap((s) => s.episodes).find((e) => e.video.id === next.videoId);
   const rows = seasonRows(seasons);
+  const words = resolveSeriesLabels(series.labels, null);
   const guest =
     viewer.kind === 'guest' ? { signUpOpen: (await getSite().content()).signUpOpen } : null;
   const inList = guest ? false : (await getLibrary().myListIds(ctx)).includes(itemKey(series));
@@ -94,7 +97,7 @@ export default async function SeriesPage({
       <div className="web-page web-title">
         <h1 className="web-title__name">{series.title}</h1>
         <p className="web-title__meta">
-          <Badge variant="neutral">{`${series.seasonCount} ${series.seasonCount === 1 ? 'season' : 'seasons'}`}</Badge>{' '}
+          <Badge variant="neutral">{groupCount(words, series.seasonCount)}</Badge>{' '}
           <span>{series.categoryName}</span>
         </p>
         {nextVideo ? (
@@ -103,7 +106,7 @@ export default async function SeriesPage({
               label: next.label,
               startSeconds: 0,
               watchHref: `/watch/${nextVideo.video.id}`,
-              episode: { season: next.season, number: next.episode },
+              episode: { season: next.season, number: next.episode, labels: series.labels },
             })}
             itemKey={itemKey(series)}
             inList={inList}
@@ -117,11 +120,13 @@ export default async function SeriesPage({
         <p className="web-title__desc">{series.description}</p>
         {guest ? (
           <GuestEpisodeProgress
+            labels={series.labels}
             seasons={rows}
             initialSeason={pickSeason(seasons, query.season, next.season)}
           />
         ) : (
           <EpisodeList
+            labels={series.labels}
             seasons={rows}
             initialSeason={pickSeason(seasons, query.season, next.season)}
           />

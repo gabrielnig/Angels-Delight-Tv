@@ -1,3 +1,9 @@
+import {
+  positionCode,
+  positionLong,
+  resolveSeriesLabels,
+  type SeriesLabelSetting,
+} from '@ad/shared/series-labels';
 import { formatClock } from '@ad/ui';
 import type { PlayLabel } from './title-cta';
 
@@ -22,10 +28,16 @@ export function watchedLabel(positionSeconds: number, durationSeconds: number): 
   return `${formatClock(positionSeconds)} of ${formatClock(durationSeconds)} watched`;
 }
 
-export function seriesLine(series: { title: string; season: number; episode: number }) {
+export function seriesLine(series: {
+  title: string;
+  season: number;
+  episode: number;
+  labels?: SeriesLabelSetting;
+}) {
+  const words = resolveSeriesLabels(series.labels, null);
   return {
-    long: `${series.title}, Season ${series.season}, Episode ${series.episode}`,
-    short: `${series.title}, S${series.season} E${series.episode}`,
+    long: `${series.title}, ${positionLong(words, series.season, series.episode)}`,
+    short: `${series.title}, ${positionCode(words, series.season, series.episode)}`,
   };
 }
 

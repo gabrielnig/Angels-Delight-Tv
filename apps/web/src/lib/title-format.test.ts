@@ -37,3 +37,14 @@ describe('title page wording (S18)', () => {
     expect(titlePrimaryText('resume', 134, 352)).toBe('Resume, 3 min 38 sec left');
   });
 });
+
+describe('seriesLine with the owner words (M50)', () => {
+  it('uses the labels of the series, and the default words without them', () => {
+    const base = { title: 'Genesis', season: 1, episode: 3 };
+    expect(seriesLine(base).long).toBe('Genesis, Season 1, Episode 3');
+    expect(seriesLine({ ...base, labels: { preset: 'book_chapter' } })).toEqual({
+      long: 'Genesis, Book 1, Chapter 3',
+      short: 'Genesis, B1 Ch3',
+    });
+  });
+});

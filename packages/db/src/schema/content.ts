@@ -282,11 +282,14 @@ export const series = pgTable(
     createdAt: createdAt(),
     updatedAt: updatedAt(),
     deletedAt: timestamptz('deleted_at'),
+    /** Own group and item words for this series (M50), null to follow `content.series_labels`. */
+    labelOverrides: jsonb('label_overrides'),
     searchTsv: tsvector('search_tsv').generatedAlwaysAs(
       sql`to_tsvector('simple', title || ' ' || coalesce(description, ''))`,
     ),
   },
   (t) => [
+    check('series_label_overrides_object', sql`${t.labelOverrides} IS NULL OR jsonb_typeof(${t.labelOverrides}) = 'object'`),
     check('series_slug_format', slugCheck('slug')),
     check('series_maturity_rank_range', sql`${t.maturityRank} IS NULL OR ${t.maturityRank} BETWEEN 0 AND 4`),
     check('series_title_length', sql`char_length(${t.title}) BETWEEN 1 AND 200`),

@@ -86,6 +86,7 @@ export function videoCardToSummary(
           title: card.episode.seriesTitle,
           season: card.episode.seasonNumber,
           episode: card.episode.number,
+          labels: card.episode.labels,
         }
       : undefined,
   };

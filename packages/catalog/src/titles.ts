@@ -1,3 +1,4 @@
+import { effectiveSeriesLabels, type SeriesLabelSetting } from '@ad/shared';
 import { viewerTrackSql } from './caption-visibility';
 import { sql, type SQL } from 'drizzle-orm';
 import { artworkFromRow, type ArtworkDto, type ArtworkRow } from './artwork';
@@ -28,6 +29,8 @@ export interface TitleCard {
   categoryName: string | null;
   /** When the title went live (ISO), or is due to. Null only for data that was never published. */
   publishedAt: string | null;
+  /** The group and item words of a series (M50). Null for a video. */
+  labels: SeriesLabelSetting | null;
 }
 
 export interface CategoryDto {
@@ -63,6 +66,8 @@ interface CardRow extends ArtworkRow {
   kids_safe: boolean;
   maturity_rank: number | null;
   has_captions: boolean;
+  label_overrides: unknown;
+  site_series_labels: unknown;
   sort_at: string | null;
   category_slug: string | null;
   category_name: string | null;
@@ -72,7 +77,8 @@ interface CardRow extends ArtworkRow {
 
 const CARD_COLUMNS =
   sql.raw(`t.kind, t.id, t.slug, t.title, t.description, t.duration_ms, t.episode_count,
-  t.kids_safe, t.maturity_rank, t.has_captions, t.sort_at::text AS sort_at, t.title_key,
+  t.kids_safe, t.maturity_rank, t.has_captions, t.sort_at::text AS sort_at, t.title_key, t.label_overrides,
+  (SELECT st3.value FROM settings st3 WHERE st3.key = 'content.series_labels') AS site_series_labels,
   (SELECT c.slug FROM categories c WHERE c.id = ANY(t.category_ids) AND c.is_visible ORDER BY c.position, c.name LIMIT 1) AS category_slug,
   (SELECT c.name::text FROM categories c WHERE c.id = ANY(t.category_ids) AND c.is_visible ORDER BY c.position, c.name LIMIT 1) AS category_name,
   pa.id AS poster_id, pa.alt_text AS poster_alt, pa.placeholder_color AS poster_color, pa.placeholder_blur AS poster_blur,
@@ -103,7 +109,7 @@ function titlesCte(
   return sql`titles AS (
     SELECT 'video'::text AS kind, v.id, v.slug, v.title, v.description, v.duration_ms::int AS duration_ms,
       NULL::int AS episode_count, v.kids_safe, v.maturity_rank, coalesce(v.published_at, v.publish_at) AS sort_at,
-      v.poster_asset_id,
+      v.poster_asset_id, NULL::jsonb AS label_overrides,
       (EXISTS (SELECT 1 FROM caption_tracks ct WHERE ct.video_id = v.id AND ${sql.raw(viewerTrackSql('ct'))})
       AND coalesce(v.captions_enabled, NOT EXISTS (SELECT 1 FROM settings st WHERE st.key = 'features.captions_default_available' AND st.value = 'false'::jsonb))) AS has_captions,
       ad_unaccent(lower(v.title)) AS title_key,
@@ -114,7 +120,7 @@ function titlesCte(
     SELECT 'series'::text, s.id, s.slug, s.title, s.description, NULL::int,
       (SELECT count(*) FROM seasons esn JOIN episodes eep ON eep.season_id = esn.id JOIN videos ev ON ev.id = eep.video_id
         WHERE esn.series_id = s.id AND ${liveVideoSql('ev', audience, now)})::int,
-      s.kids_safe, s.maturity_rank, coalesce(s.published_at, s.publish_at), s.poster_asset_id,
+      s.kids_safe, s.maturity_rank, coalesce(s.published_at, s.publish_at), s.poster_asset_id, s.label_overrides,
       EXISTS (SELECT 1 FROM seasons csn JOIN episodes cep ON cep.season_id = csn.id
         JOIN caption_tracks ct ON ct.video_id = cep.video_id AND ${sql.raw(viewerTrackSql('ct'))}
         WHERE csn.series_id = s.id),
@@ -141,6 +147,7 @@ function toCard(row: CardRow, mediaOrigin: string): TitleCard {
     categorySlug: row.category_slug,
     categoryName: row.category_name,
     publishedAt: row.sort_at === null ? null : new Date(row.sort_at).toISOString(),
+    labels: row.kind === 'series' ? effectiveSeriesLabels(row.site_series_labels, row.label_overrides) : null,
   };
 }
 

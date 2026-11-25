@@ -32,7 +32,7 @@ describe('NotificationSettings (M44-S14)', () => {
     render(<NotificationSettings profileId="p1" />);
     const bell = await screen.findByRole('switch', { name: 'Bell' });
     expect(bell).toBeChecked();
-    expect(screen.getByRole('switch', { name: 'New episodes of series I follow' })).toBeChecked();
+    expect(screen.getByRole('switch', { name: 'New videos in series I follow' })).toBeChecked();
     expect(screen.getByRole('switch', { name: 'New videos' })).toBeChecked();
     const group = screen.getByRole('radiogroup', { name: 'Email digest' });
     expect(within(group).getByRole('radio', { name: /Off/ })).toBeChecked();

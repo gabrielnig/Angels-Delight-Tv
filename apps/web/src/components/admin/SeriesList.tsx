@@ -1,5 +1,6 @@
 'use client';
 
+import { itemCount, resolveSeriesLabels } from '@ad/shared/series-labels';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useCallback, useMemo, useRef, useState } from 'react';
@@ -159,7 +160,7 @@ export function SeriesList({
       {series.length === 0 ? (
         <EmptyState
           title="No series yet."
-          help="A series groups episodes into seasons. Create one, then add videos to it."
+          help="A series bundles videos into groups you name. Create one, then add videos to it."
           icon="series"
         />
       ) : (
@@ -176,7 +177,7 @@ export function SeriesList({
                   <strong>{s.title}</strong>
                 </Link>
                 <span className="adm-muted">
-                  {s.episodeCount} {s.episodeCount === 1 ? 'episode' : 'episodes'}
+                  {itemCount(resolveSeriesLabels(s.labels, null), s.episodeCount)}
                 </span>
                 <Badge
                   tone={s.published ? 'success' : 'neutral'}
@@ -195,7 +196,7 @@ export function SeriesList({
       <TypedConfirmDialog
         open={confirmDelete}
         title={`Delete ${sel.count} ${sel.count === 1 ? 'series' : 'series'}?`}
-        consequence="The series and its seasons are removed. The videos stay in the library as single videos."
+        consequence="The series and its groups are removed. The videos stay in the library as single videos."
         phrase={String(sel.count)}
         phraseLabel={`Type ${sel.count} to confirm`}
         confirmLabel={`Delete ${sel.count} series`}

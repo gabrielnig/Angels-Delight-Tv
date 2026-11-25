@@ -1,4 +1,4 @@
-import { parseMaturityLabels } from '@ad/shared';
+import { DEFAULT_SERIES_LABELS, parseMaturityLabels, validateSeriesLabels, type SeriesLabelSetting } from '@ad/shared';
 import { z } from 'zod';
 import { DISCOVERY_DEFS } from './settings-discovery';
 import { MONETIZATION_DEFS } from './settings-monetization';
@@ -60,6 +60,17 @@ const maintenanceBanner = z.object({
   startsAt: z.string().datetime().nullable(),
   endsAt: z.string().datetime().nullable(),
 });
+
+/** Series group and item names (M50). Words are validated by the shared helper so one rule serves every caller. */
+const seriesLabels = z
+  .custom<SeriesLabelSetting>((value) => {
+    const result = validateSeriesLabels(value);
+    return result.ok && result.value !== null;
+  }, 'Choose a name set and check each word')
+  .transform((value) => {
+    const result = validateSeriesLabels(value);
+    return result.ok && result.value ? result.value : DEFAULT_SERIES_LABELS;
+  });
 
 export type SettingTier = 'admin' | 'super';
 export type SettingGroup =
@@ -544,6 +555,15 @@ export const SETTING_DEFS = {
     group: 'content',
     label: 'Interface languages',
     description: 'Languages viewers can pick for menus and text. Only English until a language is published',
+  }),
+  'content.series_labels': def({
+    schema: seriesLabels,
+    default: DEFAULT_SERIES_LABELS,
+    isPublic: true,
+    tier: 'admin',
+    group: 'content',
+    label: 'Series group and item names',
+    description: 'Choose a ready made name set or type your own words. A series can override this',
   }),
   'i18n.publish_min_percent': def({
     schema: int(0, 100),

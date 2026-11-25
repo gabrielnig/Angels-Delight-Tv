@@ -455,8 +455,8 @@ export function SeriesCard({
   title,
   href,
   thumbnail,
-  episodeCount,
-  seasonCount = 1,
+  itemsText,
+  groupsText,
   hasCaptions,
   priority,
   inList,
@@ -470,9 +470,10 @@ export function SeriesCard({
   title: string;
   href: string;
   thumbnail?: Thumbnail;
-  episodeCount: number;
-  /** Shown instead of the episode count on the badge when there is more than one season. */
-  seasonCount?: number;
+  /** The item count as words, such as "8 episodes" or "12 chapters". The owner chooses the words (M50). */
+  itemsText: string;
+  /** Shown instead of the item count on the badge when there is more than one group, such as "3 seasons". */
+  groupsText?: string;
   hasCaptions?: boolean;
   priority?: boolean;
   inList?: boolean;
@@ -484,10 +485,7 @@ export function SeriesCard({
   rank?: number;
   className?: string;
 }) {
-  const episodesText = `${episodeCount} episode${episodeCount === 1 ? '' : 's'}`;
-  const manySeasons = seasonCount > 1;
-  const seasonsText = `${seasonCount} seasons`;
-  const countText = manySeasons ? `${seasonsText}, ${episodesText}` : episodesText;
+  const countText = groupsText ? `${groupsText}, ${itemsText}` : itemsText;
   return (
     <article className={cx('ad-card ad-card--series', className)}>
       <Link href={href} className="ad-card__link">
@@ -495,7 +493,7 @@ export function SeriesCard({
         <span className="ad-card__stack">
           <Thumb thumbnail={thumbnail} title={title} priority={priority}>
             <span className="ad-card__badge" aria-hidden="true">
-              <Badge variant="duration">{manySeasons ? seasonsText : episodesText}</Badge>
+              <Badge variant="duration">{groupsText ?? itemsText}</Badge>
             </span>
             {hasCaptions ? <CaptionMark /> : null}
           </Thumb>

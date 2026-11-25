@@ -97,7 +97,7 @@ describe('UploadOverrides', () => {
 
   it('every cell is a labelled control the keyboard can reach', () => {
     setup([row('a')]);
-    for (const label of ['Title', 'Category', 'Series', 'Episode', 'Suitability'])
+    for (const label of ['Title', 'Category', 'Series', 'Number', 'Suitability'])
       expect(screen.getAllByLabelText(`${label} for a_clip-one.mp4`)[0]!).toBeInTheDocument();
   });
 });

@@ -8,7 +8,7 @@ import {
 } from '@ad/player';
 import { findTitle } from '@ad/catalog';
 import { withAccount } from '@ad/db';
-import { isUuid, NotFound } from '@ad/shared';
+import { isUuid, NotFound, positionCode, resolveSeriesLabels } from '@ad/shared';
 import type { PublishedExtras } from '@ad/video';
 import {
   catalogContext,
@@ -293,7 +293,8 @@ export class RealPlaybackData implements PlaybackData {
     const current = flat[index];
     if (!current) return null;
     const next = flat[index + 1];
-    const label = (e: (typeof flat)[number]) => `S${e.season} E${e.video.episode?.number ?? 0}`;
+    const words = resolveSeriesLabels(found.card.labels, null);
+    const label = (e: (typeof flat)[number]) => positionCode(words, e.season, e.video.episode?.number ?? 0);
     const category = found.categories[0]?.name ?? '';
 
     const video: WatchVideo = {

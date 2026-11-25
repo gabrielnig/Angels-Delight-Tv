@@ -1,7 +1,7 @@
 import { and, desc, eq, gte, inArray, sql } from 'drizzle-orm';
 import type { profiles } from '@ad/db';
 import { watchProgress, watchProgressRemovals, withAccount } from '@ad/db';
-import { isUuid, NotFound, type Actor } from '@ad/shared';
+import { isUuid, NotFound, positionCode, resolveSeriesLabels, type Actor } from '@ad/shared';
 import {
   episodeOrder,
   fetchVideoCards,
@@ -67,7 +67,9 @@ export interface ContinueWatchingItem {
 const HISTORY_SCAN_LIMIT = 200;
 
 function episodeLabelOf(card: VideoCard): string | null {
-  return card.episode ? `S${card.episode.seasonNumber} E${card.episode.number}` : null;
+  return card.episode
+    ? positionCode(resolveSeriesLabels(card.episode.labels, null), card.episode.seasonNumber, card.episode.number)
+    : null;
 }
 
 export function isFinished(rules: ViewerRules, positionMs: number, durationMs: number): boolean {

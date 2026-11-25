@@ -25,7 +25,7 @@ describe('PlaybackSettings state 1: default', () => {
   it('lists the rows with the mockup labels and hints', () => {
     wrap(vi.fn());
     const rows: [string, string][] = [
-      ['Autoplay next episode', 'Start the next episode when one ends.'],
+      ['Autoplay next video', 'Start the next video when one ends.'],
       [
         'Autoplay previews on Home',
         'Play a short silent preview when you hover or pause on a title.',
@@ -49,7 +49,7 @@ describe('PlaybackSettings state 1: default', () => {
 
   it('exposes each switch with its label and state', () => {
     wrap(vi.fn());
-    expect(screen.getByRole('switch', { name: 'Autoplay next episode' })).toHaveAttribute(
+    expect(screen.getByRole('switch', { name: 'Autoplay next video' })).toHaveAttribute(
       'aria-checked',
       'true',
     );
@@ -155,7 +155,7 @@ describe('PlaybackSettings state 3: kids profile, locked rows', () => {
     expect(
       screen.getByText('You are in a Kids profile. Some settings are managed by a parent account.'),
     ).toBeInTheDocument();
-    const next = screen.getByRole('switch', { name: 'Autoplay next episode' });
+    const next = screen.getByRole('switch', { name: 'Autoplay next video' });
     const saver = screen.getByRole('switch', { name: 'Data saver' });
     expect(next).toHaveAttribute('aria-disabled', 'true');
     expect(saver).toHaveAttribute('aria-disabled', 'true');
@@ -174,7 +174,7 @@ describe('PlaybackSettings state 5: save error, setting reverted', () => {
     const save = vi.fn().mockRejectedValueOnce(new Error('x')).mockResolvedValue(initial);
     const user = userEvent.setup();
     wrap(save);
-    const sw = screen.getByRole('switch', { name: 'Autoplay next episode' });
+    const sw = screen.getByRole('switch', { name: 'Autoplay next video' });
     await user.click(sw);
     await waitFor(() => expect(sw).toHaveAttribute('aria-checked', 'true'));
     expect(

@@ -119,7 +119,7 @@ export const SHORTCUT_HELP: readonly ShortcutHelpRow[] = [
   { id: 'fullscreen', keys: ['F'], action: 'Full screen' },
   { id: 'jump', keys: ['0 to 9'], action: 'Jump to 0 to 90 percent' },
   { id: 'speed', keys: ['Shift ,', 'Shift .'], action: 'Slower or faster' },
-  { id: 'next', keys: ['N'], action: 'Next episode' },
+  { id: 'next', keys: ['N'], action: 'Next video' },
   { id: 'skip', keys: ['S'], action: 'Skip intro, recap or credits' },
   { id: 'theatre', keys: ['T'], action: 'Theatre mode' },
   { id: 'escape', keys: ['Esc'], action: 'Close menus or leave full screen' },

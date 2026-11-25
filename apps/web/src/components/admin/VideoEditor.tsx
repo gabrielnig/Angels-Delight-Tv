@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 import { LOCALES, type AccountRole } from '@ad/shared';
+import { itemWord, resolveSeriesLabels } from '@ad/shared/series-labels';
 import { can } from '@/lib/admin/can';
 import { formatDuration } from '@/lib/admin/format';
 import { formatBytes } from '@/lib/uploader/format';
@@ -100,6 +101,7 @@ export function VideoEditor({
   const maturityLabels = useMaturityLabels();
   const [saved, setSaved] = useState<FormState>(() => toForm(video));
   const [form, setForm] = useState<FormState>(saved);
+  const words = resolveSeriesLabels(series.find((s) => s.id === form.seriesId)?.labels, null);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
   const [publishOpen, setPublishOpen] = useState(false);
@@ -325,7 +327,7 @@ export function VideoEditor({
               onChange={(e) => set('seriesId', e.target.value)}
             />
             <TextField
-              label="Episode"
+              label={itemWord(words, 1)}
               type="number"
               inputMode="numeric"
               min={1}

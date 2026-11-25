@@ -635,3 +635,24 @@ describe('discovery tab search quality (M45-S08, M45-S09)', () => {
     expect(screen.queryByRole('textbox', { name: 'One group per line' })).toBeNull();
   });
 });
+
+describe('series names tab (M50-S01)', () => {
+  it('saves a preset as the site default', async () => {
+    const { actions, user } = setup();
+    await user.click(screen.getByRole('tab', { name: 'Series names' }));
+    await user.selectOptions(screen.getByRole('combobox', { name: 'Name set' }), 'part_lesson');
+    await user.click(screen.getByRole('button', { name: 'Save changes' }));
+    await waitFor(() =>
+      expect(actions.update).toHaveBeenCalledWith({ 'content.series_labels': { preset: 'part_lesson' } }),
+    );
+  });
+
+  it('keeps the values and names the field when a custom word is empty', async () => {
+    const { actions, user } = setup();
+    await user.click(screen.getByRole('tab', { name: 'Series names' }));
+    await user.selectOptions(screen.getByRole('combobox', { name: 'Name set' }), 'custom');
+    await user.click(screen.getByRole('button', { name: 'Save changes' }));
+    expect(await screen.findAllByText('Enter this word')).not.toHaveLength(0);
+    expect(actions.update).not.toHaveBeenCalled();
+  });
+});

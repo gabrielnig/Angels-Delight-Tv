@@ -3,6 +3,14 @@
 import { useT } from '../../lib/i18n/provider';
 import { useState } from 'react';
 import { Link, ProgressBar, Select, formatDuration } from '@ad/ui';
+import {
+  groupName,
+  groupSummary,
+  groupWord,
+  itemName,
+  resolveSeriesLabels,
+  type SeriesLabelSetting,
+} from '@ad/shared/series-labels';
 
 export interface EpisodeRow {
   number: number;
@@ -19,6 +27,8 @@ export interface EpisodeRow {
 
 export interface SeasonRows {
   number: number;
+  /** The group's own title, such as Genesis. Shown instead of the numbered name. */
+  title?: string | null;
   episodes: EpisodeRow[];
 }
 
@@ -26,11 +36,15 @@ export interface SeasonRows {
 export function EpisodeList({
   seasons,
   initialSeason,
+  labels,
 }: {
   seasons: SeasonRows[];
   initialSeason: number;
+  /** The group and item words of the series. Absent means the site default words. */
+  labels?: SeriesLabelSetting;
 }) {
   const msg = useT();
+  const words = resolveSeriesLabels(labels, null, msg);
   const [season, setSeason] = useState(initialSeason);
   const current = seasons.find((s) => s.number === season) ?? seasons[0];
   if (!current) return null;
@@ -40,7 +54,7 @@ export function EpisodeList({
     <div className="web-episodes">
       {seasons.length > 1 ? (
         <Select
-          label="Season"
+          label={groupWord(words, 1)}
           value={String(season)}
           onChange={(event) => {
             const next = Number(event.target.value);
@@ -53,13 +67,13 @@ export function EpisodeList({
         >
           {seasons.map((s) => (
             <option key={s.number} value={s.number}>
-              {msg('title.season', { number: s.number })}
+              {groupName(words, s.number, s.title, msg)}
             </option>
           ))}
         </Select>
       ) : null}
       <p className="web-episodes__count" aria-live="polite">
-        {msg('title.seasonEpisodes', { number: current.number, count })}
+        {groupSummary(words, current.number, count, msg, current.title)}
       </p>
       <ol className="web-episodes__list">
         {current.episodes.map((episode) => (
@@ -75,7 +89,10 @@ export function EpisodeList({
               </span>
               <span className="web-episode__body">
                 <span className="web-episode__title">
-                  {msg('title.episode', { number: episode.number, title: episode.title })}
+                  {msg('series.labels.itemTitle', {
+                    item: itemName(words, episode.number, msg),
+                    title: episode.title,
+                  })}
                   {episode.current ? (
                     <span className="web-episode__now"> {msg('title.upNext')}</span>
                   ) : null}
@@ -92,7 +109,9 @@ export function EpisodeList({
             {episode.percent ? (
               <ProgressBar
                 value={episode.percent}
-                label={msg('title.episodeProgress', { number: episode.number })}
+                label={msg('series.labels.itemProgress', {
+                  item: itemName(words, episode.number, msg),
+                })}
                 size="sm"
               />
             ) : null}

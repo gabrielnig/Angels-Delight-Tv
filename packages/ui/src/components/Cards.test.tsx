@@ -37,7 +37,7 @@ describe('card links name from their visible text (WCAG 2.5.3)', () => {
       <>
         <VideoCard {...base} />
         <ContinueCard {...base} progressPercent={20} timeLeftLabel="3 min left" />
-        <SeriesCard title="Farming basics" href="/series/farming" episodeCount={8} />
+        <SeriesCard title="Farming basics" href="/series/farming" itemsText="8 episodes" />
       </>,
     );
     for (const link of container.querySelectorAll('a.ad-card__link')) {
@@ -158,7 +158,7 @@ describe('ContinueCard', () => {
 
 describe('SeriesCard', () => {
   it('links to the series with an episode count badge', () => {
-    render(<SeriesCard title="Farming basics" href="/series/farming" episodeCount={8} />);
+    render(<SeriesCard title="Farming basics" href="/series/farming" itemsText="8 episodes" />);
     expect(screen.getByRole('link', { name: 'Farming basics, 8 episodes' })).toHaveAttribute(
       'href',
       '/series/farming',
@@ -167,7 +167,7 @@ describe('SeriesCard', () => {
   });
 
   it('says 1 episode for a single episode', () => {
-    render(<SeriesCard title="Short" href="/series/short" episodeCount={1} />);
+    render(<SeriesCard title="Short" href="/series/short" itemsText="1 episode" />);
     expect(screen.getByText('1 episode')).toBeInTheDocument();
   });
 });
@@ -179,7 +179,7 @@ describe('SeriesCard My List', () => {
       <SeriesCard
         title="Science"
         href="/series/s"
-        episodeCount={3}
+        itemsText="3 episodes"
         inList
         onToggleList={onToggleList}
       />,
@@ -191,7 +191,7 @@ describe('SeriesCard My List', () => {
   });
 
   it('has no My List button without a handler', () => {
-    render(<SeriesCard title="Science" href="/series/s" episodeCount={3} />);
+    render(<SeriesCard title="Science" href="/series/s" itemsText="3 episodes" />);
     expect(screen.queryByRole('button')).toBeNull();
   });
 });
@@ -357,7 +357,7 @@ describe('card rating cluster and Most liked (M44-S03, S05)', () => {
       <SeriesCard
         title="Money 101"
         href="/series/m"
-        episodeCount={4}
+        itemsText="4 episodes"
         rating={{ value: 1, onChange: () => {}, labels }}
       />,
     );
@@ -403,7 +403,7 @@ describe('card maturity chip (M44-S13)', () => {
   });
 
   it('says Rated on a series card too', () => {
-    render(<SeriesCard title="Money 101" href="/series/m" episodeCount={4} maturity="12" />);
+    render(<SeriesCard title="Money 101" href="/series/m" itemsText="4 episodes" maturity="12" />);
     expect(screen.getByRole('link')).toHaveAccessibleName(/Rated 12/);
   });
 });
@@ -473,7 +473,7 @@ describe('card rank for a Top 10 row (M44-S09)', () => {
   });
 
   it('does the same on a series card', () => {
-    render(<SeriesCard title="Money 101" href="/series/m" episodeCount={4} rank={10} />);
+    render(<SeriesCard title="Money 101" href="/series/m" itemsText="4 episodes" rank={10} />);
     expect(screen.getByRole('link')).toHaveAccessibleName(/^Number 10,\s?Money 101/);
   });
 

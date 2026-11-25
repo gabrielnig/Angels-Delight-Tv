@@ -5,7 +5,7 @@ import { useState } from 'react';
 import { Button, EmptyState, SeriesCard, VideoCard, useToast } from '@ad/ui';
 import { addToListAction, removeFromListAction } from '../../app/actions';
 import type { CatalogItem, Page } from '../../lib/data';
-import { itemHref, itemKey, metaLine } from '../../lib/format';
+import { itemHref, itemKey, metaLine, seriesCounts } from '../../lib/format';
 
 export interface MyListGridProps {
   initialItems: CatalogItem[];
@@ -136,7 +136,7 @@ export function MyListGrid({
                 title={item.title}
                 href={itemHref(item)}
                 thumbnail={item.thumbnail}
-                episodeCount={item.episodeCount}
+                {...seriesCounts(item)}
                 inList
                 onToggleList={() => void onRemove(item)}
               />

@@ -47,7 +47,7 @@ export async function setRating(
         await tx.execute(sql`SELECT kind FROM videos WHERE id = ${input.target.id}::uuid`),
       )[0]?.kind;
       if (kind === 'episode')
-        throw new ValidationFailed({ target: ['Rate the series, not a single episode'] });
+        throw new ValidationFailed({ target: ['Rate the series, not a single video in it'] });
     }
     const visible = await fetchCards(tx, catalogContext(ctx), audienceOf(profile), [input.target]);
     if (visible.length === 0) throw new NotFound('Title not found');

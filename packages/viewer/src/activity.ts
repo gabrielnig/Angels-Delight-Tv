@@ -1,6 +1,6 @@
 import { and, desc, eq, sql } from 'drizzle-orm';
 import { auditLog, watchProgress, watchProgressRemovals, withAccount } from '@ad/db';
-import { isUuid, NotFound, type Actor } from '@ad/shared';
+import { isUuid, NotFound, positionCode, resolveSeriesLabels, type Actor } from '@ad/shared';
 import { fetchVideoCards } from '@ad/catalog';
 import { catalogContext, clockOf, type ViewerContext } from './context';
 import { audienceOf, loadOwnedProfile } from './profiles';
@@ -96,7 +96,7 @@ export async function listActivity(
           title: card.title,
           seriesTitle: card.episode?.seriesTitle ?? null,
           episodeLabel: card.episode
-            ? `S${card.episode.seasonNumber} E${card.episode.number}`
+            ? positionCode(resolveSeriesLabels(card.episode.labels, null), card.episode.seasonNumber, card.episode.number)
             : null,
           slug: card.slug,
           posterUrl: card.poster?.variants?.[0]?.url ?? null,

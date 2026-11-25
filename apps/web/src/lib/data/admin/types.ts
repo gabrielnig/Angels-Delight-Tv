@@ -1,3 +1,4 @@
+import type { SeriesLabelSetting } from '@ad/shared/series-labels';
 import type { AccountRole, PublishState, VideoStatus } from '@ad/shared';
 import type { Cue } from '@/lib/admin/cues';
 
@@ -90,6 +91,10 @@ export interface SeriesRecord {
   published: boolean;
   /** 0 (G) to 4 (18), null until rated (M44-S13). */
   maturityRank?: number | null;
+  /** The series' own group and item names, null when it follows the site default (M50). */
+  labelOverride?: SeriesLabelSetting | null;
+  /** What the series shows: its override, else the site default. Absent means the default. */
+  labels?: SeriesLabelSetting;
 }
 
 export interface Page<T> {

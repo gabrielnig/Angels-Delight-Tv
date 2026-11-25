@@ -7,9 +7,12 @@ const ROOTS = [
   resolve(__dirname, '..'),
   resolve(__dirname, '../../../../packages/player/src'),
   resolve(__dirname, '../../../../packages/mailer/src'),
+  // The series label helper calls msg with literal keys (M50).
+  resolve(__dirname, '../../../../packages/shared/src/series-labels.ts'),
 ];
 
 function sources(dir: string): string[] {
+  if (statSync(dir).isFile()) return [dir];
   return readdirSync(dir).flatMap((name) => {
     const path = join(dir, name);
     if (statSync(path).isDirectory()) return name === 'node_modules' ? [] : sources(path);

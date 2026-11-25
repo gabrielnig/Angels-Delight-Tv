@@ -9,3 +9,4 @@ export * from './roles';
 export * from './messages';
 export * from './sponsors';
 export * from './view-all';
+export * from './series-labels';

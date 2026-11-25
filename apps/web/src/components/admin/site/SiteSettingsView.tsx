@@ -17,6 +17,7 @@ import { Tabs } from '../Tabs';
 import { useToast } from '../Toast';
 import { FormActions } from './FormActions';
 import { DiscoveryTab } from './DiscoveryTab';
+import { SeriesNamesTab } from './SeriesNamesTab';
 import { InviteCodesTab, type InviteCodeActions } from './InviteCodesTab';
 import { PagesEditor } from './PagesEditor';
 import { SearchQualityCards } from './SearchQualityCards';
@@ -32,7 +33,7 @@ export interface SiteActions extends Partial<InviteCodeActions> {
   saveSynonyms?(text: string): Promise<SynonymSaveResult>;
 }
 
-type TabId = 'platform' | 'features' | 'home' | 'discovery' | 'invites' | 'pages' | 'maintenance';
+type TabId = 'platform' | 'features' | 'home' | 'series' | 'discovery' | 'invites' | 'pages' | 'maintenance';
 
 const GIB = 1024 ** 3;
 
@@ -131,6 +132,7 @@ export function SiteSettingsView({
               { id: 'platform', label: 'Platform details' },
               { id: 'features', label: 'Features and limits' },
               { id: 'home', label: 'Home' },
+              { id: 'series', label: 'Series names' },
               { id: 'discovery', label: 'Discovery' },
               ...(invites && actions.create && actions.revoke
                 ? [{ id: 'invites', label: 'Invite codes' }]
@@ -146,6 +148,9 @@ export function SiteSettingsView({
               <FeaturesTab data={data} actions={actions} onSaved={setData} />
             ) : null}
             {tab === 'home' ? <HomeTab data={data} actions={actions} onSaved={setData} /> : null}
+            {tab === 'series' ? (
+              <SeriesNamesTab data={data} actions={actions} onSaved={setData} />
+            ) : null}
             {tab === 'discovery' ? (
               <>
                 <DiscoveryTab data={data} actions={actions} onSaved={setData} />

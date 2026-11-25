@@ -336,7 +336,7 @@ export function MarkerEditor({
             value={copyFrom}
             onChange={(e) => setCopyFrom(e.target.value)}
           >
-            <option value="">Choose an episode</option>
+            <option value="">Choose another video</option>
             {siblings.map((s) => (
               <option key={s.id} value={s.id}>{`${s.label} ${s.title}`}</option>
             ))}

@@ -101,3 +101,49 @@ describe('SeriesEditor maturity rating (S127)', () => {
     expect(screen.queryByRole('button', { name: /Apply to all/ })).toBeNull();
   });
 });
+
+describe('SeriesEditor names (M50)', () => {
+  const withLabels = (labels: object, override: object | null = null): SeriesDetail => {
+    const d = detail(2, [2]);
+    return { ...d, series: { ...d.series, labels, labelOverride: override } } as SeriesDetail;
+  };
+
+  it('words the headings, buttons and number fields with the series words', () => {
+    setup(withLabels({ preset: 'book_chapter' }));
+    expect(screen.getByRole('heading', { name: 'Chapters' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Add chapter' })).toBeInTheDocument();
+    expect(screen.getByLabelText('Book')).toBeInTheDocument();
+    expect(screen.getByLabelText('Chapter')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Apply to all 1 chapter' })).toBeInTheDocument();
+  });
+
+  it('keeps the default words when the series has no labels', () => {
+    setup(detail(2, [2]));
+    expect(screen.getByRole('heading', { name: 'Episodes' })).toBeInTheDocument();
+    expect(screen.getByLabelText('Season')).toBeInTheDocument();
+  });
+
+  it('saves an own name set and goes back to the site names', async () => {
+    const { update } = setup(withLabels({ preset: 'season_episode' }));
+    await userEvent.click(screen.getByRole('radio', { name: 'Use names for this series only' }));
+    await userEvent.selectOptions(screen.getByRole('combobox', { name: 'Name set' }), 'part_lesson');
+    await userEvent.click(screen.getByRole('button', { name: 'Save names' }));
+    await waitFor(() => expect(update).toHaveBeenCalledWith('s1', { labels: { preset: 'part_lesson' } }));
+  });
+
+  it('clears the override with the site names option', async () => {
+    const { update } = setup(withLabels({ preset: 'part_lesson' }, { preset: 'part_lesson' }));
+    await userEvent.click(screen.getByRole('radio', { name: 'Use the site names' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Save names' }));
+    await waitFor(() => expect(update).toHaveBeenCalledWith('s1', { labels: null }));
+  });
+
+  it('names the field when a custom word is missing and saves nothing', async () => {
+    const { update } = setup(withLabels({ preset: 'season_episode' }));
+    await userEvent.click(screen.getByRole('radio', { name: 'Use names for this series only' }));
+    await userEvent.selectOptions(screen.getByRole('combobox', { name: 'Name set' }), 'custom');
+    await userEvent.click(screen.getByRole('button', { name: 'Save names' }));
+    expect((await screen.findAllByText('Enter this word')).length).toBeGreaterThan(0);
+    expect(update).not.toHaveBeenCalled();
+  });
+});
