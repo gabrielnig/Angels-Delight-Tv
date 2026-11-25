@@ -96,12 +96,13 @@ export function overlayInitScript(o: { touch: boolean }): string {
         requestAnimationFrame(f);
       });
     },
-    scrollIntoView(el, ms, anchor) {
+    scrollIntoView(el, ms, anchor, safeBottom) {
       const sp = scrollParent(el);
       const box = sp === document.scrollingElement || sp === document.documentElement ? { top: 0, height: innerHeight } : sp.getBoundingClientRect();
       const r = el.getBoundingClientRect();
       // Already comfortably on screen: leave the page where it is so the recording does not jump.
-      if (r.top >= box.top + box.height * 0.08 && r.bottom <= box.top + box.height * 0.85) return Promise.resolve(false);
+      const limit = Math.min(box.top + box.height * 0.85, (sp === document.scrollingElement || sp === document.documentElement ? innerHeight : box.top + box.height) - (safeBottom || 0));
+      if (r.top >= box.top + box.height * 0.08 && r.bottom <= limit) return Promise.resolve(false);
       const want = box.top + box.height * (anchor == null ? 0.35 : anchor);
       const from = sp.scrollTop, to = Math.max(0, Math.min(from + (r.top - want), sp.scrollHeight - sp.clientHeight));
       if (Math.abs(to - from) < 2) return Promise.resolve(false);
@@ -121,6 +122,28 @@ export function overlayInitScript(o: { touch: boolean }): string {
       Object.assign(h.style, { left: r.x - 6 + 'px', top: r.y - 6 + 'px', width: r.width + 12 + 'px', height: r.height + 12 + 'px' });
       document.documentElement.appendChild(h);
       setTimeout(() => { h.style.opacity = '0'; setTimeout(() => h.remove(), 260); }, ms);
+    },
+    zoom(rect, scale, ms) {
+      const root = document.documentElement;
+      root.style.transformOrigin = '0 0';
+      const from = root.__kbz || { s: 1, x: 0, y: 0 };
+      const to = rect
+        ? { s: scale, x: -(rect.x + rect.width / 2) * scale + innerWidth / 2, y: -(rect.y + rect.height / 2) * scale + innerHeight / 2 }
+        : { s: 1, x: 0, y: 0 };
+      // Keep the zoomed page covering the frame: never show empty space beyond the page edges.
+      to.x = Math.min(0, Math.max(to.x, innerWidth - innerWidth * to.s));
+      to.y = Math.min(0, Math.max(to.y, innerHeight - innerHeight * to.s));
+      const t0 = performance.now();
+      return new Promise((res) => {
+        const f = (t) => {
+          const k = Math.min(1, (t - t0) / ms), e = ease(k);
+          const c = { s: from.s + (to.s - from.s) * e, x: from.x + (to.x - from.x) * e, y: from.y + (to.y - from.y) * e };
+          root.style.transform = 'translate(' + c.x + 'px,' + c.y + 'px) scale(' + c.s + ')';
+          root.__kbz = c;
+          if (k < 1) requestAnimationFrame(f); else res(true);
+        };
+        requestAnimationFrame(f);
+      });
     },
     redactAll,
     annotate(sh, size) {

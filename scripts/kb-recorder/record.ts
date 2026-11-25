@@ -6,12 +6,12 @@
 import { mkdir, rename, rm, writeFile } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 import { parseArgs } from 'node:util';
-import { chromium } from '@playwright/test';
 import { burnCaptions } from './burn';
-import { buildCues, readingTimeMs, toAss, toVtt, validateCues, type StepTiming } from './captions';
-import type { Episode } from './episode';
-import { overlayInitScript } from './overlay';
-import { PROFILES, Session, type Profile } from './session';
+import { buildCues, toAss, toVtt, validateCues } from './captions';
+import { validateEpisode } from './episode';
+import { PROFILES, type Profile } from './profiles';
+import { loadEpisode } from './registry';
+import { playEpisode } from './runner';
 
 const { values } = parseArgs({
   options: {
@@ -25,69 +25,11 @@ const { values } = parseArgs({
   },
 });
 
-async function loadEpisode(id: string): Promise<Episode> {
-  const mod = (await import(`./episodes/${id}.ts`)) as { default: Episode };
-  return mod.default;
-}
-
-async function playEpisode(
-  episode: Episode,
-  profile: Profile,
-  o: { baseURL: string; videoDir?: string; shotsDir: string | null; pace: number },
-) {
-  const browser = await chromium.launch({ executablePath: process.env.E2E_CHROMIUM_PATH });
-  const context = await browser.newContext({
-    baseURL: o.baseURL,
-    viewport: { width: profile.width, height: profile.height },
-    deviceScaleFactor: 1,
-    // The app sends a strict style-src CSP; the overlay needs inline styles. Recording only, never point this at production.
-    bypassCSP: true,
-    isMobile: profile.mobile,
-    hasTouch: false,
-    locale: 'en-GB',
-    timezoneId: 'Africa/Lagos',
-    colorScheme: 'light',
-    ...(o.videoDir
-      ? { recordVideo: { dir: o.videoDir, size: { width: profile.width, height: profile.height } } }
-      : {}),
-  });
-  await context.addInitScript({ content: overlayInitScript({ touch: profile.mobile }) });
-  // The storage notice would sit on top of every screen. Mark it as already dismissed (key from lib/consent/notice.ts).
-  await context.addInitScript({
-    content: `try { localStorage.setItem('ad:notice:v1', JSON.stringify({ version: 1, at: Date.now() })); } catch (e) {}`,
-  });
-  const page = await context.newPage();
-  const t0 = Date.now();
-  const session = new Session(page, profile, o.shotsDir, o.pace);
-  const timings: StepTiming[] = [];
-  await mkdir(o.shotsDir ?? '.', { recursive: true });
-  let i = 0;
-  for (const step of episode.steps) {
-    i += 1;
-    const startMs = Date.now() - t0;
-    await step.run(session);
-    if (step.shot && o.shotsDir) {
-      const marks = step.shot.marks.map((m) => ({ target: m.target(session), label: m.label }));
-      await session.shot(`${String(i).padStart(2, '0')}-${step.shot.name}`, marks);
-    }
-    const wanted =
-      Math.max(step.caption ? readingTimeMs(step.caption) + 300 : 0, 0) + (step.holdMs ?? 600);
-    const spent = Date.now() - t0 - startMs;
-    if (spent < wanted * o.pace) await session.pause(wanted - spent / o.pace);
-    timings.push({ caption: step.caption, startMs, endMs: Date.now() - t0 });
-  }
-  await session.pause(1200);
-  const totalMs = Date.now() - t0;
-  const video = page.video();
-  await context.close();
-  const videoPath = video ? await video.path() : null;
-  await browser.close();
-  return { timings, totalMs, videoPath };
-}
-
 async function main() {
   if (!values.episode) throw new Error('Pass --episode <id>');
   const episode = await loadEpisode(values.episode);
+  const problems = validateEpisode(episode);
+  if (problems.length) throw new Error(`Episode ${episode.id}: ${problems.join('; ')}`);
   const baseURL = values['base-url']!;
   const pace = Number(values.pace);
   const profiles = values.profile!.split(',').map((n) => {

@@ -173,3 +173,29 @@ describe('readingTimeMs', () => {
     expect(readingTimeMs('a'.repeat(40) + '\n' + 'b'.repeat(40))).toBe(400 + 80 * 55);
   });
 });
+
+describe('caption position (safe area)', () => {
+  it('carries the position from the step timing into the cue', () => {
+    const cues = buildCues(
+      [
+        { caption: 'One.', startMs: 0, endMs: 3000, position: 'top' },
+        { caption: 'Two.', startMs: 3000, endMs: 6000 },
+      ],
+      { leadMs: 250, minMs: 1800 },
+    );
+    expect(cues[0]!.position).toBe('top');
+    expect(cues[1]!.position).toBeUndefined();
+  });
+
+  it('writes a top aligned ASS event for a top cue only', () => {
+    const ass = toAss(
+      [
+        { startMs: 0, endMs: 2000, text: 'Up here.', position: 'top' },
+        { startMs: 2000, endMs: 4000, text: 'Down here.' },
+      ],
+      { width: 1280, height: 720, fontSize: 34, marginX: 96, marginV: 44, fontName: 'Inter' },
+    );
+    expect(ass).toMatch(/Dialogue: 0,0:00:00\.00,0:00:02\.00,Caption,,0,0,0,,\{\\an8\}Up here\./);
+    expect(ass).toMatch(/,Caption,,0,0,0,,Down here\./);
+  });
+});
