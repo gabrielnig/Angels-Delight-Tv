@@ -39,7 +39,7 @@ Learn where things are in the admin. You open a screen from the [side menu](glos
    ![The Videos screen with its heading marked 1](../../media/S04/S04-02-videos-desktop.webp)
 3. Choose **Dashboard** in the side menu to go back.
 4. Check that a number beside **Captions** shows how many videos wait.
-5. Click **Account menu for Ngozi Eze** at the top right.
+5. Click **Account menu for Demo Editor** at the top right.
    Your own name is on the button.
    ![The account menu open with Preview site marked 1](../../media/S04/S04-05-account-desktop.webp)
 6. Check that **Preview site** shows the site the way viewers see it.

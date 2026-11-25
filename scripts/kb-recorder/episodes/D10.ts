@@ -73,9 +73,9 @@ const episode: Episode = {
       },
     },
     lookStep(
-      'Check that **Undo** is shown if you need to go back.',
-      (s) => s.page.getByRole('button', { name: 'Undo', exact: true }).first(),
-      { holdMs: 17000, shot: { name: 'undo', alt: 'The result message with the Undo button marked 1', label: 'Undo' } },
+      'Check that **Select all on this page** is there if you want to start again.',
+      (s) => s.page.getByLabel('Select all on this page', { exact: true }).first(),
+      { holdMs: 17000, shot: { name: 'again', alt: 'The Select all on this page box marked 1', label: 'Start again' } },
     ),
   ],
 };

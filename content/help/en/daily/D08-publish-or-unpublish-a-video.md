@@ -40,7 +40,8 @@ status: draft
    ![The Publish this video box with Publish now marked 1](../../media/D08/D08-04-dialog-desktop.webp)
 5. Click **Publish now**.
 6. Wait until you see **Unpublish**.
-   ![The message that the video is live marked 1](../../media/D08/D08-06-live-desktop.webp)
+   A message says the video is live for a few seconds. The Unpublish button stays.
+   ![The message that the video is live, with the Unpublish button marked 1](../../media/D08/D08-06-live-desktop.webp)
 7. Click **Unpublish** to hide the video again.
 8. Click **Unpublish** to confirm.
    Viewers can no longer find or watch the video. You can publish it again any time.

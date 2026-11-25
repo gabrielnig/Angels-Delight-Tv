@@ -41,8 +41,8 @@ Filter the [Videos](/admin/videos) list, select the rows you want and add them a
 4. Click **Add to category**.
 5. Select **Science** from the **Category** list.
 6. Click **Apply**.
-7. Check that **Undo** is shown if you need to go back.
-   ![The result message with the Undo button marked 1](../../media/D10/D10-07-undo-desktop.webp)
+7. Check that **Select all on this page** is there if you want to start again.
+   ![The Select all on this page box marked 1](../../media/D10/D10-07-again-desktop.webp)
 <!-- /kb:steps -->
 
 ## What you should see

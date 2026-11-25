@@ -13,8 +13,18 @@ export class CaptureRefused extends Error {
 
 /** Everything a viewer of the recording could read: visible text, field values (not passwords), placeholders, alt and titles. */
 export async function pageText(page: Page): Promise<string> {
+  // A click that opens another page can leave the old one half gone, so the read gets a second go.
+  try {
+    return await readPageText(page);
+  } catch {
+    await page.waitForLoadState('domcontentloaded').catch(() => {});
+    return readPageText(page);
+  }
+}
+
+function readPageText(page: Page): Promise<string> {
   return page.evaluate(() => {
-    const parts: string[] = [document.body.innerText];
+    const parts: string[] = [document.body?.innerText ?? ''];
     for (const el of Array.from(document.querySelectorAll('input, textarea, select'))) {
       const input = el as HTMLInputElement;
       if (input.type === 'password' || input.type === 'hidden') continue;
