@@ -2051,3 +2051,10 @@ Decision: `video.preview` catches every error and records `failed` or `skipped` 
 - Options: A new bulk action type in the shared bulk core with chunking and its own undo token; or a dialog over the existing per item command.
 - Why: The bulk core is built for idempotent field changes in chunks. Numbering depends on order, so it must run in sequence and the preview already shows the result. The per item command keeps the clash check and the audit entry in one place.
 - Reversible: Yes. No schema change beyond migration 0059.
+
+## D-373 Episodes are typed modules in scripts/kb-recorder/episodes, one file per id, with the steps block between comment markers (lane KB-H, M50)
+- Decision: A procedure is `scripts/kb-recorder/episodes/<id>.ts` with a default export of the `Episode` type (id, title, role, steps with caption, run, optional note, shot and caption side, plus screens, actions, dependsOn and viewports for the coverage tests and `--changed`). The article step list is generated between `<!-- kb:steps <id> -->` and `<!-- /kb:steps -->` and nothing else in the article is rewritten. The recorder signs in as the episode role off camera, so a video starts on the task.
+- Options: `content/help/flows/*.flow.ts` as sketched in the plan; a JSON or YAML step file; a Markdown article as the source.
+- Why: The recorder already runs under tsx from `scripts/`, so a typed module there needs no package boundary and fails to compile when a helper changes. The plan's `content/help/flows` path adds a second tsx entry and a second tsconfig for no gain. Markers keep the hand written article parts safe from regeneration.
+- Reversible: Yes. Moving the folder is a rename plus one constant in `registry.ts`.
+

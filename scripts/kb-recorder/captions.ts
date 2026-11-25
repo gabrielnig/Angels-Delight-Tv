@@ -4,10 +4,13 @@ export interface Cue {
   startMs: number;
   endMs: number;
   text: string;
+  /** Top places the caption at the top of the frame so it does not cover the target. Default bottom. */
+  position?: 'top' | 'bottom';
 }
 
 export interface StepTiming {
   caption: string | undefined;
+  position?: 'top' | 'bottom';
   startMs: number;
   endMs: number;
 }
@@ -122,7 +125,8 @@ export function toAss(cues: Cue[], o: AssOptions): string {
   const esc = (t: string) => t.replace(/[{}\\]/g, '').replace(/\n/g, '\\N');
   const events = cues
     .map(
-      (c) => `Dialogue: 0,${assTime(c.startMs)},${assTime(c.endMs)},Caption,,0,0,0,,${esc(c.text)}`,
+      (c) =>
+        `Dialogue: 0,${assTime(c.startMs)},${assTime(c.endMs)},Caption,,0,0,0,,${c.position === 'top' ? '{\\an8}' : ''}${esc(c.text)}`,
     )
     .join('\n');
   return [
@@ -156,7 +160,12 @@ export function buildCues(steps: StepTiming[], o: { leadMs: number; minMs: numbe
     let endMs = Math.max(s.endMs, startMs + o.minMs);
     const next = withText[i + 1];
     if (next) endMs = Math.min(endMs, next.startMs + o.leadMs);
-    return { startMs, endMs: Math.max(endMs, startMs), text: s.caption };
+    return {
+      startMs,
+      endMs: Math.max(endMs, startMs),
+      text: s.caption,
+      ...(s.position ? { position: s.position } : {}),
+    };
   });
 }
 

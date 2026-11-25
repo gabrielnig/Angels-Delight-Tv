@@ -1,4 +1,7 @@
 {
   "extends": "../tsconfig.base.json",
-  "include": ["*.ts", "kb-recorder/*.ts"]
+  "include": [
+    "*.ts",
+    "kb-recorder/**/*.ts"
+  ]
 }

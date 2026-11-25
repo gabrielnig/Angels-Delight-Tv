@@ -1,43 +1,22 @@
 /// <reference lib="dom" />
 import type { Locator, Page } from '@playwright/test';
 import { arrowFor, placeBadge, type Rect } from './annotate';
+import type { Profile } from './profiles';
+import { captionBand, captionPlacement, type Band } from './safe-area';
 
-export interface Profile {
-  name: 'desktop' | 'mobile';
-  width: number;
-  height: number;
-  mobile: boolean;
-  captionFontSize: number;
-  captionMarginX: number;
-  captionMarginV: number;
-}
-
-export const PROFILES: Record<Profile['name'], Profile> = {
-  desktop: {
-    name: 'desktop',
-    width: 1280,
-    height: 720,
-    mobile: false,
-    captionFontSize: 34,
-    captionMarginX: 96,
-    captionMarginV: 44,
-  },
-  mobile: {
-    name: 'mobile',
-    width: 390,
-    height: 844,
-    mobile: true,
-    captionFontSize: 22,
-    captionMarginX: 24,
-    captionMarginV: 64,
-  },
-};
+export { PROFILES, type Profile } from './profiles';
 
 declare global {
   interface Window {
     __kb: {
       glide(x: number, y: number, ms: number): Promise<boolean>;
-      scrollIntoView(el: Element, ms: number, anchor?: number): Promise<boolean>;
+      scrollIntoView(
+        el: Element,
+        ms: number,
+        anchor?: number,
+        safeBottom?: number,
+      ): Promise<boolean>;
+      zoom(rect: Rect | null, scale: number, ms: number): Promise<boolean>;
       highlight(r: Rect, ms: number): void;
       redactAll(deep: boolean): void;
       annotate(shapes: unknown[], size: number): void;
@@ -54,7 +33,25 @@ export class Session {
     readonly profile: Profile,
     private readonly shotsDir: string | null,
     private readonly pace = 1,
-  ) {}
+  ) {
+    this.band = captionBand(profile);
+  }
+
+  /** Multiply a motion time by this so slow runs stay slow and locator runs stay quick. */
+  get paceFactor(): number {
+    return this.pace;
+  }
+
+  /** Where the burned in caption can sit, so a target is never scrolled under it. */
+  readonly band: Band;
+  /** The box of the last element the viewer was pointed at, used to choose the caption side. */
+  lastTarget: Rect | null = null;
+
+  /** Which side the caption of the step just played should use. */
+  captionSide(): 'top' | 'bottom' {
+    if (!this.lastTarget) return 'bottom';
+    return captionPlacement(this.lastTarget, this.profile, this.band);
+  }
 
   pause(ms: number): Promise<void> {
     return sleep(ms * this.pace);
@@ -69,13 +66,18 @@ export class Session {
   /** Smoothly scrolls so the element sits about a third of the way down its scroll area. */
   async reveal(target: Locator, anchor = 0.35): Promise<void> {
     await target.waitFor({ state: 'visible' });
-    const moved = await target.evaluate((el, a) => window.__kb.scrollIntoView(el, 900, a), anchor);
+    const safe = this.band.bottom;
+    const moved = await target.evaluate((el, [a, b]) => window.__kb.scrollIntoView(el, 900, a, b), [
+      anchor,
+      safe,
+    ] as [number, number]);
     if (moved) await this.pause(300);
   }
 
   private async centre(target: Locator): Promise<{ x: number; y: number; box: Rect }> {
     const box = await target.boundingBox();
     if (!box) throw new Error('Target has no box');
+    this.lastTarget = box;
     return { x: box.x + box.width / 2, y: box.y + box.height / 2, box };
   }
 
