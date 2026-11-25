@@ -7,7 +7,7 @@ role: editor
 needs: [D02]
 related: [D02, D07, D08]
 readMinutes: 4
-watchSeconds: 80
+watchSeconds: 73
 video:
   id: VD05
   phone: true
@@ -40,7 +40,7 @@ Fill in the details of a video: its description, [categories](glossary:category)
 3. Click **Edit Counting Money in Naira**.
 4. Check that the **Title** says what viewers will learn.
    ![The Title box marked 1](../../media/D05/D05-04-title-desktop.webp)
-5. Type "Learn how to count and compare naira notes and coins." in the **Description** box.
+5. Type "Learn to count and compare naira." in the **Description** box.
    Start with what viewers will learn. The counter shows how many characters you may use.
    ![The Description box with the counter marked 1](../../media/D05/D05-05-description-desktop.webp)
 6. Tick **Maths**.

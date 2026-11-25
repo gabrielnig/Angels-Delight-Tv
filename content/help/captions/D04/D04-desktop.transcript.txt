@@ -1,0 +1,12 @@
+Fix an upload that stopped or failed (D04)
+For Editors. 1 min 2 s.
+
+0:05  Choose Upload in the side menu.
+      The pointer moves to Upload.
+0:11  Click Choose videos.
+      The pointer moves to Choose videos.
+0:21  Choose a file from your computer, named "flaky-lesson.mp4".
+0:28  Wait until you see Retry.
+0:33  Click Retry flaky-lesson.mp4.
+      The pointer moves to Retry flaky-lesson.mp4.
+0:37  Wait until you see Uploaded just now.

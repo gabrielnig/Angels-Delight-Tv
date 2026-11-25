@@ -1,0 +1,13 @@
+See your site the way a viewer sees it (S07)
+For Editors. 1 min 13 s.
+
+0:06  Choose Videos in the side menu.
+      The pointer moves to Videos.
+0:12  Click Edit Staying Safe Online.
+      The pointer moves to Edit Staying Safe Online.
+0:18  Check that Before you publish shows what is left to do.
+      The pointer moves to Before you publish.
+0:26  Check that Preview as viewer is on the video screen.
+      The pointer moves to Preview as viewer.
+0:34  Click Preview as viewer.
+      The pointer moves to Only signed in staff can see this preview. It plays the vide.

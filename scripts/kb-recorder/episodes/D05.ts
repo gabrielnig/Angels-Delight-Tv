@@ -49,11 +49,11 @@ const episode: Episode = {
       { shot: { name: 'title', alt: 'The Title box marked 1', label: 'Title' } },
     ),
     {
-      caption: 'Type "Learn how to count and compare naira notes and coins." in the **Description** box.',
+      caption: 'Type "Learn to count and compare naira." in the **Description** box.',
       note: 'Start with what viewers will learn. The counter shows how many characters you may use.',
       holdMs: 2200,
       run: async (s) => {
-        await typeInto(s, 'Description', 'Learn how to count and compare naira notes and coins.');
+        await typeInto(s, 'Description', 'Learn to count and compare naira.');
       },
       shot: {
         name: 'description',

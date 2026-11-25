@@ -7,7 +7,7 @@ role: editor
 needs: [D05]
 related: [D05, D08]
 readMinutes: 3
-watchSeconds: 70
+watchSeconds: 63
 video:
   id: VD06
   captions: burned
@@ -42,7 +42,7 @@ Pick one of six frames from your video as its [poster](glossary:poster), check h
    The time is where in the video the frame comes from.
 6. Scroll to **Crop and focus**.
    ![The Crop and focus card with the focus point marked 1](../../media/D06/D06-06-crop-desktop.webp)
-7. Type "Naira notes and coins on a table." in the **Poster description (alt text)** box.
+7. Type "Naira notes and coins." in the **Poster description (alt text)** box.
    This text is read aloud for people who cannot see the picture.
 8. Click **Save poster**.
 9. Wait until you see **Before you publish**.

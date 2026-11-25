@@ -7,7 +7,7 @@ role: editor
 needs: [S04]
 related: [R02, S04]
 readMinutes: 3
-watchSeconds: 70
+watchSeconds: 62
 video:
   id: VS05
   captions: burned

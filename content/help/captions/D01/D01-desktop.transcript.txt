@@ -1,0 +1,17 @@
+Check the Dashboard (D01)
+For Editors. 1 min 3 s.
+
+0:05  Check that the Published tile counts the videos viewers can watch.
+      The pointer moves to Published.
+0:14  Check that the Needs attention card lists what waits for you.
+      The pointer moves to Needs attention.
+0:22  Scroll to Recent uploads.
+      The pointer moves to Recent uploads.
+0:28  Scroll to Storage used.
+      The pointer moves to Storage used.
+0:34  Scroll to Views, last 7 days.
+      The pointer moves to Views, last 7 days.
+0:41  Click Open in Encoding to go straight to a video that needs you.
+      The pointer moves to Open in Encoding.
+0:51  Choose Dashboard in the side menu to come back.
+      The pointer moves to Dashboard.

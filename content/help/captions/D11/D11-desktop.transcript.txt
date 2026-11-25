@@ -1,0 +1,19 @@
+Delete a video and restore it from Trash (D11)
+For Admins. 1 min 1 s.
+
+0:04  Choose Videos in the side menu.
+      The pointer moves to Videos.
+0:10  Click Edit Telling the Time.
+      The pointer moves to Edit Telling the Time.
+0:15  Click Move to Trash.
+      The pointer moves to Move to Trash.
+0:19  Click Move to Trash to confirm.
+      The pointer moves to Move to Trash.
+0:24  Choose Trash in the side menu.
+      The pointer moves to Trash.
+0:30  Click Restore Telling the Time.
+      The pointer moves to Restore Telling the Time.
+0:35  Choose Videos in the side menu.
+      The pointer moves to Videos.
+0:41  Check that Telling the Time is back in the list.
+      The pointer moves to Telling the Time.

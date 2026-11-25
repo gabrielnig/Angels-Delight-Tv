@@ -1,0 +1,14 @@
+Sign in and set up two step sign in (S02)
+For everyone. 1 min 2 s.
+
+0:03  Go to the sign in page, "/admin/login".
+0:09  Type your email in the Email box.
+0:15  Type your password in the Password box.
+0:22  Click Sign in.
+      The pointer moves to Sign in.
+0:27  Wait until you see Enter your code.
+0:34  Type the 6 digit code from your app in the Digit 1 of 6 box.
+      The pointer moves to Digit 1 of 6.
+0:41  Click Verify.
+      The pointer moves to Verify.
+0:46  Wait until you see Dashboard. You are signed in.

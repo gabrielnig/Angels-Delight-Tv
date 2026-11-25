@@ -8,7 +8,7 @@ roleNote: Editors can restore from Trash. Only Admins can move a video to Trash.
 needs: [D10]
 related: [D10, D08]
 readMinutes: 3
-watchSeconds: 70
+watchSeconds: 61
 video:
   id: VD11
   captions: burned

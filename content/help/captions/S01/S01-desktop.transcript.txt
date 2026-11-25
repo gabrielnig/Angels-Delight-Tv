@@ -1,0 +1,21 @@
+Welcome: what this platform does and what you can do (S01)
+For Editors. 1 min 13 s.
+
+0:05  Check that the Dashboard is open. It is your home in the admin.
+      The pointer moves to Dashboard.
+0:12  Choose Videos in the side menu to see every video you have added.
+      The pointer moves to Videos.
+0:20  Choose Upload in the side menu to add a new video.
+      The pointer moves to Upload.
+0:26  Choose Encoding in the side menu to watch videos get ready.
+      The pointer moves to Encoding1 need attention.
+0:33  Choose Captions in the side menu to check the words on screen.
+      The pointer moves to Captions1 need attention.
+0:41  Choose Home curation in the side menu to arrange the Home page.
+      The pointer moves to Home curation.
+0:48  Choose Analytics in the side menu to read your numbers.
+      The pointer moves to Analytics.
+0:55  Choose Help centre in the side menu when you need a guide.
+      The pointer moves to Help centre.
+1:02  Choose Dashboard in the side menu to come back home.
+      The pointer moves to Dashboard.

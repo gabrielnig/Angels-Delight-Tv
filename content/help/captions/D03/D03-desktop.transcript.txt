@@ -1,0 +1,16 @@
+Upload many videos and share details (D03)
+For Editors. 1 min 2 s.
+
+0:05  Choose Upload in the side menu.
+      The pointer moves to Upload.
+0:11  Tick Science to give every file this category.
+0:17  Select Everyone from the Suitability list.
+      The pointer moves to Not setEveryoneKidsOlder viewers.
+0:23  Select 2 at a time from the Files at once list.
+      The pointer moves to 1 at a time2 at a time3 at a time.
+0:29  Click Choose videos.
+      The pointer moves to Choose videos.
+0:39  Choose a file from your computer.
+0:44  Wait until you see Uploaded just now.
+0:50  Check that Details were saved with the draft.
+      The pointer moves to Details were saved with the draft..

@@ -25,6 +25,14 @@ async function control(s: Session, label: string): Promise<Locator> {
   let loc = s.page.getByRole(ROLES[0], { name: label, exact: true });
   for (const role of ROLES.slice(1))
     loc = loc.or(s.page.getByRole(role, { name: label, exact: true }));
+  // With a box open on the page, the control a person means is the one inside the box.
+  const box = s.page.getByRole('dialog');
+  if ((await box.count()) > 0) {
+    let inBox = box.getByRole(ROLES[0], { name: label, exact: true });
+    for (const role of ROLES.slice(1))
+      inBox = inBox.or(box.getByRole(role, { name: label, exact: true }));
+    if (await visible(inBox.first(), 1500)) return inBox.first();
+  }
   // A control whose name is exactly the label wins over the looser matches below, so a choice called "Publish now"
   // does not take the click meant for the button of the same name.
   const exact = loc.first();
@@ -96,7 +104,7 @@ async function demoFile(box: FileChooser, name?: string) {
   }
   // Big enough to be sent in more than one part, like a real video, so a failed part can be shown.
   return {
-    name: name ?? 'demo-lesson.mp4',
+    name: name ?? 'demo_lesson.mp4',
     mimeType: 'video/mp4',
     buffer: Buffer.alloc(20 * 1024 * 1024),
   };

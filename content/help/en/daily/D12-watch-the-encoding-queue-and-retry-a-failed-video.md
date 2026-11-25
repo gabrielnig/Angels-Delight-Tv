@@ -7,7 +7,7 @@ role: editor
 needs: [D02]
 related: [D02, D07]
 readMinutes: 3
-watchSeconds: 70
+watchSeconds: 63
 video:
   id: VD12
   phone: true
