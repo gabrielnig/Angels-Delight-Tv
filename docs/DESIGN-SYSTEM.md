@@ -133,7 +133,7 @@ Tokens added by M47 (layout, motion, scrim and fixed colours):
 | `--color-hero-track` / `--color-hero-track-done` | `rgba(255, 255, 255, 0.4)` / `rgba(255, 255, 255, 0.95)` | Hero slide indicator segment still to come, and shown (or the current one with no fill) |
 | `--color-hero-border` / `--color-hero-chip-hover` | `rgba(255, 255, 255, 0.85)` / `rgba(14, 15, 19, 0.8)` | Hero Pause and sound button border, and their fill on hover |
 | `--scrim-rgb`, `--scrim-hero-start` / `-mid` / `-end` | `14, 15, 19`, 0.85 / 0.45 / 0 | Hero scrim stops, with `-hold`, `-mid` and `-end` positions per desktop and mobile |
-| `--nav-scrim-hold` | 70% | Nav scrim holds 0.85 to here |
+| `--nav-scrim-fade` | `--space-4` (16px) | The nav scrim holds 0.85 through the whole bar, then fades over this much below it (replaces `--nav-scrim-hold`, D-381) |
 | `--tabbar-height` | 3.5rem | Bottom tab bar |
 | `--avatar-initial-120` / `-160` | 2.5rem / 3.5rem | Large avatar initials |
 | `--prose-max` | 90rem | Text page width cap |
@@ -504,7 +504,11 @@ Accessibility: card is an `<a>` with accessible name "Title, 4 minutes". Actions
 ### 11.8 Top navigation (viewer)
 
 - Height `--nav-height` (56 mobile, 68 from `md`). Logo (links home) left, primary links (Home, Browse, My List) then search and profile avatar on the right.
-- Mobile: logo, search icon, avatar in the top bar. A bottom tab bar (Home, Browse, Search, My List) with 4 items, 56px tall, icon plus label, current item marked with `--color-primary` icon and text plus a 3px top bar. Safe area padding. The bottom bar hides on the watch page.
+- Mobile: one bar for visitors and signed in viewers: logo, Search icon, the bell when signed in, and one account icon (a person for a visitor, the profile avatar when signed in). Every control is 44 by 44 px with `--space-1` between. Signing in changes only the last slot. A visitor has no Sign in button on the bar below 960 px: the account icon opens the account sheet (11.12). The language picker stays in the bar when two or more languages are on.
+- Brand name: clips with an ellipsis and never wraps, steps down to `--text-small` under 400 px, hides under 400 px when the bell shows and under 340 px always. The link keeps its accessible name. Kids (profile or Kids mode): the logo mark, a Kids word badge on `--color-accent`, no name, no bell, no language picker, no Sign in or Create account.
+- Over the hero the scrim holds 0.85 through the whole bar and fades over `--nav-scrim-fade` below it, so icons keep 4.5:1 over pale art. No `viewport-fit=cover` and no edge to edge hero under the status bar (D-374).
+- Control states: hover (fine pointer only) and pressed fill with `--color-player-border` on the clear bar and `--color-surface-sunken` on the solid bar, pressed with no delay (`--motion-press`). The header and the tab bar are not drawn on the watch page.
+- Tab bar: Home, Browse, Search, My List, 56px tall plus the bottom safe area, icon plus label, current item marked with `--color-primary` icon and text plus a 3px top bar. Labels are capped at 12 characters (a translation workspace warning, D-380) and clip with an ellipsis, never wrap. The focus ring is drawn inside the item. Hover is fine pointer only, pressed fills `--color-surface-sunken`. A phone on its side gets a 44px bar with the label beside the icon and a 48px header (`--tabbar-height`, `--nav-height` override).
 - Desktop: text links, 16px semibold. Active link has a 3px `--color-primary` underline.
 - Behaviour: transparent with a top scrim over the hero, becomes `--color-surface` with `--shadow-1` after 40px scroll (a sentinel and IntersectionObserver). On non hero pages it is always solid. Text colour flips with background to keep contrast (white on scrim, ink on surface).
 - States per link: default, hover (underline), focus (ring), active (`aria-current="page"`), loading none.
@@ -538,6 +542,7 @@ Accessibility: card is an `<a>` with accessible name "Title, 4 minutes". Actions
 
 - Modal: centred, max width 480 (small), 640 (medium), 90vh max height, `--radius-lg`, `--shadow-3`, surface fill, scrim `rgba` ink 60 percent. Header (H3, close button 44px), body (scrolls), footer (actions right aligned, primary on the right, Cancel secondary).
 - Mobile: becomes a bottom sheet anchored to the bottom, full width, top radius, drag handle, max height 90vh, actions stacked full width.
+- Account sheet (L12, under 600 px): the account icon and the avatar open the Modal as a sheet with 52px rows. A visitor sees Sign in (the one filled button), Create account, a Kids mode switch with its help line and Help. A signed in viewer sees the profile name, Adult or Kids profile, and the menu items. It closes with Escape, the Close button or the scrim and focus returns to the icon. From 600 px the same items are a popover (D-378).
 - Behaviour: `role="dialog"` with `aria-modal="true"`, labelled by its title. Focus moves into the dialog on open (first heading or first field), is trapped, Esc closes (unless a destructive confirm with unsaved data asks first), focus returns to the trigger. Background scroll locked and inert. Click on scrim closes except for destructive or form dialogs.
 - Destructive confirm: title says what will happen ("Delete this video?"), body says the consequence ("This removes it for everyone. This cannot be undone."), buttons "Delete video" (danger) and "Keep it" (secondary). Never "OK" and "Cancel" for destructive actions.
 - States: open animation 200ms (opacity plus translateY 8px), reduced motion no transform. Loading (primary button loading, dialog stays open), error (inline danger banner at top of body, dialog stays open).

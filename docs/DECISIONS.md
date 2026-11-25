@@ -2098,3 +2098,8 @@ Decision: `video.preview` catches every error and records `failed` or `skipped` 
 - Options: Block labels over 12; warn only (chosen); no cap and let the tab clip.
 - Why: Four tabs share 320 px, so about 80 px each. A warning tells the translator while a block would stop a correct translation. The ellipsis keeps a longer label from breaking the bar if one gets through.
 - Reversible: Yes.
+## D-381 The nav scrim holds 0.85 through the whole bar and fades over --nav-scrim-fade below it (lane L12, slice 4)
+- Decision: The new token `--nav-scrim-fade` (`--space-4`, 16px) replaces `--nav-scrim-hold` (70 percent). The scrim layer reaches that far below the bar and holds 0.85 down to the bar bottom, then fades to clear. White icons and text keep 12.6 to 1 over pure white art at the bar bottom. A Chromium test (`packages/ui/test/nav-scrim-contrast.test.ts`) reads the resolved gradient and checks the hold and the ratio. The display font gets a layout test: the mark, the icons and the bar height stay put when the brand font changes width (`next/font` already supplies a size matched fallback for the self hosted Space Grotesk).
+- Options: Keep the 70 percent hold (icon bottoms drop under 3:1 whenever something sits under the bar); raise the hold to 100 percent (a hard edge); hold through the bar and fade below (chosen).
+- Why: A percentage hold depends on the bar height, so any extra height under the bar moved the fade into the icons. A fixed fade below the bar does not. Reviewed in `docs/reviews/v2/L12-review.md` finding 1.
+- Reversible: Yes.

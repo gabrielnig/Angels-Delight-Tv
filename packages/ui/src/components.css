@@ -2275,12 +2275,15 @@
   opacity: 0;
 }
 
+/* The layer reaches --nav-scrim-fade below the bar and holds 0.85 to the bar bottom, so icons keep contrast over a
+   pale poster even when something sits under the bar (L12, D-381). */
 .ad-nav::after {
+  bottom: calc(var(--nav-scrim-fade) * -1);
   opacity: 1;
   background: linear-gradient(
     to bottom,
     rgba(var(--scrim-rgb), var(--scrim-hero-start)) 0,
-    rgba(var(--scrim-rgb), var(--scrim-hero-start)) var(--nav-scrim-hold),
+    rgba(var(--scrim-rgb), var(--scrim-hero-start)) calc(100% - var(--nav-scrim-fade)),
     rgba(var(--scrim-rgb), 0) 100%
   );
 }

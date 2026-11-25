@@ -181,3 +181,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 - Tab labels longer than 12 characters get a warning in the translation workspace (the four `nav` tab keys, on save and on import) and are clipped with an ellipsis in the bar. The focus ring sits inside each tab, pressed and hover states are added, and a phone in landscape gets a 44 px bar with the label beside the icon. Width tested at 320, 360, 414 and landscape with long Yoruba, Igbo and Hausa labels. Decision D-380.
 
+### Lane L12 mobile header, part 4: scrim token and docs
+
+- The bar scrim over the Home hero now holds 0.85 through the whole bar and fades over the new token `--nav-scrim-fade` below it (it replaces `--nav-scrim-hold`), so icons stay readable over pale posters. A test reads the resolved gradient and checks the contrast. A second test checks the header does not move when the display font loads in a different width. Design system 11.8 and 11.12, the screen map (S81, S182 to S185) and stories M47-S17 to M47-S19 describe the phone header, sheet and tab bar. Decision D-381.
+
