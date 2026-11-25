@@ -15,7 +15,7 @@ Worktree `/home/claude/wt2/KBP-build`. Builds the help centre itself: the conten
 | 3 Progress | migration 0060 `help_progress` (RLS, purge, export), service with fixture and real versions, Mark as done, Was this helpful, progress card | Merged in the third platform PR |
 | 4 Video | private media route with Range for pictures, videos and captions, `HelpVideo` player with captions track, quality and picture choice, transcript, watched at 90 percent, `/admin/help/videos/[id]` with playlist, isolation test | Merged in the fourth platform PR |
 | 5 Panel | contextual help drawer and sheet | Not yet |
-| 6 Search and glossary | search page and highlights, glossary page | Not yet |
+| 6 Search and glossary | pure scorer in `@ad/help` (`search.ts`: stemming, aliases, one edit typo tolerance, Did you mean, role ordering, highlights), `/admin/help/search`, `/admin/help/glossary` (A to Z jump, filter, anchors by slug, guide links), search box on the help home with the slash key. Recent searches are not stored, so no storage key was added | Merged in the fifth platform PR |
 | 7 States and checks | offline and error states, accessibility and layout e2e, final docs | Not yet |
 
 Update this table in every platform PR.
