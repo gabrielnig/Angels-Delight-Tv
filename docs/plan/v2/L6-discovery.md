@@ -151,8 +151,8 @@ As Sister Vanessa, I want to set the site description and the default share pict
 
 ### M45-S06 Share menu (Must)
 As a viewer, I want to share a title by WhatsApp or by copying the link, so that I can send it to friends and family.
-- AC1: Given my phone supports native share, When I tap Share, Then the system share sheet opens with the title, text and link.
-- AC2: Given a desktop browser, When I click Share, Then a menu offers Copy link and WhatsApp first, then Facebook and X, plus any channel the admin enabled.
+- AC1: Given any device, When I tap Share, Then our Share sheet opens (a bottom sheet under 600 px, a popover from 600 px) and lists Copy link, then the channels the admin enabled, then More when the device has its own share menu (superseded by M45-S25, D-391).
+- AC2: Given a desktop browser, When I click Share, Then the popover offers Copy link and WhatsApp first, then Facebook, X, Telegram, Email and Messages as the admin ordered them (superseded by M45-S25).
 - AC3: Given I copy, When it succeeds, Then I see "Link copied", and if the clipboard is blocked a selectable link field shows.
 - AC4: Given I am on a kids profile, When the title page shows, Then there is no Share button.
 - Edge: cancelling the native sheet shows nothing. All external links open in a new tab and say so to screen readers.
@@ -362,3 +362,30 @@ As a developer or owner, I want one command that checks the real tags and pictur
 - AC1: Given a running build, When `pnpm share:check --base <url>` runs, Then it prints a table and exits 1 on any missing tag, relative or non https url, canonical mismatch, redirect, wrong content type, picture over 300 KB, wrong or mismatched dimensions or slow response.
 - AC2: `pnpm share:check --self-test` runs the rules against fixtures and runs in CI.
 
+### M45-S25 Share sheet with every place to share (Must, lane L15a)
+As a viewer, I want one Share control that shows every place I can send a title, so that I can reach my family and friends on the app they use.
+- AC1: Given I press Share anywhere, When the sheet opens, Then I see the title and its picture, large labelled targets for Copy link, WhatsApp, Facebook, X, Telegram, Email, Messages and More, and the link in a field with a Copy button.
+- AC2: Given a phone under 600 px, When the sheet opens, Then it rises from the bottom edge with a handle and a Close button, I can swipe it down, it respects the safe area, and every target is at least 44 px.
+- AC3: Given a window 600 px or wider, When I press Share, Then a popover hangs from the button and stays inside the window, or a centred dialog shows on a short window.
+- AC4: Given I copy the link, When it works, Then the button says Copied and a polite status line says Link copied. If nothing can copy, the field is selected and a sentence tells me to press and hold.
+- AC5: Given my device has a share menu, When I choose More, Then it opens with the title, text and link. If I cancel, nothing is shown. If it fails, a sentence says so and the link stays ready.
+- AC6: Given the admin changed Share options, When the sheet opens, Then the channels and their order follow the setting. Copy link is always first and More is last.
+- AC7: Given I use only the keyboard, When I open the sheet, Then focus moves into it and stays there, Escape closes it and focus returns to Share.
+- AC8: Given I am offline, When the sheet opens, Then Copy link, Messages and More work and the others explain that they need a connection.
+- Edge: very long titles stop at two lines. Yoruba, Igbo and Hausa labels may use two lines and never overflow at 320 px.
+- Error and empty: as AC4, AC5, AC8. A guest shares the same way, with no sign in.
+
+### M45-S26 Share from every place a title appears (Must, lane L15a)
+As a viewer, I want to share from the title page, series page, home hero, hover card, Continue menu, watch page and end screen, so that I never have to hunt for it.
+- AC1: Given any of those places, When I press Share, Then the sheet opens for that title (or the series for an episode).
+- AC2: Given the link is shown, Then it is the clean public address of the title page or series page, never the watch address, a signed address, a session address or a tracking tag.
+- AC3: Given a kids profile or a guest in Kids mode, Then no Share control shows anywhere. A title that must not be shared (kids only, or a failed lookup) has none either.
+- AC4: Given the autoplay countdown is running on the end screen, Then Share is not offered until it is cancelled, so a share is never cut short by the next title.
+- Edge: touch devices have no hover card, so a plain card has no Share; the title, series, hero, Continue menu and watch page cover touch.
+
+### M45-S27 Share counts without personal data (Should, lane L15a)
+As the owner, I want to know which places viewers share to, so that I can choose which to keep, without tracking anyone.
+- AC1: Given someone picks a place that works, Then one event with the place and whether it was a video or a series is counted. It carries no link, title, text or id.
+- AC2: Given Global Privacy Control or Do Not Track is on, Then nothing is sent.
+- AC3: Given a failed copy, a cancelled device menu or an offline tap, Then nothing is counted.
+- AC4: Given the batch reaches the server, Then two daily counters are bumped (`share` by place, `share_title` by video or series), with no identity, for every audience.

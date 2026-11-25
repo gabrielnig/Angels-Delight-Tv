@@ -41,8 +41,8 @@ Audit: `docs/audits/2026-11-25-share-audit.md`. Mockups S200 to S203 in `docs/mo
 | 4 | Share analytics event per channel | open | |
 | 2 | ShareSheet and ShareButton, wired into the title and series pages | in review | |
 | 3 | Wire into title, series, hero, hover card, card menu, watch, end screen | open | |
-| 4 | Share analytics event per channel | in review | |
-| 5 | Chromium layout tests, a11y, e2e | open | |
+| 4 | Share analytics event per channel (with audit, mockups and review) | merged | #456 |
+| 5 | Chromium layout tests, a11y, e2e (`apps/web/e2e/share.e2e.ts`) | open (waiting for a free Chromium slot) | |
 | 6 | Docs | merged | #451 |
 
 ### L15a slice 1
@@ -120,3 +120,8 @@ Test a kids only title and an unpublished title: the debugger must show the gene
 - No new storage, cookie or third party. Nothing to add to `STORAGE_INVENTORY`.
 - Not built: an admin report of the counters (the data is there for a later chart).
 - Tests: `pnpm vitest run packages/analytics/src/events.test.ts packages/analytics/src/ingest.test.ts apps/web/src/components/share apps/web/src/lib/consent/guard.test.ts`. `inventory.test.ts` fails on main for storage keys of other lanes.
+
+### L15a slice 6 and the mockup canvas
+
+- Docs: stories M45-S25 to S27 in `docs/plan/v2/L6-discovery.md` (S06 ACs 1 and 2 marked superseded), `docs/MODULES.md` M45 note, `docs/SCREEN-ARCHITECTURE.md` Share sheet section, `docs/DESIGN-SYSTEM.md` 11.12a, `docs/SECURITY.md` 17.2.
+- Mockups also published as a Design canvas (private): https://claude.ai/artifact/9bm1dDEFYhyfsXUtpSA1JC

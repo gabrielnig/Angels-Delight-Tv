@@ -547,6 +547,13 @@ Accessibility: card is an `<a>` with accessible name "Title, 4 minutes". Actions
 - Destructive confirm: title says what will happen ("Delete this video?"), body says the consequence ("This removes it for everyone. This cannot be undone."), buttons "Delete video" (danger) and "Keep it" (secondary). Never "OK" and "Cancel" for destructive actions.
 - States: open animation 200ms (opacity plus translateY 8px), reduced motion no transform. Loading (primary button loading, dialog stays open), error (inline danger banner at top of body, dialog stays open).
 
+### 11.12a Share sheet (L15a, D-391)
+
+- One component for every Share control. Under 600 px it uses the bottom sheet rules of 11.12 (top radius `--radius-lg`, handle, `--shadow-3`, scrim ink 60 percent, max height 90vh, safe area padding) and the handle and header can be dragged down; past 25 percent of its height or a fast flick it closes. From 600 px it is a popover 380 px wide hung from the button (8 px gap, flips to the right edge, never leaves the window) with a transparent scrim, or a centred dialog on a window under 560 px high.
+- Header: 72 px 16:9 picture, small kind line ("Share this video"), title in two lines, Close 44 px. Body: grid of targets in cells at least 72 px wide and 88 px high, a 52 px round `--color-surface-sunken` tile with a `currentColor` glyph and a 13 px label that may wrap to two lines; then the link field (44 px) with a Copy button (44 px, reads Copied after a copy); then a `role="status"` line (success, error or muted, always words as well as colour).
+- No brand colours in CSS. Glyphs are original simple marks drawn as SVG in `share-icons.tsx`.
+- Behaviour as 11.12: `role="dialog"`, `aria-modal`, focus into the first target, trapped, Escape and scrim close, focus returns to the button. Reduced motion: no slide. Web channels open in a new tab with "Opens in a new tab" for screen readers; Email and Messages open in place.
+
 ### 11.13 Toast
 
 - Position: bottom centre on mobile above the tab bar, bottom left on desktop. Max one visible, queue others. Width up to 360, `--radius-sm`, `--shadow-2`.

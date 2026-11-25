@@ -433,6 +433,10 @@ Key compromise specifics: playback token or media URL secret leak means rotate t
 
 A share preview is read by crawlers without a session, so it follows the signed out rules: `publicPreview` applies `maturity.guest_max_rank`, unpublished, scheduled, trashed titles answer not found, kids only titles and failed kids only lookups show the generic platform card with noindex (R26, D-389, D-390). `og:video` tags are never emitted and JSON-LD never sets `contentUrl`, because media urls are signed. Share text is cleaned of markup and control characters before it reaches a tag, and JSON-LD is escaped by `serializeJsonLd`. `pnpm share:check` guards the tags in CI.
 
+### 17.2 Share links and share counts
+
+The Share sheet (lane L15a) uses plain links, `mailto:`, `sms:` and the Web Share API. No third party script, pixel or SDK is loaded, so no sharing site learns anything until the viewer chooses it. The shared link is built from the slug alone (`canonicalShareUrl`), never from the address bar, so a session, signed or tracking value on the current page can never end up in a link. Web channels open with `rel="noopener noreferrer"`. A title that must not be shared (kids only, or a failed lookup) and every kids profile get no Share control. The `share` analytics event carries only the place and whether it was a video or a series; the schema is strict so a link, title or id is rejected, and the event is dropped under Global Privacy Control and Do Not Track.
+
 ## 18. Residual risks
 
 | Id | Risk | Decision |
