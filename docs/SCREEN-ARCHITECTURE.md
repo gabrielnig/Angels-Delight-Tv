@@ -348,9 +348,9 @@ Each specification lists purpose, layout regions, components, data needed, state
 List pages behind View all (M41-S09): `/browse/new` (newest first, Load more, length filter), `/browse/trending` (top 50 of the last 7 days in rank order), `/browse/series` (every live series) and `/browse/row/[slug]` (a manual section in the editor's order). They share the grid (2 across on phones, up to 6 from 1920 px), a loading skeleton with reserved height, an empty and an error state with Retry, and the not found page for an unknown slug. The words new, trending, series and row cannot be category slugs.
 
 - **Purpose.** Explore by subject.
-- **Layout.** Category chips (scrollable, solid fill when active), sort and duration filter bar, grid of cards (2 columns xs, up to 5 xl) with "Show more".
-- **States.** Loading skeleton grid, empty category, no match after filters ("Clear filters"), error with retry, offline.
-- **Responsive.** Chips scroll horizontally on mobile. Filters collapse to a sheet on xs.
+- **Layout.** Title and count, one category chip rail that never wraps (scroll snap, edge fades, arrows on fine pointers, selected chip scrolled into view), one bar with two menu buttons (Length and Sort, tinted when set, Clear link) pinned with the rail under the nav, grid of cards (2 columns xs, up to 5 xl) with "Show more". Mockup S186, decisions D-357.
+- **States.** Loading skeleton grid that reserves height, empty category (Back to Home), no match after filters (Clear filters), Show more idle, loading and failed (Try again), offline. Each empty state has one action (R39).
+- **Responsive.** The rail scrolls on every width. Length and Sort open a popover menu on desktop and a bottom sheet on phones, applied on tap with no Apply bar. On phones the bar slides away on scroll down and returns on scroll up (not under reduced motion animation), the rail stays.
 - **Nav in.** Header, tab bar, See all. **Out.** Title detail, Series page.
 - **Stories.** M06-S01, M06-S02, M04-S04.
 

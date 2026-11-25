@@ -2103,3 +2103,17 @@ Decision: `video.preview` catches every error and records `failed` or `skipped` 
 - Options: Keep the 70 percent hold (icon bottoms drop under 3:1 whenever something sits under the bar); raise the hold to 100 percent (a hard edge); hold through the bar and fade below (chosen).
 - Why: A percentage hold depends on the bar height, so any extra height under the bar moved the fade into the icons. A fixed fade below the bar does not. Reviewed in `docs/reviews/v2/L12-review.md` finding 1.
 - Reversible: Yes.
+
+
+## D-382 Browse length buckets follow their labels: under 5, 5 to 15, over 15 minutes (lane L11, S186)
+- Decision: The catalog service buckets are now short under 5 min, medium 5 min up to 15 min and long 15 min and over (`DURATION_BUCKETS`, `bucketOfMs`). The labels on Browse are Under 5 min, 5 to 15 min and Over 15 min. The bucket keys `short`, `medium` and `long` are unchanged, so saved links keep working and now mean what their label says. The fixture filter uses the same edges and a test keeps it in step. M06-S02 AC1 is reworded to under 300 seconds.
+- Options: Change the labels to the old buckets (under 3, 3 to 5, 5 and over); change the buckets to the labels (chosen, owner answer to the L11 review finding 1); add new bucket keys and map old ones.
+- Why: A filter must do what its label says. Most videos are short, so 3 and 5 minute edges put nearly everything in one bucket, while 5 and 15 spread a typical catalog. Keeping the keys avoids a redirect layer for old links.
+- Reversible: Yes. Change the three numbers and the labels together.
+
+## D-383 Browse build notes: mobile scrim follows tokens.css, the count stays in the page head, the bar scrolls sideways on phones (lane L11, S186)
+- Decision: (1) RULINGS R36 gives mobile scrim stops of 50, 65 and 80 percent, while `tokens.css` has 72, 82 and 96 with a middle of 0.7. Browse and the hero follow tokens.css, the values in use and tested. R36 is the stale side and should be updated to the token values when RULINGS is next edited. (2) The result count sits beside the page title in a polite live region and is not repeated inside the stuck bar (S186 state 2), because the phone bar is already wider than the screen and the count would push Clear out of view. (3) On phones the bar scrolls sideways, as drawn, because Length, Sort and Clear together are about 400 px against a 288 px content width at 320. Values are never cut and the page never scrolls sideways. (4) The accent progress track on the Home hero keeps the 2.47 to 1 fill against track accepted by the owner (finding 11).
+- Options: Follow R36 or tokens.css; count in the bar or the head; shrink or cut button text or let the bar scroll.
+- Why: One source of truth for the scrim, no hidden information in buttons, and a count that screen readers hear once.
+- Reversible: Yes.
+
