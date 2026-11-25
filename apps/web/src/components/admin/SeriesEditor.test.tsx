@@ -102,7 +102,7 @@ describe('SeriesEditor maturity rating (S127)', () => {
   });
 });
 
-describe('SeriesEditor names (M50)', () => {
+describe('SeriesEditor names (M51)', () => {
   const withLabels = (labels: object, override: object | null = null): SeriesDetail => {
     const d = detail(2, [2]);
     return { ...d, series: { ...d.series, labels, labelOverride: override } } as SeriesDetail;

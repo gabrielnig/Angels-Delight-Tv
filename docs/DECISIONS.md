@@ -2027,3 +2027,21 @@ Decision: `video.preview` catches every error and records `failed` or `skipped` 
 - Options: Keep the 36 by 10 px bar and dots; segments as in S187.
 - Why: The owner wants the indicator to visibly fill over the dwell, and the old bar was too small to read. Segments show progress and position together. The tokens remove the raw white and black alpha values from the component CSS.
 - Reversible: Yes.
+
+## D-369 Series words are one site setting plus an optional column on the series, and presets are translated but custom words are not
+- Decision: The site default lives in the settings registry as `content.series_labels` (public, Admin tier): a preset (`season_episode`, `book_chapter`, `part_lesson`, `module_lesson`, `custom`), four custom words when the preset is custom, and an optional item code prefix. A series can override it in the nullable column `series.label_overrides` (migration 0059, additive, CHECK that it is null or an object). The series override wins over the site default, which wins over Season and Episode with code E. Preset words and codes come from the message catalogs (R23), so each language can translate them. Custom words are shown as typed in every language. Every word is 1 to 24 characters with no markup, dashes or emoji, a code is 1 to 4 letters or numbers. One helper in `@ad/shared` (`series-labels.ts`, also at `@ad/shared/series-labels` for client bundles) builds every phrase and `scripts/series-copy-scan.test.ts` fails on any hardcoded Season or Episode copy outside a short allowlist.
+- Options: A table of label sets referenced by series; columns for the four words on every series; a free text template per phrase; or the setting plus one override column.
+- Why: Two levels cover the owner's need (one default, one odd series) with the least surface. The settings registry already has validation, audit and caching. A column on the series needs no join and rolls back by never reading it. Translating typed words would need a translation per word per language and the owner's words are names, not interface copy.
+- Reversible: Yes. Dropping the column and the setting returns the old words. Defaults are unchanged, so nothing visibly changes until the owner sets them.
+
+## D-370 Where no series is known the copy says video, not episode
+- Decision: Player shortcut "Next video", the Autoplay setting "Autoplay next video" with "Start the next video when one ends.", the notice kind "New in a series", the notification switch "New videos in series I follow", the end screen "Well done. Try another series or watch a video again." and the rating error "Rate the series, not a single video in it". Admin lead lines, empty states and confirm dialogs on the series screens use the series own words through the helper.
+- Options: Keep Episode in these lines and break the owner's wording for a Bible series, or neutral wording.
+- Why: These lines have no series in hand (settings, shortcuts, one notice kind for all series), so the helper cannot word them. Video is true for every set of names.
+- Reversible: Yes.
+
+## D-371 The data layer ships the effective label setting and each client words it with its own translator
+- Decision: `EpisodePosition.labels` (video cards) and `TitleCard.labels` (series cards) carry the effective setting, a few bytes such as `{ "preset": "book_chapter" }`, read in the same SQL as the card from the series override and the `content.series_labels` row. Viewer data types carry it as `labels`. Components call `resolveSeriesLabels(labels, null, t)` with the viewer translator, so preset words follow the viewer language and custom words stay as typed. Server text such as the Continue "Next: E4" code, activity labels and admin messages resolve on the server with the English catalog.
+- Options: Ship fully resolved English words with every card (bigger payload, not translatable); read the setting in every client component through a context (a second source of truth).
+- Why: The setting is the smallest payload that lets each caller choose the language. Reading it with the card removes a second lookup and any chance of a card and a page disagreeing.
+- Reversible: Yes.

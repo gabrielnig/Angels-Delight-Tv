@@ -77,7 +77,7 @@ describe.skipIf(!integrationEnabled())('title queries', () => {
       });
     });
 
-    it('carries the series labels on a series card and null on a video (M50)', async () => {
+    it('carries the series labels on a series card and null on a video (M51)', async () => {
       const video = await seedVideo(t.setup, { title: 'Labels video' });
       const own = await seedSeries(t.setup, {
         series: { title: 'Labels series', labelOverrides: { preset: 'book_chapter' } },

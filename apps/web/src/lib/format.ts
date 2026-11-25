@@ -13,7 +13,7 @@ export const itemHref = (item: CatalogItem) =>
 export const itemKey = (item: CatalogItem) =>
   item.kind === 'video' ? `video:${item.id}` : `series:${item.id ?? item.slug}`;
 
-/** "8 episodes" and, past one group, "3 seasons", in the words of the series (M50). */
+/** "8 episodes" and, past one group, "3 seasons", in the words of the series (M51). */
 export function seriesCounts(
   series: { episodeCount: number; seasonCount: number; labels?: SeriesLabelSetting },
   t?: Parameters<typeof resolveSeriesLabels>[2],

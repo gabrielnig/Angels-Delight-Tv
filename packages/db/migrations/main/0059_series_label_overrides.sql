@@ -1,4 +1,4 @@
--- M50: a series can word its groups and items on its own (Book and Chapter, Part and Lesson, custom words). The
+-- M51: a series can word its groups and items on its own (Book and Chapter, Part and Lesson, custom words). The
 -- site wide default lives in the settings table under content.series_labels. Null means the series follows the
 -- site default. Additive, so a rollback to the previous release simply never reads the column.
 ALTER TABLE series ADD COLUMN label_overrides jsonb;--> statement-breakpoint

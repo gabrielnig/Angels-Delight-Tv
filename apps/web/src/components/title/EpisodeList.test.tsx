@@ -76,7 +76,7 @@ describe('EpisodeList', () => {
   });
 });
 
-describe('EpisodeList with the owner words (M50)', () => {
+describe('EpisodeList with the owner words (M51)', () => {
   const chapters = [
     { number: 1, title: 'Genesis', episodes: [ep(1), ep(2, { percent: 40 })] },
     { number: 2, episodes: [ep(1)] },

@@ -38,7 +38,7 @@ describe('primaryAction', () => {
   });
 });
 
-describe('primary action with the owner words (M50)', () => {
+describe('primary action with the owner words (M51)', () => {
   it('shows the code of the series words', () => {
     const action = primaryAction({
       label: 'play',

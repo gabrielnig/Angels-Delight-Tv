@@ -29,7 +29,7 @@ export interface TitleCard {
   categoryName: string | null;
   /** When the title went live (ISO), or is due to. Null only for data that was never published. */
   publishedAt: string | null;
-  /** The group and item words of a series (M50). Null for a video. */
+  /** The group and item words of a series (M51). Null for a video. */
   labels: SeriesLabelSetting | null;
 }
 

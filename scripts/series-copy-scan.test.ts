@@ -3,7 +3,7 @@ import { join, relative, resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 /**
- * M50: the owner words the groups and items of a series, so no screen may carry the words Season or Episode or
+ * M51: the owner words the groups and items of a series, so no screen may carry the words Season or Episode or
  * a code like E4 in its own copy. Every phrase goes through `@ad/shared` series-labels. This scan fails on any
  * remaining literal outside the allowlist.
  */
@@ -140,7 +140,7 @@ export function scan(): string[] {
   return hits;
 }
 
-describe('no hardcoded Season or Episode copy (M50-S03)', () => {
+describe('no hardcoded Season or Episode copy (M51-S03)', () => {
   it('finds none outside the allowlist', () => {
     expect(scan()).toEqual([]);
   });

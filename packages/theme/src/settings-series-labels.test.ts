@@ -3,7 +3,7 @@ import { SETTING_DEFS } from './settings-registry';
 
 const def = SETTING_DEFS['content.series_labels'];
 
-describe('content.series_labels setting (M50)', () => {
+describe('content.series_labels setting (M51)', () => {
   it('defaults to Season and Episode and is public for admins to change', () => {
     expect(def.default).toEqual({ preset: 'season_episode' });
     expect(def.isPublic).toBe(true);

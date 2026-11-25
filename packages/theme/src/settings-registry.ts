@@ -61,7 +61,7 @@ const maintenanceBanner = z.object({
   endsAt: z.string().datetime().nullable(),
 });
 
-/** Series group and item names (M50). Words are validated by the shared helper so one rule serves every caller. */
+/** Series group and item names (M51). Words are validated by the shared helper so one rule serves every caller. */
 const seriesLabels = z
   .custom<SeriesLabelSetting>((value) => {
     const result = validateSeriesLabels(value);

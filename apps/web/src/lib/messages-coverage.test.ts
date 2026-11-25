@@ -7,7 +7,7 @@ const ROOTS = [
   resolve(__dirname, '..'),
   resolve(__dirname, '../../../../packages/player/src'),
   resolve(__dirname, '../../../../packages/mailer/src'),
-  // The series label helper calls msg with literal keys (M50).
+  // The series label helper calls msg with literal keys (M51).
   resolve(__dirname, '../../../../packages/shared/src/series-labels.ts'),
 ];
 

@@ -43,7 +43,7 @@ export interface AdminSeries {
   episodeCount: number;
   /** 0 (G) to 4 (18), null until rated. */
   maturityRank: number | null;
-  /** The series' own group and item names, null when it follows the site default (M50). */
+  /** The series' own group and item names, null when it follows the site default (M51). */
   labelOverride: SeriesLabelSetting | null;
   /** What the series shows: its override, else the site default. */
   labels: SeriesLabelSetting;
@@ -90,7 +90,7 @@ function ownLabels(value: unknown): SeriesLabelSetting | null {
   return checked.ok ? checked.value : null;
 }
 
-/** The words of one series for admin messages: its override, else the site default (M50). */
+/** The words of one series for admin messages: its override, else the site default (M51). */
 async function wordsOf(tx: Tx, seriesId: string): Promise<SeriesWords> {
   const [own] = await tx.select({ value: series.labelOverrides }).from(series).where(eq(series.id, seriesId));
   const [site] = await tx
@@ -207,7 +207,7 @@ export interface SeriesEdit {
   maturityRank?: number;
   /** With maturityRank: give every episode the same rating. The editor confirms this in the UI. */
   applyToEpisodes?: boolean;
-  /** Own group and item names for this series (M50). Null goes back to the site default. */
+  /** Own group and item names for this series (M51). Null goes back to the site default. */
   labels?: SeriesLabelSetting | null;
 }
 

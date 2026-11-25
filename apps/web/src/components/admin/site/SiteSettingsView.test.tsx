@@ -636,7 +636,7 @@ describe('discovery tab search quality (M45-S08, M45-S09)', () => {
   });
 });
 
-describe('series names tab (M50-S01)', () => {
+describe('series names tab (M51-S01)', () => {
   it('saves a preset as the site default', async () => {
     const { actions, user } = setup();
     await user.click(screen.getByRole('tab', { name: 'Series names' }));

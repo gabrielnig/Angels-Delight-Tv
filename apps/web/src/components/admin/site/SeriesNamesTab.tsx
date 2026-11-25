@@ -24,7 +24,7 @@ interface Props {
   onSaved: (data: SiteSettingsDto) => void;
 }
 
-/** M50-S01: the site wide words for the groups and items of a series. A series can override them in its editor. */
+/** M51-S01: the site wide words for the groups and items of a series. A series can override them in its editor. */
 export function SeriesNamesTab({ data, actions, onSaved }: Props) {
   const toast = useToast();
   const form = useSettingsForm({ keys: KEYS, data, update: actions.update, onSaved });

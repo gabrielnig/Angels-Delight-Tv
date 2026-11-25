@@ -102,7 +102,7 @@ export interface SeriesSummary {
   thumbnail?: Thumb;
   episodeCount: number;
   seasonCount: number;
-  /** The group and item words of this series (M50). Absent means Season and Episode. */
+  /** The group and item words of this series (M51). Absent means Season and Episode. */
   labels?: SeriesLabelSetting;
   kidsSafe: boolean;
   ageLabel?: string;
