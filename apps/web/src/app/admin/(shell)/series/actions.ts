@@ -6,6 +6,7 @@ import type { SeriesBulkAction } from '@/lib/data/admin/series-bulk';
 import { auditBulkRun } from '@/server/admin/bulk-run';
 import { collectionService } from '@/lib/data/admin/services';
 import { requireActionActor } from '@/lib/data/admin/session-next';
+import { cleanSeriesPatch } from '@/server/admin/series-patch';
 import type { SeriesPatch } from '@/lib/data/admin/collection-commands';
 import type { CommandResult } from '@/lib/data/admin/video-commands';
 
@@ -25,13 +26,7 @@ export async function createSeriesAction(title: string, description: string) {
 }
 
 export async function updateSeriesAction(id: string, patch: SeriesPatch) {
-  return run((a) =>
-    collectionService.updateSeries(a, String(id), {
-      title: patch.title === undefined ? undefined : String(patch.title),
-      description: patch.description === undefined ? undefined : String(patch.description),
-      published: patch.published === undefined ? undefined : Boolean(patch.published),
-    }),
-  );
+  return run((a) => collectionService.updateSeries(a, String(id), cleanSeriesPatch(patch)));
 }
 
 export async function deleteSeriesAction(id: string) {
@@ -68,7 +63,10 @@ export async function bulkSeriesAction(
     { accountId: actor.accountId, role: actor.role },
     {
       action: `series.bulk_${action.type}`,
-      label: action.type === 'delete' ? 'Delete series' : `${action.type === 'publish' ? 'Publish' : 'Unpublish'} series`,
+      label:
+        action.type === 'delete'
+          ? 'Delete series'
+          : `${action.type === 'publish' ? 'Publish' : 'Unpublish'} series`,
       targetType: 'series',
       bulkId,
       ids: used,
@@ -84,4 +82,43 @@ export async function undoBulkSeriesAction(undo: BulkUndo) {
   const result = await collectionService.undoSeries(actor, undo);
   revalidatePath('/admin', 'layout');
   return result;
+}
+
+export async function renameGroupAction(seriesId: string, group: number, title: string) {
+  return run((a) =>
+    collectionService.renameGroup(a, String(seriesId), Number(group), String(title)),
+  );
+}
+
+export async function moveEpisodeAction(
+  seriesId: string,
+  videoId: string,
+  direction: 'up' | 'down',
+) {
+  return run((a) =>
+    collectionService.moveEpisode(
+      a,
+      String(seriesId),
+      String(videoId),
+      direction === 'down' ? 'down' : 'up',
+    ),
+  );
+}
+
+/** For the Videos list: a new series that answers with its id, so the videos can go straight in (M51-S04). */
+export async function createSeriesForBundleAction(title: string) {
+  const actor = await requireActionActor('/admin/videos');
+  const result = await collectionService.createSeries(actor, {
+    title: String(title),
+    description: '',
+  });
+  revalidatePath('/admin', 'layout');
+  return result;
+}
+
+/** Group and item numbers already used in a series, to warn before a bundle clashes. */
+export async function seriesNumbersAction(seriesId: string) {
+  const actor = await requireActionActor('/admin/videos');
+  const detail = await collectionService.seriesDetail(actor, String(seriesId));
+  return detail.episodes.map((v) => ({ group: v.seasonNumber ?? 1, number: v.episodeNumber ?? 0 }));
 }

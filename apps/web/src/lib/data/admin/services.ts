@@ -84,9 +84,11 @@ import {
   renameCategory,
   setCategoryHidden,
   setEpisode,
+  renameGroup,
+  moveEpisode,
   updateSeries,
 } from './collection-commands';
-import type { SeriesPatch } from './collection-commands';
+import type { CreatedResult, SeriesPatch } from './collection-commands';
 import type { AdminActor } from './types';
 
 /**
@@ -586,6 +588,8 @@ export interface SeriesRow extends SeriesRecord {
 }
 export interface SeriesDetail {
   series: SeriesRecord;
+  /** The groups with their own titles, in order (M51-S05). */
+  groups: Array<{ number: number; title: string | null }>;
   episodes: VideoRecord[];
   available: VideoRecord[];
 }
@@ -599,10 +603,14 @@ export interface CollectionService {
   deleteCategory(actor: AdminActor, id: string): Promise<CommandResult>;
   seriesList(actor: AdminActor): Promise<SeriesRow[]>;
   seriesDetail(actor: AdminActor, id: string): Promise<SeriesDetail>;
+  /** Swaps an item's number with its neighbour in the same group. */
+  moveEpisode(actor: AdminActor, seriesId: string, videoId: string, direction: 'up' | 'down'): Promise<CommandResult>;
+  /** Gives a group its own title. A blank title goes back to the numbered name. */
+  renameGroup(actor: AdminActor, seriesId: string, group: number, title: string): Promise<CommandResult>;
   createSeries(
     actor: AdminActor,
     input: { title: string; description: string },
-  ): Promise<CommandResult>;
+  ): Promise<CreatedResult>;
   updateSeries(actor: AdminActor, id: string, patch: SeriesPatch): Promise<CommandResult>;
   deleteSeries(actor: AdminActor, id: string): Promise<CommandResult>;
   /** Publish, unpublish or delete many series. Delete is admin only (series.delete). */
@@ -674,7 +682,21 @@ const fixtureCollectionService: CollectionService = {
           (a.seasonNumber ?? 1) - (b.seasonNumber ?? 1) ||
           (a.episodeNumber ?? 0) - (b.episodeNumber ?? 0),
       );
-    return { series: { ...series }, episodes, available: live.filter((v) => v.seriesId === null) };
+    const numbers = [...new Set(episodes.map((v) => v.seasonNumber ?? 1))].sort((a, b) => a - b);
+    return {
+      series: { ...series },
+      groups: numbers.map((number) => ({ number, title: series.groupTitles?.[number] ?? null })),
+      episodes,
+      available: live.filter((v) => v.seriesId === null),
+    };
+  },
+  async moveEpisode(actor, seriesId, videoId, direction) {
+    need(actor, 'series.manage');
+    return moveEpisode(getStore(), seriesId, videoId, direction);
+  },
+  async renameGroup(actor, seriesId, group, title) {
+    need(actor, 'series.manage');
+    return renameGroup(getStore(), seriesId, group, title);
   },
   async createSeries(actor, input) {
     need(actor, 'series.manage');

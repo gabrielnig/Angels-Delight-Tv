@@ -27,6 +27,9 @@ import type { CategoryRecord, Page, VideoRecord } from '@/lib/data/admin/types';
 import { adminStatusOf } from '@/lib/data/admin/video-rules';
 import { CaptionBadge, StatusBadge } from './Badge';
 import { Button, LinkButton } from './Button';
+import { AddToSeriesDialog, type BundleDone } from './AddToSeriesDialog';
+import type { SeriesLabelSetting } from '@ad/shared/series-labels';
+import type { CommandResult } from '@/lib/data/admin/video-commands';
 import { BulkBar, type BulkBarAction } from './bulk/BulkBar';
 import { BulkProgress } from './bulk/BulkProgress';
 import { BulkReport } from './bulk/BulkReport';
@@ -74,6 +77,20 @@ interface Props {
   undo?: (undo: BulkUndo) => Promise<BulkResult>;
   /** Ids that match the current filter, for "Select all N that match". */
   matching?: (query: VideoQuery) => Promise<string[]>;
+  /** Bundling into a series (M51-S04). Without it the Add to series action is not offered. */
+  bundle?: {
+    series: Array<{ id: string; title: string; labels?: SeriesLabelSetting }>;
+    existing: (seriesId: string) => Promise<Array<{ group: number; number: number }>>;
+    setEpisode: (
+      videoId: string,
+      seriesId: string | null,
+      group: number | null,
+      number: number | null,
+    ) => Promise<CommandResult>;
+    createSeries: (
+      title: string,
+    ) => Promise<{ ok: true; id: string } | { ok: false; error: string }>;
+  };
   now: number;
 }
 
@@ -96,7 +113,8 @@ const labelOf = (action: BulkAction): string =>
 const options = (list: ReadonlyArray<readonly [string, string]>) =>
   list.map(([value, label]) => ({ value, label }));
 
-export function VideosList({ page, query, categories, role, bulk, undo, matching }: Props) {
+export function VideosList({ page, query, categories, role, bulk, undo, matching, bundle }: Props) {
+  const [bundling, setBundling] = useState(false);
   const router = useRouter();
   const pathname = usePathname();
   const toast = useToast();
@@ -239,6 +257,21 @@ export function VideosList({ page, query, categories, role, bulk, undo, matching
       onClick: () => setPicker('remove_category'),
       disabledReason: canEdit ? undefined : 'Your role cannot edit videos.',
     },
+    ...(bundle
+      ? [
+          {
+            id: 'add_to_series',
+            label: 'Add to series',
+            secondary: true,
+            onClick: () => setBundling(true),
+            disabledReason: !can(role, 'series.manage')
+              ? 'Your role cannot manage series.'
+              : sel.scope === 'matching'
+                ? 'Select rows on this page to use this action.'
+                : undefined,
+          } satisfies BulkBarAction,
+        ]
+      : []),
     {
       id: 'maturity',
       label: 'Set maturity rating',
@@ -284,8 +317,40 @@ export function VideosList({ page, query, categories, role, bulk, undo, matching
     void run(action, selectedIds);
   };
 
+  const bundleVideos = selectedIds.flatMap((id) => {
+    const v = page.items.find((item) => item.id === id);
+    return v ? [{ id: v.id, title: v.title, uploadedAt: v.createdAt }] : [];
+  });
+  function bundled(done: BundleDone) {
+    sel.clear();
+    toast.show({
+      tone: 'success',
+      message: `${done.added} ${done.added === 1 ? 'video' : 'videos'} added to the series.`,
+      actionLabel: 'Undo',
+      durationMs: 10000,
+      onAction: () =>
+        void done.undo().then(() => {
+          toast.show({ tone: 'success', message: 'Undone: the videos are standalone again.' });
+          router.refresh();
+        }),
+    });
+    router.refresh();
+  }
+
   return (
     <div className="adm-stack">
+      {bundle ? (
+        <AddToSeriesDialog
+          open={bundling}
+          videos={bundleVideos}
+          series={bundle.series}
+          existing={bundle.existing}
+          setEpisode={bundle.setEpisode}
+          createSeries={bundle.createSeries}
+          onClose={() => setBundling(false)}
+          onDone={bundled}
+        />
+      ) : null}
       <form
         className="adm-card adm-filters"
         role="search"

@@ -30,6 +30,7 @@ import {
   type AdminContext,
   type AdminVideo,
   type CommandResult,
+  type CreatedResult,
 } from './types';
 import { getAdminVideos } from './videos';
 import { changeSlug } from './slugs';
@@ -51,6 +52,8 @@ export interface AdminSeries {
 
 export interface AdminSeriesDetail {
   series: AdminSeries;
+  /** The groups with their own titles, in order. A null title shows the numbered name (M51-S05). */
+  groups: Array<{ number: number; title: string | null }>;
   episodes: AdminVideo[];
   available: AdminVideo[];
 }
@@ -123,7 +126,7 @@ export async function getAdminSeriesDetail(
 ): Promise<AdminSeriesDetail> {
   assertStaff(actor);
   if (!isUuid(id)) throw new NotFound(NOT_FOUND);
-  const { row, episodeIds, availableIds } = await withAccount(ctx.db, actor, async (tx) => {
+  const { row, episodeIds, availableIds, groups } = await withAccount(ctx.db, actor, async (tx) => {
     const row = rowsOf<Row>(
       await tx.execute(sql`${SELECT} WHERE s.id = ${id}::uuid AND s.deleted_at IS NULL`),
     )[0];
@@ -138,12 +141,20 @@ export async function getAdminSeriesDetail(
         SELECT v.id FROM videos v WHERE v.deleted_at IS NULL AND v.kind = 'standalone'
         ORDER BY v.updated_at DESC LIMIT 200`),
     ).map((r) => r.id);
-    return { row, episodeIds, availableIds };
+    const groups = (
+      await tx
+        .select({ number: seasons.number, title: seasons.title })
+        .from(seasons)
+        .where(eq(seasons.seriesId, id))
+        .orderBy(seasons.number)
+    ).map((g) => ({ number: g.number, title: g.title ?? null }));
+    return { row, episodeIds, availableIds, groups };
   });
   const all = await getAdminVideos(ctx, actor, [...episodeIds, ...availableIds]);
   const byId = new Map(all.map((v) => [v.id, v]));
   return {
     series: toSeries(row),
+    groups,
     episodes: episodeIds.map((e) => byId.get(e)).filter((v): v is AdminVideo => Boolean(v)),
     available: availableIds.map((e) => byId.get(e)).filter((v): v is AdminVideo => Boolean(v)),
   };
@@ -178,11 +189,11 @@ export async function createAdminSeries(
   ctx: AdminContext,
   actor: Actor,
   input: { title: string; description: string },
-): Promise<CommandResult> {
+): Promise<CreatedResult> {
   assertStaff(actor);
   const title = clean(input.title);
-  if (!title) return fail('Give the series a title.');
-  if (title.length > 80) return fail('Use 80 characters or fewer.');
+  if (!title) return { ok: false, error: 'Give the series a title.' };
+  if (title.length > 80) return { ok: false, error: 'Use 80 characters or fewer.' };
   return withAccount(ctx.db, actor, async (tx) => {
     const [row] = await tx
       .insert(series)
@@ -194,7 +205,7 @@ export async function createAdminSeries(
       })
       .returning({ id: series.id });
     await audit(tx, actor, 'series.create', row!.id, `Created series ${title}`);
-    return OK;
+    return { ok: true, id: row!.id };
   });
 }
 
@@ -465,6 +476,80 @@ export async function setAdminEpisode(
       videoId,
       `Put ${video.title} in ${target!.title}, ${groupName(await wordsOf(tx, seriesId), seasonNumber)}, ${itemName(await wordsOf(tx, seriesId), number)}`,
     );
+    return OK;
+  });
+}
+
+/** Gives a group of a series its own title, such as Genesis. A blank title goes back to the numbered name. */
+export async function renameAdminGroup(
+  ctx: AdminContext,
+  actor: Actor,
+  seriesId: string,
+  groupNumber: number,
+  rawTitle: string,
+): Promise<CommandResult> {
+  assertStaff(actor);
+  if (!isUuid(seriesId)) return fail(NOT_FOUND);
+  const title = clean(rawTitle);
+  if (title.length > 60) return fail('Use 60 characters or fewer.');
+  return withAccount(ctx.db, actor, async (tx) => {
+    const [current] = await tx
+      .select({ title: series.title })
+      .from(series)
+      .where(and(eq(series.id, seriesId), sql`${series.deletedAt} IS NULL`));
+    if (!current) return fail(NOT_FOUND);
+    const updated = await tx
+      .update(seasons)
+      .set({ title: title === '' ? null : title })
+      .where(and(eq(seasons.seriesId, seriesId), eq(seasons.number, groupNumber)))
+      .returning({ id: seasons.id });
+    if (updated.length === 0) return fail('That group does not exist yet.');
+    await audit(
+      tx,
+      actor,
+      'series.group_rename',
+      seriesId,
+      title === ''
+        ? `Cleared the title of group ${groupNumber} in ${current.title}`
+        : `Named group ${groupNumber} in ${current.title} ${title}`,
+    );
+    return OK;
+  });
+}
+
+/** Swaps an item's number with its neighbour inside the same group. The ends and other groups are left alone. */
+export async function moveAdminEpisode(
+  ctx: AdminContext,
+  actor: Actor,
+  seriesId: string,
+  videoId: string,
+  direction: 'up' | 'down',
+): Promise<CommandResult> {
+  assertStaff(actor);
+  if (!isUuid(seriesId)) return fail(NOT_FOUND);
+  if (!isUuid(videoId)) return fail('Video not found.');
+  return withAccount(ctx.db, actor, async (tx) => {
+    const [own] = await tx
+      .select({ id: episodes.id, seasonId: episodes.seasonId, number: episodes.number })
+      .from(episodes)
+      .innerJoin(seasons, eq(seasons.id, episodes.seasonId))
+      .where(and(eq(episodes.videoId, videoId), eq(seasons.seriesId, seriesId)))
+      .for('update');
+    if (!own) return fail('That video is not in this series.');
+    const neighbours = rowsOf<{ id: string; number: number }>(
+      await tx.execute(
+        direction === 'up'
+          ? sql`SELECT id, number FROM episodes WHERE season_id = ${own.seasonId}::uuid AND number < ${own.number} ORDER BY number DESC LIMIT 1 FOR UPDATE`
+          : sql`SELECT id, number FROM episodes WHERE season_id = ${own.seasonId}::uuid AND number > ${own.number} ORDER BY number ASC LIMIT 1 FOR UPDATE`,
+      ),
+    );
+    const other = neighbours[0];
+    if (!other) return fail(direction === 'up' ? 'It is already first in its group.' : 'It is already last in its group.');
+    const parking = 32000;
+    await tx.update(episodes).set({ number: parking }).where(eq(episodes.id, own.id));
+    await tx.update(episodes).set({ number: own.number }).where(eq(episodes.id, other.id));
+    await tx.update(episodes).set({ number: other.number }).where(eq(episodes.id, own.id));
+    await audit(tx, actor, 'series.episode_move', videoId, `Moved an item ${direction} to number ${other.number}`);
     return OK;
   });
 }

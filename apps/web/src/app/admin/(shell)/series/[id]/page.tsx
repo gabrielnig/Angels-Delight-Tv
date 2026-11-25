@@ -6,7 +6,13 @@ import { SeriesEditor } from '@/components/admin/SeriesEditor';
 import { can } from '@/lib/admin/can';
 import { collectionService } from '@/lib/data/admin/services';
 import { requireActor } from '@/lib/data/admin/session-next';
-import { deleteSeriesAction, setEpisodeAction, updateSeriesAction } from '../actions';
+import {
+  deleteSeriesAction,
+  moveEpisodeAction,
+  renameGroupAction,
+  setEpisodeAction,
+  updateSeriesAction,
+} from '../actions';
 
 export const metadata: Metadata = { title: 'Edit series' };
 
@@ -36,6 +42,8 @@ export default async function SeriesEditPage({ params }: { params: Promise<{ id:
           update: updateSeriesAction,
           remove: deleteSeriesAction,
           setEpisode: setEpisodeAction,
+          moveEpisode: moveEpisodeAction,
+          renameGroup: renameGroupAction,
         }}
       />
     </>

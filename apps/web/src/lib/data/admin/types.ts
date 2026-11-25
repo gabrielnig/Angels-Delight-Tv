@@ -95,6 +95,8 @@ export interface SeriesRecord {
   labelOverride?: SeriesLabelSetting | null;
   /** What the series shows: its override, else the site default. Absent means the default. */
   labels?: SeriesLabelSetting;
+  /** Own titles of the groups, by group number (M51-S05). */
+  groupTitles?: Record<number, string>;
 }
 
 export interface Page<T> {
