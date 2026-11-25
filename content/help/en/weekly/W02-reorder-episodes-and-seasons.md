@@ -29,6 +29,11 @@ The screen has **Up** and **Down** buttons, not drag and drop. Each button names
 
 ## Steps
 <!-- kb:steps W02 -->
+1. Choose **Series** in the side menu.
+2. Click **Demo series: Genesis** in the list.
+3. Click **Move Demo lesson: Genesis 6, Noah and the ark up**.
+   ![The Noah lesson now above the Adam and Eve lesson, with its Up button marked 1](../../media/W02/W02-03-moved-desktop.webp)
+4. Click **Move Demo lesson: Genesis 6, Noah and the ark down**.
 <!-- /kb:steps -->
 
 ## What you should see

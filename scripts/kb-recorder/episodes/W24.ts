@@ -29,7 +29,7 @@ const episode: Episode = {
     {
       caption: 'Type "Creation" in the **Title for Part 1** box.',
       run: async (s) => {
-        const box = s.page.getByLabel('Title for Part 1');
+        const box = s.page.getByLabel('Title for Part 1', { exact: true });
         await box.fill('');
         await s.type(box, 'Creation');
       },
@@ -55,7 +55,7 @@ const episode: Episode = {
       caption: 'Type "1" in the **Part** box.',
       run: async (s) => {
         const row = s.page.getByRole('listitem').filter({ hasText: MOVER }).last();
-        const box = row.getByLabel('Part');
+        const box = row.getByLabel('Part', { exact: true });
         await box.fill('');
         await s.type(box, '1');
       },
@@ -64,7 +64,7 @@ const episode: Episode = {
       caption: 'Type "4" in the **Lesson** box.',
       run: async (s) => {
         const row = s.page.getByRole('listitem').filter({ hasText: MOVER }).last();
-        const box = row.getByLabel('Lesson');
+        const box = row.getByLabel('Lesson', { exact: true });
         await box.fill('');
         await s.type(box, '4');
       },

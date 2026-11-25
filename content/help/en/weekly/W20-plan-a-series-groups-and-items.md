@@ -34,6 +34,12 @@ A Genesis plan might read Part 1 Beginnings (Lessons 1 to 3) and Part 2 The fami
 
 ## Steps
 <!-- kb:steps W20 -->
+1. Choose **Series** in the side menu.
+   ![The Series list with the Genesis series marked 1](../../media/W20/W20-01-series-list-desktop.webp)
+2. Click **Demo series: Genesis** in the list.
+3. Scroll to **Part 1** to see the first group.
+   ![The Part 1 group marked 1, with its lessons listed below it](../../media/W20/W20-03-group-one-desktop.webp)
+4. Scroll to **Part 2** to see the second group.
 <!-- /kb:steps -->
 
 ## What you should see
