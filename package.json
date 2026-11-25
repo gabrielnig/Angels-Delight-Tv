@@ -24,6 +24,7 @@
     "kb:record": "tsx scripts/kb-recorder/record.ts",
     "kb:verify": "tsx scripts/kb-recorder/record.ts --check",
     "kb:update": "tsx scripts/kb-recorder/record.ts --update --episode",
+    "kb:fact-check": "tsx scripts/kb-recorder/fact-check-cli.ts",
     "kb:steps": "tsx scripts/kb-recorder/tools.ts steps --episode",
     "kb:shots-diff": "tsx scripts/kb-recorder/tools.ts shots-diff",
     "kb:publish": "tsx scripts/kb-recorder/tools.ts publish",
