@@ -31,10 +31,10 @@ const detail = (patch: Partial<TitleDetail>): TitleDetail => ({
   ...patch,
 });
 
-const view = (d: TitleDetail) =>
+const view = (d: TitleDetail, startAt?: number | null) =>
   render(
     <ToastProvider>
-      <TitleView detail={d} inList={false} />
+      <TitleView detail={d} inList={false} startAt={startAt} />
     </ToastProvider>,
   );
 
@@ -390,5 +390,23 @@ describe('TitleView maturity badge and Most liked (M44-S05, S13)', () => {
   it('shows no Most liked label for a title that has none', () => {
     show({ mostLiked: false });
     expect(screen.queryByText('Most liked')).toBeNull();
+  });
+});
+
+describe('Shared start time (L15a)', () => {
+  it('sends Play to the watch route with the shared time and never plays on the title page', () => {
+    view(detail({}), 83);
+    const links = screen.getAllByRole('link', { name: /^Play/ });
+    for (const link of links) expect(link).toHaveAttribute('href', '/watch/v1?t=83');
+    expect(screen.getAllByRole('link', { name: 'Play from 1:23' }).length).toBeGreaterThan(0);
+    expect(document.querySelector('video')).toBeNull();
+  });
+  it('ignores a missing or zero time', () => {
+    view(detail({}), null);
+    expect(screen.getAllByRole('link', { name: 'Play' })[0]).toHaveAttribute('href', '/watch/v1');
+  });
+  it('keeps Watch again from the start', () => {
+    view(detail({ play: { label: 'watch_again', startSeconds: 0 } }), 83);
+    expect(screen.getAllByRole('link', { name: /Watch again/ })[0]).toHaveAttribute('href', '/watch/v1?t=0');
   });
 });

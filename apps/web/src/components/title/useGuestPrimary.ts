@@ -25,7 +25,10 @@ export function useGuestPrimary(server: PrimaryAction, guest?: GuestPlace): Prim
   useEffect(() => {
     if (videoId) {
       const entry = readGuestProgress(window.localStorage, videoId);
-      setPrimary(guestPrimary({ watchHref: server.href, durationSeconds: duration }, entry));
+      // A shared `?t=` stays on the server button unless this device has a place of its own (L15a).
+      const base = server.href.split('?')[0]!;
+      const own = guestPrimary({ watchHref: base, durationSeconds: duration }, entry);
+      setPrimary(own.text === 'Play' ? server : own);
       return;
     }
     if (series) {
