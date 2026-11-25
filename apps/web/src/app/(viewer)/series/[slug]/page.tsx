@@ -19,7 +19,6 @@ import { shareOf, shareTextOf } from '../../../../lib/seo/share-overrides';
 import { shareImageFor } from '../../../../lib/seo/share-image';
 import { seriesPageJsonLd } from '../../../../lib/seo/page-jsonld';
 import { shareConfig, siteOrigin, titleIndexable } from '../../../../server/seo/page-seo';
-import { getRootTheme } from '../../../../lib/theme/root';
 import { itemKey } from '../../../../lib/format';
 import { primaryAction } from '../../../../lib/title-cta';
 import { getSite } from '../../../../lib/data';

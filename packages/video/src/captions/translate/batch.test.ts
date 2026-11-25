@@ -5,7 +5,7 @@ import type { Translator } from './types';
 const upper = (over: Partial<Translator> = {}): Translator => ({
   name: 'test',
   supports: () => true,
-  translate: vi.fn(async ({ texts }) => ({ texts: texts.map((t) => t.toUpperCase()), model: 'm', chars: texts.join('').length })),
+  translate: vi.fn<Translator['translate']>(async ({ texts }) => ({ texts: texts.map((t) => t.toUpperCase()), model: 'm', chars: texts.join('').length })),
   ...over,
 });
 const cues = (n: number) => Array.from({ length: n }, (_, i) => `line ${i}`);
@@ -23,7 +23,7 @@ describe('translateTexts', () => {
   it('falls back to cue by cue when the line count differs', async () => {
     let first = true;
     const t = upper({
-      translate: vi.fn(async ({ texts }) => {
+      translate: vi.fn<Translator['translate']>(async ({ texts }) => {
         if (first && texts.length > 1) {
           first = false;
           return { texts: [texts.join(' ')], model: 'm', chars: 1 };

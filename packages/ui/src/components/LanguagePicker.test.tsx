@@ -51,7 +51,7 @@ describe('LanguagePicker', () => {
     expect(document.activeElement).toBe(button);
   });
   it('is hidden when only one locale is enabled', () => {
-    const { } = setup({ locales: locales.slice(0, 1) });
+    setup({ locales: locales.slice(0, 1) });
     expect(screen.queryByRole('button')).toBeNull();
   });
   it('rows are at least 44px tall', () => {

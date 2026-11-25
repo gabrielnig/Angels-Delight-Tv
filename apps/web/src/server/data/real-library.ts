@@ -16,9 +16,7 @@ import {
 import { isUuid, ValidationFailed } from '@ad/shared';
 import type { TitleRef } from '@ad/catalog';
 import type {
-  CatalogItem,
   LibraryRepository,
-  Page,
   Progress,
   VideoSummary,
   ViewerContext,

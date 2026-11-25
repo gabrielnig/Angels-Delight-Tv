@@ -15,7 +15,7 @@ export function formatNoticeTime(iso: string, now: Date = new Date()): string {
   if (day === today) {
     const time = new Intl.DateTimeFormat('en-NG', { timeZone: ZONE, hour: 'numeric', minute: '2-digit', hour12: true })
       .format(date)
-      .replace(/ /g, ' ')
+      .replace(/\u202f/g, ' ')
       .toLowerCase();
     return msg('engage.notices.today', { time });
   }

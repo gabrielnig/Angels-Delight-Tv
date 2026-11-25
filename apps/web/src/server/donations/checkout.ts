@@ -89,6 +89,7 @@ const json = (status: number, data: unknown, extra: Record<string, string> = {})
     headers: { 'content-type': 'application/json', 'cache-control': 'no-store', ...extra },
   });
 const bad = (error: string, field?: string) => json(400, { error, ...(field ? { field } : {}) });
+// eslint-disable-next-line no-control-regex -- stripping control characters is the purpose of this pattern
 const cleanName = (name: string | undefined) => (name ?? '').replace(/[\u0000-\u001f\u007f<>]/g, '').replace(/\s+/g, ' ').trim();
 
 export const PROVIDER_MESSAGE = 'We could not start the payment. Nothing was charged. Try again.';

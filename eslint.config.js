@@ -20,6 +20,8 @@ export default tseslint.config(
       '**/coverage/**',
       'packages/db/migrations/**',
       '.claude/**',
+      // Page scripts sent to a browser by the review tooling, not part of the build.
+      'docs/reviews/**/tools/**',
       '.e2e-storage/**',
       '.m1-storage/**',
       'next-env.d.ts',

@@ -1,4 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import type { Actor } from '@ad/shared';
 import { browse } from './browse';
 import { getHome } from './home';
 import { addToMyList } from './my-list';
@@ -10,7 +11,7 @@ import { createHarness, NOW, seedVideo, seedSeries, type ViewerHarness } from '.
 
 describe.skipIf(!process.env.TEST_DATABASE_ADMIN_URL)('maturity limit on every viewer surface', () => {
   let h: ViewerHarness;
-  let limited: { actor: import('@ad/shared').Actor; profileId: string };
+  let limited: { actor: Actor; profileId: string };
   let fine: { id: string };
   let high: { id: string };
   let unrated: { id: string };

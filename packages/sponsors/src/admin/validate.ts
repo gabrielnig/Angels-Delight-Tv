@@ -35,6 +35,7 @@ export function validateDestination(raw: unknown, options: DestinationOptions): 
   const text = typeof raw === 'string' ? raw.trim() : '';
   if (!text) return { ok: false, error: 'Add the sponsor website link.' };
   if (text.length > 500) return { ok: false, error: 'Keep the link under 500 characters.' };
+  // eslint-disable-next-line no-control-regex -- rejecting control characters is the purpose of this pattern
   if (/[\s\u0000-\u001F\u007F]/.test(text)) return { ok: false, error: 'The link cannot contain spaces.' };
   let url: URL;
   try {

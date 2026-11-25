@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { formatRelative } from '@/lib/admin/format';
-import { describeOutcome, mergeOutcomes, newBulkId, type BulkOutcome } from '@/lib/data/admin/bulk';
+import { mergeOutcomes, newBulkId, type BulkOutcome } from '@/lib/data/admin/bulk';
 import type { VideoRecord } from '@/lib/data/admin/types';
 import type { CommandResult } from '@/lib/data/admin/video-commands';
 import { Badge } from './Badge';

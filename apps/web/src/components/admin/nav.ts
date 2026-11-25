@@ -180,26 +180,3 @@ export interface Crumb {
   href?: string;
 }
 
-const SEGMENT_LABELS: Record<string, string> = {
-  videos: 'Videos',
-  upload: 'Upload',
-  trash: 'Trash',
-  encoding: 'Encoding',
-  captions: 'Captions',
-  series: 'Series',
-  categories: 'Categories',
-  home: 'Home curation',
-  theme: 'Theme',
-  users: 'Users',
-  analytics: 'Analytics',
-  exports: 'Exports',
-  'audit-log': 'Audit log',
-  roles: 'Roles and invites',
-  'site-settings': 'Site settings',
-  system: 'System',
-  sponsors: 'Sponsors',
-  report: 'Report',
-  account: 'My account',
-  poster: 'Poster',
-};
-

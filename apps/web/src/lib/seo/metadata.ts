@@ -42,6 +42,7 @@ export type PageMeta = {
 export const META_DESCRIPTION_LIMIT = 160;
 export const TWITTER_DESCRIPTION_LIMIT = 200;
 
+// eslint-disable-next-line no-control-regex -- stripping control characters is the purpose of this pattern
 const CONTROL = new RegExp('[\\u0000-\\u001f\\u007f\\u2028\\u2029]', 'g');
 
 /** Plain text only: no tags, no control characters, one space between words. Quotes and diacritics stay. */
@@ -58,6 +59,7 @@ function graphemeSafeCut(text: string, length: number): string {
   let cut = text.slice(0, length);
   // Do not end on a lone high surrogate or inside a base letter plus combining marks.
   const next = text.charAt(length);
+  // eslint-disable-next-line no-misleading-character-class -- the combining mark ranges are matched on purpose
   if (/[̀-ͯ᪰-᫿⃐-⃿︠-︯]/.test(next) || /[\ud800-\udbff]$/.test(cut)) {
     cut = cut.replace(/[^\s]*$/u, '');
     if (!cut) cut = text.slice(0, Math.max(1, length - 2));

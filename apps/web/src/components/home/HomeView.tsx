@@ -6,8 +6,6 @@ import {
   getLibrary,
   getSite,
   type CatalogItem,
-  type HomeData,
-  type Progress,
   type ViewerContext,
 } from '../../lib/data';
 import { reloadContinueRowAction, reloadMyListRowAction } from '../../app/actions';

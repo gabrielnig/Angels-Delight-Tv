@@ -94,8 +94,6 @@ interface Props {
   now: number;
 }
 
-/** Page scope only. These never run on a "select all that match" snapshot (L3-D05). */
-const PAGE_ONLY = new Set(['publish', 'unpublish', 'trash']);
 const TYPED_COUNT_AT = 5;
 const plural = (n: number) => `${n} ${n === 1 ? 'video' : 'videos'}`;
 const labelOf = (action: BulkAction): string =>

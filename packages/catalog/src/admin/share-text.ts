@@ -7,6 +7,7 @@ import type { AdminContext } from './types';
 /** Limits and rules match `apps/web/src/lib/seo/share-overrides.ts`, which the admin form uses for instant messages. */
 export const SHARE_TITLE_MAX = 90;
 export const SHARE_DESCRIPTION_MAX = 200;
+// eslint-disable-next-line no-control-regex -- rejecting control characters is the purpose of this pattern
 const HIDDEN = new RegExp('[\\u0000-\\u001f\\u007f\\u2028\\u2029]');
 
 export interface ShareText {
