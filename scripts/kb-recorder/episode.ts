@@ -7,6 +7,10 @@ export type EpisodeRole = (typeof ROLES)[number];
 export interface ShotMark {
   target: (s: Session) => Locator;
   label?: string;
+  /** `blur` hides the area (a value that must not be read). Default is a numbered highlight. */
+  kind?: 'mark' | 'blur';
+  /** Draw an arrow from the number to the target. Off by default. */
+  arrow?: boolean;
 }
 
 export interface ShotSpec {
@@ -15,6 +19,8 @@ export interface ShotSpec {
   /** Alt text for the picture. Default is "Step N: " plus the caption. */
   alt?: string;
   marks: ShotMark[];
+  /** A tight crop of one card instead of the whole viewport. */
+  crop?: (s: Session) => Locator;
   /** Capture dark when the screen is dark by design (sign in card, preview player). */
   scheme?: 'light' | 'dark';
 }

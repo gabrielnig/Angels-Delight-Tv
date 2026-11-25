@@ -71,3 +71,18 @@ describe('steps block generator', () => {
     expect(applyStepsBlock(once, episode)).toBe(once);
   });
 });
+
+describe('dark by design pictures', () => {
+  it('adds a dark suffix to the file name and the article link', () => {
+    expect(shotFileName('S02', 1, 'card', 'desktop', 'dark')).toBe('S02-01-card-desktop-dark.webp');
+    const e: Episode = {
+      id: 'S02',
+      title: 'T',
+      role: 'none',
+      steps: [
+        { caption: 'Open the page.', run, shot: { name: 'card', scheme: 'dark', marks: [] } },
+      ],
+    };
+    expect(renderStepsBlock(e)).toContain('S02-01-card-desktop-dark.webp');
+  });
+});

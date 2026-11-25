@@ -1,4 +1,4 @@
-import { mkdir } from 'node:fs/promises';
+import { mkdir, rm } from 'node:fs/promises';
 import { chromium, type BrowserContextOptions } from '@playwright/test';
 import type { StepTiming } from './captions';
 import { readingTimeMs } from './captions';
@@ -8,6 +8,7 @@ import { overlayInitScript } from './overlay';
 import type { Profile } from './profiles';
 import { Session } from './session';
 import { shotFileName } from './steps-block';
+import { pngToWebp } from './webp';
 
 export interface PlayOptions {
   baseURL: string;
@@ -18,6 +19,8 @@ export interface PlayOptions {
   pace: number;
   /** Locator check: no reading time padding, no captions pacing. Used by CI and the fact checker. */
   check?: boolean;
+  /** Device scale factor. Screenshots use 2 on desktop and 3 on phones (plan section 6.1), video uses 1. */
+  scale?: number;
   /** Fixed browser clock (epoch ms) so dates in the capture never change between runs. */
   clockMs?: number;
 }
@@ -26,7 +29,7 @@ export interface PlayResult {
   timings: StepTiming[];
   totalMs: number;
   videoPath: string | null;
-  shots: Array<{ step: number; name: string; file: string }>;
+  shots: Array<{ step: number; name: string; file: string; alt: string }>;
 }
 
 export class StepFailure extends Error {
@@ -42,10 +45,10 @@ export class StepFailure extends Error {
   }
 }
 
-const baseContext = (profile: Profile, baseURL: string): BrowserContextOptions => ({
+const baseContext = (profile: Profile, baseURL: string, scale = 1): BrowserContextOptions => ({
   baseURL,
+  deviceScaleFactor: scale,
   viewport: { width: profile.width, height: profile.height },
-  deviceScaleFactor: 1,
   // The app sends a strict style-src CSP; the overlay needs inline styles. Recording only, never point this at production.
   bypassCSP: true,
   isMobile: profile.mobile,
@@ -65,7 +68,7 @@ export async function playEpisode(
   try {
     const storageState = await signInOffCamera(browser, episode, profile, o);
     const context = await browser.newContext({
-      ...baseContext(profile, o.baseURL),
+      ...baseContext(profile, o.baseURL, o.scale),
       ...(storageState ? { storageState } : {}),
       ...(o.videoDir
         ? {
@@ -96,14 +99,29 @@ export async function playEpisode(
       session.lastTarget = null;
       try {
         await step.run(session);
+        await session.guard(`step ${i}`);
         if (step.shot && o.shotsDir) {
-          const marks = step.shot.marks.map((m) => ({ target: m.target(session), label: m.label }));
-          const file = shotFileName(episode.id, i, step.shot.name, profile.name).replace(
+          const spec = step.shot;
+          const base = shotFileName(episode.id, i, spec.name, profile.name, spec.scheme).replace(
             /\.webp$/,
-            '.png',
+            '',
           );
-          await session.shot(file.replace(/\.png$/, ''), marks);
-          shots.push({ step: i, name: step.shot.name, file });
+          const png = await session.shot(base, {
+            marks: spec.marks.map((m) => ({ ...m, target: m.target(session) })),
+            crop: spec.crop?.(session),
+            scheme: spec.scheme,
+          });
+          if (png) {
+            const webp = png.replace(/\.png$/, '.webp');
+            await pngToWebp(png, webp, { width: profile.width });
+            await rm(png);
+            shots.push({
+              step: i,
+              name: spec.name,
+              file: webp,
+              alt: spec.alt ?? `Step ${i}: ${step.caption}`,
+            });
+          }
         }
       } catch (e) {
         throw new StepFailure(episode.id, i, step.caption, e);

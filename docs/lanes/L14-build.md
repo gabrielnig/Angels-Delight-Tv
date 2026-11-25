@@ -152,10 +152,18 @@ Recording and checking run only against the isolated demo stack (D-362, D-379). 
 - Origin guard: `pnpm kb:record` refuses any base URL that is not localhost, 127.0.0.1, [::1] or the demo host named in `KB_DEMO_HOST` (a reserved example name). `--no-reset` skips the reset for a plain dev server.
 - Real Postgres mode: `pnpm kb:stack real` prepares databases `ad_kb` and `ad_kb_keys`, migrations, the demo catalog and one admin, and writes `.env.kb-real`. Set `KB_2FA_CODE` for the sign in helper. The reset there is a rerun of the script. Partial: only one staff account is seeded and the demo overlay (sponsors, donations, fake staff names) applies to fixture mode only. `assertAllowedDatabase` refuses any database other than `ad_kb` and `ad_kb_keys` on localhost.
 
+### Redaction scanner and screenshots
+
+- `scan.ts` (`scanText`): fails a capture that shows a real looking email (anything not on example.com, example.net, example.org, example.test), the `[email hidden]` marker the page redactor leaves (a real email reached the screen), a key, token or secret (`sk_`, `pk_`, AWS ids, JWT, bearer, long mixed tokens, long hex that is not a UUID), a phone number (Nigerian mobile, international, dashed) or an IP outside loopback and the documentation ranges. A finding shows the kind, the position and a masked excerpt, never the value. `allow` lists exact values a screen must show.
+- `scan-page.ts` (`assertPageClean`): scans visible text, field values (not passwords), placeholders, alt and title text. The runner runs it after every step, after every navigation and click, and before every screenshot (`Session.guard`).
+- Elements marked `data-kb-mask` (a QR code, a recovery code) are replaced by `DEMO-0000-0000` before capture.
+- Annotation (`shapes.ts` and the overlay): numbered dark circles with a yellow highlight and a dark halo (fixed colours, not theme tokens), optional arrows (`arrow: true`), blur (`kind: 'blur'`), and a tight crop of one card (`crop`). Marks are numbered in order, blurs are not.
+- `webp.ts` (`pngToWebp`): WebP at the profile width (1280 desktop, 390 phone), no metadata chunk, quality lowered until it is at most 120 KB, fails when it cannot fit. File names: `<id>-<nn>-<name>-<desktop|mobile>[-dark].webp`. `scheme: 'dark'` emulates a dark colour scheme for screens that are dark by design.
+
 ### Commands
 
 - `pnpm kb:record --episode <id> --profile desktop,mobile --out .kb-out` records one episode (see the spike note for the stack).
 
 ### Status
 
-Slices 1 (episode framework) and 2 (demo stack) done. Later slices append here.
+Slices 1 (episode framework), 2 (demo stack) and 3 (redaction scanner, annotation, WebP) done. Later slices append here.
