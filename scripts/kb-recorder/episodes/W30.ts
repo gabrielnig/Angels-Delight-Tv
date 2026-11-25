@@ -21,7 +21,18 @@ const episode: Episode = {
       caption: 'Type "Joseph" in the **Search** box.',
       run: async (s) => {
         await s.type(s.page.getByRole('searchbox', { name: 'Search', exact: true }), 'Joseph');
-        await s.page.getByRole('row').filter({ hasText: 'Demo lesson: Joseph is sold' }).first().waitFor();
+        await s.page
+          .getByRole('row')
+          .filter({ hasText: 'Demo lesson: Joseph is sold' })
+          .first()
+          .waitFor();
+      },
+    },
+    {
+      caption: 'Wait until you see **Demo lesson: Joseph is sold** in the list.',
+      run: async (s) => {
+        await s.page.getByText('Demo lesson: Joseph is sold').first().waitFor();
+        await s.pause(1500);
       },
     },
     {
@@ -50,7 +61,11 @@ const episode: Episode = {
     {
       caption: 'Select **Life Skills** from the **Category** list.',
       run: async (s) => {
-        await selectOption(s, 'Category', 'Life Skills');
+        await s.page
+          .getByRole('dialog')
+          .getByLabel('Category', { exact: true })
+          .selectOption({ label: 'Life Skills' });
+        await s.pause(500);
       },
     },
     {

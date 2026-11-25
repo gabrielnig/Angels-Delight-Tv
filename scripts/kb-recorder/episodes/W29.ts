@@ -18,6 +18,13 @@ const episode: Episode = {
       },
     },
     {
+      caption: 'Type "Joseph" in the **Search** box.',
+      run: async (s) => {
+        await s.type(s.page.getByRole('searchbox', { name: 'Search', exact: true }), 'Joseph');
+        await s.page.getByRole('link', { name: 'Edit Demo lesson: Joseph is sold' }).waitFor();
+      },
+    },
+    {
       caption: 'Click **Edit Demo lesson: Joseph is sold**.',
       run: async (s) => {
         await clickByName(s, 'link', 'Edit Demo lesson: Joseph is sold');
