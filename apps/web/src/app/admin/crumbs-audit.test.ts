@@ -16,8 +16,7 @@ function pages(dir: string): string[] {
 function crumbArrays(src: string): string[] {
   const out: string[] = [];
   const re = /crumbs=\{\[/g;
-  let m: RegExpExecArray | null;
-  while ((m = re.exec(src))) {
+  while (re.exec(src)) {
     let depth = 1;
     let i = re.lastIndex;
     while (i < src.length && depth > 0) {

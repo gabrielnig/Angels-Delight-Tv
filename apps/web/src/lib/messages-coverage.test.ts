@@ -1,7 +1,7 @@
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { BASELINES, EN_NG, validateTranslation } from '@ad/shared/messages';
+import { BASELINES, EN_NG, validateTranslation, type CatalogShape } from '@ad/shared/messages';
 
 const ROOTS = [
   resolve(__dirname, '..'),
@@ -65,7 +65,7 @@ describe('message catalog coverage (M34-S04)', () => {
 });
 
 describe('locale baseline catalogs (M46)', () => {
-  const english = EN_NG as unknown as Record<string, import('@ad/shared/messages').CatalogShape[string]>;
+  const english = EN_NG as unknown as Record<string, CatalogShape[string]>;
   for (const [locale, catalog] of Object.entries(BASELINES)) {
     it(`every ${locale} key exists in en-ng`, () => {
       expect(Object.keys(catalog).filter((k) => !(k in EN_NG))).toEqual([]);

@@ -27,6 +27,7 @@ const DEFAULT_NEXT = '/profiles';
 export function safeNext(next: string | null | undefined): string {
   if (!next || next.length > 512 || !next.startsWith('/') || next.startsWith('//'))
     return DEFAULT_NEXT;
+  // eslint-disable-next-line no-control-regex -- rejecting control characters is the purpose of this pattern
   if (/[\\\u0000-\u001f]/.test(next)) return DEFAULT_NEXT;
   return next;
 }
@@ -599,7 +600,7 @@ export class GoogleAuthService extends ViewerMfaService {
         linked: Boolean(identity),
         hint: identity?.hint ?? null,
         linkedAt: identity?.linkedAt ?? null,
-        hasPassword: account?.passwordHash != null,
+        hasPassword: account?.passwordHash !== null && account?.passwordHash !== undefined,
       };
     });
   }

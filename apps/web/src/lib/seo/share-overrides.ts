@@ -15,6 +15,7 @@ export type ShareTextResult =
   | { ok: true; value: { shareTitle?: string | null; shareDescription?: string | null } }
   | { ok: false; errors: Record<string, string> };
 
+// eslint-disable-next-line no-control-regex -- rejecting control characters is the purpose of this pattern
 const CONTROL = new RegExp('[\\u0000-\\u001f\\u007f\\u2028\\u2029]');
 
 function field(raw: string, max: number, label: string): { value: string | null } | { error: string } {

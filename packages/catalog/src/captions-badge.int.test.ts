@@ -1,5 +1,5 @@
 import { eq } from 'drizzle-orm';
-import { captions, captionTracks, settings, videos } from '@ad/db';
+import { captions, captionTracks, settings, type videos } from '@ad/db';
 import { uuidv7 } from '@ad/shared';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import {

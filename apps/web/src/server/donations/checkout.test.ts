@@ -204,7 +204,7 @@ describe('POST /api/donate/checkout', () => {
 
   it('returns the winner url when two taps race and the database keeps the first', async () => {
     const { handler } = make({
-      store: { findAttempt: async () => null, create: async (i) => ({ reference: 'ad-don-bbbbbbbbbbbbbbbbbbbb', url: 'https://checkout.paystack.com/winner', created: false }) },
+      store: { findAttempt: async () => null, create: async () => ({ reference: 'ad-don-bbbbbbbbbbbbbbbbbbbb', url: 'https://checkout.paystack.com/winner', created: false }) },
     });
     expect((await (await handler(post(body()))).json()).url).toBe('https://checkout.paystack.com/winner');
   });
