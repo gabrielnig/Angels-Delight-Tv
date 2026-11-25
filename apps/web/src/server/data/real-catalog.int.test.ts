@@ -1,5 +1,5 @@
 import { seedDemo } from '@ad/catalog';
-import { searchHistory, slugRedirects, videos, watchProgress } from '@ad/db';
+import { searchHistory, settings as settingsTable, slugRedirects, videos, watchProgress } from '@ad/db';
 import {
   categorize,
   createHarness,
@@ -12,7 +12,7 @@ import {
   type ViewerHarness,
 } from '@ad/viewer/testing';
 import { eq } from 'drizzle-orm';
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { guestContext, type ViewerContext } from '../../lib/data/types';
 import { RealCatalog } from './real-catalog';
 
@@ -359,6 +359,16 @@ describe.skipIf(!integrationEnabled())('real catalog repository', () => {
   });
 
   describe('public preview', () => {
+    const setGuestRank = (value: number) =>
+      h.db.setup
+        .insert(settingsTable)
+        .values({ key: 'maturity.guest_max_rank', value })
+        .onConflictDoUpdate({ target: settingsTable.key, set: { value } });
+    // Seeded titles are unrated, which counts as rank 4: open the ceiling except in the ceiling test.
+    beforeEach(async () => {
+      await setGuestRank(4);
+    });
+
     it('shows published titles without a session and nothing else', async () => {
       await seedVideo(h.db.setup, { slug: 'public-one', title: 'Public one' });
       await seedVideo(h.db.setup, { slug: 'draft-one', publishState: 'draft', publishedAt: null });
@@ -414,6 +424,16 @@ describe.skipIf(!integrationEnabled())('real catalog repository', () => {
         type: 'redirect',
         to: '/series/ep-series',
       });
+    });
+
+    it('hides a title above the guest maturity ceiling from the public preview (L15b, R26)', async () => {
+      await seedVideo(h.db.setup, { slug: 'mild', maturityRank: 1 });
+      await seedVideo(h.db.setup, { slug: 'strong', maturityRank: 3 });
+      await setGuestRank(2);
+      expect(await catalog.publicPreview('mild', 'video')).toMatchObject({ type: 'video' });
+      expect(await catalog.publicPreview('strong', 'video')).toBeNull();
+      await setGuestRank(3);
+      expect(await catalog.publicPreview('strong', 'video')).toMatchObject({ type: 'video' });
     });
 
     it('carries artwork when the title has a poster', async () => {

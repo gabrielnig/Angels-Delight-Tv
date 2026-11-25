@@ -40,3 +40,9 @@ export async function getSiteMeta(): Promise<SiteMeta> {
 export async function pageMetadata(page: PageMeta): Promise<Metadata> {
   return buildMetadata(await getSiteMeta(), page);
 }
+
+/** Settings that change the drawn picture. They go into the image version so a change makes chat apps fetch it again. */
+export async function shareImageExtra(): Promise<string[]> {
+  const [theme, seo] = await Promise.all([getRootTheme(), getSeoSettings()]);
+  return [theme.platformName, theme.injection.themeColor, String(seo.titleOverlay), String(seo.playBadge)];
+}

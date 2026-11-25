@@ -126,6 +126,24 @@ describe('title page search engine rules (M45-S02, R26)', () => {
     expect((await generateMetadata(params)).robots).toEqual({ index: false, follow: false });
   });
 
+  it('a kids only title shows the generic card: no title, text, poster or share image in any tag (R26)', async () => {
+    mocks.indexable = false;
+    const m = await generateMetadata(params);
+    const dump = JSON.stringify(m);
+    expect(dump).not.toContain('Preview');
+    expect(dump).not.toContain('/og/title/');
+    expect(m.openGraph?.title).toBe('Test TV');
+    expect(m.openGraph?.images).toMatchObject([{ url: '/brand-icons/placeholder-og.png' }]);
+    expect(m.alternates).toBeUndefined();
+  });
+
+  it('an unknown, unpublished or above ceiling title has no preview: not found and not indexed', async () => {
+    mocks.preview.mockResolvedValue(null);
+    const m = await generateMetadata(params);
+    expect(m.robots).toEqual({ index: false, follow: false });
+    expect(JSON.stringify(m)).not.toContain('/og/');
+  });
+
   it('a title for everyone leaves robots alone', async () => {
     expect((await generateMetadata(params)).robots).toBeUndefined();
   });

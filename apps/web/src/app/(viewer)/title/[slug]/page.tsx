@@ -8,7 +8,7 @@ import { TitleBlocked } from '../../../../components/title/TitleStates';
 import { PublicTitle, TitleView } from '../../../../components/title/TitleView';
 import { getCatalog, getLibrary } from '../../../../lib/data';
 import { JsonLd } from '../../../../components/seo/JsonLd';
-import { pageMetadata } from '../../../../server/seo/site-meta';
+import { pageMetadata, shareImageExtra } from '../../../../server/seo/site-meta';
 import { shareImageFor } from '../../../../lib/seo/share-image';
 import { titlePageJsonLd } from '../../../../lib/seo/page-jsonld';
 import { shareConfig, siteOrigin, titleIndexable } from '../../../../server/seo/page-seo';
@@ -39,7 +39,7 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
     path,
     title: item.title,
     description: item.description,
-    image: shareImageFor('title', item.slug, item.title, item.publishedAt, item.thumbnail),
+    image: shareImageFor('title', item.slug, item.title, item.publishedAt, item.thumbnail, await shareImageExtra()),
     durationSeconds: item.durationSeconds,
     releasedAt: item.publishedAt || undefined,
     tags: item.categoryName ? [item.categoryName] : undefined,
