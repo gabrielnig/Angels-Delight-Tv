@@ -1,0 +1,469 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S189 Videos add to series desktop</title>
+<style>
+
+
+:root {
+  
+  --color-bg: #F5F5F2;
+  --color-surface: #FFFFFF;
+  --color-ink: #1A1C22;
+  --color-muted: #5B606B;
+  --color-border: #DEDDD6;
+  --color-primary: #1F6FB5;       
+  --color-accent: #FFC93C;        
+
+  
+  --color-on-primary: #FFFFFF;
+  --color-on-accent: #1A1C22;
+  --color-primary-hover: #1B5F9C;
+  --color-primary-active: #174F83;
+  --color-primary-tint: #E3F1FF;
+  --color-accent-hover: #F2B84B;
+  --color-accent-active: #E0A63A;
+  --color-border-strong: #8A8D94;  
+  --color-surface-sunken: #ECEAE3;
+  --color-focus-ring: #1F6FB5;     
+  --color-focus-ring-dark: #FFC93C;
+
+  
+  --color-success: #1E7A46;
+  --color-success-tint: #E4F4EA;
+  --color-danger: #B42318;
+  --color-danger-tint: #FDECEA;
+  --color-warning: #8A5A00;
+  --color-warning-tint: #FFF3D6;
+  --color-info: #1F6FB5;
+  --color-info-tint: #E3F1FF;
+
+  
+  --color-sidebar-bg: #17181C;
+  --color-sidebar-ink: #FFFFFF;
+  --color-sidebar-muted: #A9AEB9;
+  --color-sidebar-hover: #23252B;
+  --color-sidebar-active: #2E3138;
+  --color-sidebar-accent: #FFC93C;
+
+  
+  --color-player-bg: #0E0F13;
+  --color-player-ink: #FFFFFF;
+  --color-player-muted: #B4B8C2;
+  --color-player-rail: #6A6E78;
+  --color-player-buffer: #9CA0AA;
+  --color-player-border: #3A3D46;
+  --color-player-surface-raised: #1B1D24;
+  --color-player-switch-off: #6E7179;
+  --color-player-control-bg: rgba(14, 15, 19, 0.72);
+  --color-scrim-top: rgba(14, 15, 19, 0.85);
+  --color-scrim-bottom: rgba(14, 15, 19, 0.0);
+  --color-card-progress-rail: #3A3D46;   
+  --color-bar-disabled-bg: #3A3D46;      
+  --color-bar-disabled-ink: #C9CCD3;     
+  --color-hero-chip-bg: rgba(14, 15, 19, 0.6); 
+
+  
+  --sponsor-slot-height-compact: calc(7rem * var(--type-scale));
+  --sponsor-slot-height-wide: calc(8.5rem * var(--type-scale));
+  --sponsor-label-bg: #ECEAE3;
+  --sponsor-label-ink: #1A1C22;
+  --sponsor-label-size: var(--text-caption);
+  --sponsor-label-height: calc(1.5rem * var(--type-scale));
+
+  
+  --scrim-rgb: 14, 15, 19;
+  --scrim-hero-start: 0.85;
+  --scrim-hero-mid: 0.45;
+  --scrim-hero-end: 0;
+  --scrim-hero-hold-desktop: 40%;
+  --scrim-hero-mid-desktop: 60%;
+  --scrim-hero-end-desktop: 100%;
+  --scrim-hero-mid-m: 0.7;   
+  --scrim-hero-hold-mobile: 72%;
+  --scrim-hero-mid-mobile: 82%;
+  --scrim-hero-end-mobile: 96%;
+  --hero-fade: var(--motion-slow);
+  --hero-interval: 10s;  
+  --nav-scrim-hold: 70%;
+
+  
+  --color-tile-sky: #E3F1FF;
+  --color-tile-mint: #DDF3EA;
+  --color-tile-lemon: #FFF3C9;
+  --color-tile-peach: #FFE3DA;
+  --color-tile-lavender: #ECE4FF;
+
+  
+  --color-avatar-mint: #BFE3D0;
+  --color-avatar-lemon: #F7D27A;
+  --color-avatar-sky: #B9D8F5;
+  --color-avatar-peach: #F2B1AC;
+  --color-avatar-lavender: #D9CCF5;
+
+  
+  --color-danger-border: #E8B4AE;
+  --color-danger-surface: #FFFBFA;
+  --color-danger-ink: #8F1D13;      
+  --color-info-ink: #14568F;        
+  --color-success-ink: #14532D;     
+  --color-warning-ink: #5E3D00;     
+  --color-warning-strong: #B26A00;  
+  --color-switch-off: #6E7179;
+  --color-switch-locked: #C9C8C1;
+  --color-toast-ok: #7BE0A0;        
+  --color-preview-from: #2B3A55;    
+  --color-preview-to: #12263A;
+
+  
+  --font-sans: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-display: "Space Grotesk", var(--font-sans);
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+  
+  --type-scale: 1;
+
+  --text-micro: calc(0.6875rem * var(--type-scale));  
+  --text-caption: calc(0.8125rem * var(--type-scale));
+  --text-small: calc(0.875rem * var(--type-scale));   
+  --text-body: calc(1rem * var(--type-scale));        
+  
+  --text-lead: calc(1.0625rem * var(--type-scale));   
+  --text-h4: calc(1.125rem * var(--type-scale));      
+  --text-h3: calc(1.25rem * var(--type-scale));       
+  --text-h2: calc(1.5rem * var(--type-scale));        
+  --text-h1: calc(1.75rem * var(--type-scale));       
+  --text-hero: calc(clamp(2rem, 5vw, 3.5rem) * var(--type-scale)); 
+
+  --weight-regular: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+  --weight-bold: 700;
+
+  --leading-tight: 1.15;
+  --leading-snug: 1.3;
+  --leading-marks: 1.3;       
+  --leading-normal: 1.5;
+
+  
+  --space-0: 0;
+  --space-1: 0.25rem;  
+  --space-2: 0.5rem;   
+  --space-3: 0.75rem;  
+  --space-4: 1rem;     
+  --space-5: 1.25rem;  
+  --space-6: 1.5rem;   
+  --space-8: 2rem;     
+  --space-10: 2.5rem;  
+  --space-12: 3rem;    
+  --space-16: 4rem;    
+  --space-20: 5rem;    
+
+  
+  --page-gutter: clamp(1rem, 4vw, 3.5rem);  
+  --content-max: 90rem;      
+  --prose-max: 90rem;        
+  --row-gap: var(--space-8);
+  --card-gap: var(--space-2);
+  --cards-visible: 2.3;      
+  --nav-height: 3.5rem;      
+  --tabbar-height: 3.5rem;   
+  --admin-sidebar-width: 15rem;
+  --touch-target: 2.75rem;   
+  --button-height-sm: 2rem;  
+  --button-height-md: 2.5rem;
+  --button-height-lg: 3rem;
+  --button-pad-x: 1rem;
+  --icon-gap: 0.5rem;
+  --avatar-initial-120: 2.5rem;
+  --avatar-initial-160: 3.5rem;
+
+  
+  --radius-xs: 0.25rem;   
+  --radius-sm: 0.5rem;    
+  --radius-md: 0.75rem;   
+  --radius-lg: 1rem;      
+  --radius-pill: 62.4375rem;
+  --radius-circle: 50%;
+
+  
+  --shadow-0: none;
+  --shadow-1: 0 1px 2px rgba(26, 28, 34, 0.08);
+  --shadow-2: 0 4px 12px rgba(26, 28, 34, 0.12);
+  --shadow-3: 0 12px 32px rgba(26, 28, 34, 0.18);
+  --shadow-up: 0 -4px 12px rgba(26, 28, 34, 0.08);
+
+  
+  --motion-instant: 100ms;
+  --motion-fast: 150ms;
+  --motion-base: 200ms;
+  --motion-slow: 350ms;
+  --motion-spin: 700ms;
+  --motion-shimmer: 1.4s;
+  --ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-enter: cubic-bezier(0, 0, 0.2, 1);
+  --ease-exit: cubic-bezier(0.4, 0, 1, 1);
+  --motion-hover: 250ms;
+  --motion-press: 0ms;
+  --ease-out-strong: cubic-bezier(0.22, 1, 0.36, 1);
+  --hover-card-delay: 300ms;
+  --card-scale: 1.25;
+
+  
+  --z-base: 0;
+  --z-sticky: 10;
+  --z-nav: 20;
+  --z-overlay: 30;
+  --z-modal: 40;
+  --z-toast: 50;
+
+  
+  --ratio-video: 16 / 9;
+  --ratio-poster: 2 / 3;
+  --ratio-square: 1 / 1;
+  --ratio-hero: 16 / 9;
+  --ratio-hero-mobile: 4 / 5;
+}
+
+@media (min-width: 600px) {
+  :root { --cards-visible: 3.3; }
+}
+@media (min-width: 960px) {
+  :root {
+    --cards-visible: 4.3;
+    --nav-height: 4.25rem;
+    --card-gap: var(--space-3);
+    --text-lead: calc(1.125rem * var(--type-scale));  
+    --text-h4: calc(1.25rem * var(--type-scale));     
+    --text-h3: calc(1.5rem * var(--type-scale));      
+    --text-h2: calc(2rem * var(--type-scale));        
+    --text-h1: calc(2.5rem * var(--type-scale));      
+  }
+}
+@media (min-width: 1280px) {
+  :root { --cards-visible: 5.3; }
+}
+@media (min-width: 1920px) {
+  :root { --cards-visible: 6.3; --content-max: 120rem; }
+}
+
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --motion-instant: 0.01ms;
+    --motion-fast: 0.01ms;
+    --motion-base: 0.01ms;
+    --motion-slow: 0.01ms;
+    --motion-hover: 0.01ms;
+    --motion-press: 0ms;
+    --hover-card-delay: 0ms;
+  }
+}
+
+
+:root[data-saver="on"] {
+  --motion-slow: 0.01ms;
+}
+
+
+*{box-sizing:border-box}
+body{margin:0;background:var(--color-bg);font-family:var(--font-sans);font-size:var(--text-body);color:var(--color-ink);line-height:1.5}
+a{color:inherit;text-decoration:none}
+h1,h2,h3,h4{font-family:var(--font-display);margin:0;color:var(--color-ink);line-height:1.2}
+p{margin:0}
+button,input,select{font-family:inherit;font-size:inherit;color:inherit}
+ol,ul{margin:0;padding:0;list-style:none}
+svg{flex:none}
+.lbl{background:var(--color-surface-sunken);border-top:1px solid var(--color-border);border-bottom:1px solid var(--color-border);padding:var(--space-3) var(--space-12);font-size:var(--text-caption);font-weight:600;letter-spacing:.02em}
+.m .lbl{padding:var(--space-3) var(--space-4)}
+.lbl small{font-weight:400;color:var(--color-muted);margin-left:var(--space-3)}
+.m .lbl small{display:block;margin:2px 0 0}
+.pad{padding:var(--space-8) var(--space-12)}
+.m .pad{padding:var(--space-4)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:var(--space-2);min-height:48px;padding:0 var(--space-6);border-radius:var(--radius-sm);border:1px solid var(--color-primary);font-size:var(--text-body);font-weight:600;cursor:pointer;background:var(--color-primary);color:var(--color-on-primary);white-space:nowrap}
+.btn.sec{background:var(--color-surface);color:var(--color-ink);border-color:var(--color-border-strong)}
+.btn.dng{background:var(--color-danger);border-color:var(--color-danger);color:var(--color-surface)}
+.btn.sm{min-height:44px;padding:0 var(--space-4);font-size:var(--text-small)}
+.btn.full{width:100%}
+.btn.ghost{background:transparent;border-color:transparent;color:var(--color-primary);padding:0 var(--space-3)}
+.btn[disabled],.btn.dis{background:var(--color-surface-sunken);color:var(--color-muted);border-color:var(--color-border);cursor:not-allowed}
+.btn.onacc{background:var(--color-accent);border-color:var(--color-accent);color:var(--color-on-accent)}
+.ib{display:inline-flex;align-items:center;justify-content:center;width:44px;height:44px;border-radius:var(--radius-sm);border:1px solid var(--color-border-strong);background:var(--color-surface);color:var(--color-ink);cursor:pointer;padding:0}
+.ib.plain{border-color:transparent;background:transparent}
+.ib[disabled]{color:var(--color-muted);background:var(--color-surface-sunken);border-color:var(--color-border);cursor:not-allowed}
+.f,:focus-visible{outline:3px solid var(--color-focus-ring);outline-offset:2px}
+.fd{outline:3px solid var(--color-focus-ring-dark);outline-offset:2px}
+@media (forced-colors:active){.f,.fd,:focus-visible{outline-color:Highlight}}
+.inp{display:flex;align-items:center;justify-content:space-between;gap:var(--space-2);min-height:48px;border:1px solid var(--color-border-strong);border-radius:var(--radius-sm);background:var(--color-surface);padding:0 var(--space-3);width:100%}
+.inp.err{border:2px solid var(--color-danger)}
+.inp.foc{border:2px solid var(--color-primary);outline:3px solid var(--color-focus-ring);outline-offset:2px}
+.inp.dis{background:var(--color-surface-sunken);color:var(--color-muted)}
+.fld{display:flex;flex-direction:column;min-width:0}
+.fld>.l{font-size:var(--text-small);font-weight:600;margin-bottom:var(--space-2)}
+.help{font-size:var(--text-small);color:var(--color-muted);margin-top:var(--space-2);line-height:1.45}
+.errtx{font-size:var(--text-small);color:var(--color-danger);margin-top:var(--space-2);display:flex;gap:var(--space-2);align-items:flex-start;line-height:1.45;font-weight:500}
+.chip{display:inline-flex;align-items:center;gap:var(--space-1);height:24px;padding:0 var(--space-2);border-radius:var(--radius-xs);font-size:var(--text-caption);font-weight:600;white-space:nowrap}
+.chip.ok{background:var(--color-success-tint);color:var(--color-success)}
+.chip.dr{background:var(--color-surface-sunken);color:var(--color-ink)}
+.chip.wn{background:var(--color-warning-tint);color:var(--color-warning)}
+.chip.er{background:var(--color-danger-tint);color:var(--color-danger)}
+.chip.in{background:var(--color-info-tint);color:var(--color-primary-active)}
+.chip.kid{background:var(--color-accent);color:var(--color-on-accent)}
+.nxt{display:inline-flex;align-items:center;height:24px;padding:0 var(--space-2);border-radius:var(--radius-xs);background:var(--color-accent);color:var(--color-on-accent);font-size:var(--text-caption);font-weight:700;white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis}
+.banner{display:flex;align-items:flex-start;gap:var(--space-3);padding:var(--space-3) var(--space-4);border-radius:var(--radius-sm);font-size:var(--text-small);line-height:1.45;border:1px solid}
+.banner.warn{background:var(--color-warning-tint);color:var(--color-warning);border-color:var(--color-warning)}
+.banner.err{background:var(--color-danger-tint);color:var(--color-danger);border-color:var(--color-danger)}
+.banner.ok{background:var(--color-success-tint);color:var(--color-success);border-color:var(--color-success)}
+.banner.info{background:var(--color-info-tint);color:var(--color-ink);border-color:var(--color-info)}
+.banner .tx{flex:1;min-width:0;color:var(--color-ink)}
+.banner .tx b{display:block}
+.pbar{height:6px;border-radius:var(--radius-pill);background:var(--color-card-progress-rail);overflow:hidden}
+.pbar i{display:block;height:6px;background:var(--color-accent)}
+.pbar.lt{background:var(--color-border)}
+.pbar.lt i{background:var(--color-primary)}
+.thumb{position:relative;aspect-ratio:16/9;border-radius:var(--radius-sm);background:linear-gradient(135deg,var(--color-player-surface-raised),var(--color-player-border));overflow:hidden;color:var(--color-player-ink);display:flex;align-items:center;justify-content:center;flex:none}
+.thumb .pbar{position:absolute;left:0;right:0;bottom:0;border-radius:0}
+.thumb .dur{position:absolute;right:var(--space-1);bottom:var(--space-2);background:var(--color-hero-chip-bg);color:var(--color-player-ink);font-size:var(--text-caption);font-weight:600;padding:1px var(--space-2);border-radius:var(--radius-xs)}
+.thumb .tn{position:absolute;left:var(--space-2);top:var(--space-2);background:var(--color-hero-chip-bg);color:var(--color-player-ink);font-size:var(--text-caption);font-weight:700;padding:1px var(--space-2);border-radius:var(--radius-xs)}
+.sk{background:var(--color-surface-sunken);border-radius:var(--radius-sm)}
+.sw{position:relative;width:52px;height:44px;flex:none;display:inline-block}
+.sw::before{content:"";position:absolute;left:0;right:0;top:9px;height:26px;border-radius:13px;background:var(--color-border-strong)}
+.sw::after{content:"";position:absolute;top:12px;left:3px;width:20px;height:20px;border-radius:50%;background:var(--color-surface)}
+.sw.on::before{background:var(--color-primary)}.sw.on::after{left:29px}
+.rad{width:22px;height:22px;border-radius:50%;border:2px solid var(--color-border-strong);background:var(--color-surface);display:flex;align-items:center;justify-content:center;flex:none;margin-top:1px}
+.rad.on{border-color:var(--color-primary)}.rad.on i{width:10px;height:10px;border-radius:50%;background:var(--color-primary);display:block}
+.cb{width:22px;height:22px;border-radius:var(--radius-xs);border:2px solid var(--color-border-strong);background:var(--color-surface);display:flex;align-items:center;justify-content:center;flex:none;color:var(--color-on-primary)}
+.cb.on{background:var(--color-primary);border-color:var(--color-primary)}
+.hit{display:inline-flex;align-items:center;justify-content:center;width:44px;height:44px;flex:none}
+.opt{display:flex;gap:var(--space-3);align-items:flex-start;padding:var(--space-3) var(--space-4);border:1px solid var(--color-border-strong);border-radius:var(--radius-sm);background:var(--color-surface);min-height:44px}
+.opt.on{border:2px solid var(--color-primary);background:var(--color-primary-tint);padding:calc(var(--space-3) - 1px) calc(var(--space-4) - 1px)}
+.opt .t{font-weight:600;font-size:var(--text-body)}
+.opt .s{font-size:var(--text-small);color:var(--color-muted)}
+.scrim{background:rgba(var(--scrim-rgb),.6);padding:var(--space-8);display:flex;justify-content:center;border-radius:var(--radius-md)}
+.m .scrim{padding:0;align-items:flex-end;border-radius:0}
+.dlg{width:600px;max-width:100%;background:var(--color-surface);border-radius:var(--radius-lg);box-shadow:var(--shadow-3);display:flex;flex-direction:column}
+.dlg .hd{display:flex;align-items:flex-start;gap:var(--space-2);padding:var(--space-5) var(--space-3) 0 var(--space-6)}
+.dlg .hd h3{font-size:var(--text-h3);flex:1;padding-top:var(--space-2)}
+.dlg .bd{padding:var(--space-3) var(--space-6) var(--space-2);display:flex;flex-direction:column;gap:var(--space-4)}
+.dlg .ft{display:flex;justify-content:flex-end;gap:var(--space-3);padding:var(--space-4) var(--space-6) var(--space-6);flex-wrap:wrap}
+.m .dlg{width:100%;border-radius:var(--radius-lg) var(--radius-lg) 0 0}
+.m .dlg .hd{padding-left:var(--space-5)}
+.m .dlg .bd{padding-left:var(--space-5);padding-right:var(--space-5)}
+.m .dlg .ft{flex-direction:column-reverse;padding:var(--space-3) var(--space-5) var(--space-4)}
+.m .dlg .ft .btn{width:100%}
+.grab{width:40px;height:4px;border-radius:2px;background:var(--color-border-strong);margin:var(--space-2) auto 0}
+.toast{width:420px;max-width:100%;border-radius:var(--radius-sm);box-shadow:var(--shadow-2);padding:var(--space-1) var(--space-1) var(--space-1) var(--space-4);display:flex;align-items:center;gap:var(--space-3);min-height:56px;border:1px solid;position:relative;overflow:hidden}
+.toast.s{background:var(--color-success-tint);border-color:var(--color-success)}
+.toast.e{background:var(--color-danger-tint);border-color:var(--color-danger)}
+.toast .t{flex:1;font-size:var(--text-small);font-weight:500;line-height:1.35;padding:var(--space-2) 0}
+.toast .ac{display:inline-flex;align-items:center;justify-content:center;min-height:44px;min-width:44px;padding:0 var(--space-3);font-weight:700;font-size:var(--text-small);text-decoration:underline;background:transparent;border:0;cursor:pointer}
+.toast .cd{position:absolute;left:0;bottom:0;height:3px;width:60%;background:var(--color-success)}
+.m .toast{width:100%}
+.note{font-size:var(--text-caption);color:var(--color-muted)}
+.sectl{font-size:var(--text-caption);font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--color-muted)}
+.card{background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-md)}
+.crumbs ol{display:flex;flex-wrap:wrap;align-items:center;color:var(--color-muted);font-size:var(--text-caption)}
+.crumbs li{display:inline-flex;align-items:center;min-height:44px}
+.crumbs li+li::before{content:"/";padding:0 var(--space-2)}
+.crumbs a{display:inline-flex;align-items:center;min-height:44px;min-width:44px;justify-content:center}
+.crumbs [aria-current]{display:inline-block;line-height:44px;color:var(--color-ink);max-width:40ch;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.vh{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+/* viewer chrome */
+.vhead{display:flex;align-items:center;gap:var(--space-6);padding:0 var(--space-12);height:64px;background:var(--color-surface);border-bottom:1px solid var(--color-border)}
+.m .vhead{padding:0 var(--space-2) 0 var(--space-4);height:56px;gap:var(--space-2)}
+.vhead .nav{display:flex;gap:var(--space-1);flex:1}
+.vhead .nav a{display:inline-flex;align-items:center;min-height:44px;padding:0 var(--space-3);font-weight:500;font-size:var(--text-small)}
+.vhead .nav a.on{font-weight:700;box-shadow:inset 0 -3px 0 var(--color-primary)}
+.logo{display:flex;align-items:center;gap:var(--space-2);font-family:var(--font-display);font-weight:700;font-size:var(--text-h4)}
+.m .logo{flex:1}
+.vfoot{border-top:1px solid var(--color-border);padding:var(--space-6) var(--space-12);font-size:var(--text-small);color:var(--color-muted)}
+.m .vfoot{padding:var(--space-4)}
+/* admin chrome */
+.adm{display:flex;align-items:stretch;min-height:640px;background:var(--color-bg)}
+.side{flex:0 0 240px;background:var(--color-sidebar-bg);color:var(--color-sidebar-ink);padding:var(--space-6) var(--space-4);display:flex;flex-direction:column;gap:var(--space-6)}
+.side nav{display:flex;flex-direction:column;gap:2px}
+.nv{display:flex;align-items:center;gap:var(--space-3);min-height:44px;padding:0 var(--space-3);border-radius:var(--radius-sm);color:var(--color-sidebar-muted);font-size:var(--text-small);font-weight:500}
+.nv.on{background:var(--color-sidebar-active);color:var(--color-sidebar-ink);box-shadow:inset 3px 0 0 var(--color-sidebar-accent)}
+.main{flex:1;min-width:0;padding:var(--space-6) var(--space-8) var(--space-10);display:flex;flex-direction:column;gap:var(--space-5)}
+.mtop{display:flex;align-items:center;gap:var(--space-2);height:56px;padding:0 var(--space-2) 0 var(--space-4);background:var(--color-sidebar-bg);color:var(--color-sidebar-ink)}
+.mtop .logo{color:var(--color-sidebar-ink)}
+.mmain{padding:var(--space-2) var(--space-4) var(--space-6);display:flex;flex-direction:column;gap:var(--space-4);background:var(--color-bg)}
+.ph{display:flex;align-items:center;gap:var(--space-4);flex-wrap:wrap}
+.ph h1{font-size:var(--text-h1);flex:1}
+.m .ph h1{font-size:var(--text-h2)}
+.tbl{width:100%;border-collapse:collapse;font-size:var(--text-small)}
+.tbl th{height:44px;text-align:left;font-size:var(--text-caption);font-weight:600;color:var(--color-muted);padding:0 var(--space-2);border-bottom:1px solid var(--color-border);background:var(--color-surface)}
+.tbl td{padding:var(--space-2);border-bottom:1px solid var(--color-border);height:72px;vertical-align:middle}
+.tbl tr.sel td{background:var(--color-primary-tint)}
+.tbl th:first-child,.tbl td:first-child{padding-left:var(--space-2);width:52px}
+.bulk{background:var(--color-sidebar-bg);color:var(--color-sidebar-ink);border-radius:var(--radius-md);padding:var(--space-2) var(--space-4);min-height:60px;display:flex;align-items:center;gap:var(--space-3);box-shadow:var(--shadow-3);flex-wrap:wrap}
+.bulk .cnt{font-weight:700;white-space:nowrap}
+.bulk .w{background:var(--color-surface);color:var(--color-ink);border-color:var(--color-surface)}
+.bulk .clr{background:transparent;color:var(--color-sidebar-ink);border-color:var(--color-sidebar-muted)}
+.bulk .lnk{display:inline-flex;align-items:center;min-height:44px;color:var(--color-sidebar-accent);font-weight:600;text-decoration:underline;white-space:nowrap}
+.bulk .mt{color:var(--color-sidebar-muted);font-size:var(--text-small)}
+.bulk .off{background:var(--color-bar-disabled-bg);border-color:var(--color-bar-disabled-bg);color:var(--color-bar-disabled-ink);cursor:not-allowed}
+.dock{position:absolute;left:0;right:0;bottom:0;background:var(--color-sidebar-bg);color:var(--color-sidebar-ink);padding:var(--space-3) var(--space-3) var(--space-4);box-shadow:var(--shadow-up);display:flex;flex-direction:column;gap:var(--space-2)}
+.dock .row{display:flex;gap:var(--space-2);align-items:center}
+.dock .btn{flex:1;padding:0 var(--space-2)}
+.dock .w{background:var(--color-surface);color:var(--color-ink);border-color:var(--color-surface)}
+.dock .clr{background:transparent;color:var(--color-sidebar-ink);border-color:var(--color-sidebar-muted)}
+.dock .lnk{display:inline-flex;align-items:center;min-height:44px;color:var(--color-sidebar-accent);font-weight:600;text-decoration:underline;white-space:nowrap}
+.menu{background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-sm);box-shadow:var(--shadow-3);padding:var(--space-1);display:flex;flex-direction:column;min-width:240px}
+.menu .mi{display:flex;align-items:center;gap:var(--space-3);min-height:44px;padding:0 var(--space-3);border-radius:var(--radius-xs);font-size:var(--text-small);font-weight:500}
+.menu .mi.on{background:var(--color-primary-tint)}
+.menu .mi.off{color:var(--color-muted)}
+.menu .sep{height:1px;background:var(--color-border);margin:var(--space-1) 0}
+.vp{position:relative;width:390px;background:var(--color-bg);overflow:hidden}
+.mark{outline:2px dashed var(--color-danger);outline-offset:2px}
+
+
+.tool{display:flex;gap:var(--space-3);flex-wrap:wrap;align-items:flex-end}
+.tool .fld{flex:1;min-width:200px}
+.tool .fld.s{flex:0 0 200px}
+.m .tool .fld,.m .tool .fld.s{flex:1 1 100%}
+.tw{background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-md);overflow:hidden}
+.vt{display:flex;align-items:center;gap:var(--space-3);min-width:0}
+.vt .thumb{width:104px;aspect-ratio:16/9}
+.vt .tt{font-weight:600}
+.vt .tt small{display:block;font-weight:400;color:var(--color-muted)}
+.mc{display:flex;gap:var(--space-2);padding:var(--space-3) var(--space-2);border-bottom:1px solid var(--color-border);align-items:flex-start}
+.mc.sel{background:var(--color-primary-tint)}
+.mc .thumb{width:104px}
+.mc .bd{flex:1;min-width:0;display:flex;flex-direction:column;gap:var(--space-1)}
+.prev{border:1px solid var(--color-border);border-radius:var(--radius-sm);background:var(--color-surface)}
+.prev li{display:flex;align-items:center;gap:var(--space-3);min-height:44px;padding:var(--space-2) var(--space-3);border-top:1px solid var(--color-border);font-size:var(--text-small)}
+.prev li:first-child{border-top:0}
+.prev .no{font-family:var(--font-mono);font-weight:700;min-width:84px;color:var(--color-ink)}
+.prev .ti{flex:1;min-width:0}
+.m .prev .no{min-width:72px}
+.seg{display:flex;gap:var(--space-2);flex-wrap:wrap}
+.seg .opt{flex:1;min-width:200px}
+.spin{width:18px;height:18px;border-radius:50%;border:3px solid currentColor;border-right-color:transparent;display:inline-block}
+.stack{display:flex;flex-direction:column;gap:var(--space-3)}
+.two{display:flex;gap:var(--space-4)}
+.m .two{flex-direction:column}
+.two>*{flex:1;min-width:0}
+
+</style>
+</head>
+<body>
+<div class="d" style="width:1360px;background:var(--color-bg)">
+<div class="lbl">1. Videos list, 4 selected, bulk action bar<small>Add to series sits beside Publish. Select all N link is a 44 px target (R30). Disabled actions use the bar tokens, not raw grey (R38).</small></div><div class=""><div class="pad" style="padding:0"><div class="adm"><aside class="side"><span class="logo"><svg width="28" height="28" viewBox="0 0 28 28" aria-hidden="true"><circle cx="14" cy="14" r="13" fill="var(--color-accent)"/><path d="M11 8.5v11l9-5.5z" fill="var(--color-on-accent)"/></svg><span>ADTV</span></span><nav aria-label="Admin"><a class="nv" href="#"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 12h12"/></svg><span>Dashboard</span></a><a class="nv on" href="#"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="6" width="13" height="12" rx="2"/><path d="M16 10l5-3v10l-5-3"/></svg><span>Videos</span></a><a class="nv" href="#"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6h11M9 12h11M9 18h11M4 6h.5M4 12h.5M4 18h.5"/></svg><span>Series</span></a><a class="nv" href="#"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6h11M9 12h11M9 18h11M4 6h.5M4 12h.5M4 18h.5"/></svg><span>Categories</span></a><a class="nv" href="#"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1"/></svg><span>Site settings</span></a></nav></aside><main class="main"><div class="ph"><h1>Videos</h1><a class="btn" href="#"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>Upload</a></div><div class="bulk" role="region" aria-label="Bulk actions" style="position:relative"><span class="cnt">4 selected</span><a class="lnk" href="#">Select all 37 that match</a><span style="flex:1"></span><button class="btn sm w">Publish</button><button class="btn sm w fd"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>Add to series</button><button class="btn sm w" aria-haspopup="menu" aria-expanded="false">More <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button><button class="btn sm clr">Clear</button></div><div class="tool"><div class="fld"><span class="l">Search videos</span><div class="inp"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6"/><path d="M20 20l-4.5-4.5"/></svg><span style="flex:1;color:var(--color-muted)">Search by title</span></div></div><div class="fld s"><span class="l">Status</span><div class="inp"><span>Any status</span><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></div></div><div class="fld s"><span class="l">Series</span><div class="inp"><span>Any</span><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></div></div></div><div class="tw"><table class="tbl"><thead><tr><th><span class="hit"><span class="cb " aria-label="Select all on this page"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 12h12"/></svg></span></span></th><th>Video</th><th>Status</th><th>Series</th><th style="text-align:right;padding-right:var(--space-4)">Length</th></tr></thead><tbody><tr class="sel"><td><span class="hit"><span class="cb on"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span></span></td><td><div class="vt"><div class="thumb"><span style="opacity:.9"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 5v14l11-7z" fill="currentColor" stroke="none"/></svg></span></div><span class="tt">The flood begins</span></div></td><td><span class="chip dr">Draft</span></td><td><span class="note" style="font-size:var(--text-small)">Not in a series</span></td><td style="text-align:right;padding-right:var(--space-4)">27 min</td></tr><tr class="sel"><td><span class="hit"><span class="cb on"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span></span></td><td><div class="vt"><div class="thumb"><span style="opacity:.9"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 5v14l11-7z" fill="currentColor" stroke="none"/></svg></span></div><span class="tt">The ark is shut</span></div></td><td><span class="chip ok"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>Published</span></td><td><span class="note" style="font-size:var(--text-small)">Not in a series</span></td><td style="text-align:right;padding-right:var(--space-4)">22 min</td></tr><tr class="sel"><td><span class="hit"><span class="cb on"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span></span></td><td><div class="vt"><div class="thumb"><span style="opacity:.9"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 5v14l11-7z" fill="currentColor" stroke="none"/></svg></span></div><span class="tt">After the flood</span></div></td><td><span class="chip ok"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>Published</span></td><td><span class="note" style="font-size:var(--text-small)">Not in a series</span></td><td style="text-align:right;padding-right:var(--space-4)">24 min</td></tr><tr class="sel"><td><span class="hit"><span class="cb on"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span></span></td><td><div class="vt"><div class="thumb"><span style="opacity:.9"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 5v14l11-7z" fill="currentColor" stroke="none"/></svg></span></div><span class="tt">The rainbow</span></div></td><td><span class="chip ok"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>Published</span></td><td><span style="font-size:var(--text-small)">Bible stories for kids</span></td><td style="text-align:right;padding-right:var(--space-4)">21 min</td></tr><tr class=""><td><span class="hit"><span class="cb"></span></span></td><td><div class="vt"><div class="thumb"><span style="opacity:.9"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 5v14l11-7z" fill="currentColor" stroke="none"/></svg></span></div><span class="tt">Welcome to the channel</span></div></td><td><span class="chip ok"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>Published</span></td><td><span class="note" style="font-size:var(--text-small)">Not in a series</span></td><td style="text-align:right;padding-right:var(--space-4)">6 min</td></tr><tr class=""><td><span class="hit"><span class="cb"></span></span></td><td><div class="vt"><div class="thumb"><span style="opacity:.9"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 5v14l11-7z" fill="currentColor" stroke="none"/></svg></span></div><span class="tt">How to pray, a short guide</span></div></td><td><span class="chip ok"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>Published</span></td><td><span class="note" style="font-size:var(--text-small)">Not in a series</span></td><td style="text-align:right;padding-right:var(--space-4)">14 min</td></tr></tbody></table></div></main></div></div></div><div class="lbl">2. More menu open<small>Keyboard: Enter opens, arrows move, Esc closes and returns focus to More.</small></div><div class=""><div class="pad" style="padding:0"><div class="adm"><aside class="side"><span class="logo"><svg width="28" height="28" viewBox="0 0 28 28" aria-hidden="true"><circle cx="14" cy="14" r="13" fill="var(--color-accent)"/><path d="M11 8.5v11l9-5.5z" fill="var(--color-on-accent)"/></svg><span>ADTV</span></span><nav aria-label="Admin"><a class="nv" href="#"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 12h12"/></svg><span>Dashboard</span></a><a class="nv on" href="#"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="6" width="13" height="12" rx="2"/><path d="M16 10l5-3v10l-5-3"/></svg><span>Videos</span></a><a class="nv" href="#"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6h11M9 12h11M9 18h11M4 6h.5M4 12h.5M4 18h.5"/></svg><span>Series</span></a><a class="nv" href="#"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6h11M9 12h11M9 18h11M4 6h.5M4 12h.5M4 18h.5"/></svg><span>Categories</span></a><a class="nv" href="#"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1"/></svg><span>Site settings</span></a></nav></aside><main class="main"><div class="ph"><h1>Videos</h1><a class="btn" href="#"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>Upload</a></div><div class="bulk" role="region" aria-label="Bulk actions" style="position:relative"><span class="cnt">4 selected</span><a class="lnk" href="#">Select all 37 that match</a><span style="flex:1"></span><button class="btn sm w">Publish</button><button class="btn sm w"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>Add to series</button><button class="btn sm w" aria-haspopup="menu" aria-expanded="true">More <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button><button class="btn sm clr">Clear</button><div class="menu" role="menu" style="position:absolute;right:120px;top:56px;z-index:var(--z-overlay)"><span class="mi" role="menuitem">Unpublish</span><span class="mi" role="menuitem">Add to category</span><span class="mi" role="menuitem">Remove from category</span><span class="mi" role="menuitem">Set maturity rating</span><span class="sep"></span><span class="mi" role="menuitem" style="color:var(--color-danger)">Move to Trash</span></div></div><div class="tool"><div class="fld"><span class="l">Search videos</span><div class="inp"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6"/><path d="M20 20l-4.5-4.5"/></svg><span style="flex:1;color:var(--color-muted)">Search by title</span></div></div><div class="fld s"><span class="l">Status</span><div class="inp"><span>Any status</span><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></div></div><div class="fld s"><span class="l">Series</span><div class="inp"><span>Any</span><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></div></div></div><div class="tw"><table class="tbl"><thead><tr><th><span class="hit"><span class="cb " aria-label="Select all on this page"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 12h12"/></svg></span></span></th><th>Video</th><th>Status</th><th>Series</th><th style="text-align:right;padding-right:var(--space-4)">Length</th></tr></thead><tbody><tr class="sel"><td><span class="hit"><span class="cb on"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span></span></td><td><div class="vt"><div class="thumb"><span style="opacity:.9"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 5v14l11-7z" fill="currentColor" stroke="none"/></svg></span></div><span class="tt">The flood begins</span></div></td><td><span class="chip dr">Draft</span></td><td><span class="note" style="font-size:var(--text-small)">Not in a series</span></td><td style="text-align:right;padding-right:var(--space-4)">27 min</td></tr><tr class="sel"><td><span class="hit"><span class="cb on"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span></span></td><td><div class="vt"><div class="thumb"><span style="opacity:.9"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 5v14l11-7z" fill="currentColor" stroke="none"/></svg></span></div><span class="tt">The ark is shut</span></div></td><td><span class="chip ok"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>Published</span></td><td><span class="note" style="font-size:var(--text-small)">Not in a series</span></td><td style="text-align:right;padding-right:var(--space-4)">22 min</td></tr><tr class="sel"><td><span class="hit"><span class="cb on"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span></span></td><td><div class="vt"><div class="thumb"><span style="opacity:.9"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 5v14l11-7z" fill="currentColor" stroke="none"/></svg></span></div><span class="tt">After the flood</span></div></td><td><span class="chip ok"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>Published</span></td><td><span class="note" style="font-size:var(--text-small)">Not in a series</span></td><td style="text-align:right;padding-right:var(--space-4)">24 min</td></tr><tr class="sel"><td><span class="hit"><span class="cb on"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span></span></td><td><div class="vt"><div class="thumb"><span style="opacity:.9"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 5v14l11-7z" fill="currentColor" stroke="none"/></svg></span></div><span class="tt">The rainbow</span></div></td><td><span class="chip ok"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>Published</span></td><td><span style="font-size:var(--text-small)">Bible stories for kids</span></td><td style="text-align:right;padding-right:var(--space-4)">21 min</td></tr><tr class=""><td><span class="hit"><span class="cb"></span></span></td><td><div class="vt"><div class="thumb"><span style="opacity:.9"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 5v14l11-7z" fill="currentColor" stroke="none"/></svg></span></div><span class="tt">Welcome to the channel</span></div></td><td><span class="chip ok"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>Published</span></td><td><span class="note" style="font-size:var(--text-small)">Not in a series</span></td><td style="text-align:right;padding-right:var(--space-4)">6 min</td></tr><tr class=""><td><span class="hit"><span class="cb"></span></span></td><td><div class="vt"><div class="thumb"><span style="opacity:.9"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 5v14l11-7z" fill="currentColor" stroke="none"/></svg></span></div><span class="tt">How to pray, a short guide</span></div></td><td><span class="chip ok"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>Published</span></td><td><span class="note" style="font-size:var(--text-small)">Not in a series</span></td><td style="text-align:right;padding-right:var(--space-4)">14 min</td></tr></tbody></table></div></main></div></div></div><div class="lbl">3. Add to series, existing series<small>Dialog traps focus, first focus on Series, Esc closes. Numbers preview updates as you change order or start number.</small></div><div class=""><div class="pad" style="padding:var(--space-6) var(--space-12)"><div class="scrim"><div class="dlg" role="dialog" aria-modal="true" aria-labelledby="dt"><div class="hd"><h3 id="dt">Add 4 videos to a series</h3><button class="ib plain" aria-label="Close"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div><div class="bd"><div class="seg" role="radiogroup" aria-label="Where to add"><div class="opt on" role="radio" aria-checked="true"><span class="rad on"><i></i></span><div><div class="t">A series I have</div></div></div><div class="opt" role="radio" aria-checked="false"><span class="rad"></span><div><div class="t">A new series</div></div></div></div><div class="fld"><span class="l">Series</span><div class="inp"><span>Genesis <span class="note">Names: Part and Lesson</span></span><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></div></div><div class="fld"><span class="l">Part</span><div class="inp"><span>Part 2: Flood and Babel <span class="note">8 lessons</span></span><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></div><span class="help">Or choose New part to start Part 4.</span></div><fieldset style="border:0;padding:0;margin:0" class="stack"><legend class="l" style="font-size:var(--text-small);font-weight:600;padding:0;margin-bottom:var(--space-2)">Numbering order</legend>
+<div class="opt on" role="radio" aria-checked="true"><span class="rad on"><i></i></span><div><div class="t">Keep the order of the list</div><div class="s">The order you see in the table, top to bottom.</div></div></div>
+<div class="opt" role="radio" aria-checked="false"><span class="rad"></span><div><div class="t">Oldest upload first</div></div></div>
+<div class="opt" role="radio" aria-checked="false"><span class="rad"></span><div><div class="t">Title A to Z</div></div></div></fieldset><div class="fld" style="max-width:240px"><span class="l">Start at Lesson</span><div class="inp" style="justify-content:flex-start"><span>9</span></div><span class="help">Next free number in Part 2.</span></div><div class="stack"><span class="sectl">Preview, Genesis, Part 2</span><ol class="prev" aria-label="Numbers that will be given"><li><span class="no">Lesson 9</span><span class="ti">The flood begins</span><span class="chip dr">Draft</span></li><li><span class="no">Lesson 10</span><span class="ti">The ark is shut</span></li><li><span class="no">Lesson 11</span><span class="ti">After the flood</span></li><li><span class="no">Lesson 12</span><span class="ti">The rainbow<br><span class="note">Now in Bible stories for kids. It moves to this series.</span></span><span class="chip wn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4l9 16H3z"/><path d="M12 10v4M12 17v.5"/></svg>Moves</span></li></ol></div></div><div class="ft"><button class="btn sec">Cancel</button><button class="btn">Add 4 videos to Part 2</button></div></div></div></div></div><div class="lbl">4. Add to series, new series<small>Create a series in the same dialog. Rating is required like in the series editor.</small></div><div class=""><div class="pad" style="padding:var(--space-6) var(--space-12)"><div class="scrim"><div class="dlg" role="dialog" aria-modal="true" aria-labelledby="dt"><div class="hd"><h3 id="dt">Add 4 videos to a series</h3><button class="ib plain" aria-label="Close"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div><div class="bd"><div class="seg" role="radiogroup" aria-label="Where to add"><div class="opt" role="radio" aria-checked="false"><span class="rad"></span><div><div class="t">A series I have</div></div></div><div class="opt on" role="radio" aria-checked="true"><span class="rad on"><i></i></span><div><div class="t">A new series</div></div></div></div><div class="fld"><span class="l">Series title</span><div class="inp foc"><span>Bible stories for adults</span><span class="note">24 of 80</span></div></div><div class="fld"><span class="l">Maturity rating (required)</span><div class="inp"><span>PG</span><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></div></div><div class="fld"><span class="l">Name of the first part</span><div class="inp"><span style="color:var(--color-muted)">Part 1</span></div><span class="help">Leave blank to use Part 1. Names for this series: Part and Lesson, from Site settings.</span></div><fieldset style="border:0;padding:0;margin:0" class="stack"><legend class="l" style="font-size:var(--text-small);font-weight:600;padding:0;margin-bottom:var(--space-2)">Numbering order</legend>
+<div class="opt on" role="radio" aria-checked="true"><span class="rad on"><i></i></span><div><div class="t">Keep the order of the list</div><div class="s">The order you see in the table, top to bottom.</div></div></div>
+<div class="opt" role="radio" aria-checked="false"><span class="rad"></span><div><div class="t">Oldest upload first</div></div></div>
+<div class="opt" role="radio" aria-checked="false"><span class="rad"></span><div><div class="t">Title A to Z</div></div></div></fieldset><div class="fld" style="max-width:240px"><span class="l">Start at Lesson</span><div class="inp" style="justify-content:flex-start"><span>1</span></div><span class="help">Next free number in Part 1.</span></div><div class="stack"><span class="sectl">Preview, Genesis, Part 1</span><ol class="prev" aria-label="Numbers that will be given"><li><span class="no">Lesson 1</span><span class="ti">The flood begins</span><span class="chip dr">Draft</span></li><li><span class="no">Lesson 2</span><span class="ti">The ark is shut</span></li><li><span class="no">Lesson 3</span><span class="ti">After the flood</span></li><li><span class="no">Lesson 4</span><span class="ti">The rainbow<br><span class="note">Now in Bible stories for kids. It moves to this series.</span></span><span class="chip wn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4l9 16H3z"/><path d="M12 10v4M12 17v.5"/></svg>Moves</span></li></ol></div></div><div class="ft"><button class="btn sec">Cancel</button><button class="btn">Create series and add 4 videos</button></div></div></div></div></div><div class="lbl">5. Add to series, number already taken<small>Error text plus one action. The submit button is disabled and names the reason through aria-describedby.</small></div><div class=""><div class="pad" style="padding:var(--space-6) var(--space-12)"><div class="scrim"><div class="dlg" role="dialog" aria-modal="true" aria-labelledby="dt"><div class="hd"><h3 id="dt">Add 4 videos to a series</h3><button class="ib plain" aria-label="Close"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div><div class="bd"><div class="seg" role="radiogroup" aria-label="Where to add"><div class="opt on" role="radio" aria-checked="true"><span class="rad on"><i></i></span><div><div class="t">A series I have</div></div></div><div class="opt" role="radio" aria-checked="false"><span class="rad"></span><div><div class="t">A new series</div></div></div></div><div class="fld"><span class="l">Series</span><div class="inp"><span>Genesis <span class="note">Names: Part and Lesson</span></span><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></div></div><div class="fld"><span class="l">Part</span><div class="inp"><span>Part 2: Flood and Babel <span class="note">8 lessons</span></span><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></div><span class="help">Or choose New part to start Part 4.</span></div><fieldset style="border:0;padding:0;margin:0" class="stack"><legend class="l" style="font-size:var(--text-small);font-weight:600;padding:0;margin-bottom:var(--space-2)">Numbering order</legend>
+<div class="opt on" role="radio" aria-checked="true"><span class="rad on"><i></i></span><div><div class="t">Keep the order of the list</div><div class="s">The order you see in the table, top to bottom.</div></div></div>
+<div class="opt" role="radio" aria-checked="false"><span class="rad"></span><div><div class="t">Oldest upload first</div></div></div>
+<div class="opt" role="radio" aria-checked="false"><span class="rad"></span><div><div class="t">Title A to Z</div></div></div></fieldset><div class="fld" style="max-width:240px"><span class="l">Start at Lesson</span><div class="inp err foc" style="justify-content:flex-start" aria-invalid="true"><span>5</span></div><div class="errtx" id="e1"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v6M12 16v.5"/></svg><span>Part 2 already has Lessons 5 to 8.</span></div><div style="margin-top:var(--space-2)"><button class="btn sm sec">Start at Lesson 9</button></div></div><div class="stack"><span class="sectl">Preview, Genesis, Part 2</span><ol class="prev" aria-label="Numbers that will be given"><li><span class="no" style="color:var(--color-muted)">Lesson 5</span><span class="ti">The flood begins</span><span class="chip er"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v6M12 16v.5"/></svg>Taken</span></li><li><span class="no" style="color:var(--color-muted)">Lesson 6</span><span class="ti">The ark is shut</span><span class="chip er"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v6M12 16v.5"/></svg>Taken</span></li><li><span class="no" style="color:var(--color-muted)">Lesson 7</span><span class="ti">After the flood</span><span class="chip er"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v6M12 16v.5"/></svg>Taken</span></li><li><span class="no" style="color:var(--color-muted)">Lesson 8</span><span class="ti">The rainbow</span><span class="chip er"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v6M12 16v.5"/></svg>Taken</span></li></ol></div></div><div class="ft"><button class="btn sec">Cancel</button><button class="btn dis" disabled aria-describedby="e1">Add 4 videos to Part 2</button></div></div></div></div></div><div class="lbl">6. Saving<small>Spinner under 3 seconds, button width locked.</small></div><div class=""><div class="pad" style="padding:var(--space-6) var(--space-12)"><div class="scrim"><div class="dlg" role="dialog" aria-modal="true" aria-labelledby="dt"><div class="hd"><h3 id="dt">Add 4 videos to a series</h3><button class="ib plain" aria-label="Close"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div><div class="bd"><div class="seg" role="radiogroup" aria-label="Where to add"><div class="opt on" role="radio" aria-checked="true"><span class="rad on"><i></i></span><div><div class="t">A series I have</div></div></div><div class="opt" role="radio" aria-checked="false"><span class="rad"></span><div><div class="t">A new series</div></div></div></div><div class="fld"><span class="l">Series</span><div class="inp"><span>Genesis <span class="note">Names: Part and Lesson</span></span><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></div></div><div class="fld"><span class="l">Part</span><div class="inp"><span>Part 2: Flood and Babel <span class="note">8 lessons</span></span><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></div><span class="help">Or choose New part to start Part 4.</span></div><fieldset style="border:0;padding:0;margin:0" class="stack"><legend class="l" style="font-size:var(--text-small);font-weight:600;padding:0;margin-bottom:var(--space-2)">Numbering order</legend>
+<div class="opt on" role="radio" aria-checked="true"><span class="rad on"><i></i></span><div><div class="t">Keep the order of the list</div><div class="s">The order you see in the table, top to bottom.</div></div></div>
+<div class="opt" role="radio" aria-checked="false"><span class="rad"></span><div><div class="t">Oldest upload first</div></div></div>
+<div class="opt" role="radio" aria-checked="false"><span class="rad"></span><div><div class="t">Title A to Z</div></div></div></fieldset><div class="fld" style="max-width:240px"><span class="l">Start at Lesson</span><div class="inp" style="justify-content:flex-start"><span>9</span></div><span class="help">Next free number in Part 2.</span></div><div class="stack"><span class="sectl">Preview, Genesis, Part 2</span><ol class="prev" aria-label="Numbers that will be given"><li><span class="no">Lesson 9</span><span class="ti">The flood begins</span><span class="chip dr">Draft</span></li><li><span class="no">Lesson 10</span><span class="ti">The ark is shut</span></li><li><span class="no">Lesson 11</span><span class="ti">After the flood</span></li><li><span class="no">Lesson 12</span><span class="ti">The rainbow<br><span class="note">Now in Bible stories for kids. It moves to this series.</span></span><span class="chip wn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4l9 16H3z"/><path d="M12 10v4M12 17v.5"/></svg>Moves</span></li></ol></div></div><div class="ft"><button class="btn sec">Cancel</button><button class="btn" disabled aria-busy="true" style="min-width:230px"><span class="spin"></span>Adding 4 videos</button></div></div></div></div></div><div class="lbl">7. Result with undo toast<small>The Series column already shows the new place. The toast has role status and Undo as its one action.</small></div><div class=""><div class="pad" style="padding:0"><div class="adm"><aside class="side"><span class="logo"><svg width="28" height="28" viewBox="0 0 28 28" aria-hidden="true"><circle cx="14" cy="14" r="13" fill="var(--color-accent)"/><path d="M11 8.5v11l9-5.5z" fill="var(--color-on-accent)"/></svg><span>ADTV</span></span><nav aria-label="Admin"><a class="nv" href="#"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 12h12"/></svg><span>Dashboard</span></a><a class="nv on" href="#"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="6" width="13" height="12" rx="2"/><path d="M16 10l5-3v10l-5-3"/></svg><span>Videos</span></a><a class="nv" href="#"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6h11M9 12h11M9 18h11M4 6h.5M4 12h.5M4 18h.5"/></svg><span>Series</span></a><a class="nv" href="#"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6h11M9 12h11M9 18h11M4 6h.5M4 12h.5M4 18h.5"/></svg><span>Categories</span></a><a class="nv" href="#"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1"/></svg><span>Site settings</span></a></nav></aside><main class="main"><div class="ph"><h1>Videos</h1><a class="btn" href="#"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>Upload</a></div><div class="tool"><div class="fld"><span class="l">Search videos</span><div class="inp"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6"/><path d="M20 20l-4.5-4.5"/></svg><span style="flex:1;color:var(--color-muted)">Search by title</span></div></div><div class="fld s"><span class="l">Status</span><div class="inp"><span>Any status</span><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></div></div><div class="fld s"><span class="l">Series</span><div class="inp"><span>Any</span><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></div></div></div><div class="tw"><table class="tbl"><thead><tr><th><span class="hit"><span class="cb " aria-label="Select all on this page"></span></span></th><th>Video</th><th>Status</th><th>Series</th><th style="text-align:right;padding-right:var(--space-4)">Length</th></tr></thead><tbody><tr class=""><td><span class="hit"><span class="cb"></span></span></td><td><div class="vt"><div class="thumb"><span style="opacity:.9"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 5v14l11-7z" fill="currentColor" stroke="none"/></svg></span></div><span class="tt">The flood begins</span></div></td><td><span class="chip dr">Draft</span></td><td><span style="font-size:var(--text-small)">Genesis, Part 2, L9</span></td><td style="text-align:right;padding-right:var(--space-4)">27 min</td></tr><tr class=""><td><span class="hit"><span class="cb"></span></span></td><td><div class="vt"><div class="thumb"><span style="opacity:.9"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 5v14l11-7z" fill="currentColor" stroke="none"/></svg></span></div><span class="tt">The ark is shut</span></div></td><td><span class="chip ok"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>Published</span></td><td><span style="font-size:var(--text-small)">Genesis, Part 2, L10</span></td><td style="text-align:right;padding-right:var(--space-4)">22 min</td></tr><tr class=""><td><span class="hit"><span class="cb"></span></span></td><td><div class="vt"><div class="thumb"><span style="opacity:.9"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 5v14l11-7z" fill="currentColor" stroke="none"/></svg></span></div><span class="tt">After the flood</span></div></td><td><span class="chip ok"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>Published</span></td><td><span style="font-size:var(--text-small)">Genesis, Part 2, L11</span></td><td style="text-align:right;padding-right:var(--space-4)">24 min</td></tr><tr class=""><td><span class="hit"><span class="cb"></span></span></td><td><div class="vt"><div class="thumb"><span style="opacity:.9"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 5v14l11-7z" fill="currentColor" stroke="none"/></svg></span></div><span class="tt">The rainbow</span></div></td><td><span class="chip ok"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>Published</span></td><td><span style="font-size:var(--text-small)">Genesis, Part 2, L12</span></td><td style="text-align:right;padding-right:var(--space-4)">21 min</td></tr><tr class=""><td><span class="hit"><span class="cb"></span></span></td><td><div class="vt"><div class="thumb"><span style="opacity:.9"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 5v14l11-7z" fill="currentColor" stroke="none"/></svg></span></div><span class="tt">Welcome to the channel</span></div></td><td><span class="chip ok"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>Published</span></td><td><span class="note" style="font-size:var(--text-small)">Not in a series</span></td><td style="text-align:right;padding-right:var(--space-4)">6 min</td></tr><tr class=""><td><span class="hit"><span class="cb"></span></span></td><td><div class="vt"><div class="thumb"><span style="opacity:.9"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 5v14l11-7z" fill="currentColor" stroke="none"/></svg></span></div><span class="tt">How to pray, a short guide</span></div></td><td><span class="chip ok"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>Published</span></td><td><span class="note" style="font-size:var(--text-small)">Not in a series</span></td><td style="text-align:right;padding-right:var(--space-4)">14 min</td></tr></tbody></table></div></main></div></div><div class="pad" style="padding-top:0"><div style="display:flex;justify-content:flex-start"><div class="toast s" role="status"><span style="color:var(--color-success)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span><span class="t">4 videos added to Genesis, Part 2, Lessons 9 to 12.</span><button class="ac">Undo</button><span class="cd"></span></div></div></div></div><div class="lbl">8. After Undo</div><div class=""><div class="pad"><div style="display:flex;justify-content:flex-start"><div class="toast s" role="status"><span style="color:var(--color-success)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 8H5V4M5 8a8 8 0 1 1-1 5"/></svg></span><span class="t">Undone. The 4 videos are back where they were, including The rainbow in Bible stories for kids.</span></div></div></div></div>
+</div>
+</body>
+</html>
