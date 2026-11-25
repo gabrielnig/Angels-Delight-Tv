@@ -35,6 +35,11 @@ Aliases: genre, topic
 The company that delivers your videos to viewers quickly and keeps the site address working. You log in to it to see the plan and the domain.
 Aliases: cdn, media host
 
+## Creative
+One sponsor message with its headline, text, link, pictures and the places it shows.
+Aliases: sponsor message, advert
+Guides: M03
+
 ## Cue
 One line of a caption with its start and end time.
 Aliases: caption line, subtitle line
@@ -50,6 +55,7 @@ Aliases: web address, url, website name
 ## Donation
 A gift of money from a viewer, made through the payment service. You can see each gift on the Donations screen.
 Aliases: gift, giving, payment
+Guides: M01, M08
 
 ## Draft
 A video that is not visible to viewers yet.
@@ -83,6 +89,11 @@ Aliases: banner, featured
 The admin screen where you choose which rows viewers see on Home and in what order.
 Aliases: home page, rows
 
+## Impression
+One time a sponsor card was half visible for one second. Sponsor reports count them.
+Aliases: view, sponsor view
+Guides: M06
+
 ## Invite
 An email that lets a new staff member set up an account with the role you chose.
 Aliases: add staff
@@ -98,6 +109,7 @@ Aliases: kids, children, child safe, maturity
 ## Master switch
 A single switch that turns a whole feature on or off for everyone. Only a Super admin can use it.
 Aliases: feature switch, flag
+Guides: M02
 
 ## Maturity rating
 The age level you give a video, from the lowest rating to the highest. It decides who can watch it.
@@ -106,10 +118,17 @@ Aliases: rating, age rating, kids rating
 ## Needs review
 A caption state that means the captions are written but nobody has approved them yet.
 Aliases: review
+Guides: M09
+
+## Paystack
+The payment company that takes gifts on its own secure page. Its keys are kept on the server, never in the admin area.
+Aliases: payment service, payment company
+Guides: M07, M10
 
 ## Placement
 A place on the viewer pages where a sponsor message can show.
 Aliases: slot, ad space
+Guides: M04
 
 ## Poster
 The still picture shown for a video before it plays.
@@ -126,6 +145,10 @@ Aliases: go live, release
 ## Published
 A video that viewers can watch now. A video that is not published is a draft, scheduled or unpublished.
 Aliases: live, go live
+
+## Reach
+The number of different viewers on one day. It is a daily figure and is never added up across days.
+Guides: M06
 
 ## Recovery code
 A code you saved when you set up two step sign in. Each one works once if you lose your phone.
@@ -170,6 +193,7 @@ Guides: S04
 ## Sponsor
 A business or person that pays to show a message beside your videos.
 Aliases: advert, ad, advertiser
+Guides: M01, M03
 
 ## Storage budget
 The amount of file space you plan to use. The System screen warns you when you are near it.
@@ -178,6 +202,11 @@ Aliases: space, disk, storage limit
 ## Super admin
 The highest staff role. Super admins also manage roles, switches, failed jobs and the Audit log security part.
 Aliases: owner, super administrator
+
+## Test mode
+A way of running donations with a test key, so no real money moves. Test gifts show a Test badge and are not counted.
+Aliases: sandbox, test gift
+Guides: M10, M11
 
 ## Theme
 The colours, fonts and look of the viewer site.

@@ -5,8 +5,6 @@
     "/admin/analytics/[id]",
     "/admin/audit-log",
     "/admin/categories",
-    "/admin/donations",
-    "/admin/donations/[id]",
     "/admin/encoding",
     "/admin/encoding/failed",
     "/admin/exports",
@@ -21,11 +19,6 @@
     "/admin/series",
     "/admin/series/[id]",
     "/admin/site-settings",
-    "/admin/sponsors",
-    "/admin/sponsors/[id]",
-    "/admin/sponsors/[id]/report",
-    "/admin/sponsors/[id]/report/print",
-    "/admin/sponsors/new",
     "/admin/system",
     "/admin/theme",
     "/admin/theme/history",
@@ -53,8 +46,6 @@
     "/admin/users",
     "/admin/roles",
     "/admin/audit-log",
-    "/admin/system",
-    "/admin/sponsors",
-    "/admin/donations"
+    "/admin/system"
   ]
 }

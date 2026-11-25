@@ -1,0 +1,16 @@
+Settle a gift that needs review (M09)
+For Admins. 46 s.
+
+0:05  Choose Donations in the side menu.
+      The pointer moves to Donations.
+0:09  Click addondemo06.
+      The pointer moves to addondemo06.
+0:12  Check that Needs review shows beside the reference.
+      The pointer moves to Needs review.
+0:17  Check that Expected ₦15,000, paid ₦10,000. shows under the reference.
+      The pointer moves to Expected ₦15,000, paid ₦10,000..
+0:23  Type "Checked Paystack in test mode. The amounts match." in the Note box.
+0:32  Click Accept the gift.
+      The pointer moves to Accept the gift.
+0:36  Check that Gift accepted shows at the bottom of the screen.
+      The pointer moves to Gift accepted.

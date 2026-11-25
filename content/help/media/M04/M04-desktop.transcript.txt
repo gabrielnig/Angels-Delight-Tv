@@ -1,0 +1,20 @@
+Choose where a sponsor shows and for how long (M04)
+For Admins. 49 s.
+
+0:05  Choose Sponsors in the side menu.
+      The pointer moves to Sponsors.
+0:09  Click Demo Bakery (test).
+      The pointer moves to Demo Bakery (test).
+0:12  Click Edit.
+      The pointer moves to Edit.
+0:16  Tick Home page banner.
+0:19  Tick After the video.
+0:22  Click Save creative.
+      The pointer moves to Save creative.
+0:25  Type "10102026" in the Ends on box.
+0:30  Click Save sponsor.
+      The pointer moves to Save sponsor.
+0:35  Click Approve to run.
+      The pointer moves to Approve to run.
+0:39  Check that Live shows beside the sponsor name.
+      The pointer moves to Live.

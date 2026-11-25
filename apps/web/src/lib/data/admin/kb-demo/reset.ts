@@ -22,7 +22,7 @@ export function kbDemoAllowed(env: Env = process.env): boolean {
 }
 
 /** State other fixture services keep on `globalThis`. Dropping it makes the next call build it fresh. */
-const HELD_STATE = ['ad.admin.fixture.markers', 'ad.admin.fixture.auth', 'ad.theme.runtime'];
+const HELD_STATE = ['ad.admin.fixture.markers', 'ad.admin.fixture.auth', 'ad.theme.runtime', 'ad.kb.money'];
 
 /** Puts the in memory admin store back to the demo dataset at the pinned clock. Returns the clock it used. */
 export function resetDemoStore(): { now: number; store: AdminStore } {

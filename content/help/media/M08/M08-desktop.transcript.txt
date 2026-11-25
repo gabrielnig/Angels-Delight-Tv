@@ -1,0 +1,15 @@
+See donations and download the list (M08)
+For Admins. 37 s.
+
+0:05  Choose Donations in the side menu.
+      The pointer moves to Donations.
+0:09  Check that Test gifts are not counted. shows under the totals.
+      The pointer moves to Test gifts are not counted. Currencies are never added toget.
+0:15  Check that Anonymous shows for donors who asked to stay private.
+      The pointer moves to Gifts received through Paystack. Emails are masked and the n.
+0:20  Click Export CSV to download the list.
+      The pointer moves to Export CSV.
+0:25  Click addondemo01.
+      The pointer moves to addondemo01.
+0:27  Check that Receipt queued shows under the reference.
+      The pointer moves to Email d***@example.net. Receipt queued..

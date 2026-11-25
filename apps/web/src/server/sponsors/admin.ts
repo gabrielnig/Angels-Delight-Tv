@@ -8,6 +8,7 @@ import { checkSponsorImage, type SponsorImageKind } from '@/lib/admin/sponsor-im
 import type { AdminActor } from '@/lib/data/admin/types';
 import { adminRuntime } from '../admin/runtime';
 import { getServices } from '@/lib/runtime/services';
+import { demoMoney, demoReportStore, kbDemoMoney } from '@/lib/data/admin/kb-demo/money';
 import { createPgSponsorStore } from './pg-store';
 import { createPgReportStore } from './report-store';
 
@@ -20,6 +21,19 @@ function ownHosts(): string[] {
 
 /** The sponsors admin service for one staff member. Every database call runs as that person (row level security). */
 export function sponsorAdmin(actor: AdminActor): SponsorAdminService {
+  // The isolated help recording stack has no database: it reads the fake demo sponsors held in memory.
+  if (kbDemoMoney()) {
+    return new SponsorAdminService({
+      store: demoMoney().sponsors,
+      settings: { update: async (a, changes) => (await themeRuntime()).settings.update(a, changes) },
+      // Demo only: any typed password is accepted, so no password is ever stored or shown in a recording.
+      reauthenticate: async (_a, password) =>
+        password.trim() !== '' ? { ok: true } : { ok: false, error: 'Password is not right' },
+      ownHosts: ['localhost'],
+      seal: async (plain) => Buffer.from(plain, 'utf8').toString('base64'),
+      unseal: async (sealed) => Buffer.from(sealed, 'base64').toString('utf8'),
+    });
+  }
   const rt = adminRuntime();
   const who: Actor = { accountId: actor.accountId, role: actor.role };
   const kek = rt.fieldKek();
@@ -62,6 +76,7 @@ export async function uploadSponsorImage(
   if (actor.role === 'viewer') return { ok: false, error: 'Only staff can upload pictures.' };
   const checked = await checkSponsorImage(bytes, kind);
   if (!checked.ok) return checked;
+  if (kbDemoMoney()) return { ok: true, assetId: uuidv7() };
   const rt = adminRuntime();
   const assetId = uuidv7();
   const rawKey = `uploads/sponsors/${assetId}`;
@@ -84,6 +99,7 @@ export async function uploadSponsorImage(
 
 /** The sponsor report service for one staff member. Every read runs as that person (row level security). */
 export function sponsorReports(actor: AdminActor): SponsorReportService {
+  if (kbDemoMoney()) return new SponsorReportService({ store: demoReportStore() });
   const rt = adminRuntime();
   return new SponsorReportService({
     store: createPgReportStore(rt.db(), { accountId: actor.accountId, role: actor.role }),

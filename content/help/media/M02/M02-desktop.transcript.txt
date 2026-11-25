@@ -1,0 +1,21 @@
+Turn sponsors on (M02)
+For Admins. 53 s.
+
+0:05  Choose Sponsors in the side menu.
+      The pointer moves to Sponsors.
+0:09  Check that Sponsors are off. Viewers see nothing. shows beside the switch.
+      The pointer moves to Sponsors are off. Viewers see nothing..
+0:15  Click Show sponsors on the site.
+      The pointer moves to Show sponsors on the site.
+0:19  Type "your password" in the Password box.
+0:23  Click Confirm.
+      The pointer moves to Confirm.
+0:26  Check that Sponsors are on. shows beside the switch.
+      The pointer moves to Sponsors are on. Live sponsors can appear to adults..
+0:31  Click Show sponsors on the site.
+      The pointer moves to Show sponsors on the site.
+0:35  Type "your password" in the Password box.
+0:39  Click Confirm.
+      The pointer moves to Confirm.
+0:42  Check that Sponsors are off. Viewers see nothing. shows again.
+      The pointer moves to Sponsors are off. Viewers see nothing..
