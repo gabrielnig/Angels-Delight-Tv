@@ -201,8 +201,8 @@ describe.skipIf(!integrationEnabled())('title queries', () => {
       const category = await seedCategory(t.setup, 'Sorting');
       const specs = [
         { title: 'Charlie', durationMs: 60_000 },
-        { title: 'alpha', durationMs: 400_000 },
-        { title: 'Bravo', durationMs: 200_000 },
+        { title: 'alpha', durationMs: 1_000_000 },
+        { title: 'Bravo', durationMs: 400_000 },
       ];
       for (const spec of specs) {
         const video = await seedVideo(t.setup, spec);

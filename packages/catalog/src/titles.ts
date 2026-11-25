@@ -43,12 +43,24 @@ export interface CategoryDto {
 export type BrowseSort = 'newest' | 'az' | 'shortest' | 'longest';
 export type DurationBucket = 'short' | 'medium' | 'long';
 
-/** Duration buckets in milliseconds, as [min inclusive, max exclusive). The story calls the first one "under 3 minutes". */
+/**
+ * Duration buckets in milliseconds, as [min inclusive, max exclusive). They match the labels viewers see on Browse:
+ * short is "Under 5 min", medium is "5 to 15 min" and long is "Over 15 min" (L11, D-357). The keys are unchanged, so
+ * saved links with ?length=short, medium or long keep working and now mean what their label says.
+ */
 export const DURATION_BUCKETS: Record<DurationBucket, [number, number | null]> = {
-  short: [0, 180_000],
-  medium: [180_000, 300_000],
-  long: [300_000, null],
+  short: [0, 300_000],
+  medium: [300_000, 900_000],
+  long: [900_000, null],
 };
+
+/** The bucket a duration falls in. */
+export function bucketOfMs(ms: number): DurationBucket {
+  for (const key of ['short', 'medium'] as const) {
+    if (ms < DURATION_BUCKETS[key][1]!) return key;
+  }
+  return 'long';
+}
 
 export const PAGE_SIZE = 24;
 export const MAX_PAGE_SIZE = 50;

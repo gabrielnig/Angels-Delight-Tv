@@ -19,7 +19,7 @@ import type {
   ViewerContext,
 } from '../types';
 import { CATEGORIES, SERIES, VIDEOS } from './catalog-data';
-import { listable } from './queries';
+import { listable, matchesLength } from './queries';
 import { progressFor } from './library';
 
 function pageOf<T>(all: T[], cursor: string | undefined, limit: number): Page<T> {
@@ -28,13 +28,6 @@ function pageOf<T>(all: T[], cursor: string | undefined, limit: number): Page<T>
   const end = start + items.length;
   return { items, total: all.length, nextCursor: end < all.length ? String(end) : null };
 }
-
-const matchesLength = (seconds: number, length: BrowseQuery['length']) => {
-  if (length === 'short') return seconds < 180;
-  if (length === 'medium') return seconds >= 180 && seconds <= 360;
-  if (length === 'long') return seconds > 360;
-  return true;
-};
 
 const seconds = (item: CatalogItem) => (item.kind === 'video' ? item.durationSeconds : item.episodeCount * 300);
 
