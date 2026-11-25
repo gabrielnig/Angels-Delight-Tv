@@ -12,6 +12,7 @@ const episode: Episode = {
   steps: [
     {
       caption: 'Choose **Home curation** in the side menu.',
+      holdMs: 3500,
       run: async (s) => {
         await goToScreen(s, 'Home curation');
         await s.page.getByRole('heading', { name: 'Home curation' }).first().waitFor();
@@ -20,6 +21,7 @@ const episode: Episode = {
     {
       caption: 'Scroll to **Hero titles**.',
       note: 'The hero is the big banner at the top of Home.',
+      holdMs: 3500,
       run: async (s) => {
         await scrollTo(s, s.page.getByRole('heading', { name: 'Hero titles' }));
       },
@@ -32,6 +34,7 @@ const episode: Episode = {
     {
       caption: 'Type " today" in the **Headline for How to Save Money on Data** box.',
       note: 'Keep it short. Viewers read it in a second.',
+      holdMs: 3500,
       run: async (s) => {
         await s.type(s.page.getByLabel('Headline for How to Save Money on Data', { exact: true }), ' today');
       },
@@ -39,6 +42,7 @@ const episode: Episode = {
     {
       caption: 'Scroll to **Hero clips**.',
       note: 'A hero clip is a short silent preview. Choose Automatic, Pick a segment or Off on the video screen.',
+      holdMs: 3500,
       run: async (s) => {
         await scrollTo(s, s.page.getByRole('heading', { name: 'Hero clips' }));
       },
@@ -50,6 +54,7 @@ const episode: Episode = {
     },
     {
       caption: 'Click **Save draft**.',
+      holdMs: 3500,
       run: async (s) => {
         await s.click(s.page.getByRole('button', { name: 'Save draft', exact: true }));
       },

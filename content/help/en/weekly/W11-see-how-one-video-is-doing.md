@@ -7,7 +7,7 @@ role: editor
 needs: [W10]
 related: [W10, W12]
 readMinutes: 2
-watchSeconds: 60
+watchSeconds: 90
 video:
   id: VW11
 screens: ["/admin/analytics/[id]"]

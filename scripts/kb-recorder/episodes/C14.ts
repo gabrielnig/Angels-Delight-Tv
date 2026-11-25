@@ -14,6 +14,7 @@ const episode: Episode = {
     {
       caption: 'Choose **System** in the side menu.',
       note: 'Admins can look. Only a Super admin can Retry or Discard a failed job.',
+      holdMs: 3500,
       run: async (s) => {
         await goToScreen(s, 'System');
         await s.page.getByRole('heading', { name: 'System' }).first().waitFor();
@@ -27,6 +28,7 @@ const episode: Episode = {
     {
       caption: 'Check that **Storage used** is on the page.',
       note: 'The bar shows how much of your storage budget is used. A warning appears before it is full.',
+      holdMs: 3500,
       run: async (s) => {
         await s.point(s.page.getByText('Storage used').first());
       },
@@ -34,6 +36,7 @@ const episode: Episode = {
     {
       caption: 'Click **Player quality**.',
       note: "This is measured on viewers' devices over the last 7 days.",
+      holdMs: 3500,
       run: async (s) => {
         await s.click(s.page.getByRole('tab', { name: 'Player quality', exact: true }));
       },
@@ -46,12 +49,14 @@ const episode: Episode = {
     {
       caption: 'Check that **Typical start time** shows a number.',
       note: 'A long start time or a lot of stalling means viewers are on slow connections.',
+      holdMs: 3500,
       run: async (s) => {
         await s.point(s.page.getByText('Typical start time'));
       },
     },
     {
       caption: 'Click **Storage**.',
+      holdMs: 3500,
       run: async (s) => {
         await s.click(s.page.getByRole('tab', { name: 'Storage', exact: true }));
       },

@@ -7,7 +7,7 @@ role: editor
 needs: [W10]
 related: [W10, W11]
 readMinutes: 3
-watchSeconds: 50
+watchSeconds: 109
 video:
   id: VW12
 screens: ["/admin/exports", "/admin/exports/new"]

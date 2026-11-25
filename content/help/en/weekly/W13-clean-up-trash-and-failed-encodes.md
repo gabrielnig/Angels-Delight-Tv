@@ -28,22 +28,23 @@ Editors, Admins and Super admins can restore a video and clean up failed encodes
 
 ## Steps
 <!-- kb:steps W13 -->
-1. Choose **Trash** in the side menu.
+1. Click **Open in Encoding**.
+   It is in Needs attention on the Dashboard. You can also open Encoding in the side menu.
+   ![The Encoding queue with the Failed encodes button marked 1](../../media/W13/W13-01-queue-desktop.webp)
+2. Click **Failed encodes**.
+   ![The Failed encodes page with the Clean up all button marked 1, greyed out when nothing is left over](../../media/W13/W13-02-failed-desktop.webp)
+3. Check that **Clean up all** is on the page.
+   Clean up all deletes only the half made streaming files, never your original videos. It is greyed out when nothing is left over. Each row also has Retry or Replace file.
+4. Choose **Trash** in the side menu.
    Videos wait here for 30 days before they are deleted for good.
-   ![The Trash list with the Days left column marked 1](../../media/W13/W13-01-trash-desktop.webp)
-2. Click **Restore Test clip**.
+   ![The Trash list with the Days left column marked 1](../../media/W13/W13-04-trash-desktop.webp)
+5. Click **Restore Test clip**.
    A restored video comes back as a draft. Nothing is published until you choose Publish.
-   ![The Trash list after a video was restored, with Delete forever for the other video marked 1](../../media/W13/W13-02-restore-desktop.webp)
-3. Choose **Encoding** in the side menu.
-4. Click **Failed encodes**.
-   ![The Failed encodes page with the Clean up all button marked 1](../../media/W13/W13-04-failed-desktop.webp)
-5. Click **Clean up all**.
-   This deletes only the half made streaming files. The original videos are never touched.
-6. Click **Clean up all** again to confirm.
+   ![The Trash list after a video was restored, with Delete forever for the other video marked 1](../../media/W13/W13-05-restore-desktop.webp)
 <!-- /kb:steps -->
 
 ## What you should see
-The restored video is gone from **Trash** and is back in **Videos** as a draft. On **Failed encodes**, a message says the video is back in the queue. After **Clean up all**, a message tells you how many files were removed and how much space was freed.
+The restored video is gone from **Trash** and is back in **Videos** as a draft. On **Failed encodes**, each failed video has its reason, with **Retry** or **Replace file**. After **Clean up all**, a message tells you how many files were removed and how much space was freed.
 
 > [!NOTE]
 > **Days left** counts down from 30. When it reaches 0, the video and its files are deleted for good. Restore anything you still want before then.

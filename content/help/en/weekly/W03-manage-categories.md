@@ -7,7 +7,7 @@ role: editor
 needs: [S04]
 related: [W10, W13]
 readMinutes: 3
-watchSeconds: 90
+watchSeconds: 121
 video:
   id: VW03
 screens: ["/admin/categories"]

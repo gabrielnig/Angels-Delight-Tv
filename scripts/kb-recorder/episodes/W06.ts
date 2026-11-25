@@ -14,6 +14,7 @@ const episode: Episode = {
   steps: [
     {
       caption: 'Choose **Videos** in the side menu.',
+      holdMs: 2500,
       run: async (s) => {
         await goToScreen(s, 'Videos');
         await s.page.getByRole('heading', { name: 'Videos' }).first().waitFor();
@@ -21,13 +22,15 @@ const episode: Episode = {
     },
     {
       caption: `Click **${TITLE}**.`,
+      holdMs: 2500,
       run: async (s) => {
-        await s.click(s.page.getByRole('link', { name: TITLE }).first());
+        await s.click(s.page.getByText(TITLE, { exact: true }).first());
         await s.page.getByRole('link', { name: 'Set up skip and chapters' }).waitFor();
       },
     },
     {
       caption: 'Click **Set up skip and chapters**.',
+      holdMs: 2500,
       run: async (s) => {
         await s.click(s.page.getByRole('link', { name: 'Set up skip and chapters' }));
         await s.page.getByLabel('Intro start', { exact: true }).waitFor();
@@ -41,6 +44,7 @@ const episode: Episode = {
     {
       caption: 'Type "0:05" in the **Intro start** box.',
       note: 'Use minutes and seconds, like 0:05. You can also play the video and click Use current time.',
+      holdMs: 2500,
       run: async (s) => {
         await s.type(s.page.getByLabel('Intro start', { exact: true }), '0:05');
       },
@@ -48,6 +52,7 @@ const episode: Episode = {
     {
       caption: 'Type "0:20" in the **Intro end** box.',
       note: 'Viewers get a Skip intro button between these two times.',
+      holdMs: 2500,
       run: async (s) => {
         await s.type(s.page.getByLabel('Intro end', { exact: true }), '0:20');
       },
@@ -60,6 +65,7 @@ const episode: Episode = {
     {
       caption: 'Click **Save changes**.',
       note: 'Viewers see the change straight away.',
+      holdMs: 2500,
       run: async (s) => {
         await s.click(s.page.getByRole('button', { name: 'Save changes', exact: true }));
         await s.pause(800);

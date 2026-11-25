@@ -1,0 +1,13 @@
+Make and download a report (W12)
+For Editors. 1 min 49 s.
+
+0:05  Choose Analytics in the side menu.
+      The pointer moves to Analytics.
+0:25  Click Last 90 days.
+      The pointer moves to Last 90 days.
+0:44  Click Export CSV.
+      The pointer moves to Export CSV.
+1:02  Choose Exports in the side menu.
+      The pointer moves to Exports.
+1:22  Check that No exports yet. is on the page.
+      The pointer moves to No exports yet..

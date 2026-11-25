@@ -14,6 +14,7 @@ const episode: Episode = {
     {
       caption: 'Choose **Roles and invites** in the side menu.',
       note: 'Only a Super admin can see this page.',
+      holdMs: 3500,
       run: async (s) => {
         await goToScreen(s, 'Roles and invites');
         await s.page.getByRole('heading', { name: 'Roles and invites' }).first().waitFor();
@@ -26,6 +27,7 @@ const episode: Episode = {
     },
     {
       caption: 'Scroll to **Invite a team member**.',
+      holdMs: 3500,
       run: async (s) => {
         await scrollTo(s, s.page.getByText('Invite a team member').first());
       },
@@ -33,6 +35,7 @@ const episode: Episode = {
     {
       caption: 'Type "newteam@example.test" in the **Email** box.',
       note: 'Use the address they read email on. They get the invite there.',
+      holdMs: 3500,
       run: async (s) => {
         await s.type(s.page.getByLabel('Email', { exact: true }), 'newteam@example.test');
       },
@@ -40,6 +43,7 @@ const episode: Episode = {
     {
       caption: 'Select **Editor** from the **Role** list.',
       note: 'Editor looks after videos. Admin also sets the look and handles accounts.',
+      holdMs: 3500,
       run: async (s) => {
         await s.click(s.page.getByLabel('Role', { exact: true }));
         await s.page.getByLabel('Role', { exact: true }).selectOption({ label: 'Editor' });
@@ -53,6 +57,7 @@ const episode: Episode = {
     {
       caption: 'Click **Send invite**.',
       note: 'They have a limited time to accept. Use Resend invite or Cancel invite in Pending invites.',
+      holdMs: 3500,
       run: async (s) => {
         await s.click(s.page.getByRole('button', { name: 'Send invite', exact: true }));
         await s.page.getByText('newteam@example.test').first().waitFor();

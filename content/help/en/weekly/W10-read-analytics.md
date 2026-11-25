@@ -7,7 +7,7 @@ role: editor
 needs: [S04]
 related: [W11, W12, R06]
 readMinutes: 4
-watchSeconds: 80
+watchSeconds: 62
 video:
   id: VW10
   phone: true

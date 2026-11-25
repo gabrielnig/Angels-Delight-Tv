@@ -15,6 +15,7 @@ const episode: Episode = {
   steps: [
     {
       caption: 'Choose **Videos** in the side menu.',
+      holdMs: 3500,
       run: async (s) => {
         await goToScreen(s, 'Videos');
         await s.page.getByRole('heading', { name: 'Videos' }).first().waitFor();
@@ -22,14 +23,16 @@ const episode: Episode = {
     },
     {
       caption: `Click **${TITLE}**.`,
+      holdMs: 3500,
       run: async (s) => {
-        await s.click(s.page.getByRole('link', { name: TITLE }).first());
+        await s.click(s.page.getByText(TITLE, { exact: true }).first());
         await s.page.getByText('Captions for viewers').first().waitFor();
       },
     },
     {
       caption: 'Scroll to **Captions for viewers**.',
       note: 'Only Admins and Super admins can change this card. Editors see it greyed out.',
+      holdMs: 3500,
       run: async (s) => {
         await scrollTo(s, s.page.getByRole('heading', { name: 'Captions for viewers' }));
       },
@@ -42,12 +45,14 @@ const episode: Episode = {
     {
       caption: 'Select **Off**.',
       note: 'Off hides the captions button for this video. Viewers who saved a choice keep it for other videos.',
+      holdMs: 3500,
       run: async (s) => {
         await s.click(s.page.getByRole('radio', { name: 'Off', exact: true }));
       },
     },
     {
       caption: 'Click **Save captions setting**.',
+      holdMs: 3500,
       run: async (s) => {
         await s.click(s.page.getByRole('button', { name: 'Save captions setting', exact: true }));
         await s.pause(800);
@@ -61,12 +66,14 @@ const episode: Episode = {
     {
       caption: 'Select **Follow site default (currently on)**.',
       note: 'Choose this again to put things back. Captions return for viewers.',
+      holdMs: 3500,
       run: async (s) => {
         await s.click(s.page.getByRole('radio', { name: /^Follow site default/ }));
       },
     },
     {
       caption: 'Click **Save captions setting**.',
+      holdMs: 3500,
       run: async (s) => {
         await s.click(s.page.getByRole('button', { name: 'Save captions setting', exact: true }));
         await s.pause(800);

@@ -19,6 +19,7 @@ const episode: Episode = {
     {
       caption: 'Click **Open in Encoding**.',
       note: 'It is in Needs attention on the Dashboard. You can also open Encoding in the side menu.',
+      holdMs: 3000,
       run: async (s) => {
         await s.click(s.page.getByRole('link', { name: 'Open in Encoding', exact: true }));
         await s.page.getByRole('heading', { name: 'Encoding queue' }).waitFor();
@@ -31,6 +32,7 @@ const episode: Episode = {
     },
     {
       caption: 'Click **Failed encodes**.',
+      holdMs: 3000,
       run: async (s) => {
         await s.click(s.page.getByRole('link', { name: 'Failed encodes', exact: true }));
         await s.page.getByRole('heading', { name: 'Failed encodes' }).first().waitFor();
@@ -42,21 +44,17 @@ const episode: Episode = {
       },
     },
     {
-      caption: 'Click **Retry Our Solar System**.',
-      note: 'Retry starts the video again from your original file. If a retry keeps failing, use Clean up all to clear the half made files first.',
+      caption: 'Check that **Clean up all** is on the page.',
+      note: 'Clean up all deletes only the half made streaming files, never your original videos. It is greyed out when nothing is left over. Each row also has Retry or Replace file.',
+      holdMs: 3000,
       run: async (s) => {
-        await s.click(s.page.getByRole('button', { name: 'Retry Our Solar System', exact: true }));
-        await s.pause(1200);
-      },
-      shot: {
-        name: 'retry',
-        alt: 'The Failed encodes list with the Retry button for Our Solar System marked 1',
-        marks: [{ target: (s) => s.page.getByRole('button', { name: 'Retry Our Solar System', exact: true }), label: 'Retry' }],
+        await s.point(s.page.getByRole('button', { name: 'Clean up all', exact: true }));
       },
     },
     {
       caption: 'Choose **Trash** in the side menu.',
       note: 'Videos wait here for 30 days before they are deleted for good.',
+      holdMs: 3000,
       run: async (s) => {
         await goToScreen(s, 'Trash');
         await s.page.getByRole('heading', { name: 'Trash' }).first().waitFor();
@@ -70,6 +68,7 @@ const episode: Episode = {
     {
       caption: 'Click **Restore Test clip**.',
       note: 'A restored video comes back as a draft. Nothing is published until you choose Publish.',
+      holdMs: 3000,
       run: async (s) => {
         await s.click(s.page.getByRole('button', { name: 'Restore Test clip' }));
         await s.page.getByRole('button', { name: 'Restore Test clip' }).waitFor({ state: 'detached' });

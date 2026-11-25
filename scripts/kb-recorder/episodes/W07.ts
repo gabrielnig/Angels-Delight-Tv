@@ -13,6 +13,7 @@ const episode: Episode = {
     {
       caption: 'Click **Review captions**.',
       note: 'It is in Needs attention on the Dashboard. You can also open Captions in the side menu.',
+      holdMs: 3500,
       run: async (s) => {
         await s.click(s.page.getByRole('link', { name: 'Review captions', exact: true }));
         await s.page.getByRole('button', { name: 'Find and replace' }).waitFor();
@@ -26,19 +27,22 @@ const episode: Episode = {
     {
       caption: 'Type " now" in the **Words in cue 1** box.',
       note: 'Your change is saved by itself. Fix wrong words, names and numbers.',
+      holdMs: 3500,
       run: async (s) => {
-        await s.type(s.page.getByLabel('Words in cue 1'), ' now');
+        await s.type(s.page.getByLabel('Words in cue 1', { exact: true }), ' now');
       },
     },
     {
       caption: 'Click **Undo**.',
       note: 'Undo and Redo step back and forward through your changes.',
+      holdMs: 3500,
       run: async (s) => {
         await s.click(s.page.getByRole('button', { name: 'Undo', exact: true }));
       },
     },
     {
       caption: 'Click **Redo**.',
+      holdMs: 3500,
       run: async (s) => {
         await s.click(s.page.getByRole('button', { name: 'Redo', exact: true }));
       },
@@ -46,6 +50,7 @@ const episode: Episode = {
     {
       caption: 'Click **Find and replace**.',
       note: 'Use it when one word is wrong in many cues, such as a name.',
+      holdMs: 3500,
       run: async (s) => {
         await s.click(s.page.getByRole('button', { name: 'Find and replace', exact: true }));
         await s.page.getByRole('dialog').waitFor();
@@ -58,6 +63,7 @@ const episode: Episode = {
     },
     {
       caption: 'Click **Close**.',
+      holdMs: 3500,
       run: async (s) => {
         await s.click(s.page.getByRole('dialog').getByRole('button', { name: 'Close', exact: true }));
       },
