@@ -4,7 +4,7 @@ import { itemHref, metaLine, timeLeftLabel } from '../../lib/format';
 
 /** Maps the Home hero slots to the slides the Hero draws. The wide artwork rides on the item thumbnail (M41-S01). */
 export function heroItems(home: HomeData, progress: Map<string, Progress>): HeroItem[] {
-  return home.hero.map(({ item, blurb, headline, buttonLabel, previewUrl }) => {
+  return home.hero.map(({ item, blurb, headline, buttonLabel, previewUrl, previewMs, previewHasAudio }) => {
     const video = item.kind === 'video' ? item : null;
     const resume = video ? progress.get(video.id) : undefined;
     const wide = item.thumbnail;
@@ -20,6 +20,8 @@ export function heroItems(home: HomeData, progress: Map<string, Progress>): Hero
       infoHref: itemHref(item),
       playLabel: buttonLabel,
       previewSrc: previewUrl,
+      previewMs,
+      previewHasAudio: previewHasAudio === true,
       resumeLabel:
         resume && resume.positionSeconds < resume.durationSeconds * 0.95
           ? timeLeftLabel(resume)

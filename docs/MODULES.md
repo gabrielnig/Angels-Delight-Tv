@@ -788,7 +788,7 @@ Each module lists: purpose, responsibilities, data owned, dependencies, client i
 
 **Dependencies.** M04, M05, M09, M14, M17, M25, M30, M36.
 
-**Notes.** Plan: `docs/plan/v2/L2-home.md`. Stories: M41-S01 to S20. Nothing here needs client input; the row names, the default top row title and the preview switches are settings.
+**Notes.** Plan: `docs/plan/v2/L2-home.md`. Stories: M41-S01 to S21. Nothing here needs client input; the row names, the default top row title and the preview switches are settings.
 
 ### M42 Admin polish and bulk operations [READY]
 

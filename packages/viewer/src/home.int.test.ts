@@ -105,6 +105,8 @@ describe.skipIf(!process.env.TEST_DATABASE_ADMIN_URL)('home', () => {
         title: 'With clip',
         previewState: 'ready',
         previewKey: 'cap/x/preview/clip.mp4',
+        previewHasAudio: true,
+        previewLengthMs: 20_000,
       });
       await addRow({ title: 'Banner', kind: 'hero' }, [
         { videoId: v.id, heroHeadline: 'Start here' },
@@ -112,7 +114,8 @@ describe.skipIf(!process.env.TEST_DATABASE_ADMIN_URL)('home', () => {
       const home = await getHome(h.ctx, user.actor, { profileId: user.profileId });
       expect(home.hero[0]?.text).toMatchObject({ headline: 'Start here', blurb: null });
       expect(home.hero[0]?.previewUrl).toMatch(/\/cap\/x\/preview\/clip\.mp4$/);
-      expect(home.hero[0]?.previewMs).toBe(6000);
+      expect(home.hero[0]?.previewMs).toBe(20_000);
+      expect(home.hero[0]?.previewHasAudio).toBe(true);
     });
 
     it('falls back to the newest titles when no hero is configured', async () => {

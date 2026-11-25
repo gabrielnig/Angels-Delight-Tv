@@ -127,6 +127,8 @@ export interface HeroSlot {
   /** Muted clip, present only when it is ready and not turned off (M41-S11). */
   previewUrl?: string;
   previewMs?: number;
+  /** The clip has a sound track (new clips only). Absent means silent. */
+  previewHasAudio?: boolean;
 }
 
 export interface HomeRow {

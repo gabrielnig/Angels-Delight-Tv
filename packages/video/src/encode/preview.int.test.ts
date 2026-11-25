@@ -16,7 +16,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { keyring } from '../hls-key';
-import { PREVIEW_MAX_BYTES } from '../preview';
+import { previewMaxBytes } from '../preview';
 import { nodeRunner, type ProcessRunner } from './ffmpeg';
 import { VideoPipeline } from './pipeline';
 
@@ -40,6 +40,7 @@ describe.skipIf(!integrationEnabled() || !hasFfmpeg)('hero preview clip with rea
   let boss: FakeBoss;
   let calls: string[][];
   let maxBytes: number | undefined;
+  let clipMs: number | undefined;
   let pipeline: VideoPipeline;
   const files: Record<string, Buffer> = {};
 
@@ -54,7 +55,7 @@ describe.skipIf(!integrationEnabled() || !hasFfmpeg)('hero preview clip with rea
     const video = makeVideo({
       createdBy: owner,
       status: 'ready',
-      durationMs: 20_000,
+      durationMs: 40_000,
       width: 640,
       height: 360,
       ...overrides,
@@ -101,8 +102,10 @@ describe.skipIf(!integrationEnabled() || !hasFfmpeg)('hero preview clip with rea
       ffmpeg([...args, '-c:v', 'libx264', '-pix_fmt', 'yuv420p', path]);
       files[name] = await readFile(path);
     };
-    await make('busy', '-f', 'lavfi', '-i', 'testsrc=duration=20:size=640x360:rate=24', '-f', 'lavfi', '-i', 'sine=frequency=440:duration=20', '-c:a', 'aac', '-shortest');
-    await make('black', '-f', 'lavfi', '-i', 'color=c=black:s=320x180:d=20:r=24');
+    await make('busy', '-f', 'lavfi', '-i', 'testsrc=duration=40:size=640x360:rate=24', '-f', 'lavfi', '-i', 'sine=frequency=440:duration=40', '-c:a', 'aac', '-shortest');
+    await make('silent', '-f', 'lavfi', '-i', 'testsrc=duration=40:size=640x360:rate=24');
+    await make('whole', '-f', 'lavfi', '-i', 'testsrc=duration=14:size=640x360:rate=24', '-f', 'lavfi', '-i', 'sine=frequency=330:duration=14', '-c:a', 'aac', '-shortest');
+    await make('black', '-f', 'lavfi', '-i', 'color=c=black:s=320x180:d=40:r=24');
     await make('tiny', '-f', 'lavfi', '-i', 'testsrc=duration=2:size=320x180:rate=24');
     await make('short', '-f', 'lavfi', '-i', 'testsrc=duration=5:size=320x180:rate=24');
   }, 120_000);
@@ -110,6 +113,7 @@ describe.skipIf(!integrationEnabled() || !hasFfmpeg)('hero preview clip with rea
   beforeEach(() => {
     calls = [];
     maxBytes = undefined;
+    clipMs = undefined;
     pipeline = new VideoPipeline({
       db: t.db,
       originals,
@@ -120,7 +124,10 @@ describe.skipIf(!integrationEnabled() || !hasFfmpeg)('hero preview clip with rea
       runner,
       ffmpeg: { preset: 'ultrafast', threads: 2 },
       limits: { maxSeconds: 1800, warnSeconds: 3600 },
-      preview: { get maxBytes() { return maxBytes; } },
+      preview: {
+        get maxBytes() { return maxBytes; },
+        clipMs: async () => clipMs ?? 20_000,
+      },
     });
   });
 
@@ -129,28 +136,57 @@ describe.skipIf(!integrationEnabled() || !hasFfmpeg)('hero preview clip with rea
     await rm(root, { recursive: true, force: true });
   });
 
-  it('makes a silent six second H.264 clip under 800 KB and records it', async () => {
+  it('makes a 20 second H.264 clip with low bitrate AAC audio and records length and sound', async () => {
     const video = await newVideo('busy');
     await pipeline.previewClip(video.id, {}, none);
     const after = await row(video.id);
     expect(after.previewState).toBe('ready');
     expect(after.previewKey).toMatch(new RegExp(`^cap/${video.mediaPrefix}/preview/\\d+-[0-9a-f]{8}\\.mp4$`));
     expect(after.previewBytes).toBeGreaterThan(0);
-    expect(after.previewBytes).toBeLessThan(PREVIEW_MAX_BYTES);
+    expect(after.previewBytes).toBeLessThan(previewMaxBytes(20_000));
+    expect(after.previewHasAudio).toBe(true);
+    expect(after.previewLengthMs).toBe(20_000);
     expect(after.previewNote).toBeNull();
     expect(after.previewUpdatedAt).not.toBeNull();
     const info = await probeOf(await readMedia(after.previewKey!));
-    expect(info.streams.map((s) => s.codec_type)).toEqual(['video']);
-    expect(info.streams[0]).toMatchObject({ codec_name: 'h264', width: 854 });
-    expect(Number(info.format.duration)).toBeGreaterThan(5.5);
-    expect(Number(info.format.duration)).toBeLessThan(6.6);
+    expect(info.streams.map((s) => s.codec_type).sort()).toEqual(['audio', 'video']);
+    expect(info.streams.find((s) => s.codec_type === 'video')).toMatchObject({ codec_name: 'h264', width: 854 });
+    expect(info.streams.find((s) => s.codec_type === 'audio')).toMatchObject({ codec_name: 'aac' });
+    expect(Number(info.format.duration)).toBeGreaterThan(19.5);
+    expect(Number(info.format.duration)).toBeLessThan(20.7);
+  }, 120_000);
+
+  it('keeps a silent source silent and records no sound', async () => {
+    const video = await newVideo('silent');
+    await pipeline.previewClip(video.id, {}, none);
+    const after = await row(video.id);
+    expect(after).toMatchObject({ previewState: 'ready', previewHasAudio: false, previewLengthMs: 20_000 });
+    expect((await probeOf(await readMedia(after.previewKey!))).streams.map((s) => s.codec_type)).toEqual(['video']);
+  }, 120_000);
+
+  it('uses the whole video when it is no longer than the clip length', async () => {
+    const video = await newVideo('whole', { durationMs: 14_000 });
+    await pipeline.previewClip(video.id, {}, none);
+    const after = await row(video.id);
+    expect(after).toMatchObject({ previewState: 'ready', previewStartMs: 0, previewHasAudio: true });
+    expect(after.previewLengthMs).toBeGreaterThan(13_000);
+    expect(after.previewLengthMs).toBeLessThan(14_600);
+  }, 120_000);
+
+  it('follows the clip length setting', async () => {
+    const video = await newVideo('busy');
+    clipMs = 8000;
+    await pipeline.previewClip(video.id, {}, none);
+    const after = await row(video.id);
+    expect(after.previewLengthMs).toBe(8000);
+    expect(Number((await probeOf(await readMedia(after.previewKey!))).format.duration)).toBeLessThan(8.7);
   }, 120_000);
 
   it('uses the whole of a short video', async () => {
-    const video = await newVideo('short');
+    const video = await newVideo('short', { durationMs: 5000 });
     await pipeline.previewClip(video.id, {}, none);
     const after = await row(video.id);
-    expect(after).toMatchObject({ previewState: 'ready', previewStartMs: 0 });
+    expect(after).toMatchObject({ previewState: 'ready', previewStartMs: 0, previewHasAudio: false });
     expect(Number((await probeOf(await readMedia(after.previewKey!))).format.duration)).toBeGreaterThan(4.5);
   }, 60_000);
 

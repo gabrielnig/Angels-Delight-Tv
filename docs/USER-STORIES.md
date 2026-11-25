@@ -444,7 +444,7 @@ As a viewer on a slow network, I want catalog pages to respond quickly, so that 
 ### M05-S01 Hero banner (Must)
 As a viewer, I want a featured title at the top of Home, so that I see something worth watching at once.
 - AC1: Given Home loads, When a hero is configured, Then I see poster art, title, a one-line description, a Play (or Resume) button and a More info button.
-- AC2: Given multiple hero titles are set, When I wait, Then they rotate every 10 seconds (site setting) with visible dots and a Pause control, and rotation stops under reduced motion or Data saver. See M41-S02.
+- AC2: Given multiple hero titles are set, When I wait, Then they rotate every 20 seconds (site setting) with visible dots and a Pause control, and rotation stops under reduced motion or Data saver. See M41-S02.
 - AC3: Given I tap Play, When the title is a series, Then it plays the next unwatched episode for my profile.
 - AC4: Given a fast connection, Data saver off and no reduced motion, When a slide with a ready clip is shown, Then an optional muted preview clip may play over the still. See M41-S11.
 - Edge: text over the image keeps WCAG contrast through a gradient scrim.
@@ -1646,7 +1646,7 @@ As an admin, I want a dashboard when I sign in, so that I see what needs attenti
 
 ### M17-S01 Choose hero titles (Must)
 As an editor, I want to pick the featured title, so that Home highlights what matters.
-- AC1: Given `/admin/home`, When I choose up to 5 published titles for the hero, Then they are saved with order and shown with rotation on Home (10 seconds by default).
+- AC1: Given `/admin/home`, When I choose up to 5 published titles for the hero, Then they are saved with order and shown with rotation on Home (20 seconds by default).
 - AC2: Given a hero title is unpublished, When viewers load Home, Then it is skipped automatically.
 - Edge: each hero slot can override the headline, description and button label (80 chars), see M41-S16.
 - Error: more than 5 shows a limit message.
@@ -2881,7 +2881,7 @@ As a guest on a shared device, I want to clear what this device remembers, so th
 
 ## Coverage summary
 
-Total stories: 309. Must: 199. Should: 87. Could: 23.
+Total stories: 310. Must: 199. Should: 88. Could: 23.
 
 | Module | Stories |
 |---|---|
@@ -2922,7 +2922,7 @@ Total stories: 309. Must: 199. Should: 87. Could: 23.
 | M35 | 4 |
 | M36 | 4 |
 | M40 | 18 |
-| M41 | 20 |
+| M41 | 21 |
 
 Modules with no viewer or admin screen of their own (M04, M22, M23, M24, M30, M31, M33) still carry stories because their behaviour is testable and has user visible effects.
 
@@ -3021,7 +3021,7 @@ As a phone user, I want headings sized for a small screen, so that titles do not
 
 ### M47-S10 Hero crossfade, rotation and readable text (Must)
 As a viewer, I want the hero to change gently and always keep its text readable.
-- AC1: Given several hero titles, When I wait, Then they rotate every 10 seconds with a 350 ms crossfade, a visible Pause control and dots.
+- AC1: Given several hero titles, When I wait, Then they rotate every 20 seconds with a 350 ms crossfade, a visible Pause control and dots.
 - AC2: Given I hover, focus, touch or press Pause, When it happens, Then rotation stops.
 - AC3: Given reduced motion or Data saver, When Home loads, Then the hero does not rotate and does not crossfade.
 - AC4: Given any hero image, When the title shows, Then white text on the scrim is at least 4.5 to 1 against the lightest possible image.
@@ -3901,8 +3901,8 @@ As a viewer, I want a large featured title with clear art, so that Home looks al
 - Empty: see M41-S03.
 
 ### M41-S02 Hero advances by itself and can be controlled (Must)
-As a viewer, I want the hero to move on in about 10 seconds and let me stop it, so that I see more titles without losing control.
-- AC1: Given more than one slide and auto advance on, When 10 seconds pass (the site setting, 5 to 20), Then the next slide crossfades in over 350 ms, and the timer restarts when I use a dot, arrow or swipe.
+As a viewer, I want the hero to move on in about 20 seconds and let me stop it, so that I see more titles without losing control.
+- AC1: Given more than one slide and auto advance on, When 20 seconds pass (the site setting, 5 to 60), Then the next slide crossfades in over 350 ms, and the timer restarts when I use a dot, arrow or swipe.
 - AC2: Given I hover or focus inside the hero, or the tab is hidden, When time passes, Then the slide does not change.
 - AC3: Given I press Pause, When I look at the button, Then it reads "Resume rotation", the slide holds, and the region is announced politely; Resume restarts the timer.
 - AC4: Given reduced motion or Data saver is on, When Home loads, Then slides never advance by themselves, there is no crossfade, and dots and arrows still work.
@@ -4008,10 +4008,10 @@ As a viewer on a fast connection, I want a short silent preview on the featured 
 
 ### M41-S12 Worker generates preview clips (Should)
 As an admin, I want clips made for me, so that I upload nothing extra.
-- AC1: Given a video finished thumbnails, When the worker runs `video.preview`, Then a 6 second H.264 clip without audio, 854 px wide and at most 800 KB, is stored under `cap/{mediaPrefix}/preview/` and the video shows state ready.
+- AC1: Given a video finished thumbnails, When the worker runs `video.preview`, Then an H.264 clip 854 px wide with low bitrate AAC audio (silent only when the source has none) is stored under `cap/{mediaPrefix}/preview/`, its length and sound are recorded, and the video shows state ready. The clip is the whole video when it is no longer than the clip length setting (20 seconds by default, 6 to 30), otherwise a segment of that length, and is accepted up to 120 KB a second.
 - AC2: Given the auto mode, When a segment is chosen, Then it avoids the first and last parts and prefers the best lit and sharpest of five candidates.
 - AC3: Given a black or very short video, When the job runs, Then the state is skipped and Home uses the still.
-- AC4: Given a published video with no clip, When the hourly sweep runs, Then up to 10 are queued.
+- AC4: Given a published video with no clip, When the hourly sweep runs, Then up to 10 are queued. Videos with a failed, skipped or out of date clip are queued by M41-S21.
 - Edge: a recut replaces the old file and deletes it.
 - Error: failure marks the clip failed with a plain reason and never fails the video.
 - Empty: not applicable.
@@ -4019,7 +4019,7 @@ As an admin, I want clips made for me, so that I upload nothing extra.
 ### M41-S13 Admin controls the preview clip (Should)
 As an admin, I want to choose or turn off a clip, so that the preview shows the right moment.
 - AC1: Given a video, When I open its Home preview card, Then I see the state (queued, ready, failed, skipped) and the choices Automatic, Pick a segment and Off.
-- AC2: Given Pick a segment, When I enter a start time and see its frame, Then Save queues a recut; starts beyond duration minus 6 seconds are refused.
+- AC2: Given Pick a segment, When I enter a start time and see its frame, Then Save queues a recut; starts beyond duration minus the clip length are refused.
 - AC3: Given Off, When I save, Then viewers get the still only, and the choice is audited.
 - AC4: Given failed, When I press Retry, Then the job runs again.
 - Edge: Editors may change it, Viewers may not.
@@ -4083,6 +4083,16 @@ As an admin, I want a button that brings back the launch layout, so that I can u
 - Edge: the live layout stays until I publish.
 - Error: failure changes nothing.
 - Empty: not applicable.
+
+### M41-S21 Generate previews for all videos (Should)
+As an admin, I want one button that makes the hero clips for every video already on the site, so that videos published before clips existed show one without me opening each.
+- AC1: Given `/admin/home` as an admin, When I press Generate previews for all videos, Then every published, ready video with its original and a mode other than Off that has no clip, a failed or skipped one, a clip made before sound and a recorded length existed, a clip whose length no longer matches the setting, or a job stuck for over an hour is queued, and I read how many were queued and how many already had a current clip.
+- AC2: Given I press it again, When nothing changed, Then nothing is queued twice and the message says nothing to queue.
+- AC3: Given I am an Editor, When I open `/admin/home`, Then the button is disabled with "Only admins can do this", and the service refuses the call.
+- AC4: Given it ran, When I open the audit log, Then one `video.preview_backfill` entry names who pressed it and how many were queued.
+- Edge: at most 500 videos are queued per press, pressing again carries on; videos set to Off, unpublished, deleted or without an original are left out.
+- Error: a failure says "That did not work. Nothing was queued. Try again." and changes nothing.
+- Empty: with no eligible video the message says nothing to queue.
 
 ---
 

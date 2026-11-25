@@ -33,6 +33,8 @@ export interface HeroItem {
   /** Muted clip for the active slide on fast connections. Null when none is ready or the editor turned it off. */
   previewUrl: string | null;
   previewMs: number | null;
+  /** The clip has a sound track. False for clips made before sound existed. */
+  previewHasAudio: boolean;
 }
 
 export interface ContinueWatchingRow {
@@ -256,6 +258,7 @@ async function buildHero(
       },
       previewUrl: extras.get(card.id)?.previewUrl ?? null,
       previewMs: extras.get(card.id)?.previewMs ?? null,
+      previewHasAudio: extras.get(card.id)?.previewHasAudio ?? false,
       play:
         card.kind === 'series'
           ? await seriesPlayTarget(tx, ctx, audience, profile?.id ?? null, card.id)

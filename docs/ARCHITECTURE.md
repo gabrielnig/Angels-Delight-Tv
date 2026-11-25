@@ -363,8 +363,8 @@ pg-boss runs in the worker (consumer, maintenance and cron). `apps/web` creates 
 | `video.probe` | 2 | 3, backoff 30 s | 10 min | Singleton per video |
 | `video.encode` | 1 | 3, backoff 2 min | 3 h | Checkpoint per rendition |
 | `video.thumbnails` | 2 | 3 | 15 min | 3 candidates at 10, 50, 90 percent |
-| `video.preview` | 1 | 2, backoff 1 min | 10 min | Six second muted H.264 clip for the Home hero, stored under `cap/{prefix}/preview/`. Payload: video id, optional mode and start. A failure never fails the video |
-| `video.preview_sweep` | 1 | 2 | 10 min | Hourly, queues up to 10 published videos that have no clip yet |
+| `video.preview` | 1 | 2, backoff 1 min | 10 min | Home hero clip (the whole video up to `home.hero_clip_seconds`, 20 by default, otherwise a segment of that length) as H.264 with low bitrate AAC when the source has sound, stored under `cap/{prefix}/preview/`. Payload: video id, optional mode and start. Queued by the hourly sweep and by the admin action Generate previews for all videos. A failure never fails the video |
+| `video.preview_sweep` | 1 | 2 | 10 min | Hourly, queues up to 10 published videos that have no clip yet (the admin action covers failed, skipped and out of date clips) |
 | `caption.generate` | 1 | 2 | 45 min | Calls whisper |
 | `image.process` | 2 | 3 | 5 min | sharp, strip metadata, fixed widths |
 | `video.rekey` | 1 | 2 | 3 h | Re-encrypt segments with a new key, no transcode |

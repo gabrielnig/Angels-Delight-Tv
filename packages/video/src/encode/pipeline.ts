@@ -19,12 +19,14 @@ import {
   type MasterRung,
 } from '../playlist';
 import {
+  PREVIEW_CLIP_MS,
   PREVIEW_CRF,
-  PREVIEW_MAX_BYTES,
   PREVIEW_RETRY_CRF,
+  clampClipMs,
   planPreview,
   previewArgs,
   previewKey,
+  previewMaxBytes,
   previewScoreOffsetMs,
 } from '../preview';
 import { sweepPreviews } from '../preview-sweep';
@@ -66,8 +68,11 @@ export interface PipelineDeps {
   ladder?: () => Promise<RungSpec[]>;
   /** Seek preview sprites are on unless `enabled` says otherwise. */
   sprites?: { enabled?: () => Promise<boolean> };
-  /** Hero preview clip limits. `maxBytes` exists so tests can force the oversize path. */
-  preview?: { maxBytes?: number };
+  /**
+   * Hero preview clip limits. `maxBytes` exists so tests can force the oversize path. `clipMs` reads the site
+   * setting `home.hero_clip_seconds` (the worker supplies it) and defaults to 20 seconds.
+   */
+  preview?: { maxBytes?: number; clipMs?: () => Promise<number> };
   logger?: Logger;
 }
 
@@ -645,7 +650,7 @@ export class VideoPipeline {
   }
 
   /**
-   * `video.preview`: a six second silent clip for the Home hero (M41). It never fails the video. A clip that cannot
+   * `video.preview`: a short clip for the Home hero (M41), up to the clip length setting (20 seconds by default) with low bitrate audio when the source has any. It never fails the video. A clip that cannot
    * be made leaves the state `skipped` (nothing wrong with the video) or `failed` (a plain note for the editor), and
    * the hero falls back to the poster. A recut writes a new content hashed file, updates the row, then removes the old one.
    */
@@ -658,8 +663,8 @@ export class VideoPipeline {
     const mode = opts.mode ?? (video.previewMode === 'picked' ? 'picked' : 'auto');
     if (video.previewMode === 'off') return;
     const requestedStart = opts.startMs ?? video.previewStartMs ?? undefined;
-    const maxBytes = this.deps.preview?.maxBytes ?? PREVIEW_MAX_BYTES;
     try {
+      const clipMs = clampClipMs((await this.deps.preview?.clipMs?.()) ?? PREVIEW_CLIP_MS);
       await progress('Making preview', 5);
       const outcome = await withScratch(
         this.deps.scratch,
@@ -667,7 +672,7 @@ export class VideoPipeline {
         video.originalBytes ?? 0,
         async (dir) => {
           const { path, container, probe } = await this.fetchSource(videoId, dir);
-          const plan = planPreview({ durationMs: probe.durationMs, mode, startMs: requestedStart });
+          const plan = planPreview({ durationMs: probe.durationMs, mode, startMs: requestedStart, clipMs });
           if (plan.kind === 'skip') return { skip: plan.reason } as const;
 
           let startMs = plan.startMs;
@@ -693,11 +698,20 @@ export class VideoPipeline {
 
           await progress('Making preview', 40);
           const output = join(dir, 'preview.mp4');
+          const maxBytes = this.deps.preview?.maxBytes ?? previewMaxBytes(plan.lengthMs);
           let bytes: Buffer | null = null;
           for (const crf of [PREVIEW_CRF, PREVIEW_RETRY_CRF]) {
             const result = await this.runner.run(
               this.ffmpegPath(),
-              previewArgs({ input: path, container, startMs, lengthMs: plan.lengthMs, output, crf }),
+              previewArgs({
+                input: path,
+                container,
+                startMs,
+                lengthMs: plan.lengthMs,
+                output,
+                hasAudio: probe.hasAudio,
+                crf,
+              }),
               { timeoutMs: 5 * 60_000, niceness: this.deps.ffmpeg?.niceness ?? 10 },
             );
             if (result.code !== 0)
@@ -709,7 +723,7 @@ export class VideoPipeline {
             }
           }
           if (!bytes) return { fail: 'The clip came out too large' } as const;
-          return { bytes, startMs } as const;
+          return { bytes, startMs, lengthMs: plan.lengthMs, hasAudio: probe.hasAudio } as const;
         },
       );
 
@@ -729,6 +743,8 @@ export class VideoPipeline {
         previewState: 'ready',
         previewStartMs: outcome.startMs,
         previewBytes: outcome.bytes.length,
+        previewLengthMs: outcome.lengthMs,
+        previewHasAudio: outcome.hasAudio,
         previewNote: null,
       });
       if (video.previewKey && video.previewKey !== key)

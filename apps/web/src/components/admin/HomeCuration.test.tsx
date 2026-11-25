@@ -34,6 +34,41 @@ const view = (canCurate = true, saveDraft = ok()) => {
   return actions;
 };
 
+describe('HomeCuration hero clips card', () => {
+  const state = { draft: defaultHome(), published: defaultHome(), previous: null, publishedAt: null };
+  const mount = (actions: Record<string, unknown>, canBackfill?: boolean) =>
+    render(
+      <ToastProvider>
+        <HomeCuration
+          state={state}
+          videos={s.videos}
+          series={s.series}
+          categories={s.categories}
+          canCurate
+          canBackfill={canBackfill}
+          actions={{ saveDraft: ok(), publish: ok(), restore: ok(), ...actions }}
+        />
+      </ToastProvider>,
+    );
+
+  it('offers Generate previews for all videos to an admin and calls the action', async () => {
+    const backfillPreviews = vi.fn().mockResolvedValue({ ok: true, queued: 3, current: 1 });
+    mount({ backfillPreviews }, true);
+    fireEvent.click(screen.getByRole('button', { name: 'Generate previews for all videos' }));
+    await waitFor(() => expect(backfillPreviews).toHaveBeenCalledTimes(1));
+  });
+
+  it('disables it for an editor', () => {
+    mount({ backfillPreviews: vi.fn() }, false);
+    expect((screen.getByRole('button', { name: 'Generate previews for all videos' }) as HTMLButtonElement).disabled).toBe(true);
+  });
+
+  it('shows no card when the screen has no such action', () => {
+    mount({});
+    expect(screen.queryByRole('button', { name: 'Generate previews for all videos' })).toBeNull();
+  });
+});
+
 describe('HomeCuration', () => {
   it('starts clean with publish and save off', () => {
     view();

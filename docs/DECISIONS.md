@@ -1922,3 +1922,33 @@ Decision: `video.preview` catches every error and records `failed` or `skipped` 
 - Options: Leave `public` alone because no SQL injection exists today, or fix the eight and add a guard test.
 - Why: Without `pg_temp` last, Postgres searches the temporary schema first, so one SQL injection bug could shadow `profiles` or `viewer_notification_prefs` for a function that runs with owner rights. The fix is metadata only and the guard stops it coming back.
 - Reversible: Yes.
+
+## D-351 Hero slides stay 20 seconds by default, range 5 to 60 (lane L2, M41, supersedes the 10 second default of R12)
+- Decision: `home.hero_interval_seconds` defaults to 20 and accepts 5 to 60. R12 stays as the rule for everything else (on by default, Pause, holds on hover and focus, off under reduced motion and Data saver, stops after two loops).
+- Options: Keep 10 seconds and let the owner change it; default 20 seconds; tie the time to the clip length only.
+- Why: The owner (Unique) wants the clip to be seen playing, then the next slide after about 20 seconds. A 10 second slide cut every clip in half. The value stays a site setting so a client can go back to 10. The interval is also the time a slide without a clip stays.
+- Reversible: Yes, one setting.
+
+## D-352 Hero clip length is a setting, 20 seconds by default, 6 to 30 (lane L2, M41, supersedes the 6 second clip of plan 4.3)
+- Decision: `home.hero_clip_seconds` (admin, not public) sets the clip length, default 20, 6 to 30. A video no longer than the length plays whole (startMs 0, length is the video length). A longer video gets a segment of that length from the best of the five candidate starts, as before. The worker reads the setting when the job runs and records the real length in `videos.preview_length_ms`. A picked start is allowed up to duration minus the length.
+- Options: Fixed 20 seconds; fixed 30 seconds; a setting with bounds.
+- Why: The owner asked for up to 20 seconds, "the whole video when it is 20 to 30 seconds long or less". Read literally, a 28 second video would play whole, which is longer than the 20 second slide. The setting settles it: at 20 (default) a 28 second video plays a 20 second segment; the owner can raise it to 30 and every video up to 30 seconds plays whole. The 6 second lower bound keeps the old behaviour available. Size impact: the video is still 854 px wide with `-maxrate 900k`, so a clip is about 0.7 to 1.8 MB for 20 seconds (6 seconds was 0.5 to 0.7 MB), plus about 0.12 MB of audio. The accepted size limit is 120 KB a second of clip (2.4 MB at 20 seconds, 3.6 MB at 30), with the same one retry at crf 31. Ten videos cost about 15 MB of storage and a viewer downloads one clip per slide shown (about 1 to 2 MB), not all five.
+- Reversible: Yes. Clips made at another length are recut by Generate previews for all videos (D-355).
+
+## D-353 The clip keeps a low bitrate AAC track and records it (lane L2, M41, migration 0058)
+- Decision: The clip encoder maps the first audio stream when the source has one and encodes it as AAC-LC 48 kbit/s, two channels, 44.1 kHz (`-an` only when the source is silent). Migration 0058 adds `videos.preview_has_audio boolean not null default false` and `videos.preview_length_ms integer` (null or above 0). Every clip made before the migration is silent and keeps false, so the viewer hides the sound button for it and nothing breaks. The Home data carries `previewHasAudio` and `previewMs` (null length reads as 6000, the old fixed length).
+- Options: Keep clips silent and unmute the full stream (not possible without loading HLS); a second audio only file; keep audio in the clip.
+- Why: A muted autoplay clip with an audio track is the standard way to offer an unmute button without a second request, and 48 kbit/s adds about 120 KB for 20 seconds. A flag per clip is needed because older clips have no audio and a source with no sound produces a silent clip too.
+- Reversible: Yes. The migration is additive.
+
+## D-354 Hero clips play on unknown connections and from 2 Mbps (lane L2, M41, supersedes the defaults of R13)
+- Decision: `home.hero_previews_unknown_connection` now defaults to true (Safari and Firefox, super tier switch kept) and a new `home.hero_previews_min_downlink_mbps` (admin, 1 to 10, default 2) replaces the fixed 5 Mbps floor. Data saver, reduced motion, a hidden tab and a slow effective type (2g, 3g) still stop the clip, and the connection is still re-checked on change.
+- Options: Keep R13 and tell the owner to switch it on; lower the floor only; both.
+- Why: Diagnosis of the live site (docs/lanes/L2-home.md, section Why no clip played) found that Chrome reports a downlink well under 5 Mbps on most Lagos connections and that Safari and Firefox were excluded by default, so almost no real browser qualified even once clips existed. The owner needs to see the feature work. The cost is bounded: one clip per slide actually shown, stop after two loops, Data saver respected, and both values are settings.
+- Reversible: Yes, two settings.
+
+## D-355 Generate previews for all videos is an admin action on Home curation (lane L2, M41)
+- Decision: A button on `/admin/home` (new action `preview.backfill`, admin) queues the existing `video.preview` job for every published, ready, undeleted video with its original and a mode other than Off, when it has no clip, a failed or skipped one, a clip with no recorded length (made before migration 0058), a clip whose length differs from the setting by over a second, or a job stuck as queued for over an hour. Each video is marked queued in the same statement, so pressing again never queues one twice. At most 500 per press. One audit entry per press (`video.preview_backfill`). A fixture twin exists for the dev flags.
+- Options: Rely on the hourly sweep (10 videos an hour, only state none); a CLI; an admin button.
+- Why: The sweep never touches failed, skipped or already ready clips, so it cannot replace silent 6 second clips with the new ones, and the owner has no way to see or push it. A button is the smallest owner facing control, reuses the job and its limits, and is repeatable.
+- Reversible: Yes.

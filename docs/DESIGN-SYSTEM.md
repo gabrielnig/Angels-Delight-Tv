@@ -322,7 +322,7 @@ Rules:
 - Animate `transform` and `opacity` only. Never animate width, height, top or left (exception: progress bar width, 300ms ease-out, per UI standard).
 - Feedback under 400ms always. Nothing decorative runs longer than 400ms.
 - Shimmer: 1.4s linear loop, left to right. One shimmer per page region, not per element.
-- Hero crossfade 350ms. Auto rotate is on, 10 s per slide, paused by hover, focus, touch and the Pause control, off under reduced motion and Data saver.
+- Hero crossfade 350ms. Auto rotate is on, 20 s per slide, paused by hover, focus, touch and the Pause control, off under reduced motion and Data saver.
 - **Reduced motion** (`prefers-reduced-motion: reduce`): durations become near zero (the tokens do this), no parallax, no scale on hover, no shimmer (use a static sunken fill), no hero rotation, no hero clip, no autoplay of anything, smooth scrolling off, up next countdown remains but without animated ring (number only). State changes still happen, only movement is removed.
 - Data saver on: also drop the slow transitions.
 - No flashing content. Nothing flashes more than 3 times per second.
@@ -493,7 +493,7 @@ Accessibility: card is an `<a>` with accessible name "Title, 4 minutes". Actions
 
 - Content: still image, title (`--text-hero`), one to two line description, meta (category, length), primary action "Play" (or "Continue", with time left), secondary "More info". The still shows first. An optional muted 6 second clip (no audio track, decorative, `aria-hidden`) may fade in over it after 1.2 s only when the connection is fast, Data saver is off, reduced motion is off, the tab is visible and the slide is active; any error or a 2 s stall removes it. Editors may replace the headline, description and button label (80 characters each).
 - Layout mobile: 4:5 image, scrim at the bottom, text and buttons stacked inside at the bottom, buttons full width. Desktop: 16:9 up to a max height of 70vh, text block on the left at most 40 characters wide per line, `--color-scrim-bottom` and a left scrim.
-- Carousel: 1 to 5 items, dots indicator (44px hit area, current marked with accent fill plus `aria-current`), rotating by default every 10 s (site setting 5 to 20), paused by hover, focus, hidden tab and the Pause control, stopped after two loops, swipe on touch, arrows beside Pause on desktop. With no hero titles chosen the 5 newest live titles with artwork rotate.
+- Carousel: 1 to 5 items, dots indicator (44px hit area, current marked with accent fill plus `aria-current`), rotating by default every 20 s (site setting 5 to 60), paused by hover, focus, hidden tab and the Pause control, stopped after two loops, swipe on touch, arrows beside Pause on desktop. With no hero titles chosen the 5 newest live titles with artwork rotate.
 - States: loading (skeleton with the same ratio and height cap as the slide), error (fall back to a solid `--color-primary` panel with title text), reduced motion (no crossfade, no parallax).
 - Text sits on scrim so white text reaches 4.5:1. Title is live text, not baked into the image. Alt text includes any baked text.
 - Resume logic: if the signed in profile has progress on the featured title, the primary button becomes "Continue" and shows "12 min left".

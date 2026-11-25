@@ -14,6 +14,7 @@ import {
   restoreVideo,
   retryEncode,
   retryEncodeMany,
+  queuePreviewBackfill,
   retryPreview,
   setPreviewMode,
   type PreviewModeInput,
@@ -22,7 +23,7 @@ import {
   schedulePublish,
   validateVideoPatch,
 } from './video-commands';
-import type { PublishRequest, VideoPatch, CommandResult } from './video-commands';
+import type { PublishRequest, VideoPatch, CommandResult, PreviewBackfillOutcome } from './video-commands';
 import type {
   SeriesRecord,
   CategoryRecord,
@@ -157,6 +158,8 @@ export interface VideoService {
   /** How the Home hero clip is made: automatic, a picked start or off (M41-S10). */
   setPreviewMode(actor: AdminActor, id: string, input: PreviewModeInput): Promise<CommandResult>;
   retryPreview(actor: AdminActor, id: string): Promise<CommandResult>;
+  /** Admin only. Queues a hero clip for every published video that lacks a current one. Safe to repeat (D-355). */
+  backfillPreviews(actor: AdminActor): Promise<PreviewBackfillOutcome>;
   /** Retries many failed videos, oldest failure first. Each id succeeds, is skipped or fails alone. */
   retryEncodeMany(actor: AdminActor, ids: string[], bulkId?: string): Promise<BulkParts>;
   restoreMany(actor: AdminActor, ids: string[]): Promise<BulkParts>;
@@ -287,6 +290,10 @@ const fixtureVideoService: VideoService = {
     const video = getStore().videos.find((v) => v.id === id);
     if (!video) throw new NotFound('Video not found');
     return retryPreview(video);
+  },
+  async backfillPreviews(actor) {
+    need(actor, 'preview.backfill');
+    return queuePreviewBackfill(getStore().videos);
   },
   async retryEncodeMany(actor, ids) {
     need(actor, 'encode.retry');

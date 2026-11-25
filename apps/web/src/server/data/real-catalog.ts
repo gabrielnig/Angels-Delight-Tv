@@ -134,7 +134,13 @@ export class RealCatalog implements CatalogRepository {
         ...(slot.text.blurb ? { blurb: slot.text.blurb } : {}),
         ...(slot.text.headline ? { headline: slot.text.headline } : {}),
         ...(slot.text.buttonLabel ? { buttonLabel: slot.text.buttonLabel } : {}),
-        ...(slot.previewUrl ? { previewUrl: slot.previewUrl, previewMs: slot.previewMs ?? undefined } : {}),
+        ...(slot.previewUrl
+          ? {
+              previewUrl: slot.previewUrl,
+              previewMs: slot.previewMs ?? undefined,
+              previewHasAudio: slot.previewHasAudio,
+            }
+          : {}),
       };
     });
     return {

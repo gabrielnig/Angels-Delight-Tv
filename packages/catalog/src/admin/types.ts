@@ -9,6 +9,8 @@ export interface AdminContext {
   requireApprovedCaptions?: boolean;
   /** `features.captions_default_available`. Default true (D-184). */
   captionsDefaultAvailable?: boolean;
+  /** `home.hero_clip_seconds` in milliseconds, 20 seconds by default (D-352). */
+  heroClipMs?: number;
 }
 
 export type AdminCaptionState = 'none' | 'generating' | 'needs_review' | 'approved' | 'failed';

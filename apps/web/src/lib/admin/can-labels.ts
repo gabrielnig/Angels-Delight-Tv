@@ -17,6 +17,7 @@ export const ACTION_LABELS: Record<AdminAction, string> = {
   'caption.publish_language': 'Publish a caption language for viewers',
   'caption.availability': 'Switch captions on or off for viewers',
   'encode.retry': 'Retry failed encodes',
+  'preview.backfill': 'Generate previews for all videos',
   'series.manage': 'Manage series',
   'series.delete': 'Delete a series',
   'category.manage': 'Manage categories',

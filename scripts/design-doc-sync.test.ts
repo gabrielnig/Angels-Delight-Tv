@@ -7,9 +7,9 @@ const read = (p: string) => readFileSync(resolve(root, p), 'utf8');
 const ds = read('docs/DESIGN-SYSTEM.md');
 
 describe('design doc quotes the values the plan settled (M47-S15)', () => {
-  it('names hero interval 10 s and crossfade 350 ms, rotating by default', () => {
+  it('names hero interval 20 s and crossfade 350 ms, rotating by default', () => {
     expect(ds).toMatch(/Hero crossfade 350 ?ms/);
-    expect(ds).toMatch(/Auto rotate is on, 10 s per slide/);
+    expect(ds).toMatch(/Auto rotate is on, 20 s per slide/);
     expect(ds).not.toMatch(/manual by default/);
   });
 
@@ -43,8 +43,8 @@ describe('design doc quotes the values the plan settled (M47-S15)', () => {
     expect(sa).not.toMatch(/xs 2\.3, sm 3\.3, md 4\.3, lg 4\.5/);
   });
 
-  it('user story M05-S01 rotates every 10 seconds', () => {
-    expect(read('docs/USER-STORIES.md')).toMatch(/they rotate every 10 seconds/);
+  it('user story M05-S01 rotates every 20 seconds', () => {
+    expect(read('docs/USER-STORIES.md')).toMatch(/they rotate every 20 seconds/);
   });
 
   it('MODULES lists M47 and USER-STORIES has M47-S01 to M47-S16', () => {

@@ -21,6 +21,7 @@ const MATRIX = {
   'caption.publish_language': 'admin',
   'caption.availability': 'admin',
   'encode.retry': 'editor',
+  'preview.backfill': 'admin',
   'series.manage': 'editor',
   'series.delete': 'admin',
   'category.manage': 'editor',

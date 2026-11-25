@@ -136,6 +136,10 @@ export const videos = pgTable(
     /** Plain reason shown to editors when the state is failed or skipped. */
     previewNote: text('preview_note'),
     previewUpdatedAt: timestamptz('preview_updated_at'),
+    /** The clip has an AAC track. False for every clip made before sound existed, so the viewer hides the button. */
+    previewHasAudio: boolean('preview_has_audio').notNull().default(false),
+    /** Length of the stored clip in milliseconds. Null for clips made before this column, the viewer assumes 6 seconds. */
+    previewLengthMs: integer('preview_length_ms'),
     /** Free tags set by editors. Shown on the admin edit screen only. */
     tags: text('tags')
       .array()
@@ -183,6 +187,7 @@ export const videos = pgTable(
       'videos_preview_numbers',
       sql`(${t.previewStartMs} IS NULL OR ${t.previewStartMs} >= 0) AND (${t.previewBytes} IS NULL OR ${t.previewBytes} >= 0)`,
     ),
+    check('videos_preview_length', sql`${t.previewLengthMs} IS NULL OR ${t.previewLengthMs} > 0`),
     check('videos_tags_count', sql`cardinality(${t.tags}) <= 10`),
     check('videos_title_length', sql`char_length(${t.title}) BETWEEN 1 AND 200`),
     check(

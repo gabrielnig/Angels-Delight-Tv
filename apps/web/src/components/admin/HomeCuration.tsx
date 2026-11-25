@@ -18,13 +18,14 @@ import {
 } from '@/lib/data/admin/home-rules';
 import type { HomeConfig, HomeRowType, HomeState } from '@/lib/data/admin/home-rules';
 import type { CategoryRecord, SeriesRecord, VideoRecord } from '@/lib/data/admin/types';
-import type { CommandResult } from '@/lib/data/admin/video-commands';
+import type { CommandResult, PreviewBackfillOutcome } from '@/lib/data/admin/video-commands';
 import { Badge } from './Badge';
 import { Button } from './Button';
 import { ConfirmDialog, Dialog } from './Dialog';
 import { PosterTile, seedOf } from './PosterTile';
 import { SelectField, Switch, TextField } from './fields';
 import { HeroSlots } from './HeroSlots';
+import { PreviewBackfillCard } from './PreviewBackfillCard';
 import { HomeSections } from './HomeSections';
 import { SectionEditor } from './SectionEditor';
 import { Banner } from './states';
@@ -35,6 +36,8 @@ export interface HomeActions {
   saveDraft(config: HomeConfig): Promise<CommandResult>;
   publish(config: HomeConfig): Promise<CommandResult>;
   restore(): Promise<CommandResult>;
+  /** Generate previews for all videos (D-355). Absent hides the card. */
+  backfillPreviews?(): Promise<PreviewBackfillOutcome>;
 }
 
 let counter = 0;
@@ -58,6 +61,7 @@ export function HomeCuration({
   series,
   categories,
   canCurate,
+  canBackfill = false,
   actions,
 }: {
   state: HomeState;
@@ -65,6 +69,8 @@ export function HomeCuration({
   series: SeriesRecord[];
   categories: CategoryRecord[];
   canCurate: boolean;
+  /** Admins only (preview.backfill). */
+  canBackfill?: boolean;
   actions: HomeActions;
 }) {
   const router = useRouter();
@@ -244,6 +250,9 @@ export function HomeCuration({
               </ol>
             )}
             <HeroSlots config={config} videos={videos} canCurate={canCurate} onChange={(next) => apply({ ok: true, config: next })} />
+            {actions.backfillPreviews ? (
+              <PreviewBackfillCard canRun={canBackfill} onRun={actions.backfillPreviews} />
+            ) : null}
             <div className="adm-row">
               <SelectField
                 label="Add hero title"
