@@ -20,7 +20,7 @@ const episode: Episode = {
     {
       caption: 'Type "Joseph" in the **Search** box.',
       run: async (s) => {
-        await typeInto(s, 'Search', 'Joseph');
+        await s.type(s.page.getByRole('searchbox', { name: 'Search', exact: true }), 'Joseph');
         await s.page.getByRole('row').filter({ hasText: 'Demo lesson: Joseph is sold' }).first().waitFor();
       },
     },

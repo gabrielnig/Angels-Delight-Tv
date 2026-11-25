@@ -10,18 +10,11 @@ Glossary terms added: Group, Item, Name set.
 ## Demo seed
 `apps/web/src/lib/data/admin/kb-demo/apply.ts` and `dataset.ts` now add: series "Demo series: Genesis" (Part and Lesson, Part 1 Beginnings with 3 lessons, Part 2 The family of Abraham with 2), three unassigned Genesis 37, 41, 45 lessons for bundling, and "Demo series: Proverbs" (Part and Lesson, lesson numbers 1, 3, 3: a gap and a duplicate). 11 videos added, all published. Other lanes that baseline Videos list or Dashboard counts must re-record.
 
-## State
-| Id | Article | Episode | Shots | Video | Fact check |
-|---|---|---|---|---|---|
-| W20 to W23, W01 | written (steps block empty) | written (W20, W21, W22, W23, W01) | not taken | not recorded | not run |
-| W02, W24 to W33, W03 | not started | not started | | | |
+## State (batch 1 merged)
+Articles with recorded pictures, steps blocks and a passing fact check: W02, W20, W21, W22, W24, W25, W26, W28 (8). W01 article written, locator fixed (Add episode), fact check to rerun. W03 belongs to lane C1 (removed here).
+Episodes written but article not yet in the repo (drafts kept in /home/claude/kb-out/C4/pending, regenerate with gen-articles.py): W23, W27, W29, W30, W31, W32, W33. Search box locator fixed with getByRole('searchbox'); W23 and W30 need a re-run.
+No videos were recorded (kb:update records them but they are not committed); no phone pictures.
+Coverage gaps closed: series routes, Series, Site settings, Captions, Encoding nav, content.series_labels, series.manage, series.delete, settings.site, caption.approve_bulk, video.edit, video.upload.
 
-## Blockers seen
-The shared 8 GB container is out of memory when several lanes run dev servers and Chrome: the demo dev server and the recorder browser were OOM killed (dmesg shows cgroup kills), and the first compile of each admin route takes 30 to 120 s. `next build` was SIGKILLed. Warm routes with curl first (`/home/claude/kb-out/C4/warm.sh`), start the stack alone, then run `pnpm kb:verify --episode W20` before `kb:update`.
-
-## Next steps for a fresh agent
-1. `pnpm kb:stack fixture 3204`, run warm.sh, `KB_BASE_URL=http://localhost:3204 pnpm kb:verify --episode W20,W21,W22,W23,W01` and fix locators (label names such as `Add Episode`, heading `Part 1` are unverified).
-2. `pnpm kb:update <id>` per episode (writes shots and the steps block), then `pnpm kb:record --episode <id> --min-seconds 60`, `pnpm kb:fact-check --article <id>`, `pnpm help:check`.
-3. `W23` and the others reference D10, W25, W01 and W02: add `needs` and links only once those articles exist on main (help:check refuses missing ids).
-4. Remove closed gaps from `scripts/kb-recorder/coverage-gaps.json` (Series, Site settings nav, `/admin/series`, `/admin/series/[id]`, `/admin/site-settings`, setting `content.series_labels`, action `series.manage`, `settings.site`) keeping other lanes' entries.
-5. Update `ai-context.md` (scripts/design-doc-sync.test.ts) and open PRs of about 5 articles with `gh api`, rebase merge.
+## Next steps
+Run `/home/claude/kb-slot.sh` batches: `pnpm kb:update` then `pnpm kb:fact-check --article` for W01, W23, W27, W29 to W33; restore their articles and links (help:W23 etc.), then PR.

@@ -5,7 +5,7 @@ path: weekly
 summary: Read the Check the numbers warning and fix a missing or repeated lesson number.
 role: editor
 needs: [W02]
-related: [W02, W23, W24]
+related: [W02, W24]
 readMinutes: 3
 watchSeconds: 75
 video:
@@ -29,6 +29,12 @@ The warning is called **Check the numbers**. It says which lesson is missing or 
 
 ## Steps
 <!-- kb:steps W25 -->
+1. Choose **Series** in the side menu.
+2. Click **Demo series: Proverbs** in the list.
+3. Check that **Check the numbers** warns about the problem.
+   ![The Check the numbers warning listing a missing lesson and a repeated lesson, marked 1](../../media/W25/W25-03-warning-desktop.webp)
+4. Type "2" in the **Lesson** box.
+5. Click **Save numbers for Demo lesson: Proverbs 15, a gentle answer**.
 <!-- /kb:steps -->
 
 ## What you should see
