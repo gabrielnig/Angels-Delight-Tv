@@ -28,7 +28,7 @@ How it was measured: `docs/reviews/v2/tools/l11-audit.py` renders all four files
 | 9 | Minor | S186 | Theme test did not scale text, custom properties resolve at `:root`. | Fixed: theme frames restate the scaled text tokens |
 | 10 | Minor | S186 | Hover card showed one description for every title. | Fixed: real fixture blurbs |
 | 11 | Minor | S187 | Accent fill on the pale track is 2.47:1. The fill is 8.6:1 against the scrim and the track is 3.5:1, so the progress is readable, but fill against track is under 3:1. | Accepted, the track is the remainder and the fill is the information. Raise if the owner wants a hard pass |
-| 12 | Note | S186 | `RULINGS` R36 gives mobile scrim stops 50, 65, 80. tokens.css has 72, 82, 96 with mid 0.7. S187 uses tokens.css. | Open: doc and token disagree, pick one |
+| 12 | Note | S186 | `RULINGS` R36 gives mobile scrim stops 50, 65, 80. tokens.css has 72, 82, 96 with mid 0.7. S187 uses tokens.css. | Fixed: R36 now states the token values (D-383) |
 | 13 | Note | S186 | 11.11 says one Filters button with Apply on phones. S186 differs, see D-357. | Logged |
 | 14 | Note | S186 | Rail arrows are real buttons in tab order, so keyboard users can skip them with Tab or use the chips. A "skip categories" link is not needed at 11 chips. | Note |
 

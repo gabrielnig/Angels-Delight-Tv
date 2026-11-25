@@ -33,7 +33,7 @@ Cross lane decisions taken by the main session using the recommended option, per
 - R33 Locked row checkbox spacer is 20 px wide.
 - R34 Seek rail unfilled colour reaches 3:1 against the player surface (a lighter token such as #6A6E78).
 - R35 Nav active underline on a clear nav uses the dark accent ring colour, not blue. The nav colour flip happens as one step at 35 percent of the fade and gate tests do not sample inside the fade.
-- R36 Hero scrim: desktop holds 0.85 to 40 percent, mid stop at 60, end at 100. Mobile holds 0.85 to 50 percent, mid at 65, end at 80. White text must stay above alpha 0.57 in the title zone.
+- R36 Hero scrim: desktop holds 0.85 to 40 percent, mid stop at 60, end at 100. Mobile holds 0.85 to 72 percent, mid (alpha 0.7) at 82, end at 96 (as in `tokens.css`, per D-383). White text must stay above alpha 0.57 in the title zone.
 - R37 Tile focus uses an offset outline (3 px, 2 px offset) plus a transparent outline for forced colours. Profile tile focus ring gets the same.
 - R38 Caption badge on cards gets a contrast safe fill. Disabled actions on the bulk bar use a token, not a raw grey. A `--font-mono` token is added for recovery codes. The Google mark is the one documented brand colour exception.
 - R39 Error states show one action. Old mockups S24, S33 and S20 are updated to match the player and copy rules.

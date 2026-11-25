@@ -29,9 +29,12 @@ describe('list page grid columns (M41-S08)', () => {
 
 describe('list page skeleton geometry', () => {
   it('reserves height so the grid does not shift when cards arrive', () => {
-    const start = css.indexOf('.web-list-skeleton {');
+    // The region class is display: contents, which ignores min-height, so this rule must make it a box
+    // and must win over it (two classes beat one).
+    const start = css.indexOf('.ad-skeleton-region.web-list-skeleton {');
     expect(start).toBeGreaterThan(-1);
     const rule = css.slice(start, css.indexOf('}', start));
+    expect(rule).toMatch(/display:\s*block;/);
     expect(rule).toMatch(/min-height:\s*[^;]+;/);
   });
 
