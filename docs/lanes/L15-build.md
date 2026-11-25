@@ -118,13 +118,20 @@ Test a kids only title and an unpublished title: the debugger must show the gene
 - Event `share` in `@ad/analytics` (`shareEvent`, `SHARE_CHANNELS`): strict object `{ kind, channel, titleKind }`. No link, title, text or id, so a bad client cannot smuggle any. Ingest adds two daily counters: `share` keyed by channel and `share_title` keyed by `video` or `series`. No identity, same for kids audiences.
 - Web: `components/share/share-analytics.ts` `trackShare(channel, titleKind)` (fails silent), called by `ShareSheet` for a copy that worked, a chosen link, and More after the device menu returns. A cancelled device menu, a failed copy and an offline tap count nothing. The browser client already drops `share` under Global Privacy Control and Do Not Track (`lib/consent/guard.ts`).
 - No new storage, cookie or third party. Nothing to add to `STORAGE_INVENTORY`.
-- Not built: an admin report of the counters (the data is there for a later chart).
+- Admin report of the counters: built in slice 7 (see below).
 - Tests: `pnpm vitest run packages/analytics/src/events.test.ts packages/analytics/src/ingest.test.ts apps/web/src/components/share apps/web/src/lib/consent/guard.test.ts`. `inventory.test.ts` fails on main for storage keys of other lanes.
 
 ### L15a slice 6 and the mockup canvas
 
 - Docs: stories M45-S25 to S27 in `docs/plan/v2/L6-discovery.md` (S06 ACs 1 and 2 marked superseded), `docs/MODULES.md` M45 note, `docs/SCREEN-ARCHITECTURE.md` Share sheet section, `docs/DESIGN-SYSTEM.md` 11.12a, `docs/SECURITY.md` 17.2.
 - Mockups also published as a Design canvas (private): https://claude.ai/artifact/9bm1dDEFYhyfsXUtpSA1JC
+
+### L15a slice 7 (order control, share counts, Start at)
+
+- Admin Discovery tab: Up and Down buttons (44 px, keyboard operable) write the stored `seo.share_channels` order. Copy link is always first, More last.
+- Analytics: optional `titleId` on the share event, counter `share_item` (`<id>|<channel>`), `shareTotals` and `titleShares` queries, a Shares by channel card on the overview and the per video page. Decision D-393.
+- Watch page: Start at switch in the Share sheet (off each open, videos only). The title page hands a valid `?t=` to `/watch/<id>?t=N` for the Play button only.
+- Tests: `pnpm vitest run packages/analytics/src apps/web/src/components/share apps/web/src/components/admin/AnalyticsView.test.tsx apps/web/src/components/title apps/web/src/features/player/WatchClient.test.tsx`
 
 ## Verification run (2026-11-25, production build of main, fixture demo data)
 
