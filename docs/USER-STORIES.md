@@ -4568,3 +4568,70 @@ As the owner, I want the contact shown in the help centre to be a setting, so th
 - Empty: the placeholder.
 
 Counts: 29 stories in M50 (the 24 of the plan plus S25 to S29 from the owner's answers). Must 24 (S01 to S09, S11 to S22, S25, S27, S29), Should 4 (S10, S23, S26, S28), Could 1 (S24).
+## M51 Series with configurable names
+
+Module M51 lets the owner word the groups and items of a series (Book and Chapter, Part and Lesson, any four words) and bundle videos into a series quickly. Plan: `docs/plan/v2/L13-series.md`. Decisions D-369 to D-373 and D-375.
+
+### M51-S01 Choose the series names for the whole site (Must)
+As an admin, I want to pick the words for the groups and items of every series, so that a Bible teaching series reads as Book and Chapter instead of Season and Episode.
+- AC1: Given Site settings, Series names, When I choose Season and Episode, Book and Chapter, Part and Lesson, Module and Lesson or Custom names, Then a preview shows the title line, short code, Continue Next label and a numbered example before I save.
+- AC2: Given Custom names, When I fill group and item words in singular and plural and an optional item code, Then each word is 1 to 24 characters with no markup, dashes or emoji and the code is 1 to 4 letters or numbers; Save names the field that is wrong.
+- AC3: Given nothing was ever saved, When any screen shows a series, Then the words are Season and Episode and the code is E, exactly as before.
+- Edge: Preset words follow the viewer's language from the catalogs; typed words are shown as typed in every language (D-369).
+- Error: a word that is empty, too long or has markup shows the message under that field and nothing is saved.
+- Empty: a new site shows Season and Episode selected.
+
+### M51-S02 Give one series its own names (Must)
+As an admin, I want one series to use different words from the site, so that a Genesis series can say Chapter while another keeps Lesson.
+- AC1: Given a series editor, When I choose Use names for this series only and a name set, Then Save names stores it and the series uses it everywhere.
+- AC2: Given an override, When I choose Use the site names, Then the override is cleared and the series follows the site.
+- AC3: Given a save, Then an audit entry `series.labels` is written.
+- Edge: changing the site names never changes a series that has its own.
+- Error: invalid words name the field; the series keeps its old names.
+- Empty: a series with no override says Use the site names.
+
+### M51-S03 Every text uses the chosen words (Must)
+As a viewer or admin, I want the series words everywhere, so that nothing says Episode when the owner said Chapter.
+- AC1: Given a series with Book and Chapter, When I see the series page, title page line, cards, Continue learning Next label, activity, search results, document and JSON-LD text, admin screens and messages, Then they use Book and Chapter and the code Ch.
+- AC2: Given the source, When the scan test runs, Then it fails on any hardcoded Season or Episode copy outside the allowlist.
+- AC3: Given a count of 1, Then the singular form is used; any other count uses the plural form.
+- Edge: lines with no series in hand say video (D-370).
+- Error: a stored value that fails validation falls back to the site words, then to Season and Episode.
+- Empty: not applicable.
+
+### M51-S04 Add many videos to a series from the Videos list (Must)
+As an editor, I want to select videos and add them to a series in one go, so that bundling a long course is not one video at a time.
+- AC1: Given selected videos, When I choose Add to series, Then I choose or create a series, a group, a start number and how to number (order picked, by title, by upload date), and a preview shows each place in the series words before saving.
+- AC2: Given I save, Then each video is added in order and I can undo to take them all out again.
+- AC3: Given a number is already used in that group, Then Save is off and one message says which number and what to change.
+- Edge: a failure stops the run and says how many were added.
+- Error: a new series with no title says so.
+- Empty: with nothing selected the action is not shown.
+
+### M51-S05 Reorder, move and rename inside a series (Must)
+As an editor, I want to reorder items, move them between groups and name the groups, so that the series reads in the right order.
+- AC1: Given the series editor, When I press Up or Down on an item, Then it swaps numbers with its neighbour in the same group; the first and last are off.
+- AC2: Given a group, When I save a title such as Genesis, Then viewers see it instead of Book 1; a blank title goes back.
+- AC3: Given a gap or a duplicate number, Then one warning per problem is listed in the series words.
+- Edge: every control is a 44px button with a label that names the item; audit entries `series.episode_move` and `series.group_rename`.
+- Error: a move at the end says it is already first or last.
+- Empty: a series with no items says there are none yet.
+
+### M51-S06 Series page follows my progress (Must)
+As a viewer, I want the main button and the sticky Play bar to continue where I am, so that I do not hunt for the next lesson.
+- AC1: Given an account, When I open a series, Then the main button is Play, Resume or Watch again for the right item.
+- AC2: Given a guest with device progress, When the series loads, Then the main button and the phone Play bar say Resume or Play with the item code of the first unfinished item.
+- AC3: Given everything is finished, Then it says Watch again from the first item.
+- Edge: under five seconds counts as not started; a device with no history keeps the server button.
+- Error: unreadable device storage keeps the server button.
+- Empty: not applicable.
+
+### M51-S07 Kids blocked screen on a series (Should)
+As a guest in Kids mode, I want a clear screen when a series is not in the Kids library, so that it does not look broken.
+- AC1: Given Kids mode on this device, When I open a series that is not kids safe, Then I see the same blocked screen as titles with choices to browse or leave Kids mode.
+- AC2: Given a series that does not exist, Then I get not found.
+- Edge: a signed in kids profile sees the plain blocked state.
+- Error: not applicable.
+- Empty: not applicable.
+
+Counts: 7 stories in M51 (Must: S01, S02, S03, S04, S05, S06; Should: S07).

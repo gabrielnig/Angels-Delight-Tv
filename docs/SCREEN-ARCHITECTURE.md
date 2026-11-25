@@ -376,7 +376,8 @@ List pages behind View all (M41-S09): `/browse/new` (newest first, Load more, le
 ### Screen 19. Series page (`/series/[slug]`)
 
 - **Purpose.** See and play episodes in order.
-- **Layout.** Series header (poster, title, description, primary Play or Resume S1 E3, My List, Share), season selector (hidden for one season), episode list (number, thumbnail, title, duration, snippet, progress or watched tick).
+- **Words (M51).** Group and item words, counts and codes come from the series labels (Season and Episode by default, or the owner's words); a group with its own title shows it. The main button and a phone sticky Play bar follow account progress, or device progress for a guest. A guest in Kids mode sees the Kids blocked screen when the series is not in the Kids library.
+- **Layout.** Series header (poster, title, description, primary Play or Resume S1 E3, My List, Share), group selector in the owner's word (hidden for one group), item list (number, thumbnail, title, duration, snippet, progress or watched tick).
 - **States.** Loading, one season, unpublished episodes hidden, error, offline.
 - **Nav in.** Cards, Continue Watching, end screen. **Out.** Watch.
 - **Stories.** M07-S02, M07-S07, M09-S05, M09-S09, M10-S05.
@@ -533,9 +534,9 @@ List pages behind View all (M41-S09): `/browse/new` (newest first, Load more, le
 
 ### Screens 51 and 52. Series list and edit
 
-- **Layout.** List: table with poster, title, episodes count, status. Edit: details form, season tabs, episode list with drag reorder and Up and Down buttons, Add episode (search videos).
-- **States.** Duplicate episode number, empty, error.
-- **Stories.** M16-S04, M28-S06.
+- **Layout.** List: table with poster, title, item count in the series words, status. Edit: details form, Names section (site names or this series only), items grouped under group headings with a title field, Up and Down buttons, group and number fields, Add item, and a Check the numbers warning for gaps and duplicates. The Videos list has an Add to series bulk action with a preview dialog.
+- **States.** Gap or duplicate number, empty, error, name field errors.
+- **Stories.** M16-S04, M28-S06, M51-S01 to M51-S05.
 
 ### Screen 53. Categories
 
@@ -587,9 +588,9 @@ List pages behind View all (M41-S09): `/browse/new` (newest first, Load more, le
 
 ### Screen 64. Site settings
 
-- **Layout.** Tabs: Platform details, Features and limits (Super admin), Pages (editor with versions), Invite codes, Maintenance. Launch checklist panel showing unset items.
+- **Layout.** Tabs: Platform details, Features and limits (Super admin), Home, Series names (M51: name set, custom words, item code, live preview), Discovery, Pages (editor with versions), Invite codes, Maintenance. Launch checklist panel showing unset items.
 - **States.** Unsaved changes, validation, placeholder warnings.
-- **Stories.** M29-S01 to M29-S04, M26-S02.
+- **Stories.** M29-S01 to M29-S04, M26-S02, M51-S01.
 
 ### Screen 65. System
 

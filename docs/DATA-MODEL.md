@@ -326,9 +326,9 @@ Indexes: `(purpose, created_at DESC)`; `(sha256)`. SVG is not an allowed type.
 
 ### 5.5 `series`, `seasons`, `episodes`
 
-`series`: `id`, `slug`, `title`, `description`, `kids_safe`, `poster_asset_id` and `hero_asset_id` (FK SET NULL), `publish_state`, `publish_at`, `published_at`, `created_by` (SET NULL), timestamps, `deleted_at`, `search_tsv`. Same checks and indexes pattern as `videos` (partial unique slug, GIN on `search_tsv`).
+`series`: `id`, `slug`, `title`, `description`, `kids_safe`, `label_overrides` jsonb nullable (migration 0059, M51: this series' own group and item words, null follows the setting `content.series_labels`; CHECK it is null or an object), `poster_asset_id` and `hero_asset_id` (FK SET NULL), `publish_state`, `publish_at`, `published_at`, `created_by` (SET NULL), timestamps, `deleted_at`, `search_tsv`. Same checks and indexes pattern as `videos` (partial unique slug, GIN on `search_tsv`).
 
-`seasons`: `id`, `series_id` (FK `series` CASCADE), `number` smallint (>= 1), `title` nullable. `UNIQUE (series_id, number)`.
+`seasons`: `id`, `series_id` (FK `series` CASCADE), `number` smallint (>= 1), `title` nullable (the group's own title such as Genesis, shown instead of the numbered name, M51). `UNIQUE (series_id, number)`. The words Season and Episode are only the default labels: the owner's words come from `content.series_labels` and `series.label_overrides` (value shape in `packages/shared/src/series-labels.ts`).
 
 `episodes`:
 

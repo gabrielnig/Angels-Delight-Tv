@@ -17,6 +17,7 @@ All of these live in one file, `client.json`, copied from `client.example.json` 
 | Support email | `supportEmail` | Settings, help page, env `SUPPORT_EMAIL` | |
 | Storage notice | Settings, Discovery tab: `noticeEnabled`, `noticeText`, `noticeVersion` | Storage notice on public pages | Default text is a placeholder. Bump the version to show it again |
 | Search synonyms and share channels | Settings, Discovery tab | Search quality, share menu | Optional. Kids-only titles are never indexed whatever is set |
+| Series names | Settings, Series names tab: preset (Season and Episode, Book and Chapter, Part and Lesson, Module and Lesson) or four custom words and an item code | Series pages, cards, Continue learning, notices, search, admin screens | A client question: what words do the Bible series use. Default Season and Episode. One series can override |
 | Owner email | `adminOwnerEmail` | Who the first owner account is created for | The person who holds the account |
 | Colours | `theme.colors` (bg, surface, ink, muted, border, primary, accent) | Theme service, then every screen through tokens | Hex values. Contrast checked |
 | Font | `theme.fontKey` | Theme service | One of the allowed keys |
