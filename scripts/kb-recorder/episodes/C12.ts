@@ -15,9 +15,9 @@ const episode: Episode = {
       run: async (s) => { await goToScreen(s, 'Roles and invites'); await s.page.getByRole('heading', { name: 'Roles and invites' }).first().waitFor(); },
     },
     {
-      caption: 'Check the **People with admin access** list.',
+      caption: 'Check the **Role** column of the staff list.',
       note: 'You cannot change your own role. The only Super admin is locked, so make someone else a Super admin first.',
-      run: async (s) => highlight(s, s.page.getByRole('heading', { name: 'People with admin access' }), 2000),
+      run: async (s) => highlight(s, s.page.getByRole('columnheader', { name: 'Role' }), 2000),
       shot: {
         name: 'people',
         alt: 'The staff table with the Role column marked 1',

@@ -25,7 +25,7 @@ const episode: Episode = {
       },
     },
     {
-      caption: 'Check the warning about placeholder text.',
+      caption: 'Check the **Placeholder text.** warning.',
       note: 'The Terms page and Privacy page start with placeholder text. Replace it before you launch.',
       run: async (s) => highlight(s, s.page.getByText('Placeholder text.').first(), 2000),
     },

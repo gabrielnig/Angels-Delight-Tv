@@ -42,7 +42,8 @@ You need to be an Admin or a Super admin. To choose which videos appear in the b
    This tab sets how the site looks in search results and when a link is shared.
 8. Type "Free video lessons for learners at home." in the **Site description** box.
    Keep it under 160 characters.
-9. Click **Show previews**.
+9. Check the preview shows **Angels Delight TV** as the name.
+   The two previews show how the site looks in a search result and in a shared link. Use Hide previews to close them.
    ![The search result and share card previews marked 1](../../media/C05/C05-09-previews-desktop.webp)
 10. Click **Save changes**.
 <!-- /kb:steps -->

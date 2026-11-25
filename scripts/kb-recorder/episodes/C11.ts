@@ -38,10 +38,10 @@ const episode: Episode = {
     {
       caption: 'Click **Send invite**.',
       note: 'The link in the email works for 7 days and can be used once.',
-      run: async (s) => { await clickByName(s, 'button', 'Send invite'); await s.page.getByText('amaka@example.org').first().waitFor(); },
+      run: async (s) => { await clickByName(s, 'button', 'Send invite', { exact: true }); await s.page.getByText('amaka@example.org').first().waitFor(); },
     },
     {
-      caption: 'Check **amaka@example.org** in the pending list.',
+      caption: 'Check the pending list for **amaka@example.org**.',
       run: async (s) => highlight(s, s.page.getByText('amaka@example.org').first(), 2200),
       shot: {
         name: 'pending',

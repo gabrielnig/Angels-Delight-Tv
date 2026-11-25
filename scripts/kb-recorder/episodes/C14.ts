@@ -35,7 +35,7 @@ const episode: Episode = {
       run: async (s) => { await clickByName(s, 'tab', 'Storage', { exact: true }); await s.page.getByText('Storage used').first().waitFor(); },
     },
     {
-      caption: 'Check **Storage used** and the list below it.',
+      caption: 'Check the **Storage used** figure and the list.',
       note: 'The list shows what takes the space: videos, posters, captions and other files. The estimate says when you will reach your budget.',
       run: async (s) => highlight(s, s.page.getByText('Storage used').first(), 2600),
       shot: {
@@ -49,7 +49,7 @@ const episode: Episode = {
       run: async (s) => { await clickByName(s, 'tab', 'Player quality', { exact: true }); await s.page.getByText('Typical start time').first().waitFor(); },
     },
     {
-      caption: 'Check **Typical start time**.',
+      caption: 'Check the **Typical start time** figure.',
       note: 'This is how long viewers wait for a video to start. Slow start, stalling and playback errors are listed below it. Send these numbers to your developer if they look bad.',
       run: async (s) => highlight(s, s.page.getByText('Typical start time').first(), 2600),
       shot: {

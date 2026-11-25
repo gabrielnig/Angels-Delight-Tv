@@ -35,7 +35,7 @@ You need to be a Super admin. Have the person's email address and decide their r
    Editor looks after videos and Home. Admin also sets the look, pages and accounts. Super admin also controls the team and the switches.
 4. Click **Send invite**.
    The link in the email works for 7 days and can be used once.
-5. Check **amaka@example.org** in the pending list.
+5. Check the pending list for **amaka@example.org**.
    ![The Pending invites list with the new invite marked 1](../../media/C11/C11-05-pending-desktop.webp)
 6. Click **Resend invite to amaka@example.org**.
    Use this when the email did not arrive. Ask them to check their spam folder first.

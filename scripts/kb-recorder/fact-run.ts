@@ -3,7 +3,7 @@ import type { Locator } from '@playwright/test';
 import { interpretStep, type Action } from './fact-check';
 import { accountFor, FIXTURE_CODE } from './accounts';
 import type { EpisodeRole } from './episode';
-import { goToScreen } from './helpers';
+import { goToScreen, menuName } from './helpers';
 import type { Session } from './session';
 
 export interface StepResult {
@@ -25,8 +25,11 @@ function control(s: Session, label: string): Locator {
   let loc = s.page.getByRole(ROLES[0], { name: label, exact: true });
   for (const role of ROLES.slice(1))
     loc = loc.or(s.page.getByRole(role, { name: label, exact: true }));
+  // A menu made from a details summary has no button role in every browser, so it is found by its text.
+  loc = loc.or(s.page.locator('summary').filter({ hasText: label }));
   return loc.first();
 }
+
 
 async function labelsOnScreen(s: Session): Promise<string[]> {
   return s.page
@@ -64,7 +67,7 @@ async function execute(
     (await visible(loc, 6000)) ? null : `Cannot find ${what} on ${new URL(s.page.url()).pathname}.`;
   switch (a.kind) {
     case 'menu': {
-      const link = s.page.getByRole('link', { name: a.label, exact: true }).first();
+      const link = s.page.getByRole('link', { name: menuName(a.label) }).first();
       const open = s.page.getByRole('button', { name: 'Open menu' });
       if (s.profile.mobile && (await open.isVisible().catch(() => false))) await s.click(open);
       const miss = await find(`the menu item "${a.label}"`, link);
@@ -76,7 +79,11 @@ async function execute(
       const loc = control(s, a.label);
       const miss = await find(`a control named "${a.label}"`, loc);
       if (miss) return miss;
+      await loc.scrollIntoViewIfNeeded().catch(() => {});
       await s.click(loc);
+      // A person waits for a save to finish before the next move, so the page gets a moment to settle.
+      await s.page.waitForLoadState('networkidle', { timeout: 3000 }).catch(() => {});
+      await s.page.waitForTimeout(600);
       break;
     }
     case 'type': {
@@ -90,6 +97,10 @@ async function execute(
       } else if (a.secret) {
         await s.type(loc, accountFor(role)[a.secret], 20);
       } else {
+        // Typing replaces what is in the box, as a person would after selecting it.
+        await s.click(loc);
+        await loc.press('Control+A');
+        await loc.press('Backspace');
         await s.type(loc, a.text, 20);
       }
       break;

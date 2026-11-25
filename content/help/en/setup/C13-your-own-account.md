@@ -27,7 +27,7 @@ Any staff role can do this. You need your authenticator app on your phone for pa
 
 ## Steps
 <!-- kb:steps C13 -->
-1. Click **Account menu for Demo Editor**.
+1. Click **Demo Editor** in the top bar.
    The menu is the round badge with your name at the top right.
 2. Click **My account**.
    ![The My account screen with the Profile card marked 1](../../media/C13/C13-02-account-desktop.webp)

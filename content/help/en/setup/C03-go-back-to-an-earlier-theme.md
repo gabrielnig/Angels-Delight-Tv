@@ -36,9 +36,8 @@ You need to be an Admin or a Super admin. The theme must have been saved at leas
    Pick the older version you want back. View version shows its colours first.
    ![The Restore box with the Restore as draft button marked 1](../../media/C03/C03-04-restore-desktop.webp)
 5. Click **Restore as draft** to confirm.
-   This copies the old theme into your draft. Viewers keep the current theme until you publish.
-6. Click **Back to theme**.
-7. Click **Publish theme** and confirm.
+   This copies the old theme into your draft and opens the Theme screen. Viewers keep the current theme until you publish.
+6. Click **Publish theme** and confirm.
    Viewers see the earlier look on their next page load.
 <!-- /kb:steps -->
 

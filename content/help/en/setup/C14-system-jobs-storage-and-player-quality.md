@@ -34,11 +34,11 @@ You need to be an Admin to see Storage and Player quality, and a Super admin to 
    The Jobs tab lists work that failed, such as encodes, captions and emails. A failed email job means the mail service refused the message. Retry it, or Discard it. Only Super admins can do either.
    ![The failed email job marked 1](../../media/C14/C14-02-email-job-desktop.webp)
 3. Click **Storage** at the top.
-4. Check **Storage used** and the list below it.
+4. Check the **Storage used** figure and the list.
    The list shows what takes the space: videos, posters, captions and other files. The estimate says when you will reach your budget.
    ![The Storage tab with the used space marked 1](../../media/C14/C14-04-storage-desktop.webp)
 5. Click **Player quality** at the top.
-6. Check **Typical start time**.
+6. Check the **Typical start time** figure.
    This is how long viewers wait for a video to start. Slow start, stalling and playback errors are listed below it. Send these numbers to your developer if they look bad.
    ![The Player quality tab with the start time marked 1](../../media/C14/C14-06-player-desktop.webp)
 <!-- /kb:steps -->

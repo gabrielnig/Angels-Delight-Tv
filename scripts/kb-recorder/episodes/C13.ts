@@ -11,9 +11,9 @@ const episode: Episode = {
   next: 'C14 System: jobs, storage and player quality',
   steps: padSteps([
     {
-      caption: 'Click **Account menu for Demo Editor**.',
+      caption: 'Click **Demo Editor** in the top bar.',
       note: 'The menu is the round badge with your name at the top right.',
-      run: async (s) => { await s.click(s.page.getByText('Account menu for').first()); await s.page.getByRole('link', { name: 'My account' }).waitFor(); },
+      run: async (s) => { await s.click(s.page.locator('summary').filter({ hasText: 'Demo Editor' })); await s.page.getByRole('link', { name: 'My account' }).waitFor(); },
     },
     {
       caption: 'Click **My account**.',

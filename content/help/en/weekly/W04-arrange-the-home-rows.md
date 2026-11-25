@@ -29,22 +29,21 @@ You need to be an Editor or above. Read [Find your way around](help:S04) if you 
 <!-- kb:steps W04 -->
 1. Click **Home curation** in the side menu.
 2. Check the **Sections** list.
-   Each section is one row on the viewer Home page, in the order viewers see them.
+   Each section is one row on the viewer Home page, in the order viewers see them. Add section starts a new row: you choose a kind (New, Popular, Trending now, Top 10, Most liked, Category, Series or Manual list) and a name. Trending now, Top 10 and Most liked stay hidden until enough viewers have watched.
    ![The Sections list with the Add section button marked 1](../../media/W04/W04-02-sections-desktop.webp)
-3. Click **Add section**.
-4. Check the **What kind of section?** list and pick one.
-   Kinds include New, Popular, Trending now, Top 10, Most liked, Category, Series and a Manual list you fill by hand. Trending, Top 10 and Most liked stay hidden until enough viewers have watched.
-   ![The Add a section box with the kinds list marked 1](../../media/W04/W04-04-kinds-desktop.webp)
-5. Click **Add section** to confirm.
-6. Check the **View all link** choices.
+3. Click **Edit New this week**.
+4. Check the **View all link** choices.
    Automatic opens the matching list page. Custom link uses a path or an https link. None hides the link.
-   ![The section editor with the View all link choices marked 1](../../media/W04/W04-06-view-all-desktop.webp)
-7. Untick **Show My List**.
-   A hidden section stays in the list but viewers do not see it. Kids profiles have their own switch in the section editor.
-8. Click **Mobile** in the live preview.
-9. Click **Save draft**.
-10. Click **Publish changes**.
-   Viewers see the new order within a minute. Use Restore previous to undo the last publish.
+   ![The section editor with the View all link choices marked 1](../../media/W04/W04-04-view-all-desktop.webp)
+5. Click **Move New this week down**.
+   You can also drag the handle beside a section.
+6. Untick **Show My List**.
+   A hidden section stays in the list but viewers do not see it. In the section editor, Show on Kids profiles has its own switch.
+7. Click **Mobile** in the live preview.
+   ![The live preview in phone size marked 1](../../media/W04/W04-07-preview-desktop.webp)
+8. Click **Save draft**.
+9. Click **Publish changes**.
+   Viewers see the new order within a minute. Restore previous undoes the last publish and Restore launch defaults puts back the first layout.
 <!-- /kb:steps -->
 
 ## What you should see

@@ -38,12 +38,14 @@ You need to be a Super admin for Maintenance mode. An Admin can do the banner st
 5. Click **Save changes**.
 6. Tick **Maintenance mode**.
    This closes the site to viewers. Only Super admins can turn it on.
-7. Click **Save changes** to continue.
-   ![The confirmation box with the Turn on button marked 1](../../media/C10/C10-07-confirm-desktop.webp)
-8. Click **Turn on** to confirm.
+7. Check the **Unsaved changes** badge.
+   The badge shows that your last change is waiting to be saved.
+8. Click **Save changes** to continue.
+   ![The confirmation box with the Turn on button marked 1](../../media/C10/C10-08-confirm-desktop.webp)
+9. Click **Turn on** to confirm.
    Admins can still sign in. Videos that are already playing carry on.
-9. Untick **Maintenance mode** to open the site again.
-10. Click **Save changes** to finish.
+10. Untick **Maintenance mode** to open the site again.
+11. Click **Save changes** to finish.
    Turning it off needs no confirmation.
 <!-- /kb:steps -->
 
