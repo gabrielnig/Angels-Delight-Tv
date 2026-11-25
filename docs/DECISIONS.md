@@ -1952,3 +1952,9 @@ Decision: `video.preview` catches every error and records `failed` or `skipped` 
 - Options: Rely on the hourly sweep (10 videos an hour, only state none); a CLI; an admin button.
 - Why: The sweep never touches failed, skipped or already ready clips, so it cannot replace silent 6 second clips with the new ones, and the owner has no way to see or push it. A button is the smallest owner facing control, reuses the job and its limits, and is repeatable.
 - Reversible: Yes.
+
+## D-356 Phone header direction: one account icon with a bottom sheet (mockups S182 to S185, owner to confirm)
+- Decision: The recommended phone header is logo, Search and one account icon that opens a bottom sheet (Sign in, Create account, Kids mode, Language, Help). The bar scrim holds 0.85 through the whole bar and fades over a new `--nav-scrim-fade` below it, replacing the 70 percent hold, so icons keep contrast under a safe area inset. No code changes in this slice.
+- Options: A one Sign in button with a More tab, B account icon and sheet, C transparent bar with a category rail.
+- Why: Fewest controls, same skeleton as the signed in bar, immune to long Yoruba, Igbo and Hausa labels (measured at 320, 360 and 414), smallest build that keeps the tab bar. See docs/reviews/v2/L12-review.md.
+- Reversible: Yes, mockups only until the build slice.
