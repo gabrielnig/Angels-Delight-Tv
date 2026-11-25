@@ -38,6 +38,8 @@ export interface Step {
   holdMs?: number;
   /** A numbered, annotated screenshot taken once the action is done. */
   shot?: ShotSpec;
+  /** Starts a chapter of this name at this step (a WebVTT chapters track). Default: one chapter per step. */
+  chapter?: string;
   /** Force the caption position. Default: the recorder picks the side that does not cover the target. */
   captionAt?: 'top' | 'bottom';
 }
@@ -62,6 +64,8 @@ export interface Episode {
   dependsOn?: string[];
   /** Profiles to record. Default desktop only. */
   viewports?: Array<'desktop' | 'mobile'>;
+  /** The article that follows, shown on the end card: "D03 Upload many videos". */
+  next?: string;
   /** Where the sign in helper leaves the session. Default /admin. */
   start?: string;
 }
@@ -84,4 +88,11 @@ export function validateEpisode(e: Episode): string[] {
     }
   });
   return problems;
+}
+
+/** Who the episode is for, as it reads on the title card: "For Editors". */
+export function audienceOf(role: EpisodeRole): string {
+  return { none: 'everyone', editor: 'Editors', admin: 'Admins', super_admin: 'Super admins' }[
+    role
+  ];
 }

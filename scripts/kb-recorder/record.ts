@@ -6,9 +6,8 @@
 import { mkdir, rename, rm, writeFile } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 import { parseArgs } from 'node:util';
-import { burnCaptions } from './burn';
-import { buildCues, toAss, toVtt, validateCues } from './captions';
-import { validateEpisode } from './episode';
+import { audienceOf, validateEpisode } from './episode';
+import { produceOutputs } from './produce';
 import { PROFILES, type Profile } from './profiles';
 import { resetDemo } from './demo/client';
 import { assertAllowedOrigin } from './demo/origin-guard';
@@ -60,7 +59,7 @@ async function main() {
     const warmMs = Date.now() - started;
     const recStart = Date.now();
     const clockMs = await freshDemo(baseURL);
-    const { timings, totalMs, videoPath } = await playEpisode(episode, profile, {
+    const { timings, totalMs, videoPath, skips } = await playEpisode(episode, profile, {
       baseURL,
       clockMs,
       videoDir: join(dir, 'tmp'),
@@ -71,26 +70,22 @@ async function main() {
     const raw = join(dir, `${episode.id}-${profile.name}.raw.webm`);
     await rename(videoPath, raw);
     await rm(join(dir, 'tmp'), { recursive: true, force: true });
-    const cues = buildCues(timings, { leadMs: 250, minMs: 1800 });
-    const problems = validateCues(cues);
-    if (problems.length) throw new Error(`Caption problems: ${problems.join('; ')}`);
-    const vtt = join(dir, `${episode.id}-${profile.name}.vtt`);
-    const ass = join(dir, `${episode.id}-${profile.name}.ass`);
-    await writeFile(vtt, toVtt(cues));
-    await writeFile(
-      ass,
-      toAss(cues, {
-        width: profile.width,
-        height: profile.height,
-        fontSize: profile.captionFontSize,
-        marginX: profile.captionMarginX,
-        marginV: profile.captionMarginV,
-        fontName: 'Inter',
-      }),
-    );
-    const mp4 = join(dir, `${episode.id}-${profile.name}.mp4`);
     const burnStart = Date.now();
-    await burnCaptions({ input: raw, ass, output: mp4 });
+    const out = await produceOutputs({
+      id: episode.id,
+      title: episode.title,
+      audience: audienceOf(episode.role),
+      profile,
+      raw,
+      outDir: dir,
+      totalMs,
+      timings,
+      skips,
+      next: episode.next,
+    });
+    if (out.cueProblems.length)
+      throw new Error(`Caption style problems: ${out.cueProblems.join('; ')}`);
+    const { mp4, vtt } = out;
     const meta = {
       episode: episode.id,
       profile: profile.name,
@@ -99,7 +94,8 @@ async function main() {
       recordMs: Date.now() - recStart,
       totalMs,
       burnMs: Date.now() - burnStart,
-      cues: cues.length,
+      durationMs: out.durationMs,
+      cues: out.cues.length,
     };
     await writeFile(join(dir, 'meta.json'), JSON.stringify(meta, null, 2) + '\n');
     console.log(JSON.stringify(meta));

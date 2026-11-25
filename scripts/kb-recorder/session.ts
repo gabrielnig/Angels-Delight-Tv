@@ -49,11 +49,28 @@ export class Session {
   readonly band: Band;
   /** The box of the last element the viewer was pointed at, used to choose the caption side. */
   lastTarget: Rect | null = null;
+  /** The name of the control the pointer last went to, for the transcript. */
+  lastTargetName: string | null = null;
+  /** Waits cut out of the video, as wall clock times (ms since epoch). The runner converts them to the video clock. */
+  readonly skips: Array<{ startAt: number; endAt: number }> = [];
 
   /** Which side the caption of the step just played should use. */
   captionSide(): 'top' | 'bottom' {
     if (!this.lastTarget) return 'bottom';
     return captionPlacement(this.lastTarget, this.profile, this.band);
+  }
+
+  /**
+   * Runs a long wait (an upload, an encode) and cuts the dead time out of the video, keeping 0.6 s on each side. The
+   * video shows a "Time skipped" badge at the cut. Waits under 1.5 s are left alone.
+   */
+  async skippable<T>(wait: () => Promise<T>): Promise<T> {
+    const startAt = Date.now();
+    const result = await wait();
+    const endAt = Date.now();
+    if (endAt - startAt > 1500 + 1200)
+      this.skips.push({ startAt: startAt + 600, endAt: endAt - 600 });
+    return result;
   }
 
   pause(ms: number): Promise<void> {
@@ -82,6 +99,14 @@ export class Session {
     const box = await target.boundingBox();
     if (!box) throw new Error('Target has no box');
     this.lastTarget = box;
+    this.lastTargetName = await target
+      .evaluate((el) =>
+        (el.getAttribute('aria-label') || el.textContent || '')
+          .trim()
+          .replace(/\s+/g, ' ')
+          .slice(0, 60),
+      )
+      .catch(() => null);
     return { x: box.x + box.width / 2, y: box.y + box.height / 2, box };
   }
 

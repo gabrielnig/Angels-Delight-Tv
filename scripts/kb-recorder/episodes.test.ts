@@ -53,3 +53,13 @@ describe('validateEpisode', () => {
     );
   });
 });
+
+describe('episode captions follow the style guide', async () => {
+  const { lintCaption } = await import('./caption-style');
+  const episodes = await loadAllEpisodes();
+  it.each(
+    episodes.flatMap((e) => e.steps.map((s, i) => [`${e.id} step ${i + 1}`, s.caption] as const)),
+  )('%s', (_where, caption) => {
+    expect(lintCaption(caption).errors).toEqual([]);
+  });
+});
