@@ -18,11 +18,14 @@ test.beforeEach(({}, testInfo) => {
 
 async function open(page: Page, width: number, height = 800, path = TITLE) {
   await page.setViewportSize({ width, height });
-  await page.goto(path, { waitUntil: 'networkidle' });
+  await page.goto(path, { waitUntil: 'domcontentloaded' });
   const button = page.getByRole('button', { name: 'Share', exact: true }).first();
-  await button.click();
   const dialog = page.getByRole('dialog', { name: /^Share this/ });
-  await expect(dialog).toBeVisible();
+  // The page may not have hydrated at the first click, so retry until the sheet is open.
+  await expect(async () => {
+    await button.click({ timeout: 3000 });
+    await expect(dialog).toBeVisible({ timeout: 2000 });
+  }).toPass({ timeout: 20000 });
   return { dialog, button };
 }
 
@@ -172,8 +175,11 @@ for (const width of [360, 1360]) {
 
 test('the watch page shares the title page, not the watch address', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 740 });
-  await page.goto('/watch/v-rain', { waitUntil: 'networkidle' });
-  await page.getByRole('button', { name: 'Share', exact: true }).first().click();
+  await page.goto('/watch/v-rain', { waitUntil: 'domcontentloaded' });
+  await expect(async () => {
+    await page.getByRole('button', { name: 'Share', exact: true }).first().click({ timeout: 3000 });
+    await expect(page.getByLabel('Link to share')).toBeVisible({ timeout: 2000 });
+  }).toPass({ timeout: 20000 });
   const link = await page.getByLabel('Link to share').inputValue();
   expect(link).toMatch(/\/title\/v-rain$/);
   expect(link).not.toContain('/watch/');
