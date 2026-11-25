@@ -56,7 +56,7 @@ const episode: Episode = {
     },
     {
       caption: 'Click **Yes** if the guide helped you.',
-      holdMs: 2400,
+      holdMs: 17400,
       run: async (s) => {
         await clickByName(s, 'button', 'Yes', { exact: true });
         await s.pause(600);

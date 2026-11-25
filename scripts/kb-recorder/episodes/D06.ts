@@ -48,15 +48,15 @@ const episode: Episode = {
       shot: {
         name: 'frames',
         alt: 'The six frames to pick from, with the first marked 1',
-        marks: [{ target: (s) => s.page.getByRole('button', { name: /^CO 0:34/ }), label: 'A frame' }],
+        marks: [{ target: (s) => s.page.getByRole('button', { name: /^0:34/ }), label: 'A frame' }],
       },
     },
     {
-      caption: 'Click **CO 0:34 Use this**.',
-      note: 'The letters at the start are the first letters of your video title. The time is where the frame comes from.',
+      caption: 'Click **0:34 Use this**.',
+      note: 'The time is where in the video the frame comes from.',
       holdMs: 2200,
       run: async (s) => {
-        await clickByName(s, 'button', 'CO 0:34 Use this', { exact: true });
+        await clickByName(s, 'button', '0:34 Use this', { exact: true });
       },
     },
     lookStep(

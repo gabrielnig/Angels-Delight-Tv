@@ -26,7 +26,9 @@ function control(s: Session, label: string): Locator {
   for (const role of ROLES.slice(1))
     loc = loc.or(s.page.getByRole(role, { name: label, exact: true }));
   // A menu made from a details summary has no button role in every browser, so it is found by its text.
-  loc = loc.or(s.page.locator('summary').filter({ hasText: label }));
+  const words = label.split(/\s+/).map((w) => w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+  // Initials or icons may sit between the words, so the words only need to appear in order.
+  loc = loc.or(s.page.locator('summary').filter({ hasText: new RegExp(words.join('[\\s\\S]*')) }));
   // A choice in a group is read out with its help line ("Schedule Pick a date and time."), so a label that starts it counts.
   const escaped = label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   loc = loc.or(s.page.getByRole('radio', { name: new RegExp(`^${escaped}(?= )`) }));
@@ -163,7 +165,14 @@ async function execute(
       const miss = await find(`a box labelled "${a.label}"`, loc);
       if (miss) return miss;
       await s.reveal(loc);
-      await loc.setChecked(a.on);
+      // A page that has only just opened may not answer a click yet, so it gets a moment and one more try.
+      await s.page.waitForLoadState('networkidle', { timeout: 3000 }).catch(() => {});
+      try {
+        await loc.setChecked(a.on, { timeout: 5000 });
+      } catch {
+        await s.page.waitForTimeout(1500);
+        await loc.setChecked(a.on);
+      }
       break;
     }
     case 'select': {

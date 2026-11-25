@@ -32,6 +32,16 @@ Choose a day and time for a ready video to go live by itself. You end with the v
 ## Steps
 <!-- kb:steps D09 -->
 1. Choose **Videos** in the side menu.
+2. Click **Edit Staying Safe Online**.
+3. Click **Publish**.
+4. Click **Schedule**.
+5. Type "03/12/2026" in the **Date** box.
+   Times are Lagos time, all year. The practice site clock says it is 10 Mar 2026.
+   ![The Date and Time boxes of the Schedule choice, with Date marked 1](../../media/D09/D09-05-date-desktop.webp)
+6. Click **Schedule for 12 Mar, 9:00**.
+   The button names the day and time you chose. The time box starts at 9:00 in the morning.
+7. Wait until you see **is scheduled**.
+   ![The message that the video is scheduled, marked 1](../../media/D09/D09-07-scheduled-desktop.webp)
 <!-- /kb:steps -->
 
 ## What you should see
