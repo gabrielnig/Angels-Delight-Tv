@@ -24,7 +24,7 @@ export function formatClock(ms: number): string {
   return tenths ? `${base}.${tenths}` : base;
 }
 
-const STATE: Record<PreviewInfo['state'], { word: string; tone: 'neutral' | 'info' | 'success' | 'danger' | 'warning' }> = {
+export const PREVIEW_STATES: Record<PreviewInfo['state'], { word: string; tone: 'neutral' | 'info' | 'success' | 'danger' | 'warning' }> = {
   none: { word: 'Not made yet', tone: 'neutral' },
   queued: { word: 'Queued', tone: 'info' },
   ready: { word: 'Ready', tone: 'success' },
@@ -56,7 +56,7 @@ export function PreviewClipCard({
   const [start, setStart] = useState(preview.startMs === null ? '' : formatClock(preview.startMs));
   const [error, setError] = useState<string>();
   const [busy, setBusy] = useState(false);
-  const state = STATE[preview.state];
+  const state = PREVIEW_STATES[preview.state];
   const changed = mode !== preview.mode || (mode === 'picked' && start !== (preview.startMs === null ? '' : formatClock(preview.startMs)));
 
   async function run(work: () => Promise<CommandResult>) {
