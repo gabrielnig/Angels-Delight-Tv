@@ -43,6 +43,9 @@ async function fetchImage(url: string): Promise<ImageFetch> {
   };
 }
 
+/** Pages a site can switch off (donations). A 404 that asks not to be indexed counts as switched off, not as a failure. */
+const OPTIONAL_PAGES = new Set(['/donate', '/transparency']);
+
 async function checkUrl(base: string, path: string, kind: PageOptions['kind'], allowHttp: boolean): Promise<Row> {
   const url = new URL(path, base).toString();
   const row: Row = { url: path, status: '-', tags: '-', image: '-', bytes: '-', ms: '-', issues: [] };
@@ -58,6 +61,10 @@ async function checkUrl(base: string, path: string, kind: PageOptions['kind'], a
   const ms = Date.now() - started;
   row.status = String(res.status);
   row.ms = String(ms);
+  if (res.status === 404 && OPTIONAL_PAGES.has(path) && /noindex/i.test(parseHead(html).robots ?? '')) {
+    row.tags = 'switched off';
+    return row;
+  }
   if (res.status !== 200) row.issues.push(`page status ${res.status}, want 200 with no redirect`);
   if (ms > PAGE_MAX_MS) row.issues.push(`page is slow (${ms} ms)`);
   const page = checkPage(html, url, { kind, allowHttp });
