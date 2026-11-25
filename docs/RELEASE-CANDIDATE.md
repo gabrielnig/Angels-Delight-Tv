@@ -161,7 +161,7 @@ Open items from the v2 lanes, then older items that are still open or whose stat
 L1 guest access
 - M40-S18 Clear history on this device is not built.
 - No audience select in the admin Features screen (use `client.json` or the settings API).
-- Series pages have no Kids blocked screen for a guest, they answer not found. The title page does.
+- (Closed by L13, D-375.) Series pages now show the Kids blocked screen to a guest in Kids mode, as the title page does.
 - The sticky Play bar and the series main button do not follow device progress.
 - The key route bucket `play-key-ip` still keys on the address (the session buckets are hashed).
 - Journey specs were not run.

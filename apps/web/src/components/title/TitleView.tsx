@@ -1,5 +1,6 @@
 import { itemCount, resolveSeriesLabels, type SeriesLabelSetting } from '@ad/shared/series-labels';
 import { Badge, Breadcrumbs, ButtonLink, ProgressBar } from '@ad/ui';
+import { StickyPlay } from './StickyPlay';
 import type { Thumb, TitleDetail } from '../../lib/data';
 import { itemKey, percent } from '../../lib/format';
 import { primaryAction } from '../../lib/title-cta';
@@ -149,11 +150,10 @@ export function TitleView({
         </div>
       </div>
       <RelatedRow items={detail.related} />
-      <div className="tv-sticky">
-        <ButtonLink href={primary.href} icon="play" size="lg" fullWidth>
-          {primaryText}
-        </ButtonLink>
-      </div>
+      <StickyPlay
+        primary={{ text: primaryText, href: primary.href }}
+        guest={guest ? { videoId: video.id, durationSeconds: video.durationSeconds } : undefined}
+      />
     </div>
   );
 }
@@ -227,7 +227,9 @@ export function PublicSeries({
         <div className="web-title__info">
           <h1 className="web-title__name">{title}</h1>
           <p className="web-title__meta">
-            <Badge variant="neutral">{itemCount(resolveSeriesLabels(labels, null), episodes)}</Badge>{' '}
+            <Badge variant="neutral">
+              {itemCount(resolveSeriesLabels(labels, null), episodes)}
+            </Badge>{' '}
             <span>{category}</span>
           </p>
           <p className="web-title__desc">{description}</p>

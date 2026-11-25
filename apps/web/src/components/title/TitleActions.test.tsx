@@ -4,6 +4,10 @@ import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import { ToastProvider } from '@ad/ui';
 import { TitleActions } from './TitleActions';
+import { writeGuestProgress } from '../../lib/guest/progress-store';
+
+const GA = '00000000-0000-4000-8000-00000000000a';
+const GB = '00000000-0000-4000-8000-00000000000b';
 
 const wrap = (ui: React.ReactElement) => render(<ToastProvider>{ui}</ToastProvider>);
 const play = { text: 'Play', href: '/watch/a' };
@@ -223,6 +227,55 @@ describe('TitleActions in the title layout (S18)', () => {
       await userEvent.click(button);
       await userEvent.click(screen.getByRole('button', { name: 'Not now' }));
       expect(button).toHaveFocus();
+    });
+  });
+
+  describe('guest series button (M51-S06)', () => {
+    const episodes = [
+      { videoId: GA, href: '/watch/a', group: 1, number: 1, durationSeconds: 600 },
+      { videoId: GB, href: '/watch/b', group: 1, number: 2, durationSeconds: 600 },
+    ];
+    const guest = {
+      signUpOpen: true,
+      next: '/series/x',
+      series: { episodes, labels: { preset: 'book_chapter' as const } },
+    };
+
+    it('follows the place saved on this device', async () => {
+      writeGuestProgress(window.localStorage, GA, { p: 600, d: 600, f: true });
+      writeGuestProgress(window.localStorage, GB, { p: 90, d: 600, f: false });
+      wrap(
+        <TitleActions
+          primary={{ text: 'Play B1 Ch1', href: '/watch/a' }}
+          itemKey="series:x"
+          inList={false}
+          guest={guest}
+          kind="series"
+        />,
+      );
+      expect(await screen.findByRole('link', { name: 'Resume B1 Ch2' })).toHaveAttribute(
+        'href',
+        '/watch/b',
+      );
+      expect(screen.getByRole('link', { name: 'Start over' })).toHaveAttribute(
+        'href',
+        '/watch/b?t=0',
+      );
+      window.localStorage.clear();
+    });
+
+    it('keeps the server button on a device with no history', () => {
+      window.localStorage.clear();
+      wrap(
+        <TitleActions
+          primary={{ text: 'Play B1 Ch1', href: '/watch/a' }}
+          itemKey="series:x"
+          inList={false}
+          guest={guest}
+          kind="series"
+        />,
+      );
+      expect(screen.getByRole('link', { name: 'Play B1 Ch1' })).toBeInTheDocument();
     });
   });
 });

@@ -287,7 +287,10 @@ export interface CatalogRepository {
    * all null, so a visitor cannot tell them apart.
    */
   publicPreview(slug: string, kind: 'video' | 'series'): Promise<PublicPreview | null>;
-  series(ctx: ViewerContext, slug: string): Promise<SeriesDetail | { redirect: string } | null>;
+  series(
+    ctx: ViewerContext,
+    slug: string,
+  ): Promise<SeriesDetail | { blocked: 'kids' } | { redirect: string } | null>;
 }
 
 export type PublicPreview =

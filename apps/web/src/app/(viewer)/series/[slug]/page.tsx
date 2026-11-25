@@ -5,7 +5,11 @@ import { groupCount, resolveSeriesLabels } from '@ad/shared/series-labels';
 import { AppShell } from '../../../../components/Shell';
 import { PublicSeries } from '../../../../components/title/TitleView';
 import { GuestEpisodeProgress } from '../../../../components/guest/GuestEpisodeProgress';
+import { setGuestAudienceAction } from '../../../actions';
+import { GuestKidsBlocked } from '../../../../components/guest/GuestKidsBlocked';
+import { TitleBlocked } from '../../../../components/title/TitleStates';
 import { EpisodeList } from '../../../../components/title/EpisodeList';
+import { StickyPlay } from '../../../../components/title/StickyPlay';
 import { TitleActions } from '../../../../components/title/TitleActions';
 import { pickSeason, seasonRows } from '../../../../components/title/series-rows';
 import { getCatalog, getLibrary } from '../../../../lib/data';
@@ -78,10 +82,41 @@ export default async function SeriesPage({
   const detail = await getCatalog().series(ctx, slug);
   if (!detail) notFound();
   if ('redirect' in detail) permanentRedirect(detail.redirect);
+  if ('blocked' in detail) {
+    return (
+      <AppShell>
+        {viewer.kind === 'guest' ? (
+          <GuestKidsBlocked setKidsMode={setGuestAudienceAction} />
+        ) : (
+          <TitleBlocked />
+        )}
+      </AppShell>
+    );
+  }
   const { series, seasons, next } = detail;
   const nextVideo = seasons.flatMap((s) => s.episodes).find((e) => e.video.id === next.videoId);
   const rows = seasonRows(seasons);
   const words = resolveSeriesLabels(series.labels, null);
+  const guestSeries = {
+    labels: series.labels,
+    episodes: seasons.flatMap((season) =>
+      season.episodes.map((e) => ({
+        videoId: e.video.id,
+        href: `/watch/${e.video.id}`,
+        group: season.number,
+        number: e.number,
+        durationSeconds: e.video.durationSeconds,
+      })),
+    ),
+  };
+  const mainButton = nextVideo
+    ? primaryAction({
+        label: next.label,
+        startSeconds: 0,
+        watchHref: `/watch/${nextVideo.video.id}`,
+        episode: { season: next.season, number: next.episode, labels: series.labels },
+      })
+    : null;
   const guest =
     viewer.kind === 'guest' ? { signUpOpen: (await getSite().content()).signUpOpen } : null;
   const inList = guest ? false : (await getLibrary().myListIds(ctx)).includes(itemKey(series));
@@ -102,19 +137,18 @@ export default async function SeriesPage({
         </p>
         {nextVideo ? (
           <TitleActions
-            primary={primaryAction({
-              label: next.label,
-              startSeconds: 0,
-              watchHref: `/watch/${nextVideo.video.id}`,
-              episode: { season: next.season, number: next.episode, labels: series.labels },
-            })}
+            primary={mainButton!}
             itemKey={itemKey(series)}
             inList={inList}
             shareTitle={series.title}
             share={share}
             kids={ctx.audience === 'kids'}
             kind="series"
-            guest={guest ? { signUpOpen: guest.signUpOpen, next: `/series/${slug}` } : undefined}
+            guest={
+              guest
+                ? { signUpOpen: guest.signUpOpen, next: `/series/${slug}`, series: guestSeries }
+                : undefined
+            }
           />
         ) : null}
         <p className="web-title__desc">{series.description}</p>
@@ -131,6 +165,9 @@ export default async function SeriesPage({
             initialSeason={pickSeason(seasons, query.season, next.season)}
           />
         )}
+        {mainButton ? (
+          <StickyPlay primary={mainButton} guest={guest ? { series: guestSeries } : undefined} />
+        ) : null}
       </div>
     </AppShell>
   );
