@@ -4299,3 +4299,272 @@ As a developer, I want a pseudo language that lengthens text and uses the hard l
 - Empty: not applicable.
 
 Counts: 19 new stories in M46 (Must: S01, S02, S03, S04, S06, S07, S08, S11, S12, S13, S14, S15; Should: S05, S09, S10, S16, S17; Could: S18, S19) plus 12 edits to existing stories and docs.
+
+
+## M50 Admin help centre
+
+From `docs/plan/v2/L14-admin-knowledge-base.md` section 21, built by lane L14 (platform slices). Area: Admin, Readiness [READY]. Dependencies M12, M16, M20, M34, M42, M46 for the reuse of tabs and dialogs. Role words are Editor, Admin, Super admin.
+
+### M50-S01 Find the help centre from anywhere (Must)
+As staff, I want a Help button and menu item on every admin screen, so that I can get help without leaving my place.
+- AC1: Given any admin page, When it renders, Then the top bar has a Help button and the side menu has a Help item, both reachable by keyboard.
+- AC2: Given a phone width, When I open the menu drawer, Then Help is in it and the button is at least 44 px.
+- AC3: Given I am not signed in or I am a viewer, When I open `/admin/help`, Then I am sent to sign in or to No access.
+- Edge: the Help item shows for every staff role.
+- Error: the help pages fail to load shows one headline, one sentence and Try again.
+- Empty: not applicable.
+
+### M50-S02 A Help link on each screen opens the matching article (Must)
+As staff, I want the Help link on a page to open the article for that page, so that I do not search.
+- AC1: Given any of the 41 admin routes, When I click Help in the page header, Then the article whose `screens` entry matches opens at the right section.
+- AC2: Given a route with two articles, When I click Help, Then the panel lists both with the main one first.
+- AC3: Given a route with no article, When tests run, Then the route coverage test fails.
+- Edge: dynamic routes (`/admin/videos/[id]`) match their pattern.
+- Error: a missing article id shows the not found state with search.
+- Empty: not applicable.
+
+### M50-S03 Contextual help panel (Must)
+As staff, I want a panel that shows the article for the page I am on, so that I can follow the steps beside my work.
+- AC1: Given md and up, When I press Help, Then a side drawer opens with the video, the steps and Open full article, and my page stays usable.
+- AC2: Given a phone, When I press Help, Then a bottom sheet opens and closes with a swipe, a close button or Escape.
+- AC3: Given the panel is open, When I move to another page, Then it updates to that page's article.
+- Edge: focus returns to the Help button on close; the question mark key opens the panel only when no field has focus.
+- Error: video fails to load shows the transcript and a retry.
+- Empty: with no matching article it shows search and the core tasks.
+
+### M50-S04 Learn by path (Must)
+As a new staff member, I want ordered paths, so that I know what to learn first.
+- AC1: Given `/admin/help`, When it renders, Then Start here is first and the seven paths show their article and video counts.
+- AC2: Given a path page, When I open it, Then articles are in learning order with role, read time and watch time.
+- AC3: Given an article, When it ends, Then Next and Related are shown.
+- Edge: a path never skips ahead past an article that needs an earlier one without showing the Needs line.
+- Error: not applicable.
+- Empty: a path with no published articles is hidden.
+
+### M50-S05 Article layout and template (Must)
+As staff, I want every article laid out the same way, so that I know where to look.
+- AC1: Given any article, When it renders, Then it has the six sections in the fixed order and the Who can do this line.
+- AC2: Given front matter that breaks the schema, When the build runs, Then it fails and names the file.
+- AC3: Given a quoted label, When tests run, Then it matches a label on the live screen.
+- Edge: an article for a higher role shows a role label and stays visible.
+- Error: a broken image shows its alt text.
+- Empty: not applicable.
+
+### M50-S06 Silent captioned video player (Must)
+As staff, I want to watch a short video with captions and no sound, so that I can see where to click.
+- AC1: Given an article with a video, When I press play, Then the file plays with captions (a live text track by default, or burned in when the article says so), no sound track, native keyboard controls and a poster.
+- AC2: Given Data saver or a screen under 600 px, When the page loads, Then the 480p file is used, with a Quality choice.
+- AC3: Given the video, When I open Read this video, Then the transcript lists every caption and pointer action.
+- Edge: no autoplay, and reduced motion stops auto advance to the next video.
+- Error: file missing shows the transcript and one action, Try again.
+- Empty: articles with no video (R and two others) show no player.
+
+### M50-S07 Private media route (Must)
+As the owner, I want help videos served only to staff and kept out of the viewer catalog, so that nothing leaks.
+- AC1: Given an anonymous request or a viewer, When it asks for a help file, Then it gets 401 or 404.
+- AC2: Given a staff request, When it asks for a file, Then it is served with Range support and `Cache-Control: private`.
+- AC3: Given the catalog, Home, search, sitemap, analytics and kids profiles, When tests run, Then no help file appears in any of them.
+- Edge: a path outside `help/` is refused.
+- Error: storage failure gives 502 with a short message.
+- Empty: not applicable.
+
+### M50-S08 Search (Must)
+As staff, I want to search the help centre in my own words, so that I find the answer fast.
+- AC1: Given a search for "poster" or "thumbnail", When I submit, Then the poster articles come first.
+- AC2: Given the 12 core tasks, When searched by their plain words, Then the right article is in the top 3.
+- AC3: Given no match, When I search, Then I see one headline, one sentence and Browse all articles.
+- Edge: typo of one letter still finds the article; slash focuses the box.
+- Error: a failed index load shows Try again.
+- Empty: an empty box shows recent articles from this browser and the core tasks.
+
+### M50-S09 Print and PDF for each article (Must)
+As staff, I want to print or save an article, so that I can keep it by my desk.
+- AC1: Given an article, When I choose Print, Then chrome and the player are hidden and all steps and pictures print without cut steps.
+- AC2: Given an article, When I choose Download PDF, Then a file for that article and release downloads.
+- AC3: Given the print copy, When read, Then it shows the article id and the release it was checked against.
+- Edge: pictures print at full width with their alt text if they cannot load.
+- Error: PDF missing falls back to the print dialog.
+- Empty: not applicable.
+
+### M50-S10 Offline handbook (Should)
+As a new volunteer with no account yet, I want a handbook I can open without a server, so that I can learn first.
+- AC1: Given a release, When I choose Download the handbook, Then I get a ZIP that opens offline with search, paths and pictures.
+- AC2: Given the choice With videos, When I select it, Then videos are included.
+- AC3: Given the handbook, When opened, Then it names its release.
+- Edge: the ZIP has no personal data and no secrets.
+- Error: build missing shows the per path PDFs instead.
+- Empty: not applicable.
+
+### M50-S11 Responsive help pages (Must)
+As staff on a phone or a laptop, I want pages that fit, so that I can read and watch anywhere.
+- AC1: Given widths 360, 600, 960 and 1280, When any help page renders, Then there is no horizontal scroll and targets are at least 44 px.
+- AC2: Given a phone with a phone recording, When an article opens, Then Phone is the default view of pictures and video.
+- AC3: Given an image, When I tap it, Then it opens a zoomable view that closes with Escape or a button.
+- Edge: forced colours and 200 percent zoom keep every control usable.
+- Error: not applicable.
+- Empty: not applicable.
+
+### M50-S12 Accessibility of the help centre (Must)
+As a staff member who relies on assistive technology, I want the help centre to work with my tools, so that I can learn the same way.
+- AC1: Given axe on home, article, search and panel at desktop and phone widths, When run, Then there are no serious or critical issues.
+- AC2: Given any image, When checked, Then it has alt text; given any video, When checked, Then it has a transcript.
+- AC3: Given reduced motion, When the page loads, Then nothing animates and nothing autoplays.
+- Edge: burned in captions meet 7 to 1 contrast.
+- Error: not applicable.
+- Empty: not applicable.
+
+### M50-S13 Demo dataset and isolated stack (Must)
+As the developer, I want a clearly fake dataset on an isolated stack, so that recordings never show real data.
+- AC1: Given `pnpm kb:stack`, When it runs, Then databases `ad_kb` and `ad_kb_keys` are created and seeded with the demo set in section 11.
+- AC2: Given an origin or database outside the allow list, When the recorder starts, Then it refuses.
+- AC3: Given a capture, When the page text holds a non demo email or a key shaped string, Then the capture fails.
+- Edge: the seed is deterministic; running it twice gives the same state.
+- Error: a failed seed leaves nothing half made.
+- Empty: not applicable.
+
+### M50-S14 Flow runner proves each procedure (Must)
+As the developer, I want one flow per procedure that checks each step, so that the steps are proven.
+- AC1: Given a flow, When `pnpm kb:verify --only D02` runs as the flow's role, Then every step finds its control by role and label and every `expect` passes.
+- AC2: Given a step that cannot find its control, When it runs, Then the failure names the article, the step and the nearest label.
+- AC3: Given a flow, When rendered, Then its `say` lines are the article steps.
+- Edge: a role that cannot do the task fails with the role named.
+- Error: a timeout retries once, then fails with a screenshot.
+- Empty: not applicable.
+
+### M50-S15 Recorder makes silent captioned videos (Must)
+As the developer, I want one command to record a flow, so that videos can be made again whenever a screen changes.
+- AC1: Given `pnpm kb:record --only D02`, When it runs, Then it makes the 720p and 480p files, a poster, a VTT and a transcript.
+- AC2: Given the file, When checked, Then it has no audio stream, a length of 1 to 4 minutes and captions that meet section 5.3.
+- AC3: Given `--phone`, When it runs, Then a portrait 390 by 844 version is made.
+- Edge: long waits are skipped with a Time skipped badge.
+- Error: a failed recording leaves the previous files untouched.
+- Empty: not applicable.
+
+### M50-S16 Screenshots with numbered marks (Must)
+As staff, I want pictures with numbered marks that match the steps, so that I can find the control.
+- AC1: Given a flow step with `shot`, When `kb:shots` runs, Then a WebP with the numbered badge and highlight is saved with alt text.
+- AC2: Given a picture, When checked, Then it is at most 120 KB and has no metadata.
+- AC3: Given the baseline, When the screen changes by more than 0.5 percent of pixels, Then the nightly check fails with the diff image.
+- Edge: dark by design screens are captured dark.
+- Error: a missing control fails the shot.
+- Empty: not applicable.
+
+### M50-S17 Coverage tests keep it complete (Must)
+As the developer, I want tests that fail when the product grows past the help, so that the KB stays complete.
+- AC1: Given a new admin route, nav item, permission or setting, When tests run, Then they fail until the KB covers it.
+- AC2: Given R02, R03, R04 and R06, When built, Then they are generated from `can.ts`, `NAV_ITEMS`, the settings registry and the enums.
+- AC3: Given a Who can do this line, When it disagrees with `can.ts`, Then the build fails.
+- Edge: a text only article is allowed without a flow when marked.
+- Error: not applicable.
+- Empty: not applicable.
+
+### M50-S18 CI catches a screen that no longer matches (Must)
+As the developer, I want a pull request that breaks a recorded screen to fail, so that help never lies.
+- AC1: Given a change under the admin screens, When CI runs, Then only the affected flows run and a failure names the article and step.
+- AC2: Given a release tag or the nightly job, When it runs, Then all flows run and all screenshots are compared.
+- AC3: Given an article not verified since its sources changed, When status is read, Then it is listed stale.
+- Edge: a flow that depends on a changed shared component is included through `dependsOn`.
+- Error: an infrastructure failure is reported as infrastructure, not as a content failure.
+- Empty: not applicable.
+
+### M50-S19 Writing and caption rules are enforced (Must)
+As the owner, I want every article and caption to follow the plain English rules, so that it is easy to read.
+- AC1: Given any article or caption, When linted, Then it has no dash, no emoji and no banned word, and a step has at most one action and 25 words.
+- AC2: Given captions, When checked, Then lines are at most 42 characters and 2 lines, and speed is at most 15 characters a second.
+- AC3: Given the glossary, When an article uses a glossary term first, Then it links to it.
+- Edge: quoted labels are exempt from the banned word list.
+- Error: not applicable.
+- Empty: not applicable.
+
+### M50-S20 Start here path (Must)
+As a new staff member, I want the Start here path, so that I can sign in and publish my first video.
+- AC1: Given S01 to S08, When published, Then each has text, video, pictures and passes the fact checker.
+- AC2: Given the Vanessa test, When a new person follows S02 to S06, Then they publish a demo video.
+- AC3: Given a phone, When S02 and S04 are opened, Then the phone recordings are offered.
+- Edge: S03 works with an expired invite by pointing to C11.
+- Error: not applicable.
+- Empty: not applicable.
+
+### M50-S21 Daily and weekly paths (Must)
+As an Editor, I want the daily and weekly paths, so that I can run the content routine.
+- AC1: Given D01 to D12 and W01 to W13, When published, Then each passes its gates and the fact checker as the right role.
+- AC2: Given an Admin only step, When shown to an Editor, Then it is labelled.
+- AC3: Given the phone articles in these paths, When opened, Then phone recordings play.
+- Edge: where docs and code disagree on a role, the article follows the code.
+- Error: not applicable.
+- Empty: not applicable.
+
+### M50-S22 Setup, money, safety and troubleshooting paths (Must)
+As an Admin or Super admin, I want the setup, money, safety and troubleshooting paths, so that I can run the whole platform.
+- AC1: Given C01 to C14, M01 to M09, K01 to K08 and T01 to T11, When published, Then each passes its gates.
+- AC2: Given the money articles, When read, Then no real key, bank detail or person appears and the developer owned steps are named.
+- AC3: Given every T article, When opened, Then it links to the article that fixes the cause.
+- Edge: T11 lists what to send and never asks for a password or key.
+- Error: not applicable.
+- Empty: not applicable.
+
+### M50-S23 Release stamp and keep it fresh (Should)
+As the owner, I want each article to say which release it was checked against, so that I know it is current.
+- AC1: Given an article, When shown, Then the footer reads Checked against release X on a date.
+- AC2: Given a new release, When `kb:publish` runs, Then the media pointer moves and the previous release stays for rollback.
+- AC3: Given R08, When a release is made, Then it lists the admin changes from `CHANGELOG.md`.
+- Edge: a rollback restores the previous pointer in one step.
+- Error: a failed upload leaves the pointer unchanged.
+- Empty: not applicable.
+
+### M50-S24 Tell us what is unclear (Could)
+As staff, I want a quick way to say an article is unclear, so that it can be improved.
+- AC1: Given an article, When I choose Tell us what is unclear, Then a message to the support email opens with the article id filled in.
+- AC2: Given the feature, When checked, Then no feedback or view count is stored on the server in this phase.
+- AC3: Given a later decision to count feedback, When made, Then it needs a new decision and a privacy note.
+- Edge: no support email set hides the link.
+- Error: not applicable.
+- Empty: not applicable.
+
+### M50-S25 My progress follows my account (Must)
+As staff, I want the guides I finished and the videos I watched remembered on my account, so that I can carry on from my phone or another computer.
+- AC1: Given I open a guide and choose Mark as done, When I open the help home on another device, Then the guide shows as finished and the progress card counts it.
+- AC2: Given a how-to video, When I watch 90 percent of it or choose Mark as watched, Then it counts as watched. A guide is never marked done by scrolling or opening it.
+- AC3: Given I choose Mark as not done, When it saves, Then the count goes down.
+- AC4: Given my account is deleted, When the purge runs, Then my progress rows are deleted, and my data export lists them.
+- Edge: two staff on the same machine never see each other's progress, because it is stored per account and never in the browser.
+- Error: a save that fails shows "We could not save that. Try again." and the button keeps its old state.
+- Empty: with nothing finished the progress card says "You have not finished a guide yet. Start with Start here."
+
+### M50-S26 Was this helpful (Should)
+As staff, I want to say with one tap whether a guide helped, so that unclear guides can be fixed.
+- AC1: Given a guide, When I choose Yes or No, Then one answer is saved against my account for that guide and the buttons show my answer. I can change it.
+- AC2: Given the answer, When stored, Then nothing else is stored with it: no text, no time on page, no search words.
+- AC3: Given an account purge or export, When they run, Then the answer is deleted or listed with the rest of my progress.
+- Edge: the answer is never shown to other staff and no count is shown in the admin in this phase.
+- Error: a failed save shows the retry line and keeps the buttons usable.
+- Empty: not applicable.
+
+### M50-S27 Guides for a higher role stay visible behind a count (Must)
+As an Editor or Admin, I want guides for roles above mine counted and shown on request, so that I know what to ask for without clutter.
+- AC1: Given I am an Editor, When the help home loads, Then guides for Admin and Super admin are hidden and a line says how many, with a Show them button.
+- AC2: Given I choose Show them, When the list updates, Then those guides appear with an Admin only or Super admin only label and the choice is kept in this tab.
+- AC3: Given a direct link to a hidden guide, When I open it, Then it opens with the role label (nothing is blocked).
+- Edge: a Super admin never sees the line.
+- Error: not applicable.
+- Empty: with no hidden guides the line is not shown.
+
+### M50-S28 Glossary page (Should)
+As staff, I want an A to Z list of the words used in the admin, so that I can look up a word without a search.
+- AC1: Given `/admin/help/glossary`, When it renders, Then every term shows with its meaning and links to the guides that explain it.
+- AC2: Given the filter box, When I type, Then the list narrows and says how many terms match.
+- AC3: Given a term with aliases, When I filter by an alias, Then the term is found.
+- Edge: the A to Z jump bar only lists letters that have terms.
+- Error: not applicable.
+- Empty: no match shows "No term matches. Clear the filter to see all terms."
+
+### M50-S29 Message ARKDEV strip uses a setting (Must)
+As the owner, I want the contact shown in the help centre to be a setting, so that it is mine to change.
+- AC1: Given the setting `help.support_contact` holds an email address or a link, When the help home or a state page renders, Then the strip shows it.
+- AC2: Given the setting is empty, When the page renders, Then the strip shows the placeholder text and no link.
+- AC3: Given the source code, When searched, Then no contact address is hardcoded.
+- Edge: a value that is not an email address or an https link is refused by the settings validator.
+- Error: not applicable.
+- Empty: the placeholder.
+
+Counts: 29 stories in M50 (the 24 of the plan plus S25 to S29 from the owner's answers). Must 24 (S01 to S09, S11 to S22, S25, S27, S29), Should 4 (S10, S23, S26, S28), Could 1 (S24).
