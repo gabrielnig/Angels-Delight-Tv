@@ -1,11 +1,13 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { ArticleView } from '@/components/admin/help/ArticleView';
+import { HelpVideo } from '@/components/admin/help/HelpVideo';
+import { videoCues } from '@/server/help/video-block';
 import { ArticleActions } from '@/components/admin/help/ArticleActions';
 import { helpProgress, type ProgressRows } from '@/lib/data/admin/help-progress';
 import { requireActor } from '@/lib/data/admin/session-next';
 import { getLibrary, helpRole } from '@/server/help';
-import { setGuideDoneAction, setHelpfulAction } from '../actions';
+import { markVideoWatchedAction, setGuideDoneAction, setHelpfulAction } from '../actions';
 
 export const dynamic = 'force-dynamic';
 
@@ -30,6 +32,20 @@ export default async function HelpArticlePage({ params }: Props) {
       library={library}
       article={article}
       role={helpRole(actor.role)}
+      video={
+        article.meta.video ? (
+          <HelpVideo
+            guide={article.meta.id}
+            videoId={article.meta.video.id}
+            title={article.meta.title}
+            phone={article.meta.video.phone}
+            captions={article.meta.video.captions}
+            cues={await videoCues(article)}
+            watched={mine?.watched ?? false}
+            onWatched={markVideoWatchedAction}
+          />
+        ) : undefined
+      }
       actions={
         <ArticleActions
           guide={article.meta.id}

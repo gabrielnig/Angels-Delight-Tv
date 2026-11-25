@@ -13,7 +13,7 @@ Worktree `/home/claude/wt2/KBP-build`. Builds the help centre itself: the conten
 | 1 Content format | `@ad/help` (schema, parser, library, lint, glossary, route matching), `content/help`, `pnpm help:check`, 3 sample articles, stories and decisions | Merged in the first platform PR |
 | 2 Pages | `/admin/help` home, path, article with contents list, role labels, print layout, Help in the side menu, top bar and page header, route to article map, private picture route, `help.support_contact` setting, coverage tests with `content/help/coverage-gaps.json` | Merged in the second platform PR |
 | 3 Progress | migration 0060 `help_progress` (RLS, purge, export), service with fixture and real versions, Mark as done, Was this helpful, progress card | Merged in the third platform PR |
-| 4 Video | private media route, player, playlist, transcript | Not yet |
+| 4 Video | private media route with Range for pictures, videos and captions, `HelpVideo` player with captions track, quality and picture choice, transcript, watched at 90 percent, `/admin/help/videos/[id]` with playlist, isolation test | Merged in the fourth platform PR |
 | 5 Panel | contextual help drawer and sheet | Not yet |
 | 6 Search and glossary | search page and highlights, glossary page | Not yet |
 | 7 States and checks | offline and error states, accessibility and layout e2e, final docs | Not yet |
@@ -92,6 +92,8 @@ Video files are not in the repo. The page looks for them under the media release
 - `pnpm vitest run apps/web/src/components/admin/help apps/web/src/lib/admin/help-coverage.test.ts apps/web/src/server/help`
 - Coverage gaps: `content/help/coverage-gaps.json` lists admin routes and menu items with no article yet. A content lane that covers one must remove it (the test fails otherwise). A new admin route needs an article with `screens` or a gap entry.
 - Dockerfile copies `content/help` to `/app/content/help`; the loader finds it from the app folder or `HELP_CONTENT_DIR`.
+- `pnpm vitest run apps/web/src/server/help "apps/web/src/app/admin/(shell)/help/media"` (media route, Range, isolation)
+- Media release: env `HELP_MEDIA_RELEASE` (default `sample`, which serves `content/help/placeholder`). A real release is read from the originals bucket at `help/<release>/<VIDEO_ID>/<file>`. `kb:publish` (harness lane) writes it.
 - Later slices add their own lines here.
 
 ## Harness (lane KB-H)
