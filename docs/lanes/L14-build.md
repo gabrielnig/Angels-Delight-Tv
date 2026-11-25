@@ -232,6 +232,7 @@ How a step is read (write steps so this works):
 - Labels are the **bold** words and must match the screen exactly. Text to type is in quotes: `Type "Rivers" in the **Title** box.`
 - Verbs: Choose or Open a menu item; Click or Press a control; Type or Enter; Tick or Untick; Select an option from a list; Wait until you see; Scroll to.
 - Drag, upload or "choose a file" steps are skipped as manual and counted in the report.
+- Signing in: an article that starts with `Go to the sign in page, "/admin/login".` is followed signed out. `Type your email in the **Email** box.`, `Type your password in the **Password** box.` and `Type the 6 digit code from your app in the **Digit 1 of 6** box.` use the demo account of the role (never written in an article). Any other article is followed signed in as its role.
 - A role below the article role fails before any browser opens and names both roles.
 
 A failure names the step, why, and the labels on screen at that moment.

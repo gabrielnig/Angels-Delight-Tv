@@ -1,6 +1,8 @@
 /// <reference lib="dom" />
 import type { Locator } from '@playwright/test';
 import { interpretStep, type Action } from './fact-check';
+import { accountFor, FIXTURE_CODE } from './accounts';
+import type { EpisodeRole } from './episode';
 import { goToScreen } from './helpers';
 import type { Session } from './session';
 
@@ -52,7 +54,12 @@ async function visible(loc: Locator, ms: number): Promise<boolean> {
   }
 }
 
-async function execute(s: Session, a: Action, seeTimeoutMs: number): Promise<string | null> {
+async function execute(
+  s: Session,
+  a: Action,
+  seeTimeoutMs: number,
+  role: EpisodeRole,
+): Promise<string | null> {
   const find = async (what: string, loc: Locator) =>
     (await visible(loc, 6000)) ? null : `Cannot find ${what} on ${new URL(s.page.url()).pathname}.`;
   switch (a.kind) {
@@ -76,7 +83,19 @@ async function execute(s: Session, a: Action, seeTimeoutMs: number): Promise<str
       const loc = s.page.getByLabel(a.label, { exact: true }).first();
       const miss = await find(`a field labelled "${a.label}"`, loc);
       if (miss) return miss;
-      await s.type(loc, a.text, 20);
+      if (a.secret === 'code') {
+        // The six digit boxes move on by themselves, so the digits are typed after the first box has focus.
+        await s.click(loc);
+        await s.page.keyboard.type(process.env.KB_2FA_CODE ?? FIXTURE_CODE, { delay: 20 });
+      } else if (a.secret) {
+        await s.type(loc, accountFor(role)[a.secret], 20);
+      } else {
+        await s.type(loc, a.text, 20);
+      }
+      break;
+    }
+    case 'goto': {
+      await s.goto(a.path);
       break;
     }
     case 'check': {
@@ -129,7 +148,7 @@ async function execute(s: Session, a: Action, seeTimeoutMs: number): Promise<str
 export async function runSteps(
   s: Session,
   steps: Array<{ n: number; text: string }>,
-  o: { seeTimeoutMs?: number } = {},
+  o: { seeTimeoutMs?: number; role?: EpisodeRole } = {},
 ): Promise<{ results: StepResult[]; failure: StepFailureReport | null }> {
   const results: StepResult[] = [];
   for (const step of steps) {
@@ -143,7 +162,7 @@ export async function runSteps(
     }
     let problem: string | null;
     try {
-      problem = await execute(s, action, o.seeTimeoutMs ?? 10_000);
+      problem = await execute(s, action, o.seeTimeoutMs ?? 10_000, o.role ?? 'editor');
       if (!problem) await s.guard(`step ${step.n}`);
     } catch (e) {
       problem = e instanceof Error ? e.message.split('\n')[0]! : String(e);

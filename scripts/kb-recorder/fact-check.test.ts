@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { interpretStep, parseArticle, roleAllows } from './fact-check';
+import { interpretStep, parseArticle, roleAllows, startsSignedOut } from './fact-check';
 
 describe('parseArticle', () => {
   const md = [
@@ -64,7 +64,16 @@ describe('interpretStep', () => {
       'Type "Staying Safe Online" in the **Title** box.',
       { kind: 'type', label: 'Title', text: 'Staying Safe Online' },
     ],
-    ['Type your email in the **Email** box.', { kind: 'unclear' }],
+    ['Type your email in the **Email** box.', { kind: 'type', label: 'Email', secret: 'email' }],
+    [
+      'Type your password in the **Password** box.',
+      { kind: 'type', label: 'Password', secret: 'password' },
+    ],
+    [
+      'Type the 6 digit code from your app in the **Digit 1 of 6** box.',
+      { kind: 'type', label: 'Digit 1 of 6', secret: 'code' },
+    ],
+    ['Go to the sign in page, "/admin/login".', { kind: 'goto', path: '/admin/login' }],
     ['Tick **Compact rows**.', { kind: 'check', label: 'Compact rows', on: true }],
     ['Untick **Compact rows**.', { kind: 'check', label: 'Compact rows', on: false }],
     [
@@ -95,6 +104,20 @@ describe('interpretStep', () => {
 
   it('treats a number of different bold labels in a click as unclear', () => {
     expect(interpretStep('Click **Upload** or **Done**.').kind).toBe('unclear');
+  });
+});
+
+describe('signed out articles', () => {
+  it('only a first step that goes to a sign in page starts signed out', () => {
+    expect(startsSignedOut([{ n: 1, text: 'Go to the sign in page, "/admin/login".' }])).toBe(true);
+    expect(startsSignedOut([{ n: 1, text: 'Choose **Videos** in the side menu.' }])).toBe(false);
+    expect(startsSignedOut([{ n: 1, text: 'Go to the list, "/admin/videos".' }])).toBe(false);
+    expect(startsSignedOut([])).toBe(false);
+  });
+
+  it('a go to step needs one path in quotes', () => {
+    expect(interpretStep('Go to the sign in page.').kind).toBe('unclear');
+    expect(interpretStep('Go to "admin".').kind).toBe('unclear');
   });
 });
 
