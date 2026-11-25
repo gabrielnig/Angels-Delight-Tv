@@ -60,7 +60,7 @@ const episode: Episode = {
       },
     },
     {
-      caption: 'Click **Account menu for Ngozi Eze** at the top right.',
+      caption: 'Click **Account menu for Demo Editor** at the top right.',
       note: 'Your own name is on the button.',
       holdMs: 3000,
       run: async (s) => {

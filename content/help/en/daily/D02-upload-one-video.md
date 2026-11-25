@@ -33,6 +33,20 @@ Add one video file to the platform. You end with a [draft](glossary:draft) video
 ## Steps
 <!-- kb:steps D02 -->
 1. Choose **Upload** in the side menu.
+   ![The Upload page with the Choose videos button marked 1](../../media/D02/D02-01-upload-desktop.webp)
+2. Click **Choose videos**.
+   ![The Choose videos button marked 1](../../media/D02/D02-02-choose-desktop.webp)
+3. Choose a file from your computer.
+   A box from your computer opens. Pick one MP4, MOV or MKV file.
+   ![The Upload queue with the file and its progress bar marked 1](../../media/D02/D02-03-queue-desktop.webp)
+4. Wait until you see **Uploaded just now**.
+   Keep this page open until then. Closing it can stop the upload.
+   ![The finished upload with Uploaded just now marked 1](../../media/D02/D02-04-done-desktop.webp)
+5. Click **Edit details for demo-lesson.mp4**.
+   The name on this button is the name of your own file.
+6. Wait until you see **Before you publish**.
+   Your video is now a draft. Nobody can watch it yet.
+   ![The new draft video with the Before you publish card marked 1](../../media/D02/D02-06-draft-desktop.webp)
 <!-- /kb:steps -->
 
 ## What you should see

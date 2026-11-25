@@ -1,6 +1,6 @@
 import type { Episode } from '../episode';
 import { lookStep, navStep, rowLink } from '../c1-common';
-import { clickByName, typeInto, waitForToast } from '../helpers';
+import { clickByName, typeInto } from '../helpers';
 
 /** D06 Choose or upload a poster: pick one of the six frames, check the crop, save. */
 const episode: Episode = {
@@ -72,15 +72,16 @@ const episode: Episode = {
       },
     },
     {
-      caption: 'Wait until you see **Poster saved**.',
+      caption: 'Wait until you see **Before you publish**.',
       holdMs: 3000,
       run: async (s) => {
-        await waitForToast(s, 'Poster saved');
+        await s.page.waitForURL(/\/admin\/videos\/vid_naira$/, { timeout: 15000 });
+        await s.page.getByText('Before you publish').first().waitFor();
       },
       shot: {
         name: 'saved',
-        alt: 'The message Poster saved marked 1',
-        marks: [{ target: (s) => s.page.getByText('Poster saved').first(), label: 'Poster saved' }],
+        alt: 'The video page again, with Before you publish marked 1',
+        marks: [{ target: (s) => s.page.getByText('Before you publish').first(), label: 'Before you publish' }],
       },
     },
   ],

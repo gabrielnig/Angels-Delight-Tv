@@ -56,6 +56,7 @@ const episode: Episode = {
       caption: 'Click **Restore Telling the Time**.',
       holdMs: 1800,
       run: async (s) => {
+        await s.page.waitForURL(/\/admin\/videos\/trash/, { timeout: 15000 });
         await clickByName(s, 'button', 'Restore Telling the Time', { exact: true });
       },
       shot: {

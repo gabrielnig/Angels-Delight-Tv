@@ -34,6 +34,17 @@ Find your own [role](glossary:role) and learn what the three staff roles can do.
 ## Steps
 <!-- kb:steps S05 -->
 1. Choose **Help centre** in the side menu.
+   ![The Help centre home with the search box marked 1](../../media/S05/S05-01-help-desktop.webp)
+2. Type "roles" in the **Search the help centre** box.
+   ![The search box with the word roles typed in, marked 1](../../media/S05/S05-02-search-desktop.webp)
+3. Click **Search**.
+   ![The search results with Roles and permissions marked 1](../../media/S05/S05-03-results-desktop.webp)
+4. Click **Roles and permissions**.
+5. Wait until you see **Who can do this**.
+   ![The guide with its Who can do this line marked 1](../../media/S05/S05-05-guide-desktop.webp)
+6. Scroll to **Steps**.
+   ![The list of tasks and the lowest role for each, marked 1](../../media/S05/S05-06-list-desktop.webp)
+7. Scroll to **Related guides**.
 <!-- /kb:steps -->
 
 ## What you should see
