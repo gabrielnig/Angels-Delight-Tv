@@ -367,9 +367,11 @@ export class RealCatalog implements CatalogRepository {
     if (found.type === 'redirect') return { type: 'redirect', to: redirectPath(found.to) };
     const { card, categories, publishedAt } = found.title;
     const item = cardToItem(card);
+    const share = await this.shareText(card.kind, card.id);
     if (item.kind === 'series') {
       return {
         type: 'series',
+        share,
         item: {
           ...item,
           categorySlug: categories[0]?.slug ?? '',
@@ -379,6 +381,7 @@ export class RealCatalog implements CatalogRepository {
     }
     return {
       type: 'video',
+      share,
       item: {
         ...(item as VideoSummary),
         categorySlug: categories[0]?.slug ?? '',
@@ -386,6 +389,17 @@ export class RealCatalog implements CatalogRepository {
         publishedAt: publishedAt ?? '',
       },
     };
+  }
+
+  /** The editor's share words (L15b), absent when none are set. */
+  private async shareText(kind: 'video' | 'series', id: string) {
+    const rows = (await this.service.db.execute(
+      kind === 'video'
+        ? sql`SELECT share_title AS title, share_description AS description FROM videos WHERE id = ${id}::uuid`
+        : sql`SELECT share_title AS title, share_description AS description FROM series WHERE id = ${id}::uuid`,
+    )) as unknown as { rows?: { title: string | null; description: string | null }[] } | { title: string | null; description: string | null }[];
+    const row = (Array.isArray(rows) ? rows : (rows.rows ?? []))[0];
+    return row && (row.title || row.description) ? { title: row.title, description: row.description } : undefined;
   }
 
   async series(ctx: ViewerContext, slug: string) {

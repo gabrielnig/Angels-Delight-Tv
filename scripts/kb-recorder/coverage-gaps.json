@@ -21,6 +21,7 @@
     "/admin/roles",
     "/admin/series",
     "/admin/series/[id]",
+    "/admin/series/[id]/share",
     "/admin/site-settings",
     "/admin/sponsors",
     "/admin/sponsors/[id]",
@@ -35,6 +36,7 @@
     "/admin/videos/[id]/markers",
     "/admin/videos/[id]/poster",
     "/admin/videos/[id]/preview",
+    "/admin/videos/[id]/share",
     "/admin/videos/trash",
     "/admin/videos/upload"
   ],

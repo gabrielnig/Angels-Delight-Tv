@@ -9,6 +9,7 @@ import { PublicTitle, TitleView } from '../../../../components/title/TitleView';
 import { getCatalog, getLibrary } from '../../../../lib/data';
 import { JsonLd } from '../../../../components/seo/JsonLd';
 import { pageMetadata, shareImageExtra } from '../../../../server/seo/site-meta';
+import { shareOf, shareTextOf } from '../../../../lib/seo/share-overrides';
 import { shareImageFor } from '../../../../lib/seo/share-image';
 import { titlePageJsonLd } from '../../../../lib/seo/page-jsonld';
 import { shareConfig, siteOrigin, titleIndexable } from '../../../../server/seo/page-seo';
@@ -31,15 +32,16 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   }
   const { item } = preview;
   const path = `/title/${item.slug}`;
+  const words = shareTextOf(item, preview.share);
   const indexable = await titleIndexable('video', item.slug);
   // Kids only titles (and a failed lookup) show the generic platform card: no title, text or picture (R26).
   if (!indexable) return pageMetadata({ kind: 'private', path });
   return pageMetadata({
     kind: 'video',
     path,
-    title: item.title,
-    description: item.description,
-    image: shareImageFor('title', item.slug, item.title, item.publishedAt, item.thumbnail, await shareImageExtra()),
+    title: words.title,
+    description: words.description,
+    image: shareImageFor('title', item.slug, words.title, item.publishedAt, item.thumbnail, await shareImageExtra()),
     durationSeconds: item.durationSeconds,
     releasedAt: item.publishedAt || undefined,
     tags: item.categoryName ? [item.categoryName] : undefined,
@@ -85,10 +87,14 @@ export default async function TitlePage({ params }: Params) {
   ]);
   const kids = ctx.audience === 'kids';
   const sponsor = kids ? null : await sponsorFor('title_card', ctx);
+  const words = shareTextOf(
+    detail.video,
+    shareOf(await getCatalog().publicPreview(detail.video.slug, 'video')),
+  );
   const shareImage = shareImageFor(
     'title',
     detail.video.slug,
-    detail.video.title,
+    words.title,
     detail.video.publishedAt,
     detail.video.thumbnail,
     await shareImageExtra(),
@@ -100,6 +106,7 @@ export default async function TitlePage({ params }: Params) {
         siteName: platformName,
         video: detail.video,
         shareImage,
+        words,
       })}
     />
   ) : null;

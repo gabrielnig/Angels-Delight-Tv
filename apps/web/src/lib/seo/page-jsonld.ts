@@ -49,14 +49,16 @@ export function titlePageJsonLd(input: {
   video: VideoSummary;
   /** The share picture path or url. It leads the picture list so structured data and Open Graph agree. */
   shareImage?: string;
+  /** The share card words (lib/seo/share-overrides.ts), so the name and description equal og:title and og:description. */
+  words?: { title: string; description: string };
 }): Block[] {
   const { origin, video } = input;
   if (!origin) return [];
   const object = videoObject({
     origin,
     slug: video.slug,
-    title: video.title,
-    description: trimWords(video.description, DESCRIPTION_LIMIT),
+    title: input.words?.title ?? video.title,
+    description: trimWords(input.words?.description ?? video.description, DESCRIPTION_LIMIT),
     thumbnails: withShareImage(origin, input.shareImage, thumbnailUrls(origin, video.thumbnail)),
     uploadDate: video.publishedAt,
     durationSeconds: video.durationSeconds,
@@ -77,6 +79,7 @@ export function seriesPageJsonLd(input: {
   series: SeriesSummary;
   seasons: SeriesDetail['seasons'];
   shareImage?: string;
+  words?: { title: string; description: string };
 }): Block[] {
   const { origin, series } = input;
   if (!origin) return [];
@@ -91,8 +94,8 @@ export function seriesPageJsonLd(input: {
     tvSeries({
       origin,
       slug: series.slug,
-      title: series.title,
-      description: trimWords(series.description, DESCRIPTION_LIMIT),
+      title: input.words?.title ?? series.title,
+      description: trimWords(input.words?.description ?? series.description, DESCRIPTION_LIMIT),
       thumbnails: withShareImage(origin, input.shareImage, thumbnailUrls(origin, series.thumbnail)),
       episodes,
       numberOfEpisodes: series.episodeCount,

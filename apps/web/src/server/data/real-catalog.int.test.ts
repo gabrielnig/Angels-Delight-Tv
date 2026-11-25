@@ -436,6 +436,16 @@ describe.skipIf(!integrationEnabled())('real catalog repository', () => {
       expect(await catalog.publicPreview('strong', 'video')).toMatchObject({ type: 'video' });
     });
 
+    it('carries the editor share words when set and none when not (L15b)', async () => {
+      const a = await seedVideo(h.db.setup, { slug: 'worded', maturityRank: 0, shareTitle: 'Rivers, told well', shareDescription: 'A short film.' });
+      await seedVideo(h.db.setup, { slug: 'plain', maturityRank: 0 });
+      expect(await catalog.publicPreview('worded', 'video')).toMatchObject({
+        share: { title: 'Rivers, told well', description: 'A short film.' },
+      });
+      expect(a.id).toBeTruthy();
+      expect(await catalog.publicPreview('plain', 'video')).not.toHaveProperty('share', expect.anything());
+    });
+
     it('carries artwork when the title has a poster', async () => {
       const assetId = await seedAsset(h.db.setup);
       await seedVideo(h.db.setup, { slug: 'with-poster', posterAssetId: assetId });

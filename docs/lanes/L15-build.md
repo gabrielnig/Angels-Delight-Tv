@@ -8,7 +8,7 @@ Audit: `docs/audits/2026-11-25-og-audit.md`. L15a owns share UI code. L15b owns 
 |---|---|---|---|
 | 1 | Metadata builder for every public route | merged | #446 |
 | 2 | Image pipeline and privacy gate | merged | #447 |
-| 3 | Admin share control per video and series | open | |
+| 3 | Admin share control per video and series (text; custom picture left) | in review | |
 | 4 | `pnpm share:check` and CI | merged | #449 |
 | 5 | JSON-LD alignment | merged | #450 |
 | 6 | Docs | in review | |
@@ -66,3 +66,13 @@ Audit: `docs/audits/2026-11-25-share-audit.md`. Mockups S200 to S203 in `docs/mo
 - Sheet under 600 px (handle, swipe down past 25 percent or a flick, scroll inside, safe area), popover from 600 px hung from the button and flipped near the right edge, centred dialog under 560 px of height. Focus moves in, is trapped, Escape and scrim close, focus returns. Status line is a polite `role="status"`. Copy uses the clipboard api, then `execCommand`, then selects the field. More hides without `navigator.share`. Offline: Facebook, WhatsApp, X, Telegram and Email explain themselves, Copy link, Messages and More still work.
 - Pages: `shareConfig(title, kind, slug, thumbnail)` returns channels, text and the canonical url. `share={null}` hides Share for a title that is not indexable (kids only or a failed lookup).
 - Tests: `pnpm vitest run apps/web/src/components/share apps/web/src/components/title "apps/web/src/app/(viewer)"`.
+
+## Slice 3 (Share card admin)
+
+- Migration `packages/db/migrations/main/0061_share_text.sql` (journal entry added), columns in `packages/db/src/schema/content.ts`. `packages/catalog/src/admin/share-text.ts`: `getShareText`, `setShareText` (staff only, validation, audit `video.share_text` and `series.share_text`).
+- Web: `lib/seo/share-overrides.ts` (`validateShareText`, `shareTextOf`, `shareOf`, `previewCards`, `PLATFORM_LIMITS`), `lib/data/admin/real/share.ts` (`shareAdmin`), `app/admin/(shell)/share/actions.ts`, pages `videos/[id]/share` and `series/[id]/share`, `components/admin/ShareCardEditor.tsx` (live cards). A Share card button sits in the header of both editors. Fixture mode shows the form but refuses to save.
+- `PublicPreview` carries `share` (from `publicPreview` in `server/data/real-catalog.ts`); page tags, og picture title and JSON-LD use it.
+- For the content and knowledge base lanes: the screen is a gap entry in `scripts/kb-recorder/coverage-gaps.json` (routes and the three settings X handle, title overlay and play badge). A guide should say: open a video or series, press Share card, type a share title and description (empty uses the title), watch the three cards, Save. WhatsApp shows about 65 characters of title and 120 of description, Facebook 88 and 160, X 70 and 200. Chat apps keep old previews for days: after a change, share the link again or use the debuggers listed below.
+- Not built: custom share picture upload or choice (fallback chain today is the generated card from the poster, then the platform card). The series card preview shows no picture because the series admin record has no slug.
+- Tests: `pnpm vitest run apps/web/src/lib/seo/share-overrides.test.ts apps/web/src/components/admin/ShareCardEditor.test.tsx apps/web/src/lib/admin/kb-episode-coverage.test.ts` and with the database `packages/catalog/src/admin/share-text.int.test.ts apps/web/src/server/data/real-catalog.int.test.ts -t share`.
+

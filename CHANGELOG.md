@@ -7,6 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 ## [Unreleased]
 
 ### Added
+- Lane L15b slice 3 (M45): Share card page for every video and series (`/admin/videos/[id]/share`, `/admin/series/[id]/share`). Share title and description with live WhatsApp, Facebook and X cards, limits and plain messages, audit entries, migration 0061 (`share_title`, `share_description`). The words reach the page tags, the share picture overlay and JSON-LD. Custom share picture upload is left for later
 - Lane L15b slice 6 (M45): docs. Stories M45-S20 to S24, MODULES note, SCREEN-ARCHITECTURE share metadata section, SECURITY section 17.1 on public share previews, CLIENT-INPUTS rows for the site description, default share image, X handle and picture style
 - Lane L15b slice 5 (M45): structured data matches the share tags. VideoObject and TVSeries lead their image list with the share picture, descriptions use the same 160 character word safe trim as og:description, and the Organization lists the X profile from the handle setting and the default share image as logo
 - Lane L15b slice 4 (M45): `pnpm share:check`. Fetches public pages of a running build and checks every share tag, absolute https urls, canonical equals og:url, no og:video, markup, description length, picture reachability, status, redirect, content type, size under 300 KB, real against declared dimensions and response time, then prints a table. `--self-test` runs the rules against fixtures and runs in the CI lint job; the a11y job runs it against the fixture server

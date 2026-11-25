@@ -233,6 +233,7 @@ Index `(updated_at)` for cleanup. Consumed with one atomic `INSERT ... ON CONFLI
 | `poster_asset_id` | uuid | yes | | FK `assets` ON DELETE SET NULL |
 | `hero_asset_id` | uuid | yes | | FK `assets` ON DELETE SET NULL |
 | `failure_code` | text | yes | | Machine code for `failed` |
+| `share_title`, `share_description` | text | yes | | Editor worded share card (migration 0061, L15b). Up to 90 and 200 characters. Null follows the title and description |
 | `failure_message` | text | yes | | Readable, sanitized |
 | `preview_key` | text | yes | | Hero preview clip in the media bucket, `cap/{media_prefix}/preview/{start_ms}-{sha8}.mp4`, content hashed (migration 0050) |
 | `preview_state` | text | no | `none` | `none`, `queued`, `ready`, `failed` or `skipped` |
@@ -326,7 +327,7 @@ Indexes: `(purpose, created_at DESC)`; `(sha256)`. SVG is not an allowed type.
 
 ### 5.5 `series`, `seasons`, `episodes`
 
-`series`: `id`, `slug`, `title`, `description`, `kids_safe`, `label_overrides` jsonb nullable (migration 0059, M51: this series' own group and item words, null follows the setting `content.series_labels`; CHECK it is null or an object), `poster_asset_id` and `hero_asset_id` (FK SET NULL), `publish_state`, `publish_at`, `published_at`, `created_by` (SET NULL), timestamps, `deleted_at`, `search_tsv`. Same checks and indexes pattern as `videos` (partial unique slug, GIN on `search_tsv`).
+`series`: `id`, `slug`, `title`, `description`, `kids_safe`, `label_overrides` jsonb nullable (migration 0059, M51: this series' own group and item words, null follows the setting `content.series_labels`; CHECK it is null or an object), `share_title` and `share_description` text nullable (migration 0061, L15b: the editor's share card words, CHECK up to 90 and 200 characters, null follows the title and description), `poster_asset_id` and `hero_asset_id` (FK SET NULL), `publish_state`, `publish_at`, `published_at`, `created_by` (SET NULL), timestamps, `deleted_at`, `search_tsv`. Same checks and indexes pattern as `videos` (partial unique slug, GIN on `search_tsv`).
 
 `seasons`: `id`, `series_id` (FK `series` CASCADE), `number` smallint (>= 1), `title` nullable (the group's own title such as Genesis, shown instead of the numbered name, M51). `UNIQUE (series_id, number)`. The words Season and Episode are only the default labels: the owner's words come from `content.series_labels` and `series.label_overrides` (value shape in `packages/shared/src/series-labels.ts`).
 

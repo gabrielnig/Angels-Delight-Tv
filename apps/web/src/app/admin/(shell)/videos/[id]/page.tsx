@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { PageHeader } from '@/components/admin/PageHeader';
+import { LinkButton } from '@/components/admin/Button';
 import { VideoEditor } from '@/components/admin/VideoEditor';
 import { adminDataMode, videoService } from '@/lib/data/admin/services';
 import { markersAdmin } from '@/lib/data/admin/markers';
@@ -47,6 +48,11 @@ export default async function VideoEditPage({ params }: { params: Promise<{ id: 
           { label: video.title },
         ]}
         title={video.title}
+        actions={
+          <LinkButton href={`/admin/videos/${id}/share`} variant="secondary">
+            Share card
+          </LinkButton>
+        }
       />
       <VideoEditor
         key={video.updatedAt}

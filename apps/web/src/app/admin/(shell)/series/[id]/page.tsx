@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { notFound, forbidden } from 'next/navigation';
 import { NotFound } from '@ad/shared';
+import { LinkButton } from '@/components/admin/Button';
 import { PageHeader } from '@/components/admin/PageHeader';
 import { SeriesEditor } from '@/components/admin/SeriesEditor';
 import { can } from '@/lib/admin/can';
@@ -33,6 +34,11 @@ export default async function SeriesEditPage({ params }: { params: Promise<{ id:
           { label: detail.series.title },
         ]}
         title={detail.series.title}
+        actions={
+          <LinkButton href={`/admin/series/${id}/share`} variant="secondary">
+            Share card
+          </LinkButton>
+        }
       />
       <SeriesEditor
         detail={detail}
