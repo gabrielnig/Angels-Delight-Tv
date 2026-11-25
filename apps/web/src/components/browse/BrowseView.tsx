@@ -1,15 +1,20 @@
-import { EmptyState } from '@ad/ui';
+import { Suspense } from 'react';
 import { getLocale, getTranslator } from '../../lib/i18n/server';
 import { getCatalog, getLibrary } from '../../lib/data';
 import type { BrowseLength, BrowseSort, ViewerContext } from '../../lib/data';
-import { BrowseGrid } from './BoundGrids';
 import { BrowseControls } from './BrowseControls';
+import { BrowseCount, BrowseResults } from './BrowseResults';
+import { BrowseCountSkeleton, BrowseSkeleton } from './BrowseSkeleton';
 import { browseHref as href, parseLength, parseSort } from './browse-filters';
 import { lengthOptions, sortOptions } from './browse-options';
 
 export { parseLength, parseSort };
 
-/** Browse by category with URL-driven length and sort filters. */
+/**
+ * Browse by category with URL-driven length and sort (S186, D-357). The title, rail and bar render at once. The
+ * count and the results stream behind a skeleton that is keyed to the choices, so a change shows the skeleton
+ * under the same rail and bar instead of a blank page.
+ */
 export async function BrowseView({
   ctx,
   categorySlug,
@@ -23,17 +28,23 @@ export async function BrowseView({
 }) {
   const catalog = getCatalog();
   const msg = await getTranslator(await getLocale());
-  const [categories, page, inList] = await Promise.all([
-    catalog.categories(ctx),
-    catalog.browse(ctx, { categorySlug, length, sort }),
-    getLibrary().myListIds(ctx),
-  ]);
+  const categories = await catalog.categories(ctx);
+  // Started here, read below by the count and the results, so one request serves both.
+  const page = catalog.browse(ctx, { categorySlug, length, sort });
+  const inList = getLibrary().myListIds(ctx);
   const base = categorySlug ? `/browse/${categorySlug}` : '/browse';
-  const filtered = length !== 'any';
+  const key = `${categorySlug ?? 'all'}-${length}-${sort}`;
 
   return (
-    <div className="web-page">
-      <h1 className="web-page__title">Browse</h1>
+    <div className="web-page web-browse">
+      <div className="web-browse__head">
+        <h1 className="web-page__title">{msg('browse.title')}</h1>
+        <p className="web-browse__count" aria-live="polite">
+          <Suspense key={key} fallback={<BrowseCountSkeleton />}>
+            <BrowseCount msg={msg} page={page} />
+          </Suspense>
+        </p>
+      </div>
       <BrowseControls
         base={base}
         length={length}
@@ -50,35 +61,17 @@ export async function BrowseView({
         lengthOptions={lengthOptions(msg)}
         sortOptions={sortOptions(msg)}
       />
-      {page.items.length === 0 ? (
-        filtered ? (
-          <EmptyState
-            live
-            icon="search"
-            title="No videos match these filters"
-            description="Try a different length or clear your filters."
-            action={{ label: 'Clear filters', href: href(base, 'any', sort) }}
-          />
-        ) : (
-          <EmptyState
-            icon="list"
-            title="Nothing here yet"
-            description="New videos are added often. Check back soon."
-            action={{ label: 'Back to Home', href: '/' }}
-          />
-        )
-      ) : (
-        <BrowseGrid
-          key={`${categorySlug ?? 'all'}-${length}-${sort}`}
-          initialItems={page.items}
-          total={page.total}
-          nextCursor={page.nextCursor}
+      <Suspense key={key} fallback={<BrowseSkeleton label={msg('browse.skeleton.label')} />}>
+        <BrowseResults
+          msg={msg}
+          page={page}
           inList={inList}
+          base={base}
           categorySlug={categorySlug}
           length={length}
           sort={sort}
         />
-      )}
+      </Suspense>
     </div>
   );
 }

@@ -10,6 +10,7 @@ import { MenuButton, type MenuOption } from './MenuButton';
 import { nextBarHidden } from './browse-bar-state';
 import { browseHref } from './browse-filters';
 import './browse-controls.css';
+import './browse-page.css';
 
 export interface BrowseControlsProps {
   /** The page path without a query, for example /browse or /browse/science. */
