@@ -1,4 +1,5 @@
 import { L10_MESSAGES } from './l10-messages';
+import { L11_MESSAGES } from './l11-messages';
 import { L13_MESSAGES } from './l13-messages';
 import { L5_MESSAGES } from './l5-messages';
 import { L7_MESSAGES } from './l7-messages';
@@ -249,6 +250,7 @@ export const EN_NG = {
   'format.duration.hr': '{count} hr',
   'format.duration.hrMin': '{hours} hr {minutes} min',
   ...L10_MESSAGES,
+  ...L11_MESSAGES,
   ...L13_MESSAGES,
   ...L5_MESSAGES,
   ...L9_MESSAGES,
