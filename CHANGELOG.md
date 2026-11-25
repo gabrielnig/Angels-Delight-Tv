@@ -7,6 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 ## [Unreleased]
 
 ### Added
+- Lane KB-H slice 5 (M50): pipeline commands for the knowledge base recorder. `pnpm kb:record` with `--episode`, `--path`, `--changed` and `--all`, `pnpm kb:verify` as a locator only check, an output layout per episode and profile, a poster and a 480p copy, ffprobe checks (codec, no audio, size, length), atomic replacement of published files, and `manifest.json` for the platform.
 - Lane L14 platform slice 4 (M50): private help media route for videos, captions and pictures (staff only, Range, no catalog), the silent captioned `HelpVideo` player with quality and phone picture choice, transcript and watched at 90 percent, and the video page with the path playlist.
 - Lane L14 platform slice 3 (M50): migration 0060 `help_progress` (per account, owner only RLS, deleted at purge, in the data export), Mark as done by button, a one tap Was this helpful answer and a Your progress card on the help home.
 - Lane KB-H slice 4 (M50): caption tools for the knowledge base recorder. Caption style guide lint (short plain sentences, no dashes or emojis, 15 characters a second, two lines of 42), burn in with a readable large style, a Step n of N badge, title and end cards, skipped long waits, WebVTT, a transcript with pointer descriptions and a chapters track.
