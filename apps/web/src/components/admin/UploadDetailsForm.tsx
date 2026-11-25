@@ -1,5 +1,6 @@
 'use client';
 
+import { itemInSentence, resolveSeriesLabels, type SeriesLabelSetting } from '@ad/shared/series-labels';
 import { useState } from 'react';
 import {
   EMPTY_DETAILS,
@@ -34,13 +35,14 @@ export function UploadDetailsForm({
   details: UploadDetails;
   onChange: (next: UploadDetails) => void;
   categories: Array<{ id: string; name: string }>;
-  series: Array<{ id: string; title: string }>;
+  series: Array<{ id: string; title: string; labels?: SeriesLabelSetting }>;
   fileCount: number;
   open: boolean;
   onOpen: () => void;
   onClose: () => void;
 }) {
   const [tagsText, setTagsText] = useState(details.tags.join(', '));
+  const words = resolveSeriesLabels(series.find((s) => s.id === details.seriesId)?.labels, null);
   if (!open) {
     return (
       <div className="adm-card adm-row" style={{ justifyContent: 'space-between' }}>
@@ -83,13 +85,13 @@ export function UploadDetailsForm({
       {details.seriesId ? (
         <div className="adm-row" style={{ alignItems: 'flex-end' }}>
           <Checkbox
-            label="Number episodes in file order"
+            label={`Number ${itemInSentence(words, 2)} in file order`}
             checked={details.numberEpisodes}
             onChange={(e) => onChange({ ...details, numberEpisodes: e.target.checked })}
           />
           {details.numberEpisodes ? (
             <TextField
-              label="Start at episode"
+              label={`Start at ${itemInSentence(words, 1)}`}
               type="number"
               min={1}
               inputMode="numeric"

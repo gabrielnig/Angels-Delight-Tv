@@ -1,5 +1,6 @@
 'use client';
 
+import { type SeriesLabelSetting } from '@ad/shared/series-labels';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { DragEvent } from 'react';
 import type { Lane } from '@/lib/uploader/types';
@@ -40,7 +41,7 @@ export function UploadScreen({
   /** Saves the details onto the draft once it exists. Same validation as the video editor. */
   applyDetails?: (videoId: string, patch: VideoPatch) => Promise<{ ok: boolean; error?: string }>;
   categories?: Array<{ id: string; name: string }>;
-  series?: Array<{ id: string; title: string }>;
+  series?: Array<{ id: string; title: string; labels?: SeriesLabelSetting }>;
   maxFileLabel?: string;
   /** Upload a new file for this existing video (a failed encode) instead of making a new draft. */
   replace?: { videoId: string; title: string };

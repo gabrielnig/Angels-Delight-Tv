@@ -27,11 +27,8 @@ export const L7_DISCOVERY_MESSAGES = {
   'browse.cancel': 'Cancel',
   'browse.continue': 'Continue',
   'browse.listeningSayASubject': 'Listening. Say a subject or a title. Press Escape to stop.',
-  'title.season': 'Season {number}',
-  'title.episode': 'Episode {number}: {title}',
   'title.upNext': 'Up next',
   'title.watched': 'Watched',
-  'title.episodeProgress': 'Episode {number} progress',
   'title.showLess': 'Show less',
   'title.showMore': 'Show more',
   'title.startOver': 'Start over',
@@ -47,10 +44,6 @@ export const L7_DISCOVERY_MESSAGES = {
   'browse.slowDown': {
     one: 'Slow down a little. Try again in {count} second.',
     other: 'Slow down a little. Try again in {count} seconds.',
-  },
-  'title.seasonEpisodes': {
-    one: 'Season {number}, {count} episode',
-    other: 'Season {number}, {count} episodes',
   },
   'title.savedOffline': 'Saved on this device. It will sync when you are back online.',
   'title.addedToList': 'Added to My List',

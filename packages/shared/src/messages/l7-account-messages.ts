@@ -91,7 +91,7 @@ export const L7_ACCOUNT_MESSAGES = {
   'account.youAreInA': 'You are in a Kids profile. Some settings are managed by a parent account.',
   'account.weCouldNotSave2': 'We could not save that change. Your setting was put back.',
   'account.setByYourParent': 'Set by your parent account.',
-  'account.startTheNextEpisode': 'Start the next episode when one ends.',
+  'account.startTheNextVideo': 'Start the next video when one ends.',
   'account.dataSaverKeepsVideo':
     'Data saver keeps video at 480p or lower to use less data. About 20 MB per minute.',
   'account.auto': 'Auto',

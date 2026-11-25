@@ -1,5 +1,14 @@
 import { schema, type Database } from '@ad/db';
-import { Forbidden, NotFound, isStaffRole, isUuid, type Actor } from '@ad/shared';
+import {
+  Forbidden,
+  NotFound,
+  effectiveSeriesLabels,
+  isStaffRole,
+  isUuid,
+  positionCode,
+  resolveSeriesLabels,
+  type Actor,
+} from '@ad/shared';
 import { and, asc, eq, ne } from 'drizzle-orm';
 import type { AuditSink } from '../captions/service';
 import {
@@ -10,7 +19,7 @@ import {
   type MarkerKind,
 } from './validate';
 
-const { videoMarkers, videoChapters, videos, episodes, seasons } = schema;
+const { videoMarkers, videoChapters, videos, episodes, seasons, series, settings } = schema;
 
 export interface MarkerServiceDeps {
   db: Database;
@@ -76,12 +85,19 @@ export class MarkerService {
     if (!isStaffRole(actor.role)) throw new Forbidden('Only editors and admins edit skip markers');
     if (!isUuid(videoId)) throw new NotFound('Video not found');
     const [own] = await this.db
-      .select({ seriesId: seasons.seriesId })
+      .select({ seriesId: seasons.seriesId, labelOverrides: series.labelOverrides })
       .from(episodes)
       .innerJoin(seasons, eq(seasons.id, episodes.seasonId))
+      .innerJoin(series, eq(series.id, seasons.seriesId))
       .where(eq(episodes.videoId, videoId))
       .limit(1);
     if (!own) return [];
+    const [site] = await this.db
+      .select({ value: settings.value })
+      .from(settings)
+      .where(eq(settings.key, 'content.series_labels'))
+      .limit(1);
+    const words = resolveSeriesLabels(effectiveSeriesLabels(site?.value, own.labelOverrides), null);
     const rows = await this.db
       .select({
         id: videos.id,
@@ -97,7 +113,7 @@ export class MarkerService {
     const out = [];
     for (const row of rows) {
       const { markers } = await this.read(row.id);
-      out.push({ id: row.id, title: row.title, label: `S${row.season} E${row.number}`, markers });
+      out.push({ id: row.id, title: row.title, label: positionCode(words, row.season, row.number), markers });
     }
     return out;
   }

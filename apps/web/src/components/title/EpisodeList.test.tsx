@@ -75,3 +75,30 @@ describe('EpisodeList', () => {
     });
   });
 });
+
+describe('EpisodeList with the owner words (M50)', () => {
+  const chapters = [
+    { number: 1, title: 'Genesis', episodes: [ep(1), ep(2, { percent: 40 })] },
+    { number: 2, episodes: [ep(1)] },
+  ];
+
+  it('uses Book and Chapter, and a group title when it has one', () => {
+    render(<EpisodeList seasons={chapters} initialSeason={1} labels={{ preset: 'book_chapter' }} />);
+    expect(screen.getByRole('combobox', { name: 'Book' })).toHaveValue('1');
+    expect(screen.getByRole('option', { name: 'Genesis' })).toBeInTheDocument();
+    expect(screen.getByRole('option', { name: 'Book 2' })).toBeInTheDocument();
+    expect(screen.getByText('Genesis, 2 chapters')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /Chapter 1: Episode 1 title/ })).toBeInTheDocument();
+    expect(screen.getByRole('progressbar', { name: 'Chapter 2 progress' })).toBeInTheDocument();
+  });
+
+  it('shows custom words as typed', () => {
+    const custom = {
+      preset: 'custom' as const,
+      custom: { group: { one: 'Volume', other: 'Volumes' }, item: { one: 'Study', other: 'Studies' } },
+    };
+    render(<EpisodeList seasons={chapters} initialSeason={2} labels={custom} />);
+    expect(screen.getByText('Volume 2, 1 Study')).toBeInTheDocument();
+  });
+});
+

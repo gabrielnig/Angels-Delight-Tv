@@ -4,6 +4,8 @@
  * (lane B auth, lane C viewer API) without touching pages.
  */
 
+import type { SeriesLabelSetting } from '@ad/shared/series-labels';
+
 export type Audience = 'adult' | 'kids';
 
 export interface Thumb {
@@ -73,7 +75,13 @@ export interface VideoSummary {
   kidsSafe: boolean;
   /** ISO date. */
   publishedAt: string;
-  series?: { slug: string; title: string; season: number; episode: number };
+  series?: {
+    slug: string;
+    title: string;
+    season: number;
+    episode: number;
+    labels?: SeriesLabelSetting;
+  };
   /** This profile's rating (-1 Not for me, 1 Like, 2 Love), null when unrated, absent when the source has none (M44). */
   rating?: -1 | 1 | 2 | null;
   /** The computed Most liked label (M44-S05). */
@@ -94,6 +102,8 @@ export interface SeriesSummary {
   thumbnail?: Thumb;
   episodeCount: number;
   seasonCount: number;
+  /** The group and item words of this series (M50). Absent means Season and Episode. */
+  labels?: SeriesLabelSetting;
   kidsSafe: boolean;
   ageLabel?: string;
   hasCaptions: boolean;
@@ -210,7 +220,7 @@ export interface Episode {
 
 export interface SeriesDetail {
   series: SeriesSummary;
-  seasons: Array<{ number: number; episodes: Episode[] }>;
+  seasons: Array<{ number: number; title?: string | null; episodes: Episode[] }>;
   /** Episode to resume or start. */
   next: {
     videoId: string;
@@ -313,7 +323,10 @@ export interface LibraryRepository {
   myList(
     ctx: ViewerContext,
     cursor?: string,
-    options?: { filter?: 'all' | 'started' | 'not_started'; sort?: 'newest' | 'oldest' | 'az' | 'za' },
+    options?: {
+      filter?: 'all' | 'started' | 'not_started';
+      sort?: 'newest' | 'oldest' | 'az' | 'za';
+    },
   ): Promise<
     Page<CatalogItem> & {
       hiddenCount: number;

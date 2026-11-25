@@ -465,7 +465,7 @@ export const ADD_TYPE_HINTS: Record<
   trending: 'What is being watched right now. Hidden until 5 titles qualify.',
   top_ten: 'The ten most watched titles, numbered one to ten.',
   most_liked: 'The titles viewers rated Like or Love the most.',
-  series: 'The episodes of one series.',
+  series: 'The videos of one series.',
   each_category: 'One section for every subject with enough titles.',
   all_series: 'Series cards, newest first.',
 };

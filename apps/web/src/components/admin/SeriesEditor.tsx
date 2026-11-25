@@ -2,6 +2,17 @@
 
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
+import {
+  DEFAULT_SERIES_LABELS,
+  groupWord,
+  itemCount,
+  itemInSentence,
+  itemWord,
+  resolveSeriesLabels,
+  validateSeriesLabels,
+  type SeriesLabelSetting,
+  type SeriesWords,
+} from '@ad/shared/series-labels';
 import type { SeriesPatch } from '@/lib/data/admin/collection-commands';
 import type { SeriesDetail } from '@/lib/data/admin/services';
 import type { CommandResult } from '@/lib/data/admin/video-commands';
@@ -12,6 +23,7 @@ import { ConfirmDialog } from './Dialog';
 import { SelectField, Switch, TextArea, TextField } from './fields';
 import { EmptyState } from './states';
 import { useCommand } from './useCommand';
+import { SeriesNamesFields } from './site/SeriesNamesFields';
 
 export interface SeriesActions {
   update(id: string, patch: SeriesPatch): Promise<CommandResult>;
@@ -39,6 +51,9 @@ export function SeriesEditor({
   const router = useRouter();
   const { run, busy } = useCommand();
   const { series, episodes, available } = detail;
+  const words = resolveSeriesLabels(series.labels, null);
+  const some = itemInSentence(words, 2);
+  const one = itemInSentence(words, 1);
   const [title, setTitle] = useState(series.title);
   const [description, setDescription] = useState(series.description);
   const [error, setError] = useState<string>();
@@ -57,7 +72,7 @@ export function SeriesEditor({
   const differingRanks = new Set(differing.map((v) => v.maturityRank ?? null));
   const differingText =
     differing.length === 0
-      ? 'every episode already has this rating'
+      ? `every ${one} already has this rating`
       : differingRanks.size === 1 && !differingRanks.has(null)
         ? `including ${differing.length} that ${differing.length === 1 ? 'is' : 'are'} rated ${labels[[...differingRanks][0]!]} today`
         : `including ${differing.length} that ${differing.length === 1 ? 'is' : 'are'} rated differently today`;
@@ -73,6 +88,13 @@ export function SeriesEditor({
       'Series saved.',
     );
     setError(result.ok ? undefined : result.error);
+  }
+  async function saveNames(labels: SeriesLabelSetting | null) {
+    const result = await run(
+      () => actions.update(series.id, { labels }),
+      labels === null ? 'This series follows the site names.' : 'Series names saved.',
+    );
+    return result;
   }
   async function publish(next: boolean) {
     const result = await run(
@@ -105,7 +127,7 @@ export function SeriesEditor({
         />
         <SelectField
           label="Maturity rating (required)"
-          hint="Episodes keep their own rating. A profile sees only the episodes within its limit."
+          hint={`${itemWord(words, 2)} keep their own rating. A profile sees only the ${some} within its limit.`}
           value={rank}
           disabled={!canManage}
           options={[
@@ -121,7 +143,7 @@ export function SeriesEditor({
               disabled={!canManage || busy}
               onClick={() => setApplyOpen(true)}
             >
-              {`Apply to all ${episodes.length} ${episodes.length === 1 ? 'episode' : 'episodes'}`}
+              {`Apply to all ${itemCount(words, episodes.length)}`}
             </Button>
           </div>
         ) : null}
@@ -138,14 +160,16 @@ export function SeriesEditor({
         </div>
       </section>
 
-      <section className="adm-card adm-stack" aria-labelledby="series-episodes">
-        <h2 className="adm-h3" id="series-episodes">
-          Episodes
+      <SeriesNamesSection series={series} canManage={canManage} busy={busy} onSave={saveNames} />
+
+      <section className="adm-card adm-stack" aria-labelledby="series-items">
+        <h2 className="adm-h3" id="series-items">
+          {itemWord(words, 2)}
         </h2>
         {episodes.length === 0 ? (
           <EmptyState
-            title="No episodes yet."
-            help="Add a video below to make the first episode."
+            title={`No ${some} yet.`}
+            help={`Add a video below to make the first ${one}.`}
             icon="video"
           />
         ) : (
@@ -153,13 +177,14 @@ export function SeriesEditor({
             {episodes.map((v) => (
               <EpisodeRow
                 key={v.id}
+                words={words}
                 title={v.title}
                 published={v.publishState === 'published'}
                 season={v.seasonNumber}
                 episode={v.episodeNumber}
                 disabled={!canManage || busy}
                 onSave={(s, e) =>
-                  run(() => actions.setEpisode(v.id, series.id, s, e), 'Episode numbers saved.')
+                  run(() => actions.setEpisode(v.id, series.id, s, e), 'Numbers saved.')
                 }
                 onRemove={() =>
                   run(() => actions.setEpisode(v.id, null, null, null), 'Removed from the series.')
@@ -184,12 +209,12 @@ export function SeriesEditor({
             onClick={async () => {
               await run(
                 () => actions.setEpisode(addId, series.id, 1, episodes.length + 1),
-                'Episode added.',
+                `${itemWord(words, 1)} added.`,
               );
               setAddId('');
             }}
           >
-            Add episode
+            {`Add ${one}`}
           </Button>
         </div>
       </section>
@@ -215,16 +240,16 @@ export function SeriesEditor({
 
       <ConfirmDialog
         open={applyOpen && applying !== null}
-        title={`Apply ${applying === null ? '' : labels[applying]} to all ${episodes.length} ${episodes.length === 1 ? 'episode' : 'episodes'}?`}
-        consequence={`This replaces the rating on every episode, ${differingText}. You can change single episodes later.`}
-        confirmLabel={`Apply to ${episodes.length} ${episodes.length === 1 ? 'episode' : 'episodes'}`}
-        cancelLabel="Keep episode ratings"
+        title={`Apply ${applying === null ? '' : labels[applying]} to all ${itemCount(words, episodes.length)}?`}
+        consequence={`This replaces the rating on every ${one}, ${differingText}. You can change single ${some} later.`}
+        confirmLabel={`Apply to ${itemCount(words, episodes.length)}`}
+        cancelLabel={`Keep ${one} ratings`}
         busy={busy}
         onClose={() => setApplyOpen(false)}
         onConfirm={async () => {
           const result = await run(
             () => actions.update(series.id, { maturityRank: applying!, applyToEpisodes: true }),
-            'Rating applied to every episode.',
+            `Rating applied to every ${one}.`,
           );
           setError(result.ok ? undefined : result.error);
           setApplyOpen(false);
@@ -234,7 +259,7 @@ export function SeriesEditor({
       <ConfirmDialog
         open={confirm}
         title={`Delete ${series.title}?`}
-        consequence={`${episodes.length} ${episodes.length === 1 ? 'episode stays' : 'episodes stay'} in your library, but they will not belong to a series.`}
+        consequence={`${itemCount(words, episodes.length)} ${episodes.length === 1 ? 'stays' : 'stay'} in your library, but ${episodes.length === 1 ? 'it' : 'they'} will not belong to a series.`}
         confirmLabel="Delete series"
         danger
         busy={busy}
@@ -250,6 +275,7 @@ export function SeriesEditor({
 }
 
 function EpisodeRow({
+  words,
   title,
   published,
   season,
@@ -258,6 +284,7 @@ function EpisodeRow({
   onSave,
   onRemove,
 }: {
+  words: SeriesWords;
   title: string;
   published: boolean;
   season: number | null;
@@ -279,7 +306,7 @@ function EpisodeRow({
       </div>
       <div className="adm-row">
         <TextField
-          label="Season"
+          label={groupWord(words, 1)}
           inputMode="numeric"
           value={s}
           disabled={disabled}
@@ -287,7 +314,7 @@ function EpisodeRow({
           style={{ width: '5rem' }}
         />
         <TextField
-          label="Episode"
+          label={itemWord(words, 1)}
           inputMode="numeric"
           value={e}
           disabled={disabled}
@@ -311,5 +338,92 @@ function EpisodeRow({
         </Button>
       </div>
     </li>
+  );
+}
+
+/** M50-S02: this series uses the site names, or its own set. */
+function SeriesNamesSection({
+  series,
+  canManage,
+  busy,
+  onSave,
+}: {
+  series: SeriesDetail['series'];
+  canManage: boolean;
+  busy: boolean;
+  onSave: (labels: SeriesLabelSetting | null) => Promise<CommandResult>;
+}) {
+  const own = series.labelOverride ?? null;
+  const [useOwn, setUseOwn] = useState(own !== null);
+  const [value, setValue] = useState<SeriesLabelSetting>(
+    own ?? series.labels ?? DEFAULT_SERIES_LABELS,
+  );
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [failure, setFailure] = useState<string>();
+
+  async function save() {
+    if (useOwn) {
+      const checked = validateSeriesLabels(value);
+      if (!checked.ok) {
+        setErrors(checked.errors);
+        return;
+      }
+    }
+    setErrors({});
+    const result = await onSave(useOwn ? value : null);
+    setFailure(result.ok ? undefined : result.error);
+  }
+
+  return (
+    <section className="adm-card adm-stack" aria-labelledby="series-names">
+      <h2 className="adm-h3" id="series-names">
+        Names for groups and items
+      </h2>
+      <fieldset
+        className="adm-stack"
+        disabled={!canManage}
+        style={{ border: 0, padding: 0, margin: 0 }}
+      >
+        <legend className="adm-field__label">Which names does this series use?</legend>
+        <label className="adm-check">
+          <input
+            type="radio"
+            name="series-names-mode"
+            checked={!useOwn}
+            onChange={() => setUseOwn(false)}
+          />
+          <span>Use the site names</span>
+        </label>
+        <label className="adm-check">
+          <input
+            type="radio"
+            name="series-names-mode"
+            checked={useOwn}
+            onChange={() => setUseOwn(true)}
+          />
+          <span>Use names for this series only</span>
+        </label>
+      </fieldset>
+      {useOwn ? (
+        <SeriesNamesFields
+          value={value}
+          errors={errors}
+          onChange={(next) => {
+            setErrors({});
+            setValue(next);
+          }}
+        />
+      ) : null}
+      {failure ? (
+        <p className="adm-field__error" role="alert">
+          {failure}
+        </p>
+      ) : null}
+      <div>
+        <Button disabled={!canManage || busy} onClick={() => void save()}>
+          Save names
+        </Button>
+      </div>
+    </section>
   );
 }

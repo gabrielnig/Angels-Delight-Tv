@@ -33,7 +33,7 @@ export default async function UploadPage({
       />
       <UploadScreen
         categories={categories.map((c) => ({ id: c.id, name: c.name }))}
-        series={series.map((s) => ({ id: s.id, title: s.title }))}
+        series={series.map((s) => ({ id: s.id, title: s.title, labels: s.labels }))}
         applyDetails={applyUploadDetailsAction}
         registerUpload={uploadTransportMode() === 'fixture' ? registerUploadAction : undefined}
         {...(target ? { replace: { videoId: target.id, title: target.title } } : {})}

@@ -1,13 +1,21 @@
 import { and, eq, sql } from 'drizzle-orm';
-import { episodes, seasons, series, videos, withAccount } from '@ad/db';
+import { episodes, seasons, series, settings, videos, withAccount } from '@ad/db';
 import { writeAudit } from '../audit';
 import {
   Forbidden,
   NotFound,
   ValidationFailed,
+  effectiveSeriesLabels,
+  groupName,
   isUuid,
+  itemName,
+  itemWord,
+  resolveSeriesLabels,
   uuidv7,
+  validateSeriesLabels,
   type Actor,
+  type SeriesLabelSetting,
+  type SeriesWords,
   isAdminRole,
   isStaffRole,
 } from '@ad/shared';
@@ -35,6 +43,10 @@ export interface AdminSeries {
   episodeCount: number;
   /** 0 (G) to 4 (18), null until rated. */
   maturityRank: number | null;
+  /** The series' own group and item names, null when it follows the site default (M50). */
+  labelOverride: SeriesLabelSetting | null;
+  /** What the series shows: its override, else the site default. */
+  labels: SeriesLabelSetting;
 }
 
 export interface AdminSeriesDetail {
@@ -57,6 +69,8 @@ interface Row {
   publish_state: string;
   maturity_rank: number | null;
   episode_count: string | number;
+  label_overrides: unknown;
+  site_labels: unknown;
 }
 
 const toSeries = (row: Row): AdminSeries => ({
@@ -67,10 +81,28 @@ const toSeries = (row: Row): AdminSeries => ({
   published: row.publish_state === 'published',
   episodeCount: Number(row.episode_count),
   maturityRank: row.maturity_rank ?? null,
+  labelOverride: ownLabels(row.label_overrides),
+  labels: effectiveSeriesLabels(row.site_labels, row.label_overrides),
 });
 
+function ownLabels(value: unknown): SeriesLabelSetting | null {
+  const checked = validateSeriesLabels(value);
+  return checked.ok ? checked.value : null;
+}
+
+/** The words of one series for admin messages: its override, else the site default (M50). */
+async function wordsOf(tx: Tx, seriesId: string): Promise<SeriesWords> {
+  const [own] = await tx.select({ value: series.labelOverrides }).from(series).where(eq(series.id, seriesId));
+  const [site] = await tx
+    .select({ value: settings.value })
+    .from(settings)
+    .where(eq(settings.key, 'content.series_labels'));
+  return resolveSeriesLabels(effectiveSeriesLabels(site?.value, own?.value), null);
+}
+
 const SELECT = sql`
-  SELECT s.id, s.title, s.description, s.poster_asset_id, s.publish_state, s.maturity_rank,
+  SELECT s.id, s.title, s.description, s.poster_asset_id, s.publish_state, s.maturity_rank, s.label_overrides,
+    (SELECT st.value FROM settings st WHERE st.key = 'content.series_labels') AS site_labels,
     (SELECT count(*) FROM seasons sn JOIN episodes e ON e.season_id = sn.id JOIN videos v ON v.id = e.video_id
       WHERE sn.series_id = s.id AND v.deleted_at IS NULL) AS episode_count
   FROM series s`;
@@ -175,6 +207,8 @@ export interface SeriesEdit {
   maturityRank?: number;
   /** With maturityRank: give every episode the same rating. The editor confirms this in the UI. */
   applyToEpisodes?: boolean;
+  /** Own group and item names for this series (M50). Null goes back to the site default. */
+  labels?: SeriesLabelSetting | null;
 }
 
 export async function updateAdminSeries(
@@ -197,6 +231,12 @@ export async function updateAdminSeries(
     if (!Number.isInteger(edit.maturityRank) || edit.maturityRank < 0 || edit.maturityRank > 4)
       return fail('Choose one of the five ratings.');
     set.maturityRank = edit.maturityRank;
+  }
+
+  if (edit.labels !== undefined) {
+    const checked = validateSeriesLabels(edit.labels);
+    if (!checked.ok) return fail(`Series names: ${Object.values(checked.errors)[0]}.`);
+    set.labelOverrides = checked.value;
   }
 
   let slugText: string | null = null;
@@ -224,6 +264,17 @@ export async function updateAdminSeries(
       await tx.update(series).set(set).where(eq(series.id, id));
       await audit(tx, actor, 'series.update', id, `Edited series ${set.title ?? current.title}`);
     }
+    if (edit.labels !== undefined) {
+      await audit(
+        tx,
+        actor,
+        'series.labels',
+        id,
+        edit.labels === null
+          ? `Series ${current.title} now follows the site names`
+          : `Set the group and item names of ${current.title}`,
+      );
+    }
     if (set.maturityRank !== undefined && set.maturityRank !== current.maturityRank) {
       await audit(
         tx,
@@ -238,7 +289,14 @@ export async function updateAdminSeries(
         UPDATE videos SET maturity_rank = ${set.maturityRank}
         WHERE deleted_at IS NULL AND id IN (
           SELECT e.video_id FROM episodes e JOIN seasons sn ON sn.id = e.season_id WHERE sn.series_id = ${id}::uuid)`);
-      await audit(tx, actor, 'series.maturity', id, `Gave every episode of ${current.title} rating ${set.maturityRank}`);
+      const words = await wordsOf(tx, id);
+      await audit(
+        tx,
+        actor,
+        'series.maturity',
+        id,
+        `Gave every ${itemWord(words, 1).toLowerCase()} of ${current.title} rating ${set.maturityRank}`,
+      );
     }
     const publishedEpisodes = Number(
       rowsOf<{ count: string }>(
@@ -247,7 +305,7 @@ export async function updateAdminSeries(
           WHERE sn.series_id = ${id}::uuid AND v.deleted_at IS NULL AND v.publish_state = 'published'`),
       )[0]!.count,
     );
-    return { current, publishedEpisodes };
+    return { current, publishedEpisodes, words: await wordsOf(tx, id) };
   });
   if (slugText) return fail(slugText);
   if (!found) return fail(NOT_FOUND);
@@ -256,7 +314,9 @@ export async function updateAdminSeries(
 
   if (edit.published) {
     if (found.publishedEpisodes === 0)
-      return fail('Publish at least one episode before publishing the series.');
+      return fail(
+        `Publish at least one ${found.words.typed ? itemWord(found.words, 1) : itemWord(found.words, 1).toLowerCase()} before publishing the series.`,
+      );
     try {
       await publish(ctx, actor, 'series', id);
     } catch (error) {
@@ -384,7 +444,10 @@ export async function setAdminEpisode(
             sql`${episodes.videoId} <> ${videoId}::uuid`,
           ),
         );
-      if (clash) return fail(`Season ${seasonNumber} already has an episode ${number}.`);
+      if (clash) {
+        const words = await wordsOf(tx, seriesId);
+        return fail(`${groupName(words, seasonNumber)} already has ${itemName(words, number)}.`);
+      }
     }
     await tx.delete(episodes).where(eq(episodes.videoId, videoId));
     if (!seasonRow) {
@@ -400,7 +463,7 @@ export async function setAdminEpisode(
       actor,
       'series.episode_set',
       videoId,
-      `Put ${video.title} in ${target!.title}, season ${seasonNumber}, episode ${number}`,
+      `Put ${video.title} in ${target!.title}, ${groupName(await wordsOf(tx, seriesId), seasonNumber)}, ${itemName(await wordsOf(tx, seriesId), number)}`,
     );
     return OK;
   });

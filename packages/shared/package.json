@@ -6,6 +6,7 @@
   "exports": {
     ".": "./src/index.ts",
     "./messages": "./src/messages/index.ts",
+    "./series-labels": "./src/series-labels.ts",
     "./view-all": "./src/view-all.ts"
   },
   "scripts": {

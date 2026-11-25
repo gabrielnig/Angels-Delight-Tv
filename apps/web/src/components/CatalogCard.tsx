@@ -4,12 +4,13 @@ import { useT } from '../lib/i18n/provider';
 import { useState } from 'react';
 import { ContinueCard, Row, SeriesCard, VideoCard, useToast, type CardRating } from '@ad/ui';
 import { msg } from '@ad/shared/messages';
+import { itemCode, resolveSeriesLabels } from '@ad/shared/series-labels';
 import { restoreContinueAction, removeContinueAction } from '../app/actions';
 import { useMaturityLabels } from '../lib/maturity-context';
 import { useProfileId, useProfileKids } from '../lib/profile-context';
 import { useListToggle } from '../lib/pwa/useListToggle';
 import type { CatalogItem, Progress, VideoSummary } from '../lib/data';
-import { itemHref, itemKey, metaLine, percent, timeLeftLabel } from '../lib/format';
+import { itemHref, itemKey, metaLine, percent, seriesCounts, timeLeftLabel } from '../lib/format';
 
 type ToggleList = (itemKey: string, add: boolean) => Promise<void | 'sent' | 'queued'>;
 
@@ -120,8 +121,7 @@ export function CatalogCard({
         title={item.title}
         href={itemHref(item)}
         thumbnail={item.thumbnail}
-        episodeCount={item.episodeCount}
-        seasonCount={item.seasonCount}
+        {...seriesCounts(item)}
         hasCaptions={item.hasCaptions}
         priority={priority}
         inList={inList}
@@ -155,9 +155,10 @@ export function CatalogCard({
   );
 }
 
-/** "E4" from the episode number, or the tail of the server label. */
+/** "E4" from the item number and the series words, or the tail of the server label. */
 function nextEpisodeLabel(video: VideoSummary, progress: Progress): string {
-  if (video.series) return `E${video.series.episode}`;
+  if (video.series)
+    return itemCode(resolveSeriesLabels(video.series.labels, null, msg), video.series.episode);
   return progress.episodeLabel?.split(' ').pop() ?? '';
 }
 
@@ -224,7 +225,7 @@ export function ContinueRow({
           }
           nextLabel={
             progress.nextUp
-              ? msg('engage.continue.next', { episode: nextEpisodeLabel(video, progress) })
+              ? msg('engage.continue.next', { code: nextEpisodeLabel(video, progress) })
               : undefined
           }
           titleHref={video.series ? `/series/${video.series.slug}` : `/title/${video.slug}`}

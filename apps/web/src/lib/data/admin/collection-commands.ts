@@ -1,3 +1,10 @@
+import {
+  effectiveSeriesLabels,
+  itemWord,
+  resolveSeriesLabels,
+  validateSeriesLabels,
+  type SeriesLabelSetting,
+} from '@ad/shared/series-labels';
 import type { AdminStore as Store } from './store';
 import type { CommandResult } from './video-commands';
 
@@ -86,6 +93,8 @@ export interface SeriesPatch {
   maturityRank?: number;
   /** With maturityRank: every episode gets the same rating. The editor confirms this first. */
   applyToEpisodes?: boolean;
+  /** Own group and item names (M50). Null goes back to the site default. */
+  labels?: SeriesLabelSetting | null;
 }
 
 export function createSeries(
@@ -114,6 +123,12 @@ export function updateSeries(s: Store, id: string, patch: SeriesPatch): CommandR
     series.title = title.slice(0, 80);
   }
   if (patch.description !== undefined) series.description = patch.description.trim().slice(0, 500);
+  if (patch.labels !== undefined) {
+    const checked = validateSeriesLabels(patch.labels);
+    if (!checked.ok) return fail(`Series names: ${Object.values(checked.errors)[0]}.`);
+    series.labelOverride = checked.value;
+    series.labels = effectiveSeriesLabels(null, checked.value);
+  }
   if (patch.maturityRank !== undefined) {
     if (!Number.isInteger(patch.maturityRank) || patch.maturityRank < 0 || patch.maturityRank > 4)
       return fail('Choose one of the five ratings.');
@@ -126,9 +141,15 @@ export function updateSeries(s: Store, id: string, patch: SeriesPatch): CommandR
     patch.published === true &&
     !live(s).some((v) => v.seriesId === id && v.publishState === 'published')
   )
-    return fail('Publish at least one episode before publishing the series.');
+    return fail(publishRefusal(series.labelOverride ?? null));
   if (patch.published !== undefined) series.published = patch.published;
   return OK;
+}
+
+function publishRefusal(override: SeriesLabelSetting | null): string {
+  const words = resolveSeriesLabels(effectiveSeriesLabels(null, override), null);
+  const item = itemWord(words, 1);
+  return `Publish at least one ${words.typed ? item : item.toLowerCase()} before publishing the series.`;
 }
 
 export function deleteSeries(s: Store, id: string): CommandResult {

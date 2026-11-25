@@ -19,11 +19,13 @@ describe('primaryAction', () => {
   });
 
   it('says Watch again for a finished title and starts at zero', () => {
-    expect(primaryAction({ label: 'watch_again', startSeconds: 0, watchHref: '/watch/a' })).toEqual({
-      text: 'Watch again',
-      href: '/watch/a?t=0',
-      startOverHref: undefined,
-    });
+    expect(primaryAction({ label: 'watch_again', startSeconds: 0, watchHref: '/watch/a' })).toEqual(
+      {
+        text: 'Watch again',
+        href: '/watch/a?t=0',
+        startOverHref: undefined,
+      },
+    );
   });
 
   it('names the episode for a series', () => {
@@ -33,5 +35,17 @@ describe('primaryAction', () => {
     expect(primaryAction({ ...base, label: 'watch_again', startSeconds: 0 }).text).toBe(
       'Watch again S1 E3',
     );
+  });
+});
+
+describe('primary action with the owner words (M50)', () => {
+  it('shows the code of the series words', () => {
+    const action = primaryAction({
+      label: 'play',
+      startSeconds: 0,
+      watchHref: '/watch/x',
+      episode: { season: 2, number: 12, labels: { preset: 'book_chapter' } },
+    });
+    expect(action.text).toBe('Play B2 Ch12');
   });
 });

@@ -77,7 +77,7 @@ describe('player wave D: end screen (M46-S01)', () => {
     );
     expect(screen.getByText('[You finished Science]')).toBeTruthy();
     expect(
-      screen.getByText('[Well done. Try another series or watch an episode again.]'),
+      screen.getByText('[Well done. Try another series or watch a video again.]'),
     ).toBeTruthy();
     expect(screen.getByRole('link', { name: '[Back to the series]' })).toBeTruthy();
     expect(screen.getByRole('link', { name: '[Browse more]' })).toBeTruthy();

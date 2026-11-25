@@ -1,3 +1,8 @@
+import {
+  positionCode,
+  resolveSeriesLabels,
+  type SeriesLabelSetting,
+} from '@ad/shared/series-labels';
 import { formatClock } from '@ad/ui';
 
 export type PlayLabel = 'play' | 'resume' | 'watch_again';
@@ -14,9 +19,11 @@ export function primaryAction(input: {
   label: PlayLabel;
   startSeconds: number;
   watchHref: string;
-  episode?: { season: number; number: number };
+  episode?: { season: number; number: number; labels?: SeriesLabelSetting };
 }): PrimaryAction {
-  const where = input.episode ? ` S${input.episode.season} E${input.episode.number}` : '';
+  const where = input.episode
+    ? ` ${positionCode(resolveSeriesLabels(input.episode.labels, null), input.episode.season, input.episode.number)}`
+    : '';
   const fromStart = `${input.watchHref}?t=0`;
   if (input.label === 'watch_again') {
     return { text: `Watch again${where}`, href: fromStart, startOverHref: undefined };

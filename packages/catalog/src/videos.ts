@@ -1,3 +1,4 @@
+import { effectiveSeriesLabels, type SeriesLabelSetting } from '@ad/shared';
 import { viewerTrackSql } from './caption-visibility';
 import { sql } from 'drizzle-orm';
 import { artworkFromRow, type ArtworkDto, type ArtworkRow } from './artwork';
@@ -11,6 +12,8 @@ export interface EpisodePosition {
   seriesTitle: string;
   seasonNumber: number;
   number: number;
+  /** The group and item words this series shows: its own override, else the site default (M50). */
+  labels: SeriesLabelSetting;
 }
 
 /** One playable video, standalone or an episode. Episodes carry their place in the series. */
@@ -39,12 +42,16 @@ interface VideoRow extends ArtworkRow {
   series_title: string | null;
   season_number: number | null;
   episode_number: number | null;
+  series_label_overrides: unknown;
+  site_series_labels: unknown;
 }
 
 const VIDEO_SELECT = sql.raw(`v.id, v.slug, v.title, v.description, v.duration_ms, v.kids_safe,
   (EXISTS (SELECT 1 FROM caption_tracks ct WHERE ct.video_id = v.id AND ${viewerTrackSql('ct')})
       AND coalesce(v.captions_enabled, NOT EXISTS (SELECT 1 FROM settings st WHERE st.key = 'features.captions_default_available' AND st.value = 'false'::jsonb))) AS has_captions,
   se.id AS series_id, se.slug AS series_slug, se.title AS series_title, sn.number AS season_number, ep.number AS episode_number,
+  se.label_overrides AS series_label_overrides,
+  (SELECT st2.value FROM settings st2 WHERE st2.key = 'content.series_labels') AS site_series_labels,
   pa.id AS poster_id, pa.alt_text AS poster_alt, pa.placeholder_color AS poster_color, pa.placeholder_blur AS poster_blur,
   pa.width AS poster_width, pa.height AS poster_height, pa.variants AS poster_variants`);
 
@@ -72,6 +79,7 @@ function toVideoCard(row: VideoRow, mediaOrigin: string): VideoCard {
             seriesTitle: row.series_title!,
             seasonNumber: row.season_number!,
             number: row.episode_number!,
+            labels: effectiveSeriesLabels(row.site_series_labels, row.series_label_overrides),
           },
   };
 }

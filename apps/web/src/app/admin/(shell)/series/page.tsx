@@ -18,7 +18,7 @@ export default async function SeriesPage() {
       <PageHeader
         crumbs={[{ label: 'Admin', href: '/admin' }, { label: 'Series' }]}
         title="Series"
-        lead="Group episodes into seasons."
+        lead="Bundle videos into series with your own group and item names."
       />
       <SeriesList
         series={series}

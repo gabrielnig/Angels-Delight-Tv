@@ -1,5 +1,6 @@
 'use client';
 
+import type { SeriesLabelSetting } from '@ad/shared/series-labels';
 import { formatBytes } from '@/lib/uploader/format';
 import {
   titleFromFileName,
@@ -44,7 +45,7 @@ export function UploadOverrides({
   rows: OverrideRow[];
   shared: UploadDetails;
   categories: Array<{ id: string; name: string }>;
-  series: Array<{ id: string; title: string }>;
+  series: Array<{ id: string; title: string; labels?: SeriesLabelSetting }>;
   onChange: (id: string, patch: FileOverride) => void;
   onReset: (id: string) => void;
 }) {
@@ -99,7 +100,7 @@ export function UploadOverrides({
       ),
       episode: (
         <TextField
-          label={`Episode for ${name}`}
+          label={`Number for ${name}`}
           type="number"
           min={1}
           inputMode="numeric"
@@ -153,7 +154,7 @@ export function UploadOverrides({
             <th scope="col">Title</th>
             <th scope="col">Category</th>
             <th scope="col">Series</th>
-            <th scope="col">Episode</th>
+            <th scope="col">Number</th>
             <th scope="col">Suitability</th>
             <th scope="col">
               <span className="adm-sr">Reset</span>

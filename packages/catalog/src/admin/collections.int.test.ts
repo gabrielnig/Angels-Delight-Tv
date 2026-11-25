@@ -152,7 +152,7 @@ describe.skipIf(!integrationEnabled())('admin categories and series', () => {
       expect(await setAdminEpisode(ctx, editor, b.id, series.id, 1, 1)).toEqual({ ok: true });
       expect(await setAdminEpisode(ctx, editor, a.id, series.id, 1, 1)).toEqual({
         ok: false,
-        error: 'Season 1 already has an episode 1.',
+        error: 'Season 1 already has Episode 1.',
       });
 
       const detail = await getAdminSeriesDetail(ctx, editor, series.id);

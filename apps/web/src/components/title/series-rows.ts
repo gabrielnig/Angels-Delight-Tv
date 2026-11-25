@@ -5,6 +5,7 @@ import type { SeasonRows } from './EpisodeList';
 export function seasonRows(seasons: SeriesDetail['seasons']): SeasonRows[] {
   return seasons.map((season) => ({
     number: season.number,
+    title: season.title ?? null,
     episodes: season.episodes.map((e) => {
       const p = e.progress ? percent(e.progress) : 0;
       return {

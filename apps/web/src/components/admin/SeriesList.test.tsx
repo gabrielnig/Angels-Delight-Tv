@@ -65,7 +65,7 @@ describe('SeriesList bulk', () => {
     const dialog = await screen.findByRole('dialog');
     expect(
       within(dialog).getByText(
-        'The series and its seasons are removed. The videos stay in the library as single videos.',
+        'The series and its groups are removed. The videos stay in the library as single videos.',
       ),
     ).toBeInTheDocument();
     const go = within(dialog).getByRole('button', { name: 'Delete 2 series' });

@@ -1,3 +1,4 @@
+import { itemCount, resolveSeriesLabels, type SeriesLabelSetting } from '@ad/shared/series-labels';
 import { Badge, Breadcrumbs, ButtonLink, ProgressBar } from '@ad/ui';
 import type { Thumb, TitleDetail } from '../../lib/data';
 import { itemKey, percent } from '../../lib/format';
@@ -202,10 +203,12 @@ export function PublicSeries({
   title,
   description,
   episodes,
+  labels,
   category,
   thumbnail,
 }: {
   slug: string;
+  labels?: SeriesLabelSetting;
   thumbnail?: Thumb;
   title: string;
   description: string;
@@ -224,7 +227,7 @@ export function PublicSeries({
         <div className="web-title__info">
           <h1 className="web-title__name">{title}</h1>
           <p className="web-title__meta">
-            <Badge variant="neutral">{`${episodes} ${episodes === 1 ? 'episode' : 'episodes'}`}</Badge>{' '}
+            <Badge variant="neutral">{itemCount(resolveSeriesLabels(labels, null), episodes)}</Badge>{' '}
             <span>{category}</span>
           </p>
           <p className="web-title__desc">{description}</p>

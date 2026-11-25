@@ -37,6 +37,7 @@ const videoCard = (over: Partial<TitleCardDto> = {}): TitleCardDto => ({
   categorySlug: 'geography',
   categoryName: 'Geography',
   publishedAt: '2026-05-01T09:00:00.000Z',
+  labels: null,
   progress: null,
   inMyList: false,
   rating: null,

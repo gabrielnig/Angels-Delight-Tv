@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import type { SeriesLabelSetting } from '@ad/shared/series-labels';
 import { applyGuestProgress } from '../../lib/guest/episodes';
 import { listGuestProgress } from '../../lib/guest/progress-store';
 import { EpisodeList, type SeasonRows } from '../title/EpisodeList';
@@ -9,9 +10,11 @@ import { EpisodeList, type SeasonRows } from '../title/EpisodeList';
 export function GuestEpisodeProgress({
   seasons,
   initialSeason,
+  labels,
 }: {
   seasons: SeasonRows[];
   initialSeason: number;
+  labels?: SeriesLabelSetting;
 }) {
   const [shown, setShown] = useState(seasons);
   useEffect(() => {
@@ -20,5 +23,5 @@ export function GuestEpisodeProgress({
     );
     setShown(applyGuestProgress(seasons, saved));
   }, [seasons]);
-  return <EpisodeList seasons={shown} initialSeason={initialSeason} />;
+  return <EpisodeList seasons={shown} initialSeason={initialSeason} labels={labels} />;
 }

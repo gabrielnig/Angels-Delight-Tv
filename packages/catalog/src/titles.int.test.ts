@@ -77,6 +77,26 @@ describe.skipIf(!integrationEnabled())('title queries', () => {
       });
     });
 
+    it('carries the series labels on a series card and null on a video (M50)', async () => {
+      const video = await seedVideo(t.setup, { title: 'Labels video' });
+      const own = await seedSeries(t.setup, {
+        series: { title: 'Labels series', labelOverrides: { preset: 'book_chapter' } },
+      });
+      const plain = await seedSeries(t.setup, { series: { title: 'Plain labels series' } });
+      const cards = await run((tx) =>
+        fetchCards(tx, ctx, general, [
+          { kind: 'video', id: video.id },
+          { kind: 'series', id: own.id },
+          { kind: 'series', id: plain.id },
+        ]),
+      );
+      expect(cards.map((c) => c.labels)).toEqual([
+        null,
+        { preset: 'book_chapter' },
+        { preset: 'season_episode' },
+      ]);
+    });
+
     it('carries the maturity rank of videos and series, null when unrated (M44-S13)', async () => {
       const rated = await seedVideo(t.setup, { title: 'Rated card', maturityRank: 3, kidsSafe: false });
       const unrated = await seedVideo(t.setup, { title: 'Unrated card', maturityRank: null, kidsSafe: false });
