@@ -1,0 +1,18 @@
+Make a video safe for Kids mode (K01)
+For Editors. 1 min 11 s.
+
+0:05  Choose Videos in the side menu.
+      The pointer moves to Videos.
+0:11  Type "Counting" in the Search box.
+0:19  Click Counting Money in Naira to open the video.
+      The pointer moves to Counting Money in Naira.
+0:27  Scroll to Maturity rating.
+      The pointer moves to Choose a ratingGPG121518.
+0:34  Select G from Maturity rating.
+      The pointer moves to Choose a ratingGPG121518.
+0:40  Click Save changes.
+      The pointer moves to Save changes.
+0:53  Scroll to Before you publish.
+      The pointer moves to Before you publish.
+0:59  Scroll to How viewers see it.
+      The pointer moves to How viewers see it.

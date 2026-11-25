@@ -1,0 +1,27 @@
+Set one rating for a series or many videos (K09)
+For Editors. 1 min 31 s.
+
+0:04  Choose Videos in the side menu.
+      The pointer moves to Videos.
+0:10  Select Life Skills from Category.
+      The pointer moves to All categoriesLife SkillsScienceMathsGeographyHealth.
+0:15  Tick Select Counting Money in Naira.
+0:21  Tick Select Staying Safe Online.
+0:26  Click Set maturity rating.
+      The pointer moves to Set maturity rating.
+0:31  Select PG from Maturity rating.
+      The pointer moves to Choose a ratingGPG121518.
+0:36  Click Apply.
+      The pointer moves to Apply.
+0:44  Choose Series in the side menu.
+      The pointer moves to Series.
+0:49  Click Maths Made Simple to open the series.
+      The pointer moves to Maths Made Simple.
+0:55  Select G from Maturity rating (required).
+      The pointer moves to Choose a ratingGPG121518.
+1:02  Click Save changes.
+      The pointer moves to Save changes.
+1:12  Click Apply to all 2 episodes.
+      The pointer moves to Apply to all 2 episodes.
+1:17  Click Apply to 2 episodes.
+      The pointer moves to Apply to 2 episodes.

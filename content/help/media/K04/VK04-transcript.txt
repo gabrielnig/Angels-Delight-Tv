@@ -1,0 +1,26 @@
+Suspend an account and sign someone out everywhere (K04)
+For Admins. 1 min 39 s.
+
+0:06  Choose Users in the side menu.
+      The pointer moves to Users.
+0:11  Type "adaeze" in the Search by email or profile name box.
+0:19  Click Search.
+      The pointer moves to Search.
+0:24  Click adaeze@example.test to open the account.
+      The pointer moves to adaeze@example.test.
+0:31  Scroll to Signed in on.
+      The pointer moves to Signed in on.
+0:36  Click Sign out everywhere.
+      The pointer moves to Sign out everywhere.
+0:41  Type "Phone was lost" in the Reason box.
+0:47  Click Sign out everywhere to confirm.
+      The pointer moves to Sign out everywhere.
+0:57  Click Suspend account.
+      The pointer moves to Suspend account.
+1:01  Type "Shared the account" in the Reason box.
+1:08  Click Suspend account to confirm.
+      The pointer moves to Suspend account.
+1:18  Click Reinstate account.
+      The pointer moves to Reinstate account.
+1:25  Click Reinstate account to confirm.
+      The pointer moves to Reinstate account.

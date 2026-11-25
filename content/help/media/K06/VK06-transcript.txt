@@ -1,0 +1,18 @@
+Read the audit log: who did what (K06)
+For Admins. 1 min 6 s.
+
+0:05  Choose Audit log in the side menu.
+      The pointer moves to Audit log.
+0:12  Scroll to Result.
+      The pointer moves to Result.
+0:18  Type "video." in the Action box.
+0:25  Click Filter.
+      The pointer moves to Filter.
+0:30  Click Open details for video.publish at 10 Mar, 7:36 to open the entry.
+      The pointer moves to Open details for video.publish at 10 Mar, 7:36.
+0:42  Scroll to Before.
+      The pointer moves to Before.
+0:49  Click Close.
+      The pointer moves to Close.
+0:54  Click Clear.
+      The pointer moves to Clear.

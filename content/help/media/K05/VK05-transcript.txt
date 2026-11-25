@@ -1,0 +1,17 @@
+Reset a viewer's two step sign in and delete an account on request (K05)
+For Admins. 1 min 4 s.
+
+0:05  Choose Users in the side menu.
+      The pointer moves to Users.
+0:10  Type "tunde" in the Search by email or profile name box.
+0:18  Click Search.
+      The pointer moves to Search.
+0:23  Click tunde@example.test to open the account.
+      The pointer moves to tunde@example.test.
+0:30  Scroll to Support actions.
+      The pointer moves to Support actions.
+0:36  Click Reset two step verification.
+      The pointer moves to Reset two step verification.
+0:41  Type "Lost phone and codes, owner confirmed by email" in the Reason box.
+0:52  Click Reset two step verification to confirm.
+      The pointer moves to Reset two step verification.

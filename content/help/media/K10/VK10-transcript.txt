@@ -1,0 +1,23 @@
+Take a video down quickly (K10)
+For Admins. 1 min 32 s.
+
+0:05  Choose Videos in the side menu.
+      The pointer moves to Videos.
+0:12  Type "Telling" in the Search box.
+0:19  Click Telling the Time to open the video.
+      The pointer moves to Telling the Time.
+0:27  Click Unpublish.
+      The pointer moves to Unpublish.
+0:33  Click Unpublish to confirm.
+      The pointer moves to Unpublish.
+0:42  Wait until you see Publish.
+0:48  Click Move to Trash.
+      The pointer moves to Move to Trash.
+0:56  Click Move to Trash to confirm.
+      The pointer moves to Move to Trash.
+1:02  Choose Trash in the side menu.
+      The pointer moves to Trash.
+1:09  Click Restore Welcome Video (old cut).
+      The pointer moves to Restore Welcome Video (old cut).
+1:19  Check that Delete forever is there.
+      The pointer moves to Delete forever: Test clip.

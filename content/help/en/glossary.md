@@ -248,3 +248,22 @@ Aliases: learner, audience, user
 ## Workers plan
 The Cloudflare plan that delivers your videos. The free plan stops at a daily limit and the paid plan raises it.
 Aliases: cloudflare plan, plan limit
+
+## Audit log
+A list of who did what in the admin and when. Nobody can edit or delete an entry.
+Guides: K06
+
+## Guest
+A visitor who has not signed in. Guests can watch if the site allows it.
+Aliases: visitor, no account, anonymous
+Guides: K03
+
+## Kids mode
+A way of watching that shows only videos rated G. Kids profiles use it, and visitors can turn it on for their device.
+Aliases: kids, children, kids profile, child safe
+Guides: K01
+
+## Suspend
+Stop an account from signing in without deleting anything. A suspension can be undone.
+Aliases: ban, block, lock
+Guides: K04

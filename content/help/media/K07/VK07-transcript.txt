@@ -1,0 +1,20 @@
+Keep the admin safe (K07)
+For Editors. 1 min 11 s.
+
+0:05  Click Account menu.
+      The pointer moves to Account menu for DEDemo Editor.
+0:11  Click My account.
+      The pointer moves to My account.
+0:16  Scroll to Password.
+      The pointer moves to Password.
+0:22  Type "river" in the New password box.
+0:30  Scroll to Two step sign in.
+      The pointer moves to Two step sign in.
+0:36  Click Make new recovery codes.
+      The pointer moves to Make new recovery codes.
+0:43  Check that Your old codes stop working. is in the box.
+      The pointer moves to Your old codes stop working. Enter the 6 digit code from you.
+0:53  Click Cancel.
+      The pointer moves to Cancel.
+0:58  Scroll to Where you are signed in.
+      The pointer moves to Where you are signed in.

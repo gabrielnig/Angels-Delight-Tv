@@ -1,0 +1,11 @@
+What data we keep and for how long (K08)
+For Admins. 33 s.
+
+0:04  Choose Site settings in the side menu.
+      The pointer moves to Site settings.
+0:09  Click Features and limits.
+      The pointer moves to Features and limits.
+0:13  Scroll to Raw view event retention (days).
+0:19  Scroll to Audit log retention (months).
+0:24  Click Pages.
+      The pointer moves to Pages.
