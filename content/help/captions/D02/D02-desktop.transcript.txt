@@ -1,14 +1,14 @@
 Upload one video (D02)
-For Editors. 1 min 4 s.
+For Editors. 1 min 2 s.
 
-0:05  Choose Upload in the side menu.
+0:04  Choose Upload in the side menu.
       The pointer moves to Upload.
-0:11  Click Choose videos.
+0:10  Click Choose videos.
       The pointer moves to Choose videos.
-0:22  Choose a file from your computer.
-      The pointer moves to demo-lesson.mp4.
-0:27  Wait until you see Uploaded just now.
-0:33  Click Edit details for demo-lesson.mp4.
-      The pointer moves to Edit details for demo-lesson.mp4.
-0:39  Wait until you see Before you publish.
+0:20  Choose a file from your computer.
+      The pointer moves to demo_lesson.mp4.
+0:25  Wait until you see Uploaded just now.
+0:31  Click Edit details for demo_lesson.mp4.
+      The pointer moves to Edit details for demo_lesson.mp4.
+0:37  Wait until you see Before you publish.
       The pointer moves to Before you publish.

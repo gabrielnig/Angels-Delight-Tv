@@ -1,24 +1,24 @@
 Your first video from start to finish (S06)
-For Editors. 1 min 35 s.
+For Editors. 1 min 29 s.
 
 0:05  Choose Upload in the side menu.
       The pointer moves to Upload.
 0:11  Click Choose videos.
       The pointer moves to Choose videos.
-0:28  Choose a file from your computer.
-0:33  Wait until you see Uploaded just now.
-0:38  Click Edit details for demo-lesson.mp4.
-      The pointer moves to Edit details for demo-lesson.mp4.
-0:44  Type "Learn how to save money on mobile data." in the Description box.
-0:52  Tick Life Skills.
-0:56  Select G from the Maturity rating list.
+0:22  Choose a file from your computer.
+0:27  Wait until you see Uploaded just now.
+0:33  Click Edit details for demo_lesson.mp4.
+      The pointer moves to Edit details for demo_lesson.mp4.
+0:38  Type "Learn how to save money on mobile data." in the Description box.
+0:46  Tick Life Skills.
+0:50  Select G from the Maturity rating list.
       The pointer moves to Choose a ratingGPG121518.
-1:01  Click Save changes.
+0:56  Click Save changes.
       The pointer moves to Save changes.
-1:06  Wait until you see Changes saved.
-1:11  Check that Before you publish shows what is left to do.
+1:00  Wait until you see Changes saved.
+1:05  Check that Before you publish shows what is left to do.
       The pointer moves to Before you publish.
-1:19  Click Choose poster.
+1:13  Click Choose poster.
       The pointer moves to Choose poster.
-1:23  Check that Save poster is on the screen.
+1:17  Check that Save poster is on the screen.
       The pointer moves to Save poster.
