@@ -7,6 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 ## [Unreleased]
 
 ### Added
+- Lane KB-H slice 7 (M50): episode coverage tests. Every admin route, menu item, permission action, setting and status needs an episode or an entry on the known gaps list (`scripts/kb-recorder/coverage-gaps.json`), failing with a named list. The list can only shrink.
 - Lane KB-H slice 6 (M50): CI for the knowledge base. `kb-verify.yml` checks only the affected episodes on pull requests that touch admin files, `kb-nightly.yml` records everything and compares lengths and screenshots, with a screenshot diff (`pnpm kb:shots-diff`), `pnpm kb:update`, `pnpm kb:steps`, `pnpm kb:publish`, a `kb-stack.sh start` mode and exit codes that separate content failures from infrastructure failures. No secrets.
 - Lane KB-H slice 5 (M50): pipeline commands for the knowledge base recorder. `pnpm kb:record` with `--episode`, `--path`, `--changed` and `--all`, `pnpm kb:verify` as a locator only check, an output layout per episode and profile, a poster and a 480p copy, ffprobe checks (codec, no audio, size, length), atomic replacement of published files, and `manifest.json` for the platform.
 - Lane L14 platform slice 4 (M50): private help media route for videos, captions and pictures (staff only, Range, no catalog), the silent captioned `HelpVideo` player with quality and phone picture choice, transcript and watched at 90 percent, and the video page with the path playlist.

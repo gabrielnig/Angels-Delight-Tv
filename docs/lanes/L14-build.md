@@ -208,6 +208,18 @@ Checks per video (ffprobe): H.264, yuv420p, no audio stream, the profile size, l
 - `pnpm kb:publish --run .kb-out/nightly --release v1.0.0 --dest dist-media`: writes `help/<release>/<VIDEO_ID>/<VIDEO_ID>-720.mp4`, `-480.mp4`, `-poster.webp`, `-captions.vtt`, `-chapters.vtt`, `-transcript.txt`, `-phone-720.mp4` and `-phone-captions.vtt`, the names the help media route reads. Uploading that folder to the originals bucket is an operations step.
 - Bold labels in a caption (`Click **Upload**`) are kept in the article and dropped from the burned in caption, the VTT and the transcript.
 
+### Episode coverage (what content lanes must empty)
+
+`apps/web/src/lib/admin/kb-episode-coverage.test.ts` (logic in `scripts/kb-recorder/coverage.ts`) fails with a clear list when any of these has no episode and no gap entry: an admin route (`page.tsx`, help pages excluded), a side menu item (`NAV_ITEMS` label), a permission action (`ADMIN_ACTIONS`), a setting (`SETTING_KEYS`) or a status (`video:<VIDEO_STATUSES>`, `publish:<PUBLISH_STATES>`, `caption:<CAPTION_STATUSES>`). An episode declares what it teaches:
+
+```ts
+screens: ['/admin/videos/[id]'],                  // routes (exact patterns, as the folder names them)
+actions: ['video.publish'],                       // can.ts action ids
+covers: { nav: ['Videos'], settings: ['site.name'], statuses: ['video:ready', 'publish:draft'] },
+```
+
+The test also fails when an episode names something that does not exist, when a gap entry is covered now (so the list can only shrink) and when a gap entry names something that does not exist. The allowlist of known gaps is `scripts/kb-recorder/coverage-gaps.json` (37 routes, 19 menu items, 47 actions, 106 settings, 15 statuses at the start). When you add an episode, delete the entries it covers. To rewrite the list from the current state: `KB_WRITE_GAPS=1 pnpm vitest run apps/web/src/lib/admin/kb-episode-coverage.test.ts`. This is separate from KB-P's article coverage (`content/help/coverage-gaps.json`), which checks that an article exists.
+
 ### Status
 
-Slices 1 to 6 done (framework, demo stack, scanner and annotation, caption tools, pipeline commands, CI). Later slices append here.
+Slices 1 to 7 done (framework, demo stack, scanner and annotation, caption tools, pipeline commands, CI, episode coverage). Later slices append here.
