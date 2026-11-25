@@ -114,6 +114,15 @@ describe('HomeHero', () => {
       act(() => void vi.advanceTimersByTime(20_000));
       expect(screen.getByRole('heading', { name: 'Two' })).toBeInTheDocument();
     });
+    it('offers the sound button only when the page allows it', () => {
+      fastNav();
+      const loud = clips.map((item) => ({ ...item, previewHasAudio: true }));
+      const on = render(<HomeHero items={loud} label="Featured" profileId="p1" previews soundAllowed />);
+      expect(screen.getByRole('button', { name: 'Unmute preview sound' })).toBeTruthy();
+      on.unmount();
+      render(<HomeHero items={loud} label="Featured" profileId="p1" previews />);
+      expect(screen.queryByRole('button', { name: /preview sound/ })).toBeNull();
+    });
     it('stops the clip when the connection turns slow', () => {
       const listeners: Array<() => void> = [];
       const conn = { effectiveType: '4g', downlink: 10, saveData: false, addEventListener: (_: string, f: () => void) => listeners.push(f), removeEventListener() {} };

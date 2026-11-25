@@ -118,4 +118,52 @@ describe('HeroPreview', () => {
     wait(2000);
     expect(onFail).toHaveBeenCalledTimes(1);
   });
+
+  it('is muted unless the carousel says sound is on, and follows a change without remounting', () => {
+    const { container, rerender } = render(<HeroPreview src="/c.mp4" active paused={false} />);
+    wait(1200);
+    const v = video(container)!;
+    expect(v.muted).toBe(true);
+    rerender(<HeroPreview src="/c.mp4" active paused={false} sound />);
+    expect(video(container)).toBe(v);
+    expect(v.muted).toBe(false);
+    rerender(<HeroPreview src="/c.mp4" active paused={false} sound={false} />);
+    expect(v.muted).toBe(true);
+  });
+
+  it('starts a new clip unmuted when sound is already on', () => {
+    const { container } = render(<HeroPreview src="/c.mp4" active paused={false} sound />);
+    wait(1200);
+    expect(video(container)!.muted).toBe(false);
+  });
+
+  it('falls back to muted playback and says so when the browser refuses sound, without removing the clip', async () => {
+    const onSoundBlocked = vi.fn();
+    const onFail = vi.fn();
+    play.mockRejectedValueOnce(new DOMException('blocked', 'NotAllowedError'));
+    const { container } = render(
+      <HeroPreview src="/c.mp4" active paused={false} sound onSoundBlocked={onSoundBlocked} onFail={onFail} />,
+    );
+    wait(1200);
+    await act(async () => {
+      await Promise.resolve();
+    });
+    expect(onSoundBlocked).toHaveBeenCalledTimes(1);
+    expect(video(container)!.muted).toBe(true);
+    expect(play).toHaveBeenCalledTimes(2);
+    expect(onFail).not.toHaveBeenCalled();
+    expect(video(container)).not.toBeNull();
+  });
+
+  it('removes a muted clip that the browser refuses to play', async () => {
+    const onFail = vi.fn();
+    play.mockRejectedValueOnce(new DOMException('blocked', 'NotAllowedError'));
+    const { container } = render(<HeroPreview src="/c.mp4" active paused={false} onFail={onFail} />);
+    wait(1200);
+    await act(async () => {
+      await Promise.resolve();
+    });
+    expect(onFail).toHaveBeenCalledTimes(1);
+    expect(video(container)).toBeNull();
+  });
 });

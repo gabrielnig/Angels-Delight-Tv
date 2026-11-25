@@ -7,6 +7,8 @@ import type { SVGProps } from 'react';
 const PATHS = {
   play: 'M8 5.5v13l11-6.5z',
   pause: 'M8 5v14M16 5v14',
+  volumeOff: 'M4 9.5h3.5L12 5.5v13L7.5 14.5H4zM16 9.5l5 5M21 9.5l-5 5',
+  volumeOn: 'M4 9.5h3.5L12 5.5v13L7.5 14.5H4zM15.5 9a4.5 4.5 0 0 1 0 6M18 6.5a8 8 0 0 1 0 11',
   plus: 'M12 5v14M5 12h14',
   check: 'M5 12.5l4.5 4.5L19 7.5',
   close: 'M6 6l12 12M18 6L6 18',

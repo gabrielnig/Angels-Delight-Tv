@@ -63,6 +63,10 @@
   --color-bar-disabled-bg: #3A3D46;      /* disabled action on the dark bulk bar */
   --color-bar-disabled-ink: #C9CCD3;     /* 6.75:1 on the disabled fill */
   --color-hero-chip-bg: rgba(14, 15, 19, 0.6); /* hero More info fill, white text 5.03:1 over a white image */
+  --color-hero-track: rgba(255, 255, 255, 0.4);       /* hero slide indicator, slide still to come (S187) */
+  --color-hero-track-done: rgba(255, 255, 255, 0.95); /* hero slide indicator, slide already shown, or the current one with no fill */
+  --color-hero-border: rgba(255, 255, 255, 0.85);     /* hero Pause and sound button border */
+  --color-hero-chip-hover: rgba(14, 15, 19, 0.8);     /* hero Pause and sound button fill on hover */
 
   /* Sponsor slots (M48, Fixed): a client theme cannot shrink the box or weaken the label */
   --sponsor-slot-height-compact: calc(7rem * var(--type-scale));

@@ -83,7 +83,7 @@ Mark each as Pass, Fail or Not applicable.
 ### Mobile first and data
 - [ ] Mobile first CSS (`min-width` queries). Checked at 360px, 768px, 1280px. Survives 200 percent zoom.
 - [ ] No hover only features. Gestures have visible alternatives.
-- [ ] Low data rules from section 13: no autoplay video except the optional muted hero clip under its eligibility rules (fast link, Data saver off, no reduced motion), no preview clips in rows, still first hero, lazy rows, heavy code split out, budgets respected, Data saver honoured.
+- [ ] Low data rules from section 13: no autoplay video except the optional hero clip under its eligibility rules (fast link, Data saver off, no reduced motion), always muted until the viewer taps Unmute (never offered to Kids), no preview clips in rows, still first hero, lazy rows, heavy code split out, budgets respected, Data saver honoured.
 
 ### Copy
 - [ ] Plain English, short sentences, sentence case, active voice, Nigerian audience friendly (section 14).
