@@ -125,3 +125,8 @@ Test a kids only title and an unpublished title: the debugger must show the gene
 
 - Docs: stories M45-S25 to S27 in `docs/plan/v2/L6-discovery.md` (S06 ACs 1 and 2 marked superseded), `docs/MODULES.md` M45 note, `docs/SCREEN-ARCHITECTURE.md` Share sheet section, `docs/DESIGN-SYSTEM.md` 11.12a, `docs/SECURITY.md` 17.2.
 - Mockups also published as a Design canvas (private): https://claude.ai/artifact/9bm1dDEFYhyfsXUtpSA1JC
+
+## Verification run (2026-11-25, production build of main, fixture demo data)
+
+`pnpm --filter @ad/web build` compiled and listed every route. `next start` on the fixture env, then `pnpm share:check --base http://localhost:3140 /title/counting-money /title/how-plants-make-their-own-food /series/everyday-science /title/brush-your-teeth --private /search` passed all 5 urls, and Home, Browse, About and Help passed as well. The picture of a title answers 200 `image/jpeg`, 1200 by 630. Donate and Transparency answered 404 because donations are off in the demo; the script now reports that as switched off. In fixture mode the poster is not served, so the picture is the stand in card with the 5 minute cache; with real media it is the poster card with one year caching.
+
