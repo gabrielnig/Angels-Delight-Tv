@@ -35,6 +35,13 @@ const episode: Episode = {
       },
     },
     {
+      caption: 'Wait until you see **Demo lesson: Joseph is sold** in the list.',
+      run: async (s) => {
+        await s.page.getByText('Demo lesson: Joseph is sold').first().waitFor();
+        await s.pause(1500);
+      },
+    },
+    {
       caption: 'Tick **Select all on this page**.',
       run: async (s) => {
         await s.click(s.page.getByLabel('Select all on this page').first());
@@ -60,7 +67,11 @@ const episode: Episode = {
     {
       caption: 'Select **Demo series: Genesis** from the **Series** list.',
       run: async (s) => {
-        await selectOption(s, 'Series', 'Demo series: Genesis');
+        await s.page
+          .getByRole('dialog')
+          .getByLabel('Series', { exact: true })
+          .selectOption({ label: 'Demo series: Genesis' });
+        await s.pause(500);
       },
     },
     {

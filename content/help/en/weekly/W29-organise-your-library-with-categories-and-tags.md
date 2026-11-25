@@ -4,8 +4,8 @@ title: Organise your library with categories and tags
 path: weekly
 summary: Plan categories and tags so every video is easy to find.
 role: editor
-needs: [W03]
-related: [W03, W30]
+needs: [S04]
+related: [W30]
 readMinutes: 3
 watchSeconds: 90
 video:
@@ -23,12 +23,18 @@ status: draft
 Use categories for the big shelves and tags for subjects. You end with a video tagged so people can find it by search.
 
 ## Before you start
-You need the Editor role or above. Read [Manage categories](help:W03).
+You need the Editor role or above. Read Manage categories.
 
 A good plan: few categories (about six), many tags. Put a Genesis lesson in the category Bible Teaching and add tags like genesis, noah, creation. A series bundles videos in order; a category groups videos by shelf; a tag helps search.
 
 ## Steps
 <!-- kb:steps W29 -->
+1. Choose **Videos** in the side menu.
+2. Type "Joseph" in the **Search** box.
+3. Click **Edit Demo lesson: Joseph is sold**.
+4. Type "genesis, joseph" in the **Tags** box.
+   ![The Tags box with genesis and joseph typed in, marked 1](../../media/W29/W29-04-tags-desktop.webp)
+5. Click **Save changes**.
 <!-- /kb:steps -->
 
 ## What you should see

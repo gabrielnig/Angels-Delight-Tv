@@ -5,7 +5,7 @@ path: weekly
 summary: Select videos and publish, rate or add them to a category in one go.
 role: editor
 needs: [S04]
-related: [W23, W33]
+related: [W23]
 readMinutes: 4
 watchSeconds: 120
 video:
@@ -29,6 +29,14 @@ The bar offers **Publish**, **Unpublish**, **Add to category**, **Remove from ca
 
 ## Steps
 <!-- kb:steps W30 -->
+1. Choose **Videos** in the side menu.
+2. Type "Joseph" in the **Search** box.
+3. Wait until you see **Demo lesson: Joseph is sold** in the list.
+4. Tick **Select all on this page**.
+   ![The bulk bar with Publish, Add to category and Set maturity rating, marked 1](../../media/W30/W30-04-bar-desktop.webp)
+5. Click **Add to category** in the bar.
+6. Select **Life Skills** from the **Category** list.
+7. Click **Apply** in the box.
 <!-- /kb:steps -->
 
 ## What you should see

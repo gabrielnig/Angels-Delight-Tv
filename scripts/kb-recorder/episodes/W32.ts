@@ -18,9 +18,9 @@ const episode: Episode = {
       },
     },
     {
-      caption: 'Tick **Select all on this page**.',
+      caption: 'Tick **Select Our Solar System**.',
       run: async (s) => {
-        await s.click(s.page.getByLabel(/^Select all/).first());
+        await s.click(s.page.getByLabel('Select Our Solar System'));
       },
       shot: {
         name: 'selected',
@@ -34,7 +34,7 @@ const episode: Episode = {
       },
     },
     {
-      caption: 'Click **Retry** in the bar.',
+      caption: 'Click **Retry 1 failed** in the bar.',
       run: async (s) => {
         await s.click(s.page.getByRole('button', { name: /^Retry \d+ failed/ }));
         await s.page.getByRole('dialog').waitFor();

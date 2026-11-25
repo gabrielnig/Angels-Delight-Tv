@@ -10,7 +10,6 @@ readMinutes: 4
 watchSeconds: 120
 video:
   id: VW27
-  phone: true
 screens: ["/admin/series/[id]"]
 aliases: [viewer page, resume, next episode, preview series]
 flow: W27
@@ -31,18 +30,17 @@ Viewers see a series page with a group list in your own words, such as Part, and
 <!-- kb:steps W27 -->
 1. Choose **Series** in the side menu.
 2. Click **Maths Made Simple** in the list.
-3. Click **Preview site** in the top bar.
-   ![The viewer series page with its group list and lessons, marked 1](../../media/W27/W27-03-series-page-desktop.webp)
-4. Check that **Play** starts the first lesson.
+3. Check that **Published** is switched on.
+   ![The Published switch marked 1 on the series page](../../media/W27/W27-03-published-desktop.webp)
 <!-- /kb:steps -->
 
 ## What you should see
 The series page shows its title, the Play button and the lessons in order.
 
-The recording shows the site's sample series, because the demo series are not on the viewer demo site.
+The recording shows only the admin side, because the demo series are not on the viewer demo site. The viewer page is described above.
 
 > [!NOTE]
-> **Preview site** in the top bar opens the site in a new tab. The recording stays in one tab.
+> **Preview site** in the top bar opens the site in a new tab, so you can check the series page yourself.
 
 ## If something goes wrong
 - **The series is not on the site.** It is probably a draft. Use the **Published** switch on the series page.

@@ -29,6 +29,17 @@ You can order the new numbers three ways: the order you picked, by title, or by 
 
 ## Steps
 <!-- kb:steps W23 -->
+1. Choose **Videos** in the side menu.
+2. Type "Joseph" in the **Search** box.
+3. Wait until you see **Demo lesson: Joseph is sold** in the list.
+4. Tick **Select all on this page**.
+   ![Three Joseph lessons ticked, with the bulk bar showing how many are selected, marked 1](../../media/W23/W23-04-selected-desktop.webp)
+5. Click **Add to series** in the bar.
+6. Select **Demo series: Genesis** from the **Series** list.
+7. Type "3" in the **Part** box.
+   ![The preview table listing each video with its Part and Lesson, marked 1](../../media/W23/W23-07-preview-desktop.webp)
+8. Click **Add 3 videos**.
+9. Click **Undo** to take them out again.
 <!-- /kb:steps -->
 
 ## What you should see
