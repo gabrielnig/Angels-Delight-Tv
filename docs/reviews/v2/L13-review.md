@@ -40,6 +40,7 @@ Counts after fixes: 0 Blocker, 0 Major open, 0 Minor open, 6 Notes (build and de
 | F6 | Minor | S188 phone | Current lesson row had different side padding than the others so thumbnails did not line up. | Fixed, same padding for every row |
 | F7 | Minor | S188 | Many groups board explained the 9 plus rule inside the page. That belongs in the board note. Its lessons were Genesis lessons under Book 4. | Fixed, real Chapter rows with C codes, note moved to the board label |
 | F8 | Minor | S192 | Exodus card said Part 1 Lesson 8 next but the label said P2 L1. Prayer card said Lesson 3 next with a label of LES124. | Fixed, subtitles match labels |
+| F10 | Major | S188 desktop | The two rail arrow buttons on the many groups board had malformed markup, so the accessible names read as a stray quote instead of Show earlier books and Show later books. Found after the first merge by a markup scan. | Fixed in a follow up |
 | F9 | Minor | all | S numbers S182 to S187 were already taken on main by L11 and L12. | Fixed, renumbered S188 to S192 |
 
 ## Checks that passed (Pass on all ten files)
