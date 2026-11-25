@@ -1,0 +1,20 @@
+Read a sponsor report and print it (M06)
+For Admins. 43 s.
+
+0:05  Choose Sponsors in the side menu.
+      The pointer moves to Sponsors.
+0:08  Click Demo Sponsor Ltd (test).
+      The pointer moves to Demo Sponsor Ltd (test).
+0:12  Click Report.
+      The pointer moves to Report.
+0:15  Type "03032026" in the From box.
+0:19  Click Show.
+      The pointer moves to Show.
+0:22  Check that Impressions shows in the number tiles.
+      The pointer moves to Impressions.
+0:27  Check that Reach is a daily figure shows under the tiles.
+      The pointer moves to Reach is a daily figure: the viewers counted on one day. Dai.
+0:32  Click Download CSV.
+      The pointer moves to Download CSV.
+0:35  Click Print.
+      The pointer moves to Print.

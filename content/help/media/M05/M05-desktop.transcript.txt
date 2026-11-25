@@ -1,0 +1,27 @@
+Pause, archive or delete a sponsor (M05)
+For Admins. 1 min 1 s.
+
+0:05  Choose Sponsors in the side menu.
+      The pointer moves to Sponsors.
+0:09  Click Demo Sponsor Ltd (test).
+      The pointer moves to Demo Sponsor Ltd (test).
+0:13  Click Pause.
+      The pointer moves to Pause.
+0:16  Check that Sponsor paused. shows at the bottom of the screen.
+      The pointer moves to Sponsor paused..
+0:21  Click Approve to run.
+      The pointer moves to Approve to run.
+0:26  Check that Sponsor approved. shows at the bottom of the screen.
+      The pointer moves to Sponsor approved..
+0:32  Click Archive.
+      The pointer moves to Archive.
+0:37  Check that Sponsor archived. shows at the bottom of the screen.
+      The pointer moves to Sponsor archived..
+0:42  Click Sponsors in the top path.
+      The pointer moves to Sponsors.
+0:46  Click Demo Bakery (test).
+      The pointer moves to Demo Bakery (test).
+0:49  Click Delete sponsor.
+      The pointer moves to Delete sponsor.
+0:52  Click Delete.
+      The pointer moves to Delete.

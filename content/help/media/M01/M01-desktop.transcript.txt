@@ -1,0 +1,19 @@
+How sponsors and donations work (M01)
+For Editors. 47 s.
+
+0:05  Choose Sponsors in the side menu.
+      The pointer moves to Sponsors.
+0:09  Check that Sponsors never show to children appears under the title.
+      The pointer moves to Sponsors never show to children. Everything here is off unti.
+0:15  Check that Sponsors are off. Viewers see nothing. shows beside the switch.
+      The pointer moves to Sponsors are off. Viewers see nothing..
+0:22  Check that Demo Sponsor Ltd (test) shows in the list.
+      The pointer moves to Demo Sponsor Ltd (test).
+0:27  Click Demo Sponsor Ltd (test).
+      The pointer moves to Demo Sponsor Ltd (test).
+0:30  Check that Pause shows in the status panel.
+      The pointer moves to Pause.
+0:35  Click Report.
+      The pointer moves to Report.
+0:38  Check that Impressions shows at the top of the report.
+      The pointer moves to Impressions.

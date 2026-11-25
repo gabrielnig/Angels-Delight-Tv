@@ -1,0 +1,15 @@
+Test mode and live mode (M11)
+For Admins. 1 min 36 s.
+
+0:05  Choose Donations in the side menu.
+      The pointer moves to Donations.
+0:09  Check that Test gifts are not counted. shows under the totals.
+      The pointer moves to Test gifts are not counted. Currencies are never added toget.
+0:14  Select succeeded from the Status list.
+      The pointer moves to Allsucceededpendingfailedabandonedrefundedneeds review.
+0:19  Click Apply.
+      The pointer moves to Apply.
+0:53  Click addondemo01.
+      The pointer moves to addondemo01.
+1:27  Check that Test shows next to the status.
+      The pointer moves to Demo Donor 01 (test).

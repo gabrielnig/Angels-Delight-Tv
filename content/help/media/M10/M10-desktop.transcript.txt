@@ -1,0 +1,13 @@
+Check Paystack with a test gift (M10)
+For Admins. 31 s.
+
+0:05  Choose Donations in the side menu.
+      The pointer moves to Donations.
+0:09  Click addondemo02.
+      The pointer moves to addondemo02.
+0:12  Check that Succeeded shows beside the amount.
+      The pointer moves to Succeeded.
+0:17  Check that Test shows beside it as a second badge.
+      The pointer moves to Demo Donor 02 (test).
+0:22  Check that Receipt queued shows under the reference.
+      The pointer moves to Email d***@example.net. Receipt queued..
