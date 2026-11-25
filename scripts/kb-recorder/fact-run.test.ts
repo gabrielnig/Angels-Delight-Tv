@@ -28,7 +28,10 @@ const HTML = `
 <p id="o"></p>
 <h2>Home preview clip</h2>
 <div style="width:200px;overflow-x:auto;white-space:nowrap" id="strip"><button style="margin-right:400px">First tab</button><button id="far" onclick="document.getElementById('o').textContent='Far clicked'">Far tab</button></div>
-<details><summary><span class="sr">Account menu for </span>Demo Editor</summary><a href="#me">My account</a></details>`;
+<details><summary><span class="sr">Account menu for </span>Demo Editor</summary><a href="#me">My account</a></details>
+<p hidden>Video is live somewhere hidden</p>
+<p id="live" hidden>Maths is live.</p>
+<button id="go" onclick="document.getElementById('live').hidden=false">Go</button>`;
 
 async function session() {
   const context = await browser!.newContext({
@@ -197,6 +200,19 @@ describe('runSteps (needs Chromium)', () => {
       seeTimeoutMs: 800,
     });
     expect(r.failure!.reason).toMatch(/Uploaded/);
+    await context.close();
+  }, 60_000);
+
+  it('opens a details menu by the label of its summary and waits for text past a hidden copy', async (ctx) => {
+    if (!browser) return ctx.skip();
+    const { context, s } = await session();
+    const r = await runSteps(s, [
+      { n: 1, text: 'Click **Account menu for Demo Editor**.' },
+      { n: 2, text: 'Click **Go**.' },
+      { n: 3, text: 'Wait until you see **is live**.' },
+    ]);
+    expect(r.failure).toBeUndefined();
+    expect(await s.page.getByRole('link', { name: 'My account' }).isVisible()).toBe(true);
     await context.close();
   }, 60_000);
 });

@@ -33,6 +33,27 @@ Fill in the details of a video: its description, [categories](glossary:category)
 ## Steps
 <!-- kb:steps D05 -->
 1. Choose **Videos** in the side menu.
+   ![The Videos list with the Videos menu item marked 1](../../media/D05/D05-01-list-desktop.webp)
+2. Type "Naira" in the **Search** box.
+   The list narrows as you type, so your video is easy to find.
+   ![The Search box with Naira typed and one video left in the list](../../media/D05/D05-02-search-desktop.webp)
+3. Click **Edit Counting Money in Naira**.
+4. Check that the **Title** says what viewers will learn.
+   ![The Title box marked 1](../../media/D05/D05-04-title-desktop.webp)
+5. Type "Learn how to count and compare naira notes and coins." in the **Description** box.
+   Start with what viewers will learn. The counter shows how many characters you may use.
+   ![The Description box with the counter marked 1](../../media/D05/D05-05-description-desktop.webp)
+6. Tick **Maths**.
+   A video can have more than one category. Viewers find it in each one.
+   ![The Categories boxes with Maths marked 1](../../media/D05/D05-06-categories-desktop.webp)
+7. Type "naira, money, counting" in the **Tags** box.
+   Separate tags with commas. You can add up to 10.
+8. Select **G** from the **Maturity rating** list.
+   G is the only rating that Kids profiles see.
+   ![The Maturity rating list marked 1](../../media/D05/D05-08-rating-desktop.webp)
+9. Click **Save changes**.
+10. Wait until you see **Changes saved**.
+   ![The message Changes saved marked 1](../../media/D05/D05-10-saved-desktop.webp)
 <!-- /kb:steps -->
 
 ## What you should see

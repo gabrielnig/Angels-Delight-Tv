@@ -181,7 +181,7 @@ async function execute(
       break;
     }
     case 'see': {
-      if (!(await visible(s.page.getByText(a.text, { exact: false }).first(), seeTimeoutMs))) {
+      if (!(await visible(s.page.getByText(a.text, { exact: false }).locator('visible=true').first(), seeTimeoutMs))) {
         return `The text "${a.text}" never appeared on ${new URL(s.page.url()).pathname}.`;
       }
       break;

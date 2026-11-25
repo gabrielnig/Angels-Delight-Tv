@@ -33,6 +33,23 @@ Take one video from your computer to the point where it only needs captions and 
 ## Steps
 <!-- kb:steps S06 -->
 1. Choose **Upload** in the side menu.
+2. Click **Choose videos**.
+3. Choose a file from your computer.
+   ![The Upload queue with the file uploading, marked 1](../../media/S06/S06-03-queue-desktop.webp)
+4. Wait until you see **Uploaded just now**.
+5. Click **Edit details for demo-lesson.mp4**.
+6. Type "Learn how to save money on mobile data." in the **Description** box.
+   ![The Description box filled in, marked 1](../../media/S06/S06-06-details-desktop.webp)
+7. Tick **Life Skills**.
+8. Select **G** from the **Maturity rating** list.
+9. Click **Save changes**.
+10. Wait until you see **Changes saved**.
+11. Check that **Before you publish** shows what is left to do.
+   ![The Before you publish checklist marked 1](../../media/S06/S06-11-checklist-desktop.webp)
+12. Click **Choose poster**.
+   ![The poster picker with the Save poster button marked 1](../../media/S06/S06-12-poster-desktop.webp)
+13. Check that **Save poster** is on the screen.
+   ![The Save poster button marked 1](../../media/S06/S06-13-save-poster-desktop.webp)
 <!-- /kb:steps -->
 
 ## What you should see

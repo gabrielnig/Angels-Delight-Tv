@@ -61,7 +61,7 @@ const episode: Episode = {
     },
     {
       caption: 'Wait until you see **is scheduled**.',
-      holdMs: 3000,
+      holdMs: 15000,
       run: async (s) => {
         await waitForToast(s, 'is scheduled');
       },
