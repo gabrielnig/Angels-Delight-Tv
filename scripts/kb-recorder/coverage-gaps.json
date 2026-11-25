@@ -1,26 +1,15 @@
 {
   "routes": [
-    "/admin",
-    "/admin/captions/[videoId]",
-    "/admin/encoding/failed",
     "/admin/invite/[token]",
     "/admin/series/[id]/share",
     "/admin/videos/[id]/markers",
-    "/admin/videos/[id]/poster",
-    "/admin/videos/[id]/preview",
     "/admin/videos/[id]/share"
   ],
-  "nav": [
-    "Dashboard",
-    "Upload"
-  ],
+  "nav": [],
   "actions": [
-    "admin.access",
     "audit.export",
     "audit.security",
     "caption.override",
-    "caption.review",
-    "encode.retry",
     "i18n.approve",
     "users.bulk",
     "video.markers"
@@ -67,16 +56,9 @@
     "video:uploading",
     "video:uploaded",
     "video:validating",
-    "video:encoding",
     "video:ready",
-    "video:failed",
-    "publish:draft",
-    "publish:scheduled",
-    "publish:published",
     "publish:unpublished",
     "caption:draft",
-    "caption:in_review",
-    "caption:approved",
     "caption:rejected",
     "caption:superseded"
   ]
