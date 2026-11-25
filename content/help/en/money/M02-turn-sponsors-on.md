@@ -28,6 +28,23 @@ The switch is one control for the whole site. Nothing sponsored shows to anyone 
 
 ## Steps
 <!-- kb:steps M02 -->
+1. Choose **Sponsors** in the side menu.
+2. Check that **Sponsors are off. Viewers see nothing.** shows beside the switch.
+3. Click **Show sponsors on the site**.
+   ![The switch card marked 1](../../media/M02/M02-03-ask-desktop.webp)
+4. Type "your password" in the **Password** box.
+   > [!TIP]
+   > Type your own password, not the words in quotes. You are asked again only after 10 minutes.
+   ![The password box marked 1](../../media/M02/M02-04-password-desktop.webp)
+5. Click **Confirm**.
+6. Check that **Sponsors are on.** shows beside the switch.
+   ![The switch card saying sponsors are on, marked 1](../../media/M02/M02-06-on-desktop.webp)
+7. Click **Show sponsors on the site**.
+   > [!NOTE]
+   > Turning the switch off works the same way. Live sponsors stay Live, but nobody sees them.
+8. Type "your password" in the **Password** box.
+9. Click **Confirm**.
+10. Check that **Sponsors are off. Viewers see nothing.** shows again.
 <!-- /kb:steps -->
 
 ## What you should see

@@ -42,6 +42,12 @@ Important: today the donation settings have no screen in this admin area. You de
 
 ## Steps
 <!-- kb:steps M07 -->
+1. Choose **Donations** in the side menu.
+   ![The Donations screen with the title line marked 1](../../media/M07/M07-01-donations-desktop.webp)
+2. Check that **Gifts received through Paystack** shows under the title.
+3. Check that **No succeeded live gifts in this view.** appears.
+   ![The totals box, marked 1](../../media/M07/M07-03-totals-desktop.webp)
+4. Check that **Test gifts are not counted.** shows under the totals.
 <!-- /kb:steps -->
 
 ## What you should see

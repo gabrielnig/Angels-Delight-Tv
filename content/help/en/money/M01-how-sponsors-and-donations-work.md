@@ -30,6 +30,18 @@ Both are off until they are switched on. Neither is ever shown to children. Mone
 
 ## Steps
 <!-- kb:steps M01 -->
+1. Choose **Sponsors** in the side menu.
+   ![The Sponsors screen with the switch card marked 1 and the sponsor list marked 2](../../media/M01/M01-01-sponsors-desktop.webp)
+2. Check that **Sponsors never show to children** appears under the title.
+3. Check that **Sponsors are off. Viewers see nothing.** shows beside the switch.
+   ![The switch card saying sponsors are off, marked 1](../../media/M01/M01-03-off-desktop.webp)
+4. Check that **Demo Sponsor Ltd (test)** shows in the list.
+5. Click **Demo Sponsor Ltd (test)**.
+   ![The sponsor screen with the status buttons marked 1](../../media/M01/M01-05-detail-desktop.webp)
+6. Check that **Pause** shows in the status panel.
+7. Click **Report**.
+   ![The sponsor report with the number tiles marked 1](../../media/M01/M01-07-report-desktop.webp)
+8. Check that **Impressions** shows at the top of the report.
 <!-- /kb:steps -->
 
 ## What you should see

@@ -28,6 +28,17 @@ Before you decide, look at the payment in your Paystack dashboard. Accept the gi
 
 ## Steps
 <!-- kb:steps M09 -->
+1. Choose **Donations** in the side menu.
+2. Click **addondemo06**.
+   ![A gift that needs review, with the amounts line marked 1](../../media/M09/M09-02-review-desktop.webp)
+3. Check that **Needs review** shows beside the reference.
+4. Check that **Expected ₦15,000, paid ₦10,000.** shows under the reference.
+5. Type "Checked Paystack in test mode. The amounts match." in the **Note** box.
+   > [!CAREFUL]
+   > Accept only if Paystack shows the money arrived. Write what you checked. Rejecting works the same way with Reject the gift.
+   ![The note box with the two buttons marked 1](../../media/M09/M09-05-note-desktop.webp)
+6. Click **Accept the gift**.
+7. Check that **Gift accepted** shows at the bottom of the screen.
 <!-- /kb:steps -->
 
 ## What you should see

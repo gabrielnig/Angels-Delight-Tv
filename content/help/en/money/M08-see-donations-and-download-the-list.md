@@ -28,6 +28,14 @@ The totals count only succeeded live gifts, one total for each currency. Test gi
 
 ## Steps
 <!-- kb:steps M08 -->
+1. Choose **Donations** in the side menu.
+   ![The Donations list with the table marked 1 and Export CSV marked 2](../../media/M08/M08-01-list-desktop.webp)
+2. Check that **Test gifts are not counted.** shows under the totals.
+3. Check that **Anonymous** shows for donors who asked to stay private.
+4. Click **Export CSV** to download the list.
+5. Click **addondemo01**.
+   ![One gift with its status and receipt line marked 1](../../media/M08/M08-05-gift-desktop.webp)
+6. Check that **Receipt queued** shows under the reference.
 <!-- /kb:steps -->
 
 ## What you should see

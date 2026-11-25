@@ -29,6 +29,27 @@ A sponsor that has report numbers cannot be deleted. Archive it instead.
 
 ## Steps
 <!-- kb:steps M05 -->
+1. Choose **Sponsors** in the side menu.
+2. Click **Demo Sponsor Ltd (test)**.
+   ![A live sponsor with Pause, Archive and Delete sponsor marked 1](../../media/M05/M05-02-live-desktop.webp)
+3. Click **Pause**.
+   > [!NOTE]
+   > Pause keeps everything. Use Approve to run to start it again.
+4. Check that **Sponsor paused.** shows at the bottom of the screen.
+   ![The sponsor paused, with Approve to run marked 1](../../media/M05/M05-04-paused-desktop.webp)
+5. Click **Approve to run**.
+6. Check that **Sponsor approved.** shows at the bottom of the screen.
+7. Click **Archive**.
+   > [!CAREFUL]
+   > Archive hides the sponsor for good, but its report numbers stay.
+8. Check that **Sponsor archived.** shows at the bottom of the screen.
+9. Click **Sponsors** in the top path.
+10. Click **Demo Bakery (test)**.
+11. Click **Delete sponsor**.
+   > [!CAREFUL]
+   > Delete cannot be undone, and it is refused for a sponsor that has report numbers. Archive it instead.
+   ![The Delete sponsor box asking you to confirm, marked 1](../../media/M05/M05-11-delete-desktop.webp)
+12. Click **Delete**.
 <!-- /kb:steps -->
 
 ## What you should see

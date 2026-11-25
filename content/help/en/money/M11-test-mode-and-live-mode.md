@@ -30,6 +30,15 @@ Go live in this order: test gift, check it here, then the developer swaps in the
 
 ## Steps
 <!-- kb:steps M11 -->
+1. Choose **Donations** in the side menu.
+2. Check that **Test gifts are not counted.** shows under the totals.
+   ![The totals note, marked 1](../../media/M11/M11-02-note-desktop.webp)
+3. Select **succeeded** from the **Status** list.
+4. Click **Apply**.
+   ![The list with a Test badge on every row, marked 1](../../media/M11/M11-04-filtered-desktop.webp)
+5. Click **addondemo01**.
+6. Check that **Test** shows next to the status.
+   ![The Test badge on one gift, marked 1](../../media/M11/M11-06-badge-desktop.webp)
 <!-- /kb:steps -->
 
 ## What you should see

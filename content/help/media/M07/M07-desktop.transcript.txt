@@ -1,0 +1,11 @@
+Set up donations: what you set and what the developer sets (M07)
+For Admins. 31 s.
+
+0:06  Choose Donations in the side menu.
+      The pointer moves to Donations.
+0:10  Check that Gifts received through Paystack shows under the title.
+      The pointer moves to Gifts received through Paystack. Emails are masked and the n.
+0:16  Check that No succeeded live gifts in this view. appears.
+      The pointer moves to No succeeded live gifts in this view..
+0:21  Check that Test gifts are not counted. shows under the totals.
+      The pointer moves to Test gifts are not counted. Currencies are never added toget.

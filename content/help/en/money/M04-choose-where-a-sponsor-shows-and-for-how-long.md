@@ -29,6 +29,27 @@ A [placement](glossary:placement) is a place on the site. There are four: **Home
 
 ## Steps
 <!-- kb:steps M04 -->
+1. Choose **Sponsors** in the side menu.
+2. Click **Demo Bakery (test)**.
+   ![The Demo Bakery sponsor with its status buttons marked 1](../../media/M04/M04-02-draft-desktop.webp)
+3. Click **Edit**.
+   ![The creative form with the four placement boxes marked 1](../../media/M04/M04-03-edit-desktop.webp)
+4. Tick **Home page banner**.
+   > [!TIP]
+   > Tick every place the sponsor paid for. A message with no place ticked never shows.
+5. Tick **After the video**.
+   ![Two placements ticked, marked 1](../../media/M04/M04-05-ticked-desktop.webp)
+6. Click **Save creative**.
+7. Type "10102026" in the **Ends on** box.
+   > [!NOTE]
+   > Type the day, month and year with no spaces, for example 10102026 for 10 Oct 2026. Dates use Lagos time.
+   ![The Ends on box marked 1](../../media/M04/M04-07-dates-desktop.webp)
+8. Click **Save sponsor**.
+9. Click **Approve to run**.
+   > [!CAREFUL]
+   > Only Admins can approve. The sponsors master switch must also be on for viewers to see anything.
+10. Check that **Live** shows beside the sponsor name.
+   ![The sponsor page with the Live badge marked 1](../../media/M04/M04-10-live-desktop.webp)
 <!-- /kb:steps -->
 
 ## What you should see

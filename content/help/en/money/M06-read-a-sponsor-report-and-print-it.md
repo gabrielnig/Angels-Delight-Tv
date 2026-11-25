@@ -29,6 +29,23 @@ An impression is one time a card was half visible for one second. A click is cou
 
 ## Steps
 <!-- kb:steps M06 -->
+1. Choose **Sponsors** in the side menu.
+2. Click **Demo Sponsor Ltd (test)**.
+3. Click **Report**.
+   ![The report with the date boxes marked 1](../../media/M06/M06-03-report-desktop.webp)
+4. Type "03032026" in the **From** box.
+   > [!NOTE]
+   > Type the day, month and year with no spaces, for example 03032026 for 3 Mar 2026. Leave To empty for up to today.
+5. Click **Show**.
+   ![The report numbers marked 1](../../media/M06/M06-05-numbers-desktop.webp)
+6. Check that **Impressions** shows in the number tiles.
+7. Check that **Reach is a daily figure** shows under the tiles.
+   ![The note about daily reach, marked 1](../../media/M06/M06-07-reach-desktop.webp)
+8. Click **Download CSV**.
+   > [!NOTE]
+   > Only Admins see Download CSV. The file has no personal details.
+9. Click **Print**.
+   ![The printable report, marked 1](../../media/M06/M06-09-print-desktop.webp)
 <!-- /kb:steps -->
 
 ## What you should see

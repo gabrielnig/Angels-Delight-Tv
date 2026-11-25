@@ -34,6 +34,12 @@ Never paste a key into this site, a chat or an email. If a key was shared by mis
 
 ## Steps
 <!-- kb:steps M10 -->
+1. Choose **Donations** in the side menu.
+2. Click **addondemo02**.
+   ![A test gift with the Succeeded and Test badges marked 1](../../media/M10/M10-02-test-gift-desktop.webp)
+3. Check that **Succeeded** shows beside the amount.
+4. Check that **Test** shows beside it as a second badge.
+5. Check that **Receipt queued** shows under the reference.
 <!-- /kb:steps -->
 
 ## What you should see
