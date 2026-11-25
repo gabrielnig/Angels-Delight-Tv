@@ -1,6 +1,8 @@
 /// <reference lib="dom" />
 import type { Locator, Page } from '@playwright/test';
-import { arrowFor, placeBadge, type Rect } from './annotate';
+import type { Rect } from './annotate';
+import { assertPageClean } from './scan-page';
+import { cropRect, planShapes, type MarkInput } from './shapes';
 import type { Profile } from './profiles';
 import { captionBand, captionPlacement, type Band } from './safe-area';
 
@@ -19,7 +21,8 @@ declare global {
       zoom(rect: Rect | null, scale: number, ms: number): Promise<boolean>;
       highlight(r: Rect, ms: number): void;
       redactAll(deep: boolean): void;
-      annotate(shapes: unknown[], size: number): void;
+      annotate(shapes: unknown): void;
+      maskAll(): void;
     };
   }
 }
@@ -61,6 +64,7 @@ export class Session {
     await this.page.goto(path, { waitUntil: 'load' });
     await this.page.waitForLoadState('networkidle').catch(() => {});
     await this.pause(500);
+    await this.guard(`page ${path}`);
   }
 
   /** Smoothly scrolls so the element sits about a third of the way down its scroll area. */
@@ -106,6 +110,7 @@ export class Session {
     await this.pause(90);
     await this.page.mouse.up();
     await this.pause(500);
+    await this.guard('after a click');
   }
 
   async type(target: Locator, text: string, delay = 85): Promise<void> {
@@ -114,29 +119,58 @@ export class Session {
     await this.pause(350);
   }
 
-  /** A numbered screenshot with circles and arrows, written to the shots directory. Emails are redacted first. */
+  /** Fails the capture when the page shows real looking data (scan.ts). Runs after navigation, clicks and every step. */
+  async guard(where: string): Promise<void> {
+    if (this.scanAllow === null) return;
+    await assertPageClean(this.page, where, { allow: this.scanAllow });
+  }
+
+  /** Values the scanner may ignore, for example one fake phone number a screen must show. Null turns the scan off. */
+  scanAllow: string[] | null = [];
+
+  /**
+   * A numbered, annotated screenshot written to the shots directory as PNG (the runner converts it to WebP).
+   * The scanner runs first, so a capture with real looking data fails instead of being saved.
+   */
   async shot(
     name: string,
-    marks: Array<{ target: Locator; label?: string }>,
+    spec: {
+      marks: Array<{ target: Locator; label?: string; kind?: 'mark' | 'blur'; arrow?: boolean }>;
+      crop?: Locator;
+      scheme?: 'light' | 'dark';
+    },
   ): Promise<string | null> {
     if (!this.shotsDir) return null;
     const view = { width: this.profile.width, height: this.profile.height };
-    await this.page.evaluate(() => window.__kb.redactAll(true));
-    const boxes: Array<{ n: number; rect: Rect; label?: string }> = [];
-    for (const [i, m] of marks.entries()) {
-      await this.reveal(m.target, 0.4);
-      const rect = await m.target.boundingBox();
-      if (rect) boxes.push({ n: i + 1, rect, label: m.label });
-    }
-    const SIZE = 30;
-    const shapes = boxes.map((b) => {
-      const badge = placeBadge(b.rect, view, SIZE);
-      return { ...b, badge, arrow: arrowFor(badge, b.rect, SIZE) };
+    await this.page.evaluate(() => {
+      window.__kb.maskAll();
+      window.__kb.redactAll(true);
     });
-    await this.page.evaluate((a) => window.__kb.annotate(a.shapes, a.size), { shapes, size: SIZE });
+    await this.guard(`screenshot ${name}`);
+    const inputs: MarkInput[] = [];
+    for (const m of spec.marks) {
+      if (m.kind !== 'blur') await this.reveal(m.target, 0.4);
+      const rect = await m.target.boundingBox();
+      if (rect) inputs.push({ rect, kind: m.kind, arrow: m.arrow });
+    }
+    const shapes = planShapes(inputs, view);
+    let clip: Rect | undefined;
+    if (spec.crop) {
+      await this.reveal(spec.crop, 0.3);
+      const box = await spec.crop.boundingBox();
+      if (box) clip = cropRect(box, view, 16, { minWidth: view.width / 3, minHeight: 160 });
+    }
+    if (spec.scheme) await this.page.emulateMedia({ colorScheme: spec.scheme });
+    await this.page.evaluate((s) => window.__kb.annotate(s), shapes);
     const file = `${this.shotsDir}/${name}.png`;
-    await this.page.screenshot({ path: file });
+    await this.page.screenshot({
+      path: file,
+      ...(clip ? { clip } : {}),
+      animations: 'disabled',
+      caret: 'hide',
+    });
     await this.page.evaluate(() => document.getElementById('__kb-annot')?.remove());
+    if (spec.scheme) await this.page.emulateMedia({ colorScheme: 'light' });
     return file;
   }
 }

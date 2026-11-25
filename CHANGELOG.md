@@ -7,6 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 ## [Unreleased]
 
 ### Added
+- Lane KB-H slice 3 (M50): redaction scanner for knowledge base captures (real looking emails, keys, tokens, phone numbers and IP addresses fail the capture with a masked report), annotation tools (numbered circles, optional arrows, blur, card crops), and WebP screenshots at desktop 1280 and phone 390 under 120 KB with no metadata.
 - Lane L14 platform slice 1 (M50): `@ad/help` reads Markdown help articles with a strict front matter schema, a safe Markdown subset parser, a library with link, route and path checks, a glossary parser, a copy lint and `pnpm help:check`; three sample articles (S04, D02, D07) with placeholder media; M50 stories S25 to S29 and decisions D-376 and D-377.
 - Lane L13 slice 4 (M51 docs): stories M51-S01 to S07, MODULES, SCREEN-ARCHITECTURE, DATA-MODEL, SECURITY 12b and CLIENT-INPUTS for the configurable series names.
 - Lane KB-H slice 2 (M50): demo stack for the knowledge base recorder. A clearly fake dataset (Demo names, test sponsors and donations, one video per status, a Part and Lesson series, example domains only) over the fixture build with `KB_DEMO=on`, a frozen server and browser clock, a local only reset route called before every episode, an origin and database guard, and `pnpm kb:stack` (fixture and real Postgres modes).

@@ -146,24 +146,45 @@ export function overlayInitScript(o: { touch: boolean }): string {
       });
     },
     redactAll,
-    annotate(sh, size) {
+    maskAll() {
+      for (const el of Array.from(document.querySelectorAll('[data-kb-mask]'))) {
+        el.textContent = 'DEMO-0000-0000';
+      }
+    },
+    annotate(sh) {
       const NS = 'http://www.w3.org/2000/svg';
+      const root = document.createElement('div');
+      root.id = '__kb-annot';
+      root.setAttribute('style', 'position:fixed;inset:0;z-index:2147483644;pointer-events:none');
+      for (const b of sh.blurs) {
+        const d = document.createElement('div');
+        d.setAttribute('style', 'position:fixed;left:' + b.x + 'px;top:' + b.y + 'px;width:' + b.width + 'px;height:' + b.height + 'px;backdrop-filter:blur(9px);-webkit-backdrop-filter:blur(9px);background:rgba(255,255,255,.35);border-radius:6px');
+        root.appendChild(d);
+      }
       const svg = document.createElementNS(NS, 'svg');
-      svg.id = '__kb-annot';
-      svg.setAttribute('style', 'position:fixed;inset:0;width:100vw;height:100vh;z-index:2147483644;pointer-events:none');
+      svg.setAttribute('style', 'position:absolute;inset:0;width:100%;height:100%');
       const add = (tag, attrs, text) => {
         const e = document.createElementNS(NS, tag);
         for (const k of Object.keys(attrs)) e.setAttribute(k, String(attrs[k]));
         if (text) e.textContent = text;
         svg.appendChild(e);
       };
-      for (const s of sh) {
-        add('rect', { x: s.rect.x - 4, y: s.rect.y - 4, width: s.rect.width + 8, height: s.rect.height + 8, rx: 8, fill: 'none', stroke: '#e11d48', 'stroke-width': 3 });
-        if (s.arrow) add('line', { x1: s.arrow.from.x, y1: s.arrow.from.y, x2: s.arrow.to.x, y2: s.arrow.to.y, stroke: '#e11d48', 'stroke-width': 3, 'stroke-linecap': 'round' });
-        add('circle', { cx: s.badge.x + size / 2, cy: s.badge.y + size / 2, r: size / 2, fill: '#e11d48', stroke: '#fff', 'stroke-width': 2 });
-        add('text', { x: s.badge.x + size / 2, y: s.badge.y + size / 2 + 6, 'text-anchor': 'middle', 'font-family': 'Inter, Arial, sans-serif', 'font-size': 17, 'font-weight': 700, fill: '#fff' }, String(s.n));
+      // Fixed annotation colours (not theme tokens): they must not change when the client changes the theme.
+      for (const r of sh.highlights) {
+        add('rect', { x: r.x - 5, y: r.y - 5, width: r.width + 10, height: r.height + 10, rx: 9, fill: 'none', stroke: '#1b1b1f', 'stroke-width': 5 });
+        add('rect', { x: r.x - 5, y: r.y - 5, width: r.width + 10, height: r.height + 10, rx: 9, fill: 'none', stroke: '#ffb400', 'stroke-width': 3 });
       }
-      document.documentElement.appendChild(svg);
+      for (const a of sh.arrows) {
+        add('line', { x1: a.from.x, y1: a.from.y, x2: a.to.x, y2: a.to.y, stroke: '#1b1b1f', 'stroke-width': 5, 'stroke-linecap': 'round' });
+        add('line', { x1: a.from.x, y1: a.from.y, x2: a.to.x, y2: a.to.y, stroke: '#ffb400', 'stroke-width': 3, 'stroke-linecap': 'round' });
+      }
+      for (const b of sh.badges) {
+        const cx = b.x + b.size / 2, cy = b.y + b.size / 2;
+        add('circle', { cx, cy, r: b.size / 2, fill: '#1b1b1f', stroke: '#ffb400', 'stroke-width': 2 });
+        add('text', { x: cx, y: cy + 6, 'text-anchor': 'middle', 'font-family': 'Inter, Arial, sans-serif', 'font-size': 16, 'font-weight': 700, fill: '#fff' }, String(b.n));
+      }
+      root.appendChild(svg);
+      document.documentElement.appendChild(root);
     },
   };
 

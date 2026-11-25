@@ -4,7 +4,7 @@ export interface ListedStep {
   n: number;
   text: string;
   note?: string;
-  shot?: { name: string; alt: string };
+  shot?: { name: string; alt: string; scheme?: 'light' | 'dark' };
 }
 
 /** The article step list of an episode: one numbered step per caption, with optional notes and pictures. */
@@ -14,7 +14,11 @@ export function stepList(e: Episode): ListedStep[] {
     text: s.caption,
     note: s.note,
     shot: s.shot
-      ? { name: s.shot.name, alt: s.shot.alt ?? `Step ${i + 1}: ${s.caption}` }
+      ? {
+          name: s.shot.name,
+          alt: s.shot.alt ?? `Step ${i + 1}: ${s.caption}`,
+          scheme: s.shot.scheme,
+        }
       : undefined,
   }));
 }
@@ -25,12 +29,13 @@ export function shotFileName(
   n: number,
   name: string,
   profile: 'desktop' | 'mobile',
+  scheme: 'light' | 'dark' = 'light',
 ): string {
   const slug = name
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-|-$/g, '');
-  return `${id}-${String(n).padStart(2, '0')}-${slug}-${profile}.webp`;
+  return `${id}-${String(n).padStart(2, '0')}-${slug}-${profile}${scheme === 'dark' ? '-dark' : ''}.webp`;
 }
 
 const open = (id: string) => `<!-- kb:steps ${id} -->`;
@@ -48,7 +53,7 @@ export function renderStepsBlock(e: Episode, o: { mediaPrefix?: string } = {}): 
     lines.push(`${s.n}. ${s.text}`);
     if (s.note) lines.push(`   ${s.note}`);
     if (s.shot) {
-      const file = shotFileName(e.id, s.n, s.shot.name, 'desktop');
+      const file = shotFileName(e.id, s.n, s.shot.name, 'desktop', s.shot.scheme);
       lines.push(`   ![${s.shot.alt}](${prefix}/${e.id}/${file})`);
     }
   }
