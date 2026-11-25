@@ -1,0 +1,14 @@
+A video will not publish (T02)
+For Editors. 1 min 5 s.
+
+0:05  Choose Videos in the side menu.
+      The pointer moves to Videos.
+0:14  Type "Naira" in the Search box.
+0:23  Click Edit Counting Money in Naira.
+      The pointer moves to Edit Counting Money in Naira.
+0:33  Check the Before you publish list on the right.
+      The pointer moves to Before you publish.
+0:44  Check the Needs attention items.
+      The pointer moves to Choose a poster image..
+0:53  Click Fix this under Poster.
+      The pointer moves to Fix this: Poster.

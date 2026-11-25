@@ -14,8 +14,8 @@ export function applyTroubleStates(store: AdminStore, now: number): AdminStore {
   const iso = (offset: number) => new Date(now + offset).toISOString();
   const find = (id: string) => store.videos.find((v) => v.id === id);
 
-  const testClip = find('vid_test_clip');
-  if (testClip) testClip.captionState = 'failed';
+  const failedCaptions = find('vid_fractions');
+  if (failedCaptions) failedCaptions.captionState = 'failed';
 
   const decimals = find('vid_decimals');
   if (decimals) {

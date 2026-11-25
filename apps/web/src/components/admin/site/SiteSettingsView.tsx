@@ -41,6 +41,7 @@ const PLATFORM_KEYS: SettingKey[] = [
   'platform.name',
   'platform.tagline',
   'platform.support_email',
+  'help.support_contact',
   'platform.footer_text',
   'platform.canonical_host',
   'content.default_language',
@@ -253,6 +254,7 @@ function PlatformTab({ data, actions, onSaved }: TabProps) {
         {field('platform.name')}
         {field('platform.tagline')}
         {field('platform.support_email', { type: 'email', inputMode: 'email' })}
+        {field('help.support_contact', { placeholder: 'support@example.com or https://example.com/help' })}
         {field('platform.footer_text')}
         {field('platform.canonical_host', { placeholder: 'angelsdelight.tv' })}
         {field('content.default_language')}

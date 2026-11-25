@@ -1,0 +1,12 @@
+Set the contact for the developer (R13)
+For Admins. 1 min 2 s.
+
+0:05  Choose Site settings in the side menu.
+      The pointer moves to Site settings.
+0:15  Type "help@example.com" in the Help centre contact box.
+0:28  Click Save changes.
+      The pointer moves to Save changes.
+0:36  Choose Help centre in the side menu.
+      The pointer moves to Help centre.
+0:47  Scroll to Message ARKDEV at the bottom of the page.
+      The pointer moves to Message ARKDEV.

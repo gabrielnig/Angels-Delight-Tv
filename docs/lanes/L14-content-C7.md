@@ -17,19 +17,27 @@ Worktree `/home/claude/wt2/C7-content`, demo stack on port 3207, raw outputs in 
 
 ## Demo states added for troubleshooting
 
-`apps/web/src/lib/data/admin/kb-demo/trouble.ts` (tested in `trouble.test.ts`): `vid_test_clip` has failed captions, `vid_decimals` has a failed preview clip, `vid_hygiene` a skipped one, and the series "Demo series: Small space gardening" has one published and one draft lesson. The failed encode (`vid_solar`) and the failed jobs on System (encode, captions, email) come from the base fixture.
+`apps/web/src/lib/data/admin/kb-demo/trouble.ts` (tested in `trouble.test.ts`): `vid_fractions` has failed captions, `vid_decimals` has a failed preview clip, `vid_hygiene` a skipped one, and the series "Demo series: Small space gardening" has one published and one draft lesson. The failed encode (`vid_solar`) and the failed jobs on System (encode, captions, email) come from the base fixture.
 
 ## Batches
 
 | Batch | Articles | PR | State |
 |---|---|---|---|
-| 1 | R01, R02, R03, R05, R06, glossary | | in progress |
+| 1 | R01, R02, R03, R05, R06, glossary (55 terms), demo trouble states | 443 | Merged |
+| 2 | T01 to T17, R07 to R13 (29 articles, 14 recorded videos) | see the PR list in the final report | In progress, recording through the slot script |
+
+Videos (episode id = article id, phone set only for T01 and T06): T01, T02, T03, T04, T05, T06, T07, T08, T10, T12, T13, T14, T15, T16, R13. Text only: T09 (the Donations screen does not load in fixture mode), T11, T17, R01 to R03, R05 to R12 except R13.
+
+Harness fixes made on the way: the fact checker now finds menu items that carry a count in their name ("Encoding1 need attention"); `scripts/kb-recorder/helpers-c7.ts` holds `menuTo`, `openVideo` and `slow` (adds a pause after each step so a short procedure reaches the 60 s content minimum).
+
+App fixes made on the way: the System Jobs tab printed its own code and showed the empty state and the table together (missing braces in `SystemView.tsx`); the Help centre contact setting was documented under Site settings, Platform details but had no field, so `SiteSettingsView.tsx` now has one.
 
 ## Differences between the plan and the real screens
 
 - System has three tabs: Jobs (Super admin only), Storage and Player quality. It has no backup, uptime or email status and no Cloudflare plan figure. The guides say so and point to the right places.
 - The Publish button is only greyed while the video is still preparing, failed, or has unsaved changes. Other blockers show as red items in "Before you publish" (6 items).
 - Staff two step reset is in Roles and invites (Super admin, needs the Super admin's own code). An Admin resets a viewer from Users.
+- The Donations screen shows "This page could not load" in fixture mode (the payments service is not wired), so T09 is text only. Theme history is empty in the demo, so T08 shows the empty state and describes Restore as draft.
 - The plan says a locked account waits 30 minutes. The screen shows the number of minutes, so the guides say "the minutes shown".
 
 ## Could not be shown in fixture mode

@@ -1,0 +1,15 @@
+The site looks wrong after a theme change (T08)
+For Admins. 1 min 2 s.
+
+0:05  Choose Theme in the side menu.
+      The pointer moves to Theme.
+0:14  Scroll to Colours to see the colour ratios.
+      The pointer moves to Ratios use WCAG 2.2, 4.5:1 needed for text.
+0:25  Click Theme history.
+      The pointer moves to Theme history.
+0:32  Check the Theme history list.
+      The pointer moves to Every saved version of the theme.
+0:41  Click Back to theme.
+      The pointer moves to Back to theme.
+0:49  Scroll to Reset to default at the top.
+      The pointer moves to Reset to default.

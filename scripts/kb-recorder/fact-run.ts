@@ -44,6 +44,8 @@ async function control(s: Session, label: string): Promise<Locator> {
   // A choice in a group is read out with its help line ("Schedule Pick a date and time."), so a label that starts it counts.
   const escaped = label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   loc = loc.or(s.page.getByRole('radio', { name: new RegExp(`^${escaped}(?= )`) }));
+  // A link with a hidden suffix, such as "Fix this: Poster", is named by its visible words.
+  loc = loc.or(s.page.getByRole('link', { name: new RegExp(`^${escaped}( |:|$)`) }));
   return loc.first();
 }
 

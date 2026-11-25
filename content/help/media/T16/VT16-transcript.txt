@@ -1,0 +1,13 @@
+The site feels slow or the media is not loading (T16)
+For Admins. 1 min 11 s.
+
+0:05  Choose System in the side menu.
+      The pointer moves to System.
+0:17  Open the Player quality tab.
+      The pointer moves to Player quality.
+0:29  Check the Typical start time figure.
+      The pointer moves to Typical start time.
+0:43  Check the Time spent stalling figure.
+      The pointer moves to Time spent stalling.
+0:56  Check the Playback errors table.
+      The pointer moves to Playback errors.

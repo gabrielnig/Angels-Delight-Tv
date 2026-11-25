@@ -1,0 +1,13 @@
+An upload keeps failing (T05)
+For Editors. 1 min 13 s.
+
+0:05  Choose Upload in the side menu.
+      The pointer moves to Upload.
+0:17  Check the Files at once line.
+      The pointer moves to MP4, MOV or MKV. Up to 5 GB each. You can add many at once..
+0:28  Click Choose videos and pick a file.
+      The pointer moves to Choose videos.
+0:41  Check the Upload queue for the message under the file name.
+      The pointer moves to holiday.avi is not supported. Use MP4, MOV or MKV..
+0:56  Select a file that was not added and click Remove.
+      The pointer moves to Dismiss holiday.avi.
