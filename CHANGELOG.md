@@ -7,6 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 ## [Unreleased]
 
 ### Added
+- Lane L14 platform slice 4 (M50): private help media route for videos, captions and pictures (staff only, Range, no catalog), the silent captioned `HelpVideo` player with quality and phone picture choice, transcript and watched at 90 percent, and the video page with the path playlist.
 - Lane L14 platform slice 3 (M50): migration 0060 `help_progress` (per account, owner only RLS, deleted at purge, in the data export), Mark as done by button, a one tap Was this helpful answer and a Your progress card on the help home.
 - Lane KB-H slice 3 (M50): redaction scanner for knowledge base captures (real looking emails, keys, tokens, phone numbers and IP addresses fail the capture with a masked report), annotation tools (numbered circles, optional arrows, blur, card crops), and WebP screenshots at desktop 1280 and phone 390 under 120 KB with no metadata.
 - Lane L14 platform slice 2 (M50): `/admin/help` home with Start here and learning paths, path pages, article pages with Who can do this from the permission table, contents list, print layout and role labels, a Help centre item in the side menu, a Help button in the top bar and a Help link in every page header, higher role guides hidden behind a count, the `help.support_contact` setting, a private picture route and coverage tests with a gap list.
