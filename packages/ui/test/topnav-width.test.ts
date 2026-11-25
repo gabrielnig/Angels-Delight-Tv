@@ -4,7 +4,7 @@ import { createElement, Fragment } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
 import { Icon } from '../src/components/Icon';
-import { TopNav } from '../src/components/TopNav';
+import { BottomTabBar, TopNav } from '../src/components/TopNav';
 import { repoRoot } from './css-scan';
 
 /**
@@ -170,6 +170,91 @@ describe.skipIf(!chromium)('phone header width stress (L12, S184)', () => {
             if (r.wrapped.length) failures.push(`${tag}: wrapped ${r.wrapped.join(', ')}`);
             if (width <= 339 && !r.nameHidden) failures.push(`${tag}: name still shown under 340`);
           }
+        }
+        await page.close();
+      }
+    } finally {
+      await browser.close();
+    }
+    expect(failures).toEqual([]);
+  }, 120_000);
+});
+
+const TABS = {
+  yoruba: ['Ilé ìkínni', 'Ṣàwárí fídíò', 'Wá àwọn fídíò', 'Àtòkọ àwọn fídíò mi'],
+  igbo: ['Ụlọ mbụ', 'Chọgharịa vidiyo', 'Chọọ vidiyo ndị ọzọ', 'Ndepụta vidiyo m niile'],
+  hausa: ['Gida', 'Bincika bidiyo', 'Nemo bidiyoyi', 'Jerin bidiyona na kaina'],
+};
+const ICONS = ['home', 'grid', 'search', 'list'] as const;
+
+const TAB_SCRIPT = `() => {
+  const bar = document.querySelector('.ad-tabbar');
+  const items = [...bar.querySelectorAll('.ad-tabbar__item')];
+  const rects = items.map((el) => { const r = el.getBoundingClientRect(); return { l: r.left, r: r.right, t: r.top, b: r.bottom, w: r.width, h: r.height }; });
+  const overlaps = [];
+  for (let i = 0; i < rects.length; i++) for (let j = i + 1; j < rects.length; j++) {
+    const a = rects[i], b = rects[j];
+    if (a.l < b.r - 0.5 && b.l < a.r - 0.5 && a.t < b.b - 0.5 && b.t < a.b - 0.5) overlaps.push(i + '/' + j);
+  }
+  const labels = items.map((el) => el.querySelector('span'));
+  const wrapped = labels.filter((el) => el.getClientRects().length > 1 || el.getBoundingClientRect().height > parseFloat(getComputedStyle(el).lineHeight || '0') * 1.6 + 8).length;
+  const spill = labels.filter((el, i) => { const r = el.getBoundingClientRect(); return r.left < rects[i].l - 0.5 || r.right > rects[i].r + 0.5; }).length;
+  return {
+    docWidth: document.documentElement.scrollWidth, view: window.innerWidth,
+    offscreen: rects.filter((r) => r.l < -0.5 || r.r > window.innerWidth + 0.5).length,
+    overlaps, wrapped, spill,
+    small: rects.filter((r) => r.h < 43.5 || r.w < 43.5).length,
+    barHeight: bar.getBoundingClientRect().height,
+  };
+}`;
+
+describe.skipIf(!chromium)('tab bar width stress (L12, S184, S185)', () => {
+  it('clips long labels without overflow, overlap or wrapping at 320, 360, 414 and in landscape', async () => {
+    const { chromium: browserType } = await import('@playwright/test');
+    const browser = await browserType.launch({ executablePath: chromium, args: ['--no-sandbox'] });
+    const failures: string[] = [];
+    try {
+      const sizes = [
+        { width: 320, height: 640 },
+        { width: 360, height: 740 },
+        { width: 414, height: 800 },
+        { width: 667, height: 375 },
+      ];
+      for (const size of sizes) {
+        const page = await browser.newPage({ viewport: size });
+        for (const lang of Object.keys(TABS) as Array<keyof typeof TABS>) {
+          const html = renderToStaticMarkup(
+            createElement(BottomTabBar, {
+              currentPath: '/browse',
+              tabs: TABS[lang].map((label, i) => ({
+                label,
+                href: ['/', '/browse', '/search', '/my-list'][i]!,
+                icon: ICONS[i]!,
+              })),
+            }),
+          );
+          await page.setContent(
+            `<!doctype html><html><head><meta charset="utf-8"><style>${tokens}\n${components}\nbody{margin:0;font-family:Arial,sans-serif}</style></head><body>${html}</body></html>`,
+          );
+          const r = (await page.evaluate(`(${TAB_SCRIPT})()`)) as {
+            docWidth: number;
+            view: number;
+            offscreen: number;
+            overlaps: string[];
+            wrapped: number;
+            spill: number;
+            small: number;
+            barHeight: number;
+          };
+          const tag = `${size.width}x${size.height} ${lang}`;
+          if (r.docWidth > r.view) failures.push(`${tag}: horizontal overflow`);
+          if (r.offscreen) failures.push(`${tag}: item off screen`);
+          if (r.overlaps.length) failures.push(`${tag}: overlap ${r.overlaps.join(',')}`);
+          if (r.wrapped) failures.push(`${tag}: ${r.wrapped} labels wrapped`);
+          if (r.spill) failures.push(`${tag}: ${r.spill} labels spill out of their tab`);
+          if (r.small) failures.push(`${tag}: ${r.small} tabs under 44`);
+          if (size.height === 375 && r.barHeight > 45.5)
+            failures.push(`${tag}: landscape bar ${r.barHeight} tall`);
         }
         await page.close();
       }

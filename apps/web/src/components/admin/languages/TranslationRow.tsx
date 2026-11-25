@@ -52,7 +52,7 @@ export function TranslationRow({
 
   const value: MessageText = plural ? ({ other: '', ...draft } as MessageText) : (draft.other ?? '');
   const blank = Object.values(draft).every((v) => v.trim() === '');
-  const result = blank ? null : validateTranslation({ locale, english: row.english, text: value });
+  const result = blank ? null : validateTranslation({ key: row.key, locale, english: row.english, text: value });
   const errors = serverError ? [serverError] : (result?.errors ?? []);
   const warnings = result?.warnings ?? [];
   const status = STATUS[row.status];

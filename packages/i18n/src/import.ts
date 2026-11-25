@@ -83,7 +83,7 @@ export function planImport(input: {
       plan.rejected.push({ row, key, reason: 'The plural text is not valid' });
       return;
     }
-    const result = validateTranslation({ locale: input.locale, english, text });
+    const result = validateTranslation({ key, locale: input.locale, english, text });
     if (result.errors.length > 0) {
       plan.rejected.push({ row, key, reason: result.errors.join('; ') });
       return;
