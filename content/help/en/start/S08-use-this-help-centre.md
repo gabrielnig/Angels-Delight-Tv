@@ -33,6 +33,15 @@ Find a guide with the search box, open it, mark it as done and say whether it he
 ## Steps
 <!-- kb:steps S08 -->
 1. Choose **Help centre** in the side menu.
+2. Type "captions" in the **Search the help centre** box.
+   Press the slash key on your keyboard to jump to this box from anywhere in the help centre.
+3. Click **Search**.
+   ![The search results with Review and approve captions marked 1](../../media/S08/S08-03-results-desktop.webp)
+4. Click **Review and approve captions**.
+   ![The guide with the Print or save as PDF button marked 1](../../media/S08/S08-04-guide-desktop.webp)
+5. Click **Mark as done** when you have finished a guide.
+6. Click **Yes** if the guide helped you.
+   ![The Was this helpful question with Yes marked 1](../../media/S08/S08-06-helpful-desktop.webp)
 <!-- /kb:steps -->
 
 ## What you should see

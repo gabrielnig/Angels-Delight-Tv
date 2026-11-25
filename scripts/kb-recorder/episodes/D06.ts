@@ -65,6 +65,14 @@ const episode: Episode = {
       { holdMs: 3000, shot: { name: 'crop', alt: 'The Crop and focus card with the focus point marked 1', label: 'Crop and focus' } },
     ),
     {
+      caption: 'Type "Naira notes and coins on a table." in the **Poster description (alt text)** box.',
+      note: 'This text is read aloud for people who cannot see the picture.',
+      holdMs: 2200,
+      run: async (s) => {
+        await typeInto(s, 'Poster description (alt text)', 'Naira notes and coins on a table.');
+      },
+    },
+    {
       caption: 'Click **Save poster**.',
       holdMs: 1800,
       run: async (s) => {

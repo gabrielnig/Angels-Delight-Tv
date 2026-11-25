@@ -129,12 +129,21 @@ async function execute(
         ? s.page.waitForEvent('filechooser', { timeout: 2500 }).catch(() => null)
         : null;
       await loc.scrollIntoViewIfNeeded().catch(() => {});
+      const inDialog = await loc
+        .evaluate((el) => !!el.closest('[role="dialog"]'))
+        .catch(() => false);
       await s.click(loc);
       const box = chooser ? await chooser : null;
       if (box) await box.setFiles(await demoFile(box, fileName));
       // A person waits for a save to finish before the next move, so the page gets a moment to settle.
       await s.page.waitForLoadState('networkidle', { timeout: 3000 }).catch(() => {});
       await s.page.waitForTimeout(600);
+      // A box that is still open with the same button in it did not take the click, so a person clicks again.
+      if (inDialog && !box && (await loc.isVisible().catch(() => false))) {
+        await s.click(loc);
+        await s.page.waitForLoadState('networkidle', { timeout: 3000 }).catch(() => {});
+        await s.page.waitForTimeout(600);
+      }
       break;
     }
     case 'type': {
@@ -190,7 +199,7 @@ async function execute(
       break;
     }
     case 'see': {
-      if (!(await visible(s.page.getByText(a.text, { exact: false }).locator('visible=true').first(), seeTimeoutMs))) {
+      if (!(await visible(s.page.getByText(a.text, { exact: false }).filter({ visible: true }).first(), seeTimeoutMs))) {
         return `The text "${a.text}" never appeared on ${new URL(s.page.url()).pathname}.`;
       }
       break;
