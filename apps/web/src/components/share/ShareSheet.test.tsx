@@ -262,3 +262,44 @@ describe('ShareSheet (L15a slice 2)', () => {
     expect(trackShare).toHaveBeenCalledWith('more', 'video', undefined);
   });
 });
+
+describe('ShareSheet start time (L15a)', () => {
+  it('has no switch unless a start time is given', () => {
+    setup();
+    expect(screen.queryByRole('switch')).toBeNull();
+  });
+
+  it('offers Start at 1:23, off by default, and the link stays clean until it is turned on', async () => {
+    const { user } = setup({ startAt: 83 });
+    const sw = screen.getByRole('switch', { name: 'Start at 1:23' });
+    expect(sw).toHaveAttribute('aria-checked', 'false');
+    expect(screen.getByLabelText('Link to share')).toHaveValue(url);
+    await user.click(sw);
+    expect(sw).toHaveAttribute('aria-checked', 'true');
+    expect(screen.getByLabelText('Link to share')).toHaveValue(`${url}?t=83`);
+    const wa = screen.getByRole('link', { name: /WhatsApp/ });
+    expect(decodeURIComponent(wa.getAttribute('href') ?? '')).toContain(`${url}?t=83`);
+  });
+
+  it('copies and counts the timed link when the switch is on', async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    const { user } = setup({ startAt: 83 }, { writeText });
+    setClip({ writeText });
+    await user.click(screen.getByRole('switch', { name: 'Start at 1:23' }));
+    await user.click(screen.getByRole('button', { name: 'Copy' }));
+    expect(writeText).toHaveBeenCalledWith(`${url}?t=83`);
+  });
+
+  it('is off again each time the sheet opens', async () => {
+    const { user, view, props } = setup({ startAt: 83 });
+    await user.click(screen.getByRole('switch', { name: 'Start at 1:23' }));
+    view.rerender(<ShareSheet {...props} open={false} />);
+    view.rerender(<ShareSheet {...props} open startAt={95} />);
+    expect(screen.getByRole('switch', { name: 'Start at 1:35' })).toHaveAttribute('aria-checked', 'false');
+  });
+
+  it('never offers it for a series', () => {
+    setup({ kind: 'series', startAt: 83 });
+    expect(screen.queryByRole('switch')).toBeNull();
+  });
+});

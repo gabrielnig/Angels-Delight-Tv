@@ -341,6 +341,13 @@ export function WatchClient({
   }, []);
   const onNext = useCallback((item: UpNextItem) => router.push(watchPath(item.id)), [router]);
 
+  /** Where the viewer is now, for the Share sheet's Start at switch. Nothing near the end or once it has ended. */
+  const playingSeconds = useCallback((): number | null => {
+    const state = controllerRef.current?.getState();
+    if (!state || state.phase === 'ended') return null;
+    if (Number.isFinite(state.duration) && state.duration - state.currentTime < 10) return null;
+    return state.currentTime;
+  }, []);
   const shareTarget = useShareTarget(
     video.share
       ? {
@@ -349,6 +356,7 @@ export function WatchClient({
           ...(video.share.kind === 'video' ? { id: video.id } : {}),
           title: video.series ? video.series.title : video.title,
           thumbnail: video.posterUrl ?? undefined,
+          getStartAt: playingSeconds,
         }
       : null,
   );

@@ -527,6 +527,40 @@ describe('WatchClient', () => {
     expect(field.value).not.toContain('?');
   });
 
+  it('offers Start at the current time, off by default, and only shares ?t= on the title link (L15a)', async () => {
+    const data = await dataFor('v-plants');
+    const { engine } = mount(data);
+    await waitFor(() => expect(engine.loads).toHaveLength(1));
+    const v = document.querySelector('video')!;
+    Object.defineProperty(v, 'duration', { value: 600, configurable: true });
+    Object.defineProperty(v, 'currentTime', { value: 83, configurable: true, writable: true });
+    act(() => {
+      v.dispatchEvent(new Event('timeupdate'));
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Share' }));
+    const sw = await screen.findByRole('switch', { name: 'Start at 1:23' });
+    expect(sw.getAttribute('aria-checked')).toBe('false');
+    const field = screen.getByLabelText('Link to share') as HTMLInputElement;
+    expect(field.value).toBe(`https://adtv.example/title/${data.video.share?.slug}`);
+    fireEvent.click(sw);
+    expect(field.value).toBe(`https://adtv.example/title/${data.video.share?.slug}?t=83`);
+    expect(field.value).not.toContain('/watch/');
+  });
+
+  it('does not offer Start at in the last seconds of the video', async () => {
+    const { engine } = mount(await dataFor('v-plants'));
+    await waitFor(() => expect(engine.loads).toHaveLength(1));
+    const v = document.querySelector('video')!;
+    Object.defineProperty(v, 'duration', { value: 100, configurable: true });
+    Object.defineProperty(v, 'currentTime', { value: 96, configurable: true, writable: true });
+    act(() => {
+      v.dispatchEvent(new Event('timeupdate'));
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Share' }));
+    await screen.findByLabelText('Link to share');
+    expect(screen.queryByRole('switch')).toBeNull();
+  });
+
   it('has no Share on the watch page when sharing is off for this viewer', async () => {
     const { engine } = mount(await dataFor('v-plants'), { share: false });
     await waitFor(() => expect(engine.loads).toHaveLength(1));

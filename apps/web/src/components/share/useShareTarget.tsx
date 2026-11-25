@@ -7,6 +7,9 @@ import { resolveShareUrl } from './resolve-url';
 import { useShareSettings } from './share-context';
 import { ShareSheet } from './ShareSheet';
 
+/** Under this many seconds in, starting at the shared time means nothing. */
+const MIN_START = 5;
+
 export interface ShareTargetInput {
   kind: 'video' | 'series';
   slug: string;
@@ -14,6 +17,8 @@ export interface ShareTargetInput {
   id?: string;
   title: string;
   thumbnail?: string;
+  /** Seconds into the video when the sheet opens, for the Start at switch. Videos only. */
+  getStartAt?: () => number | null;
 }
 
 /** Whether this viewer may share at all: settings were given for the page and the profile is not a kids profile. */
@@ -22,7 +27,15 @@ export function useShareEnabled(): boolean {
 }
 
 /** The open sheet for one title. Render it next to the control and outside any hover card. */
-export function ShareHost({ input, onClose }: { input: ShareTargetInput; onClose: () => void }) {
+export function ShareHost({
+  input,
+  onClose,
+  startAt,
+}: {
+  input: ShareTargetInput;
+  onClose: () => void;
+  startAt?: number;
+}) {
   const settings = useShareSettings();
   const enabled = useShareEnabled();
   if (!settings || !enabled) return null;
@@ -43,6 +56,7 @@ export function ShareHost({ input, onClose }: { input: ShareTargetInput; onClose
       url={resolveShareUrl(config.url)}
       kind={input.kind}
       titleId={input.id}
+      {...(startAt !== undefined ? { startAt } : {})}
       channels={config.channels}
       thumbnail={config.thumbnail}
     />
@@ -60,7 +74,16 @@ export function useShareTarget(input: ShareTargetInput | null): {
   const enabled = useShareEnabled();
   const [open, setOpen] = useState(false);
   const close = useCallback(() => setOpen(false), []);
-  const onShare = useCallback(() => setOpen(true), []);
+  const [startAt, setStartAt] = useState<number | undefined>(undefined);
+  const getStartAt = input?.getStartAt;
+  const onShare = useCallback(() => {
+    const seconds = getStartAt?.();
+    setStartAt(seconds !== null && seconds !== undefined && seconds >= MIN_START ? Math.floor(seconds) : undefined);
+    setOpen(true);
+  }, [getStartAt]);
   if (!enabled || !input) return { onShare: undefined, sheet: null };
-  return { onShare, sheet: open ? <ShareHost input={input} onClose={close} /> : null };
+  return {
+    onShare,
+    sheet: open ? <ShareHost input={input} onClose={close} {...(startAt !== undefined ? { startAt } : {})} /> : null,
+  };
 }
