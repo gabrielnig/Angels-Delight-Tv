@@ -14,7 +14,7 @@ Worktree `/home/claude/wt2/KBP-build`. Builds the help centre itself: the conten
 | 2 Pages | `/admin/help` home, path, article with contents list, role labels, print layout, Help in the side menu, top bar and page header, route to article map, private picture route, `help.support_contact` setting, coverage tests with `content/help/coverage-gaps.json` | Merged in the second platform PR |
 | 3 Progress | migration 0060 `help_progress` (RLS, purge, export), service with fixture and real versions, Mark as done, Was this helpful, progress card | Merged in the third platform PR |
 | 4 Video | private media route with Range for pictures, videos and captions, `HelpVideo` player with captions track, quality and picture choice, transcript, watched at 90 percent, `/admin/help/videos/[id]` with playlist, isolation test | Merged in the fourth platform PR |
-| 5 Panel | contextual help drawer and sheet | Not yet |
+| 5 Panel | `HelpPanelHost` and `HelpPanel` (drawer from 60rem, bottom sheet below), top bar Help button opens it (a real link without script), question mark key, focus trap, Escape, swipe, return focus, loading, slow, offline, error and no guide states, `InlineHint`, `panelFor` and `helpPanelAction`, D-384 | Merged (PR below) |
 | 6 Search and glossary | pure scorer in `@ad/help` (`search.ts`: stemming, aliases, one edit typo tolerance, Did you mean, role ordering, highlights), `/admin/help/search`, `/admin/help/glossary` (A to Z jump, filter, anchors by slug, guide links), search box on the help home with the slash key. Recent searches are not stored, so no storage key was added | Merged in the fifth platform PR |
 | 7 States and checks | offline and error states, accessibility and layout e2e, final docs | Not yet |
 
@@ -94,6 +94,7 @@ Video files are not in the repo. The page looks for them under the media release
 - Dockerfile copies `content/help` to `/app/content/help`; the loader finds it from the app folder or `HELP_CONTENT_DIR`.
 - `pnpm vitest run apps/web/src/server/help "apps/web/src/app/admin/(shell)/help/media"` (media route, Range, isolation)
 - Media release: env `HELP_MEDIA_RELEASE` (default `sample`, which serves `content/help/placeholder`). A real release is read from the originals bucket at `help/<release>/<VIDEO_ID>/<file>`. `kb:publish` (harness lane) writes it.
+- `pnpm vitest run apps/web/src/components/admin/help/HelpPanel.test.tsx apps/web/src/components/admin/help/InlineHint.test.tsx apps/web/src/lib/admin/help-panel.test.ts apps/web/src/components/admin/AdminShellHelp.test.tsx` (panel)
 - Later slices add their own lines here.
 
 ## Harness (lane KB-H)
