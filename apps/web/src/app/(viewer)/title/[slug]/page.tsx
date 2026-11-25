@@ -85,9 +85,22 @@ export default async function TitlePage({ params }: Params) {
   ]);
   const kids = ctx.audience === 'kids';
   const sponsor = kids ? null : await sponsorFor('title_card', ctx);
+  const shareImage = shareImageFor(
+    'title',
+    detail.video.slug,
+    detail.video.title,
+    detail.video.publishedAt,
+    detail.video.thumbnail,
+    await shareImageExtra(),
+  ).url;
   const structured = indexable ? (
     <JsonLd
-      data={titlePageJsonLd({ origin: siteOrigin(), siteName: platformName, video: detail.video })}
+      data={titlePageJsonLd({
+        origin: siteOrigin(),
+        siteName: platformName,
+        video: detail.video,
+        shareImage,
+      })}
     />
   ) : null;
   if (viewer.kind === 'guest') {

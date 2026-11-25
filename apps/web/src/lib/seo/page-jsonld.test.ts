@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import type { SeriesDetail, VideoSummary } from '../data/types';
+import type { SeriesDetail, SeriesSummary, VideoSummary } from '../data/types';
+import { buildMetadata, trimWords } from './metadata';
 import {
   categoryPageJsonLd,
   homePageJsonLd,
@@ -115,5 +116,41 @@ describe('home and category', () => {
   it('category has Home > Category', () => {
     const blocks = categoryPageJsonLd({ origin, name: 'Money', slug: 'money' });
     expect((blocks[0] as { itemListElement: unknown[] }).itemListElement).toHaveLength(2);
+  });
+});
+
+describe('alignment with Open Graph (L15b)', () => {
+  const long = { ...video, description: 'Rivers carry water and stories. '.repeat(20) };
+  const share = '/og/title/rivers?v=abc';
+
+  it('a video object uses the share picture first and the same trimmed description as og:description', () => {
+    const [object] = titlePageJsonLd({ origin, siteName: 'Test TV', video: long, shareImage: share });
+    expect((object!.thumbnailUrl as string[])[0]).toBe('https://example.test/og/title/rivers?v=abc');
+    expect(object!.description).toBe(trimWords(long.description, 160));
+    const meta = buildMetadata(
+      { siteName: 'Test TV', description: 'x', locale: 'en_NG', alternateLocales: [], indexing: true },
+      { kind: 'video', path: '/title/rivers', title: long.title, description: long.description },
+    );
+    expect(object!.description).toBe(meta.openGraph?.description);
+    expect(object!.name).toBe(meta.openGraph?.title);
+  });
+
+  it('a series uses the share picture first and the trimmed description', () => {
+    const series = {
+      kind: 'series', id: 's1', slug: 'rivers', title: 'Rivers', description: long.description,
+      categorySlug: '', categoryName: '', episodeCount: 1, kidsSafe: false, hasCaptions: false, publishedAt: '',
+      thumbnail: video.thumbnail,
+    } as unknown as SeriesSummary;
+    const [tv] = seriesPageJsonLd({ origin, series, seasons: [], shareImage: '/og/series/rivers?v=z' });
+    expect((tv!.image as string[])[0]).toBe('https://example.test/og/series/rivers?v=z');
+    expect(tv!.description).toBe(trimWords(long.description, 160));
+  });
+
+  it('the organisation lists the X profile from the handle and the default share image as logo', () => {
+    const [, org] = homePageJsonLd({ origin, name: 'Test TV', search: true, twitterHandle: '@learntv', logoUrl: '/brand-icons/placeholder-og.png' });
+    expect(org!.sameAs).toEqual(['https://x.com/learntv']);
+    expect(org!.logo).toBe('https://example.test/brand-icons/placeholder-og.png');
+    const [, none] = homePageJsonLd({ origin, name: 'Test TV', search: true, twitterHandle: '' });
+    expect(none).not.toHaveProperty('sameAs');
   });
 });

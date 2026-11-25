@@ -1,4 +1,5 @@
 import type { SeriesDetail, SeriesSummary, Thumb, VideoSummary } from '../data/types';
+import { trimWords } from './metadata';
 import { breadcrumbList, organizationJsonLd, tvSeries, videoObject, webSiteJsonLd } from './jsonld';
 
 type Block = Record<string, unknown>;
@@ -22,6 +23,15 @@ export function thumbnailUrls(origin: string, thumbnail: Thumb | undefined): str
   return sized.length > 0 ? sized : [abs(origin, thumbnail.src)];
 }
 
+/** Same limit as og:description and the meta description (lib/seo/metadata.ts). */
+const DESCRIPTION_LIMIT = 160;
+
+function withShareImage(origin: string, shareImage: string | undefined, rest: string[]): string[] {
+  if (!shareImage) return rest;
+  const url = abs(origin, shareImage);
+  return [url, ...rest.filter((r) => r !== url)];
+}
+
 function crumbs(category: { slug: string; name: string }, last: { name: string; path: string }) {
   return [
     { name: 'Home', path: '/' },
@@ -37,6 +47,8 @@ export function titlePageJsonLd(input: {
   origin: string | undefined;
   siteName: string;
   video: VideoSummary;
+  /** The share picture path or url. It leads the picture list so structured data and Open Graph agree. */
+  shareImage?: string;
 }): Block[] {
   const { origin, video } = input;
   if (!origin) return [];
@@ -44,8 +56,8 @@ export function titlePageJsonLd(input: {
     origin,
     slug: video.slug,
     title: video.title,
-    description: video.description,
-    thumbnails: thumbnailUrls(origin, video.thumbnail),
+    description: trimWords(video.description, DESCRIPTION_LIMIT),
+    thumbnails: withShareImage(origin, input.shareImage, thumbnailUrls(origin, video.thumbnail)),
     uploadDate: video.publishedAt,
     durationSeconds: video.durationSeconds,
     publisher: { name: input.siteName },
@@ -64,6 +76,7 @@ export function seriesPageJsonLd(input: {
   origin: string | undefined;
   series: SeriesSummary;
   seasons: SeriesDetail['seasons'];
+  shareImage?: string;
 }): Block[] {
   const { origin, series } = input;
   if (!origin) return [];
@@ -79,8 +92,8 @@ export function seriesPageJsonLd(input: {
       origin,
       slug: series.slug,
       title: series.title,
-      description: series.description,
-      thumbnails: thumbnailUrls(origin, series.thumbnail),
+      description: trimWords(series.description, DESCRIPTION_LIMIT),
+      thumbnails: withShareImage(origin, input.shareImage, thumbnailUrls(origin, series.thumbnail)),
       episodes,
       numberOfEpisodes: series.episodeCount,
     }),
@@ -99,11 +112,19 @@ export function homePageJsonLd(input: {
   name: string;
   search: boolean;
   logoUrl?: string;
+  /** The X handle from settings, with or without the at sign. */
+  twitterHandle?: string;
 }): Block[] {
   if (!input.origin) return [];
+  const handle = (input.twitterHandle ?? '').trim().replace(/^@+/, '');
   return [
     webSiteJsonLd({ origin: input.origin, name: input.name, search: input.search }),
-    organizationJsonLd({ origin: input.origin, name: input.name, logoUrl: input.logoUrl }),
+    organizationJsonLd({
+      origin: input.origin,
+      name: input.name,
+      logoUrl: input.logoUrl ? abs(input.origin, input.logoUrl) : undefined,
+      sameAs: /^[A-Za-z0-9_]{1,15}$/.test(handle) ? [`https://x.com/${handle}`] : undefined,
+    }),
   ];
 }
 
