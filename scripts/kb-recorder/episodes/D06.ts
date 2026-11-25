@@ -1,6 +1,6 @@
 import type { Episode } from '../episode';
 import { lookStep, navStep, rowLink } from '../c1-common';
-import { clickByName, waitForToast } from '../helpers';
+import { clickByName, typeInto, waitForToast } from '../helpers';
 
 /** D06 Choose or upload a poster: pick one of the six frames, check the crop, save. */
 const episode: Episode = {
@@ -16,6 +16,20 @@ const episode: Episode = {
   next: 'D07 Review and approve captions',
   steps: [
     navStep('Videos', 'Choose **Videos** in the side menu.'),
+    {
+      caption: 'Type "Naira" in the **Search** box.',
+      note: 'The list narrows as you type, so your video is easy to find.',
+      holdMs: 2200,
+      shot: {
+        name: 'search',
+        alt: 'The Search box with Naira typed and one video left in the list',
+        marks: [{ target: (s) => s.page.getByLabel('Search', { exact: true }), label: 'Search' }],
+      },
+      run: async (s) => {
+        await typeInto(s, 'Search', 'Naira');
+        await s.page.getByRole('link', { name: 'Counting Money in Naira', exact: true }).first().waitFor();
+      },
+    },
     {
       caption: 'Click **Edit Counting Money in Naira**.',
       holdMs: 1800,

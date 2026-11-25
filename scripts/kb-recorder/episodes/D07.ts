@@ -74,7 +74,7 @@ const episode: Episode = {
     },
     {
       caption: 'Wait until you see **Captions approved**.',
-      holdMs: 3000,
+      holdMs: 7000,
       run: async (s) => {
         await waitForToast(s, 'Captions approved');
       },

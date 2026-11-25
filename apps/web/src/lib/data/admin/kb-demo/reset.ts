@@ -1,3 +1,4 @@
+import { resetHelpProgressFixture } from '../help-progress';
 import { adminDataMode } from '../mode';
 import { resetInviteCodeFixture } from '../invite-codes';
 import { resetNoticeFixture } from '../notices';
@@ -30,6 +31,7 @@ export function resetDemoStore(): { now: number; store: AdminStore } {
   const holder = globalThis as unknown as Record<symbol, unknown>;
   for (const key of HELD_STATE) delete holder[Symbol.for(key)];
   resetNoticeFixture();
+  resetHelpProgressFixture();
   resetInviteCodeFixture();
   const store = resetStore(applyDemo(seedStore(now), DEMO_DATASET, now));
   return { now, store: store ?? getStore() };

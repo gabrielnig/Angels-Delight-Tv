@@ -2,7 +2,7 @@
 id: S06
 title: Your first video from start to finish
 path: start
-summary: Upload a video, add its details and poster, and see what is left.
+summary: Upload a video, add its details, and see what is left before you publish.
 role: editor
 needs: [S02, S04]
 related: [D07, D08]
@@ -21,7 +21,7 @@ locale: en
 status: draft
 ---
 ## What you will do
-Take one video from your computer to the point where it only needs captions and a click on Publish. This guide covers upload, details and poster.
+Take one video from your computer to the point where it only needs captions and a click on Publish. This guide covers upload, details and where to find the poster.
 
 ## Before you start
 - **Who can do this:** Editors, Admins and Super admins.
@@ -36,7 +36,7 @@ Take one video from your computer to the point where it only needs captions and 
 <!-- /kb:steps -->
 
 ## What you should see
-The card **Before you publish** shows how many steps are done. After this guide, details and poster are done. Captions and publishing are still to do.
+The card **Before you publish** shows how many steps are done. After this guide, the upload and details are done. The poster, captions and publishing are still to do. Follow [Choose or upload a poster](help:D06) for the poster.
 
 > [!TIP]
 > Open the **Encoding** screen to watch a new video get ready. It can take a while for a long video.

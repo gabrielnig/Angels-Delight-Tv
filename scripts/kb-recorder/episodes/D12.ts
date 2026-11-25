@@ -47,7 +47,7 @@ const episode: Episode = {
     },
     {
       caption: 'Wait until you see **is back in the queue**.',
-      holdMs: 3000,
+      holdMs: 16000,
       run: async (s) => {
         await waitForToast(s, 'is back in the queue');
       },

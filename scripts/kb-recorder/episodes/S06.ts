@@ -107,6 +107,11 @@ const episode: Episode = {
         await waitForToast(s, 'Changes saved');
       },
     },
+    lookStep(
+      'Check that **Before you publish** shows what is left to do.',
+      (s) => s.page.getByText('Before you publish').first(),
+      { holdMs: 3200, shot: { name: 'checklist', alt: 'The Before you publish checklist marked 1', label: 'Checklist' } },
+    ),
     {
       caption: 'Click **Choose poster**.',
       holdMs: 1800,
@@ -120,24 +125,10 @@ const episode: Episode = {
         marks: [{ target: (s) => s.page.getByRole('button', { name: 'Save poster', exact: true }), label: 'Save poster' }],
       },
     },
-    {
-      caption: 'Click **Save poster**.',
-      holdMs: 1800,
-      run: async (s) => {
-        await clickByName(s, 'button', 'Save poster', { exact: true });
-      },
-    },
-    {
-      caption: 'Wait until you see **Poster saved**.',
-      holdMs: 2200,
-      run: async (s) => {
-        await waitForToast(s, 'Poster saved');
-      },
-    },
     lookStep(
-      'Check that **Before you publish** shows what is left to do.',
-      (s) => s.page.getByText('Before you publish').first(),
-      { holdMs: 3200, shot: { name: 'checklist', alt: 'The Before you publish checklist marked 1', label: 'Checklist' } },
+      'Check that **Save poster** is on the screen.',
+      (s) => s.page.getByRole('button', { name: 'Save poster', exact: true }),
+      { holdMs: 3400, shot: { name: 'save-poster', alt: 'The Save poster button marked 1', label: 'Save poster' } },
     ),
   ],
 };

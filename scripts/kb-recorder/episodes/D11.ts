@@ -46,7 +46,7 @@ const episode: Episode = {
       holdMs: 1800,
       run: async (s) => {
         await s.click(s.page.getByRole('dialog').getByRole('button', { name: 'Move to Trash', exact: true }));
-        await s.page.getByRole('heading', { name: 'Videos' }).first().waitFor();
+        await s.page.waitForURL(/\/admin\/videos$/);
       },
     },
     navStep('Trash', 'Choose **Trash** in the side menu.', {

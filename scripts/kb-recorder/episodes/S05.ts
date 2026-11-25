@@ -60,7 +60,7 @@ const episode: Episode = {
     lookStep(
       'Scroll to **Related guides**.',
       (s) => s.page.getByRole('heading', { name: 'Related guides' }),
-      { holdMs: 2800 },
+      { holdMs: 18800 },
     ),
   ],
 };

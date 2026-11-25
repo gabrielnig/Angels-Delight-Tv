@@ -33,6 +33,19 @@ status: draft
 ## Steps
 <!-- kb:steps D08 -->
 1. Choose **Videos** in the side menu.
+2. Click **Edit Staying Safe Online**.
+3. Check that **Before you publish** shows every step done.
+   ![The Before you publish checklist marked 1](../../media/D08/D08-03-checklist-desktop.webp)
+4. Click **Publish**.
+   ![The Publish this video box with Publish now marked 1](../../media/D08/D08-04-dialog-desktop.webp)
+5. Click **Publish now**.
+6. Wait until you see **is live**.
+   ![The message that the video is live marked 1](../../media/D08/D08-06-live-desktop.webp)
+7. Click **Unpublish** to hide the video again.
+8. Click **Unpublish** to confirm.
+   Viewers can no longer find or watch the video. You can publish it again any time.
+9. Wait until you see **is unpublished**.
+   ![The message that the video is unpublished marked 1](../../media/D08/D08-09-unpublished-desktop.webp)
 <!-- /kb:steps -->
 
 ## What you should see
