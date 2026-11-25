@@ -46,6 +46,8 @@ export function Hero({
   previewAllowed = false,
   waitForClip = true,
   soundAllowed = false,
+  onShare,
+  shareLabel = 'Share',
   className,
 }: {
   items: HeroItem[];
@@ -69,6 +71,10 @@ export function Hero({
    * needs a clip with sound, previews allowed and no reduced motion. Clips are always muted until the viewer taps.
    */
   soundAllowed?: boolean;
+  /** When defined a round Share button shows after More info. The page owns the sheet (L15a). */
+  onShare?: (item: HeroItem) => void;
+  /** Spoken name of the Share button before the title, already translated. */
+  shareLabel?: string;
   className?: string;
 }) {
   const [touchX, setTouchX] = useState<number | null>(null);
@@ -221,9 +227,24 @@ export function Hero({
                 (item.playLabel ?? 'Play')
               )}
             </ButtonLink>
-            <ButtonLink href={item.infoHref} size="lg" variant="on-dark" icon="info">
+            {onShare ? (
+              <div className="ad-hero__secondary">
+                <ButtonLink href={item.infoHref} size="lg" variant="on-dark" icon="info">
               More info
             </ButtonLink>
+                <IconButton
+                variant="on-dark"
+                icon="share"
+                label={`${shareLabel} ${item.title}`}
+                className="ad-hero__share"
+                onClick={() => onShare(item)}
+              />
+              </div>
+            ) : (
+              <ButtonLink href={item.infoHref} size="lg" variant="on-dark" icon="info">
+              More info
+            </ButtonLink>
+            )}
           </div>
         </div>
       </div>

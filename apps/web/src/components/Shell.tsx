@@ -10,6 +10,8 @@ import { currentDonateGate, currentTransparencyGate } from '../server/donations/
 import { donateLinkVisible } from '../server/donations/gate';
 import { maturityLabelsSetting } from '../server/maturity-labels';
 import { MaturityLabelsProvider } from '../lib/maturity-context';
+import { getShareSettings } from '../server/seo/page-seo';
+import { ShareConfigProvider } from './share/share-context';
 import { Brand } from './AuthLayouts';
 import { GuestChrome } from './guest/GuestChrome';
 import { ViewerChrome } from './ViewerChrome';
@@ -31,8 +33,13 @@ export async function AppShell({ children, skin }: { children: ReactNode; skin?:
     ...(donateLinkVisible(await currentDonateGate()) ? [{ label: msg('donate.link'), href: '/donate' }] : []),
     ...(donateLinkVisible(await currentTransparencyGate()) ? [{ label: msg('donate.howUsed'), href: '/transparency' }] : []),
   ];
+  // Share is off on a kids profile and in a guest's Kids mode (D-391).
+  const guestKids = session?.profile ? false : (await currentGuestAudience()) === 'kids';
+  const shareSettings = session?.profile?.kids || guestKids ? null : await getShareSettings();
   const withLabels = (node: ReactNode) => (
-    <MaturityLabelsProvider labels={labels}>{node}</MaturityLabelsProvider>
+    <MaturityLabelsProvider labels={labels}>
+      <ShareConfigProvider value={shareSettings}>{node}</ShareConfigProvider>
+    </MaturityLabelsProvider>
   );
   if (session?.profile) {
     return withLabels(

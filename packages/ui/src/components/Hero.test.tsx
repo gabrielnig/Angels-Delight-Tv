@@ -27,6 +27,18 @@ const items: HeroItem[] = [
 
 const plain = items.map(({ image: _image, ...rest }) => rest);
 
+describe('Hero share (L15a)', () => {
+  it('shows a 44 px Share button named for the slide when a handler is given, and not otherwise', async () => {
+    const onShare = vi.fn();
+    const { unmount } = render(<Hero items={plain} label="Featured" onShare={onShare} />);
+    await userEvent.click(screen.getByRole('button', { name: 'Share Start a small business' }));
+    expect(onShare).toHaveBeenCalledWith(expect.objectContaining({ id: 'a' }));
+    unmount();
+    render(<Hero items={plain} label="Featured" />);
+    expect(screen.queryByRole('button', { name: /Share/ })).toBeNull();
+  });
+});
+
 describe('Hero', () => {
   it('is a labelled carousel region showing one slide', () => {
     render(<Hero items={items} label="Featured" />);

@@ -260,6 +260,7 @@ export class RealPlaybackData implements PlaybackData {
       kidsSafe: card.kidsSafe,
       series: null,
       backHref: `/title/${card.slug}`,
+      share: { kind: 'video', slug: card.slug },
     };
     const tiles = tilesFrom(detail.related, category);
     const candidates = nextCandidates(detail.related, card.id, category);
@@ -313,6 +314,7 @@ export class RealPlaybackData implements PlaybackData {
         href: `/series/${found.card.slug}`,
       },
       backHref: `/series/${found.card.slug}`,
+      share: { kind: 'series', slug: found.card.slug },
     };
     const nextVideo: NextVideo | null = next
       ? {

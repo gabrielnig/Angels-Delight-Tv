@@ -44,6 +44,8 @@ export interface WatchVideo {
   kidsSafe: boolean;
   series: WatchSeries | null;
   backHref: string;
+  /** What the Share sheet shares: the public page of this title, or of its series for an episode (D-391). */
+  share?: { kind: 'video' | 'series'; slug: string };
 }
 
 export type Tint = 'sky' | 'mint' | 'lemon' | 'peach' | 'lavender';

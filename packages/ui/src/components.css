@@ -3288,3 +3288,22 @@
     background: var(--color-surface-sunken);
   }
 }
+
+/* Hero Share (L15a): the round Share button sits beside More info and never wraps below it. */
+.ad-hero__secondary {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.ad-hero__secondary .ad-btn {
+  flex: 1 1 auto;
+  width: auto;
+}
+
+.ad-hero__share {
+  flex: 0 0 auto;
+  border: 1px solid var(--color-player-ink);
+  background: var(--color-hero-chip-bg);
+  color: var(--color-player-ink);
+}

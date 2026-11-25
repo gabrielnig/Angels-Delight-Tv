@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createFixturePlaybackData } from '@/lib/data/playback.fixture';
 import type { WatchData } from '@/lib/data/playback';
 import { captionStyleKey, preferencesKey } from './preferences';
+import { ShareConfigProvider } from '@/components/share/share-context';
 import { WatchClient } from './WatchClient';
 
 const push = vi.fn();
@@ -28,23 +29,37 @@ function mount(
     countdownSeconds?: number;
     airplay?: boolean;
     viewer?: typeof viewer;
+    share?: boolean;
   } = {},
 ) {
   const engine = new FakeEngine();
   const network = extra.network ?? new FakeNetwork();
   const utils = render(
-    <WatchClient
-      data={data}
-      viewer={extra.viewer ?? viewer}
-      transport="fixture"
-      startAt={extra.startAt ?? null}
-      prefsSync={extra.prefsSync}
-      countdownSeconds={extra.countdownSeconds}
-      airplay={extra.airplay}
-      testing={{ createEngine: async () => engine, network }}
+    <ShareConfigProvider
+      value={
+        extra.share === false
+          ? null
+          : {
+              channels: ['whatsapp', 'telegram'],
+              template: '{title} on {siteName}',
+              siteName: 'ADTV',
+              origin: 'https://adtv.example',
+            }
+      }
     >
-      <h1>{data.video.title}</h1>
-    </WatchClient>,
+      <WatchClient
+        data={data}
+        viewer={extra.viewer ?? viewer}
+        transport="fixture"
+        startAt={extra.startAt ?? null}
+        prefsSync={extra.prefsSync}
+        countdownSeconds={extra.countdownSeconds}
+        airplay={extra.airplay}
+        testing={{ createEngine: async () => engine, network }}
+      >
+        <h1>{data.video.title}</h1>
+      </WatchClient>
+    </ShareConfigProvider>,
   );
   return { engine, network, ...utils };
 }
@@ -490,24 +505,31 @@ describe('WatchClient', () => {
     await waitFor(() => expect(engine.loads).toHaveLength(1));
   });
 
-  it('shares or copies the link and toggles My List with feedback', async () => {
+  it('toggles My List with feedback', async () => {
     const { engine } = mount(await dataFor('v-plants'));
     await waitFor(() => expect(engine.loads).toHaveLength(1));
-    const add = screen.getByRole('button', { name: '+ My List' });
-    fireEvent.click(add);
+    fireEvent.click(screen.getByRole('button', { name: '+ My List' }));
     await waitFor(() =>
       expect(screen.getByRole('button', { name: 'In My List' }).getAttribute('aria-pressed')).toBe(
         'true',
       ),
     );
-    const writeText = vi.fn().mockResolvedValue(undefined);
-    vi.stubGlobal('navigator', {
-      ...navigator,
-      share: undefined,
-      clipboard: { writeText },
-      onLine: true,
-    });
+  });
+
+  it('Share opens the sheet with the clean title page link, never the watch address (L15a)', async () => {
+    const data = await dataFor('v-plants');
+    const { engine } = mount(data);
+    await waitFor(() => expect(engine.loads).toHaveLength(1));
     fireEvent.click(screen.getByRole('button', { name: 'Share' }));
-    await waitFor(() => expect(screen.getByText('Link copied')).toBeTruthy());
+    const field = (await screen.findByLabelText('Link to share')) as HTMLInputElement;
+    expect(field.value).toBe(`https://adtv.example/title/${data.video.share?.slug}`);
+    expect(field.value).not.toContain('/watch/');
+    expect(field.value).not.toContain('?');
+  });
+
+  it('has no Share on the watch page when sharing is off for this viewer', async () => {
+    const { engine } = mount(await dataFor('v-plants'), { share: false });
+    await waitFor(() => expect(engine.loads).toHaveLength(1));
+    expect(screen.queryByRole('button', { name: 'Share' })).toBeNull();
   });
 });

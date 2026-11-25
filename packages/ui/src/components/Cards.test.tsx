@@ -256,6 +256,51 @@ describe('VideoCard hover card', () => {
   });
 });
 
+describe('card share entry points (L15a)', () => {
+  it('puts a Share button in the hover card only when a share handler is given', () => {
+    const onShare = vi.fn();
+    const { unmount } = render(<VideoCard {...base} onShare={onShare} />);
+    const card = hoverOpen();
+    fireEvent.click(within(card).getByRole('button', { name: `Share ${base.title}` }));
+    expect(onShare).toHaveBeenCalledTimes(1);
+    unmount();
+    render(<VideoCard {...base} />);
+    expect(within(hoverOpen()).queryByRole('button', { name: /Share/ })).toBeNull();
+  });
+
+  it('adds Share to the Continue menu between Go to title and Remove, when given', async () => {
+    const onShare = vi.fn();
+    render(
+      <ContinueCard
+        {...base}
+        onRemove={() => {}}
+        onShare={onShare}
+        titleHref="/title/save-data"
+        menuLabels={{ more: 'More for {title}', remove: 'Remove from row', goToTitle: 'Go to title page', share: 'Share' }}
+      />,
+    );
+    await userEvent.click(screen.getByRole('button', { name: /More for/ }));
+    const items = screen.getAllByRole('menuitem').map((el) => el.textContent);
+    expect(items).toEqual(['Remove from row', 'Go to title page', 'Share']);
+    await userEvent.click(screen.getByRole('menuitem', { name: 'Share' }));
+    expect(onShare).toHaveBeenCalledTimes(1);
+    expect(screen.queryByRole('menu')).toBeNull();
+  });
+
+  it('leaves Share out of the Continue menu without a handler', async () => {
+    render(
+      <ContinueCard
+        {...base}
+        onRemove={() => {}}
+        titleHref="/title/save-data"
+        menuLabels={{ more: 'More for {title}', remove: 'Remove from row', goToTitle: 'Go to title page', share: 'Share' }}
+      />,
+    );
+    await userEvent.click(screen.getByRole('button', { name: /More for/ }));
+    expect(screen.queryByRole('menuitem', { name: 'Share' })).toBeNull();
+  });
+});
+
 describe('card artwork placeholder and fade in (M36-S02, M08-S27)', () => {
   const blur = 'data:image/webp;base64,UklGRhoAAABXRUJQVlA4';
   const withBlur = { ...base.thumbnail, placeholderBlur: blur, placeholderColor: '#3366cc' };

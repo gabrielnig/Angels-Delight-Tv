@@ -9,6 +9,7 @@ import { restoreContinueAction, removeContinueAction } from '../app/actions';
 import { useMaturityLabels } from '../lib/maturity-context';
 import { useProfileId, useProfileKids } from '../lib/profile-context';
 import { useListToggle } from '../lib/pwa/useListToggle';
+import { useShareTarget } from './share/useShareTarget';
 import type { CatalogItem, Progress, VideoSummary } from '../lib/data';
 import { itemHref, itemKey, metaLine, percent, seriesCounts, timeLeftLabel } from '../lib/format';
 
@@ -46,6 +47,12 @@ export function CatalogCard({
   const profileId = useProfileId();
   const kids = useProfileKids();
   const [rating, setRating] = useState<CardRating['value']>(item.rating ?? null);
+  const shareTarget = useShareTarget({
+    kind: item.kind === 'series' ? 'series' : 'video',
+    slug: item.slug,
+    title: item.title,
+    thumbnail: item.thumbnail?.src,
+  });
   const rateable = Boolean(profileId) && !kids && item.rating !== undefined && Boolean(item.id);
 
   async function onRate(next: CardRating['value']) {
@@ -134,24 +141,28 @@ export function CatalogCard({
     );
   }
   return (
-    <VideoCard
-      title={item.title}
-      href={itemHref(item)}
-      durationSeconds={item.durationSeconds}
-      thumbnail={item.thumbnail}
-      meta={showMeta ? metaLine(item) : undefined}
-      description={item.description}
-      subject={item.categoryName}
-      playHref={`/watch/${item.id}`}
-      priority={priority}
-      hasCaptions={item.hasCaptions}
-      inList={inList}
-      onToggleList={onToggle}
-      mostLiked={item.mostLiked}
-      maturity={maturity}
-      rank={rank}
-      {...ratingProps}
-    />
+    <>
+      <VideoCard
+        title={item.title}
+        href={itemHref(item)}
+        durationSeconds={item.durationSeconds}
+        thumbnail={item.thumbnail}
+        meta={showMeta ? metaLine(item) : undefined}
+        description={item.description}
+        subject={item.categoryName}
+        playHref={`/watch/${item.id}`}
+        priority={priority}
+        hasCaptions={item.hasCaptions}
+        inList={inList}
+        onToggleList={onToggle}
+        mostLiked={item.mostLiked}
+        maturity={maturity}
+        rank={rank}
+        onShare={shareTarget.onShare}
+        {...ratingProps}
+      />
+      {shareTarget.sheet}
+    </>
   );
 }
 
@@ -163,6 +174,52 @@ function nextEpisodeLabel(video: VideoSummary, progress: Progress): string {
 }
 
 type RowItem = { video: VideoSummary; progress: Progress };
+
+function ContinueRowCard({
+  video,
+  progress,
+  onRemove,
+}: {
+  video: VideoSummary;
+  progress: Progress;
+  onRemove: (video: VideoSummary) => Promise<void>;
+}) {
+  const shareTarget = useShareTarget({
+    kind: 'video',
+    slug: video.slug,
+    title: video.title,
+    thumbnail: video.thumbnail?.src,
+  });
+  return (
+    <>
+      <ContinueCard
+        title={video.title}
+        href={`/watch/${video.id}?t=${Math.floor(progress.positionSeconds)}`}
+        durationSeconds={video.durationSeconds}
+        thumbnail={video.thumbnail}
+        progressPercent={progress.durationSeconds > 0 ? percent(progress) : undefined}
+        timeLeftLabel={
+          progress.nextUp ? msg('engage.continue.startsAtBeginning') : timeLeftLabel(progress)
+        }
+        nextLabel={
+          progress.nextUp
+            ? msg('engage.continue.next', { code: nextEpisodeLabel(video, progress) })
+            : undefined
+        }
+        titleHref={video.series ? `/series/${video.series.slug}` : `/title/${video.slug}`}
+        menuLabels={{
+          more: msg('engage.continue.more', { title: '{title}' }),
+          remove: msg('engage.continue.remove'),
+          goToTitle: msg('engage.continue.goToTitle'),
+          share: msg('share.button'),
+        }}
+        onRemove={() => void onRemove(video)}
+        onShare={shareTarget.onShare}
+      />
+      {shareTarget.sheet}
+    </>
+  );
+}
 
 export function ContinueRow({
   items,
@@ -213,29 +270,7 @@ export function ContinueRow({
   return (
     <Row title={title}>
       {visible.map(({ video, progress }) => (
-        <ContinueCard
-          key={video.id}
-          title={video.title}
-          href={`/watch/${video.id}?t=${Math.floor(progress.positionSeconds)}`}
-          durationSeconds={video.durationSeconds}
-          thumbnail={video.thumbnail}
-          progressPercent={progress.durationSeconds > 0 ? percent(progress) : undefined}
-          timeLeftLabel={
-            progress.nextUp ? msg('engage.continue.startsAtBeginning') : timeLeftLabel(progress)
-          }
-          nextLabel={
-            progress.nextUp
-              ? msg('engage.continue.next', { code: nextEpisodeLabel(video, progress) })
-              : undefined
-          }
-          titleHref={video.series ? `/series/${video.series.slug}` : `/title/${video.slug}`}
-          menuLabels={{
-            more: msg('engage.continue.more', { title: '{title}' }),
-            remove: msg('engage.continue.remove'),
-            goToTitle: msg('engage.continue.goToTitle'),
-          }}
-          onRemove={() => void onRemove(video)}
-        />
+        <ContinueRowCard key={video.id} video={video} progress={progress} onRemove={onRemove} />
       ))}
     </Row>
   );

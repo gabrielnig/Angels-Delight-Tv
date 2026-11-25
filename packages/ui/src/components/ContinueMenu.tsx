@@ -9,6 +9,8 @@ export interface ContinueMenuLabels {
   more: string;
   remove: string;
   goToTitle: string;
+  /** Name of the Share item. It shows only when `onShare` is given. */
+  share?: string;
 }
 
 /**
@@ -20,11 +22,13 @@ export function ContinueMenu({
   titleHref,
   labels,
   onRemove,
+  onShare,
 }: {
   title: string;
   titleHref: string;
   labels: ContinueMenuLabels;
   onRemove: () => void;
+  onShare?: () => void;
 }) {
   const [open, setOpen] = useState(false);
   const root = useRef<HTMLDivElement>(null);
@@ -106,6 +110,19 @@ export function ContinueMenu({
           >
             {labels.goToTitle}
           </Link>
+          {onShare && labels.share ? (
+            <button
+              type="button"
+              role="menuitem"
+              className="ad-continue-menu__item"
+              onClick={() => {
+                close(false);
+                onShare();
+              }}
+            >
+              {labels.share}
+            </button>
+          ) : null}
         </div>
       ) : null}
     </div>

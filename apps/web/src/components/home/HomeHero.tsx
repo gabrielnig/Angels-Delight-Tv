@@ -2,9 +2,27 @@
 
 import { Hero, HERO_ROTATE_MS, type HeroItem } from '@ad/ui';
 import { useEffect, useState } from 'react';
-import { readConnection, subscribeConnection, type NavigatorLike } from '../../lib/lowdata/connection';
+import { useT } from '../../lib/i18n/provider';
+import { ShareHost, useShareEnabled, type ShareTargetInput } from '../share/useShareTarget';
+import {
+  readConnection,
+  subscribeConnection,
+  type NavigatorLike,
+} from '../../lib/lowdata/connection';
 import { heroPreviewEligible } from '../../lib/lowdata/hero-preview';
 import { useDataSaver } from '../../lib/lowdata/useDataSaver';
+
+/** `/title/<slug>` and `/series/<slug>` slide links name what the Share sheet shares. */
+function shareInputFor(item: HeroItem): ShareTargetInput | null {
+  const match = /^\/(title|series)\/([^/?#]+)$/.exec(item.infoHref);
+  if (!match) return null;
+  return {
+    kind: match[1] === 'series' ? 'series' : 'video',
+    slug: decodeURIComponent(match[2] as string),
+    title: item.title,
+    thumbnail: item.image?.src,
+  };
+}
 
 /** Rotates on the site setting (20 seconds by default, D-351), except under Data saver (M41-S02). Reduced motion is handled by Hero. */
 export function HomeHero({
@@ -43,18 +61,31 @@ export function HomeHero({
   /** Site setting home.hero_sound and not a Kids audience. Clips still start muted, the viewer taps to hear them. */
   soundAllowed?: boolean;
 }) {
+  const t = useT();
+  const shareEnabled = useShareEnabled();
+  const [sharing, setSharing] = useState<ShareTargetInput | null>(null);
   const saver = useDataSaver(profileId, { profileSetting: dataSaver });
-  const previewAllowed = useHeroPreviewAllowed(previews, saver.on, allowUnknownConnection, minDownlinkMbps);
+  const previewAllowed = useHeroPreviewAllowed(
+    previews,
+    saver.on,
+    allowUnknownConnection,
+    minDownlinkMbps,
+  );
   return (
-    <Hero
-      items={items}
-      label={label}
-      intervalMs={saver.on || !rotate ? undefined : intervalSeconds * 1000}
-      maxLoops={maxLoops}
-      previewAllowed={previewAllowed}
-      waitForClip={waitForClip}
-      soundAllowed={soundAllowed}
-    />
+    <>
+      <Hero
+        items={items}
+        label={label}
+        intervalMs={saver.on || !rotate ? undefined : intervalSeconds * 1000}
+        maxLoops={maxLoops}
+        previewAllowed={previewAllowed}
+        waitForClip={waitForClip}
+        soundAllowed={soundAllowed}
+        onShare={shareEnabled ? (item) => setSharing(shareInputFor(item)) : undefined}
+        shareLabel={t('share.button')}
+      />
+      {sharing ? <ShareHost input={sharing} onClose={() => setSharing(null)} /> : null}
+    </>
   );
 }
 

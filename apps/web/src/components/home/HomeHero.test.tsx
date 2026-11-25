@@ -1,6 +1,8 @@
 // @vitest-environment jsdom
-import { act, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { ProfileKidsProvider } from '../../lib/profile-context';
+import { ShareConfigProvider } from '../share/share-context';
 import { HomeHero } from './HomeHero';
 
 const items = ['One', 'Two'].map((title) => ({
@@ -133,5 +135,40 @@ describe('HomeHero', () => {
       act(() => listeners.forEach((f) => f()));
       expect(container.querySelector('video')).toBeNull();
     });
+  });
+});
+
+describe('HomeHero share (L15a slice 3)', () => {
+  const settings = {
+    channels: ['whatsapp' as const],
+    template: '{title} on {siteName}',
+    siteName: 'ADTV',
+    origin: 'https://adtv.example',
+  };
+
+  it('shares the slide that is showing with the clean link of its title page', () => {
+    vi.useRealTimers();
+    render(
+      <ShareConfigProvider value={settings}>
+        <HomeHero items={items} label="Featured" profileId="p1" rotate={false} />
+      </ShareConfigProvider>,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Share One' }));
+    expect(screen.getByLabelText('Link to share')).toHaveValue('https://adtv.example/title/One');
+  });
+
+  it('has no Share without settings or on a kids profile', () => {
+    vi.useRealTimers();
+    const first = render(<HomeHero items={items} label="Featured" profileId="p1" rotate={false} />);
+    expect(screen.queryByRole('button', { name: /^Share/ })).toBeNull();
+    first.unmount();
+    render(
+      <ProfileKidsProvider kids>
+        <ShareConfigProvider value={settings}>
+          <HomeHero items={items} label="Featured" profileId="p1" rotate={false} />
+        </ShareConfigProvider>
+      </ProfileKidsProvider>,
+    );
+    expect(screen.queryByRole('button', { name: /^Share/ })).toBeNull();
   });
 });

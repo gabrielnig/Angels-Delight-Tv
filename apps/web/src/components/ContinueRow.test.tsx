@@ -5,6 +5,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { ToastProvider } from '@ad/ui';
 import type { Progress, VideoSummary } from '../lib/data';
 import { ContinueRow } from './CatalogCard';
+import { ShareConfigProvider } from './share/share-context';
 
 vi.mock('../app/actions', () => ({
   restoreContinueAction: vi.fn(),
@@ -91,5 +92,29 @@ describe('Continue learning row (M44-S15)', () => {
       'href',
       '/series/farming',
     );
+  });
+});
+
+describe('ContinueRow share (L15a slice 3)', () => {
+  it('adds Share to the card menu and shares the video, not its series', async () => {
+    render(
+      <ToastProvider>
+        <ShareConfigProvider
+          value={{ channels: ['whatsapp'], template: '{title}', siteName: 'ADTV', origin: 'https://adtv.example' }}
+        >
+          <ContinueRow
+            items={[
+              {
+                video: video('b', { series: { slug: 'farming', title: 'Farming', season: 1, episode: 4 } }),
+                progress: progress('b'),
+              },
+            ]}
+          />
+        </ShareConfigProvider>
+      </ToastProvider>,
+    );
+    await userEvent.click(screen.getByRole('button', { name: /More for Title b/ }));
+    await userEvent.click(screen.getByRole('menuitem', { name: 'Share' }));
+    expect(await screen.findByLabelText('Link to share')).toHaveValue('https://adtv.example/title/slug-b');
   });
 });

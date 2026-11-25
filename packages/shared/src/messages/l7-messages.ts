@@ -34,6 +34,7 @@ export const L7_MESSAGES = {
   'player.end.next': 'Next: {title}',
   'player.end.playNext': 'Play next',
   'player.end.replay': 'Replay',
+  'player.end.share': 'Share',
   'player.end.addToList': 'Add to My List',
   'player.end.inList': 'In My List',
   'player.end.backToSeries': 'Back to series',

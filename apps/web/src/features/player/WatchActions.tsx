@@ -12,10 +12,12 @@ interface Props {
   onToggleMyList?: (videoId: string, next: boolean) => Promise<void>;
   /** A visitor without an account: My List opens the Sign in to save dialog and nothing is stored (M40). */
   guest?: { signUpOpen: boolean };
+  /** Opens the Share sheet. Left out when sharing is off for this viewer (a kids profile). */
+  onShare?: () => void;
 }
 
 /** My List and Share under the player (M10, M08-S26). Optimistic with rollback. */
-export function WatchActions({ videoId, title, initialInMyList, onToggleMyList, guest }: Props) {
+export function WatchActions({ videoId, initialInMyList, onToggleMyList, guest, onShare }: Props) {
   const msg = useT();
   const [saveOpen, setSaveOpen] = useState(false);
   const [inList, setInList] = useState(initialInMyList);
@@ -37,20 +39,6 @@ export function WatchActions({ videoId, title, initialInMyList, onToggleMyList, 
     }
   }
 
-  async function share() {
-    const url = window.location.href;
-    try {
-      if (navigator.share) {
-        await navigator.share({ title, url });
-        return;
-      }
-      await navigator.clipboard.writeText(url);
-      setNote(msg('watch.linkCopied'));
-    } catch {
-      setNote(msg('watch.couldNotShareThis'));
-    }
-  }
-
   return (
     <div className="watch__actions">
       <button
@@ -61,9 +49,11 @@ export function WatchActions({ videoId, title, initialInMyList, onToggleMyList, 
       >
         {inList && !guest ? msg('watch.inMyList') : '+ My List'}
       </button>
-      <button type="button" className="watch__button" onClick={() => void share()}>
-        {msg('watch.share')}
-      </button>
+      {onShare ? (
+        <button type="button" className="watch__button" aria-haspopup="dialog" onClick={onShare}>
+          {msg('watch.share')}
+        </button>
+      ) : null}
       <span className="watch__note" role="status">
         {note}
       </span>
