@@ -18,6 +18,9 @@ const ALLOWED_OUTLINE_NONE: Record<string, string> = {
   '.auth-input:focus, .auth-input:focus-visible': '2px border plus a 3px offset box-shadow ring',
   '.ad-tile:focus-visible': 'ring moves to the avatar child',
   '.ad-card__link:focus-visible': 'ring moves to the thumb child',
+  '.web-rail__link:focus-visible': 'ring moves to the chip child (.web-rail__link:focus-visible .web-rail__chip)',
+  '.hlp-search__field input:focus': 'wrapper draws the ring with .hlp-search__field:focus-within',
+  '.hlp-panel': 'dialog root, ring drawn by .hlp-panel:focus-visible',
 };
 
 describe('focus rings (M47-S06, R37)', () => {

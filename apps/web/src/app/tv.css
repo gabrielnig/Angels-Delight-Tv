@@ -73,6 +73,8 @@ html[data-tv] .ad-hovercard {
   display: none;
 }
 
-html[data-tv] .ad-card:hover .ad-card__action {
-  transition-delay: 0ms;
+@media (hover: hover) {
+  html[data-tv] .ad-card:hover .ad-card__action {
+    transition-delay: 0ms;
+  }
 }
