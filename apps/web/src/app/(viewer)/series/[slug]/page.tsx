@@ -121,7 +121,7 @@ export default async function SeriesPage({
   const inList = guest ? false : (await getLibrary().myListIds(ctx)).includes(itemKey(series));
   const [indexable, share] = await Promise.all([
     titleIndexable('series', series.slug),
-    shareConfig(series.title),
+    shareConfig(series.title, 'series', series.slug, series.thumbnail?.src),
   ]);
   return (
     <AppShell>
@@ -154,7 +154,7 @@ export default async function SeriesPage({
             itemKey={itemKey(series)}
             inList={inList}
             shareTitle={series.title}
-            share={share}
+            share={indexable ? share : null}
             kids={ctx.audience === 'kids'}
             kind="series"
             guest={

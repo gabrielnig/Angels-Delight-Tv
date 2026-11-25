@@ -3,8 +3,8 @@
 import { useT } from '../../lib/i18n/provider';
 import { useState } from 'react';
 import { Button, ButtonLink, useToast } from '@ad/ui';
-import { ShareMenu } from '../share/ShareMenu';
-import type { ShareChannelId } from '../share/share-links';
+import { ShareButton } from '../share/ShareButton';
+import type { ShareTargetId } from '../share/share-targets';
 import { useListToggle } from '../../lib/pwa/useListToggle';
 import { SignInToSaveDialog } from '../guest/SignInToSaveDialog';
 import type { PrimaryAction } from '../../lib/title-cta';
@@ -16,8 +16,12 @@ export interface TitleActionsProps {
   inList: boolean;
   /** Shown to other apps when the link is shared. Share is hidden when this is missing. */
   shareTitle?: string;
-  /** The channels the admin enabled and the text that goes with the link. Defaults: WhatsApp, Facebook, X. */
-  share?: { channels: ShareChannelId[]; text: string };
+  /**
+   * The channels the admin enabled, the text that goes with the link, the clean canonical address (or its path)
+   * and the poster for the sheet header. Defaults: all six channels, this page's own address. `null` hides Share
+   * (a title that must not be shared, such as a kids only title).
+   */
+  share?: { channels: ShareTargetId[]; text: string; url?: string; thumbnail?: string } | null;
   /** A kids profile or Kids mode: no external links, so no Share (M45-S06 AC4). */
   kids?: boolean;
   /** Series pages say Share this series. */
@@ -92,11 +96,13 @@ export function TitleActions({
   ) : null;
 
   const shareMenu =
-    shareTitle && !kids ? (
-      <ShareMenu
+    shareTitle && !kids && share !== null ? (
+      <ShareButton
         title={shareTitle}
         text={share?.text ?? shareTitle}
-        channels={share?.channels ?? ['whatsapp', 'facebook', 'x']}
+        channels={share?.channels ?? ['whatsapp', 'facebook', 'x', 'telegram', 'email', 'sms']}
+        url={share?.url}
+        thumbnail={share?.thumbnail}
         kind={kind}
       />
     ) : null;

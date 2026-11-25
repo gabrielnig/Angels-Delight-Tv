@@ -81,7 +81,7 @@ export default async function TitlePage({ params }: Params) {
   const [{ platformName }, indexable, share] = await Promise.all([
     getRootTheme(),
     titleIndexable('video', detail.video.slug),
-    shareConfig(detail.video.title),
+    shareConfig(detail.video.title, 'video', detail.video.slug, detail.video.thumbnail?.src),
   ]);
   const kids = ctx.audience === 'kids';
   const sponsor = kids ? null : await sponsorFor('title_card', ctx);
@@ -112,7 +112,7 @@ export default async function TitlePage({ params }: Params) {
           detail={detail}
           inList={false}
           guest={{ signUpOpen }}
-          share={share}
+          share={indexable ? share : null}
           kids={kids}
           sponsor={sponsor}
         />
@@ -127,7 +127,7 @@ export default async function TitlePage({ params }: Params) {
         detail={detail}
         inList={ids.includes(itemKey(detail.video))}
         rating={{ profileId: ctx.profileId, kind: 'video', id: detail.video.id }}
-        share={share}
+        share={indexable ? share : null}
         kids={kids}
         sponsor={sponsor}
       />
