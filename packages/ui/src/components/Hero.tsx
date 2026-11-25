@@ -6,6 +6,7 @@ import { cx } from './cx';
 import { Icon } from './Icon';
 import { Skeleton, SkeletonRegion } from './Skeleton';
 import { HeroPreview } from './HeroPreview';
+import { slideDurationMs } from './hero-timing';
 import { useHeroTimer } from './useHeroTimer';
 
 export interface HeroItem {
@@ -28,8 +29,8 @@ export interface HeroItem {
   previewHasAudio?: boolean;
 }
 
-/** Seconds between slides, in milliseconds (R12). */
-export const HERO_ROTATE_MS = 10000;
+/** Default time a slide stays, in milliseconds (D-351, supersedes the 10 seconds of R12). */
+export const HERO_ROTATE_MS = 20000;
 /** Full rounds before rotation stops (R12). */
 export const HERO_MAX_LOOPS = 2;
 
@@ -42,6 +43,7 @@ export function Hero({
   maxLoops = HERO_MAX_LOOPS,
   skeletonDelayMs,
   previewAllowed = false,
+  waitForClip = true,
   className,
 }: {
   items: HeroItem[];
@@ -55,13 +57,29 @@ export function Hero({
   skeletonDelayMs?: number;
   /** The page has decided a clip may load (fast link, Data saver off, motion allowed). */
   previewAllowed?: boolean;
+  /**
+   * Site setting `home.hero_wait_for_clip`. A slide with a playing clip changes when the clip ends. Off: every slide
+   * changes after `intervalMs` even while its clip is still playing.
+   */
+  waitForClip?: boolean;
   className?: string;
 }) {
   const [touchX, setTouchX] = useState<number | null>(null);
+  // A clip that errored or stalled is dropped for the rest of the visit, and its slide goes back to the dwell time.
+  const [failedClips, setFailedClips] = useState<ReadonlySet<string>>(new Set());
   const count = items.length;
+  const hasClip = (item: HeroItem | undefined) =>
+    Boolean(previewAllowed && item?.previewSrc && !failedClips.has(item.id));
   const timer = useHeroTimer({
     count,
     intervalMs,
+    slideMs: (index) =>
+      slideDurationMs({
+        dwellMs: intervalMs,
+        waitForClip,
+        clipMs: items[index]?.previewMs,
+        hasClip: hasClip(items[index]),
+      }),
     maxLoops,
     slideHasImage: Boolean(items[0] && items[Math.min(0, count - 1)]?.image),
   });
@@ -144,8 +162,14 @@ export function Hero({
           ) : (
             img
           )}
-          {!isLeaving && previewAllowed && item.previewSrc ? (
-            <HeroPreview src={item.previewSrc} active paused={timer.paused} />
+          {!isLeaving && hasClip(item) && item.previewSrc ? (
+            <HeroPreview
+              src={item.previewSrc}
+              active
+              paused={timer.paused}
+              onEnded={waitForClip ? timer.advanceNow : undefined}
+              onFail={() => setFailedClips((set) => new Set(set).add(item.id))}
+            />
           ) : null}
           <div className="ad-hero__scrim" aria-hidden="true" />
         </div>
@@ -180,7 +204,11 @@ export function Hero({
   return (
     <section
       className={cx('ad-hero', className)}
-      style={intervalMs ? ({ '--hero-interval': `${intervalMs}ms` } as React.CSSProperties) : undefined}
+      style={
+        intervalMs
+          ? ({ '--hero-interval': `${timer.slideLength}ms` } as React.CSSProperties)
+          : undefined
+      }
       aria-roledescription="carousel"
       aria-label={label}
       aria-live={timer.live}
@@ -209,7 +237,7 @@ export function Hero({
                 <span aria-hidden="true">
                   {position === timer.index && timer.showFill ? (
                     <i
-                      key={timer.key}
+                      key={`${timer.key}:${timer.slideLength}`}
                       className="ad-hero__fill"
                       data-running={timer.running ? 'true' : 'false'}
                     />

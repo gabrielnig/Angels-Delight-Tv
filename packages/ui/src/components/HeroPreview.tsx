@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 
-/** The still shows first, the clip waits this long before it loads. */
-export const HERO_PREVIEW_DELAY_MS = 1200;
+import { HERO_PREVIEW_DELAY_MS } from './hero-timing';
+
+export { HERO_PREVIEW_DELAY_MS };
 const STALL_MS = 2000;
 
 /**
@@ -13,17 +14,30 @@ export function HeroPreview({
   active,
   paused,
   delayMs = HERO_PREVIEW_DELAY_MS,
+  onPlayingChange,
+  onEnded,
+  onFail,
 }: {
   src: string;
   active: boolean;
   paused: boolean;
   delayMs?: number;
+  /** The clip started or stopped showing. */
+  onPlayingChange?: (playing: boolean) => void;
+  /** The clip reached its end. */
+  onEnded?: () => void;
+  /** The clip errored or stalled for 2 seconds and was removed, so the still stays. */
+  onFail?: () => void;
 }) {
   const ref = useRef<HTMLVideoElement>(null);
   const [loaded, setLoaded] = useState(false);
   const [playing, setPlaying] = useState(false);
   const [failed, setFailed] = useState(false);
   const stall = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const fail = () => {
+    setFailed(true);
+    onFail?.();
+  };
 
   useEffect(() => {
     setLoaded(false);
@@ -39,7 +53,7 @@ export function HeroPreview({
     const el = ref.current;
     if (!el || !loaded) return;
     if (paused) el.pause();
-    else void el.play()?.catch(() => setFailed(true));
+    else void el.play()?.catch(fail);
   }, [paused, loaded]);
 
   if (!active || failed) return null;
@@ -58,13 +72,18 @@ export function HeroPreview({
       onPlaying={() => {
         clearStall();
         setPlaying(true);
+        onPlayingChange?.(true);
       }}
-      onEnded={() => setPlaying(false)}
-      onError={() => setFailed(true)}
-      onAbort={() => setFailed(true)}
+      onEnded={() => {
+        setPlaying(false);
+        onPlayingChange?.(false);
+        onEnded?.();
+      }}
+      onError={fail}
+      onAbort={fail}
       onStalled={() => {
         clearStall();
-        stall.current = setTimeout(() => setFailed(true), STALL_MS);
+        stall.current = setTimeout(fail, STALL_MS);
       }}
     />
   );

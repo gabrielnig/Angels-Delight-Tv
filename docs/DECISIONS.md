@@ -2010,3 +2010,8 @@ Decision: `video.preview` catches every error and records `failed` or `skipped` 
 - Options: Translate now, or English first.
 - Why: The admin interface is English only, so translated help would explain screens that stay English.
 - Reversible: Yes.
+## D-366 A hero slide with a playing clip stays until the clip ends, one switch (lane L2, M41)
+- Decision: `home.hero_wait_for_clip` (default on, public, admin) decides who sets the length of a slide that has a clip. On: the slide stays for the clip's recorded length plus the 1.2 second start delay plus a 2 second grace (the ceiling), and the clip's `ended` event moves the carousel on first in the normal case. Off: every slide changes at `home.hero_interval_seconds` even while its clip plays. A slide with no clip, or whose clip errored or stalled, always uses the dwell time. The progress fill runs over the time the slide really stays. Pause, hover, focus, a hidden tab, reduced motion, Data saver and the stop after two loops are unchanged, and an ended clip only advances a carousel that is running.
+- Options: A three way rule (dwell, clip end, whichever first or last); a single switch; always wait.
+- Why: The owner asked that a slide with a playing clip stays "until the clip finishes or the dwell elapses, whichever the owner setting says". Two behaviours cover it: the clip decides (default, so the clip is never cut) or the dwell decides. A ceiling stops a clip that never fires `ended` from freezing Home. The ceiling is known from the stored length before the clip starts, so the progress fill is honest from the first frame. A clip shorter than the dwell moves on when it ends, which is what the owner wants for a short video.
+- Reversible: Yes, one setting.

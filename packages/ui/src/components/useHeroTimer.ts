@@ -40,11 +40,15 @@ function useTabHidden(): boolean {
 export function useHeroTimer({
   count,
   intervalMs,
+  slideMs,
   maxLoops,
   slideHasImage,
 }: {
   count: number;
+  /** The dwell time. Leave undefined for no rotation (Data saver, owner switch off). */
   intervalMs?: number;
+  /** How long slide `index` stays when that differs from `intervalMs`, for example while it waits for its clip. */
+  slideMs?: (index: number) => number | undefined;
   maxLoops: number;
   /** True when the current slide waits for an image before the clock starts. */
   slideHasImage: boolean;
@@ -67,14 +71,15 @@ export function useHeroTimer({
   const hold = hovered || focused;
   const running = canRun && !paused && !hold && !hidden && armed;
 
-  const remaining = useRef(intervalMs ?? 0);
+  const slideLength = (slideMs?.(current) ?? intervalMs) || 0;
+  const remaining = useRef(slideLength);
   const startedAt = useRef(0);
   const autoSteps = useRef(0);
 
   // A new slide or a manual change gives the slide its whole time again.
   useEffect(() => {
-    remaining.current = intervalMs ?? 0;
-  }, [key, intervalMs]);
+    remaining.current = slideLength;
+  }, [key, slideLength]);
 
   // Do not wait for a slow image for more than 1.5 seconds.
   useEffect(() => {
@@ -101,7 +106,14 @@ export function useHeroTimer({
       clearTimeout(timer);
       remaining.current = Math.max(0, remaining.current - (Date.now() - startedAt.current));
     };
-  }, [running, key, advance]);
+  }, [running, key, slideLength, advance]);
+
+  // The end of a slide's clip moves the carousel on, but only while it is really running (not paused or held).
+  const runningRef = useRef(false);
+  runningRef.current = running;
+  const advanceNow = useCallback(() => {
+    if (runningRef.current) advance();
+  }, [advance]);
 
   const go = useCallback((target: number) => {
     setIndex(target);
@@ -123,6 +135,8 @@ export function useHeroTimer({
     setFocused,
     reduced,
     running,
+    slideLength,
+    advanceNow,
     showPause: rotationAllowed && !stopped,
     showFill: rotationAllowed && !stopped,
     live: running ? ('off' as const) : ('polite' as const),
