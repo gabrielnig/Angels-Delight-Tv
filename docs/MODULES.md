@@ -899,7 +899,7 @@ Nothing in a [CLIENT] module blocks starting. The rule from `CLAUDE.md` applies:
 
 ### M50 Admin help centre [READY]
 
-**Area.** Admin. Plan: `docs/plan/v2/L14-admin-knowledge-base.md`. Platform built by lane L14 (`packages/help`, `/admin/help`), notes and the content format in `docs/lanes/L14-build.md`. Stories M50-S01 to S29 are in `docs/USER-STORIES.md`.
+**Area.** Admin. Plan: `docs/plan/v2/L14-admin-knowledge-base.md`. Platform built by lane L14 (`packages/help`, `/admin/help`), notes and the content format in `docs/lanes/L14-build.md`. Stories M50-S01 to S30 are in `docs/USER-STORIES.md`.
 
 **Purpose.** A staff only help centre at `/admin/help` that teaches every admin screen and task as text, silent captioned video and annotated screenshots, in seven learning paths, so the client can run the platform alone after handover.
 
@@ -908,6 +908,7 @@ Nothing in a [CLIENT] module blocks starting. The rule from `CLAUDE.md` applies:
 - Content as code: Markdown articles, one flow file per procedure that produces the video, the pictures, the steps and the proof.
 - Isolated demo stack and a recorder (Playwright) that makes silent captioned videos from the real screens.
 - Coverage tests and CI checks that fail when a screen no longer matches its recording.
+- Recording harness (lane KB-H, `scripts/kb-recorder`): typed episodes, demo stack with an origin and database guard, redaction scanner, caption tools, `pnpm kb:record`, `kb:verify`, `kb:fact-check`, manifest for the platform. How to use it: `docs/lanes/L14-build.md`, Harness section.
 
 **Data owned.** `help_progress` (one row per account and guide: finished, watched, helpful answer), purged and exported with the account. Content files in the repo (`content/help`), release media in private object storage under `help/<release>/`.
 

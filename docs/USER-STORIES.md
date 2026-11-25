@@ -4597,7 +4597,16 @@ As the owner, I want the contact shown in the help centre to be a setting, so th
 - Error: not applicable.
 - Empty: the placeholder.
 
-Counts: 29 stories in M50 (the 24 of the plan plus S25 to S29 from the owner's answers). Must 24 (S01 to S09, S11 to S22, S25, S27, S29), Should 4 (S10, S23, S26, S28), Could 1 (S24).
+### M50-S30 Fact checker proves an article from its steps alone (Must)
+As the developer, I want a check that follows an article using only its step list and role, so that a step a new person could not follow is found before they meet it.
+- AC1: Given `pnpm kb:fact-check --article D02`, When it runs on a clean demo stack, Then each step is followed in order and the first step that fails is named with the labels on screen.
+- AC2: Given an article for a higher role than the one used, When it runs, Then it fails before opening a browser and names both roles.
+- AC3: Given a step with two actions or no bold label, When it runs, Then it fails as unclear.
+- Edge: a step that needs a file is skipped as manual and counted in the report.
+- Error: a stack failure exits with code 2 so nobody rewrites an article for a broken runner.
+- Empty: not applicable.
+
+Counts: 30 stories in M50 (the 24 of the plan plus S25 to S29 from the owner's answers). Must 25 (S01 to S09, S11 to S22, S25, S27, S29, S30), Should 4 (S10, S23, S26, S28), Could 1 (S24).
 ## M51 Series with configurable names
 
 Module M51 lets the owner word the groups and items of a series (Book and Chapter, Part and Lesson, any four words) and bundle videos into a series quickly. Plan: `docs/plan/v2/L13-series.md`. Decisions D-369 to D-373 and D-375.
