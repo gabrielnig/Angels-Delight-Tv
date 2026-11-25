@@ -13,4 +13,5 @@ export const TEST_SITE: SiteMeta = {
 export const siteMetaMock = () => ({
   pageMetadata: async (page: PageMeta) => buildMetadata(TEST_SITE, page),
   getSiteMeta: async () => TEST_SITE,
+  shareImageExtra: async () => ['Test TV'],
 });

@@ -5,7 +5,7 @@ import { getRootTheme } from '../../lib/theme/root';
 import { titleIndexable } from './page-seo';
 import { getSeoSettings } from './seo-settings';
 import { createOgHandler } from './og-handler';
-import { renderOgJpeg } from './og-render';
+import { renderDefaultCard, renderOgJpeg } from './og-render';
 
 /** Posters live on the media origin we control, so a plain fetch with a short timeout is enough. */
 async function fetchPoster(url: string): Promise<Buffer | null> {
@@ -18,11 +18,32 @@ async function fetchPoster(url: string): Promise<Buffer | null> {
   }
 }
 
+let defaultKept: { key: string; bytes: Buffer } | null = null;
+
+/** The generic platform card, made once per site name, theme colour and default image link. */
+async function defaultCard(): Promise<Buffer> {
+  const [theme, seo] = await Promise.all([getRootTheme(), getSeoSettings()]);
+  const accent = theme.injection.themeColor;
+  const key = [theme.platformName, accent, seo.socialImageUrl].join('|');
+  if (defaultKept?.key === key) return defaultKept.bytes;
+  const bytes = await renderDefaultCard({
+    siteName: theme.platformName,
+    accent,
+    image: await fetchPoster(seo.socialImageUrl),
+  });
+  defaultKept = { key, bytes };
+  return bytes;
+}
+
 export const ogHandler = createOgHandler({
   preview: (slug, kind) => getCatalog().publicPreview(slug, kind),
   siteName: async () => (await getRootTheme()).platformName,
   freeLine: () => msg('og.freeToWatch'),
-  defaultImageUrl: async () => (await getSeoSettings()).socialImageUrl,
+  options: async () => {
+    const [theme, seo] = await Promise.all([getRootTheme(), getSeoSettings()]);
+    return { overlay: seo.titleOverlay, badge: seo.playBadge, accent: theme.injection.themeColor };
+  },
+  defaultCard,
   indexable: (slug, kind) => titleIndexable(kind, slug),
   fetchPoster,
   render: renderOgJpeg,

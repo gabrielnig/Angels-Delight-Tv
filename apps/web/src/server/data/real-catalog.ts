@@ -1,3 +1,4 @@
+import { sql } from 'drizzle-orm';
 import {
   catalogContext,
   getHome,
@@ -109,6 +110,19 @@ function progressOf(
  * The catalog on the real services (lane C). Every call resolves the profile from the database and derives the
  * audience from it, so the audience a caller claims in `ctx` never widens what is shown.
  */
+const DEFAULT_GUEST_MAX_RANK = 2;
+
+/** The `maturity.guest_max_rank` setting, or its default of 2. Anything unreadable falls to the strictest sane value. */
+async function guestMaxRank(tx: Parameters<typeof findTitle>[0]): Promise<number> {
+  const rows = (await tx.execute(
+    sql`SELECT value FROM settings WHERE key = 'maturity.guest_max_rank'`,
+  )) as unknown as { rows?: { value: unknown }[] } | { value: unknown }[];
+  const list = Array.isArray(rows) ? rows : (rows.rows ?? []);
+  const value = list[0]?.value;
+  if (value === undefined) return DEFAULT_GUEST_MAX_RANK;
+  return typeof value === 'number' && Number.isInteger(value) && value >= 0 && value <= 4 ? value : 0;
+}
+
 export class RealCatalog implements CatalogRepository {
   constructor(private readonly service: ServiceContext) {}
 
@@ -345,8 +359,9 @@ export class RealCatalog implements CatalogRepository {
 
   async publicPreview(slug: string, kind: 'video' | 'series'): Promise<PublicPreview | null> {
     const catalog = catalogContext(this.service);
-    const found = await this.service.db.transaction((tx) =>
-      findTitle(tx, catalog, { kids: false }, { slug, kind }),
+    // A share preview is public: it obeys the same ceiling as a signed out visitor (L15b, R26).
+    const found = await this.service.db.transaction(async (tx) =>
+      findTitle(tx, catalog, { kids: false, maxRank: await guestMaxRank(tx) }, { slug, kind }),
     );
     if (!found) return null;
     if (found.type === 'redirect') return { type: 'redirect', to: redirectPath(found.to) };
