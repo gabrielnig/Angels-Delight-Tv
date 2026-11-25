@@ -8,10 +8,10 @@ Audit: `docs/audits/2026-11-25-og-audit.md`. L15a owns share UI code. L15b owns 
 |---|---|---|---|
 | 1 | Metadata builder for every public route | merged | #446 |
 | 2 | Image pipeline and privacy gate | merged | #447 |
-| 3 | Admin share control per video and series (text; custom picture left) | in review | |
+| 3 | Admin share control per video and series (text; custom picture left) | merged | #453 |
 | 4 | `pnpm share:check` and CI | merged | #449 |
 | 5 | JSON-LD alignment | merged | #450 |
-| 6 | Docs | in review | |
+| 6 | Docs | merged | #451 |
 
 ## Slice 1
 
@@ -40,7 +40,7 @@ Audit: `docs/audits/2026-11-25-share-audit.md`. Mockups S200 to S203 in `docs/mo
 | 3 | Wire into title, series, hero, hover card, card menu, watch, end screen | open | |
 | 4 | Share analytics event per channel | open | |
 | 5 | Chromium layout tests, a11y, e2e | open | |
-| 6 | Docs | in review | |
+| 6 | Docs | merged | #451 |
 
 ### L15a slice 1
 
@@ -75,4 +75,28 @@ Audit: `docs/audits/2026-11-25-share-audit.md`. Mockups S200 to S203 in `docs/mo
 - For the content and knowledge base lanes: the screen is a gap entry in `scripts/kb-recorder/coverage-gaps.json` (routes and the three settings X handle, title overlay and play badge). A guide should say: open a video or series, press Share card, type a share title and description (empty uses the title), watch the three cards, Save. WhatsApp shows about 65 characters of title and 120 of description, Facebook 88 and 160, X 70 and 200. Chat apps keep old previews for days: after a change, share the link again or use the debuggers listed below.
 - Not built: custom share picture upload or choice (fallback chain today is the generated card from the poster, then the platform card). The series card preview shows no picture because the series admin record has no slug.
 - Tests: `pnpm vitest run apps/web/src/lib/seo/share-overrides.test.ts apps/web/src/components/admin/ShareCardEditor.test.tsx apps/web/src/lib/admin/kb-episode-coverage.test.ts` and with the database `packages/catalog/src/admin/share-text.int.test.ts apps/web/src/server/data/real-catalog.int.test.ts -t share`.
+
+## Post deploy checks (cannot be done from the build machine)
+
+Facebook Sharing Debugger, WhatsApp, LinkedIn Post Inspector, Telegram and Slack need the live public https site. After deploy, replace `<site>` with the real domain, pick one published video and one published series from the sitemap, and paste:
+
+| Tool | Where | Urls to paste |
+|---|---|---|
+| Facebook Sharing Debugger | https://developers.facebook.com/tools/debug/ | `https://<site>/`, `https://<site>/title/<video-slug>`, `https://<site>/series/<series-slug>`, `https://<site>/about`. Press Scrape Again after any change and read the warnings (image size, og:type, missing properties). |
+| WhatsApp | Send the link to yourself in a chat | The same four urls. Expect the picture, title and description within a few seconds. Also open `https://<site>/og/title/<video-slug>` in a browser and confirm it is a JPEG under 300 KB with no redirect. |
+| LinkedIn Post Inspector | https://www.linkedin.com/post-inspector/ | `https://<site>/`, `https://<site>/title/<video-slug>`, `https://<site>/series/<series-slug>`. LinkedIn keeps a preview for about 7 days: inspect again after changes. |
+| X | Compose a post with the link (the card validator is retired) | `https://<site>/title/<video-slug>` and `https://<site>/series/<series-slug>`. Expect the large image card with alt text. |
+| Telegram | Send the link to Saved Messages | The same urls. Telegram caches previews, send `https://<site>/title/<slug>?x=1` to force a fresh fetch if needed. |
+| Slack, iMessage, email | Paste into a message to yourself | `https://<site>/title/<video-slug>` |
+| Rich results test | https://search.google.com/test/rich-results | `https://<site>/title/<video-slug>` should show a Video item with thumbnail, upload date and duration. |
+
+Also run `pnpm share:check --base https://<site>` from any machine once the site is live. It needs no tools besides Node and prints a table.
+Test a kids only title and an unpublished title: the debugger must show the generic platform card (kids only) or a not found (unpublished) and never the title or poster.
+
+## Left for a later pass
+
+- Custom share picture upload or choice per title (D-392 option 4), including the series preview picture in the admin Share card page.
+- hreflang alternates in page metadata (waits for the locale url prefix decision, see L6 slice 13).
+- Episode pages (`video.episode`) if episodes ever get their own url.
+- The pre commit hook runs related tests that already fail on main (ThemeHistoryView, launch apply, error page r39, DATA-MODEL table list): they should be fixed by their lanes.
 
