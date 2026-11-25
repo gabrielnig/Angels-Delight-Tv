@@ -234,6 +234,8 @@ How a step is read (write steps so this works):
 - Labels are the **bold** words and must match the screen exactly. Text to type is in quotes: `Type "Rivers" in the **Title** box.`
 - Verbs: Choose or Open a menu item; Click or Press a control; Type or Enter; Tick or Untick; Select an option from a list; Wait until you see; Scroll to.
 - Drag, upload or "choose a file" steps are skipped as manual and counted in the report.
+- A click on a button whose name has Choose, Upload or Replace in it hands a small demo file (a video, or a picture when the box takes only pictures) to the file box it opens. Write the next step as `Choose a file from your computer.` (a manual step) and then wait for the result. A name in quotes in that step, such as `Choose a file from your computer, named "flaky-lesson.mp4".`, is the name the demo file gets, so a practice failure can be shown.
+- A choice in a group is found by the label it starts with (`Click **Schedule**.` finds the radio read as "Schedule Pick a date and time."). Side menu links match with or without the count badge ("Encoding 1 need attention").
 - Signing in: an article that starts with `Go to the sign in page, "/admin/login".` is followed signed out. `Type your email in the **Email** box.`, `Type your password in the **Password** box.` and `Type the 6 digit code from your app in the **Digit 1 of 6** box.` use the demo account of the role (never written in an article). Any other article is followed signed in as its role.
 - A role below the article role fails before any browser opens and names both roles.
 

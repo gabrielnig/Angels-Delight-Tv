@@ -1,5 +1,5 @@
 /// <reference lib="dom" />
-import type { Locator } from '@playwright/test';
+import type { FileChooser, Locator } from '@playwright/test';
 import { interpretStep, type Action } from './fact-check';
 import { accountFor, FIXTURE_CODE } from './accounts';
 import type { EpisodeRole } from './episode';
@@ -27,6 +27,9 @@ function control(s: Session, label: string): Locator {
     loc = loc.or(s.page.getByRole(role, { name: label, exact: true }));
   // A menu made from a details summary has no button role in every browser, so it is found by its text.
   loc = loc.or(s.page.locator('summary').filter({ hasText: label }));
+  // A choice in a group is read out with its help line ("Schedule Pick a date and time."), so a label that starts it counts.
+  const escaped = label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  loc = loc.or(s.page.getByRole('radio', { name: new RegExp(`^${escaped}(?= )`) }));
   return loc.first();
 }
 
@@ -69,11 +72,36 @@ async function visible(loc: Locator, ms: number): Promise<boolean> {
   }
 }
 
+/** A tiny stand in for the file a person would pick: a video, or a picture when the box only takes pictures. */
+export function fileNameHint(nextStep: string | undefined): string | undefined {
+  if (!nextStep || !/^choose a file\b/i.test(nextStep)) return undefined;
+  return /"([^"/]+\.(?:mp4|mov|mkv|png|jpe?g))"/i.exec(nextStep)?.[1];
+}
+
+async function demoFile(box: FileChooser, name?: string) {
+  const accept = await box.element().getAttribute('accept');
+  if (accept && /image/.test(accept) && !/video|mp4/.test(accept)) {
+    const png = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==';
+    return {
+      name: name ?? 'demo-poster.png',
+      mimeType: 'image/png',
+      buffer: Buffer.from(png, 'base64'),
+    };
+  }
+  // Big enough to be sent in more than one part, like a real video, so a failed part can be shown.
+  return {
+    name: name ?? 'demo-lesson.mp4',
+    mimeType: 'video/mp4',
+    buffer: Buffer.alloc(20 * 1024 * 1024),
+  };
+}
+
 async function execute(
   s: Session,
   a: Action,
   seeTimeoutMs: number,
   role: EpisodeRole,
+  fileName?: string,
 ): Promise<string | null> {
   const find = async (what: string, loc: Locator) =>
     (await visible(loc, 6000)) ? null : `Cannot find ${what} on ${new URL(s.page.url()).pathname}.`;
@@ -92,8 +120,16 @@ async function execute(
       const loc = await controlInOpenBox(s, a.label);
       const miss = await find(`a control named "${a.label}"`, loc);
       if (miss) return miss;
+      // A Choose or Upload button opens the file box of the computer. A person picks a file there, so the checker
+      // hands over a small demo file of the kind the box accepts.
+      const picks = /\b(choose|upload|replace)\b/i.test(a.label);
+      const chooser = picks
+        ? s.page.waitForEvent('filechooser', { timeout: 2500 }).catch(() => null)
+        : null;
       await loc.scrollIntoViewIfNeeded().catch(() => {});
       await s.click(loc);
+      const box = chooser ? await chooser : null;
+      if (box) await box.setFiles(await demoFile(box, fileName));
       // A person waits for a save to finish before the next move, so the page gets a moment to settle.
       await s.page.waitForLoadState('networkidle', { timeout: 3000 }).catch(() => {});
       await s.page.waitForTimeout(600);
@@ -175,7 +211,7 @@ export async function runSteps(
   o: { seeTimeoutMs?: number; role?: EpisodeRole } = {},
 ): Promise<{ results: StepResult[]; failure: StepFailureReport | null }> {
   const results: StepResult[] = [];
-  for (const step of steps) {
+  for (const [index, step] of steps.entries()) {
     const action = interpretStep(step.text);
     if (action.kind === 'unclear') {
       return { results, failure: { n: step.n, text: step.text, reason: action.reason } };
@@ -186,7 +222,13 @@ export async function runSteps(
     }
     let problem: string | null;
     try {
-      problem = await execute(s, action, o.seeTimeoutMs ?? 10_000, o.role ?? 'editor');
+      problem = await execute(
+        s,
+        action,
+        o.seeTimeoutMs ?? 10_000,
+        o.role ?? 'editor',
+        fileNameHint(steps[index + 1]?.text),
+      );
       if (!problem) await s.guard(`step ${step.n}`);
     } catch (e) {
       problem = e instanceof Error ? e.message.split('\n')[0]! : String(e);
