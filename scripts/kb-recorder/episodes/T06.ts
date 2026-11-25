@@ -32,10 +32,10 @@ const episode: Episode = {
       },
     },
     {
-      caption: 'Type "not-the-password" in the **Password** box.',
+      caption: 'Type "wrongpassword" in the **Password** box.',
       note: 'The demo shows a made up password. Never share your real password with anyone.',
       run: async (s) => {
-        await s.type(s.page.getByLabel('Password'), 'not-the-password');
+        await s.type(s.page.getByLabel('Password'), 'wrongpassword');
       },
     },
     {

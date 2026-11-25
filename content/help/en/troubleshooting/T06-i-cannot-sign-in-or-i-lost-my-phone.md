@@ -29,7 +29,7 @@ Have your email address and your phone with the [authenticator app](glossary:aut
 1. Go to the sign in page, "/admin/login".
    ![The staff sign in page with the Email box marked 1](../../media/T06/T06-01-signin-desktop-dark.webp)
 2. Type your email in the **Email** box.
-3. Type "not-the-password" in the **Password** box.
+3. Type "wrongpassword" in the **Password** box.
    The demo shows a made up password. Never share your real password with anyone.
 4. Click **Sign in**.
 5. Check the **Sign in** heading and the message above the boxes.

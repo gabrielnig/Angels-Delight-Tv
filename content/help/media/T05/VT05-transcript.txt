@@ -9,5 +9,5 @@ For Editors. 1 min 13 s.
       The pointer moves to Choose videos.
 0:41  Check the Upload queue for the message under the file name.
       The pointer moves to holiday.avi is not supported. Use MP4, MOV or MKV..
-0:56  Select a file that was not added and click Remove.
+0:56  Select a file that was not added to remove it with Remove.
       The pointer moves to Dismiss holiday.avi.

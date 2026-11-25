@@ -33,7 +33,7 @@ You need the Editor role or above. Have the file on your device. Only MP4, MOV a
 4. Check the **Upload queue** for the message under the file name.
    The message says what is wrong with that file. Other files in the same batch carry on.
    ![A file that was not added, with the reason marked 1 and the Remove button](../../media/T05/T05-04-message-desktop.webp)
-5. Select a file that was not added and click **Remove**.
+5. Select a file that was not added to remove it with **Remove**.
 <!-- /kb:steps -->
 
 ## What you should see
