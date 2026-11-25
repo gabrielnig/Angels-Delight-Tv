@@ -259,6 +259,6 @@ describe('ShareSheet (L15a slice 2)', () => {
     Object.assign(navigator, { share });
     const more = setup();
     await more.user.click(screen.getByRole('button', { name: 'More' }));
-    expect(trackShare).toHaveBeenCalledWith('more', 'video');
+    expect(trackShare).toHaveBeenCalledWith('more', 'video', undefined);
   });
 });
