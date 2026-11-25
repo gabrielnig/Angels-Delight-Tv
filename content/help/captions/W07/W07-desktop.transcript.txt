@@ -1,0 +1,15 @@
+Edit captions in detail (W07)
+For Editors. 1 min 16 s.
+
+0:05  Click Review captions.
+      The pointer moves to Review captions.
+0:16  Type " now" in the Words in cue 1 box.
+      The pointer moves to Words in cue 1.
+0:28  Click Undo.
+      The pointer moves to Undo.
+0:39  Click Redo.
+      The pointer moves to Redo.
+0:49  Click Find and replace.
+      The pointer moves to Find and replace.
+1:00  Click Close.
+      The pointer moves to Close.

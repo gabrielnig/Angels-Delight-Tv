@@ -1,0 +1,13 @@
+Add skip intro, recap and chapters (W06)
+For Editors. 1 min 11 s.
+
+0:05  Choose Videos in the side menu.
+      The pointer moves to Videos.
+0:15  Click How to Save Money on Data.
+      The pointer moves to How to Save Money on Data.
+0:26  Click Set up skip and chapters.
+      The pointer moves to Set up skip and chapters.
+0:36  Type "0:05" in the Intro start box.
+0:46  Type "0:20" in the Intro end box.
+0:56  Click Save changes.
+      The pointer moves to Save changes.
