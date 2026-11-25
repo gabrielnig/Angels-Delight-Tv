@@ -17,7 +17,7 @@ status: draft
 textOnly: true
 ---
 ## What you will do
-Look up what any of the 106 site settings does. You end knowing its default, where to change it and who can change it.
+Look up what any of the 109 site settings does. You end knowing its default, where to change it and who can change it.
 
 ## Before you start
 This list is written from the settings list in the platform, so it always has every setting. Most are on **Site settings**. Read [Platform details and the Launch checklist](help:C01) first.
@@ -139,101 +139,107 @@ This list is written from the settings list in the platform, so it always has ev
    Group: Discovery and notices. Where: Site settings, Discovery tab. Default: "{title} on {siteName}". Who: Admins and Super admins.
 58. **Let search engines list the site**: Turn off on a test site so nothing is listed.
    Group: Discovery and notices. Where: Site settings, Discovery tab. Default: On. Who: Admins and Super admins.
-59. **Share options**: Which options the Share menu lists. Copy link is always on.
-   Group: Discovery and notices. Where: Site settings, Discovery tab. Default: whatsapp, facebook, x. Who: Admins and Super admins.
-60. **Storage notice**: Show the short notice about what the site keeps on a visitor device.
+59. **X handle**: The site account on X, for example learntv. Leave empty if there is none.
+   Group: Discovery and notices. Where: Site settings, Discovery tab. Default: Empty. Who: Admins and Super admins.
+60. **Show the title on share pictures**: Turn off when your posters already carry the title as text.
    Group: Discovery and notices. Where: Site settings, Discovery tab. Default: On. Who: Admins and Super admins.
-61. **Storage notice text**: Plain words, up to 300 characters.
+61. **Show a play badge on video share pictures**: A small play button on the picture a shared video link shows.
+   Group: Discovery and notices. Where: Site settings, Discovery tab. Default: On. Who: Admins and Super admins.
+62. **Share options**: Which options the Share menu lists. Copy link is always on and the device share menu shows when the device has one.
+   Group: Discovery and notices. Where: Site settings, Discovery tab. Default: whatsapp, facebook, x, telegram, email, sms. Who: Admins and Super admins.
+63. **Storage notice**: Show the short notice about what the site keeps on a visitor device.
+   Group: Discovery and notices. Where: Site settings, Discovery tab. Default: On. Who: Admins and Super admins.
+64. **Storage notice text**: Plain words, up to 300 characters.
    Group: Discovery and notices. Where: Site settings, Discovery tab. Default: "This site keeps a few small things on your device so it can work and remember your choices. It does not track you for advertising.". Who: Admins and Super admins.
-62. **Storage notice version**: Raise this number to show the storage notice again to everyone who already closed it.
+65. **Storage notice version**: Raise this number to show the storage notice again to everyone who already closed it.
    Group: Discovery and notices. Where: Site settings, Discovery tab, with the button Show notice again to everyone. Default: 1. Who: Admins and Super admins.
-63. **Terms version**: Changes when the terms page is published.
+66. **Terms version**: Changes when the terms page is published.
    Group: Legal pages. Where: Changes by itself when you save a new version in Site settings, Pages tab. Default: "v0". Who: Admins and Super admins.
-64. **Privacy version**: Changes when the privacy page is published.
+67. **Privacy version**: Changes when the privacy page is published.
    Group: Legal pages. Where: Changes by itself when you save a new version in Site settings, Pages tab. Default: "v0". Who: Admins and Super admins.
-65. **Notice banner**: A slim notice shown on every page.
+68. **Notice banner**: A slim notice shown on every page.
    Group: Maintenance. Where: Site settings, Maintenance tab. Default: Off, with no message. Who: Admins and Super admins.
-66. **Maintenance mode**: Viewers see a maintenance page, admins can still sign in.
+69. **Maintenance mode**: Viewers see a maintenance page, admins can still sign in.
    Group: Maintenance. Where: Site settings, Maintenance tab. Default: Off. Who: Super admins only.
-67. **Raw view event retention (days)**: Between 7 and 730.
+70. **Raw view event retention (days)**: Between 7 and 730.
    Group: Numbers. Where: Site settings, Features and limits tab. Default: 90. Who: Super admins only.
-68. **Audit log retention (months)**: Between 6 and 120. Older entries are purged monthly.
+71. **Audit log retention (months)**: Between 6 and 120. Older entries are purged monthly.
    Group: Audit log. Where: Site settings, Features and limits tab. Default: 24. Who: Super admins only.
-69. **Sponsors master switch**: The master switch. Sponsor messages never show while this is off, whatever else is set.
+72. **Sponsors master switch**: The master switch. Sponsor messages never show while this is off, whatever else is set.
    Group: Sponsors and donations. Where: Sponsors screen, the master switch card. Default: Off. Who: Admins and Super admins.
-70. **Home banner**: One sponsor card between rows on Home.
+73. **Home banner**: One sponsor card between rows on Home.
    Group: Sponsors and donations. Where: No screen yet. Ask the developer. Default: Off. Who: Admins and Super admins.
-71. **Title page card**: One sponsor card on title pages, below the action buttons.
+74. **Title page card**: One sponsor card on title pages, below the action buttons.
    Group: Sponsors and donations. Where: No screen yet. Ask the developer. Default: Off. Who: Admins and Super admins.
-72. **Message after a video**: A still sponsor card beside Up next when a video ends.
+75. **Message after a video**: A still sponsor card beside Up next when a video ends.
    Group: Sponsors and donations. Where: No screen yet. Ask the developer. Default: Off. Who: Admins and Super admins.
-73. **Message before a video**: A skippable still sponsor card before a video starts.
+76. **Message before a video**: A skippable still sponsor card before a video starts.
    Group: Sponsors and donations. Where: No screen yet. Ask the developer. Default: Off. Who: Admins and Super admins.
-74. **Home banner position**: Show after this row. The banner never sits above the second row.
+77. **Home banner position**: Show after this row. The banner never sits above the second row.
    Group: Sponsors and donations. Where: No screen yet. Ask the developer. Default: 3. Who: Admins and Super admins.
-75. **Before card seconds**: How long the card waits before playback continues. Skip is always visible.
+78. **Before card seconds**: How long the card waits before playback continues. Skip is always visible.
    Group: Sponsors and donations. Where: No screen yet. Ask the developer. Default: 5. Who: Admins and Super admins.
-76. **Home banner views per day**: Per browser, per sponsor, per Lagos day.
+79. **Home banner views per day**: Per browser, per sponsor, per Lagos day.
    Group: Sponsors and donations. Where: No screen yet. Ask the developer. Default: 2. Who: Admins and Super admins.
-77. **Title card views per day**: Per browser, per sponsor, per Lagos day.
+80. **Title card views per day**: Per browser, per sponsor, per Lagos day.
    Group: Sponsors and donations. Where: No screen yet. Ask the developer. Default: 4. Who: Admins and Super admins.
-78. **After video cards per visit**: Per browser session.
+81. **After video cards per visit**: Per browser session.
    Group: Sponsors and donations. Where: No screen yet. Ask the developer. Default: 1. Who: Admins and Super admins.
-79. **Before video cards per visit**: Per browser session.
+82. **Before video cards per visit**: Per browser session.
    Group: Sponsors and donations. Where: No screen yet. Ask the developer. Default: 1. Who: Admins and Super admins.
-80. **Sponsor label wording**: The wording can change. The label can never be removed.
+83. **Sponsor label wording**: The wording can change. The label can never be removed.
    Group: Sponsors and donations. Where: No screen yet. Ask the developer. Default: "sponsored". Who: Admins and Super admins.
-81. **Open sponsor links in a new tab**: Sponsor links open in a new tab.
+84. **Open sponsor links in a new tab**: Sponsor links open in a new tab.
    Group: Sponsors and donations. Where: No screen yet. Ask the developer. Default: On. Who: Admins and Super admins.
-82. **Sponsor rotation**: Even shares days equally. Weighted follows each creative weight.
+85. **Sponsor rotation**: Even shares days equally. Weighted follows each creative weight.
    Group: Sponsors and donations. Where: No screen yet. Ask the developer. Default: "even". Who: Admins and Super admins.
-83. **Donations**: The master switch for donations. The Donate page and links stay hidden while this is off.
+86. **Donations**: The master switch for donations. The Donate page and links stay hidden while this is off.
    Group: Sponsors and donations. Where: No screen yet. Ask the developer. Default: Off. Who: Admins and Super admins.
-84. **Monthly giving**: Donors can choose to give every month.
+87. **Monthly giving**: Donors can choose to give every month.
    Group: Sponsors and donations. Where: No screen yet. Ask the developer. Default: Off. Who: Admins and Super admins.
-85. **Donation currencies**: USD needs the USD switch and Paystack USD on your account.
+88. **Donation currencies**: USD needs the USD switch and Paystack USD on your account.
    Group: Sponsors and donations. Where: No screen yet. Ask the developer. Default: NGN. Who: Admins and Super admins.
-86. **US dollar gifts**: Lets donors abroad give in USD.
+89. **US dollar gifts**: Lets donors abroad give in USD.
    Group: Sponsors and donations. Where: No screen yet. Ask the developer. Default: Off. Who: Admins and Super admins.
-87. **Naira preset amounts**: In kobo. 50000 is NGN 500.
+90. **Naira preset amounts**: In kobo. 50000 is NGN 500.
    Group: Sponsors and donations. Where: No screen yet. Ask the developer. Default: ₦500, ₦1,000, ₦2,000, ₦5,000. Who: Admins and Super admins.
-88. **Dollar preset amounts**: In cents. 500 is USD 5.
+91. **Dollar preset amounts**: In cents. 500 is USD 5.
    Group: Sponsors and donations. Where: No screen yet. Ask the developer. Default: $5, $10, $25. Who: Admins and Super admins.
-89. **Smallest naira gift**: In kobo. Tiny gifts lose a large share to fees.
+92. **Smallest naira gift**: In kobo. Tiny gifts lose a large share to fees.
    Group: Sponsors and donations. Where: No screen yet. Ask the developer. Default: ₦200. Who: Admins and Super admins.
-90. **Largest naira gift**: In kobo. A guard against abuse.
+93. **Largest naira gift**: In kobo. A guard against abuse.
    Group: Sponsors and donations. Where: No screen yet. Ask the developer. Default: ₦5,000,000. Who: Super admins only.
-91. **Organisation legal name**: Shown on the Donate page and on receipts.
+94. **Organisation legal name**: Shown on the Donate page and on receipts.
    Group: Sponsors and donations. Where: No screen yet. Ask the developer. Default: Empty. Who: Admins and Super admins.
-92. **Registration number**: Optional. CAC or other registration number.
+95. **Registration number**: Optional. CAC or other registration number.
    Group: Sponsors and donations. Where: No screen yet. Ask the developer. Default: Empty. Who: Admins and Super admins.
-93. **Donate page title**: Draft wording, change it.
+96. **Donate page title**: Draft wording, change it.
    Group: Sponsors and donations. Where: No screen yet. Ask the developer. Default: "Help keep lessons free". Who: Admins and Super admins.
-94. **Donate page text**: Draft wording, change it.
+97. **Donate page text**: Draft wording, change it.
    Group: Sponsors and donations. Where: No screen yet. Ask the developer. Default: "Gifts pay for hosting, captions and new lessons. Give what you wish.". Who: Admins and Super admins.
-95. **Thank you title**: Draft wording, change it.
+98. **Thank you title**: Draft wording, change it.
    Group: Sponsors and donations. Where: No screen yet. Ask the developer. Default: "Thank you". Who: Admins and Super admins.
-96. **Thank you text**: Draft wording, change it.
+99. **Thank you text**: Draft wording, change it.
    Group: Sponsors and donations. Where: No screen yet. Ask the developer. Default: "Your gift has been received. A receipt is on its way to your email.". Who: Admins and Super admins.
-97. **Offer to cover fees**: Shows a checkbox so donors can add the fee to their gift.
+100. **Offer to cover fees**: Shows a checkbox so donors can add the fee to their gift.
    Group: Sponsors and donations. Where: No screen yet. Ask the developer. Default: Off. Who: Admins and Super admins.
-98. **Bank transfer details**: Shows your bank transfer instructions on the Donate page.
+101. **Bank transfer details**: Shows your bank transfer instructions on the Donate page.
    Group: Sponsors and donations. Where: No screen yet. Ask the developer. Default: Off. Who: Admins and Super admins.
-99. **Bank transfer instructions**: Plain text. Shown escaped, never as markup.
+102. **Bank transfer instructions**: Plain text. Shown escaped, never as markup.
    Group: Sponsors and donations. Where: No screen yet. Ask the developer. Default: Empty. Who: Admins and Super admins.
-100. **Transparency page**: Shows a page explaining how gifts are used.
+103. **Transparency page**: Shows a page explaining how gifts are used.
    Group: Sponsors and donations. Where: No screen yet. Ask the developer. Default: Off. Who: Admins and Super admins.
-101. **Transparency title**: Draft wording, change it.
+104. **Transparency title**: Draft wording, change it.
    Group: Sponsors and donations. Where: No screen yet. Ask the developer. Default: "How gifts are used". Who: Admins and Super admins.
-102. **Transparency introduction**: A short paragraph above the list.
+105. **Transparency introduction**: A short paragraph above the list.
    Group: Sponsors and donations. Where: No screen yet. Ask the developer. Default: Empty. Who: Admins and Super admins.
-103. **Transparency items**: Use percentages that total 100, or amounts.
+106. **Transparency items**: Use percentages that total 100, or amounts.
    Group: Sponsors and donations. Where: No screen yet. Ask the developer. Default: Empty. Who: Admins and Super admins.
-104. **Transparency last updated**: Shown on the page.
+107. **Transparency last updated**: Shown on the page.
    Group: Sponsors and donations. Where: No screen yet. Ask the developer. Default: Empty. Who: Admins and Super admins.
-105. **Receipt reply address**: The address donors reply to when they answer a receipt.
+108. **Receipt reply address**: The address donors reply to when they answer a receipt.
    Group: Sponsors and donations. Where: No screen yet. Ask the developer. Default: Empty. Who: Admins and Super admins.
-106. **Payment event retention (days)**: How many days payment records are kept before they are removed.
+109. **Payment event retention (days)**: How many days payment records are kept before they are removed.
    Group: Sponsors and donations. Where: No screen yet. Ask the developer. Default: 90. Who: Super admins only.
 
 ## What you should see
