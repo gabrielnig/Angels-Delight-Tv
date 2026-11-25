@@ -7,3 +7,4 @@ export * from './library';
 export * from './lint';
 export { bestScreenMatch } from './routes';
 export * from './visibility';
+export * from './search';
