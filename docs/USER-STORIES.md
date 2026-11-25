@@ -3085,6 +3085,36 @@ As the owner, I want an optional dark theme, so that the platform can look cinem
 - Error: a failing pair blocks save with the reason.
 - Empty: not applicable.
 
+### M47-S17 One phone header for visitors and signed in viewers (Must)
+As a phone user, I want a short header that never crowds, so that I can reach Search and my account in one tap.
+- AC1: Given a phone width, When any page except Watch shows, Then the header holds the logo, a Search icon and one account icon (a person for a visitor, my avatar when signed in), plus the bell when signed in, every control 44 by 44 px.
+- AC2: Given a narrow phone, When the brand name does not fit, Then it clips with an ellipsis, hides under 400 px when the bell shows and under 340 px always, and the logo link keeps its accessible name.
+- AC3: Given a Kids profile or Kids mode, When the header shows, Then it holds the logo mark, a Kids word badge, Search and the account icon, with no bell, no language picker and no Sign in or Create account.
+- AC4: Given I scroll 40 px on Home, When the bar turns solid, Then it fades over 200 ms with colours flipping at 35 percent, and with reduced motion it switches at once. Off Home it is always solid.
+- AC5: Given 320, 360 and 414 px wide with long Yoruba, Igbo and Hausa names, When the header renders, Then nothing overflows, overlaps or wraps.
+- Edge: from 960 px the bar keeps the text links, and a visitor sees Sign in and Create account in the bar.
+- Error: a failed bell count shows no badge.
+- Empty: a profile with no picture shows its first letter.
+
+### M47-S18 Account sheet on phones (Must)
+As a phone user, I want my account choices in a bottom sheet, so that I can reach them with a thumb and nothing is cut off.
+- AC1: Given I am a visitor on a phone, When I tap the account icon, Then a bottom sheet titled Account opens with Sign in (the one filled button), Create account when sign up is open, a Kids mode switch with its help line, and Help.
+- AC2: Given I am signed in, When I tap my avatar, Then the sheet shows my name, whether the profile is Adult or Kids, and the same menu items in the same order as the popover.
+- AC3: Given the sheet is open, When I press Tab, Escape or Close, Then focus stays inside, Escape and Close shut it and focus returns to the icon, and with reduced motion it opens without movement.
+- AC4: Given Kids mode is on, When the sheet opens, Then it shows only the Kids mode switch and Help.
+- Edge: from 600 px the menu is a popover.
+- Error: if turning Kids mode on or off fails, the switch keeps its old state.
+- Empty: Create account is absent when sign up is closed.
+
+### M47-S19 Tab labels stay short (Should)
+As a translator, I want to know when a tab label is too long, so that the bar stays readable in every language.
+- AC1: Given I save a translation for a tab label (Home, Browse, Search, My List) over 12 characters, When I save or import it, Then it saves with a warning that the tab bar will cut it.
+- AC2: Given a label gets through, When the tab bar renders at 320 px, Then it is clipped with an ellipsis inside its tab and never wraps.
+- AC3: Given a phone on its side, When the tab bar shows, Then it is 44 px tall with the label beside the icon.
+- Edge: a letter with its tone marks counts as one character.
+- Error: not applicable.
+- Empty: not applicable.
+
 ## M48 Sponsors and donations (44 stories)
 
 Off by default. Never shown to kids profiles or Kids mode. Priorities follow `docs/plan/v2/L9-monetization.md` section 7.

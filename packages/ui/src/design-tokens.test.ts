@@ -138,7 +138,7 @@ describe('fixed colour and scrim tokens (section 13.1)', () => {
     ['--scrim-hero-hold-mobile', '72%'],
     ['--scrim-hero-mid-mobile', '82%'],
     ['--scrim-hero-end-mobile', '96%'],
-    ['--nav-scrim-hold', '70%'],
+    ['--nav-scrim-fade', 'var(--space-4)'],
     ['--font-mono', 'ui-monospace, SFMono-Regular, Menlo, Consolas, monospace'],
   ])('%s is %s', (name, value) => {
     expect(prop(name)).toBe(value);
@@ -169,7 +169,7 @@ describe('docs and the skill copy stay in step', () => {
       '--color-hero-border',
       '--color-hero-chip-hover',
       '--scrim-hero-start',
-      '--nav-scrim-hold',
+      '--nav-scrim-fade',
       '--tabbar-height',
       '--avatar-initial-120',
       '--prose-max',

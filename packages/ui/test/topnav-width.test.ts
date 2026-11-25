@@ -264,3 +264,58 @@ describe.skipIf(!chromium)('tab bar width stress (L12, S184, S185)', () => {
     expect(failures).toEqual([]);
   }, 120_000);
 });
+
+const POSITIONS = `() => {
+  const bar = document.querySelector('.ad-nav');
+  const pick = [...bar.querySelectorAll('.ad-nav__tools a, .ad-nav__tools button, .ad-nav__logo')].filter((el) => el.getClientRects().length > 0);
+  return {
+    barHeight: bar.getBoundingClientRect().height,
+    docWidth: document.documentElement.scrollWidth,
+    rects: pick.map((el) => { const r = el.getBoundingClientRect(); return [Math.round(r.left * 10) / 10, Math.round(r.top * 10) / 10, Math.round(r.width * 10) / 10, Math.round(r.height * 10) / 10]; }),
+  };
+}`;
+
+describe.skipIf(!chromium)('display font loading does not move the header (L12)', () => {
+  it('keeps every icon, the mark and the bar height still when the brand font changes width', async () => {
+    const { chromium: browserType } = await import('@playwright/test');
+    const browser = await browserType.launch({ executablePath: chromium, args: ['--no-sandbox'] });
+    const failures: string[] = [];
+    try {
+      for (const width of [320, 360, 414, 600]) {
+        const page = await browser.newPage({ viewport: { width, height: 700 } });
+        for (const name of ['Angels Delight TV', NAMES.yoruba]) {
+          const html = renderToStaticMarkup(
+            createElement(TopNav, {
+              brand: { name, href: '/' },
+              links,
+              currentPath: '/',
+              profileName: 'Ada',
+              menu: [],
+              hasBell: true,
+              trailing: stub('Notifications'),
+            }),
+          );
+          const shots: unknown[] = [];
+          for (const family of [
+            'Arial, sans-serif',
+            '"Courier New", monospace',
+            'Georgia, serif',
+          ]) {
+            await page.setContent(
+              `<!doctype html><html><head><meta charset="utf-8"><style>${tokens}\n${components}\nbody{margin:0;font-family:Arial,sans-serif}.ad-nav__brand{font-family:${family}}</style></head><body>${html}</body></html>`,
+            );
+            const r = (await page.evaluate(`(${POSITIONS})()`)) as { docWidth: number };
+            if (r.docWidth > width) failures.push(`${width} ${family}: overflow`);
+            shots.push(JSON.stringify({ ...r, docWidth: 0 }));
+          }
+          if (new Set(shots).size !== 1)
+            failures.push(`${width} ${name}: layout moved with the font`);
+        }
+        await page.close();
+      }
+    } finally {
+      await browser.close();
+    }
+    expect(failures).toEqual([]);
+  }, 120_000);
+});

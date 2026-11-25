@@ -90,7 +90,7 @@
   --scrim-hero-end-mobile: 96%;
   --hero-fade: var(--motion-slow);
   --hero-interval: 10s;  /* set per hero from the site setting */
-  --nav-scrim-hold: 70%;
+  --nav-scrim-fade: var(--space-4);  /* the nav scrim holds 0.85 through the whole bar, then fades over this much below it */
 
   /* ---- Fixed: pastel up-next and category tiles (ink text, all above 12:1) ---- */
   --color-tile-sky: #E3F1FF;

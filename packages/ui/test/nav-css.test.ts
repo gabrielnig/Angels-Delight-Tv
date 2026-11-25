@@ -22,10 +22,12 @@ describe('nav layers (R35, M47-S04)', () => {
     expect(find(".ad-nav[data-surface='solid']::after")?.body).toMatch(/opacity:\s*0/);
   });
 
-  it('the scrim holds 0.85 over the text band using the tokens', () => {
+  it('the scrim holds 0.85 through the whole bar and fades over the fade token below it (D-381)', () => {
     const after = flat(find('.ad-nav::after')?.body);
-    expect(after).toContain('var(--nav-scrim-hold)');
+    expect(after).toContain('calc(100% - var(--nav-scrim-fade))');
+    expect(after).toContain('calc(var(--nav-scrim-fade) * -1)');
     expect(after).toContain('rgba(var(--scrim-rgb), var(--scrim-hero-start))');
+    expect(after).not.toContain('--nav-scrim-hold');
   });
 
   it('text, underline and ring flip as one step at 35 percent of the fade', () => {
