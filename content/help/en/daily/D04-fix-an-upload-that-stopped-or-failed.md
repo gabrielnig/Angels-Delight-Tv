@@ -7,7 +7,7 @@ role: editor
 needs: [D02]
 related: [D02, D03]
 readMinutes: 3
-watchSeconds: 62
+watchSeconds: 61
 video:
   id: VD04
   captions: burned

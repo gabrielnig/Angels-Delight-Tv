@@ -1,17 +1,17 @@
 Add the title, description and categories (D05)
-For Editors. 1 min 10 s.
+For Editors. 1 min 7 s.
 
-0:06  Choose Videos in the side menu.
+0:05  Choose Videos in the side menu.
       The pointer moves to Videos.
-0:12  Type "Naira" in the Search box.
-0:17  Click Edit Counting Money in Naira.
+0:11  Type "Naira" in the Search box.
+0:16  Click Edit Counting Money in Naira.
       The pointer moves to Edit Counting Money in Naira.
-0:22  Check that the Title says what viewers will learn.
-0:30  Type "Learn how to count and compare naira notes and coins." in the Description box.
-0:39  Tick Maths.
-0:43  Type "naira, money, counting" in the Tags box.
-0:49  Select G from the Maturity rating list.
+0:21  Check that the Title says what viewers will learn.
+0:29  Type "Learn to count and compare naira." in the Description box.
+0:36  Tick Maths.
+0:41  Type "naira, money, counting" in the Tags box.
+0:46  Select G from the Maturity rating list.
       The pointer moves to Choose a ratingGPG121518.
-0:55  Click Save changes.
+0:52  Click Save changes.
       The pointer moves to Save changes.
-0:59  Wait until you see Changes saved.
+0:56  Wait until you see Changes saved.

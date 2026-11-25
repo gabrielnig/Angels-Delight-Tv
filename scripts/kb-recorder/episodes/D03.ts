@@ -95,7 +95,7 @@ const episode: Episode = {
     lookStep(
       'Check that **Details were saved with the draft**.',
       (s) => s.page.getByText('Details were saved with the draft').filter({ visible: true }).first(),
-      { holdMs: 3000, shot: { name: 'saved', alt: 'The note that details were saved with the draft, marked 1', label: 'Details saved' } },
+      { holdMs: 7000, shot: { name: 'saved', alt: 'The note that details were saved with the draft, marked 1', label: 'Details saved' } },
     ),
   ],
 };
