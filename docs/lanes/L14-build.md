@@ -222,6 +222,20 @@ covers: { nav: ['Videos'], settings: ['site.name'], statuses: ['video:ready', 'p
 
 The test also fails when an episode names something that does not exist, when a gap entry is covered now (so the list can only shrink) and when a gap entry names something that does not exist. The allowlist of known gaps is `scripts/kb-recorder/coverage-gaps.json` (37 routes, 19 menu items, 47 actions, 106 settings, 15 statuses at the start). When you add an episode, delete the entries it covers. To rewrite the list from the current state: `KB_WRITE_GAPS=1 pnpm vitest run apps/web/src/lib/admin/kb-episode-coverage.test.ts`. This is separate from KB-P's article coverage (`content/help/coverage-gaps.json`), which checks that an article exists.
 
+### Fact checker
+
+`pnpm kb:fact-check --article D02` (also `--file path`, `--all`, `--role editor`, `--report out.json`) re-runs an article on a clean demo stack from only its Steps list and role. It never reads the episode, so it catches steps a new person could not follow. The demo is reset, the role signs in off camera, and each step is followed in order until the first that fails. Exit 0 all followed, 1 a step failed, 2 the stack failed.
+
+How a step is read (write steps so this works):
+
+- One action per step. Two actions in one step, or a step with no **bold** label, fails as unclear.
+- Labels are the **bold** words and must match the screen exactly. Text to type is in quotes: `Type "Rivers" in the **Title** box.`
+- Verbs: Choose or Open a menu item; Click or Press a control; Type or Enter; Tick or Untick; Select an option from a list; Wait until you see; Scroll to.
+- Drag, upload or "choose a file" steps are skipped as manual and counted in the report.
+- A role below the article role fails before any browser opens and names both roles.
+
+A failure names the step, why, and the labels on screen at that moment.
+
 ### Status
 
-Slices 1 to 7 done (framework, demo stack, scanner and annotation, caption tools, pipeline commands, CI, episode coverage). Later slices append here.
+Slices 1 to 8 done (framework, demo stack, scanner and annotation, caption tools, pipeline commands, CI, episode coverage, fact checker). Later slices append here.
