@@ -236,8 +236,8 @@ describe('applyClientConfig home step (M41-S09)', () => {
     expect(calls[0]!.config.rows.map((r) => r.type)).toEqual([
       'continue_watching',
       'my_list',
+      'trending',
       'newest',
-      'smart',
       'each_category',
       'all_series',
     ]);

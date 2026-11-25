@@ -267,7 +267,7 @@ export const L7_ACCOUNT_MESSAGES = {
   'consent.gotIt': 'Got it',
   'errors.searchForALesson': 'Search for a lesson',
   'errors.ifItKeepsHappening': 'If it keeps happening, email',
-  'errors.reference': 'Reference:',
+  'errors.referenceLabel': 'Reference:',
   'account.nav.overview': 'Overview',
   'account.nav.security': 'Security',
   'account.nav.playback': 'Playback settings',

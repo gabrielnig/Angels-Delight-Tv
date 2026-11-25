@@ -75,7 +75,7 @@ export function ErrorPage({
         ) : null}
         {reference ? (
           <p className="ad-error__small">
-            {msg('errors.reference')} <span className="ad-error__mono">{reference}</span>
+            {msg('errors.referenceLabel')} <span className="ad-error__mono">{reference}</span>
           </p>
         ) : null}
         <div className="ad-error__actions">
