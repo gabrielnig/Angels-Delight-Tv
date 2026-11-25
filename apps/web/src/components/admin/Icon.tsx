@@ -63,6 +63,9 @@ const PATHS = {
   mail: 'M3 5h18v14H3zM3 7l9 6 9-6',
   star: 'M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z',
   film: 'M4 4h16v16H4zM4 9h16M4 15h16M9 4v16M15 4v16',
+  help: 'M12 21a9 9 0 100-18 9 9 0 000 18zM9.5 9.5a2.5 2.5 0 114 2c-1 .6-1.5 1.2-1.5 2.5M12 17h.01',
+  print: 'M7 9V3h10v6M6 17H3V9h18v8h-3M7 14h10v7H7z',
+  book: 'M4 4h7a2 2 0 012 2v14a2 2 0 00-2-2H4zM20 4h-7a2 2 0 00-2 2v14a2 2 0 012-2h7z',
 } as const;
 
 export type IconName = keyof typeof PATHS;

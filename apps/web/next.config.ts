@@ -20,6 +20,7 @@ const config: NextConfig = {
     '@ad/storage',
     '@ad/theme',
     '@ad/player',
+    '@ad/help',
   ],
   serverExternalPackages: ['pg', '@node-rs/argon2', 'nodemailer', 'qrcode'],
   // Lets the standalone build trace files from the monorepo root.

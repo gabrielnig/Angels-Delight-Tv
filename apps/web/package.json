@@ -19,6 +19,7 @@
     "@ad/catalog": "workspace:*",
     "@ad/config": "workspace:*",
     "@ad/db": "workspace:*",
+    "@ad/help": "workspace:*",
     "@ad/i18n": "workspace:*",
     "@ad/mailer": "workspace:*",
     "@ad/payments": "workspace:*",

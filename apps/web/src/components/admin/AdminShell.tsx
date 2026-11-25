@@ -6,6 +6,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import type { AccountRole } from '@ad/shared';
 import { Icon } from './Icon';
+import { HelpLink } from './help/HelpLink';
 import { NoticeBell, type BellNotice } from './NoticeBell';
 import { isActive, navForRole } from './nav';
 import { summarizeUploads, useUploaderState } from './UploaderContext';
@@ -41,6 +42,7 @@ export function AdminShell({
   const [open, setOpen] = useState(false);
   const menuButton = useRef<HTMLButtonElement>(null);
   const groups = navForRole(actor.role);
+  const onHelp = pathname === '/admin/help' || pathname.startsWith('/admin/help/');
   const { lanes, online } = useUploaderState();
   const uploads = summarizeUploads(lanes);
 
@@ -101,6 +103,12 @@ export function AdminShell({
             </div>
           ))}
         </nav>
+        <div className="adm-side__help">
+          <Link href="/admin/help" aria-current={onHelp ? 'page' : undefined}>
+            <Icon name="help" />
+            <span>Help centre</span>
+          </Link>
+        </div>
       </aside>
       {open ? (
         <button
@@ -124,16 +132,18 @@ export function AdminShell({
           >
             <Icon name="menu" />
           </button>
-          <form className="adm-search" role="search" action="/admin/videos" method="get">
-            <Icon name="search" size={18} />
-            <input
-              type="search"
-              name="q"
-              aria-label="Search videos"
-              placeholder="Search videos"
-              autoComplete="off"
-            />
-          </form>
+          {onHelp ? null : (
+            <form className="adm-search" role="search" action="/admin/videos" method="get">
+              <Icon name="search" size={18} />
+              <input
+                type="search"
+                name="q"
+                aria-label="Search videos"
+                placeholder="Search videos"
+                autoComplete="off"
+              />
+            </form>
+          )}
           <span className="adm-top__space" />
           {uploads.count > 0 ? (
             <Link href="/admin/videos/upload" className="adm-chip">
@@ -141,6 +151,7 @@ export function AdminShell({
               {uploads.count} uploading, {uploads.percent}%
             </Link>
           ) : null}
+          <HelpLink placement="top" />
           {notices ? <NoticeBell {...notices} /> : null}
           <details className="adm-menu">
             <summary>

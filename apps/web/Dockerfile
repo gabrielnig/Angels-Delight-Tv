@@ -14,6 +14,8 @@ WORKDIR /app
 COPY --from=build --chown=node:node /repo/apps/web/.next/standalone ./
 COPY --from=build --chown=node:node /repo/apps/web/.next/static ./apps/web/.next/static
 COPY --from=build --chown=node:node /repo/apps/web/public ./apps/web/public
+# The help centre reads its articles from disk at run time (D-376). The loader finds /app/content/help from the app folder.
+COPY --from=build --chown=node:node /repo/content/help ./content/help
 USER node
 EXPOSE 3000
 HEALTHCHECK --interval=15s --timeout=3s --start-period=20s --retries=3 \

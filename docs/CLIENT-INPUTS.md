@@ -15,6 +15,7 @@ All of these live in one file, `client.json`, copied from `client.example.json` 
 | Domain | `domain` | Env `APP_DOMAIN`, `APP_ORIGIN`, Caddy | Without `https://` |
 | Media domain | `mediaDomain` | Env `MEDIA_DOMAIN`, `MEDIA_ORIGIN`, Worker custom domain | Defaults to `media.` plus the domain |
 | Support email | `supportEmail` | Settings, help page, env `SUPPORT_EMAIL` | |
+| Help centre contact | Setting `help.support_contact` (Site settings, Platform details) | Message ARKDEV strip on the help home. An email address or an https link. Empty shows a placeholder and no link | |
 | Storage notice | Settings, Discovery tab: `noticeEnabled`, `noticeText`, `noticeVersion` | Storage notice on public pages | Default text is a placeholder. Bump the version to show it again |
 | Search synonyms and share channels | Settings, Discovery tab | Search quality, share menu | Optional. Kids-only titles are never indexed whatever is set |
 | Series names | Settings, Series names tab: preset (Season and Episode, Book and Chapter, Part and Lesson, Module and Lesson) or four custom words and an item code | Series pages, cards, Continue learning, notices, search, admin screens | A client question: what words do the Bible series use. Default Season and Episode. One series can override |

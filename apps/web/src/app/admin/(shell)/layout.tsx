@@ -16,8 +16,19 @@ import { noticesAdmin } from '@/lib/data/admin/notices';
 import { markNoticesReadAction } from './notice-actions';
 import { maturityLabelsSetting } from '@/server/maturity-labels';
 import { MaturityLabelsProvider } from '@/lib/maturity-context';
+import { HelpMapProvider } from '@/components/admin/help/HelpMapProvider';
+import { getLibrary } from '@/server/help';
 
 export const dynamic = 'force-dynamic';
+
+/** The route to article map for the Help links. A help library that cannot load must never take the admin down. */
+function helpScreenMap(): Record<string, string[]> {
+  try {
+    return getLibrary().screenMap();
+  } catch {
+    return {};
+  }
+}
 
 export default async function ShellLayout({ children }: { children: ReactNode }) {
   const actor = await getActor();
@@ -30,28 +41,30 @@ export default async function ShellLayout({ children }: { children: ReactNode })
   const labels = await maturityLabelsSetting();
   return (
     <MaturityLabelsProvider labels={labels}>
-      <UploaderProvider mode={uploadTransportMode()}>
-        <ToastProvider>
-          <AdminShell
-            platformName={DEFAULT_PLATFORM_NAME}
-            actor={{ name: actor.name, role: actor.role, roleLabel: ROLE_LABELS[actor.role] }}
-            counts={counts}
-            signOut={signOutAction}
-            notices={feed ? { ...feed, markAllRead: markNoticesReadAction } : undefined}
-          >
-            {children}
-          </AdminShell>
-          {times ? (
-            <SessionExpiryWarning
-              remainingMs={Math.min(times.idleMs, times.absoluteMs)}
-              idleMs={DEFAULT_SESSION_POLICIES.staff.idleSeconds * 1000}
-              absoluteMs={times.absoluteMs}
-              extend={extendSessionAction}
-              signInHref="/admin/login?expired=1"
-            />
-          ) : null}
-        </ToastProvider>
-      </UploaderProvider>
+      <HelpMapProvider map={helpScreenMap()}>
+        <UploaderProvider mode={uploadTransportMode()}>
+          <ToastProvider>
+            <AdminShell
+              platformName={DEFAULT_PLATFORM_NAME}
+              actor={{ name: actor.name, role: actor.role, roleLabel: ROLE_LABELS[actor.role] }}
+              counts={counts}
+              signOut={signOutAction}
+              notices={feed ? { ...feed, markAllRead: markNoticesReadAction } : undefined}
+            >
+              {children}
+            </AdminShell>
+            {times ? (
+              <SessionExpiryWarning
+                remainingMs={Math.min(times.idleMs, times.absoluteMs)}
+                idleMs={DEFAULT_SESSION_POLICIES.staff.idleSeconds * 1000}
+                absoluteMs={times.absoluteMs}
+                extend={extendSessionAction}
+                signInHref="/admin/login?expired=1"
+              />
+            ) : null}
+          </ToastProvider>
+        </UploaderProvider>
+      </HelpMapProvider>
     </MaturityLabelsProvider>
   );
 }
