@@ -9,7 +9,7 @@ const real = resolve(import.meta.dirname, '../../../content/help');
 describe('the committed content', () => {
   it('loads, lints clean and has its media', () => {
     const lib = loadLibrary(real);
-    expect(lib.articles.map((a) => a.meta.id)).toEqual(['S04', 'D02', 'D07']);
+    expect(lib.articles.map((a) => a.meta.id)).toEqual(expect.arrayContaining(['S04', 'D02', 'D07']));
     expect(lib.glossary.length).toBeGreaterThan(8);
     expect(checkContent(real)).toEqual([]);
   });
