@@ -36,6 +36,12 @@ export function parseArticle(md: string): ArticleSteps {
   return { id, role, steps };
 }
 
+/** True when the first step goes to a sign in page, so the check starts signed out like the person does. */
+export function startsSignedOut(steps: Array<{ n: number; text: string }>): boolean {
+  const first = steps[0] ? interpretStep(steps[0].text) : null;
+  return first?.kind === 'goto' && first.path.startsWith('/admin/login');
+}
+
 export function roleAllows(runRole: string, articleRole: string): boolean {
   const have = ROLE_ORDER.indexOf(runRole);
   const need = ROLE_ORDER.indexOf(articleRole);
@@ -47,7 +53,8 @@ export function roleAllows(runRole: string, articleRole: string): boolean {
 export type Action =
   | { kind: 'menu'; label: string }
   | { kind: 'click'; label: string }
-  | { kind: 'type'; label: string; text: string }
+  | { kind: 'type'; label: string; text: string; secret?: 'email' | 'password' | 'code' }
+  | { kind: 'goto'; path: string }
   | { kind: 'check'; label: string; on: boolean }
   | { kind: 'select'; label: string; option: string }
   | { kind: 'see'; text: string }
@@ -106,7 +113,22 @@ export function interpretStep(text: string): Action {
       ? { kind: 'check', label: bold[0]!, on: first === 'tick' }
       : { kind: 'unclear', reason: UNCLEAR_BOLD };
   }
+  if (first === 'go') {
+    return /^go to\b/i.test(text) && quoted.length === 1 && quoted[0]!.startsWith('/')
+      ? { kind: 'goto', path: quoted[0]! }
+      : {
+          kind: 'unclear',
+          reason:
+            'Say where to go with one path in quotes, for example Go to the sign in page, "/admin/login".',
+        };
+  }
   if (first === 'type') {
+    // The person's own sign in details are never written in an article. The checker uses the demo account of the role.
+    const own = /\byour (email|password)\b|\b6 digit code\b/i.exec(text);
+    if (quoted.length === 0 && own && bold.length === 1) {
+      const kind = /password/i.test(own[0]) ? 'password' : /email/i.test(own[0]) ? 'email' : 'code';
+      return { kind: 'type', label: bold[0]!, text: '', secret: kind };
+    }
     return quoted.length === 1 && bold.length === 1
       ? { kind: 'type', label: bold[0]!, text: quoted[0]! }
       : {

@@ -69,6 +69,17 @@ describe('runSteps (needs Chromium)', () => {
     await context.close();
   }, 60_000);
 
+  it('types the demo account of the role for your email, so no sign in detail is written in an article', async (ctx) => {
+    if (!browser) return ctx.skip();
+    const { context, s } = await session();
+    const r = await runSteps(s, [{ n: 1, text: 'Type your email in the **Title** box.' }], {
+      role: 'editor',
+    });
+    expect(r.failure).toBeNull();
+    expect(await s.page.getByLabel('Title').inputValue()).toBe('ngozi@example.test');
+    await context.close();
+  });
+
   it('stops at the first step that fails and names it with the labels on screen', async (ctx) => {
     if (!browser) return ctx.skip();
     const { context, s } = await session();

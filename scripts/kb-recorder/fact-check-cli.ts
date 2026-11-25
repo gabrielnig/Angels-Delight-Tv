@@ -5,7 +5,7 @@ import { parseArgs } from 'node:util';
 import { chromium } from '@playwright/test';
 import { resetDemo } from './demo/client';
 import { assertAllowedOrigin } from './demo/origin-guard';
-import { parseArticle, roleAllows } from './fact-check';
+import { parseArticle, roleAllows, startsSignedOut } from './fact-check';
 import { runSteps, type StepFailureReport, type StepResult } from './fact-run';
 import { signInAs } from './helpers';
 import { overlayInitScript } from './overlay';
@@ -64,9 +64,14 @@ export async function factCheckArticle(
     await context.clock.setFixedTime(o.clockMs ?? now);
     const page = await context.newPage();
     const s = new Session(page, profile, null, 0.1);
-    await signInAs(s, role as 'editor' | 'admin' | 'super_admin');
-    await s.goto('/admin');
-    const r = await runSteps(s, article.steps);
+    // An article about signing in starts on the sign in page, like the person does, so it is not signed in for them.
+    if (!startsSignedOut(article.steps)) {
+      await signInAs(s, role as 'editor' | 'admin' | 'super_admin');
+      await s.goto('/admin');
+    }
+    const r = await runSteps(s, article.steps, {
+      role: role as 'editor' | 'admin' | 'super_admin',
+    });
     return { id: article.id, ok: r.failure === null, role, ...r };
   } finally {
     await browser.close();
