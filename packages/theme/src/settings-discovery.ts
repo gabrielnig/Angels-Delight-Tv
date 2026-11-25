@@ -95,6 +95,30 @@ export const DISCOVERY_DEFS = {
     label: 'Let search engines list the site',
     description: 'Turn off on a test site so nothing is listed',
   }),
+  'seo.twitter_handle': def({
+    schema: z
+      .string()
+      .trim()
+      .max(16)
+      .refine((value) => /^@?[A-Za-z0-9_]{0,15}$/.test(value), {
+        message: 'Use letters, numbers and underscores only, up to 15 characters',
+      }),
+    default: '',
+    label: 'X handle',
+    description: 'The site account on X, for example learntv. Leave empty if there is none',
+  }),
+  'seo.share_title_overlay': def({
+    schema: z.boolean(),
+    default: true,
+    label: 'Show the title on share pictures',
+    description: 'Turn off when your posters already carry the title as text',
+  }),
+  'seo.share_play_badge': def({
+    schema: z.boolean(),
+    default: true,
+    label: 'Show a play badge on video share pictures',
+    description: 'A small play button on the picture a shared video link shows',
+  }),
   'seo.share_channels': def({
     schema: z
       .array(z.enum(SHARE_CHANNELS))

@@ -8,8 +8,11 @@ import { SearchNotes } from '../../../components/browse/SearchNotes';
 import { SearchScreen } from '../../../components/browse/SearchScreen';
 import { getCatalog, getLibrary } from '../../../lib/data';
 import { getViewerOrGuest } from '../../../lib/session';
+import { pageMetadata } from '../../../server/seo/site-meta';
 
-export const metadata = { title: 'Search', robots: { index: false, follow: true } };
+export async function generateMetadata() {
+  return pageMetadata({ kind: 'private', path: '/search', title: 'Search', follow: true });
+}
 
 export default async function SearchPage({
   searchParams,

@@ -16,6 +16,9 @@ export interface SeoSettings {
   noticeText: string;
   noticeVersion: number;
   supportEmail: string;
+  twitterHandle: string;
+  titleOverlay: boolean;
+  playBadge: boolean;
 }
 
 /** Description: the Discovery tab text, then the tagline, then a neutral line. Image: the setting, then the placeholder. */
@@ -34,6 +37,9 @@ export function resolveSeoSettings(values: ResolvedSettings): SeoSettings {
     noticeText: values['consent.notice_text'],
     noticeVersion: values['consent.notice_version'],
     supportEmail: values['platform.support_email'],
+    twitterHandle: values['seo.twitter_handle'],
+    titleOverlay: values['seo.share_title_overlay'],
+    playBadge: values['seo.share_play_badge'],
   };
 }
 

@@ -16,6 +16,9 @@ const KEYS: SettingKey[] = [
   'seo.site_description',
   'seo.default_social_image_url',
   'seo.share_text_template',
+  'seo.twitter_handle',
+  'seo.share_title_overlay',
+  'seo.share_play_badge',
   'seo.indexing',
   'seo.share_channels',
   'consent.notice_enabled',
@@ -107,6 +110,29 @@ export function DiscoveryTab({ data, actions, onSaved }: Props) {
           error={form.errors['seo.share_text_template']}
           onChange={(event) => form.set('seo.share_text_template', event.target.value)}
         />
+        <TextField
+          label={label('seo.twitter_handle')}
+          hint={hint('seo.twitter_handle')}
+          placeholder="@"
+          value={str('seo.twitter_handle')}
+          error={form.errors['seo.twitter_handle']}
+          onChange={(event) => form.set('seo.twitter_handle', event.target.value)}
+        />
+        <div className="ads-flags">
+          {(['seo.share_title_overlay', 'seo.share_play_badge'] as const).map((key) => (
+            <div className="ads-flag" key={key}>
+              <div>
+                <span className="adm-field__label">{label(key)}</span>
+                <p className="adm-field__hint">{hint(key)}</p>
+              </div>
+              <Switch
+                label={label(key)}
+                checked={form.draft[key] === true}
+                onChange={(value) => form.set(key, value)}
+              />
+            </div>
+          ))}
+        </div>
 
         <div className="ads-previews">
           <Button variant="ghost" onClick={() => setShowPreview((v) => !v)}>

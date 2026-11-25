@@ -36,6 +36,7 @@ vi.mock('../../../../server/seo/page-seo', () => ({
   titleIndexable: async () => mocks.indexable,
   shareConfig: async (title: string) => ({ channels: ['whatsapp'], text: title }),
 }));
+vi.mock('../../../../server/seo/site-meta', async () => (await import('../../../../server/seo/site-meta-mock')).siteMetaMock());
 vi.mock('../../../../lib/theme/root', () => ({
   getRootTheme: async () => ({ platformName: 'x' }),
 }));

@@ -27,6 +27,7 @@ vi.mock('../../../../lib/data', () => ({
   getCatalog: () => ({ series: mocks.series, publicPreview: mocks.preview }),
   getLibrary: () => ({ myListIds: async () => [] }),
 }));
+vi.mock('../../../../server/seo/site-meta', async () => (await import('../../../../server/seo/site-meta-mock')).siteMetaMock());
 vi.mock('../../../../lib/theme/root', () => ({
   getRootTheme: async () => ({ platformName: 'ADTV' }),
 }));

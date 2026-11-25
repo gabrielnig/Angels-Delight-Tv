@@ -14,7 +14,8 @@ import { TitleActions } from '../../../../components/title/TitleActions';
 import { pickSeason, seasonRows } from '../../../../components/title/series-rows';
 import { getCatalog, getLibrary } from '../../../../lib/data';
 import { JsonLd } from '../../../../components/seo/JsonLd';
-import { previewMetadata } from '../../../../lib/seo';
+import { pageMetadata } from '../../../../server/seo/site-meta';
+import { shareImageFor } from '../../../../lib/seo/share-image';
 import { seriesPageJsonLd } from '../../../../lib/seo/page-jsonld';
 import { shareConfig, siteOrigin, titleIndexable } from '../../../../server/seo/page-seo';
 import { getRootTheme } from '../../../../lib/theme/root';
@@ -33,19 +34,17 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
     return { title: 'Series not found', robots: { index: false, follow: false } };
   }
   const { item } = preview;
-  const [{ platformName }, indexable] = await Promise.all([
-    getRootTheme(),
-    titleIndexable('series', item.slug),
-  ]);
-  return previewMetadata({
+  const path = `/series/${item.slug}`;
+  const indexable = await titleIndexable('series', item.slug);
+  if (!indexable) return pageMetadata({ kind: 'private', path });
+  return pageMetadata({
     kind: 'series',
+    path,
     title: item.title,
     description: item.description,
-    path: `/series/${item.slug}`,
-    siteName: platformName,
-    thumbnail: item.thumbnail,
-    indexable,
-    shareImagePath: `/og/series/${encodeURIComponent(item.slug)}?v=${encodeURIComponent(item.publishedAt ?? '')}`,
+    image: shareImageFor('series', item.slug, item.title, item.publishedAt, item.thumbnail),
+    releasedAt: item.publishedAt || undefined,
+    tags: item.categoryName ? [item.categoryName] : undefined,
   });
 }
 

@@ -14,6 +14,11 @@ import { homePageJsonLd } from '../lib/seo/page-jsonld';
 import { getRootTheme } from '../lib/theme/root';
 import { siteOrigin } from '../server/seo/page-seo';
 import { turnstileSiteKey } from '../server/auth/turnstile-site';
+import { pageMetadata } from '../server/seo/site-meta';
+
+export async function generateMetadata() {
+  return pageMetadata({ kind: 'website', path: '/' });
+}
 
 /** Signed out: Home, or the landing page with the sign in card when guest play is off. Signed in with a profile: Home. */
 export default async function RootPage() {

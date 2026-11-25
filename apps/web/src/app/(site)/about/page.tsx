@@ -3,10 +3,12 @@ import { AppShell } from '../../../components/Shell';
 import { SiteTabs } from '../../../components/site/SiteTabs';
 import { LegalView } from '../../../components/site/LegalView';
 import { getSite } from '../../../lib/data';
+import { pageMetadata } from '../../../server/seo/site-meta';
 
 export async function generateMetadata() {
   const page = await getSite().legal('about');
-  return { title: page?.title ?? 'Not found' };
+  if (!page) return pageMetadata({ kind: 'private', path: '/about', title: 'Not found' });
+  return pageMetadata({ kind: 'website', path: '/about', title: page.title });
 }
 
 export default async function Page() {

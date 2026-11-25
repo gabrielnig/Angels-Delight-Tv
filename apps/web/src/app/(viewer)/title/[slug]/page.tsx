@@ -8,7 +8,8 @@ import { TitleBlocked } from '../../../../components/title/TitleStates';
 import { PublicTitle, TitleView } from '../../../../components/title/TitleView';
 import { getCatalog, getLibrary } from '../../../../lib/data';
 import { JsonLd } from '../../../../components/seo/JsonLd';
-import { previewMetadata } from '../../../../lib/seo';
+import { pageMetadata } from '../../../../server/seo/site-meta';
+import { shareImageFor } from '../../../../lib/seo/share-image';
 import { titlePageJsonLd } from '../../../../lib/seo/page-jsonld';
 import { shareConfig, siteOrigin, titleIndexable } from '../../../../server/seo/page-seo';
 import { getRootTheme } from '../../../../lib/theme/root';
@@ -29,20 +30,19 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
     return { title: 'Video not found', robots: NOT_INDEXED };
   }
   const { item } = preview;
-  const [{ platformName }, indexable] = await Promise.all([
-    getRootTheme(),
-    titleIndexable('video', item.slug),
-  ]);
-  return previewMetadata({
+  const path = `/title/${item.slug}`;
+  const indexable = await titleIndexable('video', item.slug);
+  // Kids only titles (and a failed lookup) show the generic platform card: no title, text or picture (R26).
+  if (!indexable) return pageMetadata({ kind: 'private', path });
+  return pageMetadata({
     kind: 'video',
+    path,
     title: item.title,
     description: item.description,
-    path: `/title/${item.slug}`,
-    siteName: platformName,
-    thumbnail: item.thumbnail,
+    image: shareImageFor('title', item.slug, item.title, item.publishedAt, item.thumbnail),
     durationSeconds: item.durationSeconds,
-    indexable,
-    shareImagePath: `/og/title/${encodeURIComponent(item.slug)}?v=${encodeURIComponent(item.publishedAt ?? '')}`,
+    releasedAt: item.publishedAt || undefined,
+    tags: item.categoryName ? [item.categoryName] : undefined,
   });
 }
 
