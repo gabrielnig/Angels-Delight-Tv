@@ -7,6 +7,7 @@ import type { ReactNode } from 'react';
 import type { AccountRole } from '@ad/shared';
 import { Icon } from './Icon';
 import { HelpLink } from './help/HelpLink';
+import { HelpPanelHost, type PanelResult } from './help/HelpPanelHost';
 import { NoticeBell, type BellNotice } from './NoticeBell';
 import { isActive, navForRole } from './nav';
 import { summarizeUploads, useUploaderState } from './UploaderContext';
@@ -18,6 +19,11 @@ export interface ShellProps {
   signOut: () => Promise<void>;
   /** The bell. Left out when notices could not be loaded, so the shell still works. */
   notices?: { items: BellNotice[]; unread: number; markAllRead: () => Promise<void> };
+  /** Loads the Help panel for a screen. Left out, the Help button stays a plain link. */
+  help?: {
+    load: (pathname: string, guide?: string) => Promise<PanelResult>;
+    onWatched: (guide: string) => Promise<{ ok: boolean }>;
+  };
   children: ReactNode;
 }
 
@@ -36,6 +42,7 @@ export function AdminShell({
   counts,
   signOut,
   notices,
+  help,
   children,
 }: ShellProps) {
   const pathname = usePathname() ?? '/admin';
@@ -59,7 +66,7 @@ export function AdminShell({
     return () => document.removeEventListener('keydown', onKey);
   }, [open]);
 
-  return (
+  const shell = (
     <div className="adm-shell">
       <a className="adm-skip" href="#adm-main">
         Skip to content
@@ -190,4 +197,5 @@ export function AdminShell({
       </div>
     </div>
   );
+  return help ? <HelpPanelHost {...help}>{shell}</HelpPanelHost> : shell;
 }

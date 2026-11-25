@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { cleanup, render, screen, within } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 let pathname = '/admin/videos';
@@ -64,5 +64,27 @@ describe('AdminShell help entry points (M50-S01)', () => {
     pathname = '/admin/videos';
     render(shell('editor'));
     expect(screen.getByRole('searchbox', { name: 'Search videos' })).toBeInTheDocument();
+  });
+
+  it('opens the help panel from the top bar button when the shell is given a loader', async () => {
+    pathname = '/admin/videos';
+    const load = async () => ({
+      ok: true as const,
+      data: { pathname: '/admin/videos', guides: [], core: [] },
+      cues: [],
+    });
+    render(
+      <HelpMapProvider map={{ '/admin/videos': ['D10'] }}>
+        <AdminShell
+          {...base}
+          actor={{ name: 'Ngozi Eze', role: 'editor', roleLabel: 'Staff' }}
+          help={{ load, onWatched: async () => ({ ok: true }) }}
+        >
+          x
+        </AdminShell>
+      </HelpMapProvider>,
+    );
+    fireEvent.click(within(screen.getByRole('banner')).getByRole('link', { name: 'Help' }));
+    expect(await screen.findByRole('dialog', { name: 'Help for this screen' })).toBeInTheDocument();
   });
 });
