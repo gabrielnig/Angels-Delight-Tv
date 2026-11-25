@@ -50,7 +50,7 @@ export function Workspace({
   const warningCount = [...picked].filter((key) => {
     const row = byKey.get(key);
     if (!row?.text) return false;
-    return validateTranslation({ locale: locale.code, english: row.english, text: row.text }).warnings.length > 0;
+    return validateTranslation({ key, locale: locale.code, english: row.english, text: row.text }).warnings.length > 0;
   }).length;
 
   async function approve() {

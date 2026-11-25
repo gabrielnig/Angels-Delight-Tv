@@ -39,3 +39,40 @@ describe('tab bar tokens (M47-S14, F14)', () => {
     );
   });
 });
+
+describe('tab bar states and label cap (L12, S183 frame 12, S184)', () => {
+  it('a long label is clipped with an ellipsis inside its cell and never wraps', () => {
+    const item = flat(rule('.ad-tabbar__item')?.body);
+    expect(item).toContain('min-width: 0');
+    const label = flat(rule('.ad-tabbar__item span')?.body);
+    expect(label).toContain('max-width: 100%');
+    expect(label).toContain('overflow: hidden');
+    expect(label).toContain('text-overflow: ellipsis');
+    expect(label).toContain('white-space: nowrap');
+  });
+
+  it('focus draws a 3px ring inside the item because the bar touches the screen edges (R37)', () => {
+    const focus = flat(rule('.ad-tabbar__item:focus-visible')?.body);
+    expect(focus).toContain('outline: 3px solid var(--color-focus-ring)');
+    expect(focus).toContain('outline-offset: -3px');
+  });
+
+  it('pressed fills at once and hover sits inside the fine pointer query', () => {
+    const pressed = flat(rule('.ad-tabbar__item:active')?.body);
+    expect(pressed).toContain('background: var(--color-surface-sunken)');
+    const hover = rules.find((r) => r.selector === '.ad-tabbar__item:hover');
+    expect(hover?.at.some((a) => /hover: hover/.test(a))).toBe(true);
+  });
+
+  it('landscape phones get a 44px bar with the label beside the icon (S185)', () => {
+    const landscape = rules.find(
+      (r) =>
+        r.selector === '.ad-tabbar__item' && r.at.some((a) => /orientation: landscape/.test(a)),
+    );
+    expect(flat(landscape?.body)).toContain('flex-direction: row');
+    const token = rules.find(
+      (r) => r.selector === ':root' && r.at.some((a) => /orientation: landscape/.test(a)),
+    );
+    expect(flat(token?.body)).toContain('--tabbar-height: var(--touch-target)');
+  });
+});

@@ -135,7 +135,7 @@ export class TranslationService {
         skipped++;
         continue;
       }
-      const result = validateTranslation({ locale, english, text });
+      const result = validateTranslation({ key, locale, english, text });
       if (result.errors.length > 0) {
         skipped++;
         continue;
@@ -159,7 +159,7 @@ export class TranslationService {
     this.need(actor, 'editor');
     this.translatable(locale);
     const english = this.englishFor(key);
-    const result = validateTranslation({ locale, english, text });
+    const result = validateTranslation({ key, locale, english, text });
     if (result.errors.length > 0) throw new ValidationFailed({ text: result.errors }, result.errors.join('; '));
     await this.deps.store.upsert(locale, {
       key,

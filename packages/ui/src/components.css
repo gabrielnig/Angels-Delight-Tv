@@ -2606,7 +2606,9 @@
 
 .ad-tabbar__item {
   display: flex;
+  min-width: 0;
   min-height: var(--touch-target);
+  padding: 0 var(--space-1);
   flex-direction: column;
   align-items: center;
   justify-content: center;
@@ -2621,6 +2623,42 @@
 .ad-tabbar__item[aria-current='page'] {
   border-top-color: var(--color-primary);
   color: var(--color-primary);
+}
+
+/* A tab label is capped at 12 characters in the translation workspace. Anything longer is clipped, never wrapped (S184). */
+.ad-tabbar__item span {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* The ring sits inside the item because the bar touches the screen edges (R37). */
+.ad-tabbar__item:focus-visible {
+  outline: 3px solid var(--color-focus-ring);
+  outline-offset: -3px;
+}
+
+.ad-tabbar__item:active {
+  background: var(--color-surface-sunken);
+}
+
+@media (hover: hover) {
+  .ad-tabbar__item:hover {
+    background: var(--color-surface-sunken);
+  }
+}
+
+/* A phone on its side: 44 px tab bar, label beside the icon, 48 px header (S185). */
+@media (orientation: landscape) and (max-height: 500px) {
+  :root {
+    --tabbar-height: var(--touch-target);
+    --nav-height: 3rem;
+  }
+  .ad-tabbar__item {
+    flex-direction: row;
+    gap: var(--space-2);
+  }
 }
 
 @media (min-width: 960px) {

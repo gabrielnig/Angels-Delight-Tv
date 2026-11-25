@@ -32,6 +32,25 @@ function make(minPercent = 80) {
   return { service, audit, store, bump, ui: () => ui };
 }
 
+describe('TranslationService tab label cap (L12)', () => {
+  it('saves a tab label over 12 characters and returns the length warning', async () => {
+    const { service, store } = make();
+    const result = await service.save(editor, 'yo', 'nav.home', 'Ilé ìkínni tó gùn jù');
+    expect(result.warnings).toContain(
+      'is over 12 characters, so the tab bar will cut it with an ellipsis',
+    );
+    expect((await store.list('yo'))[0]).toMatchObject({ key: 'nav.home', status: 'draft' });
+  });
+
+  it('gives no tab warning to a short tab label or to another key', async () => {
+    const { service } = make();
+    expect((await service.save(editor, 'yo', 'nav.home', 'Ilé')).warnings).toEqual([]);
+    expect(
+      (await service.save(editor, 'yo', 'player.play', 'Ṣe ere ní ọ̀nà tó gùn jù lọ')).warnings,
+    ).not.toContain('is over 12 characters, so the tab bar will cut it with an ellipsis');
+  });
+});
+
 describe('TranslationService', () => {
   it('save creates a draft with the English hash', async () => {
     const { service, store } = make();
@@ -43,7 +62,9 @@ describe('TranslationService', () => {
   it('an Editor can save but not approve', async () => {
     const { service } = make();
     await service.save(editor, 'yo', 'nav.home', 'Ilé');
-    await expect(service.approve(editor, 'yo', 'nav.home')).rejects.toThrow(/permission|forbidden/i);
+    await expect(service.approve(editor, 'yo', 'nav.home')).rejects.toThrow(
+      /permission|forbidden/i,
+    );
   });
   it('approve needs Admin and records reviewer and time', async () => {
     const { service, store } = make();
@@ -56,7 +77,13 @@ describe('TranslationService', () => {
   });
   it('approving a row with a validation error is refused', async () => {
     const { service, store } = make();
-    await store.upsert('yo', { key: 'nav.browse', text: 'Wá', status: 'draft', sourceHash: null, updatedBy: 'e' });
+    await store.upsert('yo', {
+      key: 'nav.browse',
+      text: 'Wá',
+      status: 'draft',
+      sourceHash: null,
+      updatedBy: 'e',
+    });
     await expect(service.approve(admin, 'yo', 'nav.browse')).rejects.toThrow(/placeholder/);
   });
   it('save refuses invalid text with the validator message', async () => {
@@ -68,10 +95,18 @@ describe('TranslationService', () => {
   it('bulk approve reports count and skips rows with errors', async () => {
     const { service, store } = make();
     await service.save(editor, 'yo', 'nav.home', 'Ilé');
-    await store.upsert('yo', { key: 'nav.browse', text: 'Wá', status: 'draft', sourceHash: null, updatedBy: 'e' });
+    await store.upsert('yo', {
+      key: 'nav.browse',
+      text: 'Wá',
+      status: 'draft',
+      sourceHash: null,
+      updatedBy: 'e',
+    });
     const r = await service.approveMany(admin, 'yo', ['nav.home', 'nav.browse']);
     expect(r.approved).toBe(1);
-    expect(r.skipped).toEqual([{ key: 'nav.browse', reason: expect.stringMatching(/placeholder/) }]);
+    expect(r.skipped).toEqual([
+      { key: 'nav.browse', reason: expect.stringMatching(/placeholder/) },
+    ]);
   });
   it('publish is refused below the threshold', async () => {
     const { service } = make();
@@ -90,14 +125,22 @@ describe('TranslationService', () => {
   });
   it('super admin override publishes below the threshold and is audited', async () => {
     const { service, audit, ui } = make();
-    await expect(service.publish(admin, 'yo', { override: { reason: 'Demo day' } })).rejects.toThrow();
+    await expect(
+      service.publish(admin, 'yo', { override: { reason: 'Demo day' } }),
+    ).rejects.toThrow();
     await service.publish(superAdmin, 'yo', { override: { reason: 'Demo day' } });
     expect(ui()).toContain('yo');
-    expect(audit.some((e) => e.action === 'i18n.translation.override_threshold' && e.extra?.reason === 'Demo day')).toBe(true);
+    expect(
+      audit.some(
+        (e) => e.action === 'i18n.translation.override_threshold' && e.extra?.reason === 'Demo day',
+      ),
+    ).toBe(true);
   });
   it('an override needs a reason', async () => {
     const { service } = make();
-    await expect(service.publish(superAdmin, 'yo', { override: { reason: ' ' } })).rejects.toThrow(/reason/i);
+    await expect(service.publish(superAdmin, 'yo', { override: { reason: ' ' } })).rejects.toThrow(
+      /reason/i,
+    );
   });
   it('every write records an audit event and bumps the cache version', async () => {
     const { service, audit, bump } = make(0);
@@ -123,7 +166,9 @@ describe('TranslationService', () => {
     await service.importCsv(editor, 'yo', csv);
     expect((await store.list('yo'))[0]).toMatchObject({ key: 'nav.home', status: 'in_review' });
     expect(audit.map((e) => e.action)).toEqual(['i18n.translation.import']);
-    await expect(service.importCsv({ accountId: 'v', role: 'viewer' }, 'yo', csv)).rejects.toThrow(/permission/);
+    await expect(service.importCsv({ accountId: 'v', role: 'viewer' }, 'yo', csv)).rejects.toThrow(
+      /permission/,
+    );
   });
 
   it('exports csv and json for a locale', async () => {
@@ -136,7 +181,14 @@ describe('TranslationService', () => {
 
 describe('loadDrafts (sample drafts pending native review)', () => {
   const drafts = (locale: string) =>
-    locale === 'yo' ? ({ 'nav.home': 'Ilé', 'nav.browse': 'Ṣàwárí {name}', 'player.play': 'Ṣeré', 'nope.key': 'x' } as never) : {};
+    locale === 'yo'
+      ? ({
+          'nav.home': 'Ilé',
+          'nav.browse': 'Ṣàwárí {name}',
+          'player.play': 'Ṣeré',
+          'nope.key': 'x',
+        } as never)
+      : {};
 
   function withDrafts() {
     const base = make();
@@ -148,7 +200,11 @@ describe('loadDrafts (sample drafts pending native review)', () => {
       baseline: () => ({}),
       drafts,
       audit: async (e) => void audit.push(e),
-      settings: { uiLanguages: async () => ['en'], setUiLanguages: async () => {}, minPercent: async () => 80 },
+      settings: {
+        uiLanguages: async () => ['en'],
+        setUiLanguages: async () => {},
+        minPercent: async () => 80,
+      },
     });
     return { ...base, service, store, audit };
   }
@@ -172,9 +228,14 @@ describe('loadDrafts (sample drafts pending native review)', () => {
 
   it('needs an editor, records an audit event, and is a no-op for a locale without drafts', async () => {
     const { service, audit } = withDrafts();
-    await expect(service.loadDrafts({ accountId: 'x', role: 'analyst' as never }, 'yo')).rejects.toThrow();
+    await expect(
+      service.loadDrafts({ accountId: 'x', role: 'analyst' as never }, 'yo'),
+    ).rejects.toThrow();
     await service.loadDrafts(editor, 'yo');
-    expect(audit.at(-1)).toMatchObject({ action: 'i18n.translation.import', targetId: 'yo:drafts:3' });
+    expect(audit.at(-1)).toMatchObject({
+      action: 'i18n.translation.import',
+      targetId: 'yo:drafts:3',
+    });
     expect(await service.loadDrafts(editor, 'ig')).toMatchObject({ added: 0, skipped: 0 });
   });
 });

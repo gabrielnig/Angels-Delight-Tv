@@ -177,3 +177,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 - On phones the account icon opens a bottom sheet instead of a popover: Sign in (the one filled button), Create account, a Kids mode switch with its help line and Help for a visitor, and the profile name, kind and the usual menu for a signed in viewer. It traps focus, closes with Escape or Close, and gives focus back to the icon. Wider screens keep the popover. Decision D-378.
 
+### Lane L12 mobile header, part 3: the tab bar
+
+- Tab labels longer than 12 characters get a warning in the translation workspace (the four `nav` tab keys, on save and on import) and are clipped with an ellipsis in the bar. The focus ring sits inside each tab, pressed and hover states are added, and a phone in landscape gets a 44 px bar with the label beside the icon. Width tested at 320, 360, 414 and landscape with long Yoruba, Igbo and Hausa labels. Decision D-380.
+
