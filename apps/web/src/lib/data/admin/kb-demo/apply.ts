@@ -2,6 +2,7 @@ import type { AdminStore } from '../store';
 import { videoStub } from '../video-rules';
 import type { VideoRecord } from '../types';
 import { DEMO_DATASET, type DemoDataset } from './dataset';
+import { applyTroubleStates } from './trouble';
 
 const HOUR = 3_600_000;
 const DAY = 24 * HOUR;
@@ -101,7 +102,7 @@ export function applyDemo(
   // Monetization examples, all marked as test. The sponsor and donation screens read these collections.
   store.sponsors = ds.sponsors.map((s) => ({ ...s }));
   store.donations = ds.donations.map((d) => ({ ...d }));
-  return store;
+  return applyTroubleStates(store, now);
 }
 
 type DemoStaffRole = 'editor' | 'admin' | 'super_admin';
