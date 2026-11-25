@@ -439,3 +439,15 @@ Key compromise specifics: playback token or media URL secret leak means rotate t
 | R-4 | Hand-written auth | Mitigated by tests, independent scan, minimal surface. |
 | R-5 | In-memory DEK cache delays shredding on other processes up to 5 minutes | Accepted. |
 | R-6 | CPU-bound hashing and encoding on the same VPS | Mitigated by concurrency caps and limits. |
+
+## 19. Knowledge base recording rules
+
+The recorder (`scripts/kb-recorder`) drives a real browser through the admin screens, so it follows these rules.
+
+- Demo only. It runs against a fixture or demo stack with the fake dataset, never production or a real database. The origin guard accepts only localhost, 127.0.0.1, [::1] or the reserved `KB_DEMO_HOST`. The database guard accepts only `ad_kb` and `ad_kb_keys`. Both refuse before any browser opens.
+- The demo reset route (`/api/kb-demo/reset`) exists only when `KB_DEMO=on`, needs the `x-kb-demo` header and answers only local requests.
+- `bypassCSP` is set on the recording browser context only, because the overlay needs inline styles. It is never set in the app and never pointed at a real site.
+- Every capture is scanned. A real looking email, a key or token shape, a phone number or a public IP fails the capture, and the finding is masked in anything that is kept.
+- Demo accounts use reserved example domains. CI for the recorder uses no secrets and no repository variables.
+- Published media sits in private object storage under `help/<release>/` and is served only to signed in staff by the help media route.
+

@@ -7,6 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 ## [Unreleased]
 
 ### Added
+- Lane KB-H slice 9 (M50): harness docs. Story M50-S30, the module note, recording rules in SECURITY section 19, the spike marked superseded and the harness section of the lane note finished.
 - Lane KB-H slice 8 (M50): fact checker. `pnpm kb:fact-check` re-runs a help article from only its step list and role on a clean demo stack and reports the first step that cannot be followed, with the labels on screen. Steps that need a file are skipped as manual.
 - Lane KB-H slice 7 (M50): episode coverage tests. Every admin route, menu item, permission action, setting and status needs an episode or an entry on the known gaps list (`scripts/kb-recorder/coverage-gaps.json`), failing with a named list. The list can only shrink.
 - Lane KB-H slice 6 (M50): CI for the knowledge base. `kb-verify.yml` checks only the affected episodes on pull requests that touch admin files, `kb-nightly.yml` records everything and compares lengths and screenshots, with a screenshot diff (`pnpm kb:shots-diff`), `pnpm kb:update`, `pnpm kb:steps`, `pnpm kb:publish`, a `kb-stack.sh start` mode and exit codes that separate content failures from infrastructure failures. No secrets.

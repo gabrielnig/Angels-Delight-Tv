@@ -1,6 +1,6 @@
 # Admin knowledge base recording spike
 
-Status: works on this sandbox. Captioned screen recordings of the real admin screens, desktop 1280x720 and mobile 390x844, are produced by one command from the fixture build, with a visible cursor, click ripple, eased scrolling, burned in captions, a separate .vtt, and numbered annotated screenshots with automatic email redaction.
+Status: superseded by the production harness (`scripts/kb-recorder`, usage in `docs/lanes/L14-build.md`, Harness section). Kept as the record of what the spike proved. Original status: works on this sandbox. Captioned screen recordings of the real admin screens, desktop 1280x720 and mobile 390x844, are produced by one command from the fixture build, with a visible cursor, click ripple, eased scrolling, burned in captions, a separate .vtt, and numbered annotated screenshots with automatic email redaction.
 
 The plan for the knowledge base itself is written elsewhere. This note only proves the recording step and recommends a pipeline.
 

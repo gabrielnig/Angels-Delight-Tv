@@ -238,4 +238,4 @@ A failure names the step, why, and the labels on screen at that moment.
 
 ### Status
 
-Slices 1 to 8 done (framework, demo stack, scanner and annotation, caption tools, pipeline commands, CI, episode coverage, fact checker). Later slices append here.
+Slices 1 to 9 done (framework, demo stack, scanner and annotation, caption tools, pipeline commands, CI, episode coverage, fact checker, docs). Open: the real Postgres mode (`pnpm kb:stack real`) is written but not yet run end to end, and content lanes still own the episodes that empty the coverage gaps file.
