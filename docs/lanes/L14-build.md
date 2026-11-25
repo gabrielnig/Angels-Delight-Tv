@@ -176,8 +176,27 @@ Recording and checking run only against the isolated demo stack (D-362, D-379). 
 
 ### Commands
 
-- `pnpm kb:record --episode <id> --profile desktop,mobile --out .kb-out` records one episode against the demo stack (see Demo stack). If the dev server loops on page reloads after many edits, stop it and delete `apps/web/.next/dev`.
+Run from the repo root with the demo stack up (`pnpm kb:stack fixture 3141` in another terminal, `KB_BASE_URL` defaults to `http://localhost:3141`).
+
+| Command | What it does |
+|---|---|
+| `pnpm kb:record --episode D02` | Records one episode (a comma list works: `--episode D02,D03`) |
+| `pnpm kb:record --path daily` | Every episode of a learning path: `start`, `daily`, `weekly`, `setup`, `money`, `safety`, `troubleshooting` (from the first letter of the id, or the episode `path` field) |
+| `pnpm kb:record --changed` | Only episodes affected by changed files: `dependsOn` prefixes, the episode's own file, or everything when the harness changed. `--base origin/main` (default) or `--files a,b` |
+| `pnpm kb:record --all` | Everything |
+| `pnpm kb:verify <selection>` | Locator check only: plays each episode with no video and no pacing, as the episode role, and fails naming the episode, the step, the caption and the labels on screen. `--report file.json` writes the failures |
+| `pnpm kb:record --list --changed` | Prints the selected ids and does nothing else |
+
+Options: `--profile desktop,mobile` (default: the episode `viewports`), `--out .kb-out`, `--run run1`, `--pace 1` (slower: 1.5; under 1 skips the caption timing lint), `--no-warm`, `--no-reset`, `--no-shots`, `--min-seconds 10 --max-seconds 240 --max-mb 5` (content runs use `--min-seconds 60`), `--compare previous/manifest.json` (fails when a length moved by more than 10 percent or an episode is missing), `--base-url`.
+
+Per episode and profile, three passes: a silent warm up (dev server compile), a screenshot pass at device scale 2 (desktop) or 3 (phone) saved as WebP, then the video pass at scale 1. Each pass starts with a demo reset and the pinned clock. Output layout `.kb-out/<run>/<id>/<profile>/`:
+
+- `<id>-<profile>.mp4` (and `-480.mp4` on desktop), `.poster.jpg`, `.vtt`, `.transcript.txt`, `.chapters.vtt`, `.ass`, `.raw.webm` (clean capture, no captions), `meta.json` (timings, problems)
+- `shots/<id>-<nn>-<name>-<profile>[-dark].webp`
+- `.kb-out/<run>/manifest.json`, schema 1, consumed by the platform: per episode `id`, `title`, `role`, `path`, `locale`, and per profile `video`, `renditions[{height,file,bytes}]`, `vtt`, `transcript`, `chapters`, `poster`, `width`, `height`, `bytes`, `durationMs`, `shots[{step,file,alt,bytes}]`. All paths are relative to the manifest. A `--changed` run merges into an existing manifest of the same run.
+
+Checks per video (ffprobe): H.264, yuv420p, no audio stream, the profile size, length within the limits, size under the limit. A failing episode is not published: work happens in `<profile>.work` and replaces the old folder only after every check passed, so a failed recording leaves the previous files untouched.
 
 ### Status
 
-Slices 1 (episode framework), 2 (demo stack), 3 (redaction scanner, annotation, WebP) and 4 (caption tools) done. Later slices append here.
+Slices 1 to 5 done (framework, demo stack, scanner and annotation, caption tools, pipeline commands). Later slices append here.

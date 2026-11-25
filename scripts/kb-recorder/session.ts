@@ -186,6 +186,14 @@ export class Session {
       if (box) clip = cropRect(box, view, 16, { minWidth: view.width / 3, minHeight: 160 });
     }
     if (spec.scheme) await this.page.emulateMedia({ colorScheme: spec.scheme });
+    // The pointer, ripple and amber box belong in the video, not in a still picture.
+    await this.page.evaluate(() => {
+      for (const el of Array.from(
+        document.querySelectorAll('.__kb-cursor, .__kb-hl, .__kb-ripple'),
+      )) {
+        (el as HTMLElement).style.visibility = 'hidden';
+      }
+    });
     await this.page.evaluate((s) => window.__kb.annotate(s), shapes);
     const file = `${this.shotsDir}/${name}.png`;
     await this.page.screenshot({
@@ -194,7 +202,14 @@ export class Session {
       animations: 'disabled',
       caret: 'hide',
     });
-    await this.page.evaluate(() => document.getElementById('__kb-annot')?.remove());
+    await this.page.evaluate(() => {
+      document.getElementById('__kb-annot')?.remove();
+      for (const el of Array.from(
+        document.querySelectorAll('.__kb-cursor, .__kb-hl, .__kb-ripple'),
+      )) {
+        (el as HTMLElement).style.visibility = '';
+      }
+    });
     if (spec.scheme) await this.page.emulateMedia({ colorScheme: 'light' });
     return file;
   }

@@ -62,6 +62,8 @@ export interface Episode {
   covers?: { settings?: string[]; statuses?: string[]; nav?: string[] };
   /** Source path prefixes the procedure depends on. `--changed` runs the episode when one of them changed. */
   dependsOn?: string[];
+  /** Learning path. Default: from the first letter of the id (S, D, W, C, M, K, T). */
+  path?: string;
   /** Profiles to record. Default desktop only. */
   viewports?: Array<'desktop' | 'mobile'>;
   /** The article that follows, shown on the end card: "D03 Upload many videos". */

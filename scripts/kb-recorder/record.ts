@@ -1,109 +1,186 @@
 /**
- * KB recorder: records a captioned how-to of the admin screens.
- *   pnpm exec tsx scripts/kb-recorder/record.ts --episode home-preview --profile desktop,mobile --out .kb-out
- * See docs/spikes/kb-recording.md for the full setup.
+ * KB recorder CLI (lane L14). Examples:
+ *   pnpm kb:record --episode H02-videos-list           one episode, desktop and phone as the episode asks
+ *   pnpm kb:record --path daily                        every episode of a learning path
+ *   pnpm kb:record --changed                           only episodes affected by changed files
+ *   pnpm kb:record --all                               everything
+ *   pnpm kb:verify --changed                           locator check only, no video, for pull requests
+ * Output: .kb-out/<run>/<id>/<profile>/..., and .kb-out/<run>/manifest.json for the platform.
+ * See docs/lanes/L14-build.md for the stack and docs/spikes/kb-recording.md for background.
  */
-import { mkdir, rename, rm, writeFile } from 'node:fs/promises';
-import { join, resolve } from 'node:path';
+import { readFile, writeFile } from 'node:fs/promises';
+import { resolve } from 'node:path';
 import { parseArgs } from 'node:util';
-import { audienceOf, validateEpisode } from './episode';
-import { produceOutputs } from './produce';
-import { PROFILES, type Profile } from './profiles';
-import { resetDemo } from './demo/client';
 import { assertAllowedOrigin } from './demo/origin-guard';
-import { loadEpisode } from './registry';
-import { playEpisode } from './runner';
+import { validateEpisode } from './episode';
+import { changedFiles } from './git-changes';
+import { compareManifests, type Manifest, type ManifestProfile } from './manifest';
+import {
+  manifestEntry,
+  recordProfile,
+  verifyProfile,
+  writeManifest,
+  CheckFailed,
+} from './pipeline';
+import { PROFILES, type Profile } from './profiles';
+import { loadAllEpisodes } from './registry';
+import { selectEpisodes } from './select';
 
 const { values } = parseArgs({
   options: {
     episode: { type: 'string' },
-    profile: { type: 'string', default: 'desktop,mobile' },
+    path: { type: 'string' },
+    changed: { type: 'boolean', default: false },
+    all: { type: 'boolean', default: false },
+    base: { type: 'string', default: 'origin/main' },
+    files: { type: 'string' },
+    profile: { type: 'string' },
     out: { type: 'string', default: '.kb-out' },
-    'base-url': { type: 'string', default: process.env.KB_BASE_URL ?? 'http://localhost:3113' },
+    run: { type: 'string', default: 'run1' },
+    'base-url': { type: 'string', default: process.env.KB_BASE_URL ?? 'http://localhost:3141' },
     'no-warm': { type: 'boolean', default: false },
     'no-reset': { type: 'boolean', default: false },
+    'no-shots': { type: 'boolean', default: false },
+    check: { type: 'boolean', default: false },
+    report: { type: 'string' },
     pace: { type: 'string', default: '1' },
-    run: { type: 'string', default: 'run1' },
+    'min-seconds': { type: 'string', default: '10' },
+    'max-seconds': { type: 'string', default: '240' },
+    'max-mb': { type: 'string', default: '5' },
+    compare: { type: 'string' },
+    list: { type: 'boolean', default: false },
   },
 });
 
-/** Resets the demo data so one episode never sees what another saved. Returns the pinned browser clock. */
-async function freshDemo(baseURL: string): Promise<number | undefined> {
-  if (values['no-reset']) return undefined;
-  return (await resetDemo(baseURL)).now;
-}
-
-async function main() {
-  if (!values.episode) throw new Error('Pass --episode <id>');
-  const episode = await loadEpisode(values.episode);
-  const problems = validateEpisode(episode);
-  if (problems.length) throw new Error(`Episode ${episode.id}: ${problems.join('; ')}`);
+async function main(): Promise<void> {
   const baseURL = values['base-url']!;
   assertAllowedOrigin(baseURL);
-  const pace = Number(values.pace);
-  const profiles = values.profile!.split(',').map((n) => {
-    const p = PROFILES[n.trim() as Profile['name']];
-    if (!p) throw new Error(`Unknown profile ${n}`);
-    return p;
-  });
-  for (const profile of profiles) {
-    const dir = resolve(values.out!, values.run!, episode.id, profile.name);
-    await rm(dir, { recursive: true, force: true });
-    await mkdir(dir, { recursive: true });
-    const started = Date.now();
-    if (!values['no-warm']) {
-      // Next dev compiles each route on first visit, which shows up as blank frames. One silent pass warms them.
-      const clockMs = await freshDemo(baseURL);
-      await playEpisode(episode, profile, { baseURL, shotsDir: null, pace: 0.2, clockMs });
+  const episodes = await loadAllEpisodes();
+  for (const e of episodes) {
+    const problems = validateEpisode(e);
+    if (problems.length) throw new Error(`Episode ${e.id}: ${problems.join('; ')}`);
+  }
+  const files = values.changed
+    ? values.files
+      ? values.files.split(',')
+      : await changedFiles(values.base)
+    : [];
+  const chosen = selectEpisodes(
+    episodes,
+    { episode: values.episode, path: values.path, changed: values.changed, all: values.all },
+    files,
+  );
+  if (values.list) {
+    for (const e of chosen) console.log(e.id);
+    return;
+  }
+  if (chosen.length === 0) {
+    console.log('No episode is affected, nothing to do.');
+    return;
+  }
+  const profilesFor = (e: (typeof chosen)[number]): Profile[] =>
+    (values.profile
+      ? values.profile.split(',').map((n) => n.trim())
+      : (e.viewports ?? ['desktop'])
+    ).map((n) => {
+      const p = PROFILES[n as Profile['name']];
+      if (!p) throw new Error(`Unknown profile ${n}`);
+      return p;
+    });
+
+  if (values.check) {
+    const failures: Array<{
+      episode: string;
+      profile: string;
+      step: number;
+      caption: string;
+      message: string;
+    }> = [];
+    for (const e of chosen) {
+      for (const p of profilesFor(e)) {
+        const r = await verifyProfile(e, p, { baseURL, reset: !values['no-reset'] });
+        console.log(
+          `${r.ok ? 'ok  ' : 'FAIL'} ${e.id} ${p.name}${r.ok ? '' : ` step ${r.step}: ${r.message}`}`,
+        );
+        if (!r.ok)
+          failures.push({
+            episode: e.id,
+            profile: p.name,
+            step: r.step,
+            caption: r.caption,
+            message: r.message,
+          });
+      }
     }
-    const warmMs = Date.now() - started;
-    const recStart = Date.now();
-    const clockMs = await freshDemo(baseURL);
-    const { timings, totalMs, videoPath, skips } = await playEpisode(episode, profile, {
-      baseURL,
-      clockMs,
-      videoDir: join(dir, 'tmp'),
-      shotsDir: join(dir, 'shots'),
-      pace,
-    });
-    if (!videoPath) throw new Error('No video was produced');
-    const raw = join(dir, `${episode.id}-${profile.name}.raw.webm`);
-    await rename(videoPath, raw);
-    await rm(join(dir, 'tmp'), { recursive: true, force: true });
-    const burnStart = Date.now();
-    const out = await produceOutputs({
-      id: episode.id,
-      title: episode.title,
-      audience: audienceOf(episode.role),
-      profile,
-      raw,
-      outDir: dir,
-      totalMs,
-      timings,
-      skips,
-      next: episode.next,
-    });
-    if (out.cueProblems.length)
-      throw new Error(`Caption style problems: ${out.cueProblems.join('; ')}`);
-    const { mp4, vtt } = out;
-    const meta = {
-      episode: episode.id,
-      profile: profile.name,
-      viewport: `${profile.width}x${profile.height}`,
-      warmMs,
-      recordMs: Date.now() - recStart,
-      totalMs,
-      burnMs: Date.now() - burnStart,
-      durationMs: out.durationMs,
-      cues: out.cues.length,
-    };
-    await writeFile(join(dir, 'meta.json'), JSON.stringify(meta, null, 2) + '\n');
-    console.log(JSON.stringify(meta));
-    console.log(`  ${mp4}\n  ${vtt}`);
+    if (values.report)
+      await writeFile(
+        resolve(values.report),
+        JSON.stringify({ checked: chosen.map((e) => e.id), failures }, null, 2) + '\n',
+      );
+    if (failures.length) {
+      console.error(
+        `${failures.length} episode check(s) failed. A screen changed, so the article and video are out of date.`,
+      );
+      process.exit(1);
+    }
+    return;
+  }
+
+  const options = {
+    baseURL,
+    out: values.out!,
+    run: values.run!,
+    pace: Number(values.pace),
+    warm: !values['no-warm'],
+    reset: !values['no-reset'],
+    shots: !values['no-shots'],
+    limits: {
+      minSeconds: Number(values['min-seconds']),
+      maxSeconds: Number(values['max-seconds']),
+      maxBytes: Number(values['max-mb']) * 1024 * 1024,
+    },
+  };
+  const entries = [];
+  const failed: string[] = [];
+  for (const e of chosen) {
+    const profiles: ManifestProfile[] = [];
+    for (const p of profilesFor(e)) {
+      try {
+        const r = await recordProfile(e, p, options);
+        profiles.push(r.entry);
+        console.log(
+          JSON.stringify({
+            episode: e.id,
+            profile: p.name,
+            durationMs: r.entry.durationMs,
+            bytes: r.entry.bytes,
+            shots: r.entry.shots.length,
+            ...r.timings,
+          }),
+        );
+      } catch (err) {
+        failed.push(
+          `${e.id} ${p.name}: ${err instanceof CheckFailed ? err.problems.join('; ') : err instanceof Error ? err.message : String(err)}`,
+        );
+      }
+    }
+    if (profiles.length) entries.push(manifestEntry(e, profiles));
+  }
+  const manifest = await writeManifest({ out: options.out, run: options.run, episodes: entries });
+  console.log(
+    `manifest: ${resolve(options.out, options.run, 'manifest.json')} (${manifest.episodes.length} episodes)`,
+  );
+  if (values.compare) {
+    const prev = JSON.parse(await readFile(resolve(values.compare), 'utf8')) as Manifest;
+    failed.push(...compareManifests(prev, manifest));
+  }
+  if (failed.length) {
+    console.error(`Problems:\n${failed.map((f) => `  ${f}`).join('\n')}`);
+    process.exit(1);
   }
 }
 
 main().catch((e) => {
-  console.error(e);
+  console.error(e instanceof Error ? e.message : e);
   process.exit(1);
 });
