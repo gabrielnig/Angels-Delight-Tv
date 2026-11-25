@@ -76,6 +76,8 @@ export function ViewerChrome({
   useSearchShortcut(router.push);
   // Title pages have a Back button and their own sticky Play bar instead of the tab bar (S18).
   const detail = pathname.startsWith('/title/');
+  // The player draws its own chrome: no header and no tab bar on /watch (S185).
+  const watching = pathname.startsWith('/watch');
 
   const menu: MenuItem[] = [
     { label: msg('nav.menu.switchProfile'), href: '/profiles?switch=1' },
@@ -110,27 +112,37 @@ export function ViewerChrome({
           data-kids={kids ? 'true' : undefined}
           data-skin={skin === 'soft' ? 'soft' : undefined}
         >
-          <TopNav
-            brand={{ name: platformName, href: '/', logoUrl }}
-            links={skin === 'soft' ? softLinks(msg) : links(msg)}
-            currentPath={pathname}
-            profileName={profileName}
-            profileAvatarId={profileAvatarId}
-            menu={menu}
-            overHero={pathname === '/'}
-            kids={kids}
-            skin={skin}
-            trailing={
-              kids ? undefined : (
-                <>
-                  {languagePicker}
-                  <ViewerBell profileId={profileId} />
-                </>
-              )
-            }
-            onExitKids={() => setExitOpen(true)}
-            onBack={detail ? () => router.back() : undefined}
-          />
+          {watching ? null : (
+            <TopNav
+              brand={{ name: platformName, href: '/', logoUrl }}
+              links={skin === 'soft' ? softLinks(msg) : links(msg)}
+              currentPath={pathname}
+              profileName={profileName}
+              profileAvatarId={profileAvatarId}
+              menu={menu}
+              overHero={pathname === '/'}
+              kids={kids}
+              skin={skin}
+              trailing={
+                kids ? undefined : (
+                  <>
+                    {languagePicker}
+                    <ViewerBell profileId={profileId} />
+                  </>
+                )
+              }
+              onExitKids={() => setExitOpen(true)}
+              onBack={detail ? () => router.back() : undefined}
+              hasBell={!kids}
+              kidsLabel={msg('nav.kidsBadge')}
+              searchLabel={msg('nav.search')}
+              profileMenuLabel={
+                kids
+                  ? msg('nav.profileMenuKids', { name: profileName })
+                  : msg('nav.profileMenu', { name: profileName })
+              }
+            />
+          )}
           <main id="main" className="web-main" tabIndex={-1}>
             {children}
           </main>
@@ -140,7 +152,7 @@ export function ViewerChrome({
             links={footerLinks}
             supportEmail={skin === 'soft' ? supportEmail : undefined}
           />
-          {detail ? null : <BottomTabBar tabs={tabs(msg)} currentPath={pathname} />}
+          {detail || watching ? null : <BottomTabBar tabs={tabs(msg)} currentPath={pathname} />}
           {kids ? (
             <KidsExitDialog
               open={exitOpen}

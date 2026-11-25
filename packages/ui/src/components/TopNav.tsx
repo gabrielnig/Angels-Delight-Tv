@@ -37,6 +37,13 @@ export function TopNav({
   onBack,
   skin = 'default',
   trailing,
+  guest = false,
+  accountLabel = 'Account menu',
+  kidsLabel = 'Kids',
+  hasBell = false,
+  guestActions,
+  profileMenuLabel,
+  searchLabel = 'Search',
 }: {
   brand: { name: string; href: string; logoUrl?: string };
   links: NavLink[];
@@ -56,6 +63,18 @@ export function TopNav({
   skin?: 'default' | 'soft';
   /** Extra tool shown before the profile menu, such as the language picker. Not shown on a kids profile. */
   trailing?: ReactNode;
+  /** A visitor without an account: the last slot is a person icon, not an avatar (L12). The menu holds Sign in and Create account. */
+  guest?: boolean;
+  accountLabel?: string;
+  /** The word beside the logo mark on a Kids bar, so Kids never depends on colour alone. */
+  kidsLabel?: string;
+  /** A bell is in `trailing`: the name gives way sooner on narrow phones. */
+  hasBell?: boolean;
+  /** Sign in and Create account buttons for the wide bar. Phones hide them, the account icon carries both. */
+  guestActions?: ReactNode;
+  /** Accessible name of the profile button, already translated and with the name filled in. */
+  profileMenuLabel?: string;
+  searchLabel?: string;
 }) {
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
@@ -118,12 +137,13 @@ export function TopNav({
   }
 
   // A Kids profile keeps only Switch profile and Exit kids mode (M35-S02).
-  const items: MenuItem[] = kids
-    ? [
-        { label: 'Switch profile', href: switchHref },
-        { label: 'Exit kids mode', onSelect: onExitKids },
-      ]
-    : menu;
+  const items: MenuItem[] =
+    kids && !guest
+      ? [
+          { label: 'Switch profile', href: switchHref },
+          { label: 'Exit kids mode', onSelect: onExitKids },
+        ]
+      : menu;
   const solid = !overHero || scrolled;
 
   return (
@@ -140,6 +160,9 @@ export function TopNav({
         data-hero={overHero ? 'true' : undefined}
         data-back={onBack ? 'true' : undefined}
         data-skin={skin === 'soft' ? 'soft' : undefined}
+        data-bell={hasBell ? 'true' : undefined}
+        data-kids={kids ? 'true' : undefined}
+        data-guest={guest ? 'true' : undefined}
       >
         <div className="ad-nav__inner">
           {onBack ? (
@@ -147,7 +170,11 @@ export function TopNav({
               <Icon name="back" size={24} />
             </button>
           ) : null}
-          <Link href={brand.href} className="ad-nav__brand" aria-label={`${brand.name}, home`}>
+          <Link
+            href={brand.href}
+            className="ad-nav__brand"
+            aria-label={kids ? brand.name : `${brand.name}, home`}
+          >
             {brand.logoUrl ? (
               <img src={brand.logoUrl} alt="" height={32} />
             ) : (
@@ -155,8 +182,9 @@ export function TopNav({
                 <Icon name="play" size={16} filled />
               </span>
             )}
-            <span className="ad-nav__name">{brand.name}</span>
+            {kids ? null : <span className="ad-nav__name">{brand.name}</span>}
           </Link>
+          {kids ? <span className="ad-nav__kids">{kidsLabel}</span> : null}
 
           {kids ? null : (
             <nav aria-label="Main" className="ad-nav__links">
@@ -177,21 +205,40 @@ export function TopNav({
           )}
 
           <div className="ad-nav__tools">
-            <Link href={searchHref} className="ad-iconbtn" aria-label="Search" data-variant="plain">
+            <Link
+              href={searchHref}
+              className="ad-iconbtn"
+              aria-label={searchLabel}
+              data-variant="plain"
+            >
               <Icon name="search" size={24} />
             </Link>
             {kids ? null : trailing}
+            {guest && guestActions ? <div className="ad-nav__guest">{guestActions}</div> : null}
             <div className="ad-nav__account">
               <button
                 ref={triggerRef}
                 type="button"
                 className="ad-nav__avatar"
-                aria-label={skin === 'soft' ? undefined : `Profile menu, ${profileName}`}
+                aria-label={
+                  guest
+                    ? accountLabel
+                    : skin === 'soft'
+                      ? undefined
+                      : (profileMenuLabel ?? `Profile menu, ${profileName}`)
+                }
                 aria-haspopup="menu"
                 aria-expanded={open}
+                data-guest={guest ? 'true' : undefined}
                 onClick={() => setOpen((value) => !value)}
               >
-                <Avatar name={profileName} avatarId={profileAvatarId} size={32} />
+                {guest ? (
+                  <span className="ad-nav__person" aria-hidden="true">
+                    <Icon name="user" size={18} />
+                  </span>
+                ) : (
+                  <Avatar name={profileName} avatarId={profileAvatarId} size={32} />
+                )}
                 {skin === 'soft' ? (
                   <>
                     <span className="ad-nav__avatar-name">{profileName}</span>

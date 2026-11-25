@@ -381,3 +381,49 @@ describe('soft skin and support footer (S27 to S31)', () => {
     );
   });
 });
+
+describe('TopNav phone header (L12, S183)', () => {
+  const base = {
+    brand: { name: 'Angels Delight TV', href: '/' },
+    links,
+    currentPath: '/',
+    profileName: 'Ada',
+    menu,
+  };
+
+  it('a guest gets one account icon and no avatar letter, with the same tool slots as a signed in bar', () => {
+    render(<TopNav {...base} guest accountLabel="Account menu" />);
+    const account = screen.getByRole('button', { name: 'Account menu' });
+    expect(account).toHaveAttribute('aria-haspopup', 'menu');
+    expect(account).toHaveAttribute('data-guest', 'true');
+    expect(account.textContent).toBe('');
+    expect(screen.getByRole('link', { name: 'Search' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Profile menu/ })).toBeNull();
+  });
+
+  it('desktop guest actions live in their own container that phones hide', () => {
+    render(<TopNav {...base} guest guestActions={<a href="/sign-in">Sign in</a>} />);
+    const actions = screen.getByRole('link', { name: 'Sign in' }).closest('.ad-nav__guest');
+    expect(actions).not.toBeNull();
+  });
+
+  it('a kids bar keeps the mark and a Kids word badge and drops the name', () => {
+    render(<TopNav {...base} kids kidsLabel="Kids" />);
+    expect(screen.getByText('Kids')).toHaveClass('ad-nav__kids');
+    expect(document.querySelector('.ad-nav__name')).toBeNull();
+    expect(screen.getByRole('link', { name: 'Angels Delight TV' })).toHaveAttribute('href', '/');
+  });
+
+  it('marks the bar when a bell is present so the name can step aside', () => {
+    const { rerender } = render(<TopNav {...base} hasBell />);
+    expect(document.querySelector('.ad-nav')).toHaveAttribute('data-bell', 'true');
+    rerender(<TopNav {...base} />);
+    expect(document.querySelector('.ad-nav')).not.toHaveAttribute('data-bell');
+  });
+
+  it('keeps the brand name as a clipped text node and the link named for screen readers', () => {
+    render(<TopNav {...base} />);
+    expect(screen.getByRole('link', { name: 'Angels Delight TV, home' })).toBeInTheDocument();
+    expect(document.querySelector('.ad-nav__name')).toHaveTextContent('Angels Delight TV');
+  });
+});

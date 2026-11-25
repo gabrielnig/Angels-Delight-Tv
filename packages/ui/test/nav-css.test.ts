@@ -59,3 +59,47 @@ describe('nav layers (R35, M47-S04)', () => {
     );
   });
 });
+
+describe('phone header rules (L12, S183, S184)', () => {
+  it('the name clips with an ellipsis, never wraps, and hides under 400 with a bell and under 340 always', () => {
+    const name = find('.ad-nav__name')?.body ?? '';
+    expect(name).toMatch(/text-overflow:\s*ellipsis/);
+    expect(name).toMatch(/white-space:\s*nowrap/);
+    expect(name).toMatch(/min-width:\s*0/);
+    const bell = rules.find(
+      (r) =>
+        r.selector === ".ad-nav[data-bell='true'] .ad-nav__name" &&
+        r.at.some((a) => /max-width: 399px/.test(a)),
+    );
+    expect(bell?.body).toMatch(/display:\s*none/);
+    const always = rules.find(
+      (r) => r.selector === '.ad-nav__name' && r.at.some((a) => /max-width: 339px/.test(a)),
+    );
+    expect(always?.body).toMatch(/display:\s*none/);
+  });
+
+  it('the Kids badge is a word on the accent fill and the guest actions only show from 960 px', () => {
+    const kids = find('.ad-nav__kids')?.body ?? '';
+    expect(kids).toMatch(/background:\s*var\(--color-accent\)/);
+    expect(kids).toMatch(/color:\s*var\(--color-on-accent\)/);
+    expect(find('.ad-nav__guest')?.body).toMatch(/display:\s*none/);
+    const wide = rules.find(
+      (r) => r.selector === '.ad-nav__guest' && r.at.some((a) => /min-width: 960px/.test(a)),
+    );
+    expect(wide?.body).toMatch(/display:\s*flex/);
+  });
+
+  it('pressed fills use the press token and hover sits inside the fine pointer query', () => {
+    const pressed = rules.find(
+      (r) => /\.ad-nav__avatar:active/.test(r.selector) && r.at.length === 0,
+    );
+    expect(pressed?.body).toMatch(/background:\s*var\(--nav-fill\)/);
+    expect(pressed?.body).toMatch(/transition-duration:\s*var\(--motion-press\)/);
+    const hover = rules.find((r) => /\.ad-nav__avatar:hover/.test(r.selector));
+    expect(hover?.at.some((a) => /hover: hover/.test(a))).toBe(true);
+    expect(find('.ad-nav')?.body).toMatch(/--nav-fill:\s*var\(--color-player-border\)/);
+    expect(find(".ad-nav[data-surface='solid']")?.body).toMatch(
+      /--nav-fill:\s*var\(--color-surface-sunken\)/,
+    );
+  });
+});

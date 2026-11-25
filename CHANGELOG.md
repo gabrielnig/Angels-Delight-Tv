@@ -162,3 +162,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 ### Lane L2 hero clip upgrade, part 3: sound button (M41)
 
 - The Home hero clip plays muted by itself and a button beside Pause turns the sound on and off (Unmute and Mute). It shows only for clips that have sound, never on Kids profiles or under reduced motion, stops when the tab hides, and the next clip follows the choice. A site switch can remove it. The slide indicator is now five filling segments.
+
+### Lane L12 mobile header, part 1: the header (S182 to S185)
+
+- On phones the header is the logo, a Search icon and one account icon (a person for a visitor, the avatar for a signed in profile), plus the bell when signed in. Visitors and signed in viewers now share one bar, so signing in changes only the last slot. The visitor bar no longer shows Sign in, Create account and Menu beside the logo; from 960 px Sign in and Create account stay in the bar.
+- The brand name never wraps: it clips, steps down under 400 px, hides under 400 px when the bell shows and under 340 px always (the link keeps its name for screen readers). A Kids bar shows the logo mark and a Kids word badge. The header and tab bar are not drawn on the watch page.
+- Pressed and hover fills on the bar icons, a width test in Chromium at 320, 360 and 414 with long Yoruba, Igbo and Hausa labels (no overflow, no overlap, 44 px targets), decision D-374.
