@@ -36,7 +36,7 @@ export function summarizeProgress(
   };
 }
 
-export function createFixtureHelpProgress(): HelpProgressService {
+export function createFixtureHelpProgress(): HelpProgressService & { clear(): void } {
   const store = new Map<string, ProgressRows>();
   const row = (actor: AdminActor, guide: string): GuideProgress => {
     assertGuide(guide);
@@ -45,6 +45,9 @@ export function createFixtureHelpProgress(): HelpProgressService {
     return (rows[guide] ??= { done: false, watched: false, helpful: null });
   };
   return {
+    clear() {
+      store.clear();
+    },
     async read(actor) {
       return structuredClone(store.get(actor.accountId) ?? {});
     },
@@ -61,9 +64,17 @@ export function createFixtureHelpProgress(): HelpProgressService {
 }
 
 const KEY = Symbol.for('ad.help.progress.fixture');
-const holder = globalThis as unknown as Record<symbol, HelpProgressService | undefined>;
+const holder = globalThis as unknown as Record<
+  symbol,
+  (HelpProgressService & { clear(): void }) | undefined
+>;
 
 export const helpProgress: HelpProgressService = delegating(
   (holder[KEY] ??= createFixtureHelpProgress()),
   async () => (await import('./real/help-progress')).realHelpProgress,
 );
+
+/** Forgets every account's progress on the fixture build. Only the KB demo reset calls it. */
+export function resetHelpProgressFixture(): void {
+  holder[KEY]?.clear();
+}

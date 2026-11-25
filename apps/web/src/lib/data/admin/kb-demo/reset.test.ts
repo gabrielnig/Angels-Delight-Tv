@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it } from 'vitest';
+import { helpProgress } from '../help-progress';
 import { getStore } from '../store';
 import { DEMO_NOW_ISO } from './dataset';
 import { kbDemoAllowed, resetDemoStore } from './reset';
@@ -50,4 +51,13 @@ describe('resetDemoStore clears the other fixture state too', () => {
       expect(holder[Symbol.for(key)]).toBeUndefined();
     },
   );
+});
+
+describe('resetDemoStore and help progress', () => {
+  it('forgets which guides an account marked as done', async () => {
+    const actor = { accountId: 'acc_reset_probe' } as Parameters<typeof helpProgress.read>[0];
+    await helpProgress.setGuideDone(actor, 'S01', true);
+    resetDemoStore();
+    expect((await helpProgress.read(actor)).S01).toBeUndefined();
+  });
 });

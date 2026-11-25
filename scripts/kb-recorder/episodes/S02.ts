@@ -85,7 +85,7 @@ const episode: Episode = {
     },
     {
       caption: 'Wait until you see **Dashboard**. You are signed in.',
-      holdMs: 3000,
+      holdMs: 7000,
       run: async (s) => {
         await s.pause(400);
       },

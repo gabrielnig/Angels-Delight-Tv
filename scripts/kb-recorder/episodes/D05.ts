@@ -19,8 +19,22 @@ const episode: Episode = {
   next: 'D06 Choose or upload a poster',
   steps: [
     navStep('Videos', 'Choose **Videos** in the side menu.', {
-      shot: { name: 'list', alt: 'The Videos list with the video Counting Money in Naira marked 1' },
+      shot: { name: 'list', alt: 'The Videos list with the Videos menu item marked 1' },
     }),
+    {
+      caption: 'Type "Naira" in the **Search** box.',
+      note: 'The list narrows as you type, so your video is easy to find.',
+      holdMs: 2200,
+      shot: {
+        name: 'search',
+        alt: 'The Search box with Naira typed and one video left in the list',
+        marks: [{ target: (s) => s.page.getByLabel('Search', { exact: true }), label: 'Search' }],
+      },
+      run: async (s) => {
+        await typeInto(s, 'Search', 'Naira');
+        await s.page.getByRole('link', { name: 'Counting Money in Naira', exact: true }).first().waitFor();
+      },
+    },
     {
       caption: 'Click **Edit Counting Money in Naira**.',
       holdMs: 1800,

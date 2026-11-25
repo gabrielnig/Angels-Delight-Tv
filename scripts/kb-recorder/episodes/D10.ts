@@ -75,7 +75,7 @@ const episode: Episode = {
     lookStep(
       'Check that **Undo** is shown if you need to go back.',
       (s) => s.page.getByRole('button', { name: 'Undo', exact: true }).first(),
-      { holdMs: 3000, shot: { name: 'undo', alt: 'The result message with the Undo button marked 1', label: 'Undo' } },
+      { holdMs: 17000, shot: { name: 'undo', alt: 'The result message with the Undo button marked 1', label: 'Undo' } },
     ),
   ],
 };

@@ -33,6 +33,18 @@ Learn where things are in the admin. You open a screen from the [side menu](glos
 ## Steps
 <!-- kb:steps S04 -->
 1. Check that the **Content** group holds your video screens.
+   On a phone, tap the menu button at the top left to open the side menu.
+   ![The side menu with the Content group marked 1](../../media/S04/S04-01-menu-desktop.webp)
+2. Choose **Videos** in the side menu to open a screen.
+   ![The Videos screen with its heading marked 1](../../media/S04/S04-02-videos-desktop.webp)
+3. Choose **Dashboard** in the side menu to go back.
+4. Check that a number beside **Captions** shows how many videos wait.
+5. Click **Account menu for Ngozi Eze** at the top right.
+   Your own name is on the button.
+   ![The account menu open with Preview site marked 1](../../media/S04/S04-05-account-desktop.webp)
+6. Check that **Preview site** shows the site the way viewers see it.
+7. Check that **Sign out** is in this menu.
+   ![The Sign out button marked 1](../../media/S04/S04-07-signout-desktop.webp)
 <!-- /kb:steps -->
 
 ## What you should see

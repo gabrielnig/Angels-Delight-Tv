@@ -60,7 +60,7 @@ const episode: Episode = {
     },
     {
       caption: 'Click **Open in Encoding** to go straight to a video that needs you.',
-      holdMs: 2000,
+      holdMs: 5000,
       run: async (s) => {
         const link = s.page.getByRole('link', { name: 'Open in Encoding', exact: true }).first();
         await scrollTo(s, link, 0.3);
