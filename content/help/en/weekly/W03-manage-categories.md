@@ -5,7 +5,7 @@ path: weekly
 summary: Add, rename, reorder, hide and delete the categories viewers use to browse.
 role: editor
 needs: [S04]
-related: [W10]
+related: [W10, W13]
 readMinutes: 3
 watchSeconds: 124
 video:
