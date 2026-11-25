@@ -61,9 +61,9 @@ const episode: Episode = {
       },
     },
     {
-      caption: 'Select **Demo lesson: Genesis 37, Joseph and his brothers** from the **Add a video** list.',
+      caption: 'Select **Demo lesson: Joseph is sold** from the **Add a video** list.',
       run: async (s) => {
-        await selectOption(s, 'Add a video', 'Demo lesson: Genesis 37, Joseph and his brothers');
+        await selectOption(s, 'Add a video', 'Demo lesson: Joseph is sold');
       },
       shot: {
         name: 'add-video',

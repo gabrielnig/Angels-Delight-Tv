@@ -39,7 +39,12 @@ const episode: Episode = {
       shot: {
         name: 'own-names',
         alt: 'The series names section with Use names for this series only chosen, marked 1',
-        marks: [{ target: (s) => s.page.getByLabel('Use names for this series only'), label: 'Own names' }],
+        marks: [
+          {
+            target: (s) => s.page.getByLabel('Use names for this series only'),
+            label: 'Own names',
+          },
+        ],
       },
     },
     {

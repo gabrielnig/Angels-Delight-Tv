@@ -27,6 +27,13 @@ You need the Editor role or above. Know the site words first: [Choose the series
 
 ## Steps
 <!-- kb:steps W22 -->
+1. Choose **Series** in the side menu.
+2. Click **Maths Made Simple** in the list.
+3. Scroll to **Names for groups and items**.
+4. Click **Use names for this series only**.
+   ![The series names section with Use names for this series only chosen, marked 1](../../media/W22/W22-04-own-names-desktop.webp)
+5. Select **Module and Lesson** from the **Name set** list.
+6. Click **Save names**.
 <!-- /kb:steps -->
 
 ## What you should see

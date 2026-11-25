@@ -2,9 +2,9 @@ import type { Episode } from '../episode';
 import { clickByName, goToScreen, selectOption, typeInto } from '../helpers';
 
 const joseph = [
-  'Demo lesson: Genesis 37, Joseph and his brothers',
-  'Demo lesson: Genesis 41, Joseph in Egypt',
-  'Demo lesson: Genesis 45, Joseph forgives',
+  'Demo lesson: Joseph is sold',
+  'Demo lesson: Joseph in Egypt',
+  'Demo lesson: Joseph forgives',
 ];
 
 /** Bundle videos into a series from the Videos list with Add to series, the numbering preview and Undo. */
@@ -31,7 +31,7 @@ const episode: Episode = {
       caption: 'Type "Joseph" in the **Search** box.',
       run: async (s) => {
         await typeInto(s, 'Search', 'Joseph');
-        await s.page.getByText(joseph[0]!).first().waitFor();
+        await s.page.getByRole('link', { name: joseph[0]! }).first().waitFor();
       },
     },
     {
@@ -42,7 +42,12 @@ const episode: Episode = {
       shot: {
         name: 'selected',
         alt: 'Three Joseph lessons ticked, with the bulk bar showing how many are selected, marked 1',
-        marks: [{ target: (s) => s.page.getByRole('button', { name: 'Add to series' }), label: 'Add to series' }],
+        marks: [
+          {
+            target: (s) => s.page.getByRole('button', { name: 'Add to series' }),
+            label: 'Add to series',
+          },
+        ],
       },
     },
     {
@@ -68,7 +73,9 @@ const episode: Episode = {
         name: 'preview',
         alt: 'The preview table listing each video with its Part and Lesson, marked 1',
         crop: (s) => s.page.getByRole('dialog'),
-        marks: [{ target: (s) => s.page.getByRole('table', { name: 'Preview' }), label: 'Preview' }],
+        marks: [
+          { target: (s) => s.page.getByRole('table', { name: 'Preview' }), label: 'Preview' },
+        ],
       },
     },
     {
