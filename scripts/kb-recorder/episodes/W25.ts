@@ -46,7 +46,7 @@ const episode: Episode = {
       caption: 'Type "2" in the **Lesson** box.',
       run: async (s) => {
         const row = s.page.getByRole('listitem').filter({ hasText: DUP }).last();
-        const box = row.getByLabel('Lesson');
+        const box = row.getByLabel('Lesson', { exact: true });
         await box.fill('');
         await s.type(box, '2');
       },

@@ -31,7 +31,7 @@ const episode: Episode = {
       caption: 'Type "Joseph" in the **Search** box.',
       run: async (s) => {
         await typeInto(s, 'Search', 'Joseph');
-        await s.page.getByRole('link', { name: joseph[0]! }).first().waitFor();
+        await s.page.getByRole('row').filter({ hasText: joseph[0]! }).first().waitFor();
       },
     },
     {
