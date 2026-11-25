@@ -37,23 +37,21 @@ const episode: Episode = {
       },
       shot: {
         name: 'failed',
-        alt: 'The Failed encodes page with the Clean up all button marked 1',
+        alt: 'The Failed encodes page with the Clean up all button marked 1, greyed out when nothing is left over',
         marks: [{ target: (s) => s.page.getByRole('button', { name: 'Clean up all' }), label: 'Clean up all' }],
       },
     },
     {
-      caption: 'Click **Clean up all**.',
-      note: 'This deletes only the half made streaming files. The original videos are never touched.',
+      caption: 'Click **Retry Our Solar System**.',
+      note: 'Retry starts the video again from your original file. If a retry keeps failing, use Clean up all to clear the half made files first.',
       run: async (s) => {
-        await s.click(s.page.getByRole('button', { name: 'Clean up all', exact: true }));
-        await s.page.getByRole('dialog').waitFor();
+        await s.click(s.page.getByRole('button', { name: 'Retry Our Solar System', exact: true }));
+        await s.pause(1200);
       },
-    },
-    {
-      caption: 'Click **Clean up all** again to confirm.',
-      run: async (s) => {
-        await s.click(s.page.getByRole('dialog').getByRole('button', { name: 'Clean up all', exact: true }));
-        await s.page.getByRole('dialog').waitFor({ state: 'detached' });
+      shot: {
+        name: 'retry',
+        alt: 'The Failed encodes list with the Retry button for Our Solar System marked 1',
+        marks: [{ target: (s) => s.page.getByRole('button', { name: 'Retry Our Solar System', exact: true }), label: 'Retry' }],
       },
     },
     {

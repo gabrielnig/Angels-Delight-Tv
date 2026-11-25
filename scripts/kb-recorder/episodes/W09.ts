@@ -24,7 +24,7 @@ const episode: Episode = {
       caption: `Click **${TITLE}**.`,
       run: async (s) => {
         await s.click(s.page.getByRole('link', { name: TITLE }).first());
-        await s.page.getByRole('heading', { name: 'Captions for viewers' }).waitFor();
+        await s.page.getByText('Captions for viewers').first().waitFor();
       },
     },
     {

@@ -18,6 +18,7 @@ const episode: Episode = {
   steps: [
     {
       caption: 'Choose **Analytics** in the side menu.',
+      holdMs: 8000,
       run: async (s) => {
         await goToScreen(s, 'Analytics');
         await s.page.getByRole('heading', { name: 'Analytics' }).first().waitFor();
@@ -26,6 +27,7 @@ const episode: Episode = {
     {
       caption: 'Click **Last 90 days**.',
       note: 'The report holds the dates you see on screen.',
+      holdMs: 8000,
       run: async (s) => {
         await s.click(s.page.getByRole('link', { name: 'Last 90 days', exact: true }));
         await s.page.waitForLoadState('networkidle').catch(() => {});
@@ -34,6 +36,7 @@ const episode: Episode = {
     {
       caption: 'Click **Export CSV**.',
       note: 'A small report downloads at once. A very large one is built in the background and emailed to you as a link.',
+      holdMs: 8000,
       run: async (s) => {
         const link = s.page.getByRole('link', { name: 'Export CSV' });
         await s.point(link);
@@ -48,6 +51,7 @@ const episode: Episode = {
     {
       caption: 'Choose **Exports** in the side menu.',
       note: 'Exports lists the large reports you asked for, newest first.',
+      holdMs: 8000,
       run: async (s) => {
         await goToScreen(s, 'Exports');
         await s.page.getByRole('heading', { name: 'Exports' }).first().waitFor();
@@ -61,6 +65,7 @@ const episode: Episode = {
     {
       caption: 'Check that **No exports yet.** is on the page.',
       note: 'Once a large export is Ready, a Download link appears on its row and works for 3 days.',
+      holdMs: 8000,
       run: async (s) => {
         await s.point(s.page.getByText('No exports yet.'));
       },

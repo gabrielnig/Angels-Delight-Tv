@@ -67,7 +67,7 @@ const episode: Episode = {
       shot: {
         name: 'save',
         alt: 'The Skip and chapters page after saving, with the confirmation message marked 1',
-        marks: [{ target: (s) => s.page.getByText('Saved. Viewers see this now.'), label: 'Saved' }],
+        marks: [{ target: (s) => s.page.getByText('Saved. Viewers see this now.').first(), label: 'Saved' }],
       },
     },
   ],

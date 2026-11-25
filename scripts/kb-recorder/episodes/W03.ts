@@ -19,6 +19,7 @@ const episode: Episode = {
     {
       caption: 'Choose **Categories** in the side menu.',
       note: 'The order here is the order viewers see on the home page.',
+      holdMs: 2500,
       run: async (s) => {
         await goToScreen(s, 'Categories');
         await s.page.getByRole('heading', { name: 'Categories' }).first().waitFor();
@@ -31,6 +32,7 @@ const episode: Episode = {
     },
     {
       caption: 'Click **Add category**.',
+      holdMs: 2500,
       run: async (s) => {
         await s.click(s.page.getByRole('button', { name: 'Add category' }));
         await s.page.getByLabel('Name', { exact: true }).waitFor();
@@ -39,6 +41,7 @@ const episode: Episode = {
     {
       caption: `Type "${NAME}" in the **Name** box.`,
       note: 'Use up to 40 characters. Short names fit best on a phone.',
+      holdMs: 2500,
       run: async (s) => {
         await s.type(s.page.getByLabel('Name', { exact: true }), NAME);
       },
@@ -51,6 +54,7 @@ const episode: Episode = {
     {
       caption: 'Click **Save**.',
       note: 'The new category goes to the end of the list.',
+      holdMs: 2500,
       run: async (s) => {
         await s.click(s.page.getByRole('button', { name: 'Save', exact: true }));
         await s.page.getByRole('button', { name: `Rename ${NAME}` }).waitFor();
@@ -59,6 +63,7 @@ const episode: Episode = {
     {
       caption: `Click **Move ${NAME} up**.`,
       note: 'Each click moves it one place. Use Move down to go the other way.',
+      holdMs: 2500,
       run: async (s) => {
         await s.click(s.page.getByRole('button', { name: `Move ${NAME} up` }));
         await s.pause(800);
@@ -71,6 +76,7 @@ const episode: Episode = {
     },
     {
       caption: `Click **Rename ${NAME}**.`,
+      holdMs: 2500,
       run: async (s) => {
         await s.click(s.page.getByRole('button', { name: `Rename ${NAME}` }));
         await s.page.getByLabel('Name', { exact: true }).waitFor();
@@ -79,12 +85,14 @@ const episode: Episode = {
     {
       caption: 'Type " Tips" in the **Name** box.',
       note: 'The old name is already in the box, so your words are added to the end.',
+      holdMs: 2500,
       run: async (s) => {
         await s.type(s.page.getByLabel('Name', { exact: true }), ' Tips');
       },
     },
     {
       caption: 'Click **Save**.',
+      holdMs: 2500,
       run: async (s) => {
         await s.click(s.page.getByRole('button', { name: 'Save', exact: true }));
         await s.page.getByRole('button', { name: `Rename ${NAME} Tips` }).waitFor();
@@ -93,6 +101,7 @@ const episode: Episode = {
     {
       caption: `Click **Hide ${NAME} Tips**.`,
       note: 'A hidden category stays here with a Hidden badge, but viewers no longer see it.',
+      holdMs: 2500,
       run: async (s) => {
         await s.click(s.page.getByRole('button', { name: `Hide ${NAME} Tips` }));
         await s.page.getByRole('button', { name: `Show ${NAME} Tips` }).waitFor();
@@ -106,6 +115,7 @@ const episode: Episode = {
     {
       caption: `Click **Delete ${NAME} Tips**.`,
       note: 'A category that still holds videos cannot be deleted. Hide it instead.',
+      holdMs: 2500,
       run: async (s) => {
         await s.click(s.page.getByRole('button', { name: `Delete ${NAME} Tips` }));
         await s.page.getByRole('button', { name: 'Delete category' }).waitFor();
@@ -114,6 +124,7 @@ const episode: Episode = {
     {
       caption: 'Click **Delete category**.',
       note: 'This cannot be undone.',
+      holdMs: 2500,
       run: async (s) => {
         await s.click(s.page.getByRole('button', { name: 'Delete category' }));
         await s.page.getByRole('button', { name: `Rename ${NAME} Tips` }).waitFor({ state: 'detached' });

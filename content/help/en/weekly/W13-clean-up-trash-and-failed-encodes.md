@@ -43,7 +43,7 @@ Editors, Admins and Super admins can restore a video and clean up failed encodes
 <!-- /kb:steps -->
 
 ## What you should see
-The restored video is gone from **Trash** and is back in **Videos** as a draft. On **Failed encodes**, a message tells you how many files were removed and how much space was freed. If nothing was left over, it says "Nothing was left to clean up."
+The restored video is gone from **Trash** and is back in **Videos** as a draft. On **Failed encodes**, a message says the video is back in the queue. After **Clean up all**, a message tells you how many files were removed and how much space was freed.
 
 > [!NOTE]
 > **Days left** counts down from 30. When it reaches 0, the video and its files are deleted for good. Restore anything you still want before then.
@@ -52,7 +52,7 @@ The restored video is gone from **Trash** and is back in **Videos** as a draft. 
 > **Delete forever** cannot be undone. Use it only when you are sure, and only for a video you do not need.
 
 > [!TIP]
-> Clean up does not delete your original video. It only deletes the half made streaming files, so a retry starts fresh and you get space back. To try again, click **Retry** on the row.
+> **Clean up all** does not delete your original video. It only deletes the half made streaming files, so a retry starts fresh and you get space back. In the practice site used for these pictures nothing is left over, so the button is greyed out.
 
 ## If something goes wrong
 - **Clean up all is greyed out.** There are no leftover files to remove. You can still click **Retry** on a row.
