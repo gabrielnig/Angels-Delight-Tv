@@ -265,7 +265,7 @@ export function VideoAnalyticsView({
               title="Share of viewers still watching"
               noun="viewers still watching"
               kind="line"
-              format={(v) => `${Math.round(v)}%`}
+              unit="percent"
               emptyText="Retention needs a few more views."
               points={data.retention.map((r) => ({
                 label: `${r.atPercent}% in`,
