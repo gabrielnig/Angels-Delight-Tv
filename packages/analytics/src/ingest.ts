@@ -171,6 +171,7 @@ export async function ingestBatch(input: IngestInput): Promise<IngestResult> {
       case 'share':
         await bump('share', event.channel);
         await bump('share_title', event.titleKind);
+        if (event.titleId) await bump('share_item', `${event.titleId}|${event.channel}`);
         return;
       case 'error':
         await bump('error', event.code);

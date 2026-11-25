@@ -346,6 +346,7 @@ export function WatchClient({
       ? {
           kind: video.share.kind,
           slug: video.share.slug,
+          ...(video.share.kind === 'video' ? { id: video.id } : {}),
           title: video.series ? video.series.title : video.title,
           thumbnail: video.posterUrl ?? undefined,
         }

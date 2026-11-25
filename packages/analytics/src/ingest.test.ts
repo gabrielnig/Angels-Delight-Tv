@@ -159,6 +159,27 @@ describe('ingestBatch', () => {
     expect(deps.store.views).toHaveLength(0);
   });
 
+  it('counts a share per title and channel when the event names the title (L15a)', async () => {
+    const deps = base();
+    const id = '0190a1b2-c3d4-7e5f-8a6b-7c8d9e0f1a2b';
+    await ingestBatch({
+      body: {
+        v: 1,
+        events: [
+          { kind: 'share', channel: 'whatsapp', titleKind: 'video', titleId: id },
+          { kind: 'share', channel: 'whatsapp', titleKind: 'video', titleId: id },
+          { kind: 'share', channel: 'copy', titleKind: 'video' },
+        ],
+      },
+      context: ctx(),
+      ...deps,
+      store: deps.store.store,
+    });
+    const keys = deps.store.bumps.map((b) => `${b.kind}:${b.key}`);
+    expect(keys.filter((k) => k === `share_item:${id}|whatsapp`)).toHaveLength(2);
+    expect(keys.filter((k) => k.startsWith('share_item:'))).toHaveLength(2);
+  });
+
   it('counts a share for a kids audience without any identity', async () => {
     const deps = base();
     await ingestBatch({

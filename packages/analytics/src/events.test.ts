@@ -41,6 +41,20 @@ describe('parseBatch', () => {
     expect(ok.ok && ok.events).toHaveLength(2);
   });
 
+  it('accepts an optional catalog id on a share event and rejects one that is not a uuid (L15a)', () => {
+    const id = '0190a1b2-c3d4-7e5f-8a6b-7c8d9e0f1a2b';
+    const ok = parseBatch({
+      v: 1,
+      events: [{ kind: 'share', channel: 'x', titleKind: 'video', titleId: id }],
+    });
+    expect(ok.ok && ok.events).toHaveLength(1);
+    const bad = parseBatch({
+      v: 1,
+      events: [{ kind: 'share', channel: 'x', titleKind: 'video', titleId: 'rain-slug' }],
+    });
+    expect(bad.ok && bad.events).toHaveLength(0);
+  });
+
   it('drops a share event that carries a link, text, id or an unknown channel', () => {
     const bad = parseBatch({
       v: 1,

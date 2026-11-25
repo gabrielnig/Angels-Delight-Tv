@@ -10,6 +10,8 @@ import { ShareSheet } from './ShareSheet';
 export interface ShareTargetInput {
   kind: 'video' | 'series';
   slug: string;
+  /** Catalog id, for the per title share count. Optional. */
+  id?: string;
   title: string;
   thumbnail?: string;
 }
@@ -40,6 +42,7 @@ export function ShareHost({ input, onClose }: { input: ShareTargetInput; onClose
       text={config.text}
       url={resolveShareUrl(config.url)}
       kind={input.kind}
+      titleId={input.id}
       channels={config.channels}
       thumbnail={config.thumbnail}
     />

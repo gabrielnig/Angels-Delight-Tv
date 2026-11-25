@@ -1,6 +1,7 @@
 import { sql } from 'drizzle-orm';
 import { addDays, dayBounds, lagosDay, previousPeriod, type DayRange } from './day';
 import { percentileFromBuckets } from './histogram';
+import { SHARE_CHANNELS } from './events';
 import { rowsOf, type SqlExecutor } from './sql';
 
 export interface PeriodTotals {
@@ -74,6 +75,20 @@ export const RETENTION_POINTS = 20;
 
 const num = (value: unknown): number => Number(value ?? 0);
 const ratio = (a: number, b: number): number => (b > 0 ? a / b : 0);
+
+export interface ShareCount {
+  channel: string;
+  count: number;
+}
+
+/** Share counters per channel, biggest first. Unknown channels and zeros are dropped. */
+export function shareRows(rows: Array<{ key: string; total: string }>): ShareCount[] {
+  const known: readonly string[] = SHARE_CHANNELS;
+  return rows
+    .filter((row) => known.includes(row.key) && num(row.total) > 0)
+    .map((row) => ({ channel: row.key, count: num(row.total) }))
+    .sort((a, b) => b.count - a.count || a.channel.localeCompare(b.channel));
+}
 
 /** Groups under the privacy threshold are merged into Other (M19-S04 AC2). */
 export function buildSplit(counts: Record<string, number>, minGroup = MIN_SPLIT_GROUP): SplitRow[] {
@@ -384,6 +399,35 @@ export function createAnalyticsQueries(db: SqlExecutor, options: QueryOptions = 
           country: buildSplit(group('country')),
         };
       });
+    },
+
+    /** Shares per channel across the catalog. Counters only, no person is recorded (L15a). */
+    async shareTotals(range: DayRange): Promise<ShareCount[]> {
+      return cached(`shares:${range.from}:${range.to}`, async () =>
+        shareRows(
+          rowsOf<{ key: string; total: string }>(
+            await db.execute(sql`
+              SELECT key, sum(count) AS total FROM analytics_counters
+              WHERE kind = 'share' AND day BETWEEN ${range.from}::date AND ${range.to}::date
+              GROUP BY key`),
+          ),
+        ),
+      );
+    },
+
+    /** Shares per channel for one title (L15a). */
+    async titleShares(titleId: string, range: DayRange): Promise<ShareCount[]> {
+      const prefix = `${titleId}|`;
+      return shareRows(
+        rowsOf<{ key: string; total: string }>(
+          await db.execute(sql`
+            SELECT substr(key, ${prefix.length + 1}) AS key, sum(count) AS total
+            FROM analytics_counters
+            WHERE kind = 'share_item' AND left(key, ${prefix.length}) = ${prefix}
+              AND day BETWEEN ${range.from}::date AND ${range.to}::date
+            GROUP BY 1`),
+        ),
+      );
     },
 
     /** Searches that found nothing, most frequent first (M19, Could). */

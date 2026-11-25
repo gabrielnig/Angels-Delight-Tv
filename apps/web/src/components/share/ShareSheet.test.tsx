@@ -233,11 +233,11 @@ describe('ShareSheet (L15a slice 2)', () => {
     const writeText = vi.fn().mockResolvedValue(undefined);
     const first = setup({ kind: 'series' }, { writeText });
     await first.user.click(screen.getByRole('button', { name: 'Copy link' }));
-    expect(trackShare).toHaveBeenCalledWith('copy', 'series');
+    expect(trackShare).toHaveBeenCalledWith('copy', 'series', undefined);
     const wa = screen.getByRole('link', { name: /WhatsApp/ });
     wa.addEventListener('click', (e) => e.preventDefault());
     await first.user.click(wa);
-    expect(trackShare).toHaveBeenCalledWith('whatsapp', 'series');
+    expect(trackShare).toHaveBeenCalledWith('whatsapp', 'series', undefined);
     expect(trackShare).toHaveBeenCalledTimes(2);
     first.view.unmount();
 

@@ -25,6 +25,16 @@ describe('trackShare (L15a slice 4)', () => {
     expect(Object.keys(track.mock.calls[0]?.[0] as object).sort()).toEqual(['channel', 'kind', 'titleKind']);
   });
 
+  it('adds the catalog id only when it is a uuid', () => {
+    const id = '0190a1b2-c3d4-7e5f-8a6b-7c8d9e0f1a2b';
+    trackShare('x', 'video', id);
+    expect(track).toHaveBeenLastCalledWith({ kind: 'share', channel: 'x', titleKind: 'video', titleId: id });
+    trackShare('x', 'video', 'v-rain');
+    expect(track).toHaveBeenLastCalledWith({ kind: 'share', channel: 'x', titleKind: 'video' });
+    trackShare('x', 'video', undefined);
+    expect(track).toHaveBeenLastCalledWith({ kind: 'share', channel: 'x', titleKind: 'video' });
+  });
+
   it('never throws when the client fails', () => {
     state.fail = true;
     expect(() => trackShare('copy', 'series')).not.toThrow();

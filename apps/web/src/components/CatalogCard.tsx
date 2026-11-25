@@ -50,6 +50,7 @@ export function CatalogCard({
   const shareTarget = useShareTarget({
     kind: item.kind === 'series' ? 'series' : 'video',
     slug: item.slug,
+    ...(item.id ? { id: item.id } : {}),
     title: item.title,
     thumbnail: item.thumbnail?.src,
   });
@@ -187,6 +188,7 @@ function ContinueRowCard({
   const shareTarget = useShareTarget({
     kind: 'video',
     slug: video.slug,
+    id: video.id,
     title: video.title,
     thumbnail: video.thumbnail?.src,
   });

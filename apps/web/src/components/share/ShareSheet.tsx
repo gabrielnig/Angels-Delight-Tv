@@ -29,6 +29,8 @@ export interface ShareSheetProps {
   /** The clean canonical address. Never the address bar. */
   url: string;
   kind: 'video' | 'series';
+  /** Catalog id, for the per title share count. Optional. */
+  titleId?: string;
   /** Channels the admin enabled, in order. Copy link and More are added here. */
   channels: readonly ShareTargetId[];
   thumbnail?: string;
@@ -103,6 +105,7 @@ export function ShareSheet({
   text,
   url,
   kind,
+  titleId,
   channels,
   thumbnail,
   anchor,
@@ -207,7 +210,7 @@ export function ShareSheet({
 
   /** One anonymous count, then the page's own callback. */
   function chosen(target: ShareTargetId) {
-    trackShare(target, kind);
+    trackShare(target, kind, titleId);
     onShare?.(target);
   }
 
