@@ -283,6 +283,10 @@ Nigeria Data Protection Act 2023 (NDPA), regulator the Nigeria Data Protection C
 - Data protection impact assessment recommended because children's data is processed.
 - Data minimisation and retention limits are implemented as in section 10.
 
+## 12b. Series names (M51)
+
+The series words are owner typed text shown to every viewer. They are validated once in `validateSeriesLabels` (1 to 24 characters, no markup characters, dashes or emoji, code 1 to 4 letters or numbers), by the settings registry for the site value and by `updateAdminSeries` for the series override, and React escapes them on output. The override column has a CHECK that it is null or an object. Only editors and above can change a series override and only admins can change the site setting. Both changes are audited (`series.labels`, and the settings audit). Nothing in this feature adds a cookie, storage key or public write.
+
 ## 12a. Languages and translations (M46)
 
 - **Permissions.** `i18n.edit` (Editor and above), `i18n.approve` and `i18n.publish` (Admin and above), `i18n.override` (Super admin only, with a reason). Caption side: `caption.translate` (Editor and above to request, Admin to publish a language as `caption.publish_language`). An Analyst has none.

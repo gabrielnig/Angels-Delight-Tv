@@ -9,6 +9,8 @@ Plan: `docs/plan/v2/L13-series.md`. Worktree `/home/claude/wt2/L13-build`. Decis
 
 - Slice 3 (viewer): `lib/guest/series-resume.ts` (`guestSeriesPrimary`), `components/title/useGuestPrimary.ts`, `StickyPlay` (series and title pages), `TitleActions` guest `series` option, `catalog.series` answers `{ blocked: 'kids' }` for a Kids mode guest and the series page shows `GuestKidsBlocked`. D-375. The group select (owner word label), item list and progress bars shipped in slice 1.
 
+- Slice 4 (docs): stories M51-S01 to S07 (7 stories), MODULES M51, SCREEN-ARCHITECTURE screens 19, 51, 52 and 64, DATA-MODEL 5.5, SECURITY 12b, CLIENT-INPUTS series names row.
+
 ## How to run scoped tests
 - `pnpm vitest run packages/shared/src/series-labels.test.ts packages/theme/src/settings-series-labels.test.ts scripts/series-copy-scan.test.ts`
 - `pnpm vitest run apps/web/src/components/admin/SeriesEditor.test.tsx apps/web/src/components/admin/site apps/web/src/components/title`
@@ -19,4 +21,4 @@ Plan: `docs/plan/v2/L13-series.md`. Worktree `/home/claude/wt2/L13-build`. Decis
 - `ErrorPage`, `error-pages.r39`, `consent/inventory`, `admin/tables` (AnalyticsView) and the analytics export route tests failed before the lane started.
 
 ## Left
-- Slice 4: docs (stories, MODULES, SCREEN-ARCHITECTURE, DATA-MODEL, CLIENT-INPUTS).
+- Nothing planned. Not built: drag and drop reorder (Up and Down buttons only), one click move of an item to another group (use the group field and Save), bulk add past the current page (page selections only).

@@ -57,8 +57,9 @@ Related documents: `docs/PRD.md` (why), `docs/USER-STORIES.md` (what, per module
 | M46 | Languages (interface and caption translations) | Viewer and admin | [CLIENT] |
 | M49 | Account security, activity and reach | Viewer and backend | [READY] |
 | M50 | Admin help centre (text, silent captioned video, screenshots) | Admin | [READY] |
+| M51 | Series with configurable names | Viewer and admin | [CLIENT] |
 
-40 modules in total. M41 owns the Home hero carousel, preview clips, row defaults, sections and View all links. M01 to M26 follow the planned set. M27 to M36 are modules found while breaking the brief down: they own behaviour that would otherwise be spread across several modules with nobody responsible.
+40 modules in total (M51 is added below the readiness summary). M41 owns the Home hero carousel, preview clips, row defaults, sections and View all links. M01 to M26 follow the planned set. M27 to M36 are modules found while breaking the brief down: they own behaviour that would otherwise be spread across several modules with nobody responsible.
 
 ## 2. Dependency overview
 
@@ -913,3 +914,22 @@ Nothing in a [CLIENT] module blocks starting. The rule from `CLAUDE.md` applies:
 **Dependencies.** M12, M16, M20, M34, M42, M46.
 
 **Client input.** The support contact shown in the help centre (`help.support_contact`).
+
+### M51 Series with configurable names [CLIENT]
+
+**Area.** Viewer and admin. Plan: `docs/plan/v2/L13-series.md`, lane note `docs/lanes/L13-build.md`.
+
+**Purpose.** The owner words the groups and items of a series (Book and Chapter, Part and Lesson, Module and Lesson or four custom words with an item code) and bundles videos into a series quickly, instead of the fixed Season and Episode.
+
+**Responsibilities.**
+- One helper (`packages/shared/src/series-labels.ts`) builds every phrase; presets are translated, typed words are not (D-369).
+- Site default in Site settings, Series names (`content.series_labels`), per series override in the series editor.
+- Bulk Add to series on the Videos list, Up and Down reorder, group titles, gap and duplicate warnings.
+- Series page: group select in the owner's word, item progress, main button and sticky Play bar that follow account or device progress, Kids blocked screen for guests.
+- A scan test fails on hardcoded Season or Episode copy.
+
+**Data owned.** Setting `content.series_labels`, column `series.label_overrides` (migration 0059), `seasons.title` used as the group title.
+
+**Dependencies.** M04, M07, M16, M28, M34, M40, M42, M45, M46.
+
+**Client input.** The default words and whether the Bible series use Book, Part or Module (CLIENT-INPUTS). Built now with Season and Episode, one switch to change.
