@@ -1,8 +1,10 @@
 // @vitest-environment jsdom
-import { cleanup, render, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { ToastProvider } from '../Toast';
 import { ArticleActions } from './ArticleActions';
+import { SAVE_FAILED_MESSAGE } from './retry-save';
 
 afterEach(cleanup);
 const ok = async () => ({ ok: true as const });
@@ -50,22 +52,28 @@ describe('ArticleActions', () => {
     expect(await screen.findByText('Thanks. Your answer is saved.')).toBeInTheDocument();
   });
 
-  it('keeps the old state and says so when a save fails', async () => {
+  it('keeps the tick on screen and retries by itself when a save fails', async () => {
+    const setDone = vi.fn().mockResolvedValueOnce({ ok: false }).mockResolvedValue({ ok: true });
     render(
-      <ArticleActions
-        guide="D02"
-        initial={{ done: false, helpful: null }}
-        setDone={async () => ({ ok: false as const })}
-        setHelpful={ok}
-      />,
+      <ToastProvider>
+        <ArticleActions
+          guide="D02"
+          initial={{ done: false, helpful: null }}
+          setDone={setDone}
+          setHelpful={ok}
+        />
+      </ToastProvider>,
     );
     await userEvent.click(screen.getByRole('button', { name: 'Mark as done' }));
-    expect(await screen.findByRole('alert')).toHaveTextContent(
-      'We could not save that. Try again.',
-    );
-    expect(screen.getByRole('button', { name: 'Mark as done' })).toHaveAttribute(
+    expect(await screen.findByText(SAVE_FAILED_MESSAGE)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Done. Mark as not done' })).toHaveAttribute(
       'aria-pressed',
-      'false',
+      'true',
     );
+    await act(async () => {
+      window.dispatchEvent(new Event('online'));
+    });
+    expect(setDone).toHaveBeenCalledTimes(2);
+    expect(setDone).toHaveBeenLastCalledWith('D02', true);
   });
 });

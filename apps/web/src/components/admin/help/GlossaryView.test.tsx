@@ -33,6 +33,16 @@ describe('GlossaryView', () => {
     expect(headings).toEqual(['Caption', 'Poster', 'Zone']);
   });
 
+  it('is a list of terms, not a definition list with wrapper blocks (axe definition-list)', () => {
+    const { container } = render(<GlossaryView library={lib} role="editor" />);
+    expect(container.querySelector('dl')).toBeNull();
+    const lists = container.querySelectorAll('ul.hlp-gloss-list');
+    expect(lists.length).toBe(3);
+    for (const list of lists) {
+      for (const child of Array.from(list.children)) expect(child.tagName).toBe('LI');
+    }
+  });
+
   it('links each term to its guides and shows alternative words', () => {
     render(<GlossaryView library={lib} role="editor" />);
     expect(screen.getByRole('link', { name: 'Title D01' })).toHaveAttribute(

@@ -209,7 +209,10 @@ describe('HelpPanelHost (M50-S03)', () => {
     await act(async () => {
       vi.advanceTimersByTime(350);
     });
-    expect(screen.getByRole('status', { name: 'Loading help' })).toHaveAttribute('aria-busy', 'true');
+    expect(screen.getByRole('status', { name: 'Loading help' })).toHaveAttribute(
+      'aria-busy',
+      'true',
+    );
     expect(screen.queryByText(/Still loading/)).toBeNull();
     await act(async () => {
       vi.advanceTimersByTime(6000);
@@ -244,7 +247,9 @@ describe('HelpPanelHost (M50-S03)', () => {
       window.dispatchEvent(new Event('offline'));
     });
     const panel = screen.getByRole('dialog');
-    expect(within(panel).getByText(/You are offline\. Check your data or Wi-Fi/)).toBeInTheDocument();
+    expect(
+      within(panel).getByText(/You are offline\. Check your data or Wi-Fi/),
+    ).toBeInTheDocument();
     expect(within(panel).getByText('Choose Upload.')).toBeInTheDocument();
     expect(within(panel).getByText('The video needs data')).toBeInTheDocument();
     expect(panel.querySelector('video')).toBeNull();
@@ -262,9 +267,7 @@ describe('HelpPanelHost (M50-S03)', () => {
   });
 
   it('opens a named guide at a section from an inline hint and keeps the page', async () => {
-    load.mockImplementation(async () =>
-      result(data({ guides: [guide('D01')] })),
-    );
+    load.mockImplementation(async () => result(data({ guides: [guide('D01')] })));
     const user = userEvent.setup();
     setup();
     await user.click(screen.getByRole('button', { name: 'Open D01 step two' }));

@@ -1,25 +1,14 @@
 'use client';
 
-import { PageHeader } from '@/components/admin/PageHeader';
-import { ErrorState } from '@/components/admin/states';
+import { HelpErrorView } from '@/components/admin/help/HelpStates';
 
+/** A help page failed to load (S198). The menu stays so the person can leave. */
 export default function HelpError({
+  error,
   reset,
 }: {
   error: Error & { digest?: string };
   reset: () => void;
 }) {
-  return (
-    <>
-      <PageHeader
-        crumbs={[{ label: 'Admin', href: '/admin' }, { label: 'Help centre' }]}
-        title="Help centre"
-      />
-      <ErrorState
-        title="We could not load the help centre."
-        help="Nothing was changed. Try again in a moment."
-        onRetry={reset}
-      />
-    </>
-  );
+  return <HelpErrorView digest={error.digest} reset={reset} />;
 }

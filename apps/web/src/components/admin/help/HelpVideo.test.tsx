@@ -1,10 +1,15 @@
 // @vitest-environment jsdom
-import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { ToastProvider } from '../Toast';
 import { HelpVideo } from './HelpVideo';
+import { SAVE_FAILED_MESSAGE } from './retry-save';
 
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  Object.defineProperty(window.navigator, 'onLine', { value: true, configurable: true });
+});
 const cues = [
   { start: 0.5, end: 3, text: 'Click Upload.' },
   { start: 65, end: 68, text: 'Wait for Done.' },
@@ -83,12 +88,57 @@ describe('HelpVideo', () => {
     expect(again).toHaveBeenCalledWith('D02');
   });
 
-  it('shows the transcript and one action when the file will not load', async () => {
+  it('shows one action, a reference and the transcript when the file will not play', async () => {
     const { container } = render(<HelpVideo {...base} />);
     fireEvent.error(container.querySelector('video')!);
-    expect(screen.getByRole('alert')).toHaveTextContent('The video did not load.');
-    expect(screen.getByRole('button', { name: 'Try again' })).toBeInTheDocument();
+    const alert = screen.getByRole('alert');
+    expect(alert).toHaveTextContent('This video could not play');
+    expect(alert).toHaveTextContent('The steps and transcript below still work.');
+    expect(alert).toHaveTextContent(/Reference: AD-[0-9A-F]{4}/);
+    expect(within(alert).getAllByRole('button')).toHaveLength(1);
+    expect(within(alert).getByRole('button', { name: 'Try again' })).toBeInTheDocument();
     expect(screen.getByText('Click Upload.')).toBeInTheDocument();
+  });
+
+  it('gives the same reference for the same video', () => {
+    const first = render(<HelpVideo {...base} />);
+    fireEvent.error(first.container.querySelector('video')!);
+    const ref = screen.getByRole('alert').textContent?.match(/AD-[0-9A-F]{4}/)?.[0];
+    first.unmount();
+    const second = render(<HelpVideo {...base} />);
+    fireEvent.error(second.container.querySelector('video')!);
+    expect(screen.getByRole('alert').textContent).toContain(ref);
+  });
+
+  it('says the video needs data when offline, keeps the transcript and brings the player back online', () => {
+    Object.defineProperty(window.navigator, 'onLine', { value: false, configurable: true });
+    const { container } = render(<HelpVideo {...base} />);
+    expect(screen.getByText('This video needs data')).toBeInTheDocument();
+    expect(screen.getByText('The steps and the transcript below still work.')).toBeInTheDocument();
+    expect(container.querySelector('video')).toBeNull();
+    expect(screen.getByText('Click Upload.')).toBeInTheDocument();
+    act(() => {
+      Object.defineProperty(window.navigator, 'onLine', { value: true, configurable: true });
+      window.dispatchEvent(new Event('online'));
+    });
+    expect(container.querySelector('video')).not.toBeNull();
+  });
+
+  it('keeps Watched on screen and saves quietly later when the save fails', async () => {
+    Object.defineProperty(window.navigator, 'onLine', { value: true, configurable: true });
+    const onWatched = vi.fn().mockResolvedValueOnce({ ok: false }).mockResolvedValue({ ok: true });
+    render(
+      <ToastProvider>
+        <HelpVideo {...base} onWatched={onWatched} />
+      </ToastProvider>,
+    );
+    await userEvent.click(screen.getByRole('button', { name: 'Mark as watched' }));
+    expect(await screen.findByText(SAVE_FAILED_MESSAGE)).toBeInTheDocument();
+    expect(screen.getByText('Watched')).toBeInTheDocument();
+    await act(async () => {
+      window.dispatchEvent(new Event('online'));
+    });
+    expect(onWatched).toHaveBeenCalledTimes(2);
   });
 
   it('offers the phone recording when there is one', () => {

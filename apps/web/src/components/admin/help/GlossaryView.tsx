@@ -68,9 +68,9 @@ export function GlossaryView({
               <h2 id={`letter-${letter}`} className="hlp-gloss-letter">
                 {letter}
               </h2>
-              <dl className="hlp-gloss-list">
+              <ul className="hlp-gloss-list">
                 {list.map((t) => (
-                  <div key={t.slug} className="hlp-gloss-item">
+                  <li key={t.slug} className="hlp-gloss-item">
                     <h3 id={t.slug}>{t.term}</h3>
                     <p>
                       <Inlines nodes={t.definition} />
@@ -91,9 +91,9 @@ export function GlossaryView({
                         })}
                       </ul>
                     ) : null}
-                  </div>
+                  </li>
                 ))}
-              </dl>
+              </ul>
             </section>
           ))}
         </>

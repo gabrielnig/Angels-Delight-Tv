@@ -199,7 +199,12 @@ export function HelpPanel({
           {view.phase === 'loading' ? (
             <>
               {showSkeleton ? (
-                <div className="hlp-panel__skeleton" role="status" aria-busy="true" aria-label="Loading help">
+                <div
+                  className="hlp-panel__skeleton"
+                  role="status"
+                  aria-busy="true"
+                  aria-label="Loading help"
+                >
                   <div className="adm-skeleton__row" style={{ height: '1.5rem' }} />
                   <div className="adm-skeleton__row" style={{ height: '4rem' }} />
                   <div className="adm-skeleton__row" style={{ height: '3rem' }} />
@@ -224,11 +229,22 @@ export function HelpPanel({
             <div className="hlp-panel__none">
               <h3 className="hlp-panel__title">No guide for this screen yet</h3>
               <p>Search the help, or look through all the guides.</p>
-              <form action={`${HELP_HOME}/search`} method="get" role="search" className="hlp-panel__search">
+              <form
+                action={`${HELP_HOME}/search`}
+                method="get"
+                role="search"
+                className="hlp-panel__search"
+              >
                 <label htmlFor="hlp-panel-q" className="hlp-panel__label">
                   Search help
                 </label>
-                <input id="hlp-panel-q" type="search" name="q" className="adm-input" autoComplete="off" />
+                <input
+                  id="hlp-panel-q"
+                  type="search"
+                  name="q"
+                  className="adm-input"
+                  autoComplete="off"
+                />
                 <Button type="submit" variant="secondary" icon="search">
                   Search
                 </Button>

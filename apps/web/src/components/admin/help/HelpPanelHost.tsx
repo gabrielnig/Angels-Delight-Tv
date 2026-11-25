@@ -46,8 +46,7 @@ const SKELETON_AFTER_MS = 300;
 const SLOW_AFTER_MS = 6000;
 
 const isTyping = (el: Element | null): boolean =>
-  !!el &&
-  ((el as HTMLElement).isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName));
+  !!el && ((el as HTMLElement).isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName));
 
 /**
  * Owns the open state, the loading of the guide for the current screen and the keys. The panel is a drawer from md
