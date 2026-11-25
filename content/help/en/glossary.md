@@ -81,6 +81,10 @@ Aliases: download, report
 A word on a badge that means the work did not finish. Most failed items have a Retry button.
 Aliases: error, did not finish
 
+## Group
+One section of a series, such as Part 1 or Book 2. The owner chooses the word. Videos sit inside groups.
+Guides: W20, W24
+
 ## Hero
 The large featured picture or clip at the top of the viewer Home page.
 Aliases: banner, featured
@@ -98,6 +102,10 @@ Guides: M06
 An email that lets a new staff member set up an account with the role you chose.
 Aliases: add staff
 
+## Item
+One video inside a group of a series, such as Lesson 3 or Chapter 3. The owner chooses the word.
+Guides: W20, W23
+
 ## Job
 A task the site does in the background, such as getting a video ready, making captions or sending an email.
 Aliases: queue, background task
@@ -114,6 +122,11 @@ Guides: M02
 ## Maturity rating
 The age level you give a video, from the lowest rating to the highest. It decides who can watch it.
 Aliases: rating, age rating, kids rating
+
+## Name set
+The words a series uses for its groups and items, such as Part and Lesson or Season and Episode.
+Aliases: series names, labels
+Guides: W21, W22
 
 ## Needs review
 A caption state that means the captions are written but nobody has approved them yet.

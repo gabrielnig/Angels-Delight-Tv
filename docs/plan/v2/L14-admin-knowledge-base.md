@@ -138,7 +138,7 @@ Seven learning paths, in learning order. A path is an ordered playlist: each art
 |---|---|---|---|---|
 | Start here | S | 8 | 8 | Sign in, find your way, first video |
 | Daily tasks | D | 12 | 12 | What an Editor does every day |
-| Weekly tasks | W | 13 | 13 | Series, Home, captions in depth, numbers |
+| Weekly tasks | W | 27 | 27 | Series, Home, captions in depth, numbers |
 | Setup and settings | C | 14 | 14 | Brand, switches, pages, languages, team, system |
 | Money and sponsors | M | 9 | 9 | Sponsors and donations |
 | Safety and kids | K | 8 | 7 | Kids, ratings, guests, accounts, audit, privacy |
@@ -197,6 +197,20 @@ Columns: Role is who can do the task (E Editor and up, A Admin and up, S Super a
 | W11 | See how one video is doing | E | W10 | 2 | 2:00 | no | W10 |
 | W12 | Make and download a report | E | W10 | 3 | 2:30 | no | M06, K06 |
 | W13 | Clean up Trash and failed encodes | E, A | D11, D12 | 2 | 2:00 | no | D11, D12 |
+| W20 | Plan a series: groups and items | E | S04 | 3 | 1:00 | no | W01, W21, W23 |
+| W21 | Choose the series names for your whole site | A | W20 | 3 | 1:15 | no | W22, W01, W27 |
+| W22 | Use different names for one series | E | W21 | 2 | 1:00 | no | W21, W20, W01 |
+| W23 | Add many videos to a series | E | W20 | 4 | 1:30 | no | W02, W25, W01 |
+| W24 | Move a lesson to another group and rename groups | E | W02 | 3 | 1:30 | no | W02, W25 |
+| W25 | Fix gaps and duplicate numbers | E | W02 | 3 | 1:30 | no | W02, W23, W24 |
+| W26 | Set a series maturity rating and apply it to every lesson | E | W01 | 3 | 1:30 | no | K02, W27 |
+| W27 | See how a series looks to viewers | E | W01 | 4 | 2:00 | yes | S07, W28 |
+| W28 | Remove a series without losing videos | E, A | W01 | 3 | 1:30 | no | W01, D11 |
+| W29 | Organise your library with categories and tags | E | W03 | 3 | 1:30 | no | W03, D05 |
+| W30 | Change many videos at once: publish, rating, category | E | D10 | 4 | 2:00 | no | D10, W23 |
+| W31 | Approve many captions at once | A | D07 | 3 | 1:30 | no | D07, W09 |
+| W32 | Retry many failed encodes at once | E | D12 | 2 | 1:30 | no | D12, T01 |
+| W33 | Upload many videos and set the details together | E | D03 | 3 | 1:30 | no | D03, W30 |
 
 ### 3.5 Setup and settings (C)
 
