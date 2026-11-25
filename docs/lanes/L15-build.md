@@ -10,7 +10,7 @@ Audit: `docs/audits/2026-11-25-og-audit.md`. L15a owns share UI code. L15b owns 
 | 2 | Image pipeline and privacy gate | merged | #447 |
 | 3 | Admin share control per video and series | open | |
 | 4 | `pnpm share:check` and CI | in review | #449 |
-| 5 | JSON-LD alignment | open | |
+| 5 | JSON-LD alignment | in review | |
 | 6 | Docs | open | |
 
 ## Slice 1
@@ -54,3 +54,8 @@ Audit: `docs/audits/2026-11-25-share-audit.md`. Mockups S200 to S203 in `docs/mo
 - `pnpm share:check --self-test` (no network), `pnpm share:check --base http://localhost:3000 [paths] [--private /search]`. With no paths: Home, Browse, About, Help, Donate, Transparency and up to three videos and series from `/sitemap.xml`, plus `/search` as a private page (must be noindex). A plain http base allows http urls (local build) and reads the picture from the base.
 - CI: self test after Typecheck, real check after the fixture server starts in the a11y job (the fixture env sets `APP_ORIGIN=http://localhost:<port>`).
 - Tests: `pnpm vitest run apps/web/src/lib/seo/share-check.test.ts scripts/share-check.test.ts scripts/ci-workflow.test.ts`.
+
+## Slice 5 (JSON-LD alignment)
+
+- `titlePageJsonLd` and `seriesPageJsonLd` take `shareImage` (the same `/og/...?v=` path the tags use) and put it first; descriptions go through `trimWords(text, 160)` so JSON-LD equals og:description. `homePageJsonLd` takes `twitterHandle` (sameAs `https://x.com/<handle>`) and a `logoUrl` made absolute. `contentUrl` stays omitted (signed media).
+- Tests: `pnpm vitest run apps/web/src/lib/seo/page-jsonld.test.ts "apps/web/src/app/(viewer)" apps/web/src/app/page.test.tsx`.

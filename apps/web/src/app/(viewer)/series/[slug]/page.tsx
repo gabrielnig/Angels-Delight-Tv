@@ -126,7 +126,21 @@ export default async function SeriesPage({
   return (
     <AppShell>
       {indexable ? (
-        <JsonLd data={seriesPageJsonLd({ origin: siteOrigin(), series, seasons })} />
+        <JsonLd
+          data={seriesPageJsonLd({
+            origin: siteOrigin(),
+            series,
+            seasons,
+            shareImage: shareImageFor(
+              'series',
+              series.slug,
+              series.title,
+              series.publishedAt,
+              series.thumbnail,
+              await shareImageExtra(),
+            ).url,
+          })}
+        />
       ) : null}
       <div className="web-page web-title">
         <h1 className="web-title__name">{series.title}</h1>

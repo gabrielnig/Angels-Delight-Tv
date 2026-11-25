@@ -159,6 +159,7 @@ export function organizationJsonLd(input: {
   origin: string;
   name: string;
   logoUrl?: string;
+  sameAs?: string[];
 }): Json {
   return compact({
     '@context': 'https://schema.org',
@@ -166,6 +167,7 @@ export function organizationJsonLd(input: {
     name: input.name,
     url: input.origin,
     logo: input.logoUrl,
+    sameAs: input.sameAs && input.sameAs.length > 0 ? input.sameAs : undefined,
   });
 }
 

@@ -13,6 +13,7 @@ import { JsonLd } from '../components/seo/JsonLd';
 import { homePageJsonLd } from '../lib/seo/page-jsonld';
 import { getRootTheme } from '../lib/theme/root';
 import { siteOrigin } from '../server/seo/page-seo';
+import { getSeoSettings } from '../server/seo/seo-settings';
 import { turnstileSiteKey } from '../server/auth/turnstile-site';
 import { pageMetadata } from '../server/seo/site-meta';
 
@@ -25,10 +26,18 @@ export default async function RootPage() {
   const session = await getSession();
   if (!session && (await guestPlayEnabled())) {
     // A visitor goes straight to Home (M40). Saving things asks them to sign in later.
-    const { platformName } = await getRootTheme();
+    const [{ platformName }, seo] = await Promise.all([getRootTheme(), getSeoSettings()]);
     return (
       <AppShell>
-        <JsonLd data={homePageJsonLd({ origin: siteOrigin(), name: platformName, search: true })} />
+        <JsonLd
+          data={homePageJsonLd({
+            origin: siteOrigin(),
+            name: platformName,
+            search: true,
+            twitterHandle: seo.twitterHandle,
+            logoUrl: seo.socialImageUrl,
+          })}
+        />
         <Suspense fallback={<HomeSkeleton />}>
           <HomeView ctx={guestContext(await currentGuestAudience())} />
         </Suspense>
