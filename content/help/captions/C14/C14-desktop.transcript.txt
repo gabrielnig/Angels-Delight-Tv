@@ -1,0 +1,13 @@
+System: jobs, storage and player quality (C14)
+For Admins. 1 min 10 s.
+
+0:05  Choose System in the side menu.
+      The pointer moves to System.
+0:17  Check that Storage used is on the page.
+      The pointer moves to Storage used: 416.7 GB.
+0:30  Click Player quality.
+      The pointer moves to Player quality.
+0:40  Check that Typical start time shows a number.
+      The pointer moves to Typical start time.
+0:54  Click Storage.
+      The pointer moves to Storage.

@@ -1,0 +1,11 @@
+Invite a teammate and choose their role (C11)
+For Super admins. 1 min 13 s.
+
+0:06  Choose Roles and invites in the side menu.
+      The pointer moves to Roles and invites.
+0:19  Scroll to Invite a team member.
+0:31  Type "newteam@example.test" in the Email box.
+0:44  Select Editor from the Role list.
+      The pointer moves to EditorAdminSuper admin.
+0:57  Click Send invite.
+      The pointer moves to Send invite.
