@@ -171,3 +171,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - On phones the header is the logo, a Search icon and one account icon (a person for a visitor, the avatar for a signed in profile), plus the bell when signed in. Visitors and signed in viewers now share one bar, so signing in changes only the last slot. The visitor bar no longer shows Sign in, Create account and Menu beside the logo; from 960 px Sign in and Create account stay in the bar.
 - The brand name never wraps: it clips, steps down under 400 px, hides under 400 px when the bell shows and under 340 px always (the link keeps its name for screen readers). A Kids bar shows the logo mark and a Kids word badge. The header and tab bar are not drawn on the watch page.
 - Pressed and hover fills on the bar icons, a width test in Chromium at 320, 360 and 414 with long Yoruba, Igbo and Hausa labels (no overflow, no overlap, 44 px targets), decision D-374.
+
+### Lane L12 mobile header, part 2: the account sheet
+
+- On phones the account icon opens a bottom sheet instead of a popover: Sign in (the one filled button), Create account, a Kids mode switch with its help line and Help for a visitor, and the profile name, kind and the usual menu for a signed in viewer. It traps focus, closes with Escape or Close, and gives focus back to the icon. Wider screens keep the popover. Decision D-378.
+

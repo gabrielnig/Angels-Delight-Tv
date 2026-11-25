@@ -1,6 +1,6 @@
 import { act, cleanup, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { BottomTabBar, SiteFooter, TopNav } from './TopNav';
 
 const links = [
@@ -425,5 +425,136 @@ describe('TopNav phone header (L12, S183)', () => {
     render(<TopNav {...base} />);
     expect(screen.getByRole('link', { name: 'Angels Delight TV, home' })).toBeInTheDocument();
     expect(document.querySelector('.ad-nav__name')).toHaveTextContent('Angels Delight TV');
+  });
+});
+
+describe('TopNav account sheet on phones (L12, S183 frames 7 to 9)', () => {
+  const sheet = { title: 'Account', closeLabel: 'Close' };
+  const guestMenu = [
+    { label: 'Sign in', href: '/sign-in', variant: 'primary' as const },
+    { label: 'Create account', href: '/sign-up' },
+    {
+      label: 'Kids mode',
+      onSelect: vi.fn(),
+      switch: { checked: false, help: 'Shows videos made for children.' },
+    },
+    { label: 'Help', href: '/help' },
+  ];
+  const guestNav = (extra: Record<string, unknown> = {}) => (
+    <TopNav
+      brand={{ name: 'Angels Delight TV', href: '/' }}
+      links={links}
+      currentPath="/"
+      profileName=""
+      menu={guestMenu}
+      guest
+      sheet={sheet}
+      {...extra}
+    />
+  );
+  afterEach(() => vi.unstubAllGlobals());
+  const phone = (matches: boolean) =>
+    vi.stubGlobal('matchMedia', (query: string) => ({
+      matches: matches && /max-width: 599px/.test(query),
+      media: query,
+      addEventListener: () => {},
+      removeEventListener: () => {},
+    }));
+
+  it('opens a labelled dialog with Sign in, Create account, a Kids switch with its help, and Help', async () => {
+    phone(true);
+    const user = userEvent.setup();
+    render(guestNav());
+    const trigger = screen.getByRole('button', { name: 'Account menu' });
+    expect(trigger).toHaveAttribute('aria-haspopup', 'dialog');
+    await user.click(trigger);
+    const dialog = screen.getByRole('dialog', { name: 'Account' });
+    expect(dialog).toHaveAttribute('aria-modal', 'true');
+    expect(screen.queryByRole('menu')).toBeNull();
+    expect(within(dialog).getByRole('link', { name: 'Sign in' })).toHaveAttribute(
+      'href',
+      '/sign-in',
+    );
+    expect(within(dialog).getByRole('link', { name: 'Create account' })).toHaveAttribute(
+      'href',
+      '/sign-up',
+    );
+    expect(within(dialog).getByRole('link', { name: 'Help' })).toHaveAttribute('href', '/help');
+    const toggle = within(dialog).getByRole('switch', { name: 'Kids mode' });
+    expect(toggle).toHaveAttribute('aria-checked', 'false');
+    expect(within(dialog).getByText('Shows videos made for children.')).toBeInTheDocument();
+    await user.click(toggle);
+    expect(guestMenu[2]?.onSelect).toHaveBeenCalled();
+  });
+
+  it('moves focus into the sheet, traps Tab, and returns focus to the icon on Escape', async () => {
+    phone(true);
+    const user = userEvent.setup();
+    render(guestNav());
+    const trigger = screen.getByRole('button', { name: 'Account menu' });
+    await user.click(trigger);
+    const dialog = screen.getByRole('dialog');
+    expect(dialog.contains(document.activeElement)).toBe(true);
+    for (let i = 0; i < 12; i += 1) await user.tab();
+    expect(dialog.contains(document.activeElement)).toBe(true);
+    await user.keyboard('{Escape}');
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(trigger).toHaveFocus();
+  });
+
+  it('closes with the Close button and returns focus', async () => {
+    phone(true);
+    const user = userEvent.setup();
+    render(guestNav());
+    const trigger = screen.getByRole('button', { name: 'Account menu' });
+    await user.click(trigger);
+    await user.click(screen.getByRole('button', { name: 'Close' }));
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(trigger).toHaveFocus();
+  });
+
+  it('closes after a row is chosen', async () => {
+    phone(true);
+    const user = userEvent.setup();
+    render(guestNav());
+    await user.click(screen.getByRole('button', { name: 'Account menu' }));
+    await user.click(screen.getByRole('link', { name: 'Help' }));
+    expect(screen.queryByRole('dialog')).toBeNull();
+  });
+
+  it('shows the profile and a subtitle for a signed in viewer and runs Sign out', async () => {
+    phone(true);
+    const onSelect = vi.fn();
+    const user = userEvent.setup();
+    render(
+      <TopNav
+        brand={{ name: 'Angels Delight TV', href: '/' }}
+        links={links}
+        currentPath="/"
+        profileName="Ada"
+        menu={[
+          { label: 'Switch profile', href: '/profiles?switch=1' },
+          { label: 'Sign out', onSelect },
+        ]}
+        sheet={{ title: 'Ada', subtitle: 'Adult profile', closeLabel: 'Close' }}
+      />,
+    );
+    await user.click(screen.getByRole('button', { name: 'Profile menu, Ada' }));
+    const dialog = screen.getByRole('dialog', { name: 'Ada' });
+    expect(within(dialog).getByText('Adult profile')).toBeInTheDocument();
+    await user.click(within(dialog).getByRole('button', { name: 'Sign out' }));
+    expect(onSelect).toHaveBeenCalled();
+    expect(screen.queryByRole('dialog')).toBeNull();
+  });
+
+  it('keeps the popover menu on wide screens and when no sheet is described', async () => {
+    phone(false);
+    const user = userEvent.setup();
+    render(guestNav());
+    const trigger = screen.getByRole('button', { name: 'Account menu' });
+    expect(trigger).toHaveAttribute('aria-haspopup', 'menu');
+    await user.click(trigger);
+    expect(screen.getByRole('menu')).toBeInTheDocument();
+    expect(screen.queryByRole('dialog')).toBeNull();
   });
 });

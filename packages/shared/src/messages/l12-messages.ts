@@ -12,6 +12,8 @@ export const L12_MESSAGES = {
   'guest.kids.turnOn': 'Turn on Kids mode',
   'nav.sheet.close': 'Close',
   'nav.sheet.accountTitle': 'Account',
+  'nav.sheet.adultProfile': 'Adult profile',
+  'nav.sheet.kidsProfile': 'Kids profile',
   'nav.sheet.language': 'Language',
   'nav.sheet.kidsHelp': 'Shows videos made for children. Anyone using this device can turn it off.',
 } as const;

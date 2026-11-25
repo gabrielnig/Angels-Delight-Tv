@@ -63,13 +63,18 @@ export function GuestChrome({
   // One account icon holds what the old bar spread over four controls. Kids mode shows only the switch and Help,
   // so a child cannot reach Create account (S183 frame 4).
   const menu: MenuItem[] = [
-    ...(kids ? [] : [{ label: msg('nav.signIn'), href: '/sign-in' }]),
+    ...(kids ? [] : [{ label: msg('nav.signIn'), href: '/sign-in', variant: 'primary' as const }]),
     ...(kids || !signUpOpen ? [] : [{ label: msg('nav.createAccount'), href: '/sign-up' }]),
     ...(setKidsMode
       ? [
           {
             label: kids ? msg('guest.kids.turnOff') : msg('guest.kids.turnOn'),
             onSelect: () => changeKids(!kids),
+            switch: {
+              checked: kids,
+              label: msg('guest.kids.label'),
+              help: msg('nav.sheet.kidsHelp'),
+            },
           },
         ]
       : []),
@@ -89,6 +94,7 @@ export function GuestChrome({
           profileName=""
           menu={menu}
           guest
+          sheet={{ title: msg('nav.sheet.accountTitle'), closeLabel: msg('nav.sheet.close') }}
           kids={kids}
           kidsLabel={msg('nav.kidsBadge')}
           accountLabel={msg('nav.accountMenu')}

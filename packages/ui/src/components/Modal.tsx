@@ -25,6 +25,8 @@ export interface ModalProps {
   className?: string;
   /** Drops the corner close button. Use when the footer already has a Cancel (S28, S30 dialogs). */
   hideClose?: boolean;
+  /** Accessible name of the corner close button, already translated. */
+  closeLabel?: string;
 }
 
 export function Modal({
@@ -39,6 +41,7 @@ export function Modal({
   error,
   className,
   hideClose = false,
+  closeLabel = 'Close',
 }: ModalProps) {
   const titleId = useId();
   const dialogRef = useRef<HTMLDivElement>(null);
@@ -118,7 +121,7 @@ export function Modal({
             {title}
           </h2>
           {hideClose ? null : (
-            <IconButton label="Close" icon="close" onClick={() => onCloseRef.current()} />
+            <IconButton label={closeLabel} icon="close" onClick={() => onCloseRef.current()} />
           )}
         </header>
         <div className="ad-modal__body">
