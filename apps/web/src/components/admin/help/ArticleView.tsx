@@ -86,7 +86,7 @@ export function ArticleView({
                 Go to this screen
               </LinkButton>
             ) : null}
-            <PrintButton />
+            <PrintButton guide={meta.id} />
           </>
         }
       />
