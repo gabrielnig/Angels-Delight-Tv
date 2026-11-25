@@ -9,3 +9,4 @@ export * from './posters';
 export * from './notices';
 export * from './slugs';
 export * from './captions-availability';
+export * from './share-text';

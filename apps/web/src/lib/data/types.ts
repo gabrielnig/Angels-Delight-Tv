@@ -293,9 +293,15 @@ export interface CatalogRepository {
   ): Promise<SeriesDetail | { blocked: 'kids' } | { redirect: string } | null>;
 }
 
+/** The editor's own words for the share card, from the title editor (L15b). */
+export interface ShareWords {
+  title: string | null;
+  description: string | null;
+}
+
 export type PublicPreview =
-  | { type: 'video'; item: VideoSummary }
-  | { type: 'series'; item: SeriesSummary }
+  | { type: 'video'; item: VideoSummary; share?: ShareWords }
+  | { type: 'series'; item: SeriesSummary; share?: ShareWords }
   | { type: 'redirect'; to: string };
 
 /** One title in Viewing activity (M49-S09). Mirrors `ActivityItem` in @ad/viewer. */

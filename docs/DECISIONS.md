@@ -2169,3 +2169,10 @@ Options: keep jumping straight to the system sheet (Netflix mobile behaviour); k
 Why: the owner asked that every place to share be visible and that it look like a modern app sheet. A free platform cannot rely on a good system sheet, and a tag in a copied link leaks into reshares. Kids profiles keep the no external links rule.
 Reversible: yes. Everything is a setting or a component choice; no migration.
 >>>>>>> Stashed changes
+
+## D-392 Share card words per title live in two nullable columns, edited on a Share card page (lane L15b, M45)
+- Decision: (1) `videos` and `series` get `share_title` (up to 90 characters) and `share_description` (up to 200) in migration 0061, null meaning the card follows the title and description. (2) Staff edit them on `/admin/videos/[id]/share` and `/admin/series/[id]/share` with live WhatsApp, Facebook and X cards, with the same permission as editing the title; every save is audited (`video.share_text`, `series.share_text`, field names only). (3) The words reach the page tags, the picture overlay and JSON-LD through `PublicPreview.share`. (4) A custom share picture upload is not built in this lane: the fallback chain is the generated card from the poster, then the generic platform card.
+- Options: put the words in a JSON column; reuse the poster alt text; build a custom picture upload now (needs an asset picker and image variant rules).
+- Why: Two plain columns are simple to read in the public preview query and to constrain; a custom picture needs the asset pipeline and is a separate slice.
+- Reversible: Yes. Additive columns, one read in `publicPreview`.
+

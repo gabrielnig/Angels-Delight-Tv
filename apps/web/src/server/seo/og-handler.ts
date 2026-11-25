@@ -85,7 +85,7 @@ export function createOgHandler(deps: OgDeps) {
       ]);
       const jpeg = await deps.render({
         kind,
-        title: found.item.title,
+        title: found.share?.title?.trim() || found.item.title,
         siteName,
         freeLine: deps.freeLine(),
         poster,

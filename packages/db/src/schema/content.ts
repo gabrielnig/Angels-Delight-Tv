@@ -121,6 +121,9 @@ export const videos = pgTable(
     mediaPrefix: text('media_prefix').notNull().unique(),
     posterAssetId: uuid('poster_asset_id').references(() => assets.id, { onDelete: 'set null' }),
     heroAssetId: uuid('hero_asset_id').references(() => assets.id, { onDelete: 'set null' }),
+    /** Editor worded share card (L15b). Null follows the title and description. */
+    shareTitle: text('share_title'),
+    shareDescription: text('share_description'),
     failureCode: text('failure_code'),
     failureMessage: text('failure_message'),
     /** Key in the media bucket of the seek preview map (WebVTT pointing at sprite sheets). Null when none. */
@@ -284,6 +287,9 @@ export const series = pgTable(
     deletedAt: timestamptz('deleted_at'),
     /** Own group and item words for this series (M51), null to follow `content.series_labels`. */
     labelOverrides: jsonb('label_overrides'),
+    /** Editor worded share card (L15b). Null follows the title and description. */
+    shareTitle: text('share_title'),
+    shareDescription: text('share_description'),
     searchTsv: tsvector('search_tsv').generatedAlwaysAs(
       sql`to_tsvector('simple', title || ' ' || coalesce(description, ''))`,
     ),

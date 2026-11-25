@@ -15,6 +15,7 @@ import { pickSeason, seasonRows } from '../../../../components/title/series-rows
 import { getCatalog, getLibrary } from '../../../../lib/data';
 import { JsonLd } from '../../../../components/seo/JsonLd';
 import { pageMetadata, shareImageExtra } from '../../../../server/seo/site-meta';
+import { shareOf, shareTextOf } from '../../../../lib/seo/share-overrides';
 import { shareImageFor } from '../../../../lib/seo/share-image';
 import { seriesPageJsonLd } from '../../../../lib/seo/page-jsonld';
 import { shareConfig, siteOrigin, titleIndexable } from '../../../../server/seo/page-seo';
@@ -35,14 +36,15 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   }
   const { item } = preview;
   const path = `/series/${item.slug}`;
+  const words = shareTextOf(item, preview.share);
   const indexable = await titleIndexable('series', item.slug);
   if (!indexable) return pageMetadata({ kind: 'private', path });
   return pageMetadata({
     kind: 'series',
     path,
-    title: item.title,
-    description: item.description,
-    image: shareImageFor('series', item.slug, item.title, item.publishedAt, item.thumbnail, await shareImageExtra()),
+    title: words.title,
+    description: words.description,
+    image: shareImageFor('series', item.slug, words.title, item.publishedAt, item.thumbnail, await shareImageExtra()),
     releasedAt: item.publishedAt || undefined,
     tags: item.categoryName ? [item.categoryName] : undefined,
   });
@@ -123,6 +125,10 @@ export default async function SeriesPage({
     titleIndexable('series', series.slug),
     shareConfig(series.title, 'series', series.slug, series.thumbnail?.src),
   ]);
+  const shareWords = shareTextOf(
+    series,
+    shareOf(await getCatalog().publicPreview(series.slug, 'series')),
+  );
   return (
     <AppShell>
       {indexable ? (
@@ -131,10 +137,11 @@ export default async function SeriesPage({
             origin: siteOrigin(),
             series,
             seasons,
+            words: shareWords,
             shareImage: shareImageFor(
               'series',
               series.slug,
-              series.title,
+              shareWords.title,
               series.publishedAt,
               series.thumbnail,
               await shareImageExtra(),
