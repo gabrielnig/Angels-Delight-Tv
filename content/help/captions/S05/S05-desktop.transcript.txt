@@ -1,0 +1,17 @@
+Who can do what: Editor, Admin and Super admin (S05)
+For Editors. 1 min 2 s.
+
+0:04  Choose Help centre in the side menu.
+      The pointer moves to Help centre.
+0:11  Type "roles" in the Search the help centre box.
+      The pointer moves to Search the help centre.
+0:16  Click Search.
+      The pointer moves to Search.
+0:20  Click Roles and permissions.
+      The pointer moves to Roles and permissions.
+0:25  Wait until you see Who can do this.
+      The pointer moves to Who can do this.
+0:31  Scroll to Steps.
+      The pointer moves to Steps.
+0:36  Scroll to Related guides.
+      The pointer moves to Related guides.

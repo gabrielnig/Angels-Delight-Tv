@@ -1,0 +1,14 @@
+Watch the Encoding queue and retry a failed video (D12)
+For Editors. 1 min 3 s.
+
+0:05  Choose Encoding in the side menu.
+      The pointer moves to Encoding1 need attention.
+0:11  Check that Updating live is shown.
+      The pointer moves to Updating live.
+0:18  Check that Rivers of Africa shows its progress.
+      The pointer moves to Rivers of Africa.
+0:25  Check that It did not finish explains why a video failed.
+      The pointer moves to It did not finish..
+0:33  Click Retry encoding Our Solar System.
+      The pointer moves to Retry encoding Our Solar System.
+0:38  Wait until you see is back in the queue.

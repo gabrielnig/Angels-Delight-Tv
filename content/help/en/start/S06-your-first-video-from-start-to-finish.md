@@ -7,7 +7,7 @@ role: editor
 needs: [S02, S04]
 related: [D07, D08]
 readMinutes: 4
-watchSeconds: 70
+watchSeconds: 95
 video:
   id: VS06
   captions: burned
@@ -37,7 +37,7 @@ Take one video from your computer to the point where it only needs captions and 
 3. Choose a file from your computer.
    ![The Upload queue with the file uploading, marked 1](../../media/S06/S06-03-queue-desktop.webp)
 4. Wait until you see **Uploaded just now**.
-5. Click **Edit details for demo-lesson.mp4**.
+5. Click **Edit details for demo_lesson.mp4**.
 6. Type "Learn how to save money on mobile data." in the **Description** box.
    ![The Description box filled in, marked 1](../../media/S06/S06-06-details-desktop.webp)
 7. Tick **Life Skills**.

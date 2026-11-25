@@ -46,8 +46,8 @@ async function session() {
 
 describe('fileNameHint', () => {
   it('takes the file name a following choose a file step asks for', () => {
-    expect(fileNameHint('Choose a file from your computer, named "flaky-lesson.mp4".')).toBe(
-      'flaky-lesson.mp4',
+    expect(fileNameHint('Choose a file from your computer, named "flaky_lesson.mp4".')).toBe(
+      'flaky_lesson.mp4',
     );
     expect(fileNameHint('Choose a file from your computer.')).toBeUndefined();
     expect(fileNameHint('Click **Retry**.')).toBeUndefined();
@@ -147,7 +147,7 @@ describe('runSteps (needs Chromium)', () => {
     );
     const r = await runSteps(s, [
       { n: 1, text: 'Click **Choose videos**.' },
-      { n: 2, text: 'Wait until you see **demo-lesson.mp4**.' },
+      { n: 2, text: 'Wait until you see **demo_lesson.mp4**.' },
     ]);
     expect(r.failure).toBeNull();
     await context.close();

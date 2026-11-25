@@ -1,0 +1,19 @@
+Publish or unpublish a video (D08)
+For Editors. 58 s.
+
+0:05  Choose Videos in the side menu.
+      The pointer moves to Videos.
+0:11  Click Edit Staying Safe Online.
+      The pointer moves to Staying Safe Online.
+0:16  Check that Before you publish shows every step done.
+      The pointer moves to Before you publish.
+0:24  Click Publish.
+      The pointer moves to Publish.
+0:28  Click Publish now.
+      The pointer moves to Publish now.
+0:32  Wait until you see Unpublish.
+0:38  Click Unpublish to hide the video again.
+      The pointer moves to Unpublish.
+0:43  Click Unpublish to confirm.
+      The pointer moves to Unpublish.
+0:48  Wait until you see Publish.

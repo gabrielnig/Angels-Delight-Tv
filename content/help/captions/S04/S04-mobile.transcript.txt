@@ -1,0 +1,17 @@
+Find your way around: menu, top bar and phone menu (S04)
+For Editors. 1 min 3 s.
+
+0:05  Check that the Content group holds your video screens.
+      The pointer moves to Close menu.
+0:13  Choose Videos in the side menu to open a screen.
+      The pointer moves to Videos.
+0:20  Choose Dashboard in the side menu to go back.
+      The pointer moves to Dashboard.
+0:27  Check that a number beside Captions shows how many videos wait.
+      The pointer moves to Close menu.
+0:35  Click Account menu for Demo Editor at the top right.
+      The pointer moves to Account menu for DEDemo Editor.
+0:43  Check that Preview site shows the site the way viewers see it.
+      The pointer moves to Preview site.
+0:51  Check that Sign out is in this menu.
+      The pointer moves to Sign out.

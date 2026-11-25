@@ -7,10 +7,9 @@ role: editor
 needs: [S04]
 related: [D05, D08]
 readMinutes: 4
-watchSeconds: 70
+watchSeconds: 69
 video:
   id: VD10
-  phone: true
   captions: burned
 screens: ["/admin/videos"]
 actions: [video.edit]

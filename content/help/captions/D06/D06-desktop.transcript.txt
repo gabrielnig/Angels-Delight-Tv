@@ -1,0 +1,18 @@
+Choose or upload a poster (D06)
+For Editors. 59 s.
+
+0:04  Choose Videos in the side menu.
+      The pointer moves to Videos.
+0:10  Type "Naira" in the Search box.
+0:16  Click Edit Counting Money in Naira.
+      The pointer moves to Edit Counting Money in Naira.
+0:21  Click Choose poster.
+      The pointer moves to Choose poster.
+0:25  Click 0:34 Use this.
+      The pointer moves to CO0:34Use this.
+0:29  Scroll to Crop and focus.
+      The pointer moves to Crop and focus.
+0:35  Type "Naira notes and coins on a table." in the Poster description (alt text) box.
+0:44  Click Save poster.
+      The pointer moves to Save poster.
+0:48  Wait until you see Before you publish.

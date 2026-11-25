@@ -48,7 +48,7 @@ export function lookStep(
 }
 
 /** A small valid looking MP4 name for uploads. The simulated upload of the fixture build only reads the size. */
-export const DEMO_UPLOAD = { name: 'demo-lesson.mp4', mimeType: 'video/mp4', buffer: Buffer.alloc(40 * 1024 * 1024) };
+export const DEMO_UPLOAD = { name: 'demo_lesson.mp4', mimeType: 'video/mp4', buffer: Buffer.alloc(40 * 1024 * 1024) };
 
 /**
  * The link that opens a row. On a desktop it is the Edit or Review button of the table row. On a phone the list is a

@@ -1,0 +1,15 @@
+Use this help centre: search, print, offline (S08)
+For Editors. 1 min 2 s.
+
+0:04  Choose Help centre in the side menu.
+      The pointer moves to Help centre.
+0:11  Type "captions" in the Search the help centre box.
+      The pointer moves to Search the help centre.
+0:17  Click Search.
+      The pointer moves to Search.
+0:20  Click Review and approve captions.
+      The pointer moves to Review and approve captions.
+0:25  Click Mark as done when you have finished a guide.
+      The pointer moves to Mark as done.
+0:32  Click Yes if the guide helped you.
+      The pointer moves to Yes.

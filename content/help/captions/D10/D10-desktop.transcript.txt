@@ -1,0 +1,15 @@
+Find videos and change many at once (D10)
+For Editors. 1 min 3 s.
+
+0:05  Choose Videos in the side menu.
+      The pointer moves to Videos.
+0:11  Select Published from the Status list.
+      The pointer moves to All statusesPublishedScheduledReadyNeeds captionsProcessingD.
+0:16  Tick Select all on this page.
+0:21  Click Add to category.
+      The pointer moves to Add to category.
+0:26  Select Science from the Category list.
+      The pointer moves to Choose oneLife SkillsScienceMathsGeographyHealth.
+0:31  Click Apply.
+      The pointer moves to Apply.
+0:35  Check that Select all on this page is there if you want to start again.

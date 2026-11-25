@@ -1,0 +1,16 @@
+Review and approve captions (D07)
+For Editors. 58 s.
+
+0:04  Choose Captions in the side menu.
+      The pointer moves to Captions1 need attention.
+0:10  Click Review captions for How Plants Make Food.
+      The pointer moves to How Plants Make Food.
+0:16  Click Play to watch the video with its captions.
+      The pointer moves to Play.
+0:24  Click Pause when you want to read a cue.
+      The pointer moves to Pause.
+0:30  Check that Approving is allowed with warnings shows under the video.
+      The pointer moves to Approving is allowed with warnings. Fixing them first makes .
+0:38  Click Approve captions.
+      The pointer moves to Approve captions.
+0:43  Wait until you see Captions approved.

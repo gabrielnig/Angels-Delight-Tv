@@ -1,0 +1,14 @@
+Schedule a video for later (D09)
+For Editors. 57 s.
+
+0:04  Choose Videos in the side menu.
+      The pointer moves to Videos.
+0:11  Click Edit Staying Safe Online.
+      The pointer moves to Edit Staying Safe Online.
+0:15  Click Publish.
+      The pointer moves to Publish.
+0:19  Click Schedule.
+0:24  Type "03/12/2026" in the Date box.
+0:29  Click Schedule for 12 Mar, 9:00.
+      The pointer moves to Schedule for 12 Mar, 9:00.
+0:34  Wait until you see is scheduled.

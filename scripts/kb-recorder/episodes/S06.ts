@@ -35,12 +35,12 @@ const episode: Episode = {
       caption: 'Choose a file from your computer.',
       holdMs: 2000,
       run: async (s) => {
-        await s.page.getByText('demo-lesson.mp4').filter({ visible: true }).first().waitFor();
+        await s.page.getByText('demo_lesson.mp4').filter({ visible: true }).first().waitFor();
       },
       shot: {
         name: 'queue',
         alt: 'The Upload queue with the file uploading, marked 1',
-        marks: [{ target: (s) => s.page.getByText('demo-lesson.mp4').filter({ visible: true }).first(), label: 'Your file' }],
+        marks: [{ target: (s) => s.page.getByText('demo_lesson.mp4').filter({ visible: true }).first(), label: 'Your file' }],
       },
     },
     {
@@ -53,12 +53,12 @@ const episode: Episode = {
       },
     },
     {
-      caption: 'Click **Edit details for demo-lesson.mp4**.',
+      caption: 'Click **Edit details for demo_lesson.mp4**.',
       holdMs: 2000,
       run: async (s) => {
         const edit = s.page
-          .getByRole('link', { name: 'Edit details for demo-lesson.mp4', exact: true })
-          .or(s.page.getByRole('button', { name: 'Edit details for demo-lesson.mp4', exact: true }))
+          .getByRole('link', { name: 'Edit details for demo_lesson.mp4', exact: true })
+          .or(s.page.getByRole('button', { name: 'Edit details for demo_lesson.mp4', exact: true }))
           .first();
         await s.click(edit);
         await s.page.getByLabel('Description', { exact: true }).waitFor();

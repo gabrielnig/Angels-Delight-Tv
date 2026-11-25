@@ -24,15 +24,15 @@ const episode: Episode = {
           s.page.waitForEvent('filechooser'),
           s.click(s.page.getByRole('button', { name: 'Choose videos', exact: true })),
         ]);
-        await box.setFiles({ ...DEMO_UPLOAD, name: 'flaky-lesson.mp4' });
+        await box.setFiles({ ...DEMO_UPLOAD, name: 'flaky_lesson.mp4' });
       },
     },
     {
-      caption: 'Choose a file from your computer, named "flaky-lesson.mp4".',
+      caption: 'Choose a file from your computer, named "flaky_lesson.mp4".',
       note: 'To practise, give your file a name with the word flaky in it. On your real site, any file can fail when the connection drops.',
       holdMs: 2200,
       run: async (s) => {
-        await s.page.getByText('flaky-lesson.mp4').filter({ visible: true }).first().waitFor();
+        await s.page.getByText('flaky_lesson.mp4').filter({ visible: true }).first().waitFor();
       },
     },
     {
@@ -41,20 +41,20 @@ const episode: Episode = {
       holdMs: 2500,
       run: async (s) => {
         await s.skippable(async () => {
-          await s.page.getByRole('button', { name: 'Retry flaky-lesson.mp4', exact: true }).waitFor({ timeout: 120_000 });
+          await s.page.getByRole('button', { name: 'Retry flaky_lesson.mp4', exact: true }).waitFor({ timeout: 120_000 });
         });
       },
       shot: {
         name: 'failed',
         alt: 'The failed upload with the Retry button marked 1',
-        marks: [{ target: (s) => s.page.getByRole('button', { name: 'Retry flaky-lesson.mp4', exact: true }), label: 'Retry' }],
+        marks: [{ target: (s) => s.page.getByRole('button', { name: 'Retry flaky_lesson.mp4', exact: true }), label: 'Retry' }],
       },
     },
     {
-      caption: 'Click **Retry flaky-lesson.mp4**.',
+      caption: 'Click **Retry flaky_lesson.mp4**.',
       holdMs: 1800,
       run: async (s) => {
-        await clickByName(s, 'button', 'Retry flaky-lesson.mp4', { exact: true });
+        await clickByName(s, 'button', 'Retry flaky_lesson.mp4', { exact: true });
       },
     },
     {

@@ -7,7 +7,7 @@ role: editor
 needs: [S04]
 related: [D05, D07]
 readMinutes: 4
-watchSeconds: 80
+watchSeconds: 64
 video:
   id: VD02
   phone: true
@@ -42,7 +42,7 @@ Add one video file to the platform. You end with a [draft](glossary:draft) video
 4. Wait until you see **Uploaded just now**.
    Keep this page open until then. Closing it can stop the upload.
    ![The finished upload with Uploaded just now marked 1](../../media/D02/D02-04-done-desktop.webp)
-5. Click **Edit details for demo-lesson.mp4**.
+5. Click **Edit details for demo_lesson.mp4**.
    The name on this button is the name of your own file.
 6. Wait until you see **Before you publish**.
    Your video is now a draft. Nobody can watch it yet.
