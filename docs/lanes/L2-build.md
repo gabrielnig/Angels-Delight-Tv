@@ -21,7 +21,8 @@ Plan `docs/plan/v2/L2-home.md`, review `docs/reviews/v2/L2-review.md`, rulings `
 | 12 | Hover card (portal, 300 ms, mouse only) | merged | 370 |
 | 13 | Home skeleton ratio, kids 2.3, state tests | merged | 371 |
 | 14 | Docs, stories, decisions, lane note | merged | 375 |
-| 15 | Hero clip upgrade, part 1: 20 second clip with sound, clip length and sound columns (migration 0058), settings, Generate previews for all videos | see lane note | hero3/s1 |
+| 15 | Hero clip upgrade, part 1: 20 second clip with sound, clip length and sound columns (migration 0058), settings, Generate previews for all videos | merged | 402 |
+| 16 | Hero clip upgrade, part 2: 20 second dwell, slide waits for its clip, speed floor setting, progress fill over the real time | in review | hero3/s2 |
 
 ## Exists
 
@@ -34,6 +35,7 @@ Plan `docs/plan/v2/L2-home.md`, review `docs/reviews/v2/L2-review.md`, rulings `
 ## Hero clip upgrade (slices 15 to 17, worktree `/home/claude/wt2/hero-v3`)
 
 - Slice 15 (worker and admin): `planPreview` takes `clipMs` (default 20000, bounds 6000 to 30000 in `clampClipMs`), whole video up to the clip length. `previewArgs` has `hasAudio` and keeps AAC 48k stereo when the source has sound. `previewMaxBytes(lengthMs)` is 120 KB a second. The worker reads `home.hero_clip_seconds` through `heroClipMsReader` (`apps/worker/src/preview-length.ts`). Migration 0058 adds `preview_has_audio` and `preview_length_ms`. `queueAdminPreviewBackfill` (`packages/catalog/src/admin/preview-clip.ts`), `PreviewBackfillCard`, action `preview.backfill` (admin), fixture twin `queuePreviewBackfill`.
+- Slice 16 (viewer timing): `packages/ui/src/components/hero-timing.ts` (`slideDurationMs`), `Hero` props `waitForClip` and `previewMs` on items, `useHeroTimer` takes `slideMs(index)` and returns `slideLength` and `advanceNow`, `HeroPreview` callbacks `onPlayingChange`, `onEnded`, `onFail`. `heroPreviewEligible` takes `minDownlinkMbps`. `HERO_ROTATE_MS` is 20000. Tests: `Hero.clip.test.tsx`, `hero-timing.test.ts`, `HeroPreview.test.tsx`, `apps/web/src/lib/lowdata/hero-preview.test.ts`, `apps/web/src/components/home/HomeHero.test.tsx`.
 - Scoped tests: `packages/video/src/preview.test.ts`, `packages/video/src/encode/preview.int.test.ts`, `packages/db/src/video-previews.int.test.ts`, `packages/catalog/src/admin/preview-clip.int.test.ts`, `packages/catalog/src/rows.hero.int.test.ts`, `packages/viewer/src/home.int.test.ts`, `apps/worker/src/preview-length.test.ts`, `apps/web/src/components/admin/PreviewBackfillCard.test.tsx`, `apps/web/src/lib/data/admin/video-commands.test.ts`, `packages/theme/src/settings-registry.test.ts`.
 
 ## Scoped tests

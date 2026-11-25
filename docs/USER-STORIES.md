@@ -3907,7 +3907,9 @@ As a viewer, I want the hero to move on in about 20 seconds and let me stop it, 
 - AC3: Given I press Pause, When I look at the button, Then it reads "Resume rotation", the slide holds, and the region is announced politely; Resume restarts the timer.
 - AC4: Given reduced motion or Data saver is on, When Home loads, Then slides never advance by themselves, there is no crossfade, and dots and arrows still work.
 - AC5: Given the hero has looped through twice, When the third loop would start, Then rotation stops on the first slide (setting, 0 never stops).
-- AC6: Given the dots, When a slide is running, Then the current dot shows time left as a fill, and dots have a 44 px hit area and `aria-current`.
+- AC6: Given the dots, When a slide is running, Then the current dot shows time left as a fill that runs over the time the slide really stays (the dwell time, or the clip length plus 3.2 seconds when it waits for its clip), and dots have a 44 px hit area and `aria-current`.
+- AC7: Given a slide has a clip that is playing and the setting Slide waits for its clip is on, When the dwell time passes, Then the slide stays until the clip ends, and moves on at the latest 3.2 seconds after the clip's own length; with the setting off the slide changes at the dwell time.
+- AC8: Given the clip errors or stalls, When it is removed, Then that slide goes back to the dwell time.
 - Edge: swipe left and right on touch changes slides with a 50 px threshold.
 - Error: not applicable.
 - Empty: not applicable.
@@ -3996,9 +3998,9 @@ As a viewer, I want rows that scroll like a real streaming app, so that browsing
 - Empty: see M05-S02.
 
 ### M41-S11 Optional muted preview clip in the hero (Should)
-As a viewer on a fast connection, I want a short silent preview on the featured title, so that it feels like a trailer.
-- AC1: Given a fast connection, Data saver off, no reduced motion, a visible tab and a ready clip, When a slide has shown for 1.2 seconds, Then a muted 6 second clip fades in over the still and fades back at the end.
-- AC2: Given any condition fails or the connection type is unknown, When the slide shows, Then only the still shows and no clip is requested.
+As a viewer on a fast connection, I want a short preview that plays by itself on the featured title, so that it feels like a trailer.
+- AC1: Given a fast connection, Data saver off, no reduced motion, a visible tab and a ready clip, When a slide has shown for 1.2 seconds, Then a muted clip of up to 20 seconds (the clip length setting) fades in over the still, plays by itself without sound, and fades back at the end.
+- AC2: Given any condition fails, or the connection type is unknown and the setting Preview clips on unknown connections is off, or the reported speed is under the site floor (2 Mbps by default, setting 1 to 10), When the slide shows, Then only the still shows and no clip is requested.
 - AC3: Given I press Pause or change slide, When the clip is playing, Then it pauses or unloads.
 - AC4: Given the clip errors or stalls for 2 seconds, When it happens, Then it is removed and the still stays.
 - AC5: Given the site setting for previews is off, When Home loads, Then no clip is ever requested.

@@ -151,3 +151,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - Hero clips are up to 20 seconds (site setting 6 to 30), the whole video when it is no longer than that, and keep a low bitrate audio track so a viewer can unmute. Older silent 6 second clips keep working and hide the sound button until they are cut again. Migration 0058.
 - New button Generate previews for all videos on Admin, Home curation (admins) queues a clip for every published video that has none or an out of date one. It is safe to press again.
 - Hero slides stay 20 seconds by default (was 10, setting 5 to 60). Clips now play on browsers that do not report connection speed and from 2 Mbps (settings), which is why the owner saw only the still before.
+
+### Lane L2 hero clip upgrade, part 2: timing (M41)
+
+- A hero slide with a playing clip now stays until the clip ends (setting Slide waits for its clip, on by default), otherwise slides change after the seconds setting. The dot fill runs over the time the slide really stays. Clips play from 2 Mbps (setting) and the carousel still stops after two loops, under reduced motion and Data saver.

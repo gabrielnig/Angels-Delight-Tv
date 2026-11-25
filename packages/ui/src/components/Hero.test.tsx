@@ -100,8 +100,8 @@ describe('Hero', () => {
     expect(screen.getByRole('heading', { name: 'Stay healthy' })).toBeInTheDocument();
   });
 
-  it('shares one rotation constant of 10 seconds', () => {
-    expect(HERO_ROTATE_MS).toBe(10000);
+  it('shares one rotation constant of 20 seconds', () => {
+    expect(HERO_ROTATE_MS).toBe(20000);
   });
 
   it('crossfades: the leaving slide stays for the fade then is removed', () => {

@@ -91,4 +91,31 @@ describe('HeroPreview', () => {
     rerender(<HeroPreview src="/c.mp4" active={false} paused={false} />);
     expect(video(container)).toBeNull();
   });
+
+  it('tells the carousel when it plays, ends and fails', () => {
+    const onPlayingChange = vi.fn();
+    const onEnded = vi.fn();
+    const onFail = vi.fn();
+    const { container } = render(
+      <HeroPreview src="/c.mp4" active paused={false} onPlayingChange={onPlayingChange} onEnded={onEnded} onFail={onFail} />,
+    );
+    wait(1200);
+    fireEvent.playing(video(container)!);
+    expect(onPlayingChange).toHaveBeenLastCalledWith(true);
+    fireEvent.ended(video(container)!);
+    expect(onPlayingChange).toHaveBeenLastCalledWith(false);
+    expect(onEnded).toHaveBeenCalledTimes(1);
+    expect(onFail).not.toHaveBeenCalled();
+    fireEvent.error(video(container)!);
+    expect(onFail).toHaveBeenCalledTimes(1);
+  });
+
+  it('reports a failure after a two second stall', () => {
+    const onFail = vi.fn();
+    const { container } = render(<HeroPreview src="/c.mp4" active paused={false} onFail={onFail} />);
+    wait(1200);
+    fireEvent.stalled(video(container)!);
+    wait(2000);
+    expect(onFail).toHaveBeenCalledTimes(1);
+  });
 });
