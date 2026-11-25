@@ -15,8 +15,8 @@ import { FormActions } from './FormActions';
 import { SeriesNamesFields } from './SeriesNamesFields';
 import { useSettingsForm } from './useSettingsForm';
 
-const KEY = 'content.series_labels' satisfies SettingKey;
-const KEYS: SettingKey[] = [KEY];
+const LABELS_SETTING = 'content.series_labels' satisfies SettingKey;
+const KEYS: SettingKey[] = [LABELS_SETTING];
 
 interface Props {
   data: SiteSettingsDto;
@@ -29,7 +29,7 @@ export function SeriesNamesTab({ data, actions, onSaved }: Props) {
   const toast = useToast();
   const form = useSettingsForm({ keys: KEYS, data, update: actions.update, onSaved });
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
-  const value = (form.draft[KEY] as SeriesLabelSetting | undefined) ?? DEFAULT_SERIES_LABELS;
+  const value = (form.draft[LABELS_SETTING] as SeriesLabelSetting | undefined) ?? DEFAULT_SERIES_LABELS;
 
   async function save() {
     const checked = validateSeriesLabels(value);
@@ -53,7 +53,7 @@ export function SeriesNamesTab({ data, actions, onSaved }: Props) {
           errors={fieldErrors}
           onChange={(next) => {
             setFieldErrors({});
-            form.set(KEY, next);
+            form.set(LABELS_SETTING, next);
           }}
         />
         <FormActions
