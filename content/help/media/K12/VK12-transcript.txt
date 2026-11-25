@@ -1,0 +1,14 @@
+How viewers sign in: two step, Google and the new device email (K12)
+For Super admins. 1 min 8 s.
+
+0:05  Choose Site settings in the side menu.
+      The pointer moves to Site settings.
+0:14  Click Features and limits.
+      The pointer moves to Features and limits.
+0:22  Scroll to Sign in with Google.
+      The pointer moves to Sign in with Google.
+0:30  Scroll to Open sign up.
+      The pointer moves to Open sign up.
+0:37  Scroll to Failed sign ins before lockout.
+0:47  Scroll to Lockout minutes.
+0:54  Scroll to Sessions per account.

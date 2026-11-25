@@ -37,7 +37,7 @@ async function readStable(page: Page): Promise<string> {
     try {
       return await pageText(page);
     } catch (e) {
-      const navigating = e instanceof Error && /context was destroyed|navigation/i.test(e.message);
+      const navigating = e instanceof Error && /context was destroyed|navigation|reading .innerText./i.test(e.message);
       if (!navigating || attempt >= 4) throw e;
       await page.waitForLoadState('load').catch(() => {});
     }

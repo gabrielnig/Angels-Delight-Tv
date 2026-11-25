@@ -1,0 +1,19 @@
+Who can do what: staff roles in plain words (K11)
+For Super admins. 1 min 7 s.
+
+0:05  Choose Roles and invites in the side menu.
+      The pointer moves to Roles and invites.
+0:13  Scroll to Admins.
+      The pointer moves to Admins.
+0:19  Scroll to Invite a team member.
+      The pointer moves to Invite a team member.
+0:26  Scroll to What each role can do.
+      The pointer moves to What each role can do.
+0:33  Scroll to Move videos to Trash.
+      The pointer moves to Move videos to Trash.
+0:40  Scroll to Suspend viewer accounts.
+      The pointer moves to Suspend viewer accounts.
+0:47  Scroll to Change features and limits.
+      The pointer moves to Change features and limits.
+0:55  Scroll to Export the audit log.
+      The pointer moves to Export the audit log.

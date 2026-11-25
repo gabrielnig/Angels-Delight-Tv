@@ -1,0 +1,17 @@
+Delete an account when the owner asks (K13)
+For Super admins. 1 min 13 s.
+
+0:05  Choose Users in the side menu.
+      The pointer moves to Users.
+0:12  Type "kelechi" in the Search by email or profile name box.
+0:22  Click Search.
+      The pointer moves to Search.
+0:29  Click kelechi@example.test to open the account.
+      The pointer moves to kelechi@example.test.
+0:38  Scroll to Support actions.
+      The pointer moves to Support actions.
+0:45  Click Delete account.
+      The pointer moves to Delete account.
+0:50  Type "DELETE" in the Type DELETE to confirm box.
+0:59  Click Delete account to confirm.
+      The pointer moves to Delete account.

@@ -31,6 +31,18 @@ function control(s: Session, label: string): Locator {
 }
 
 
+/** When a modal box is open, the control inside the box wins: a page button and its confirm button share a label. */
+async function controlInOpenBox(s: Session, label: string): Promise<Locator> {
+  const box = s.page.locator('dialog[open]');
+  if ((await box.count().catch(() => 0)) > 0) {
+    let loc = box.getByRole(ROLES[0], { name: label, exact: true });
+    for (const role of ROLES.slice(1))
+      loc = loc.or(box.getByRole(role, { name: label, exact: true }));
+    if ((await loc.count().catch(() => 0)) > 0) return loc.first();
+  }
+  return control(s, label);
+}
+
 async function labelsOnScreen(s: Session): Promise<string[]> {
   return s.page
     .evaluate(() => {
@@ -76,7 +88,8 @@ async function execute(
       break;
     }
     case 'click': {
-      const loc = control(s, a.label);
+      await s.page.locator('.adm-toast').first().waitFor({ state: 'hidden', timeout: 7000 }).catch(() => {});
+      const loc = await controlInOpenBox(s, a.label);
       const miss = await find(`a control named "${a.label}"`, loc);
       if (miss) return miss;
       await loc.scrollIntoViewIfNeeded().catch(() => {});

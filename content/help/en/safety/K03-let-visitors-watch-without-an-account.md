@@ -7,7 +7,7 @@ role: super_admin
 needs: [C04]
 related: [C04, C05]
 readMinutes: 3
-watchSeconds: 100
+watchSeconds: 71
 video:
   id: VK03
 actions: [settings.flags]

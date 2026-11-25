@@ -1,0 +1,20 @@
+Maturity ratings and the highest rating guests can see (K02)
+For Editors. 1 min 19 s.
+
+0:06  Choose Videos in the side menu.
+      The pointer moves to Videos.
+0:12  Type "Counting" in the Search box.
+0:20  Click Counting Money in Naira to open the video.
+      The pointer moves to Counting Money in Naira.
+0:28  Scroll to Maturity rating.
+      The pointer moves to Choose a ratingGPG121518.
+0:35  Click Publish.
+      The pointer moves to Publish.
+0:42  Check that Maturity rating (required) is in the box.
+      The pointer moves to Choose a ratingGPG121518.
+0:51  Select PG from Maturity rating (required).
+      The pointer moves to Choose a ratingGPG121518.
+1:00  Click Cancel.
+      The pointer moves to Cancel.
+1:07  Scroll to Before you publish.
+      The pointer moves to Before you publish.
