@@ -6,6 +6,7 @@ import { cx } from './cx';
 import { Icon } from './Icon';
 import { Skeleton, SkeletonRegion } from './Skeleton';
 import { HeroPreview } from './HeroPreview';
+import { useHeroSound } from './hero-sound';
 import { slideDurationMs } from './hero-timing';
 import { useHeroTimer } from './useHeroTimer';
 
@@ -44,6 +45,7 @@ export function Hero({
   skeletonDelayMs,
   previewAllowed = false,
   waitForClip = true,
+  soundAllowed = false,
   className,
 }: {
   items: HeroItem[];
@@ -62,6 +64,11 @@ export function Hero({
    * changes after `intervalMs` even while its clip is still playing.
    */
   waitForClip?: boolean;
+  /**
+   * The page allows a sound button: site setting `home.hero_sound` on and the audience is not Kids. The button also
+   * needs a clip with sound, previews allowed and no reduced motion. Clips are always muted until the viewer taps.
+   */
+  soundAllowed?: boolean;
   className?: string;
 }) {
   const [touchX, setTouchX] = useState<number | null>(null);
@@ -84,6 +91,23 @@ export function Hero({
     slideHasImage: Boolean(items[0] && items[Math.min(0, count - 1)]?.image),
   });
   const current = items[timer.index];
+
+  // The viewer's sound choice lives in memory for this visit, so the next clip follows it. It never survives a
+  // hidden tab: leaving always stops sound, and coming back starts muted with Unmute showing.
+  const [soundOn, setSoundOn] = useHeroSound();
+  useEffect(() => {
+    const stopOnHide = () => {
+      if (document.visibilityState === 'hidden') setSoundOn(false);
+    };
+    document.addEventListener('visibilitychange', stopOnHide);
+    return () => document.removeEventListener('visibilitychange', stopOnHide);
+  }, [setSoundOn]);
+  const soundPossible = soundAllowed && !timer.reduced && previewAllowed;
+  const hasSound = (item: HeroItem | undefined) =>
+    soundPossible && hasClip(item) && item?.previewHasAudio === true;
+  const reserveSoundSlot = soundPossible && items.some((item) => item.previewHasAudio === true);
+  const showSound = hasSound(current);
+  const [soundNote, setSoundNote] = useState('');
 
   // Keep the slide that is leaving for the length of the fade, never under reduced motion.
   const shownRef = useRef<HeroItem | undefined>(current);
@@ -169,6 +193,11 @@ export function Hero({
               paused={timer.paused}
               onEnded={waitForClip ? timer.advanceNow : undefined}
               onFail={() => setFailedClips((set) => new Set(set).add(item.id))}
+              sound={soundPossible && item.previewHasAudio === true && soundOn}
+              onSoundBlocked={() => {
+                setSoundOn(false);
+                setSoundNote('');
+              }}
             />
           ) : null}
           <div className="ad-hero__scrim" aria-hidden="true" />
@@ -222,32 +251,57 @@ export function Hero({
       {leaving ? renderSlide(leaving, true) : null}
       {renderSlide(current, false)}
 
-      {count > 1 ? (
+      {count > 1 || showSound ? (
         <div className="ad-hero__controls">
           <div className="ad-hero__dots">
-            {items.map((item, position) => (
-              <button
-                key={item.id}
-                type="button"
-                className="ad-hero__dot"
-                aria-label={`Show slide ${position + 1}: ${item.title}`}
-                aria-current={position === timer.index ? 'true' : undefined}
-                onClick={() => timer.go(position)}
-              >
-                <span aria-hidden="true">
-                  {position === timer.index && timer.showFill ? (
-                    <i
-                      key={`${timer.key}:${timer.slideLength}`}
-                      className="ad-hero__fill"
-                      data-running={timer.running ? 'true' : 'false'}
-                    />
-                  ) : null}
-                </span>
-              </button>
-            ))}
+            {count > 1
+              ? items.map((item, position) => (
+                  <button
+                    key={item.id}
+                    type="button"
+                    className="ad-hero__dot"
+                    aria-label={`Show slide ${position + 1}: ${item.title}`}
+                    aria-current={position === timer.index ? 'true' : undefined}
+                    data-done={position < timer.index ? 'true' : undefined}
+                    onClick={() => timer.go(position)}
+                  >
+                    <span
+                      aria-hidden="true"
+                      data-filling={position === timer.index && timer.showFill ? 'true' : undefined}
+                    >
+                      {position === timer.index && timer.showFill ? (
+                        <i
+                          key={`${timer.key}:${timer.slideLength}`}
+                          className="ad-hero__fill"
+                          data-running={timer.running ? 'true' : 'false'}
+                        />
+                      ) : null}
+                    </span>
+                  </button>
+                ))
+              : null}
           </div>
           <div className="ad-hero__cluster">
-            {timer.showPause ? (
+            {reserveSoundSlot ? (
+              <span className="ad-hero__sound-slot">
+                {showSound ? (
+                  <button
+                    type="button"
+                    className="ad-hero__sound"
+                    aria-label={soundOn ? 'Mute preview sound' : 'Unmute preview sound'}
+                    aria-pressed={soundOn}
+                    onClick={() => {
+                      setSoundOn(!soundOn);
+                      setSoundNote(soundOn ? 'Sound off' : 'Sound on');
+                    }}
+                  >
+                    <Icon name={soundOn ? 'volumeOn' : 'volumeOff'} size={20} />
+                    <span className="ad-hero__sound-text">{soundOn ? 'Mute' : 'Unmute'}</span>
+                  </button>
+                ) : null}
+              </span>
+            ) : null}
+            {count > 1 && timer.showPause ? (
               <button
                 type="button"
                 className="ad-hero__pause"
@@ -260,22 +314,31 @@ export function Hero({
                 </span>
               </button>
             ) : null}
-            <IconButton
-              className="ad-hero__step ad-hero__step--prev"
-              variant="on-dark"
-              icon="chevronLeft"
-              label="Previous slide"
-              onClick={() => timer.step(-1)}
-            />
-            <IconButton
-              className="ad-hero__step ad-hero__step--next"
-              variant="on-dark"
-              icon="chevronRight"
-              label="Next slide"
-              onClick={() => timer.step(1)}
-            />
+            {count > 1 ? (
+              <>
+                <IconButton
+                  className="ad-hero__step ad-hero__step--prev"
+                  variant="on-dark"
+                  icon="chevronLeft"
+                  label="Previous slide"
+                  onClick={() => timer.step(-1)}
+                />
+                <IconButton
+                  className="ad-hero__step ad-hero__step--next"
+                  variant="on-dark"
+                  icon="chevronRight"
+                  label="Next slide"
+                  onClick={() => timer.step(1)}
+                />
+              </>
+            ) : null}
           </div>
         </div>
+      ) : null}
+      {reserveSoundSlot ? (
+        <span className="ad-sr-only" role="status" aria-live="polite">
+          {soundNote === 'Sound on' && !soundOn ? '' : soundNote}
+        </span>
       ) : null}
     </section>
   );

@@ -19,6 +19,7 @@ export function HomeHero({
   allowUnknownConnection = false,
   minDownlinkMbps,
   waitForClip = true,
+  soundAllowed = false,
 }: {
   items: HeroItem[];
   label: string;
@@ -39,6 +40,8 @@ export function HomeHero({
   minDownlinkMbps?: number;
   /** Site setting home.hero_wait_for_clip. */
   waitForClip?: boolean;
+  /** Site setting home.hero_sound and not a Kids audience. Clips still start muted, the viewer taps to hear them. */
+  soundAllowed?: boolean;
 }) {
   const saver = useDataSaver(profileId, { profileSetting: dataSaver });
   const previewAllowed = useHeroPreviewAllowed(previews, saver.on, allowUnknownConnection, minDownlinkMbps);
@@ -50,6 +53,7 @@ export function HomeHero({
       maxLoops={maxLoops}
       previewAllowed={previewAllowed}
       waitForClip={waitForClip}
+      soundAllowed={soundAllowed}
     />
   );
 }

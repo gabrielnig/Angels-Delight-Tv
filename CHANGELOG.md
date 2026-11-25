@@ -155,3 +155,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 ### Lane L2 hero clip upgrade, part 2: timing (M41)
 
 - A hero slide with a playing clip now stays until the clip ends (setting Slide waits for its clip, on by default), otherwise slides change after the seconds setting. The dot fill runs over the time the slide really stays. Clips play from 2 Mbps (setting) and the carousel still stops after two loops, under reduced motion and Data saver.
+
+### Lane L2 hero clip upgrade, part 3: sound button (M41)
+
+- The Home hero clip plays muted by itself and a button beside Pause turns the sound on and off (Unmute and Mute). It shows only for clips that have sound, never on Kids profiles or under reduced motion, stops when the tab hides, and the next clip follows the choice. A site switch can remove it. The slide indicator is now five filling segments.

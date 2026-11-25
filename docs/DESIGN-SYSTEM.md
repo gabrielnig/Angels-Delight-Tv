@@ -48,7 +48,7 @@ Contents
 | Continue Watching and My List first, resume button says Resume | Home order puts Continue Watching first for returning users; hero and detail button switch to "Continue" with time left (11.7, 12) |
 | Profile gate after sign in, kids flag, PIN optional | Profile picker tiles page, kids safe flag, no PIN in v1 (11.9) |
 | Skeleton placeholders, dark canvas hides gaps | Skeleton with matched geometry, shimmer left to right (11.14) |
-| Dense autoplay video heroes cost data | Hero is a still image first with an optional muted 6 second clip on fast connections with Data saver off and no reduced motion. No video in rows (11.7) |
+| Dense autoplay video heroes cost data | Hero is a still image first with an optional clip of up to 20 seconds that autoplays muted on fast connections with Data saver off and no reduced motion, and a button the viewer taps to hear it. No video in rows (11.7) |
 | YouTube data saver, quality control, double tap seek, speed menu | Data saver switch, quality menu, double tap 10s, speed menu (11.22, 13) |
 | Up next end card with countdown | Pastel up-next tiles, 5s countdown, cancellable (11.23) |
 | Apple: hero 3 to 8 items, alt text must include banner text | Hero carousel max 5 items, rotating by default with a Pause control, alt text includes any text in image (11.7) |
@@ -130,6 +130,8 @@ Tokens added by M47 (layout, motion, scrim and fixed colours):
 | `--color-card-progress-rail` | `#3A3D46` | Card and admin progress rail |
 | `--color-bar-disabled-bg` / `-ink` | `#3A3D46` / `#C9CCD3` | Disabled action on the dark bulk bar |
 | `--color-hero-chip-bg` | `rgba(14, 15, 19, 0.6)` | Hero More info fill |
+| `--color-hero-track` / `--color-hero-track-done` | `rgba(255, 255, 255, 0.4)` / `rgba(255, 255, 255, 0.95)` | Hero slide indicator segment still to come, and shown (or the current one with no fill) |
+| `--color-hero-border` / `--color-hero-chip-hover` | `rgba(255, 255, 255, 0.85)` / `rgba(14, 15, 19, 0.8)` | Hero Pause and sound button border, and their fill on hover |
 | `--scrim-rgb`, `--scrim-hero-start` / `-mid` / `-end` | `14, 15, 19`, 0.85 / 0.45 / 0 | Hero scrim stops, with `-hold`, `-mid` and `-end` positions per desktop and mobile |
 | `--nav-scrim-hold` | 70% | Nav scrim holds 0.85 to here |
 | `--tabbar-height` | 3.5rem | Bottom tab bar |
@@ -491,9 +493,10 @@ Accessibility: card is an `<a>` with accessible name "Title, 4 minutes". Actions
 
 ### 11.7 Hero banner
 
-- Content: still image, title (`--text-hero`), one to two line description, meta (category, length), primary action "Play" (or "Continue", with time left), secondary "More info". The still shows first. An optional muted 6 second clip (no audio track, decorative, `aria-hidden`) may fade in over it after 1.2 s only when the connection is fast, Data saver is off, reduced motion is off, the tab is visible and the slide is active; any error or a 2 s stall removes it. Editors may replace the headline, description and button label (80 characters each).
+- Content: still image, title (`--text-hero`), one to two line description, meta (category, length), primary action "Play" (or "Continue", with time left), secondary "More info". The still shows first. An optional clip (the whole video up to the clip length, 20 s by default, otherwise a segment of that length; H.264 with low bitrate AAC when the source has sound) may fade in over it after 1.2 s, autoplaying muted and decorative (`aria-hidden`), only when the connection is fast (the browser reports at least the site floor, 2 Mbps by default, or reports nothing and the site allows unknown connections), Data saver is off, reduced motion is off, the tab is visible and the slide is active; any error or a 2 s stall removes it and the slide returns to the dwell time. A slide with a playing clip stays until the clip ends (site setting, at most the clip length plus 3.2 s); with the setting off it changes at the dwell time.
+- Sound button (S187, D-367): clips always start muted and nothing makes sound until the viewer taps. The button sits just left of Pause in a reserved slot, so nothing moves when a slide has no sound. It is a 44 px pill with an icon and the word Unmute, which becomes Mute with the sound waves icon (icon and word both change, `aria-pressed` follows, the accessible names are "Unmute preview sound" and "Mute preview sound"). On phones it is the icon only, still 44 px. A polite status says "Sound on" or "Sound off". It shows only when the slide has a clip that has sound, previews are allowed and reduced motion is off; never on a Kids profile or Kids audience; hidden when the clip is removed. The choice lasts for the visit in memory (no storage), the next clip follows it, and a hidden tab turns sound off. Focus ring is the dark variant (R37, 3 px, 2 px offset). Pause stops rotation and the clip together and leaves the button usable. Editors may replace the headline, description and button label (80 characters each).
 - Layout mobile: 4:5 image, scrim at the bottom, text and buttons stacked inside at the bottom, buttons full width. Desktop: 16:9 up to a max height of 70vh, text block on the left at most 40 characters wide per line, `--color-scrim-bottom` and a left scrim.
-- Carousel: 1 to 5 items, dots indicator (44px hit area, current marked with accent fill plus `aria-current`), rotating by default every 20 s (site setting 5 to 60), paused by hover, focus, hidden tab and the Pause control, stopped after two loops, swipe on touch, arrows beside Pause on desktop. With no hero titles chosen the 5 newest live titles with artwork rotate.
+- Carousel: 1 to 5 items, five segment indicator (56 by 6 px segments in 44 px high hit areas, 8 px apart, the current one fills accent over the time the slide really stays, past slides solid, `aria-current`), rotating by default every 20 s (site setting 5 to 60), paused by hover, focus, hidden tab and the Pause control, stopped after two loops, swipe on touch, arrows beside Pause on desktop. With no hero titles chosen the 5 newest live titles with artwork rotate.
 - States: loading (skeleton with the same ratio and height cap as the slide), error (fall back to a solid `--color-primary` panel with title text), reduced motion (no crossfade, no parallax).
 - Text sits on scrim so white text reaches 4.5:1. Title is live text, not baked into the image. Alt text includes any baked text.
 - Resume logic: if the signed in profile has progress on the featured title, the primary button becomes "Continue" and shows "12 min left".
@@ -828,7 +831,7 @@ Don't
 - Don't use accent yellow as text or as the only edge on a light background.
 - Don't rely on colour alone for status, selection or errors.
 - Don't remove focus outlines. Don't use `outline: none` without a replacement.
-- Don't autoplay audio, add preview clips to rows, or use heavy animated heroes. The only video on Home is the optional muted hero clip under the eligibility rules (11.7).
+- Don't autoplay audio, add preview clips to rows, or use heavy animated heroes. The only video on Home is the optional hero clip under the eligibility rules (11.7), muted until the viewer taps Unmute.
 - Don't use infinite spinners for uploads or long tasks.
 - Don't use placeholders as labels.
 - Don't use hover as the only way to reach an action.

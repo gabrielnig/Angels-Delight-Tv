@@ -2881,7 +2881,7 @@ As a guest on a shared device, I want to clear what this device remembers, so th
 
 ## Coverage summary
 
-Total stories: 310. Must: 199. Should: 88. Could: 23.
+Total stories: 311. Must: 199. Should: 89. Could: 23.
 
 | Module | Stories |
 |---|---|
@@ -2922,7 +2922,7 @@ Total stories: 310. Must: 199. Should: 88. Could: 23.
 | M35 | 4 |
 | M36 | 4 |
 | M40 | 18 |
-| M41 | 21 |
+| M41 | 22 |
 
 Modules with no viewer or admin screen of their own (M04, M22, M23, M24, M30, M31, M33) still carry stories because their behaviour is testable and has user visible effects.
 
@@ -3998,7 +3998,7 @@ As a viewer, I want rows that scroll like a real streaming app, so that browsing
 - Empty: see M05-S02.
 
 ### M41-S11 Optional muted preview clip in the hero (Should)
-As a viewer on a fast connection, I want a short preview that plays by itself on the featured title, so that it feels like a trailer.
+As a viewer on a fast connection, I want a short preview that plays by itself on the featured title, so that it feels like a trailer. Sound is M41-S22.
 - AC1: Given a fast connection, Data saver off, no reduced motion, a visible tab and a ready clip, When a slide has shown for 1.2 seconds, Then a muted clip of up to 20 seconds (the clip length setting) fades in over the still, plays by itself without sound, and fades back at the end.
 - AC2: Given any condition fails, or the connection type is unknown and the setting Preview clips on unknown connections is off, or the reported speed is under the site floor (2 Mbps by default, setting 1 to 10), When the slide shows, Then only the still shows and no clip is requested.
 - AC3: Given I press Pause or change slide, When the clip is playing, Then it pauses or unloads.
@@ -4095,6 +4095,19 @@ As an admin, I want one button that makes the hero clips for every video already
 - Edge: at most 500 videos are queued per press, pressing again carries on; videos set to Off, unpublished, deleted or without an original are left out.
 - Error: a failure says "That did not work. Nothing was queued. Try again." and changes nothing.
 - Empty: with no eligible video the message says nothing to queue.
+
+### M41-S22 Hero clip sound button (Should)
+As a viewer, I want to hear the clip on the featured title when I choose to, so that I can follow what the video says without opening it.
+- AC1: Given a slide with a clip that has sound, previews allowed and reduced motion off, When the clip plays, Then it plays muted and a button reading Unmute (icon and word, 44 px, `aria-pressed` false, accessible name "Unmute preview sound") sits just left of Pause.
+- AC2: Given I press Unmute (a tap, so the browser allows sound), When the clip carries on, Then it has sound, the button reads Mute with `aria-pressed` true, and a polite status says "Sound on"; pressing Mute silences it and the status says "Sound off".
+- AC3: Given I chose sound, When the slide changes, Then the next clip starts with the same choice and the button stays Mute; if the browser refuses sound the clip plays muted and the button reads Unmute again.
+- AC4: Given the tab hides or I leave the page by reloading, When I come back, Then the clip is muted and the button reads Unmute; the choice is kept in memory only and writes no browser storage.
+- AC5: Given a Kids profile or the Kids audience, reduced motion, Data saver, a slow link, a clip made before sound existed, or a clip that failed, When Home shows, Then there is no sound button.
+- AC6: Given the site setting Sound button on hero clips is off, When Home loads, Then there is no sound button and clips stay muted.
+- AC7: Given keyboard use, When I Tab to the button, Then it shows the dark focus ring (3 px, 2 px offset) and Enter or Space toggles it; Pause stops rotation and the clip together and leaves the button usable.
+- Edge: a slide with no sound leaves the button's slot empty so Pause and the arrows never move; a single slide with a clip still offers the button.
+- Error: a refused or failed clip removes the button and the still stays.
+- Empty: a slide with no clip shows no button.
 
 ---
 

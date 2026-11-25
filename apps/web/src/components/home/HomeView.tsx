@@ -77,6 +77,7 @@ export async function HomeView({
     previewsUnknown,
     minDownlink,
     waitForClip,
+    heroSound,
   ] = await Promise.all([
     settings.get('features.autoplay_hero'),
     settings.get('home.hero_interval_seconds'),
@@ -86,6 +87,7 @@ export async function HomeView({
     settings.get('home.hero_previews_unknown_connection'),
     settings.get('home.hero_previews_min_downlink_mbps'),
     settings.get('home.hero_wait_for_clip'),
+    settings.get('home.hero_sound'),
   ]);
   const kidsAudience = ctx.audience === 'kids';
   const [sponsor, afterRow] = kidsAudience
@@ -115,6 +117,7 @@ export async function HomeView({
         allowUnknownConnection={previewsUnknown}
         minDownlinkMbps={minDownlink}
         waitForClip={waitForClip}
+        soundAllowed={heroSound && ctx.audience !== 'kids'}
       />
       <div className="web-wide web-stack web-rows">
         {ctx.guest ? <GuestContinueRow /> : null}

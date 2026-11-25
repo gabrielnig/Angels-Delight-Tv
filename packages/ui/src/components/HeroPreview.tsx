@@ -17,6 +17,8 @@ export function HeroPreview({
   onPlayingChange,
   onEnded,
   onFail,
+  sound = false,
+  onSoundBlocked,
 }: {
   src: string;
   active: boolean;
@@ -28,6 +30,10 @@ export function HeroPreview({
   onEnded?: () => void;
   /** The clip errored or stalled for 2 seconds and was removed, so the still stays. */
   onFail?: () => void;
+  /** The viewer turned sound on. The clip is muted otherwise, and always starts muted on a new visit. */
+  sound?: boolean;
+  /** The browser refused to play with sound. The clip carries on muted and the carousel shows Unmute again. */
+  onSoundBlocked?: () => void;
 }) {
   const ref = useRef<HTMLVideoElement>(null);
   const [loaded, setLoaded] = useState(false);
@@ -52,9 +58,24 @@ export function HeroPreview({
   useEffect(() => {
     const el = ref.current;
     if (!el || !loaded) return;
-    if (paused) el.pause();
-    else void el.play()?.catch(fail);
+    if (paused) {
+      el.pause();
+      return;
+    }
+    void el.play()?.catch(() => {
+      if (!el.muted) {
+        // A browser can refuse sound for a clip nobody tapped. Keep the picture, drop the sound.
+        el.muted = true;
+        onSoundBlocked?.();
+        void el.play()?.catch(fail);
+      } else fail();
+    });
   }, [paused, loaded]);
+
+  // A tap on Unmute or Mute reaches the element at once, without remounting the clip.
+  useEffect(() => {
+    if (ref.current) ref.current.muted = !sound;
+  }, [sound, loaded]);
 
   if (!active || failed) return null;
   const clearStall = () => clearTimeout(stall.current);
@@ -64,7 +85,7 @@ export function HeroPreview({
       className="ad-hero__clip"
       src={loaded ? src : undefined}
       preload="none"
-      muted
+      muted={!sound}
       playsInline
       aria-hidden="true"
       tabIndex={-1}

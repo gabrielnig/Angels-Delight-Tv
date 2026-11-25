@@ -129,6 +129,39 @@ describe('HomeView states (M05-S01, S02, S08)', () => {
     expect(screen.getByRole('heading', { name: 'Health' })).toBeTruthy();
   });
 
+  describe('hero sound button (M41-S22)', () => {
+    const withClip = () =>
+      data({
+        hero: [
+          {
+            item: { ...video(1), kidsSafe: true },
+            previewUrl: 'https://m.test/cap/a/preview/c.mp4',
+            previewMs: 20_000,
+            previewHasAudio: true,
+          },
+        ],
+      });
+    beforeEach(() => {
+      Object.defineProperty(navigator, 'connection', {
+        configurable: true,
+        value: { effectiveType: '4g', downlink: 10, saveData: false },
+      });
+    });
+    afterEach(() => Reflect.deleteProperty(navigator, 'connection'));
+
+    it('offers Unmute on an adult profile when the clip has sound', async () => {
+      state.home = withClip();
+      await show(ctx('adult'));
+      expect(screen.getByRole('button', { name: 'Unmute preview sound' })).toBeTruthy();
+    });
+
+    it('never offers it on a kids profile or the kids audience', async () => {
+      state.home = withClip();
+      await show(ctx('kids'));
+      expect(screen.queryByRole('button', { name: /preview sound/ })).toBeNull();
+    });
+  });
+
   it('keeps the page and adds a saved view banner when the device goes offline', async () => {
     Object.defineProperty(navigator, 'onLine', { configurable: true, value: false });
     try {
