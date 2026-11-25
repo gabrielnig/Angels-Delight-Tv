@@ -9,8 +9,8 @@ const modules = readFileSync(join(root, 'docs/MODULES.md'), 'utf8');
 describe('M41 stories stay in step with the docs', () => {
   const numbers = [...stories.matchAll(/^### M41-S(\d+) /gm)].map((m) => Number(m[1]));
 
-  it('numbers the stories one to twenty with no gap', () => {
-    expect(numbers).toEqual(Array.from({ length: 20 }, (_, i) => i + 1));
+  it('numbers the stories one to twenty one with no gap', () => {
+    expect(numbers).toEqual(Array.from({ length: 21 }, (_, i) => i + 1));
   });
 
   it('shows the same count in the coverage table', () => {
@@ -25,7 +25,7 @@ describe('M41 stories stay in step with the docs', () => {
   it('gives every story a priority and the three kinds of case', () => {
     const body = stories.slice(stories.indexOf('## M41 Home hero, rows and sections'));
     const blocks = body.split(/^### M41-S/m).slice(1);
-    expect(blocks).toHaveLength(20);
+    expect(blocks).toHaveLength(21);
     for (const block of blocks) {
       expect(block).toMatch(/^\d+ .*\((Must|Should|Could)\)/);
       expect(block).toMatch(/- Edge:/);
@@ -37,6 +37,6 @@ describe('M41 stories stay in step with the docs', () => {
   it('counts Must, Should and Could the way the total line says', () => {
     const body = stories.slice(stories.indexOf('## M41 Home hero, rows and sections'));
     const count = (p: string) => [...body.matchAll(new RegExp(`^### M41-S\\d+ .*\\(${p}\\)`, 'gm'))].length;
-    expect([count('Must'), count('Should'), count('Could')]).toEqual([11, 7, 2]);
+    expect([count('Must'), count('Should'), count('Could')]).toEqual([11, 8, 2]);
   });
 });

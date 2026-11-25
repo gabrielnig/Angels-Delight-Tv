@@ -73,12 +73,12 @@ describe('PreviewClipCard', () => {
   });
 
   it('shows the service message when the start is refused', async () => {
-    const onSetMode = vi.fn(async () => ({ ok: false as const, error: 'Pick a start between 0:00 and 1:24 so the clip has six seconds to play' }));
+    const onSetMode = vi.fn(async () => ({ ok: false as const, error: 'Pick a start between 0:00 and 1:10 so the clip has 20 seconds to play' }));
     render(<PreviewClipCard preview={ready} durationSeconds={90} canEdit onSetMode={onSetMode} onRetry={vi.fn()} />);
     await userEvent.click(screen.getByRole('radio', { name: /Pick a segment/ }));
     await userEvent.type(screen.getByLabelText('Start at'), '1:30');
     await userEvent.click(screen.getByRole('button', { name: 'Save preview setting' }));
-    expect(await screen.findByText(/Pick a start between 0:00 and 1:24/)).toBeTruthy();
+    expect(await screen.findByText(/Pick a start between 0:00 and 1:10/)).toBeTruthy();
   });
 
   it('says why a clip failed and offers Retry', async () => {

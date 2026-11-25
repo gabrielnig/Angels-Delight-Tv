@@ -64,5 +64,17 @@ describe('heroItems', () => {
     const slot = { item: video(), previewUrl: 'https://m.test/cap/a/preview/c.mp4', previewMs: 6000 };
     const [slide] = heroItems({ hero: [slot], rows: [], empty: false }, new Map());
     expect(slide?.previewSrc).toBe('https://m.test/cap/a/preview/c.mp4');
+    expect(slide?.previewHasAudio).toBe(false);
+  });
+
+  it('passes the clip length and sound flag through', () => {
+    const slot = {
+      item: video(),
+      previewUrl: 'https://m.test/cap/a/preview/c.mp4',
+      previewMs: 20_000,
+      previewHasAudio: true,
+    };
+    const [slide] = heroItems({ hero: [slot], rows: [], empty: false }, new Map());
+    expect(slide).toMatchObject({ previewMs: 20_000, previewHasAudio: true });
   });
 });

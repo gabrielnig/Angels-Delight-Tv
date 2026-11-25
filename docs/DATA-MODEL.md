@@ -236,6 +236,8 @@ Index `(updated_at)` for cleanup. Consumed with one atomic `INSERT ... ON CONFLI
 | `failure_message` | text | yes | | Readable, sanitized |
 | `preview_key` | text | yes | | Hero preview clip in the media bucket, `cap/{media_prefix}/preview/{start_ms}-{sha8}.mp4`, content hashed (migration 0050) |
 | `preview_state` | text | no | `none` | `none`, `queued`, `ready`, `failed` or `skipped` |
+| `preview_has_audio` | boolean | no | `false` | The clip has a low bitrate AAC track. False for every clip made before migration 0058, so the sound button stays hidden for it |
+| `preview_length_ms` | integer | yes | | Length of the stored clip, above 0. Null for clips made before migration 0058 (the viewer reads 6000) |
 | `preview_mode` | text | no | `auto` | `auto`, `picked` or `off` |
 | `preview_start_ms` | integer | yes | | Where the clip starts, at least 0 |
 | `preview_bytes` | integer | yes | | Size of the clip, at least 0 |
@@ -354,7 +356,7 @@ Kids browsing shows a category only if it contains at least one visible kids-saf
 
 ### 5.7 `rows` and `row_items` (home page curation)
 
-Home settings (Site settings, group `home`): `features.autoplay_hero` (default on), `home.hero_interval_seconds` (5 to 20, default 10), `home.hero_max_loops` (0 to 5, default 2, 0 never stops), `home.hero_previews` (default on), `home.hero_previews_unknown_connection` (default off), `home.hero_fallback_count` (1 to 5, default 5, not public), `home.view_all_label` (default View all) and `home.continue_title` (default Continue learning).
+Home settings (Site settings, group `home`): `features.autoplay_hero` (default on), `home.hero_interval_seconds` (5 to 60, default 20, D-351), `home.hero_max_loops` (0 to 5, default 2, 0 never stops), `home.hero_previews` (default on), `home.hero_previews_unknown_connection` (default on, D-354), `home.hero_previews_min_downlink_mbps` (1 to 10, default 2), `home.hero_clip_seconds` (6 to 30, default 20, not public, read by the worker), `home.hero_wait_for_clip` (default on) and `home.hero_sound` (default on), `home.hero_fallback_count` (1 to 5, default 5, not public), `home.view_all_label` (default View all) and `home.continue_title` (default Continue learning).
 
 `rows`:
 
@@ -667,5 +669,6 @@ The schema in `packages/db/src/schema` is the source of truth. These changes wer
 | 0039 | Sponsors (M48): enums `sponsor_status` (draft, active, paused, archived) and `sponsor_slot`, `asset_purpose` gains `sponsor`. Tables `sponsors` (name 1 to 80, optional schedule with `ends_at > starts_at`), `sponsor_private` (staff only: encrypted contact, notes), `sponsor_creatives` (headline 1 to 60, body to 140, cta 1 to 24, `destination_url` https only to 500, weight 1 to 10), `sponsor_placements` (creative, slot), `sponsor_daily_stats` (day, creative, slot, impressions, clicks, daily reach; sponsor key restricts delete, creative has no key so numbers outlive it). `sponsor_effective()` and the view `sponsor_effective_status` derive scheduled, live and ended from the dates. RLS forced on all five: staff (editor, admin, super admin) full access, everyone else reads only live sponsors, their active creatives and placements, never `sponsor_private` or the stats. Counters are written only through the SECURITY DEFINER `sponsor_stats_bump()`. |
 | 0049 | Donations (M48): enums `donation_kind` (one_time, monthly) and `donation_status` (pending, succeeded, failed, abandoned, refunded, needs_review). Tables `donations` (unique `reference`, positive `amount_minor`, currency NGN or USD, encrypted donor email, name and message, `donor_email_hash`, optional account, `site_mode` test or live, `paid_at`, `receipt_sent_at`) and `payment_events` (unique `(provider, event_key)`, encrypted payload emptied after the retention days, `processed_at`, `outcome`, `attempts`). RLS forced on both: admins read all donations, a signed in donor reads their own, editors and guests read none; the worker role has full access. Web writes events only through the SECURITY DEFINER `payment_event_insert()`, which returns null for a repeat. |
 | 0050 | `videos` gains the hero preview columns `preview_key`, `preview_state` (none, queued, ready, failed, skipped), `preview_mode` (auto, picked, off), `preview_start_ms`, `preview_bytes`, `preview_note`, `preview_updated_at`, three checks and the partial index `videos_preview_sweep` (M41) |
+| 0058 | `videos` gains `preview_has_audio` (boolean, default false) and `preview_length_ms` (integer, null or above 0) with check `videos_preview_length`. Clips made before it stay silent and have no recorded length (M41, D-353) |
 
 Row level security summary additions: `search_history` is on and forced like `watch_progress`. `admin_invites`, `auth_lockouts`, `verification_codes`, `site_daily_stats`, `analytics_counters` and `slug_redirects` have no policies and are reached only by their own modules.

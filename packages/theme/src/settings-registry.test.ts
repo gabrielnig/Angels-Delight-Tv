@@ -219,16 +219,36 @@ describe('guest audience setting (M40-S10, R18)', () => {
 describe('home settings (M41, R12, R13, R14)', () => {
   const defaults = defaultSettings();
 
-  it('auto rotate is on by default and the interval is 10 seconds', () => {
+  it('auto rotate is on by default and the interval is 20 seconds (D-351 supersedes the 10 seconds of R12)', () => {
     expect(defaults['features.autoplay_hero']).toBe(true);
-    expect(defaults['home.hero_interval_seconds']).toBe(10);
+    expect(defaults['home.hero_interval_seconds']).toBe(20);
     expect(defaults['home.hero_max_loops']).toBe(2);
   });
 
-  it('previews are on, unknown connections are off, fallback is five', () => {
+  it('previews are on, unknown connections are on (D-354), fallback is five', () => {
     expect(defaults['home.hero_previews']).toBe(true);
-    expect(defaults['home.hero_previews_unknown_connection']).toBe(false);
+    expect(defaults['home.hero_previews_unknown_connection']).toBe(true);
     expect(defaults['home.hero_fallback_count']).toBe(5);
+  });
+
+  it('the clip plays for 20 seconds, the slide waits for it, the link must reach 2 Mbps and sound is offered', () => {
+    expect(defaults['home.hero_clip_seconds']).toBe(20);
+    expect(defaults['home.hero_wait_for_clip']).toBe(true);
+    expect(defaults['home.hero_previews_min_downlink_mbps']).toBe(2);
+    expect(defaults['home.hero_sound']).toBe(true);
+  });
+
+  it('keeps the clip length between 6 and 30 seconds and the speed floor between 1 and 10 Mbps', () => {
+    expect(parse('home.hero_clip_seconds', 5).success).toBe(false);
+    expect(parse('home.hero_clip_seconds', 6).success).toBe(true);
+    expect(parse('home.hero_clip_seconds', 30).success).toBe(true);
+    expect(parse('home.hero_clip_seconds', 31).success).toBe(false);
+    expect(parse('home.hero_clip_seconds', 12.5).success).toBe(false);
+    expect(parse('home.hero_previews_min_downlink_mbps', 0).success).toBe(false);
+    expect(parse('home.hero_previews_min_downlink_mbps', 1).success).toBe(true);
+    expect(parse('home.hero_previews_min_downlink_mbps', 10).success).toBe(true);
+    expect(parse('home.hero_previews_min_downlink_mbps', 11).success).toBe(false);
+    expect(parse('home.hero_wait_for_clip', 'yes').success).toBe(false);
   });
 
   it('labels default to View all and Continue learning', () => {
@@ -236,11 +256,11 @@ describe('home settings (M41, R12, R13, R14)', () => {
     expect(defaults['home.continue_title']).toBe('Continue learning');
   });
 
-  it('keeps the interval between 5 and 20 and the loops between 0 and 5', () => {
+  it('keeps the interval between 5 and 60 and the loops between 0 and 5', () => {
     expect(parse('home.hero_interval_seconds', 4).success).toBe(false);
     expect(parse('home.hero_interval_seconds', 5).success).toBe(true);
-    expect(parse('home.hero_interval_seconds', 20).success).toBe(true);
-    expect(parse('home.hero_interval_seconds', 21).success).toBe(false);
+    expect(parse('home.hero_interval_seconds', 60).success).toBe(true);
+    expect(parse('home.hero_interval_seconds', 61).success).toBe(false);
     expect(parse('home.hero_interval_seconds', 7.5).success).toBe(false);
     expect(parse('home.hero_max_loops', 0).success).toBe(true);
     expect(parse('home.hero_max_loops', 6).success).toBe(false);
@@ -260,11 +280,15 @@ describe('home settings (M41, R12, R13, R14)', () => {
       'home.hero_max_loops',
       'home.hero_previews',
       'home.hero_previews_unknown_connection',
+      'home.hero_previews_min_downlink_mbps',
+      'home.hero_wait_for_clip',
+      'home.hero_sound',
       'home.view_all_label',
       'home.continue_title',
     ] as const)
       expect(PUBLIC_SETTING_KEYS, key).toContain(key);
     expect(PUBLIC_SETTING_KEYS).not.toContain('home.hero_fallback_count');
+    expect(PUBLIC_SETTING_KEYS).not.toContain('home.hero_clip_seconds');
   });
 
   it('the unknown connection switch needs a super admin', () => {

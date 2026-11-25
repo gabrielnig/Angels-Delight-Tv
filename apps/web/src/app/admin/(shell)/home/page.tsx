@@ -5,7 +5,12 @@ import { PageHeader } from '@/components/admin/PageHeader';
 import { can } from '@/lib/admin/can';
 import { homeService } from '@/lib/data/admin/services';
 import { requireActor } from '@/lib/data/admin/session-next';
-import { publishHomeAction, restoreHomeAction, saveHomeDraftAction } from './actions';
+import {
+  backfillPreviewsAction,
+  publishHomeAction,
+  restoreHomeAction,
+  saveHomeDraftAction,
+} from './actions';
 
 export const metadata: Metadata = { title: 'Home curation' };
 
@@ -24,10 +29,12 @@ export default async function HomeCurationPage() {
         key={`${data.state.publishedAt}-${JSON.stringify(data.state.draft).length}`}
         {...data}
         canCurate
+        canBackfill={can(actor.role, 'preview.backfill')}
         actions={{
           saveDraft: saveHomeDraftAction,
           publish: publishHomeAction,
           restore: restoreHomeAction,
+          backfillPreviews: backfillPreviewsAction,
         }}
       />
     </>

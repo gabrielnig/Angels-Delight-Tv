@@ -148,8 +148,19 @@ describe.skipIf(!integrationEnabled())('hero cards', () => {
       const { map } = await extras();
       expect(map.get(on.id)?.previewUrl).toBe('https://media.test/cap/abc/preview/clip.mp4');
       expect(map.get(on.id)?.previewMs).toBe(6000);
+      expect(map.get(on.id)?.previewHasAudio).toBe(false);
       expect(map.get(off.id)?.previewUrl).toBeNull();
       expect(map.get(queued.id)?.previewUrl).toBeNull();
+    });
+
+    it('reports the stored clip length and whether it has sound, and treats an old clip as silent and 6 seconds', async () => {
+      await clean();
+      const fresh = await seedVideo(t.setup, { title: 'Fresh', ...ready, previewHasAudio: true, previewLengthMs: 20_000 });
+      const old = await seedVideo(t.setup, { title: 'Old', ...ready });
+      await heroRow([{ videoId: fresh.id }, { videoId: old.id }]);
+      const { map } = await extras();
+      expect(map.get(fresh.id)).toMatchObject({ previewMs: 20_000, previewHasAudio: true });
+      expect(map.get(old.id)).toMatchObject({ previewMs: 6000, previewHasAudio: false });
     });
 
     it('uses the first episode clip for a series', async () => {

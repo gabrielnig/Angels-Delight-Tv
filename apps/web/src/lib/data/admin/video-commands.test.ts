@@ -4,6 +4,7 @@ import {
   daysLeftInTrash,
   purgeMany,
   purgeVideo,
+  queuePreviewBackfill,
   restoreMany,
   restoreVideo,
   retryEncode,
@@ -275,12 +276,12 @@ describe('hero preview clip commands (M41-S10)', () => {
     expect(v.preview).toMatchObject({ mode: 'off', state: 'ready' });
   });
 
-  it('picked needs a start in 100 ms steps with six seconds left, and queues a recut', () => {
+  it('picked needs a start in 100 ms steps with the clip length left, and queues a recut', () => {
     const v = video();
     expect(setPreviewMode(v, { mode: 'picked', startMs: 12_350 }).ok).toBe(false);
     expect(setPreviewMode(v, { mode: 'picked', startMs: 85_000 })).toEqual({
       ok: false,
-      error: 'Pick a start between 0:00 and 1:24 so the clip has six seconds to play',
+      error: 'Pick a start between 0:00 and 1:10 so the clip has 20 seconds to play',
     });
     expect(setPreviewMode(v, { mode: 'picked' }).ok).toBe(false);
     expect(setPreviewMode(v, { mode: 'picked', startMs: 12_300 })).toEqual({ ok: true });
@@ -301,5 +302,37 @@ describe('hero preview clip commands (M41-S10)', () => {
     expect(v.preview).toMatchObject({ state: 'queued', note: null });
     v.preview.mode = 'off';
     expect(retryPreview(v)).toEqual({ ok: false, error: 'Turn the preview clip on first' });
+  });
+});
+
+describe('queuePreviewBackfill (Generate previews for all videos)', () => {
+  const make = (over: Partial<ReturnType<typeof base>> = {}) => ({ ...base(), ...over });
+  const base = () => {
+    const v = structuredClone(get(seedStore(NOW), seedStore(NOW).videos[0]!.id));
+    v.status = 'ready';
+    v.publishState = 'published';
+    v.deletedAt = null;
+    v.preview = { state: 'none', mode: 'auto', startMs: null, note: null };
+    return v;
+  };
+
+  it('queues published ready videos with no clip, a failed or a skipped one', () => {
+    const none = make();
+    const failed = make({ preview: { state: 'failed', mode: 'auto', startMs: null, note: 'x' } });
+    const skipped = make({ preview: { state: 'skipped', mode: 'auto', startMs: null, note: 'y' } });
+    expect(queuePreviewBackfill([none, failed, skipped])).toEqual({ ok: true, queued: 3, current: 0 });
+    for (const v of [none, failed, skipped]) expect(v.preview).toMatchObject({ state: 'queued', note: null });
+  });
+
+  it('leaves out off, unpublished, deleted, ready and queued videos, and a second press queues nothing', () => {
+    const off = make({ preview: { state: 'none', mode: 'off', startMs: null, note: null } });
+    const draft = make({ publishState: 'draft' });
+    const gone = make({ deletedAt: new Date(NOW).toISOString() });
+    const done = make({ preview: { state: 'ready', mode: 'auto', startMs: null, note: null } });
+    const waiting = make({ preview: { state: 'queued', mode: 'auto', startMs: null, note: null } });
+    const fresh = make();
+    const all = [off, draft, gone, done, waiting, fresh];
+    expect(queuePreviewBackfill(all)).toEqual({ ok: true, queued: 1, current: 2 });
+    expect(queuePreviewBackfill(all)).toEqual({ ok: true, queued: 0, current: 3 });
   });
 });

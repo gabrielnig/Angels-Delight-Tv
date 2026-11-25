@@ -15,6 +15,7 @@ import {
   restoreAdminVideo,
   requestPurgeAdminVideo,
   retryAdminVideo,
+  queueAdminPreviewBackfill,
   recutAdminPreview,
   setAdminPreviewMode,
   setAdminEpisode,
@@ -203,6 +204,14 @@ export const realVideoService: VideoService = {
     return asResult(async () =>
       recutAdminPreview(await context(), catalogActor(actor), id, adminRuntime().enqueue),
     );
+  },
+  async backfillPreviews(actor) {
+    need(actor, 'preview.backfill');
+    try {
+      return await queueAdminPreviewBackfill(await context(), catalogActor(actor), adminRuntime().enqueue);
+    } catch {
+      return { ok: false, error: 'That did not work. Nothing was queued. Try again.' };
+    }
   },
   async retryEncodeMany(actor, ids, bulkId) {
     need(actor, 'encode.retry');

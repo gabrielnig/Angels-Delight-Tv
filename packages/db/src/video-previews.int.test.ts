@@ -42,7 +42,25 @@ describe.skipIf(!integrationEnabled())('video preview columns (migration video_p
       previewBytes: null,
       previewNote: null,
       previewUpdatedAt: null,
+      previewHasAudio: false,
+      previewLengthMs: null,
     });
+  });
+
+  it('records the clip length and whether it carries sound, and allows both to stay unset', async () => {
+    const id = await add();
+    await expect(set(id, { preview_length_ms: 20000, preview_has_audio: true })).resolves.toBeDefined();
+    await expect(set(id, { preview_length_ms: null })).resolves.toBeDefined();
+    await expect(set(id, { preview_length_ms: 0 })).rejects.toThrow(/videos_preview_length/);
+    await expect(set(id, { preview_length_ms: -5 })).rejects.toThrow(/videos_preview_length/);
+  });
+
+  it('marks clips made before sound existed as silent, so the sound button stays hidden for them', async () => {
+    const id = await add();
+    await set(id, { preview_state: 'ready', preview_key: 'cap/x/preview/0-abcd1234.mp4', preview_bytes: 500000 });
+    const [row] = await t.db.select().from(videos).where(eq(videos.id, id));
+    expect(row?.previewHasAudio).toBe(false);
+    expect(row?.previewLengthMs).toBeNull();
   });
 
   it('accepts each known state and mode', async () => {

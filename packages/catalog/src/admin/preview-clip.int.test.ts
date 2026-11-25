@@ -2,7 +2,7 @@ import { sql } from 'drizzle-orm';
 import { type Actor } from '@ad/shared';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { createViewerTestDb, integrationEnabled, seedAccount, seedVideo, type ViewerTestDb } from '../testing';
-import { recutAdminPreview, setAdminPreviewMode } from './preview-clip';
+import { queueAdminPreviewBackfill, recutAdminPreview, setAdminPreviewMode } from './preview-clip';
 import { getAdminVideo } from './videos';
 import type { AdminContext } from './types';
 
@@ -57,7 +57,7 @@ describe.skipIf(!integrationEnabled())('admin hero preview clip', () => {
     });
     expect(await setAdminPreviewMode(ctx, editor, v.id, { mode: 'picked', startMs: 85_000 }, enqueue)).toEqual({
       ok: false,
-      error: 'Pick a start between 0:00 and 1:24 so the clip has six seconds to play',
+      error: 'Pick a start between 0:00 and 1:10 so the clip has 20 seconds to play',
     });
     expect(await setAdminPreviewMode(ctx, editor, v.id, { mode: 'picked' }, enqueue)).toMatchObject({ ok: false });
     expect(sent).toEqual([]);
@@ -106,5 +106,96 @@ describe.skipIf(!integrationEnabled())('admin hero preview clip', () => {
     const v = await video({ previewMode: 'picked', previewStartMs: 4200, previewState: 'failed', previewNote: 'The clip came out too large' });
     const found = await getAdminVideo(ctx, editor, v.id);
     expect(found?.preview).toEqual({ state: 'failed', mode: 'picked', startMs: 4200, note: 'The clip came out too large' });
+  });
+
+  describe('Generate previews for all videos', () => {
+    let admin: Actor;
+    beforeAll(async () => {
+      admin = { accountId: (await seedAccount(t.setup, 'admin')).id, role: 'admin' };
+    });
+    const mine = (ids: string[]) => sent.filter((job) => ids.includes(String(job.payload.videoId)));
+    const make = (fields: Record<string, unknown> = {}) =>
+      video({ originalKey: 'originals/x/up', originalBytes: 1000, ...fields });
+    const ready = { previewState: 'ready', previewKey: 'cap/x/preview/0-abcd1234.mp4', previewBytes: 500_000 };
+    const run = (actor: Actor = admin) => queueAdminPreviewBackfill(ctx, actor, enqueue);
+
+    it('queues published videos that have no clip, a failed or skipped one, and clips made before sound existed', async () => {
+      sent = [];
+      const none = await make();
+      const failed = await make({ previewState: 'failed', previewNote: 'The clip came out too large' });
+      const skipped = await make({ previewState: 'skipped', previewNote: 'The video looks too dark or plain for a clip' });
+      const legacy = await make({ ...ready });
+      const result = await run();
+      expect(result).toMatchObject({ ok: true });
+      const jobs = mine([none.id, failed.id, skipped.id, legacy.id]);
+      expect(jobs.map((job) => job.queue)).toEqual(Array(4).fill('video.preview'));
+      expect(jobs.map((job) => job.payload.mode).sort()).toEqual(['auto', 'auto', 'auto', 'auto']);
+      for (const id of [none.id, failed.id, skipped.id, legacy.id]) {
+        expect(await read(id)).toMatchObject({ preview_state: 'queued', preview_note: null });
+      }
+    });
+
+    it('leaves out videos that are off, unpublished, deleted, without an original, current or already queued', async () => {
+      sent = [];
+      const off = await make({ previewMode: 'off' });
+      const draft = await make({ publishState: 'draft' });
+      const deleted = await make({ deletedAt: new Date() });
+      const noOriginal = await make({ originalKey: null, originalBytes: null });
+      const current = await make({ ...ready, durationMs: 90_000, previewLengthMs: 20_000, previewHasAudio: true });
+      const whole = await make({ ...ready, durationMs: 14_000, previewLengthMs: 14_000, previewHasAudio: true });
+      const queued = await make({ previewState: 'queued' });
+      await run();
+      expect(mine([off.id, draft.id, deleted.id, noOriginal.id, current.id, whole.id, queued.id])).toEqual([]);
+    });
+
+    it('is safe to press again: a second press queues nothing new and reports how many are current', async () => {
+      await make();
+      sent = [];
+      const first = await run();
+      expect(first).toMatchObject({ ok: true });
+      const queuedFirst = sent.length;
+      expect(queuedFirst).toBeGreaterThan(0);
+      sent = [];
+      const second = await run();
+      expect(second).toMatchObject({ ok: true, queued: 0 });
+      expect(sent).toEqual([]);
+    });
+
+    it('queues a clip again when its recorded length no longer matches the setting', async () => {
+      sent = [];
+      const old = await make({ ...ready, durationMs: 90_000, previewLengthMs: 6000, previewHasAudio: true });
+      await run();
+      expect(mine([old.id])).toHaveLength(1);
+    });
+
+    it('picks up a queued video that has been stuck for over an hour', async () => {
+      sent = [];
+      const stuck = await make({ previewState: 'queued', updatedAt: new Date(Date.now() - 2 * 3_600_000) });
+      await run();
+      expect(mine([stuck.id])).toHaveLength(1);
+    });
+
+    it('keeps a picked start for a video whose mode is picked', async () => {
+      sent = [];
+      const picked = await make({ previewMode: 'picked', previewStartMs: 12_300 });
+      await run();
+      expect(mine([picked.id])[0]?.payload).toEqual({ videoId: picked.id, mode: 'picked', startMs: 12_300 });
+    });
+
+    it('reports the numbers and records one audit entry', async () => {
+      await make();
+      sent = [];
+      const result = await run();
+      expect(result).toMatchObject({ ok: true, queued: expect.any(Number), current: expect.any(Number) });
+      const { rows } = await t.setup.execute(
+        sql`select metadata from audit_log where action = 'video.preview_backfill' and actor_account_id = ${admin.accountId}`,
+      );
+      expect(rows.length).toBeGreaterThan(0);
+    });
+
+    it('is for admins: an editor and a viewer are refused', async () => {
+      await expect(run(editor)).rejects.toThrow();
+      await expect(run(viewer)).rejects.toThrow();
+    });
   });
 });

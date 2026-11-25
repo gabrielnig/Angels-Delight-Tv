@@ -215,13 +215,43 @@ export const SETTING_DEFS = {
     description: 'Hero slides change by themselves',
   }),
   'home.hero_interval_seconds': def({
-    schema: int(5, 20),
-    default: 10,
+    schema: int(5, 60),
+    default: 20,
     isPublic: true,
     tier: 'admin',
     group: 'home',
     label: 'Seconds per hero slide',
-    description: 'How long each hero slide stays, from 5 to 20 seconds',
+    description: 'How long each hero slide stays, from 5 to 60 seconds',
+  }),
+  'home.hero_wait_for_clip': def({
+    schema: bool,
+    default: true,
+    isPublic: true,
+    tier: 'admin',
+    group: 'home',
+    label: 'Slide waits for its clip',
+    description:
+      'A slide with a playing clip changes when the clip ends. Off: every slide changes after the seconds above, even while its clip is still playing.',
+  }),
+  'home.hero_clip_seconds': def({
+    schema: int(6, 30),
+    default: 20,
+    isPublic: false,
+    tier: 'admin',
+    group: 'home',
+    label: 'Seconds per hero clip',
+    description:
+      'A video this long or shorter plays whole. A longer one plays this many seconds from its best part. 6 to 30. Applies to clips made after the change, use Generate previews for all videos to cut the rest again.',
+  }),
+  'home.hero_sound': def({
+    schema: bool,
+    default: true,
+    isPublic: true,
+    tier: 'admin',
+    group: 'home',
+    label: 'Sound button on hero clips',
+    description:
+      'Clips always start muted. On shows an Unmute button beside Pause when the clip has sound. Never shown to kids, or when the device asks for reduced motion.',
   }),
   'home.hero_max_loops': def({
     schema: int(0, 5),
@@ -239,16 +269,27 @@ export const SETTING_DEFS = {
     tier: 'admin',
     group: 'home',
     label: 'Hero preview clips',
-    description: 'Play a short silent clip on the hero for fast connections with Data saver off',
+    description: 'Play a short muted clip on the hero for fast connections with Data saver off',
   }),
   'home.hero_previews_unknown_connection': def({
     schema: bool,
-    default: false,
+    default: true,
     isPublic: true,
     tier: 'super',
     group: 'home',
     label: 'Preview clips on unknown connections',
-    description: 'Safari and Firefox do not report connection speed. Off keeps their data use low.',
+    description:
+      'Safari and Firefox do not report connection speed. On plays clips for them too (Data saver still stops it). Off keeps their data use low.',
+  }),
+  'home.hero_previews_min_downlink_mbps': def({
+    schema: int(1, 10),
+    default: 2,
+    isPublic: true,
+    tier: 'admin',
+    group: 'home',
+    label: 'Slowest link that plays clips (Mbps)',
+    description:
+      'Clips only play when the browser reports at least this speed. Lower it if clips do not play on a slower connection. 1 to 10.',
   }),
   'home.hero_fallback_count': def({
     schema: int(1, 5),

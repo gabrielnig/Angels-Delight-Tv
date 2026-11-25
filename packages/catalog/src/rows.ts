@@ -331,6 +331,7 @@ export async function heroCards(
 }
 
 /** The preview clip is cut to this length (see the video package). */
+/** Length assumed for a clip made before the length was recorded (they were all 6 seconds). */
 export const HERO_PREVIEW_MS = 6000;
 
 export interface HeroSlideExtras {
@@ -341,6 +342,8 @@ export interface HeroSlideExtras {
   /** The muted clip, only when it is ready and the editor has not turned it off. A series uses its first episode. */
   previewUrl: string | null;
   previewMs: number | null;
+  /** The clip carries an audio track. False for clips made before sound existed. */
+  previewHasAudio: boolean;
 }
 
 /** Editor text and the optional preview clip for the hero cards, by card id (M41-S10, S11). */
@@ -377,17 +380,22 @@ export async function heroSlideExtras(
     }
   }
 
-  const clips = new Map<string, string>();
+  const clips = new Map<string, { key: string; ms: number; audio: boolean }>();
   const clipVideos = async (ids: string[]) =>
     ids.length
-      ? rowsOf<{ id: string; preview_key: string }>(
+      ? rowsOf<{ id: string; preview_key: string; preview_length_ms: number | null; preview_has_audio: boolean }>(
           await tx.execute(sql`
-            SELECT id, preview_key FROM videos
+            SELECT id, preview_key, preview_length_ms, preview_has_audio FROM videos
             WHERE id = ANY(${uuids(ids)}) AND preview_state = 'ready' AND preview_mode <> 'off'
               AND preview_key IS NOT NULL`),
         )
       : [];
-  for (const v of await clipVideos(videoIds)) clips.set(v.id, v.preview_key);
+  const clipOf = (v: { preview_key: string; preview_length_ms: number | null; preview_has_audio: boolean }) => ({
+    key: v.preview_key,
+    ms: v.preview_length_ms ?? HERO_PREVIEW_MS,
+    audio: v.preview_has_audio === true,
+  });
+  for (const v of await clipVideos(videoIds)) clips.set(v.id, clipOf(v));
   if (seriesIds.length) {
     const firsts = rowsOf<{ series_id: string; video_id: string }>(
       await tx.execute(sql`
@@ -396,22 +404,23 @@ export async function heroSlideExtras(
         WHERE s.series_id = ANY(${uuids(seriesIds)})
         ORDER BY s.series_id, s.number, e.number`),
     );
-    const keys = new Map((await clipVideos(firsts.map((f) => f.video_id))).map((v) => [v.id, v.preview_key]));
+    const found = new Map((await clipVideos(firsts.map((f) => f.video_id))).map((v) => [v.id, clipOf(v)]));
     for (const f of firsts) {
-      const key = keys.get(f.video_id);
-      if (key) clips.set(f.series_id, key);
+      const clip = found.get(f.video_id);
+      if (clip) clips.set(f.series_id, clip);
     }
   }
 
   for (const card of cards) {
     const t = text.get(card.id);
-    const key = clips.get(card.id);
+    const clip = clips.get(card.id);
     out.set(card.id, {
       headline: t?.h ?? null,
       blurb: t?.b ?? null,
       buttonLabel: t?.l ?? null,
-      previewUrl: key ? mediaUrl(ctx.mediaOrigin, key) : null,
-      previewMs: key ? HERO_PREVIEW_MS : null,
+      previewUrl: clip ? mediaUrl(ctx.mediaOrigin, clip.key) : null,
+      previewMs: clip ? clip.ms : null,
+      previewHasAudio: clip ? clip.audio : false,
     });
   }
   return out;

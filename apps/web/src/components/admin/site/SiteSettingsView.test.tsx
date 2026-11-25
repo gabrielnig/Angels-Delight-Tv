@@ -473,7 +473,11 @@ describe('home settings tab', () => {
   it('shows the hero and row settings with their defaults', async () => {
     const { user } = setup();
     await open(user);
-    expect(screen.getByLabelText('Seconds per hero slide')).toHaveValue('10');
+    expect(screen.getByLabelText('Seconds per hero slide')).toHaveValue('20');
+    expect(screen.getByLabelText('Seconds per hero clip')).toHaveValue('20');
+    expect(screen.getByLabelText('Slowest link that plays clips (Mbps)')).toHaveValue('2');
+    expect(screen.getByRole('switch', { name: 'Slide waits for its clip' })).toHaveAttribute('aria-checked', 'true');
+    expect(screen.getByRole('switch', { name: 'Sound button on hero clips' })).toHaveAttribute('aria-checked', 'true');
     expect(screen.getByLabelText('Hero loops before it stops')).toHaveValue('2');
     expect(screen.getByLabelText('View all label')).toHaveValue('View all');
     expect(screen.getByLabelText('Continue row title')).toHaveValue('Continue learning');
@@ -495,14 +499,14 @@ describe('home settings tab', () => {
     );
   });
 
-  it('refuses an interval outside 5 to 20', async () => {
+  it('refuses an interval outside 5 to 60', async () => {
     const { actions, user } = setup();
     await open(user);
     const field = screen.getByLabelText('Seconds per hero slide');
     await user.clear(field);
     await user.type(field, '3');
     await user.click(screen.getByRole('button', { name: /save changes/i }));
-    expect(await screen.findByText(/from 5 to 20/i)).toBeInTheDocument();
+    expect(await screen.findByText(/from 5 to 60/i)).toBeInTheDocument();
     expect(actions.update).not.toHaveBeenCalled();
   });
 

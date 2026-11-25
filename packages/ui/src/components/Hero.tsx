@@ -22,6 +22,10 @@ export interface HeroItem {
   playLabel?: string;
   /** Muted clip for this slide. Only played when `previewAllowed` is set on the Hero. */
   previewSrc?: string;
+  /** Length of the clip in milliseconds, from the stored file. Used for the progress fill and the wait for the clip. */
+  previewMs?: number;
+  /** The clip has a sound track. False for clips made before sound existed. */
+  previewHasAudio?: boolean;
 }
 
 /** Seconds between slides, in milliseconds (R12). */

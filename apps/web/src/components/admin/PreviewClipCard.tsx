@@ -33,8 +33,8 @@ const STATE: Record<PreviewInfo['state'], { word: string; tone: 'neutral' | 'inf
 };
 
 const MODES = [
-  { value: 'auto', title: 'Automatic', text: 'We choose a good six seconds.' },
-  { value: 'picked', title: 'Pick a segment', text: 'You choose where the six seconds start.' },
+  { value: 'auto', title: 'Automatic', text: 'We choose the best part of the video.' },
+  { value: 'picked', title: 'Pick a segment', text: 'You choose where the clip starts.' },
   { value: 'off', title: 'Off', text: 'Home shows the poster only.' },
 ] as const;
 
@@ -83,7 +83,7 @@ export function PreviewClipCard({
     <Card title="Home preview clip">
       <div className="adm-stack">
         <p className="adm-muted" style={{ margin: 0 }}>
-          A short silent clip can play on the Home hero for viewers on fast connections. Video length{' '}
+          A short clip can play on the Home hero for viewers on fast connections. It starts muted and viewers can turn the sound on. Video length{' '}
           {formatClock(durationSeconds * 1000)}.
         </p>
         <p style={{ margin: 0 }}>
@@ -122,7 +122,7 @@ export function PreviewClipCard({
               placeholder="0:12"
               inputMode="decimal"
               autoComplete="off"
-              hint="Minutes and seconds. The clip plays six seconds from here."
+              hint="Minutes and seconds. The clip plays from here for the clip length in Site settings."
               onChange={(e) => {
                 setStart(e.target.value);
                 setError(undefined);

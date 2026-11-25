@@ -250,7 +250,7 @@ export function retryEncode(video: VideoRecord, now: number): CommandResult {
 export type PreviewModeInput =
   { mode: 'auto' } | { mode: 'off' } | { mode: 'picked'; startMs?: number };
 
-const CLIP_MS = 6000;
+const CLIP_MS = 20_000;
 const clock = (ms: number) =>
   `${Math.floor(ms / 60_000)}:${String(Math.floor((ms % 60_000) / 1000)).padStart(2, '0')}`;
 
@@ -268,7 +268,7 @@ export function setPreviewMode(video: VideoRecord, input: PreviewModeInput): Com
     if (start === undefined || !Number.isInteger(start) || start < 0 || start > latest || start % 100 !== 0)
       return {
         ok: false,
-        error: `Pick a start between 0:00 and ${clock(latest)} so the clip has six seconds to play`,
+        error: `Pick a start between 0:00 and ${clock(latest)} so the clip has ${CLIP_MS / 1000} seconds to play`,
       };
     startMs = start;
   }
@@ -281,4 +281,30 @@ export function retryPreview(video: VideoRecord): CommandResult {
   if (current.mode === 'off') return { ok: false, error: 'Turn the preview clip on first' };
   video.preview = { ...current, state: 'queued', note: null };
   return { ok: true };
+}
+
+export type PreviewBackfillOutcome =
+  | { ok: true; queued: number; current: number }
+  | { ok: false; error: string };
+
+/**
+ * Generate previews for all videos, fixture twin (D-355). Queues every published, ready, not deleted video whose
+ * clip is not off and is missing, failed or skipped. The real service also recuts clips made before sound existed
+ * and stuck jobs, which fixtures do not track. Returns how many were queued and how many already have a clip.
+ */
+export function queuePreviewBackfill(
+  videos: VideoRecord[],
+): { ok: true; queued: number; current: number } {
+  let queued = 0;
+  let current = 0;
+  for (const video of videos) {
+    if (video.deletedAt !== null || video.status !== 'ready' || video.publishState !== 'published') continue;
+    const preview = video.preview ?? { state: 'none' as const, mode: 'auto' as const, startMs: null, note: null };
+    if (preview.mode === 'off') continue;
+    if (preview.state === 'none' || preview.state === 'failed' || preview.state === 'skipped') {
+      video.preview = { ...preview, state: 'queued', note: null };
+      queued += 1;
+    } else current += 1;
+  }
+  return { ok: true, queued, current };
 }

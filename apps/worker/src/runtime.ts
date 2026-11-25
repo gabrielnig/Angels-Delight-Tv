@@ -17,6 +17,7 @@ import {
 import type { Logger } from '@ad/shared';
 import { createStorage, storageConfigFromEnv } from '@ad/storage';
 import { readSetting } from '@ad/theme/settings';
+import { heroClipMsReader } from './preview-length';
 import {
   CaptionGenerator,
   CaptionTranslator,
@@ -90,6 +91,7 @@ export function buildVideoHandlerDeps(
     scratch,
     ffmpeg: { preset: env.FFMPEG_PRESET, threads: env.FFMPEG_THREADS || undefined },
     limits,
+    preview: { clipMs: heroClipMsReader(db) },
     logger,
   });
 

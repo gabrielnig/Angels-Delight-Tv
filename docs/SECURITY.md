@@ -112,6 +112,7 @@ Roles:
 | Upload, edit videos, series, categories, home rows | no | no | yes | yes | yes |
 | Review and approve captions | no | no | yes | yes | yes |
 | Set the Home hero preview clip to automatic, a picked segment or off, retry a clip, write hero slide text (`video.edit`, M41) | no | no | yes | yes | yes |
+| Generate previews for all videos, which queues hero clips for every published video (`preview.backfill`, M41, D-355) | no | no | no | yes | yes |
 | Publish and unpublish | no | no | yes | yes | yes |
 | Delete video (soft) | no | no | admin only | yes | yes |
 | View users and profiles overview, suspend users | no | no | no | yes | yes |

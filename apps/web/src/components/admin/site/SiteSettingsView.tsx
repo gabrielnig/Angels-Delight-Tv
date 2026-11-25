@@ -75,9 +75,16 @@ const NUMBER_RULES: Partial<Record<SettingKey, NumberRule>> = {
 };
 const NUMBER_KEYS = Object.keys(NUMBER_RULES) as SettingKey[];
 
-const HOME_FLAGS: SettingKey[] = ['home.hero_previews', 'home.hero_previews_unknown_connection'];
+const HOME_FLAGS: SettingKey[] = [
+  'home.hero_previews',
+  'home.hero_previews_unknown_connection',
+  'home.hero_wait_for_clip',
+  'home.hero_sound',
+];
 const HOME_NUMBERS: Partial<Record<SettingKey, NumberRule>> = {
-  'home.hero_interval_seconds': { min: 5, max: 20 },
+  'home.hero_interval_seconds': { min: 5, max: 60 },
+  'home.hero_clip_seconds': { min: 6, max: 30 },
+  'home.hero_previews_min_downlink_mbps': { min: 1, max: 10 },
   'home.hero_max_loops': { min: 0, max: 5 },
   'home.hero_fallback_count': { min: 1, max: 5 },
 };

@@ -143,3 +143,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - Lane L7 admin Languages screens: status per language, publish above a threshold with a Super admin override, a translate workspace with placeholders and plural forms, CSV and JSON export and import that land In review, a missing key report, and sample drafts for Yoruba, Igbo and Hausa that stay unreviewed until a native speaker and an Admin approve them.
 - Lane L7 caption translations: spoken language and detection, multilingual Whisper, machine translation through a provider adapter that is off by default with a monthly cap, side by side review, a Publish switch per language, and a viewer caption menu that lists only approved published languages.
 - Lane L7 copy extraction: player text, viewer mail and the offline page read from the message catalog, viewer mail and the offline page follow the account language, and `getLocale` reads the account language.
+
+### Lane L2 hero clip upgrade, part 1: 20 second clips with sound and a backfill button (M41)
+
+- Hero clips are up to 20 seconds (site setting 6 to 30), the whole video when it is no longer than that, and keep a low bitrate audio track so a viewer can unmute. Older silent 6 second clips keep working and hide the sound button until they are cut again. Migration 0058.
+- New button Generate previews for all videos on Admin, Home curation (admins) queues a clip for every published video that has none or an out of date one. It is safe to press again.
+- Hero slides stay 20 seconds by default (was 10, setting 5 to 60). Clips now play on browsers that do not report connection speed and from 2 Mbps (settings), which is why the owner saw only the still before.

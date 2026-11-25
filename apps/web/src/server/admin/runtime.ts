@@ -187,6 +187,7 @@ function build(): AdminRuntime {
         db,
         requireApprovedCaptions: await readRequireApprovedCaptions(db),
         captionsDefaultAvailable: await readCaptionsDefaultAvailable(db),
+        heroClipMs: (await readSetting(db, 'home.hero_clip_seconds')) * 1000,
       };
     },
     enqueue: (async (...args: Parameters<JobProducer['enqueue']>) =>
