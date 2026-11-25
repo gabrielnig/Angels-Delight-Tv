@@ -17,6 +17,7 @@ vi.mock('../../lib/data', () => ({
   }),
   getLibrary: () => ({ myListIds: async () => [] }),
 }));
+vi.mock('next/navigation', () => ({ useRouter: () => ({ push: () => {} }) }));
 vi.mock('./BoundGrids', () => ({ BrowseGrid: () => null }));
 
 import { BrowseView } from './BrowseView';
@@ -31,6 +32,14 @@ describe('BrowseView category rail (L11 slice 1)', () => {
     expect([...links].map((a) => a.textContent)).toEqual(['All', 'Science', 'Maths']);
     expect(screen.getByRole('link', { name: 'Maths' })).toHaveAttribute('aria-current', 'page');
     expect(screen.getByRole('link', { name: 'All' })).toHaveAttribute('href', '/browse');
+  });
+
+  it('has no old chip rows: Length and Sort are two menu buttons and the page has one filter bar', async () => {
+    render(await BrowseView({ ctx, length: 'any', sort: 'newest' }));
+    expect(screen.getAllByRole('group', { name: 'Filters' })).toHaveLength(1);
+    expect(screen.getAllByRole('button', { name: /^(Length|Sort by):/ })).toHaveLength(2);
+    expect(screen.queryByRole('group', { name: 'Length' })).toBeNull();
+    expect(screen.queryByRole('list', { name: 'Active filters' })).toBeNull();
   });
 
   it('keeps the chosen length and sort when a category is chosen', async () => {

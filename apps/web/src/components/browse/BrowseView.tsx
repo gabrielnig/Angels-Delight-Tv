@@ -1,17 +1,11 @@
-import { EmptyState, Pill, PillRow } from '@ad/ui';
+import { EmptyState } from '@ad/ui';
 import { getLocale, getTranslator } from '../../lib/i18n/server';
 import { getCatalog, getLibrary } from '../../lib/data';
 import type { BrowseLength, BrowseSort, ViewerContext } from '../../lib/data';
 import { BrowseGrid } from './BoundGrids';
-import { CategoryRail } from './CategoryRail';
-import {
-  LENGTHS,
-  SORTS,
-  activeChips,
-  browseHref as href,
-  parseLength,
-  parseSort,
-} from './browse-filters';
+import { BrowseControls } from './BrowseControls';
+import { browseHref as href, parseLength, parseSort } from './browse-filters';
+import { lengthOptions, sortOptions } from './browse-options';
 
 export { parseLength, parseSort };
 
@@ -36,14 +30,16 @@ export async function BrowseView({
   ]);
   const base = categorySlug ? `/browse/${categorySlug}` : '/browse';
   const filtered = length !== 'any';
-  const chips = activeChips(base, length, sort);
 
   return (
     <div className="web-page">
       <h1 className="web-page__title">Browse</h1>
-      <CategoryRail
-        label={msg('browse.rail.label')}
-        items={[
+      <BrowseControls
+        base={base}
+        length={length}
+        sort={sort}
+        railLabel={msg('browse.rail.label')}
+        railItems={[
           { href: href('/browse', length, sort), label: msg('browse.rail.all'), current: !categorySlug },
           ...categories.map((c) => ({
             href: href(`/browse/${c.slug}`, length, sort),
@@ -51,36 +47,9 @@ export async function BrowseView({
             current: categorySlug === c.slug,
           })),
         ]}
+        lengthOptions={lengthOptions(msg)}
+        sortOptions={sortOptions(msg)}
       />
-      <div className="web-filters">
-        <PillRow label="Length">
-          {LENGTHS.map((l) => (
-            <Pill key={l.value} href={href(base, l.value, sort)} current={length === l.value}>
-              {l.label}
-            </Pill>
-          ))}
-        </PillRow>
-        <PillRow label="Sort by">
-          {SORTS.map((s) => (
-            <Pill key={s.value} href={href(base, length, s.value)} current={sort === s.value}>
-              {s.label}
-            </Pill>
-          ))}
-        </PillRow>
-      </div>
-      {chips.length > 0 ? (
-        <ul className="web-chips" aria-label="Active filters">
-          {chips.map((chip) => (
-            <li key={chip.label}>
-              <a className="web-chip" href={chip.removeHref}>
-                <span>{chip.label}</span>
-                <span className="ad-sr-only">, remove filter</span>
-                <span aria-hidden="true">x</span>
-              </a>
-            </li>
-          ))}
-        </ul>
-      ) : null}
       {page.items.length === 0 ? (
         filtered ? (
           <EmptyState

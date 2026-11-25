@@ -1,0 +1,203 @@
+/* Browse sticky stack, filter bar and menu buttons (S186, D-357). */
+.web-browse-stack {
+  --browse-bar-height: 3.5rem;
+  position: sticky;
+  top: var(--nav-height);
+  z-index: var(--z-sticky);
+  margin: 0 calc(var(--page-gutter) * -1) var(--browse-bar-height);
+  padding: 0 var(--page-gutter);
+  background: var(--color-bg);
+}
+.web-browse-stack[data-stuck='true'] {
+  box-shadow: var(--shadow-1);
+}
+
+/* The bar hangs under the rail, so hiding it never moves the rail. */
+.web-browse-bar {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-height: var(--browse-bar-height);
+  padding: var(--space-1) var(--page-gutter) var(--space-2);
+  background: var(--color-bg);
+  transition:
+    transform var(--motion-base) var(--ease-standard),
+    opacity var(--motion-base) var(--ease-standard),
+    visibility 0s linear var(--motion-base);
+}
+.web-browse-stack[data-stuck='true'] .web-browse-bar {
+  box-shadow: var(--shadow-1);
+}
+.web-browse-bar[data-hidden='true'] {
+  transform: translateY(-100%);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .web-browse-bar {
+    transition: none;
+  }
+}
+
+.web-browse-bar__clear {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--touch-target);
+  padding: 0 var(--space-3);
+  color: var(--color-primary);
+  font-size: var(--text-small);
+  font-weight: var(--weight-semibold);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  white-space: nowrap;
+}
+.web-browse-bar__clear:focus-visible {
+  outline: 3px solid var(--color-focus-ring);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+/* Two buttons and Clear are wider than a phone, so the bar scrolls sideways there (S186). Values are never cut. */
+@media (max-width: 599px) {
+  .web-browse-bar {
+    overflow-x: auto;
+    scrollbar-width: none;
+    overscroll-behavior-x: contain;
+  }
+  .web-browse-bar::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* Menu button */
+.web-menu {
+  position: relative;
+  display: inline-flex;
+  flex: none;
+}
+.web-menu__button {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: var(--touch-target);
+  min-width: 0;
+  padding: 0 var(--space-3) 0 var(--space-4);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  color: var(--color-ink);
+  font: inherit;
+  font-size: var(--text-small);
+  white-space: nowrap;
+  cursor: pointer;
+}
+.web-menu__key {
+  color: var(--color-muted);
+  font-weight: var(--weight-medium);
+}
+.web-menu__value {
+  font-weight: var(--weight-semibold);
+}
+.web-menu__button.is-set {
+  background: var(--color-primary-tint);
+  border-color: var(--color-primary);
+}
+.web-menu__button.is-set .web-menu__key {
+  color: var(--color-info-ink);
+}
+.web-menu__button[aria-expanded='true'] {
+  border-color: var(--color-ink);
+  border-width: 2px;
+  padding: 0 calc(var(--space-3) - 1px) 0 calc(var(--space-4) - 1px);
+}
+.web-menu__button.is-loading,
+.web-menu__button.is-loading.is-set {
+  background: var(--color-surface-sunken);
+  border-color: var(--color-border-strong);
+  color: var(--color-muted);
+  cursor: default;
+}
+.web-menu__button.is-loading .web-menu__key,
+.web-menu__button.is-loading.is-set .web-menu__key {
+  color: var(--color-muted);
+}
+@media (hover: hover) and (pointer: fine) {
+  .web-menu__button:hover:not(.is-loading) {
+    border-color: var(--color-ink);
+  }
+}
+.web-menu__button:focus-visible {
+  outline: 3px solid var(--color-focus-ring);
+  outline-offset: 2px;
+}
+
+/* Popover menu (desktop) */
+.web-menu__popover {
+  position: absolute;
+  top: calc(100% + var(--space-2));
+  left: 0;
+  z-index: var(--z-overlay);
+  min-width: 14.5rem;
+  padding: var(--space-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-2);
+}
+.web-menu__option {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+  min-height: var(--touch-target);
+  padding: 0 var(--space-3);
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--color-ink);
+  font: inherit;
+  font-size: var(--text-small);
+  font-weight: var(--weight-medium);
+  text-align: start;
+  cursor: pointer;
+}
+.web-menu__tick {
+  display: inline-flex;
+  justify-content: center;
+  width: 1.25rem;
+  color: var(--color-primary);
+}
+.web-menu__option[aria-checked='true'] {
+  background: var(--color-primary-tint);
+  font-weight: var(--weight-semibold);
+}
+@media (hover: hover) and (pointer: fine) {
+  .web-menu__option:hover {
+    background: var(--color-surface-sunken);
+  }
+}
+.web-menu__option:focus-visible {
+  outline: 3px solid var(--color-focus-ring);
+  outline-offset: -3px;
+}
+
+/* Bottom sheet (phone) */
+.web-menu__group {
+  display: flex;
+  flex-direction: column;
+  padding: 0 var(--space-2) var(--space-4);
+}
+.web-menu__sheet .web-menu__option {
+  min-height: 3.25rem;
+  font-size: var(--text-body);
+}
+@media (forced-colors: active) {
+  .web-menu__option[aria-checked='true'] {
+    outline: 2px solid Highlight;
+  }
+}
