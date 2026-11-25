@@ -5,37 +5,43 @@ path: daily
 summary: Add a video file so you can prepare and publish it.
 role: editor
 needs: [S04]
-related: [D07, S04]
+related: [D05, D07]
 readMinutes: 4
-watchSeconds: 210
+watchSeconds: 80
 video:
   id: VD02
   phone: true
+  captions: burned
 screens: ["/admin/videos/upload"]
 actions: [video.upload]
-aliases: [add video, new video, import]
+aliases: [add video, new video, import, send video, upload file]
+flow: D02
+dependsOn: [apps/web/src/app/admin/(shell)/videos/upload, apps/web/src/components/admin/UploadScreen.tsx, apps/web/src/components/admin/UploadLane.tsx]
 updated: 2026-11-25
 locale: en
 status: draft
 ---
 ## What you will do
-Add one video file to the platform. You end with a draft video that you can edit.
+Add one video file to the platform. You end with a [draft](glossary:draft) video that you can edit.
 
 ## Before you start
-You need a video file on your computer, in MP4, MOV or MKV format. Read [Find your way around](help:S04) if you have not yet.
+- **Who can do this:** Editors, Admins and Super admins.
+- **Time:** about 4 minutes, plus the time your connection needs to send the file.
+- You need a video file on your computer, in MP4, MOV or MKV format. The page says the largest size it accepts.
+- Read [Find your way around](help:S04) if you have not yet.
 
 ## Steps
-1. Click **Upload** in the side menu.
-   ![Placeholder picture of the Videos list, where uploaded videos appear](../../media/D02/D02-01-upload-desktop.webp)
-2. Drag your video onto the box, or click the box and choose a file.
-3. Wait until the row says **Done**.
-   > [!CAREFUL]
-   > Keep this page open until the row says Done. Closing it can stop the upload.
-4. Click **Edit details** to add the title.
+<!-- kb:steps D02 -->
+1. Choose **Upload** in the side menu.
+<!-- /kb:steps -->
 
 ## What you should see
-The row says **Done**, and the video is in **Videos** as a draft.
+The row for your file says **Uploaded just now** and has an **Edit details** button. The video is now in [Videos](/admin/videos) as a draft. Nobody can watch it yet.
+
+> [!CAREFUL]
+> Keep the page open until the row says Uploaded just now. If your connection drops, the saved part is kept and the upload carries on by itself.
 
 ## If something goes wrong
-- **The bar stops.** Check your internet connection, then choose **Retry** on the row.
-- **The file is refused.** Use an MP4, MOV or MKV file. Other types are not accepted.
+- **The bar stops, or the row says Paused or Failed.** Check your internet connection, then choose **Retry** on the row.
+- **The file is not accepted.** Check that it is an MP4, MOV or MKV file and not larger than the limit shown on the page.
+- **You uploaded the wrong file.** Choose **Remove** on its row before you add details, or move the video to Trash later.

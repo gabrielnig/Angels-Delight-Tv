@@ -1,6 +1,6 @@
 import { chromium, type Browser } from '@playwright/test';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { runSteps } from './fact-run';
+import { fileNameHint, runSteps } from './fact-run';
 import { overlayInitScript } from './overlay';
 import { PROFILES } from './profiles';
 import { Session } from './session';
@@ -40,6 +40,17 @@ async function session() {
   await page.setContent(HTML);
   return { context, s: new Session(page, PROFILES.desktop, null, 0.1) };
 }
+
+describe('fileNameHint', () => {
+  it('takes the file name a following choose a file step asks for', () => {
+    expect(fileNameHint('Choose a file from your computer, named "flaky-lesson.mp4".')).toBe(
+      'flaky-lesson.mp4',
+    );
+    expect(fileNameHint('Choose a file from your computer.')).toBeUndefined();
+    expect(fileNameHint('Click **Retry**.')).toBeUndefined();
+    expect(fileNameHint(undefined)).toBeUndefined();
+  });
+});
 
 describe('runSteps (needs Chromium)', () => {
   it('runs a followable article to the end', async (ctx) => {
@@ -120,6 +131,38 @@ describe('runSteps (needs Chromium)', () => {
     });
     expect(r.failure).toBeNull();
     expect(await s.page.getByLabel('Title').inputValue()).toBe('ngozi@example.test');
+    await context.close();
+  });
+
+  it('gives a demo video to a file chooser that a Choose button opens, like a person picking a file', async (ctx) => {
+    if (!browser) return ctx.skip();
+    const { context, s } = await session();
+    await s.page.setContent(
+      `<button onclick="document.getElementById('f').click()">Choose videos</button>
+       <input id="f" type="file" hidden accept=".mp4,.mov" onchange="document.getElementById('o').textContent=this.files[0].name+':'+this.files[0].type">
+       <p id="o"></p>`,
+    );
+    const r = await runSteps(s, [
+      { n: 1, text: 'Click **Choose videos**.' },
+      { n: 2, text: 'Wait until you see **demo-lesson.mp4**.' },
+    ]);
+    expect(r.failure).toBeNull();
+    await context.close();
+  });
+
+  it('finds a choice by the label it starts with, since its help line is part of the name', async (ctx) => {
+    if (!browser) return ctx.skip();
+    const { context, s } = await session();
+    await s.page.setContent(
+      `<label><input type="radio" name="w" id="r1"><span><strong>Publish now</strong> Viewers can watch it.</span></label>
+       <label><input type="radio" name="w" id="r2" onchange="document.getElementById('o').textContent='Picked'"><span><strong>Schedule</strong> Pick a date and time.</span></label>
+       <p id="o"></p>`,
+    );
+    const r = await runSteps(s, [
+      { n: 1, text: 'Click **Schedule**.' },
+      { n: 2, text: 'Wait until you see **Picked**.' },
+    ]);
+    expect(r.failure).toBeNull();
     await context.close();
   });
 

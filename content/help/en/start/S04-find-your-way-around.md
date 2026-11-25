@@ -1,42 +1,49 @@
 ---
 id: S04
-title: Find your way around
+title: "Find your way around: menu, top bar and phone menu"
 path: start
-summary: Learn the side menu, the top bar and the phone menu.
+summary: Learn the side menu, the top bar and the account menu.
 role: editor
-needs: []
-related: [D02, D07]
+needs: [S02]
+related: [S05, D01]
 readMinutes: 3
-watchSeconds: 150
+watchSeconds: 70
 video:
   id: VS04
   phone: true
+  captions: burned
 screens: ["/admin"]
 actions: [admin.access]
-aliases: [menu, navigation, dashboard, where is]
+aliases: [menu, navigation, where is, side menu, top bar, sign out, preview site]
+flow: S04
+dependsOn: [apps/web/src/components/admin/AdminShell.tsx, apps/web/src/components/admin/nav.ts]
 updated: 2026-11-25
 locale: en
 status: draft
 ---
 ## What you will do
-Learn where things are in the admin. You end by opening a screen from the menu and coming back to the Dashboard.
+Learn where things are in the admin. You open a screen from the [side menu](glossary:side-menu), come back to the [Dashboard](glossary:dashboard) and look at your account menu.
 
 ## Before you start
-Sign in first. You do not need anything else.
+- **Who can do this:** every staff member.
+- **Time:** about 3 minutes.
+- Sign in first. Read [Sign in and set up two step sign in](help:S02) if you have not.
+- On a phone the side menu is hidden. Tap the menu button at the top left to open it. It closes again when you choose a screen.
 
 ## Steps
-1. Look at the side menu on the left. It has groups such as **Content** and **Site**.
-   ![Placeholder picture of the Dashboard with the side menu on the left](../../media/S04/S04-01-menu-desktop.webp)
-2. Click **Videos** to see every video you have uploaded.
-3. Look at the top bar. It shows your upload progress, the notice bell and your account menu.
-4. Open your account menu and choose **Preview site** to see the site as a viewer sees it.
-5. Click **Dashboard** in the side menu to come back.
-   > [!TIP]
-   > On a phone, tap the menu button at the top left to open the side menu.
+<!-- kb:steps S04 -->
+1. Check that the **Content** group holds your video screens.
+<!-- /kb:steps -->
 
 ## What you should see
-The Dashboard shows tiles for your videos and a list called **Needs attention**. Menu items you cannot use are hidden for your role.
+You end on the Dashboard with your account menu open. The side menu groups screens by job: **Overview**, **Content**, **Site**, **Insight and control** and **Monetization**. Numbers beside **Encoding** and **Captions** show how many videos wait.
+
+The top bar has a search box for videos, a **Help** link, the notice bell and your account menu. While a video uploads, a small chip shows its progress.
+
+> [!NOTE]
+> The side menu shows only what your role may use. If an item is missing, it is for a higher role. [Who can do what](help:S05) explains the roles.
 
 ## If something goes wrong
 - **A menu item is missing.** It may be for a higher role. Ask a Super admin which role you have.
 - **The page looks cut off.** Make the window wider or turn your phone sideways.
+- **You cannot find the account menu.** It is the button with your name at the top right. On a phone it shows your initials.

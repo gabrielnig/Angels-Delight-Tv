@@ -2,41 +2,46 @@
 id: D07
 title: Review and approve captions
 path: daily
-summary: Check the captions made for a video, fix wrong words and approve them.
+summary: Check the captions made for a video and approve them.
 role: editor
 needs: [D02]
-related: [D02, S04]
+related: [D05, D08]
 readMinutes: 5
-watchSeconds: 240
+watchSeconds: 80
 video:
   id: VD07
   phone: true
+  captions: burned
 screens: ["/admin/captions", "/admin/captions/[videoId]"]
 actions: [caption.review]
-aliases: [subtitles, cc, closed captions]
+aliases: [subtitles, cc, closed captions, approve, review words]
+flow: D07
+dependsOn: [apps/web/src/components/admin/CaptionReview.tsx, apps/web/src/components/admin/CaptionTable.tsx, apps/web/src/components/admin/CaptionList.tsx]
 updated: 2026-11-25
 locale: en
 status: draft
 ---
 ## What you will do
-Check the captions made for a new video. You end with the captions approved so viewers can see them.
+Check the [captions](glossary:caption) made for a new video and approve them. You end with the state **Approved**, so viewers can see the words.
 
 ## Before you start
-Upload a video first. Read [Upload one video](help:D02) if you have not yet. Wait until the captions are ready.
+- **Who can do this:** Editors, Admins and Super admins. Only Admins can approve many videos at once.
+- **Time:** about 5 minutes for a short video.
+- The video must be uploaded and its captions made. The state in the list says **Needs review** when they are ready.
+- Read [Upload one video](help:D02) if you have not yet.
 
 ## Steps
-1. Click **Captions** in the side menu.
-   ![Placeholder picture of the caption screen with a video waiting for review](../../media/D07/D07-01-captions-desktop.webp)
-2. Open a video that says **Needs review**.
-3. Play the video and read the captions as they appear.
-4. Click a caption line and fix any wrong word.
-5. Choose **Approve** when the captions read right.
-   > [!NOTE]
-   > Only Admins can approve many videos at once.
+<!-- kb:steps D07 -->
+1. Choose **Captions** in the side menu.
+<!-- /kb:steps -->
 
 ## What you should see
-The state of the captions changes to **Approved**.
+A message says **Captions approved**. In the **Captions** list the state of the video is **Approved**, and the number beside **Captions** in the side menu goes down by one.
+
+> [!NOTE]
+> Approving is a review, so it has no Undo. You can still change the words later and choose **Approve changes**.
 
 ## If something goes wrong
-- **There are no captions yet.** They take a few minutes. Check **Encoding** and try again later.
-- **The Approve button is grey.** Some warnings must be fixed first. Read the message above the list.
+- **The list says No captions waiting.** Nothing needs review. New videos appear here when their captions are ready.
+- **A video says Generating.** The captions are still being made. Come back in a few minutes.
+- **The words are wrong in many places.** Edit the cues on this screen before you approve. Each cue has its own **Words in cue** box.
