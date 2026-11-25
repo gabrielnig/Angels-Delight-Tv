@@ -54,7 +54,7 @@ describe('resolveSeoSettings (M45-S05)', () => {
   it('carries indexing, channels and the template', () => {
     const s = resolveSeoSettings({ ...base(), 'seo.indexing': false });
     expect(s.indexing).toBe(false);
-    expect(s.shareChannels).toEqual(['whatsapp', 'facebook', 'x']);
+    expect(s.shareChannels).toEqual(['whatsapp', 'facebook', 'x', 'telegram', 'email', 'sms']);
     expect(s.shareTemplate).toBe('{title} on {siteName}');
   });
 });

@@ -4,11 +4,12 @@ import userEvent from '@testing-library/user-event';
 import { ToastProvider } from '@ad/ui';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { ShareMenu } from './ShareMenu';
+import type { ShareChannelId } from './share-links';
 
 const props = {
   title: 'Rivers',
   text: 'Rivers on ADTV',
-  channels: ['whatsapp', 'facebook', 'x'] as ('whatsapp' | 'facebook' | 'x' | 'email')[],
+  channels: ['whatsapp', 'facebook', 'x'] as ShareChannelId[],
   kind: 'video' as const,
 };
 

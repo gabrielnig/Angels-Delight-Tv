@@ -17,7 +17,7 @@ const text = (max: number) =>
     });
 
 /** Channels the share menu can list. Copy link is always on and is not a channel here. */
-export const SHARE_CHANNELS = ['whatsapp', 'facebook', 'x', 'email'] as const;
+export const SHARE_CHANNELS = ['whatsapp', 'facebook', 'x', 'telegram', 'email', 'sms'] as const;
 export type ShareChannel = (typeof SHARE_CHANNELS)[number];
 
 const shareTemplate = z
@@ -124,9 +124,9 @@ export const DISCOVERY_DEFS = {
       .array(z.enum(SHARE_CHANNELS))
       .max(SHARE_CHANNELS.length)
       .refine((list) => new Set(list).size === list.length, { message: 'List each channel once' }),
-    default: ['whatsapp', 'facebook', 'x'] as ShareChannel[],
+    default: ['whatsapp', 'facebook', 'x', 'telegram', 'email', 'sms'] as ShareChannel[],
     label: 'Share options',
-    description: 'Which options the Share menu lists. Copy link is always on',
+    description: 'Which options the Share menu lists. Copy link is always on and the device share menu shows when the device has one',
   }),
   'consent.notice_enabled': def({
     schema: z.boolean(),
