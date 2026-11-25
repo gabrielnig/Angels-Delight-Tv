@@ -17,26 +17,28 @@ import { getLocale, loadCatalog } from '../lib/i18n/server';
 import { tvModeFromHeaders } from '../lib/tv/server';
 import { getRootTheme } from '../lib/theme/root';
 import { getSeoSettings } from '../server/seo/seo-settings';
+import { getSiteMeta } from '../server/seo/site-meta';
+import { buildMetadata } from '../lib/seo/metadata';
 import { localeInfo } from '@ad/shared/messages';
 import { Providers } from './providers';
 
 export async function generateMetadata(): Promise<Metadata> {
-  const [{ platformName }, seo] = await Promise.all([getRootTheme(), getSeoSettings()]);
+  const [{ platformName }, site] = await Promise.all([getRootTheme(), getSiteMeta()]);
   const origin = process.env.APP_ORIGIN;
+  const base = buildMetadata(site, { kind: 'website', path: '/' });
+  // Pages set their own canonical and og:url. A site wide one would point every page at the home page.
+  const { url: _url, ...openGraph } = (base.openGraph ?? {}) as Record<string, unknown>;
   return {
     ...(origin ? { metadataBase: new URL(origin) } : {}),
     title: { default: platformName, template: `%s | ${platformName}` },
-    description: seo.description,
-    ...(seo.indexing ? {} : { robots: { index: false, follow: false } }),
+    description: base.description,
+    ...(base.robots ? { robots: base.robots } : {}),
     icons: {
       icon: [{ url: '/brand-icons/favicon-32.png', sizes: '32x32', type: 'image/png' }],
       apple: '/brand-icons/apple-touch-icon.png',
     },
-    openGraph: {
-      siteName: platformName,
-      description: seo.description,
-      images: [seo.socialImageUrl],
-    },
+    openGraph: openGraph as Metadata['openGraph'],
+    twitter: base.twitter,
     appleWebApp: { capable: true, title: platformName, statusBarStyle: 'default' },
   };
 }

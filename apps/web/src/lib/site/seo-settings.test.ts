@@ -69,3 +69,17 @@ describe('shareText', () => {
     expect(shareText('{title}: {title}', { title: 'A', siteName: 'B' })).toBe('A: A');
   });
 });
+
+describe('share card settings (L15b)', () => {
+  it('carries the X handle, title overlay and play badge', () => {
+    const d = resolveSeoSettings(base());
+    expect(d).toMatchObject({ twitterHandle: '', titleOverlay: true, playBadge: true });
+    const s = resolveSeoSettings({
+      ...base(),
+      'seo.twitter_handle': '@learntv',
+      'seo.share_title_overlay': false,
+      'seo.share_play_badge': false,
+    });
+    expect(s).toMatchObject({ twitterHandle: '@learntv', titleOverlay: false, playBadge: false });
+  });
+});

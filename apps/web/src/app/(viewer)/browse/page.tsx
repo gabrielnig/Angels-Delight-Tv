@@ -1,8 +1,11 @@
 import { AppShell } from '../../../components/Shell';
 import { BrowseView, parseLength, parseSort } from '../../../components/browse/BrowseView';
 import { getViewerOrGuest } from '../../../lib/session';
+import { pageMetadata } from '../../../server/seo/site-meta';
 
-export const metadata = { title: 'Browse' };
+export async function generateMetadata() {
+  return pageMetadata({ kind: 'website', path: '/browse', title: 'Browse' });
+}
 
 export default async function BrowsePage({
   searchParams,

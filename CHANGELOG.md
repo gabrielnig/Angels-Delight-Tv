@@ -7,6 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 ## [Unreleased]
 
 ### Added
+- Lane L15b slice 1 (M45): one metadata builder for every public route (`lib/seo/metadata.ts`, `server/seo/site-meta.ts`). Home, browse, search, about, help, privacy, terms, donate, transparency, title and series pages now carry og:title, og:type, og:url, canonical, twitter tags with image alt, `video.tv_show` for series, `video.other` with duration, release date and tags for videos, word safe descriptions and og:locale from the page language. Kids only titles show the generic card. New settings X handle, title overlay and play badge. Audit in `docs/audits/2026-11-25-og-audit.md`
 - Lane KB-H slice 9 (M50): harness docs. Story M50-S30, the module note, recording rules in SECURITY section 19, the spike marked superseded and the harness section of the lane note finished.
 - Lane KB-H slice 8 (M50): fact checker. `pnpm kb:fact-check` re-runs a help article from only its step list and role on a clean demo stack and reports the first step that cannot be followed, with the labels on screen. Steps that need a file are skipped as manual.
 - Lane KB-H slice 7 (M50): episode coverage tests. Every admin route, menu item, permission action, setting and status needs an episode or an entry on the known gaps list (`scripts/kb-recorder/coverage-gaps.json`), failing with a named list. The list can only shrink.

@@ -7,13 +7,16 @@ import { BankTransfer } from '../../../components/donate/BankTransfer';
 import { DonateKids } from '../../../components/donate/DonateKids';
 import '../../../components/donate/donate.css';
 import { currentDonateGate, readDonatePage } from '../../../server/donations/page-data';
+import { pageMetadata } from '../../../server/seo/site-meta';
 
 export const dynamic = 'force-dynamic';
 
 export async function generateMetadata(): Promise<Metadata> {
   const gate = await currentDonateGate();
-  if (gate !== 'ok') return { title: gate === 'kids' ? msg('donate.kids.title') : 'Not found', robots: { index: false } };
-  return { title: (await readDonatePage()).introTitle };
+  if (gate !== 'ok') {
+    return pageMetadata({ kind: 'private', path: '/donate', title: gate === 'kids' ? msg('donate.kids.title') : 'Not found' });
+  }
+  return pageMetadata({ kind: 'website', path: '/donate', title: (await readDonatePage()).introTitle });
 }
 
 export default async function DonatePage() {

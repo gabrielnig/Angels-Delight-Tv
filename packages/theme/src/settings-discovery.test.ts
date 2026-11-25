@@ -67,3 +67,20 @@ describe('discovery settings (M45-S05, S06, S11)', () => {
     }
   });
 });
+
+describe('share card settings (L15b)', () => {
+  it('twitter handle accepts a handle with or without @ and empty, refuses the rest', () => {
+    expect(defaultSettings()['seo.twitter_handle']).toBe('');
+    expect(parse('seo.twitter_handle', '@learntv').success).toBe(true);
+    expect(parse('seo.twitter_handle', 'learn_tv').success).toBe(true);
+    expect(parse('seo.twitter_handle', '').success).toBe(true);
+    expect(parse('seo.twitter_handle', 'two words').success).toBe(false);
+    expect(parse('seo.twitter_handle', 'waytoolonghandlehere').success).toBe(false);
+  });
+
+  it('title overlay and play badge default on and are public', () => {
+    expect(defaultSettings()['seo.share_title_overlay']).toBe(true);
+    expect(defaultSettings()['seo.share_play_badge']).toBe(true);
+    expect(parse('seo.share_play_badge', 'yes').success).toBe(false);
+  });
+});

@@ -4,10 +4,12 @@ import { StorageList } from '../../../components/consent/StorageList';
 import { SiteTabs } from '../../../components/site/SiteTabs';
 import { LegalView } from '../../../components/site/LegalView';
 import { getSite } from '../../../lib/data';
+import { pageMetadata } from '../../../server/seo/site-meta';
 
 export async function generateMetadata() {
   const page = await getSite().legal('privacy');
-  return { title: page?.title ?? 'Not found' };
+  if (!page) return pageMetadata({ kind: 'private', path: '/privacy', title: 'Not found' });
+  return pageMetadata({ kind: 'website', path: '/privacy', title: page.title });
 }
 
 export default async function Page() {

@@ -3,8 +3,11 @@ import { HelpFaq } from '../../../components/site/HelpFaq';
 import { SiteTabs } from '../../../components/site/SiteTabs';
 import { LegalView } from '../../../components/site/LegalView';
 import { getSite } from '../../../lib/data';
+import { pageMetadata } from '../../../server/seo/site-meta';
 
-export const metadata = { title: 'Help' };
+export async function generateMetadata() {
+  return pageMetadata({ kind: 'website', path: '/help', title: 'Help' });
+}
 
 /** The help text is the page the admin edits, with the common questions underneath (M26-S02, M26-S03). */
 export default async function HelpPage() {

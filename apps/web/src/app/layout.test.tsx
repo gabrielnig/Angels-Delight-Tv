@@ -30,6 +30,7 @@ const localeState = vi.hoisted(() => ({
 vi.mock('../lib/i18n/server', () => ({
   getLocale: async () => localeState.value,
   loadCatalog: async () => ({ nav: {} }),
+  currentEnabledLocales: () => ['en'],
 }));
 vi.mock('../components/account/AccountSupport', () => ({
   AccountSupportProvider: ({ email, children }: { email: string; children: React.ReactNode }) => (
@@ -152,7 +153,10 @@ describe('root layout', () => {
     expect((await generateViewport()).themeColor).toBe('#123456');
     const metadata = await generateMetadata();
     expect(metadata.icons).toMatchObject({ icon: [{ url: '/brand-icons/favicon-32.png' }] });
-    expect(metadata.openGraph?.images).toEqual(['/brand-icons/placeholder-og.png']);
+    expect(metadata.openGraph?.images).toMatchObject([
+      { url: '/brand-icons/placeholder-og.png', width: 1200, height: 630, type: 'image/png' },
+    ]);
+    expect(metadata.openGraph).not.toHaveProperty('url');
     expect(metadata.title).toEqual({ default: 'Sister V TV', template: '%s | Sister V TV' });
   });
 
@@ -168,7 +172,9 @@ describe('root layout', () => {
     };
     const metadata = await generateMetadata();
     expect(metadata.description).toBe('Lessons for every family');
-    expect(metadata.openGraph?.images).toEqual(['https://cdn.test/og.jpg']);
+    expect(metadata.openGraph?.images).toMatchObject([
+      { url: 'https://cdn.test/og.jpg', width: 1200, height: 630, type: 'image/jpeg' },
+    ]);
     expect(metadata.openGraph?.description).toBe('Lessons for every family');
     expect(metadata.robots).toBeUndefined();
   });
