@@ -1,13 +1,8 @@
 {
   "routes": [
     "/admin",
-    "/admin/analytics",
-    "/admin/analytics/[id]",
     "/admin/captions/[videoId]",
-    "/admin/categories",
     "/admin/encoding/failed",
-    "/admin/exports",
-    "/admin/exports/new",
     "/admin/invite/[token]",
     "/admin/series/[id]/share",
     "/admin/videos/[id]/markers",
@@ -17,19 +12,14 @@
   ],
   "nav": [
     "Dashboard",
-    "Upload",
-    "Categories",
-    "Analytics",
-    "Exports"
+    "Upload"
   ],
   "actions": [
     "admin.access",
-    "analytics.view",
     "audit.export",
     "audit.security",
     "caption.override",
     "caption.review",
-    "category.manage",
     "encode.retry",
     "i18n.approve",
     "users.bulk",
