@@ -105,6 +105,8 @@ export const shareEvent = z.strictObject({
   kind: z.literal('share'),
   channel: z.enum(SHARE_CHANNELS),
   titleKind: z.enum(['video', 'series']),
+  /** Catalog id of the shared title. Never a person, link or text. */
+  titleId: z.uuid().optional(),
 });
 
 export const analyticsEvent = z.discriminatedUnion('kind', [

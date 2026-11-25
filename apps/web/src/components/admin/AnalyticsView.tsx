@@ -3,6 +3,7 @@ import {
   changeLabel,
   formatWatchTime,
   rangeLabel,
+  SHARE_CHANNEL_NAMES,
 } from '@/lib/data/admin/analytics-rules';
 import type {
   AnalyticsOverview,
@@ -97,6 +98,33 @@ function Tile({
       >
         {change.text}
       </Badge>
+    </div>
+  );
+}
+
+function SharesCard({ shares }: { shares: AnalyticsOverview['shares'] }) {
+  return (
+    <div role="group" aria-label="Shares by channel" className="adm-card adm-stack">
+      <h2 className="adm-h3" style={{ margin: 0 }}>
+        Shares by channel
+      </h2>
+      {shares.length === 0 ? (
+        <p className="adm-muted" style={{ margin: 0 }}>
+          Nothing was shared in this period.
+        </p>
+      ) : (
+        <ul className="adm-list">
+          {shares.map((r) => (
+            <li key={r.channel}>
+              <span>{SHARE_CHANNEL_NAMES[r.channel] ?? r.channel}</span>
+              <span className="adm-num">{count(r.count)}</span>
+            </li>
+          ))}
+        </ul>
+      )}
+      <p className="adm-muted" style={{ margin: 0 }}>
+        Only totals are kept. Nobody is named.
+      </p>
     </div>
   );
 }
@@ -206,6 +234,7 @@ export function AnalyticsOverviewView({
             <Split title="Connection" rows={data.splits.connection} />
             <Split title="Countries" rows={data.splits.country} />
           </div>
+          <SharesCard shares={data.shares} />
         </>
       )}
     </div>
@@ -244,6 +273,7 @@ export function VideoAnalyticsView({
           <strong className="adm-stat">{percent(data.totals.completionRate)}</strong>
         </div>
       </div>
+      <SharesCard shares={data.shares} />
       {empty ? (
         <EmptyState
           title="No views for this video in this period."

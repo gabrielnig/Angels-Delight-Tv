@@ -101,3 +101,45 @@ describe('VideoAnalyticsView', () => {
     expect(screen.getByText('Share of viewers still watching')).toBeTruthy();
   });
 });
+
+describe('Share counts (L15a)', () => {
+  const when = new Date('2026-11-17T10:00:00Z');
+  it('lists shares by channel on the overview, with plain channel names', () => {
+    const base = buildFixtureOverview(getStore(), range, when);
+    render(
+      <AnalyticsOverviewView
+        data={{
+          ...base,
+          shares: [
+            { channel: 'whatsapp', count: 120 },
+            { channel: 'sms', count: 7 },
+          ],
+        }}
+        preset="28d"
+        exportHref="/x"
+      />,
+    );
+    const card = screen.getByRole('group', { name: 'Shares by channel' });
+    expect(within(card).getByText('WhatsApp')).toBeTruthy();
+    expect(within(card).getByText('Messages (SMS)')).toBeTruthy();
+    expect(within(card).getByText('120')).toBeTruthy();
+  });
+  it('says so when nothing was shared', () => {
+    const base = buildFixtureOverview(getStore(), range, when);
+    render(<AnalyticsOverviewView data={{ ...base, shares: [] }} preset="28d" exportHref="/x" />);
+    expect(screen.getByText('Nothing was shared in this period.')).toBeTruthy();
+  });
+  it('shows shares for one video', () => {
+    const store = getStore();
+    const id = store.videos.find((v) => v.deletedAt === null)!.id;
+    const video = buildFixtureVideo(store, id, range, when)!;
+    render(
+      <VideoAnalyticsView
+        data={{ ...video, shares: [{ channel: 'copy', count: 3 }] }}
+        preset="28d"
+      />,
+    );
+    const card = screen.getByRole('group', { name: 'Shares by channel' });
+    expect(within(card).getByText('Copy link')).toBeTruthy();
+  });
+});

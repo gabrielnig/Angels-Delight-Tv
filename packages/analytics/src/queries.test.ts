@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildSplit } from './queries';
+import { buildSplit, shareRows } from './queries';
 
 describe('buildSplit', () => {
   it('returns percentages and merges groups under the privacy threshold into Other', () => {
@@ -10,5 +10,21 @@ describe('buildSplit', () => {
   });
   it('returns nothing when there is no data', () => {
     expect(buildSplit({})).toEqual([]);
+  });
+});
+
+describe('shareRows', () => {
+  it('orders channels by count and drops zero and unknown keys', () => {
+    expect(
+      shareRows([
+        { key: 'copy', total: '4' },
+        { key: 'whatsapp', total: '9' },
+        { key: 'myspace', total: '3' },
+        { key: 'x', total: '0' },
+      ]),
+    ).toEqual([
+      { channel: 'whatsapp', count: 9 },
+      { channel: 'copy', count: 4 },
+    ]);
   });
 });

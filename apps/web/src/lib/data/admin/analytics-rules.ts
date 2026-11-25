@@ -4,6 +4,7 @@ import type {
   OverviewResult,
   PeriodTotals,
   RetentionPoint,
+  ShareCount,
   SplitRow,
   TitleDailyRow,
   TopTitle,
@@ -71,7 +72,20 @@ export const dayLabel = short;
 export interface AnalyticsOverview extends OverviewResult {
   top: TopTitle[];
   splits: { device: SplitRow[]; connection: SplitRow[]; country: SplitRow[] };
+  /** Shares per channel. Counters only, no person (L15a). */
+  shares: ShareCount[];
 }
+
+export const SHARE_CHANNEL_NAMES: Record<string, string> = {
+  copy: 'Copy link',
+  whatsapp: 'WhatsApp',
+  facebook: 'Facebook',
+  x: 'X',
+  telegram: 'Telegram',
+  email: 'Email',
+  sms: 'Messages (SMS)',
+  more: 'Device share menu',
+};
 export interface VideoAnalytics {
   videoId: string;
   title: string;
@@ -79,6 +93,7 @@ export interface VideoAnalytics {
   daily: Array<{ day: string; views: number; watchMs: number }>;
   retention: RetentionPoint[];
   totals: { views: number; watchMs: number; completionRate: number };
+  shares: ShareCount[];
 }
 
 // ---- fixture data, shaped exactly like the @ad/analytics results ----
@@ -140,6 +155,12 @@ export function buildFixtureOverview(
     previous: totals(dailyFor(store, previousPeriod(range), now)),
     daily,
     top,
+    shares: [
+      { channel: 'whatsapp', count: 164 },
+      { channel: 'copy', count: 91 },
+      { channel: 'facebook', count: 38 },
+      { channel: 'more', count: 22 },
+    ],
     splits: {
       device: share([
         ['Phone', 71],
@@ -192,6 +213,10 @@ export function buildFixtureVideo(
       watchMs: daily.reduce((n, d) => n + d.watchMs, 0),
       completionRate: views ? 0.38 : 0,
     },
+    shares: views ? [
+      { channel: 'whatsapp', count: Math.round(views / 40) },
+      { channel: 'copy', count: Math.round(views / 90) },
+    ].filter((r) => r.count > 0) : [],
   };
 }
 
