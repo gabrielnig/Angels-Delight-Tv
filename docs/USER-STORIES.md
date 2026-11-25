@@ -4573,7 +4573,7 @@ As staff, I want to say with one tap whether a guide helped, so that unclear gui
 ### M50-S27 Guides for a higher role stay visible behind a count (Must)
 As an Editor or Admin, I want guides for roles above mine counted and shown on request, so that I know what to ask for without clutter.
 - AC1: Given I am an Editor, When the help home loads, Then guides for Admin and Super admin are hidden and a line says how many, with a Show them button.
-- AC2: Given I choose Show them, When the list updates, Then those guides appear with an Admin only or Super admin only label and the choice is kept in this tab.
+- AC2: Given I choose Show them, When the list updates, Then those guides appear with an Admin only or Super admin only label and the choice is carried in the page address (?show=all).
 - AC3: Given a direct link to a hidden guide, When I open it, Then it opens with the role label (nothing is blocked).
 - Edge: a Super admin never sees the line.
 - Error: not applicable.

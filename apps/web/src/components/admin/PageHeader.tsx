@@ -1,6 +1,7 @@
 import { Breadcrumbs } from '@ad/ui';
 import Link from 'next/link';
 import type { ReactNode } from 'react';
+import { HelpLink } from './help/HelpLink';
 import type { Crumb } from './nav';
 
 export function PageHeader({
@@ -25,7 +26,10 @@ export function PageHeader({
           <h1 className="adm-h1">{title}</h1>
           {lead ? <p className="adm-lead">{lead}</p> : null}
         </div>
-        {actions ? <div className="adm-pagehead__actions">{actions}</div> : null}
+        <div className="adm-pagehead__actions">
+          {actions}
+          <HelpLink />
+        </div>
       </div>
     </header>
   );

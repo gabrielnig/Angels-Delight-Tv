@@ -34,6 +34,24 @@ const email = z
     message: 'Enter a valid email address',
   });
 
+/** Where staff reach the developer from the help centre: an email address or an https link, or empty. */
+const supportContact = z
+  .string()
+  .trim()
+  .max(300)
+  .refine(
+    (value) => {
+      if (value === '') return true;
+      if (/^[^\s@<>"':/]+@[^\s@<>"':/]+\.[^\s@<>"':/]{2,}$/.test(value)) return true;
+      try {
+        return new URL(value).protocol === 'https:';
+      } catch {
+        return false;
+      }
+    },
+    { message: 'Enter an email address or a full https:// link' },
+  );
+
 const language = z
   .string()
   .trim()
@@ -128,6 +146,16 @@ export const SETTING_DEFS = {
     group: 'platform',
     label: 'Support email',
     description: 'Where viewers can reach you',
+  }),
+  'help.support_contact': def({
+    schema: supportContact,
+    default: '',
+    isPublic: false,
+    tier: 'admin',
+    group: 'platform',
+    label: 'Help centre contact',
+    description:
+      'Email address or https link staff use to message the developer from the help centre. Leave empty to show a placeholder',
   }),
   'platform.footer_text': def({
     schema: text(200),

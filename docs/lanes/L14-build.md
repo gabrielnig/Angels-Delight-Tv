@@ -11,7 +11,7 @@ Worktree `/home/claude/wt2/KBP-build`. Builds the help centre itself: the conten
 | Slice | Contents | State |
 |---|---|---|
 | 1 Content format | `@ad/help` (schema, parser, library, lint, glossary, route matching), `content/help`, `pnpm help:check`, 3 sample articles, stories and decisions | Merged in the first platform PR |
-| 2 Pages | `/admin/help` home, path, article with contents list, role labels, print layout, Help in the side menu and page header, `help-map.ts`, coverage tests | Not yet |
+| 2 Pages | `/admin/help` home, path, article with contents list, role labels, print layout, Help in the side menu, top bar and page header, route to article map, private picture route, `help.support_contact` setting, coverage tests with `content/help/coverage-gaps.json` | Merged in the second platform PR |
 | 3 Progress | `help_progress` table, finished, watched, helpful, progress card | Not yet |
 | 4 Video | private media route, player, playlist, transcript | Not yet |
 | 5 Panel | contextual help drawer and sheet | Not yet |
@@ -89,6 +89,9 @@ Video files are not in the repo. The page looks for them under the media release
 
 - `pnpm vitest run packages/help` (format, library, search, node loader)
 - `pnpm help:check`
+- `pnpm vitest run apps/web/src/components/admin/help apps/web/src/lib/admin/help-coverage.test.ts apps/web/src/server/help`
+- Coverage gaps: `content/help/coverage-gaps.json` lists admin routes and menu items with no article yet. A content lane that covers one must remove it (the test fails otherwise). A new admin route needs an article with `screens` or a gap entry.
+- Dockerfile copies `content/help` to `/app/content/help`; the loader finds it from the app folder or `HELP_CONTENT_DIR`.
 - Later slices add their own lines here.
 
 ## Harness (lane KB-H)
