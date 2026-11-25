@@ -28,7 +28,7 @@ const HTML = `
 <p id="o"></p>
 <h2>Home preview clip</h2>
 <div style="width:200px;overflow-x:auto;white-space:nowrap" id="strip"><button style="margin-right:400px">First tab</button><button id="far" onclick="document.getElementById('o').textContent='Far clicked'">Far tab</button></div>
-<details><summary><span class="sr">Account menu for </span>Demo Editor</summary><a href="#me">My account</a></details>
+<details><summary><span class="sr">Account menu for </span><span aria-hidden="true">DE</span> Demo Editor</summary><a href="#me">My account</a></details>
 <p hidden>Video is live somewhere hidden</p>
 <p id="live" hidden>Maths is live.</p>
 <button id="go" onclick="document.getElementById('live').hidden=false">Go</button>`;
@@ -211,7 +211,7 @@ describe('runSteps (needs Chromium)', () => {
       { n: 2, text: 'Click **Go**.' },
       { n: 3, text: 'Wait until you see **is live**.' },
     ]);
-    expect(r.failure).toBeUndefined();
+    expect(r.failure).toBeNull();
     expect(await s.page.getByRole('link', { name: 'My account' }).isVisible()).toBe(true);
     await context.close();
   }, 60_000);

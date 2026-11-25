@@ -32,6 +32,15 @@ Carry on with an upload that stopped. The part already sent is kept, so Retry se
 ## Steps
 <!-- kb:steps D04 -->
 1. Choose **Upload** in the side menu.
+2. Click **Choose videos**.
+3. Choose a file from your computer, named "flaky-lesson.mp4".
+   To practise, give your file a name with the word flaky in it. On your real site, any file can fail when the connection drops.
+4. Wait until you see **Retry**.
+   The row shows why it stopped. The part that was sent is kept.
+   ![The failed upload with the Retry button marked 1](../../media/D04/D04-04-failed-desktop.webp)
+5. Click **Retry flaky-lesson.mp4**.
+6. Wait until you see **Uploaded just now**.
+   ![The upload finished, marked 1](../../media/D04/D04-06-done-desktop.webp)
 <!-- /kb:steps -->
 
 ## What you should see

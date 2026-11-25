@@ -82,7 +82,7 @@ const episode: Episode = {
     {
       caption: 'Wait until you see **Before you publish**.',
       note: 'Your video is now a draft. Nobody can watch it yet.',
-      holdMs: 13000,
+      holdMs: 17000,
       run: async (s) => {
         await s.point(s.page.getByText('Before you publish').first());
       },

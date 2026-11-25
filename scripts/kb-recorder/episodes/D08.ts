@@ -53,15 +53,17 @@ const episode: Episode = {
       },
     },
     {
-      caption: 'Wait until you see **is live**.',
+      caption: 'Wait until you see **Unpublish**.',
+      note: 'A message says the video is live for a few seconds. The Unpublish button stays.',
       holdMs: 3000,
       run: async (s) => {
         await waitForToast(s, 'is live');
+        await s.page.getByRole('button', { name: 'Unpublish', exact: true }).first().waitFor();
       },
       shot: {
         name: 'live',
-        alt: 'The message that the video is live marked 1',
-        marks: [{ target: (s) => s.page.getByText('is live').first(), label: 'Live' }],
+        alt: 'The message that the video is live, with the Unpublish button marked 1',
+        marks: [{ target: (s) => s.page.getByRole('button', { name: 'Unpublish', exact: true }).first(), label: 'Unpublish' }],
       },
     },
     {
@@ -82,15 +84,16 @@ const episode: Episode = {
       },
     },
     {
-      caption: 'Wait until you see **is unpublished**.',
+      caption: 'Wait until you see **Publish**.',
       holdMs: 3000,
       run: async (s) => {
         await waitForToast(s, 'is unpublished');
+        await s.page.getByRole('button', { name: 'Publish', exact: true }).first().waitFor();
       },
       shot: {
         name: 'unpublished',
-        alt: 'The message that the video is unpublished marked 1',
-        marks: [{ target: (s) => s.page.getByText('is unpublished').first(), label: 'Unpublished' }],
+        alt: 'The Publish button back on the screen, marked 1',
+        marks: [{ target: (s) => s.page.getByRole('button', { name: 'Publish', exact: true }).first(), label: 'Publish' }],
       },
     },
   ],
