@@ -44,6 +44,7 @@ const MAIN_TABLES = [
   'email_suppressions',
   'email_tokens',
   'episodes',
+  'help_progress',
   'jobs',
   'login_events',
   'mfa_factors',

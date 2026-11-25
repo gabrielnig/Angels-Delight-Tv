@@ -8,7 +8,7 @@ import { ToastProvider } from '../Toast';
 import { ThemeHistoryView, type HistoryActions } from './ThemeHistoryView';
 
 const push = vi.fn();
-vi.mock('next/navigation', () => ({ useRouter: () => ({ push }) }));
+vi.mock('next/navigation', () => ({ useRouter: () => ({ push }), usePathname: () => '/admin/theme/history' }));
 
 beforeAll(() => {
   HTMLDialogElement.prototype.showModal ??= function showModal(this: HTMLDialogElement) {
