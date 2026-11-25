@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const nav = vi.hoisted(() => ({ pathname: '/browse', back: vi.fn() }));
 vi.mock('next/navigation', () => ({
@@ -96,5 +96,50 @@ describe('ViewerChrome phone header (L12, S183)', () => {
     chrome();
     expect(screen.queryByRole('banner')).toBeNull();
     expect(screen.queryByRole('navigation', { name: 'Primary' })).toBeNull();
+  });
+});
+
+describe('ViewerChrome profile sheet on phones (L12)', () => {
+  beforeEach(() => {
+    nav.pathname = '/browse';
+    vi.stubGlobal('matchMedia', (query: string) => ({
+      matches: /max-width: 599px/.test(query),
+      media: query,
+      addEventListener: () => {},
+      removeEventListener: () => {},
+    }));
+  });
+  afterEach(() => vi.unstubAllGlobals());
+
+  it('opens a bottom sheet with the profile name, kind and the real menu items in order', async () => {
+    chrome();
+    await userEvent.click(screen.getByRole('button', { name: 'Profile menu, Chidi' }));
+    const sheet = screen.getByRole('dialog', { name: 'Chidi' });
+    expect(within(sheet).getByText('Adult profile')).toBeInTheDocument();
+    const rows = within(sheet)
+      .getAllByRole('listitem')
+      .map((row) => row.textContent);
+    expect(rows).toEqual([
+      'Switch profile',
+      'Manage profiles',
+      'Account',
+      'Playback settings',
+      'Help',
+      'Sign out',
+    ]);
+  });
+
+  it('labels a Kids profile sheet and keeps Switch profile and Exit kids mode only', async () => {
+    chrome(true);
+    await userEvent.click(
+      screen.getByRole('button', { name: 'Profile menu, Chidi, Kids profile' }),
+    );
+    const sheet = screen.getByRole('dialog', { name: 'Chidi' });
+    expect(within(sheet).getByText('Kids profile')).toBeInTheDocument();
+    expect(
+      within(sheet)
+        .getAllByRole('listitem')
+        .map((row) => row.textContent),
+    ).toEqual(['Switch profile', 'Exit kids mode']);
   });
 });

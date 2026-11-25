@@ -4,7 +4,9 @@ import { useEffect, useRef, useState, type KeyboardEvent, type ReactNode } from 
 import { Avatar } from './Avatar';
 import { cx } from './cx';
 import { Icon, type IconName } from './Icon';
+import { ButtonLink } from './Button';
 import { Link } from './Link';
+import { Modal } from './Modal';
 
 export interface NavLink {
   label: string;
@@ -15,7 +17,21 @@ export interface MenuItem {
   label: string;
   href?: string;
   onSelect?: () => void;
+  /** `primary` draws the row as the one filled button of the sheet (Sign in). */
+  variant?: 'primary';
+  /** A row with an on and off state and a help line, such as Kids mode. Phones draw it as a switch. */
+  switch?: { checked: boolean; help?: string; label?: string };
 }
+
+export interface AccountSheet {
+  /** Dialog title: Account for a visitor, the profile name for a signed in viewer. */
+  title: string;
+  /** Line under the title, such as Adult profile or Kids profile. */
+  subtitle?: string;
+  closeLabel?: string;
+}
+
+const PHONE = '(max-width: 599px)';
 
 export function isCurrentPath(currentPath: string, href: string): boolean {
   if (href === '/') return currentPath === '/';
@@ -44,6 +60,7 @@ export function TopNav({
   guestActions,
   profileMenuLabel,
   searchLabel = 'Search',
+  sheet,
 }: {
   brand: { name: string; href: string; logoUrl?: string };
   links: NavLink[];
@@ -75,9 +92,12 @@ export function TopNav({
   /** Accessible name of the profile button, already translated and with the name filled in. */
   profileMenuLabel?: string;
   searchLabel?: string;
+  /** Describes the account bottom sheet. Without it the menu is a popover at every width (11.12). */
+  sheet?: AccountSheet;
 }) {
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
+  const [phone, setPhone] = useState(false);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -100,8 +120,19 @@ export function TopNav({
     return () => observer.disconnect();
   }, [overHero]);
 
+  // Phones get a bottom sheet, wider screens keep the popover (11.12).
   useEffect(() => {
-    if (!open) return;
+    if (!sheet || typeof window.matchMedia !== 'function') return;
+    const query = window.matchMedia(PHONE);
+    setPhone(query.matches);
+    const onChange = (event: MediaQueryListEvent) => setPhone(event.matches);
+    query.addEventListener?.('change', onChange);
+    return () => query.removeEventListener?.('change', onChange);
+  }, [sheet]);
+  const asSheet = Boolean(sheet) && phone;
+
+  useEffect(() => {
+    if (!open || asSheet) return;
     menuRef.current?.querySelector<HTMLElement>('[role="menuitem"]')?.focus();
     const onPointer = (event: MouseEvent) => {
       const target = event.target as Node;
@@ -110,11 +141,64 @@ export function TopNav({
     };
     document.addEventListener('mousedown', onPointer);
     return () => document.removeEventListener('mousedown', onPointer);
-  }, [open]);
+  }, [open, asSheet]);
 
   function closeMenu() {
     setOpen(false);
     triggerRef.current?.focus();
+  }
+
+  function closeSheet() {
+    setOpen(false);
+    triggerRef.current?.focus();
+  }
+
+  function renderSheetRow(item: MenuItem) {
+    if (item.switch) {
+      const { checked, help, label } = item.switch;
+      return (
+        <div className="ad-sheet__switchrow">
+          <button
+            type="button"
+            role="switch"
+            aria-checked={checked}
+            className="ad-sheet__row"
+            onClick={() => {
+              item.onSelect?.();
+              setOpen(false);
+            }}
+          >
+            <span>{label ?? item.label}</span>
+            <span className="ad-sheet__track" aria-hidden="true" />
+          </button>
+          {help ? <p className="ad-sheet__help">{help}</p> : null}
+        </div>
+      );
+    }
+    if (item.variant === 'primary' && item.href)
+      return (
+        <ButtonLink href={item.href} className="ad-sheet__primary" onClick={() => setOpen(false)}>
+          {item.label}
+        </ButtonLink>
+      );
+    if (item.href)
+      return (
+        <Link href={item.href} className="ad-sheet__row" onClick={() => setOpen(false)}>
+          {item.label}
+        </Link>
+      );
+    return (
+      <button
+        type="button"
+        className="ad-sheet__row"
+        onClick={() => {
+          setOpen(false);
+          item.onSelect?.();
+        }}
+      >
+        {item.label}
+      </button>
+    );
   }
 
   function onMenuKeyDown(event: KeyboardEvent<HTMLDivElement>) {
@@ -227,7 +311,7 @@ export function TopNav({
                       ? undefined
                       : (profileMenuLabel ?? `Profile menu, ${profileName}`)
                 }
-                aria-haspopup="menu"
+                aria-haspopup={asSheet ? 'dialog' : 'menu'}
                 aria-expanded={open}
                 data-guest={guest ? 'true' : undefined}
                 onClick={() => setOpen((value) => !value)}
@@ -246,7 +330,7 @@ export function TopNav({
                   </>
                 ) : null}
               </button>
-              {open ? (
+              {open && !asSheet ? (
                 <div
                   ref={menuRef}
                   className="ad-menu"
@@ -284,6 +368,22 @@ export function TopNav({
                     ),
                   )}
                 </div>
+              ) : null}
+              {sheet ? (
+                <Modal
+                  open={open && asSheet}
+                  onClose={closeSheet}
+                  title={sheet.title}
+                  closeLabel={sheet.closeLabel}
+                  className="ad-sheet"
+                >
+                  {sheet.subtitle ? <p className="ad-sheet__sub">{sheet.subtitle}</p> : null}
+                  <ul className="ad-sheet__list">
+                    {items.map((item) => (
+                      <li key={item.label}>{renderSheetRow(item)}</li>
+                    ))}
+                  </ul>
+                </Modal>
               ) : null}
             </div>
           </div>

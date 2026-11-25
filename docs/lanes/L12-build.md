@@ -7,7 +7,7 @@ Source: mockups `docs/mockups/v2/L12/S182` to `S185`, review `docs/reviews/v2/L1
 | Slice | State | Notes |
 |---|---|---|
 | 1 Header | built | `TopNav` gained `guest`, `kidsLabel`, `hasBell`, `guestActions`, `accountLabel`, `searchLabel`, `profileMenuLabel`. `GuestChrome` now renders `TopNav`. Header and tab bar skip /watch. |
-| 2 Account sheet | not started | |
+| 2 Account sheet | built | `TopNav` `sheet` prop opens the shared `Modal` as `ad-sheet` under 600 px; `MenuItem` gained `variant` and `switch`; `Modal` gained `closeLabel`. Language stays in the bar, no swipe (D-378). |
 | 3 Tab bar | not started | |
 | 4 Scrim token and docs | not started | |
 | 5 Review and production build | not started | |
@@ -20,4 +20,5 @@ Source: mockups `docs/mockups/v2/L12/S182` to `S185`, review `docs/reviews/v2/L1
 
 ## Gaps
 
-- The account menu is still the popover until slice 2 turns it into a bottom sheet.
+- Language row in the sheet and swipe to close are not built (D-378).
+- Pre-existing failures outside this lane: `packages/ui/test/focus-ring.test.ts` (`.web-rail__link:focus-visible`) and `hover-guard.test.ts` (`tv.css:76`).

@@ -133,6 +133,11 @@ export function ViewerChrome({
               }
               onExitKids={() => setExitOpen(true)}
               onBack={detail ? () => router.back() : undefined}
+              sheet={{
+                title: profileName,
+                subtitle: kids ? msg('nav.sheet.kidsProfile') : msg('nav.sheet.adultProfile'),
+                closeLabel: msg('nav.sheet.close'),
+              }}
               hasBell={!kids}
               kidsLabel={msg('nav.kidsBadge')}
               searchLabel={msg('nav.search')}

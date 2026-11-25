@@ -103,3 +103,27 @@ describe('phone header rules (L12, S183, S184)', () => {
     );
   });
 });
+
+describe('account sheet rules (L12, S183 frames 7 to 9)', () => {
+  it('rows are 52 px with a 44 px minimum on every state and a switch track that moves its thumb', () => {
+    expect(find('.ad-sheet__row')?.body).toMatch(/min-height:\s*3\.25rem/);
+    expect(find('.ad-sheet__primary')?.body).toMatch(/min-height:\s*3\.25rem/);
+    expect(find(".ad-sheet__row[aria-checked='true'] .ad-sheet__track")?.body).toMatch(
+      /background:\s*var\(--color-primary\)/,
+    );
+    expect(find(".ad-sheet__row[aria-checked='true'] .ad-sheet__track::after")?.body).toMatch(
+      /translateX/,
+    );
+  });
+
+  it('hover sits inside the fine pointer query and uses the sunken surface token', () => {
+    const hover = rules.find((r) => r.selector === '.ad-sheet__row:hover');
+    expect(hover?.at.some((a) => /hover: hover/.test(a))).toBe(true);
+    expect(hover?.body).toMatch(/background:\s*var\(--color-surface-sunken\)/);
+  });
+
+  it('the help line is muted caption text and the list has no bullets', () => {
+    expect(find('.ad-sheet__help')?.body).toMatch(/color:\s*var\(--color-muted\)/);
+    expect(find('.ad-sheet__list')?.body).toMatch(/list-style:\s*none/);
+  });
+});

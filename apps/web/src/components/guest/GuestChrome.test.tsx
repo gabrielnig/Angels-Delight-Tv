@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const nav = vi.hoisted(() => ({ pathname: '/browse' }));
 vi.mock('next/navigation', () => ({
@@ -139,5 +139,55 @@ describe('GuestChrome (S81)', () => {
       await userEvent.click(screen.getByRole('button', { name: 'Turn off Kids mode' }));
       expect(setKidsMode).toHaveBeenCalledWith(false);
     });
+  });
+});
+
+describe('GuestChrome account sheet on phones (L12)', () => {
+  beforeEach(() => {
+    nav.pathname = '/browse';
+    vi.stubGlobal('matchMedia', (query: string) => ({
+      matches: /max-width: 599px/.test(query),
+      media: query,
+      addEventListener: () => {},
+      removeEventListener: () => {},
+    }));
+  });
+  afterEach(() => vi.unstubAllGlobals());
+
+  it('opens the sheet with Sign in, Create account, the Kids mode switch with its help and Help', async () => {
+    const setKidsMode = vi.fn().mockResolvedValue(undefined);
+    chrome({ setKidsMode });
+    await userEvent.click(screen.getByRole('button', { name: 'Account menu' }));
+    const sheet = screen.getByRole('dialog', { name: 'Account' });
+    expect(within(sheet).getByRole('link', { name: 'Sign in' })).toHaveAttribute(
+      'href',
+      '/sign-in',
+    );
+    expect(within(sheet).getByRole('link', { name: 'Create account' })).toHaveAttribute(
+      'href',
+      '/sign-up',
+    );
+    const toggle = within(sheet).getByRole('switch', { name: 'Kids mode' });
+    expect(toggle).toHaveAttribute('aria-checked', 'false');
+    expect(
+      within(sheet).getByText(
+        'Shows videos made for children. Anyone using this device can turn it off.',
+      ),
+    ).toBeInTheDocument();
+    await userEvent.click(toggle);
+    expect(setKidsMode).toHaveBeenCalledWith(true);
+  });
+
+  it('shows only the Kids mode switch and Help when Kids mode is on', async () => {
+    chrome({ kids: true, setKidsMode: vi.fn() });
+    await userEvent.click(screen.getByRole('button', { name: 'Account menu' }));
+    const sheet = screen.getByRole('dialog');
+    expect(within(sheet).getByRole('switch', { name: 'Kids mode' })).toHaveAttribute(
+      'aria-checked',
+      'true',
+    );
+    expect(within(sheet).getByRole('link', { name: 'Help' })).toBeInTheDocument();
+    expect(within(sheet).queryByRole('link', { name: 'Sign in' })).toBeNull();
+    expect(within(sheet).queryByRole('link', { name: 'Create account' })).toBeNull();
   });
 });
