@@ -60,9 +60,24 @@ export function DiscoveryTab({ data, actions, onSaved }: Props) {
   const savedVersion = Number(data.values['consent.notice_version'] ?? 1);
   const image = str('seo.default_social_image_url');
 
+  // Enabled channels in the stored order, then the switched off ones in the usual order (L15a).
+  const enabledChannels = channels.filter((c) => c in CHANNEL_LABELS);
+  const rowOrder = [
+    ...enabledChannels,
+    ...Object.keys(CHANNEL_LABELS).filter((c) => !enabledChannels.includes(c)),
+  ];
+
   function toggleChannel(channel: string, on: boolean) {
-    const order = Object.keys(CHANNEL_LABELS);
-    const next = order.filter((c) => (c === channel ? on : channels.includes(c)));
+    const rest = enabledChannels.filter((c) => c !== channel);
+    form.set('seo.share_channels', on ? [...rest, channel] : rest);
+  }
+
+  function moveChannel(channel: string, by: -1 | 1) {
+    const next = [...enabledChannels];
+    const from = next.indexOf(channel);
+    const to = from + by;
+    if (from < 0 || to < 0 || to >= next.length) return;
+    [next[from], next[to]] = [next[to] as string, next[from] as string];
     form.set('seo.share_channels', next);
   }
 
@@ -186,19 +201,48 @@ export function DiscoveryTab({ data, actions, onSaved }: Props) {
         <fieldset className="ads-links">
           <legend className="adm-field__label">{label('seo.share_channels')}</legend>
           <p className="adm-field__hint">{hint('seo.share_channels')}</p>
-          <div className="ads-flags">
-            {Object.entries(CHANNEL_LABELS).map(([channel, name]) => (
-              <div className="ads-flag" key={channel}>
-                <span className="adm-field__label">{name}</span>
-                <Switch
-                  label={name}
-                  checked={channels.includes(channel)}
-                  onChange={(value) => toggleChannel(channel, value)}
-                />
-              </div>
-            ))}
-          </div>
-          <p className="adm-field__hint">Copy link is always on</p>
+          <ul className="ads-order" aria-label="Share options order">
+            {rowOrder.map((channel) => {
+              const name = CHANNEL_LABELS[channel] as string;
+              const index = enabledChannels.indexOf(channel);
+              const on = index >= 0;
+              return (
+                <li className="ads-flag" key={channel} data-channel={channel}>
+                  <span className="adm-field__label">{name}</span>
+                  <span className="ads-order__controls">
+                    {on ? (
+                      <>
+                        <button
+                          type="button"
+                          className="ads-order__move"
+                          aria-label={`Move ${name} up`}
+                          disabled={index === 0}
+                          onClick={() => moveChannel(channel, -1)}
+                        >
+                          Up
+                        </button>
+                        <button
+                          type="button"
+                          className="ads-order__move"
+                          aria-label={`Move ${name} down`}
+                          disabled={index === enabledChannels.length - 1}
+                          onClick={() => moveChannel(channel, 1)}
+                        >
+                          Down
+                        </button>
+                      </>
+                    ) : null}
+                    <Switch
+                      label={name}
+                      checked={on}
+                      onChange={(value) => toggleChannel(channel, value)}
+                    />
+                  </span>
+                </li>
+              );
+            })}
+          </ul>
+          <p className="adm-field__hint">Copy link is always first. The device share menu shows last when the device has one</p>
         </fieldset>
 
         <div className="ads-flags">

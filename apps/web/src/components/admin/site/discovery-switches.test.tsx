@@ -32,7 +32,7 @@ describe('Discovery tab switches (S137, R30)', () => {
       expect(el.getAttribute('aria-label')?.trim().length).toBeGreaterThan(0);
     }
     expect(screen.getByText('Kids only titles are never listed by search engines.')).toBeInTheDocument();
-    expect(screen.getByText('Copy link is always on')).toBeInTheDocument();
+    expect(screen.getByText('Copy link is always first. The device share menu shows last when the device has one')).toBeInTheDocument();
     await userEvent.setup().tab();
   });
 
