@@ -15,6 +15,9 @@ DEMO_NOW="${KB_DEMO_NOW:-2026-03-10T09:00:00.000Z}"
 
 fixture_env() {
   scripts/ci-fixture-env.sh "$PORT"
+  # Throwaway Paystack test key and receipt secret so the Donate pages exist. Random each start, never printed on screen.
+  echo "PAYSTACK_SECRET_KEY=sk_test_$(openssl rand -hex 12)"
+  echo "DONATE_RECEIPT_TOKEN_SECRET=$(openssl rand -base64 32)"
   cat <<ENV
 KB_DEMO=on
 KB_DEMO_NOW=$DEMO_NOW

@@ -53,8 +53,8 @@ export default async function SponsorPage({ params }: { params: Promise<{ id: st
         <SponsorStatusPanel
           status={sponsor.status}
           isAdmin={can(actor.role, 'sponsor.activate')}
-          setStatus={(s) => setSponsorStatusAction(id, s)}
-          remove={() => deleteSponsorAction(id)}
+          setStatus={setSponsorStatusAction.bind(null, id)}
+          remove={deleteSponsorAction.bind(null, id)}
         />
         <SponsorForm
           initial={{
@@ -66,7 +66,7 @@ export default async function SponsorPage({ params }: { params: Promise<{ id: st
             notes: sponsor.notes ?? '',
           }}
           contactEmailHint={sponsor.contactEmailMasked ? `On file: ${sponsor.contactEmailMasked}. Leave empty to clear it.` : undefined}
-          save={(values) => updateSponsorAction(id, values)}
+          save={updateSponsorAction.bind(null, id)}
         />
         <CreativesEditor
           sponsorId={id}

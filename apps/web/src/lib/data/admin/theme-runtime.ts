@@ -3,6 +3,8 @@ import { mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { createLogger, type Logger } from '@ad/shared';
+import { kbDemoAllowed } from './kb-demo/reset';
+import { KB_DEMO_MONEY_SETTINGS } from './kb-demo/money-settings';
 import { realDataEnabled } from '../../../server/data/mode';
 import { LocalStorage, type StorageAdapter } from '@ad/storage';
 import {
@@ -65,9 +67,12 @@ async function createRuntime(): Promise<ThemeRuntime> {
     bucket: 'media',
     signingSecret: new Uint8Array(32),
   });
+  const settings = new SettingsService({ store: new MemorySettingsStore(), logger });
+  // The isolated help recording stack shows a configured donate page. Never runs outside KB_DEMO.
+  if (kbDemoAllowed()) await settings.update({ accountId: 'kb-demo', role: 'super_admin' }, KB_DEMO_MONEY_SETTINGS);
   return {
     theme: new ThemeService({ store: new MemoryThemeStore(), logger }),
-    settings: new SettingsService({ store: new MemorySettingsStore(), logger }),
+    settings,
     logos: new LogoUploader({ storage, assets: new MemoryAssetStore() }),
     storage,
     logger,
