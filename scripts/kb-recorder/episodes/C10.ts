@@ -44,6 +44,11 @@ const episode: Episode = {
       run: async (s) => { await clickByName(s, 'switch', 'Maintenance mode'); },
     },
     {
+      caption: 'Check the **Unsaved changes** badge.',
+      note: 'The badge shows that your last change is waiting to be saved.',
+      run: async (s) => highlight(s, s.page.getByText('Unsaved changes').first(), 1600),
+    },
+    {
       caption: 'Click **Save changes** to continue.',
       run: async (s) => { await saveChanges(s); await s.page.getByRole('dialog').waitFor(); },
       shot: {

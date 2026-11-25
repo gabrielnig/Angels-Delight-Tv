@@ -27,7 +27,7 @@ You need to be a Super admin. Read [Invite a teammate and choose their role](hel
 ## Steps
 <!-- kb:steps C12 -->
 1. Click **Roles and invites** in the side menu.
-2. Check the **People with admin access** list.
+2. Check the **Role** column of the staff list.
    You cannot change your own role. The only Super admin is locked, so make someone else a Super admin first.
    ![The staff table with the Role column marked 1](../../media/C12/C12-02-people-desktop.webp)
 3. Select **Admin** from the **Role for Demo Editor** list.

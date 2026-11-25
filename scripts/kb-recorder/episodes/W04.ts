@@ -1,5 +1,5 @@
 import type { Episode } from '../episode';
-import { clickByName, goToScreen, highlight, markLabel, padSteps, typeInto, waitForToast } from '../c3-helpers';
+import { clickByName, goToScreen, highlight, padSteps, waitForToast } from '../c3-helpers';
 
 const episode: Episode = {
   id: 'W04',
@@ -20,7 +20,7 @@ const episode: Episode = {
     },
     {
       caption: 'Check the **Sections** list.',
-      note: 'Each section is one row on the viewer Home page, in the order viewers see them.',
+      note: 'Each section is one row on the viewer Home page, in the order viewers see them. Add section starts a new row: you choose a kind (New, Popular, Trending now, Top 10, Most liked, Category, Series or Manual list) and a name. Trending now, Top 10 and Most liked stay hidden until enough viewers have watched.',
       run: async (s) => highlight(s, s.page.getByRole('heading', { name: 'Sections' }), 1800),
       shot: {
         name: 'sections',
@@ -29,25 +29,8 @@ const episode: Episode = {
       },
     },
     {
-      caption: 'Click **Add section**.',
-      run: async (s) => { await clickByName(s, 'button', 'Add section', { first: true }); await s.page.getByRole('dialog').waitFor(); },
-    },
-    {
-      caption: 'Check the **What kind of section?** list and pick one.',
-      note: 'Kinds include New, Popular, Trending now, Top 10, Most liked, Category, Series and a Manual list you fill by hand. Trending, Top 10 and Most liked stay hidden until enough viewers have watched.',
-      run: async (s) => {
-        await highlight(s, s.page.getByText('What kind of section?').first(), 1200);
-        await s.click(s.page.getByRole('radio', { name: /^Most liked/ }));
-      },
-      shot: {
-        name: 'kinds',
-        alt: 'The Add a section box with the kinds list marked 1',
-        marks: [{ target: (s) => s.page.getByRole('group', { name: 'What kind of section?' }), label: 'Kinds of section' }],
-      },
-    },
-    {
-      caption: 'Click **Add section** to confirm.',
-      run: async (s) => { await s.click(s.page.getByRole('dialog').getByRole('button', { name: 'Add section', exact: true })); await s.page.getByText('Edit section:').first().waitFor(); },
+      caption: 'Click **Edit New this week**.',
+      run: async (s) => { await clickByName(s, 'button', 'Edit New this week'); await s.page.getByText('Edit section:').first().waitFor(); },
     },
     {
       caption: 'Check the **View all link** choices.',
@@ -60,13 +43,23 @@ const episode: Episode = {
       },
     },
     {
+      caption: 'Click **Move New this week down**.',
+      note: 'You can also drag the handle beside a section.',
+      run: async (s) => { await clickByName(s, 'button', 'Move New this week down'); await s.pause(800); },
+    },
+    {
       caption: 'Untick **Show My List**.',
-      note: 'A hidden section stays in the list but viewers do not see it. Kids profiles have their own switch in the section editor.',
+      note: 'A hidden section stays in the list but viewers do not see it. In the section editor, Show on Kids profiles has its own switch.',
       run: async (s) => { await clickByName(s, 'switch', 'Show My List'); },
     },
     {
       caption: 'Click **Mobile** in the live preview.',
-      run: async (s) => { await clickByName(s, 'button', 'Mobile', { exact: true }); },
+      run: async (s) => { await clickByName(s, 'tab', 'Mobile', { exact: true }); await s.pause(600); },
+      shot: {
+        name: 'preview',
+        alt: 'The live preview in phone size marked 1',
+        marks: [{ target: (s) => s.page.getByRole('tab', { name: 'Mobile', exact: true }), label: 'Mobile' }],
+      },
     },
     {
       caption: 'Click **Save draft**.',
@@ -74,7 +67,7 @@ const episode: Episode = {
     },
     {
       caption: 'Click **Publish changes**.',
-      note: 'Viewers see the new order within a minute. Use Restore previous to undo the last publish.',
+      note: 'Viewers see the new order within a minute. Restore previous undoes the last publish and Restore launch defaults puts back the first layout.',
       run: async (s) => { await clickByName(s, 'button', 'Publish changes'); await waitForToast(s, 'Home page published.'); },
     },
   ]),

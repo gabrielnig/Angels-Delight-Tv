@@ -30,7 +30,7 @@ You need to be an Admin or a Super admin. Have the real text ready from your law
 1. Click **Site settings** in the side menu.
 2. Click **Pages** at the top.
    ![The Pages tab with the placeholder warning marked 1](../../media/C06/C06-02-pages-desktop.webp)
-3. Check the warning about placeholder text.
+3. Check the **Placeholder text.** warning.
    The Terms page and Privacy page start with placeholder text. Replace it before you launch.
 4. Click **Bulleted list** in the formatting bar.
    The bar also has Bold, Italic, Heading and Link. Select text first, then click the tool.

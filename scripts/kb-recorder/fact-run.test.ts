@@ -18,14 +18,17 @@ afterAll(async () => {
 });
 
 const HTML = `
-<nav><a href="#videos" id="l1">Videos</a> <a href="#upload">Upload</a></nav>
+<nav><a href="#videos" id="l1">Videos</a> <a href="#upload">Upload</a> <a href="#cap" id="cap">Captions<span>1 need attention</span></a></nav>
 <h1>Videos</h1>
 <label>Title <input id="t"></label>
+<label>Count <input id="n" value="10"></label>
 <label><input type="checkbox" id="c"> Compact rows</label>
 <label>Status <select id="s"><option>All</option><option>Published</option></select></label>
 <button id="b" onclick="document.getElementById('o').textContent='Saved'">Save</button>
 <p id="o"></p>
-<h2>Home preview clip</h2>`;
+<h2>Home preview clip</h2>
+<div style="width:200px;overflow-x:auto;white-space:nowrap" id="strip"><button style="margin-right:400px">First tab</button><button id="far" onclick="document.getElementById('o').textContent='Far clicked'">Far tab</button></div>
+<details><summary><span class="sr">Account menu for </span>Demo Editor</summary><a href="#me">My account</a></details>`;
 
 async function session() {
   const context = await browser!.newContext({
@@ -66,6 +69,46 @@ describe('runSteps (needs Chromium)', () => {
     ]);
     expect(await s.page.inputValue('#t')).toBe('Rivers');
     expect(await s.page.isChecked('#c')).toBe(true);
+    await context.close();
+  }, 60_000);
+
+  it('clicks a control that sits out of view in a sideways scrolling strip', async (ctx) => {
+    if (!browser) return ctx.skip();
+    const { context, s } = await session();
+    const r = await runSteps(s, [
+      { n: 1, text: 'Click **Far tab**.' },
+      { n: 2, text: 'Wait until you see **Far clicked**.' },
+    ]);
+    expect(r.failure).toBeNull();
+    await context.close();
+  }, 60_000);
+
+  it('replaces the text that is already in a box when a step says Type', async (ctx) => {
+    if (!browser) return ctx.skip();
+    const { context, s } = await session();
+    const r = await runSteps(s, [{ n: 1, text: 'Type "20" in the **Count** box.' }]);
+    expect(r.failure).toBeNull();
+    expect(await s.page.inputValue('#n')).toBe('20');
+    await context.close();
+  }, 60_000);
+
+  it('finds a menu item that carries a count badge by its plain label', async (ctx) => {
+    if (!browser) return ctx.skip();
+    const { context, s } = await session();
+    const r = await runSteps(s, [{ n: 1, text: 'Click **Captions** in the side menu.' }]);
+    expect(r.failure).toBeNull();
+    expect(s.page.url()).toContain('#cap');
+    await context.close();
+  }, 60_000);
+
+  it('opens a menu built from a details summary by its name', async (ctx) => {
+    if (!browser) return ctx.skip();
+    const { context, s } = await session();
+    const r = await runSteps(s, [
+      { n: 1, text: 'Click **Account menu for Demo Editor**.' },
+      { n: 2, text: 'Click **My account**.' },
+    ]);
+    expect(r.failure).toBeNull();
     await context.close();
   }, 60_000);
 

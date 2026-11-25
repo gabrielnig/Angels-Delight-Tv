@@ -9,6 +9,12 @@ import type { Session } from './session';
  * run with a clear message. Each helper does one thing a viewer can follow: glide, highlight, click, pause.
  */
 
+/** A menu link keeps its count badge in its name ("Captions1 need attention"), so the plain label also matches. */
+export function menuName(label: string): RegExp {
+  const escaped = label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return new RegExp(`^${escaped}(\\s*\\d+ .*)?$`);
+}
+
 const nameOf = (n: string | RegExp) => (typeof n === 'string' ? n : n.source);
 
 /** Click a control by its accessible name. Fails naming the role and label when it is missing. */
@@ -100,7 +106,7 @@ export async function goToScreen(s: Session, label: string): Promise<void> {
     const open = s.page.getByRole('button', { name: 'Open menu' });
     if (await open.isVisible().catch(() => false)) await s.click(open);
   }
-  const link = s.page.getByRole('link', { name: label, exact: true }).first();
+  const link = s.page.getByRole('link', { name: menuName(label) }).first();
   await expectFound(link, `menu item "${label}"`);
   await s.click(link);
   await s.page.waitForLoadState('networkidle').catch(() => {});

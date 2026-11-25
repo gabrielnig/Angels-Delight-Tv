@@ -40,12 +40,8 @@ const episode: Episode = {
     },
     {
       caption: 'Click **Restore as draft** to confirm.',
-      note: 'This copies the old theme into your draft. Viewers keep the current theme until you publish.',
-      run: async (s) => { await clickByName(s, 'button', 'Restore as draft'); await s.pause(1500); },
-    },
-    {
-      caption: 'Click **Back to theme**.',
-      run: async (s) => { await clickByName(s, 'link', 'Back to theme'); await s.page.getByRole('heading', { name: 'Theme settings' }).first().waitFor(); },
+      note: 'This copies the old theme into your draft and opens the Theme screen. Viewers keep the current theme until you publish.',
+      run: async (s) => { await clickByName(s, 'button', 'Restore as draft'); await s.page.getByRole('heading', { name: 'Theme settings' }).first().waitFor(); },
     },
     {
       caption: 'Click **Publish theme** and confirm.',
