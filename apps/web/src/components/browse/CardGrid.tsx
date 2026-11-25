@@ -17,6 +17,8 @@ export interface CardGridProps {
   countLabel: string;
   /** Adds a Video or Series label to each card (search results, M06-S09). */
   showType?: boolean;
+  /** The page shows the count itself (Browse puts it beside the title). */
+  hideCount?: boolean;
 }
 
 function countText(total: number, noun: string) {
@@ -32,6 +34,7 @@ export function CardGrid({
   loadMore,
   countLabel,
   showType = false,
+  hideCount = false,
 }: CardGridProps) {
   const msg = useT();
   const [items, setItems] = useState(initialItems);
@@ -59,9 +62,11 @@ export function CardGrid({
 
   return (
     <div className="web-grid-wrap">
-      <p className="web-grid-count" aria-live="polite">
-        {countText(count, countLabel)}
-      </p>
+      {hideCount ? null : (
+        <p className="web-grid-count" aria-live="polite">
+          {countText(count, countLabel)}
+        </p>
+      )}
       <ul className="web-grid">
         {items.map((item) => (
           <li key={itemKey(item)}>
@@ -75,14 +80,18 @@ export function CardGrid({
         ))}
       </ul>
       {failed ? (
-        <p role="alert" className="web-grid-error">
-          {msg('browse.couldNotLoadMore', { countLabel })}
-        </p>
-      ) : null}
-      {cursor ? (
+        <div className="web-grid-more web-grid-more--failed">
+          <p role="alert" className="web-grid-error">
+            {msg('browse.couldNotLoadMore', { countLabel })} {msg('browse.stillHere')}
+          </p>
+          <Button variant="secondary" size="lg" onClick={() => void more()}>
+            {msg('browse.tryAgain')}
+          </Button>
+        </div>
+      ) : cursor ? (
         <div className="web-grid-more">
-          <Button variant="secondary" loading={loading} onClick={() => void more()}>
-            {loading ? msg('browse.loading') : msg('browse.showMore')}
+          <Button variant="secondary" size="lg" loading={loading} onClick={() => void more()}>
+            {loading ? msg('browse.loadingMore') : msg('browse.showMore')}
           </Button>
         </div>
       ) : null}

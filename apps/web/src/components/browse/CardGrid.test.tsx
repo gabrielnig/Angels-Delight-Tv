@@ -105,9 +105,13 @@ describe('CardGrid', () => {
       />,
     );
     await user.click(screen.getByRole('button', { name: 'Show more' }));
-    expect(await screen.findByRole('alert')).toHaveTextContent('Could not load more videos.');
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'Could not load more videos. The ones above are still here.',
+    );
     expect(screen.getAllByRole('listitem')).toHaveLength(2);
-    await user.click(screen.getByRole('button', { name: 'Show more' }));
+    // one action only (R39): Try again replaces Show more
+    expect(screen.queryByRole('button', { name: 'Show more' })).toBeNull();
+    await user.click(screen.getByRole('button', { name: 'Try again' }));
     await waitFor(() => expect(screen.getAllByRole('listitem')).toHaveLength(3));
   });
 
@@ -126,7 +130,7 @@ describe('CardGrid', () => {
       />,
     );
     await user.click(screen.getByRole('button', { name: 'Show more' }));
-    expect(screen.getByRole('button', { name: /Loading/ })).toHaveAttribute('aria-busy', 'true');
+    expect(screen.getByRole('button', { name: 'Loading more' })).toHaveAttribute('aria-busy', 'true');
     resolve({ items: [video(2)], total: 2, nextCursor: null });
     await waitFor(() => expect(screen.getAllByRole('listitem')).toHaveLength(2));
   });
@@ -173,5 +177,20 @@ describe('CardGrid', () => {
       />,
     );
     expect(screen.getAllByRole('listitem')[0]).not.toHaveTextContent(/^Video$/);
+  });
+
+  it('can leave the count to the page heading', () => {
+    wrap(
+      <CardGrid
+        initialItems={[video(1)]}
+        total={1}
+        nextCursor={null}
+        inList={[]}
+        loadMore={vi.fn()}
+        countLabel="videos"
+        hideCount
+      />,
+    );
+    expect(screen.queryByText('1 video')).toBeNull();
   });
 });

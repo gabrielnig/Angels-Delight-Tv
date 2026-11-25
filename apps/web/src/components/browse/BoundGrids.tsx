@@ -16,7 +16,12 @@ export function BrowseGrid({
   length,
   sort,
   ...base
-}: Base & { categorySlug?: string; length: BrowseLength; sort: BrowseSort }) {
+}: Base & {
+  categorySlug?: string;
+  length: BrowseLength;
+  sort: BrowseSort;
+  hideCount?: boolean;
+}) {
   return (
     <CardGrid
       {...base}
