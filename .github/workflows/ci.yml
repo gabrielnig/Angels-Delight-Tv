@@ -59,6 +59,9 @@ jobs:
       - name: Typecheck
         run: pnpm typecheck
 
+      - name: Share tag rules self test
+        run: pnpm share:check --self-test
+
       # M33-S02: the production build must compile, not only typecheck.
       - name: Build
         run: pnpm --filter @ad/web build
@@ -107,6 +110,8 @@ jobs:
           set -a; . ./.env.ci-fixture; set +a
           (cd apps/web && NODE_ENV=development nohup pnpm exec next start -p 3113 > ../../server.log 2>&1 &)
           for i in $(seq 1 30); do curl -sf http://localhost:3113/api/health && break; sleep 2; done
+      - name: Share tags and pictures of the public pages
+        run: pnpm share:check --base http://localhost:3113
       - run: pnpm exec playwright install --with-deps chromium
       - name: Axe on the key pages
         env:
