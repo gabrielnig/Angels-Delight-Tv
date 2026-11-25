@@ -13,6 +13,8 @@ interface ChartProps {
   kind?: 'line' | 'bar';
   /** Format for table values and tooltips. */
   format?: (value: number) => string;
+  /** Server pages cannot pass a function to this client component, so they name the unit instead. */
+  unit?: 'percent';
   /** Shown instead of a chart when there are no points. */
   emptyText?: string;
 }
@@ -28,11 +30,16 @@ export function Chart({
   points,
   kind = 'line',
   format,
+  unit,
   emptyText,
 }: ChartProps) {
   const [asTable, setAsTable] = useState(false);
   const id = useId();
-  const fmt = format ?? ((value: number) => value.toLocaleString('en-NG'));
+  const fmt =
+    format ??
+    (unit === 'percent'
+      ? (value: number) => `${Math.round(value)}%`
+      : (value: number) => value.toLocaleString('en-NG'));
   const description = describeSeries(points, noun);
 
   if (points.length === 0) {
