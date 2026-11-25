@@ -59,7 +59,9 @@ export function panelFor(
   const named = guide ? library.byId.get(guide) : undefined;
   const found = named ? [named, ...forScreen.filter((a) => a !== named)] : forScreen;
   const core = library.articles
-    .filter((a) => (a.meta.path === 'start' || a.meta.path === 'daily') && roleCanDo(role, a.meta.role))
+    .filter(
+      (a) => (a.meta.path === 'start' || a.meta.path === 'daily') && roleCanDo(role, a.meta.role),
+    )
     .slice(0, CORE_LIMIT)
     .map((a) => ({ id: a.meta.id, title: a.meta.title, href: articleHref(a.meta.id) }));
   return { pathname, guides: found.map((a) => toGuide(a, role)), core };

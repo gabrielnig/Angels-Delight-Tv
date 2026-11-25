@@ -39,12 +39,22 @@
 .hlp-topbtn {
   flex: none;
 }
+/* Below 60rem the word is for screen readers only, so the icon button still has a name. */
 .hlp-topbtn__text {
-  display: none;
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
 }
 @media (min-width: 60rem) {
   .hlp-topbtn__text {
-    display: inline;
+    position: static;
+    width: auto;
+    height: auto;
+    overflow: visible;
+    clip-path: none;
   }
 }
 .hlp-headlink {
@@ -787,13 +797,13 @@
   border-radius: var(--radius-md);
 }
 .hlp-search__field:focus-within {
-  outline: 2px solid var(--color-focus, var(--color-primary));
+  outline: 3px solid var(--color-focus-ring);
   outline-offset: 2px;
 }
 .hlp-search__field input {
   flex: 1;
   min-width: 0;
-  min-height: 2.5rem;
+  min-height: var(--touch-target);
   background: transparent;
   border: 0;
   color: inherit;
@@ -871,6 +881,8 @@
   display: grid;
   gap: var(--space-4);
   margin: 0;
+  padding: 0;
+  list-style: none;
 }
 .hlp-gloss-item {
   scroll-margin-top: var(--space-6);
@@ -1123,4 +1135,46 @@
 }
 .hlp-hint__body[hidden] {
   display: none;
+}
+
+/* States (S198) */
+.hlp-state {
+  margin-block: var(--space-6);
+}
+.hlp-state__title {
+  margin: 0;
+  font-size: var(--text-h3);
+  font-weight: var(--weight-semibold);
+}
+.hlp-state__title:focus-visible {
+  outline: 3px solid var(--color-focus-ring);
+  outline-offset: 2px;
+}
+.hlp-offline {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  margin: 0 0 var(--space-4);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  background: var(--color-warning-tint);
+  color: var(--color-warning-ink);
+}
+.hlp-slow {
+  margin: var(--space-4) 0 0;
+  color: var(--color-muted);
+}
+.hlp-videooffline {
+  background: var(--color-warning-tint);
+  color: var(--color-warning-ink);
+}
+.hlp-videoref {
+  color: var(--color-muted);
+  font-size: var(--text-caption);
+}
+@media print {
+  .hlp-offline,
+  .hlp-slow {
+    display: none;
+  }
 }

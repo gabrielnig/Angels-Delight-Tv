@@ -42,7 +42,8 @@ export async function helpPanelAction(
   pathname: string,
   guide?: string,
 ): Promise<
-  { ok: true; data: PanelData; cues: { start: number; end: number; text: string }[] } | { ok: false }
+  | { ok: true; data: PanelData; cues: { start: number; end: number; text: string }[] }
+  | { ok: false }
 > {
   const actor = await requireActionActor('/admin');
   if (typeof pathname !== 'string' || pathname.length > 200) return { ok: false };

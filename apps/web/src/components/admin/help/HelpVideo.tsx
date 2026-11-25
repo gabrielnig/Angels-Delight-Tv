@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Button } from '../Button';
 import { clock } from './format';
+import { useSaveQueue } from './retry-save';
 
 export interface TranscriptCue {
   start: number;
@@ -11,6 +12,13 @@ export interface TranscriptCue {
 }
 
 const WATCHED_AT = 0.9;
+/** A short code for the video that support can ask for. The same video always gives the same code. */
+export function videoReference(id: string): string {
+  let h = 0;
+  for (const ch of id) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
+  return `AD-${(h & 0xffff).toString(16).toUpperCase().padStart(4, '0')}`;
+}
+
 const base = (id: string) => `/admin/help/media/video/${id}/${id}`;
 
 /**
@@ -41,8 +49,21 @@ export function HelpVideo({
   const [picture, setPicture] = useState<'desktop' | 'phone'>('desktop');
   const [failed, setFailed] = useState(false);
   const [isWatched, setIsWatched] = useState(watched);
-  const [saveFailed, setSaveFailed] = useState(false);
+  const [online, setOnline] = useState(true);
+  const { save } = useSaveQueue();
   const counted = useRef(watched);
+
+  useEffect(() => {
+    setOnline(navigator.onLine !== false);
+    const on = () => setOnline(true);
+    const off = () => setOnline(false);
+    window.addEventListener('online', on);
+    window.addEventListener('offline', off);
+    return () => {
+      window.removeEventListener('online', on);
+      window.removeEventListener('offline', off);
+    };
+  }, []);
 
   // Data saver and small screens start on the small file and the phone picture (M50-S06 AC2, S11 AC2).
   useEffect(() => {
@@ -55,20 +76,12 @@ export function HelpVideo({
     if (phone && narrow) setPicture('phone');
   }, [phone]);
 
+  // Watched shows at once. A failed save says so in a quiet toast and retries by itself (S198).
   const markWatched = async () => {
     if (counted.current) return;
     counted.current = true;
-    let result: { ok: boolean };
-    try {
-      result = await onWatched(guide);
-    } catch {
-      result = { ok: false };
-    }
-    if (result.ok) setIsWatched(true);
-    else {
-      counted.current = false;
-      setSaveFailed(true);
-    }
+    setIsWatched(true);
+    await save(`watched:${guide}`, () => onWatched(guide));
   };
 
   const src =
@@ -76,35 +89,47 @@ export function HelpVideo({
 
   return (
     <div className={`hlp-videobox${picture === 'phone' ? ' is-phone' : ''}`}>
-      <video
-        key={src}
-        ref={ref}
-        className="hlp-player"
-        controls
-        playsInline
-        preload="none"
-        poster={`${base(videoId)}-poster.webp`}
-        src={src}
-        aria-label={title}
-        onError={() => setFailed(true)}
-        onTimeUpdate={(e) => {
-          const v = e.currentTarget;
-          if (v.duration > 0 && v.currentTime / v.duration >= WATCHED_AT) void markWatched();
-        }}
-      >
-        {captions === 'track' ? (
-          <track
-            kind="captions"
-            srcLang="en"
-            label="English"
-            src={`${base(videoId)}-captions.vtt`}
-            default
-          />
-        ) : null}
-      </video>
-      {failed ? (
+      {online ? (
+        <video
+          key={src}
+          ref={ref}
+          className="hlp-player"
+          controls
+          playsInline
+          preload="none"
+          poster={`${base(videoId)}-poster.webp`}
+          src={src}
+          aria-label={title}
+          onError={() => setFailed(true)}
+          onTimeUpdate={(e) => {
+            const v = e.currentTarget;
+            if (v.duration > 0 && v.currentTime / v.duration >= WATCHED_AT) void markWatched();
+          }}
+        >
+          {captions === 'track' ? (
+            <track
+              kind="captions"
+              srcLang="en"
+              label="English"
+              src={`${base(videoId)}-captions.vtt`}
+              default
+            />
+          ) : null}
+        </video>
+      ) : (
+        <div className="hlp-videoerror hlp-videooffline">
+          <p>
+            <strong>This video needs data</strong>
+          </p>
+          <p>The steps and the transcript below still work.</p>
+        </div>
+      )}
+      {online && failed ? (
         <div role="alert" className="hlp-videoerror">
-          <p>The video did not load. The words are below.</p>
+          <p>
+            <strong>This video could not play</strong>
+          </p>
+          <p>The steps and transcript below still work.</p>
           <Button
             icon="retry"
             onClick={() => {
@@ -114,6 +139,7 @@ export function HelpVideo({
           >
             Try again
           </Button>
+          <p className="hlp-videoref">Reference: {videoReference(videoId)}</p>
         </div>
       ) : null}
       <div className="hlp-videobar">
@@ -148,7 +174,6 @@ export function HelpVideo({
         )}
         <span className="hlp-videonote">No sound is needed. Captions are on.</span>
       </div>
-      {saveFailed ? <p role="alert">We could not save that. Try again.</p> : null}
       <details className="hlp-transcript" open={failed || undefined}>
         <summary>Read this video</summary>
         <ol>

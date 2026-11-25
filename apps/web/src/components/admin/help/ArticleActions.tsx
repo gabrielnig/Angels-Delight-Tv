@@ -1,13 +1,14 @@
 'use client';
 
-import { useState, useTransition } from 'react';
+import { useState } from 'react';
+import { useSaveQueue } from './retry-save';
 import { Button } from '../Button';
 
 type Saved = { ok: boolean };
 
 /**
  * Mark as done (only by button, never by scrolling) and the one tap Was this helpful answer (M50-S25, S26).
- * A failed save keeps the old state and says so.
+ * A failed save keeps the chosen state, says so in a quiet toast and retries when online.
  */
 export function ArticleActions({
   guide,
@@ -22,32 +23,24 @@ export function ArticleActions({
 }) {
   const [done, setDoneState] = useState(initial.done);
   const [helpful, setHelpfulState] = useState(initial.helpful);
-  const [error, setError] = useState(false);
   const [thanks, setThanks] = useState(false);
-  const [pending, start] = useTransition();
+  const { save } = useSaveQueue();
 
-  const run = (task: () => Promise<Saved>, apply: () => void, thanksAfter = false) =>
-    start(async () => {
-      setError(false);
-      let result: Saved;
-      try {
-        result = await task();
-      } catch {
-        result = { ok: false };
-      }
-      if (!result.ok) return setError(true);
-      apply();
-      setThanks(thanksAfter);
-    });
+  // The screen keeps what the person chose. A failed save retries by itself and says so in a quiet toast (S198).
+  const run = (key: string, task: () => Promise<Saved>, apply: () => void, thanksAfter = false) => {
+    apply();
+    setThanks(thanksAfter);
+    void save(key, task);
+  };
 
   return (
     <section className="hlp-actions hlp-noprint" aria-label="Your progress">
       <Button
         icon={done ? 'check' : undefined}
         aria-pressed={done}
-        loading={pending}
         onClick={() =>
           run(
+            `done:${guide}`,
             () => setDone(guide, !done),
             () => setDoneState(!done),
           )
@@ -61,6 +54,7 @@ export function ArticleActions({
           aria-pressed={helpful === true}
           onClick={() =>
             run(
+              `helpful:${guide}`,
               () => setHelpful(guide, true),
               () => setHelpfulState(true),
               true,
@@ -73,6 +67,7 @@ export function ArticleActions({
           aria-pressed={helpful === false}
           onClick={() =>
             run(
+              `helpful:${guide}`,
               () => setHelpful(guide, false),
               () => setHelpfulState(false),
               true,
@@ -83,7 +78,6 @@ export function ArticleActions({
         </Button>
       </div>
       {thanks ? <p role="status">Thanks. Your answer is saved.</p> : null}
-      {error ? <p role="alert">We could not save that. Try again.</p> : null}
     </section>
   );
 }
