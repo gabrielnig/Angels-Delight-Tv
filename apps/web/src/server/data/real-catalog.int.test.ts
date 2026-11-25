@@ -1,4 +1,4 @@
-import { seedDemo } from '@ad/catalog';
+import { DURATION_BUCKETS, seedDemo } from '@ad/catalog';
 import { searchHistory, settings as settingsTable, slugRedirects, videos, watchProgress } from '@ad/db';
 import {
   categorize,
@@ -138,7 +138,8 @@ describe.skipIf(!integrationEnabled())('real catalog repository', () => {
         limit: 50,
       });
       const durations = short.items.map((i) => (i.kind === 'video' ? i.durationSeconds : 0));
-      expect(durations.every((d) => d < 180)).toBe(true);
+      // Short is under 5 minutes (D-357), the same constant the query uses.
+      expect(durations.every((d) => d * 1000 < DURATION_BUCKETS.short[1]!)).toBe(true);
       expect([...durations].sort((a, b) => b - a)).toEqual(durations);
     });
 
