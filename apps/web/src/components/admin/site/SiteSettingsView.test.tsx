@@ -566,7 +566,7 @@ describe('discovery tab (M45-S05)', () => {
       expect(screen.getByRole('switch', { name: 'Telegram' })).toBeChecked();
       expect(screen.getByRole('switch', { name: 'Messages (SMS)' })).toBeChecked();
       expect(screen.getByRole('switch', { name: 'Email' })).toBeChecked();
-      expect(screen.getByText('Copy link is always on')).toBeInTheDocument();
+      expect(screen.getByText('Copy link is always first. The device share menu shows last when the device has one')).toBeInTheDocument();
     });
   });
 
