@@ -470,7 +470,7 @@ export function SeriesCard({
   title: string;
   href: string;
   thumbnail?: Thumbnail;
-  /** The item count as words, such as "8 episodes" or "12 chapters". The owner chooses the words (M50). */
+  /** The item count as words, such as "8 episodes" or "12 chapters". The owner chooses the words (M51). */
   itemsText: string;
   /** Shown instead of the item count on the badge when there is more than one group, such as "3 seasons". */
   groupsText?: string;

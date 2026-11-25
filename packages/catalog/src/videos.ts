@@ -12,7 +12,7 @@ export interface EpisodePosition {
   seriesTitle: string;
   seasonNumber: number;
   number: number;
-  /** The group and item words this series shows: its own override, else the site default (M50). */
+  /** The group and item words this series shows: its own override, else the site default (M51). */
   labels: SeriesLabelSetting;
 }
 

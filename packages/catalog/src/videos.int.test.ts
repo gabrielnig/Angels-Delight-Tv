@@ -56,7 +56,7 @@ describe.skipIf(!integrationEnabled())('video cards and episodes', () => {
     expect(card.poster?.id).toBe(poster);
   });
 
-  it('carries the effective series labels: default, site setting, then the series override (M50)', async () => {
+  it('carries the effective series labels: default, site setting, then the series override (M51)', async () => {
     const plain = await seedSeries(t.setup, { seasonSizes: [1] });
     const own = await seedSeries(t.setup, { seasonSizes: [1] });
     const load = async (id: string) =>

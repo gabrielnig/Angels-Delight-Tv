@@ -341,7 +341,7 @@ function EpisodeRow({
   );
 }
 
-/** M50-S02: this series uses the site names, or its own set. */
+/** M51-S02: this series uses the site names, or its own set. */
 function SeriesNamesSection({
   series,
   canManage,

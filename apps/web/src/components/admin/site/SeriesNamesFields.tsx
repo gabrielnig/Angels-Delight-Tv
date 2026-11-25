@@ -26,7 +26,7 @@ const PRESET_NAMES: Record<SeriesPreset, string> = {
 const EMPTY_CUSTOM = { group: { one: '', other: '' }, item: { one: '', other: '' } };
 
 /**
- * The name set picker used by the site settings tab and the per series override (M50-S01, S02): a preset or
+ * The name set picker used by the site settings tab and the per series override (M51-S01, S02): a preset or
  * four custom words, an optional item code, and a live preview of what viewers will read.
  */
 export function SeriesNamesFields({

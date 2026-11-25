@@ -1,7 +1,7 @@
 import { msg as defaultMsg, type Translate } from './messages';
 
 /**
- * Series labels (M50). The owner can word the groups and items of a series: Season and Episode by default, or
+ * Series labels (M51). The owner can word the groups and items of a series: Season and Episode by default, or
  * Book and Chapter, Part and Lesson, Module and Lesson, or any four words. This file is the only place that
  * builds those phrases; every screen, notice, mail and SEO text calls it. Preset words come from the message
  * catalogs so each language can translate them. Custom words are shown as typed in every language (D-351).

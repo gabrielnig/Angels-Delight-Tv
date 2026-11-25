@@ -38,7 +38,7 @@ describe('title page wording (S18)', () => {
   });
 });
 
-describe('seriesLine with the owner words (M50)', () => {
+describe('seriesLine with the owner words (M51)', () => {
   it('uses the labels of the series, and the default words without them', () => {
     const base = { title: 'Genesis', season: 1, episode: 3 };
     expect(seriesLine(base).long).toBe('Genesis, Season 1, Episode 3');

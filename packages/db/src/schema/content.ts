@@ -282,7 +282,7 @@ export const series = pgTable(
     createdAt: createdAt(),
     updatedAt: updatedAt(),
     deletedAt: timestamptz('deleted_at'),
-    /** Own group and item words for this series (M50), null to follow `content.series_labels`. */
+    /** Own group and item words for this series (M51), null to follow `content.series_labels`. */
     labelOverrides: jsonb('label_overrides'),
     searchTsv: tsvector('search_tsv').generatedAlwaysAs(
       sql`to_tsvector('simple', title || ' ' || coalesce(description, ''))`,

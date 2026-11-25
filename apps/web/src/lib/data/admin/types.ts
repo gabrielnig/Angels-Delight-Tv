@@ -91,7 +91,7 @@ export interface SeriesRecord {
   published: boolean;
   /** 0 (G) to 4 (18), null until rated (M44-S13). */
   maturityRank?: number | null;
-  /** The series' own group and item names, null when it follows the site default (M50). */
+  /** The series' own group and item names, null when it follows the site default (M51). */
   labelOverride?: SeriesLabelSetting | null;
   /** What the series shows: its override, else the site default. Absent means the default. */
   labels?: SeriesLabelSetting;

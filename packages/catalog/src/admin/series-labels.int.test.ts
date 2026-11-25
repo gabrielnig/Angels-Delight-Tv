@@ -10,7 +10,7 @@ import {
   type ViewerTestDb,
 } from '../testing';
 
-describe.skipIf(!integrationEnabled())('series label override and worded admin messages (M50)', () => {
+describe.skipIf(!integrationEnabled())('series label override and worded admin messages (M51)', () => {
   let t: ViewerTestDb;
   let editor: { accountId: string; role: 'editor' };
   beforeAll(async () => {

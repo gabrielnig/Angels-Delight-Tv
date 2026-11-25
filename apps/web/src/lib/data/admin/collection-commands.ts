@@ -93,7 +93,7 @@ export interface SeriesPatch {
   maturityRank?: number;
   /** With maturityRank: every episode gets the same rating. The editor confirms this first. */
   applyToEpisodes?: boolean;
-  /** Own group and item names (M50). Null goes back to the site default. */
+  /** Own group and item names (M51). Null goes back to the site default. */
   labels?: SeriesLabelSetting | null;
 }
 

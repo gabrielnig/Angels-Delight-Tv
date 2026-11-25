@@ -22,7 +22,7 @@ function Harness({
   );
 }
 
-describe('SeriesNamesFields (M50-S01)', () => {
+describe('SeriesNamesFields (M51-S01)', () => {
   it('lists the five name sets and previews the default words', () => {
     render(<Harness start={{ preset: 'season_episode' }} />);
     const select = screen.getByRole('combobox', { name: 'Name set' });

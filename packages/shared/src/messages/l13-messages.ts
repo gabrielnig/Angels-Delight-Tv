@@ -1,5 +1,5 @@
 /**
- * Copy for lane L13 (module M50): series with configurable names. Preset words live here so each language can
+ * Copy for lane L13 (module M51): series with configurable names. Preset words live here so each language can
  * translate them (R23). Custom words typed by the owner are never translated. Keys follow `area.kind.name`.
  */
 export const L13_MESSAGES = {
