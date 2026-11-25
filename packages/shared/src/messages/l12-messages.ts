@@ -14,6 +14,5 @@ export const L12_MESSAGES = {
   'nav.sheet.accountTitle': 'Account',
   'nav.sheet.adultProfile': 'Adult profile',
   'nav.sheet.kidsProfile': 'Kids profile',
-  'nav.sheet.language': 'Language',
   'nav.sheet.kidsHelp': 'Shows videos made for children. Anyone using this device can turn it off.',
 } as const;

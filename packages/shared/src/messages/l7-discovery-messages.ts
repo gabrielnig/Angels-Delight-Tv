@@ -6,7 +6,6 @@ export const L7_DISCOVERY_MESSAGES = {
   'browse.series': 'Series',
   'browse.video': 'Video',
   'browse.couldNotLoadMore': 'Could not load more {countLabel}.',
-  'browse.loading': 'Loading',
   'browse.showMore': 'Show more',
   'browse.nothingHereYet': 'Nothing here yet',
   'browse.seeWhatIsNew': 'See what is new',

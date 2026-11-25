@@ -558,3 +558,47 @@ describe('TopNav account sheet on phones (L12, S183 frames 7 to 9)', () => {
     expect(screen.queryByRole('dialog')).toBeNull();
   });
 });
+
+describe('TopNav translated labels (R37)', () => {
+  const props = {
+    brand: { name: 'Angels Delight TV', href: '/' },
+    links,
+    currentPath: '/',
+    profileName: 'Tobi',
+    menu,
+  };
+
+  it('uses the given skip, main navigation and back labels', () => {
+    render(
+      <TopNav
+        {...props}
+        onBack={() => undefined}
+        skipLabel="Gba si akoonu akoko"
+        mainNavLabel="Akoko"
+        backLabel="Pada"
+      />,
+    );
+    expect(screen.getByRole('link', { name: 'Gba si akoonu akoko' })).toHaveAttribute('href', '#main');
+    expect(screen.getByRole('navigation', { name: 'Akoko' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Pada' })).toBeInTheDocument();
+    expect(screen.queryByText('Skip to main content')).toBeNull();
+  });
+
+  it('uses the given Kids menu labels', async () => {
+    const onExit = vi.fn();
+    render(
+      <TopNav
+        {...props}
+        kids
+        onExitKids={onExit}
+        switchProfileLabel="Yipada profaili"
+        exitKidsLabel="Jade ipo awon omode"
+      />,
+    );
+    await userEvent.click(screen.getByRole('button', { name: /Profile menu, Tobi/ }));
+    expect(screen.getAllByRole('menuitem').map((item) => item.textContent)).toEqual([
+      'Yipada profaili',
+      'Jade ipo awon omode',
+    ]);
+  });
+});

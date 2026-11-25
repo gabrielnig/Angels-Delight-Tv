@@ -89,6 +89,11 @@ export function GuestChrome({
       ) : (
         <TopNav
           brand={{ name: platformName, href: '/', logoUrl }}
+          skipLabel={msg('guest.nav.skip')}
+          mainNavLabel={msg('guest.nav.main')}
+          backLabel={msg('nav.back')}
+          switchProfileLabel={msg('nav.menu.switchProfile')}
+          exitKidsLabel={msg('nav.menu.exitKids')}
           links={links(msg)}
           currentPath={pathname}
           profileName=""

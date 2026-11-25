@@ -6,8 +6,6 @@ export const L7_MISC_MESSAGES = {
   'watch.addedToMyList': 'Added to My List',
   'watch.removedFromMyList': 'Removed from My List',
   'watch.couldNotUpdateMy': 'Could not update My List. Try again.',
-  'watch.linkCopied': 'Link copied',
-  'watch.couldNotShareThis': 'Could not share this video',
   'watch.inMyList': 'In My List',
   'watch.share': 'Share',
   'watch.youAreOffline': 'You are offline',
