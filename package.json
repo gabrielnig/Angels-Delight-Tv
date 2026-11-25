@@ -21,6 +21,7 @@
     "hooks:install": "scripts/install-hooks.sh",
     "db:seed:admin": "pnpm --filter @ad/auth run seed:admin",
     "db:seed:demo": "pnpm --filter @ad/catalog run seed:demo",
+    "help:settings": "tsx scripts/kb-recorder/settings-reference-cli.ts",
     "kb:record": "tsx scripts/kb-recorder/record.ts",
     "kb:verify": "tsx scripts/kb-recorder/record.ts --check",
     "kb:update": "tsx scripts/kb-recorder/record.ts --update --episode",
