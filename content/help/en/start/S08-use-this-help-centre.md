@@ -11,7 +11,7 @@ watchSeconds: 70
 video:
   id: VS08
   captions: burned
-screens: ["/admin/help", "/admin/help/search"]
+screens: []
 actions: [admin.access]
 aliases: [help, guides, search, print, pdf, offline, manual, handbook]
 flow: S08

@@ -13,7 +13,7 @@ video:
   id: VD11
   captions: burned
 screens: ["/admin/videos/trash"]
-actions: [video.delete, video.restore]
+actions: [video.delete]
 aliases: [delete, remove, bin, trash, restore, undelete, get back]
 flow: D11
 dependsOn: [apps/web/src/components/admin/TrashList.tsx, apps/web/src/components/admin/VideoEditor.tsx, apps/web/src/app/admin/(shell)/videos/trash]
@@ -33,6 +33,18 @@ Move a video to [Trash](glossary:trash) and bring it back. A video waits in Tras
 ## Steps
 <!-- kb:steps D11 -->
 1. Choose **Videos** in the side menu.
+2. Click **Edit Telling the Time**.
+3. Click **Move to Trash**.
+   Only Admins and Super admins can see this button turned on.
+   ![The box that asks to move the video to Trash, with its button marked 1](../../media/D11/D11-03-confirm-desktop.webp)
+4. Click **Move to Trash** to confirm.
+   The video stops showing to viewers at once. You have 30 days to restore it.
+5. Choose **Trash** in the side menu.
+   ![The Trash list with the video Telling the Time marked 1](../../media/D11/D11-05-trash-desktop.webp)
+6. Click **Restore Telling the Time**.
+7. Choose **Videos** in the side menu.
+8. Check that **Telling the Time** is back in the list.
+   ![The video Telling the Time back in the Videos list, marked 1](../../media/D11/D11-08-back-desktop.webp)
 <!-- /kb:steps -->
 
 ## What you should see

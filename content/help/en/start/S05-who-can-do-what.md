@@ -11,7 +11,7 @@ watchSeconds: 70
 video:
   id: VS05
   captions: burned
-screens: ["/admin/help"]
+screens: []
 actions: [admin.access]
 aliases: [roles, permissions, access, who can, greyed out, editor, admin, super admin, rights]
 flow: S05

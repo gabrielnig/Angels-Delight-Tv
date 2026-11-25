@@ -21,10 +21,14 @@ export interface StepFailureReport {
 const ROLES = ['button', 'link', 'tab', 'menuitem', 'checkbox', 'radio', 'switch'] as const;
 
 /** Any control with this exact accessible name. A label quoted in an article must match the screen exactly. */
-function control(s: Session, label: string): Locator {
+async function control(s: Session, label: string): Promise<Locator> {
   let loc = s.page.getByRole(ROLES[0], { name: label, exact: true });
   for (const role of ROLES.slice(1))
     loc = loc.or(s.page.getByRole(role, { name: label, exact: true }));
+  // A control whose name is exactly the label wins over the looser matches below, so a choice called "Publish now"
+  // does not take the click meant for the button of the same name.
+  const exact = loc.first();
+  if (await visible(exact, 2500)) return exact;
   // A menu made from a details summary has no button role in every browser, so it is found by its text.
   const words = label.split(/\s+/).map((w) => w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
   // Initials or icons may sit between the words, so the words only need to appear in order.
