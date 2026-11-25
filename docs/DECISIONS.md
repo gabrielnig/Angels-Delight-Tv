@@ -2149,7 +2149,6 @@ Decision: `video.preview` catches every error and records `failed` or `skipped` 
 - Why: Keeps the format spec unchanged, makes the reference lists impossible to drift, and lets every troubleshooting guide be recorded from a real screen.
 - Reversible: Yes. A Handover path could be added later by moving the files and ids with redirects.
 
-<<<<<<< Updated upstream
 ## D-389 Share metadata comes from one builder, kids only titles show the generic card, no og:video (lane L15b, M45)
 - Decision: (1) Every public route builds its metadata through `buildMetadata` in `apps/web/src/lib/seo/metadata.ts` (site values from settings, text cleaned and trimmed on word boundaries, canonical, og, twitter, robots, locale). (2) A kids only title or series, and a title whose kids only lookup fails, answers with the generic platform card (site name, site description, default share image) and noindex, instead of its own title, text and picture. (3) `og:video` tags are not emitted: media urls are signed and short lived. (4) Episodes have no page of their own (episode urls redirect to the series page), so the series page is the share target and the builder keeps a `video.episode` kind for later. (5) New settings `seo.twitter_handle`, `seo.share_title_overlay`, `seo.share_play_badge`, all configurable in the Discovery tab.
 - Options: keep real metadata on kids only titles and only add noindex (leaks the title to chat apps); emit og:video with a public stream url (breaks signing); add a per episode page (new route and canonical rules for no gain).
@@ -2161,14 +2160,13 @@ Decision: `video.preview` catches every error and records `failed` or `skipped` 
 - Options: a disk or object store cache (more moving parts, needs cleanup); keep the 302 fallback (WhatsApp and some crawlers do not follow it); resize below 1200 by 630 to fit the limit (breaks declared og:image dimensions).
 - Why: Share links are public disclosures and chat apps are strict about speed, redirects and size. Memory is enough because Cloudflare and the chat apps cache the immutable url after the first fetch.
 - Reversible: Yes. The store is one Map in `og-handler.ts`.
-=======
+
 ## D-391 Share opens our own sheet with eight places, the shared link is the clean canonical address, and Kids profiles get no Share (lane L15a)
 
 Decision: (1) Tapping Share always opens the platform's sheet (bottom sheet under 600 px, popover from 600 px). The device share menu is one target in it, called More, shown only when the device has one. (2) Targets: Copy link, WhatsApp, Facebook, X, Telegram, Email, Messages (SMS), More. The existing site setting `seo.share_channels` is extended with `telegram` and `sms` and its default now lists all six channels in that order, so the Email default off of R26 is replaced because the owner asked for every place. Copy link and More are not settings. (3) The shared link is `/title/<slug>` or `/series/<slug>` on `APP_ORIGIN`, built by one helper, never the address bar, never signed, never tagged with `?s=`; channels are counted by one anonymous `share` click event instead. The watch page may add `?t=<seconds>` when the viewer switches on Start at. (4) Share text is cut at 200 characters (title 120 for an email subject). (5) Kids profiles and Kids mode: Share is hidden everywhere. (6) Brand marks are drawn as `currentColor` SVG glyphs on a neutral round tile, so no brand colour is hardcoded and the sheet follows the theme.
 Options: keep jumping straight to the system sheet (Netflix mobile behaviour); keep `?s=` tags; show Share on kids profiles with only Copy link; brand coloured tiles.
 Why: the owner asked that every place to share be visible and that it look like a modern app sheet. A free platform cannot rely on a good system sheet, and a tag in a copied link leaks into reshares. Kids profiles keep the no external links rule.
 Reversible: yes. Everything is a setting or a component choice; no migration.
->>>>>>> Stashed changes
 
 ## D-392 Share card words per title live in two nullable columns, edited on a Share card page (lane L15b, M45)
 - Decision: (1) `videos` and `series` get `share_title` (up to 90 characters) and `share_description` (up to 200) in migration 0061, null meaning the card follows the title and description. (2) Staff edit them on `/admin/videos/[id]/share` and `/admin/series/[id]/share` with live WhatsApp, Facebook and X cards, with the same permission as editing the title; every save is audited (`video.share_text`, `series.share_text`, field names only). (3) The words reach the page tags, the picture overlay and JSON-LD through `PublicPreview.share`. (4) A custom share picture upload is not built in this lane: the fallback chain is the generated card from the poster, then the generic platform card.
@@ -2176,3 +2174,10 @@ Reversible: yes. Everything is a setting or a component choice; no migration.
 - Why: Two plain columns are simple to read in the public preview query and to constrain; a custom picture needs the asset pipeline and is a separate slice.
 - Reversible: Yes. Additive columns, one read in `publicPreview`.
 
+
+## D-393 Share counts per channel and per title are plain counters, and Start at is a per share choice that only the watch route honours (lane L15a)
+
+Decision: (1) The `share` event may carry the catalog id of the shared title (a uuid, validated on both sides). The server adds one counter `share_item` keyed `<title id>|<channel>` next to the existing `share` and `share_title` counters. Admin analytics shows shares by channel for the whole catalog and for one video. Only totals are kept, no person, link or text. (2) The watch page Share sheet offers a Start at switch (for example Start at 1:23), off every time the sheet opens, only for videos, and only when the viewer is at least 5 seconds in and more than 10 seconds from the end. On, the link gets `?t=<whole seconds>`. (3) The title page reads `?t=` with the same parser as the watch route and only uses it to point Play at `/watch/<id>?t=N` (Play label only, a saved place or Watch again wins). It never starts playback itself and the canonical tag still has no query. (4) The admin orders the Share options with Up and Down buttons that write the stored list.
+Options: per title counts by slug (needs no id but leaks nothing more, yet slugs change); a drag handle for ordering; remembering the Start at choice between opens.
+Why: ids are stable and already public in watch links; counters keep the privacy position of D-391. Off by default each time avoids sharing a spoiler position by accident.
+Reversible: yes. The id is optional and old events stay valid; no migration.
