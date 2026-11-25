@@ -24,7 +24,7 @@ Worktree `/home/claude/wt2/C7-content`, demo stack on port 3207, raw outputs in 
 | Batch | Articles | PR | State |
 |---|---|---|---|
 | 1 | R01, R02, R03, R05, R06, glossary (55 terms), demo trouble states | 443 | Merged |
-| 2 | T01 to T17, R07 to R13 (29 articles, 14 recorded videos) | see the PR list in the final report | In progress, recording through the slot script |
+| 2 | T01 to T17, R07 to R13 (29 articles, 14 recorded videos) | see the PR list in the final report | Ready; all 15 videos pass the fact checker |
 
 Videos (episode id = article id, phone set only for T01 and T06): T01, T02, T03, T04, T05, T06, T07, T08, T10, T12, T13, T14, T15, T16, R13. Text only: T09 (the Donations screen does not load in fixture mode), T11, T17, R01 to R03, R05 to R12 except R13.
 
@@ -47,7 +47,7 @@ App fixes made on the way: the System Jobs tab printed its own code and showed t
 
 ## Left to do
 
-See the batch table. Cross links to articles owned by other lanes (D, W, C, M, K, S ids) are added in the final pass once those lanes have merged, because `help:check` refuses a link to a missing guide.
+Needs and related links to the D, W, C, K and S guides are added for T01 to T07. The `[Guide](help:T11)` links inside the If something goes wrong bullets are still to add. R04 (settings dictionary) is out of this lane. `help-coverage.test.ts` has two failures that also fail on main (the share routes and the role of W05, W08, C10, C14, K10), so they are not from this lane. T05 and T06 captions were patched in the repo copies after a lint rule (no dash, one action); a re-record would give the same text. The fact checker now also finds a link whose name has a hidden suffix, such as "Fix this: Poster".
 
 ## Scoped checks
 

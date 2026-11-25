@@ -52,16 +52,18 @@ The side menu only shows the screens your role can open. If a link below says yo
 29. **Staff sign in**: Sign in with your email and password. [Open Staff sign in](/admin/login)
 30. **Enter your code**: Enter the 6 digit code from your app. [Open Enter your code](/admin/login/2fa)
 31. **One series**: Change one series and put its lessons in order.
-32. **One sponsor**: Edit one sponsor and its pictures.
-33. **Sponsor report**: Read the report you give a sponsor.
-34. **Print sponsor report**: Print or save the sponsor report.
-35. **New sponsor**: Add a sponsor. [Open New sponsor](/admin/sponsors/new)
-36. **Theme history**: Go back to an earlier look. [Open Theme history](/admin/theme/history)
-37. **One viewer**: See one viewer and manage the account.
-38. **Edit video**: Edit one video and publish it.
-39. **Skip and chapters**: Set skip intro and chapter marks.
-40. **Poster**: Choose the poster picture.
-41. **Preview as viewer**: Watch a video the way viewers will.
+32. **Share a series**: Make a link to share a whole series.
+33. **One sponsor**: Edit one sponsor and its pictures.
+34. **Sponsor report**: Read the report you give a sponsor.
+35. **Print sponsor report**: Print or save the sponsor report.
+36. **New sponsor**: Add a sponsor. [Open New sponsor](/admin/sponsors/new)
+37. **Theme history**: Go back to an earlier look. [Open Theme history](/admin/theme/history)
+38. **One viewer**: See one viewer and manage the account.
+39. **Edit video**: Edit one video and publish it.
+40. **Skip and chapters**: Set skip intro and chapter marks.
+41. **Poster**: Choose the poster picture.
+42. **Preview as viewer**: Watch a video the way viewers will.
+43. **Share a video**: Make a link to share one video.
 <!-- /kb:generated -->
 
 ## What you should see

@@ -4,7 +4,8 @@ title: A video is stuck on Encoding or says Failed
 path: troubleshooting
 summary: Find out if a video is still preparing or failed, and use Retry.
 role: editor
-related: []
+related: [D12, C14, T15]
+needs: [D12]
 readMinutes: 3
 watchSeconds: 90
 video:
