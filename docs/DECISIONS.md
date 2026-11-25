@@ -1969,3 +1969,44 @@ Decision: `video.preview` catches every error and records `failed` or `skipped` 
 - Options: Keep clips silent with no audio track (11.7). Unmute on hover. Unmute button with a muted default.
 - Why: Sound is wanted by the owner, but a page must never start talking, and browsers allow sound only after a tap. A muted default with a visible button respects both. Segments show progress and position together, the old 36 by 10 px bar was too small to read.
 - Reversible: Yes. Needs 11.7 and section 8 edits, four proposed Fixed tokens (`--color-hero-track`, `--color-hero-track-done`, `--color-hero-border`, `--color-hero-chip-hover`) and the clip upload rules (audio allowed, 20 s cap) in the build.
+## D-359 The admin knowledge base lives inside the admin at /admin/help (lane L14, M50)
+- Decision: Help is served at `/admin/help` behind the staff session, with a Help link in each page header, a contextual help panel and a menu item. Every article is visible to every staff role with a role label. Offline use is a downloadable handbook, not a service worker cache.
+- Options: A separate public site, or inside the admin.
+- Why: It knows the screen and role, keeps the admin map private, ships and is versioned with the product, and adds no hosting for the client.
+- Reversible: Yes.
+
+## D-360 Help videos are static silent MP4 files in private storage, not catalog titles (lane L14, M50)
+- Decision: Videos and transcripts are build outputs stored under `help/<release>/` and served by an authenticated route to staff only. They never enter the videos table, the catalog, search, analytics or kids profiles.
+- Options: Hidden catalog titles, a staff only flag in the platform pipeline, or static files.
+- Why: Static files cannot leak to viewers or pollute analytics, need no migration and no encode jobs, and work offline.
+- Reversible: Yes. Flows and captions are unchanged if the pipeline route is chosen later.
+
+## D-361 Help content is Markdown plus typed flow files plus WebP screenshots in the repo (lane L14, M50)
+- Decision: Articles are Markdown, each procedure is one flow file that produces the video, the pictures and the article steps, screenshots are committed under a size budget, videos and PDFs are release artifacts.
+- Options: A CMS, hand written docs with separate recordings, or flows as the source.
+- Why: One source stops text, video and pictures drifting apart and lets CI prove the steps.
+- Reversible: Yes.
+
+## D-362 Recording and fact checking use an isolated demo stack with clearly fake data (lane L14, M50)
+- Decision: Own databases, fake accounts on `@kb-demo.example`, demo titles, sponsors and donors, a fake payment adapter, and a recorder that refuses any other origin or database. A capture scanner fails on real looking emails and keys.
+- Options: Record on staging, or on an isolated seeded stack.
+- Why: Real data or secrets in a recording cannot be taken back.
+- Reversible: Yes.
+
+## D-363 Help video captions are open and re-recorded once at handover (lane L14, M50)
+- Decision: Captions are burned into the video, the same text is a transcript and a VTT file, there is no audio track, and every video is re-recorded once the client name and theme are final.
+- Options: A selectable caption track, or burned in captions.
+- Why: Burned in captions show muted, in the offline copy and in shared files. The transcript serves screen readers.
+- Reversible: Yes.
+
+## D-364 Help freshness is checked on changed flows per pull request and fully each night (lane L14, M50)
+- Decision: A fast check runs only flows whose sources changed, and a nightly and release run compares every screenshot and rebuilds every video. Coverage tests fail when a route, nav item, permission or setting has no help.
+- Options: Full run on every pull request, nightly only, or two tiers.
+- Why: Two tiers keep pull requests fast and still catch every drift before release.
+- Reversible: Yes.
+
+## D-365 The help centre is English only and follows the roles and permissions in the code (lane L14, M50)
+- Decision: English first, labels always quoted in English, roles named Editor, Admin and Super admin from `can.ts`. Where `SCREEN-ARCHITECTURE.md` or `SECURITY.md` disagree with the code, the code wins and the document is reconciled in the build.
+- Options: Translate now, or English first.
+- Why: The admin interface is English only, so translated help would explain screens that stay English.
+- Reversible: Yes.

@@ -643,6 +643,20 @@ Mockups are in `docs/mockups/v2` as S140 to S149, reviewed in `docs/reviews/v2/L
 - **S178 Offline downloads.** Not now.
 - **S179 Passkeys.** Not now.
 
+### Admin help centre routes (M50, placeholder)
+
+Planned in `docs/plan/v2/L14-admin-knowledge-base.md`, mockups in `docs/mockups/v2/L14`. Staff only, minimum role Editor, not indexed.
+
+| Route | Screen |
+|---|---|
+| `/admin/help` | Help home: search, Start here, seven paths, core tasks, reference |
+| `/admin/help/path/[path]` | One learning path in order |
+| `/admin/help/[id]` | One article with video, steps and pictures |
+| `/admin/help/search` | Search results |
+| `/admin/help/media/[...path]` | Private video and file route (not a page) |
+
+Entry points: a Help button in the top bar (drawer at md and up, bottom sheet on phones), a Help link in each page header, a Help item in the side menu.
+
 ## 7. Key flows (for navigation checking)
 
 1. **New viewer.** Landing, Sign up, Verify email, Profile picker (create first profile), Home, Title detail, Watch.
