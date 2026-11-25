@@ -778,7 +778,7 @@ Each module lists: purpose, responsibilities, data owned, dependencies, client i
 
 **Dependencies.** M01, M06, M07, M26, M35, M40, M34.
 
-**Notes.** Share metadata (lane L15b, D-389, D-390): one builder `buildMetadata` for every public route, share pictures from `/og/...`, `pnpm share:check`, audit `docs/audits/2026-11-25-og-audit.md`, stories M45-S20 to S24 in `docs/plan/v2/L6-discovery.md`. Kids-only titles are never indexed or placed in the sitemap (R26). Every new cookie or storage key needs a row in `STORAGE_INVENTORY` (`apps/web/src/lib/consent/inventory.ts`). Plan and stories: `docs/plan/v2/L6-discovery.md`. Build notes: `docs/lanes/L6-build.md`.
+**Notes.** Share sheet (lane L15a, D-391, stories M45-S25 to S27): `ShareSheet` and `ShareButton` in `apps/web/src/components/share`, targets and link builders in `share-targets.ts`, one context `ShareConfigProvider` mounted by the shell and the watch page, off for kids. Admin setting `seo.share_channels` (WhatsApp, Facebook, X, Telegram, Email, Messages). Anonymous `share` analytics event. Audit `docs/audits/2026-11-25-share-audit.md`, mockups S200 to S203, review `docs/reviews/v2/L15-review.md`. Share metadata (lane L15b, D-389, D-390): one builder `buildMetadata` for every public route, share pictures from `/og/...`, `pnpm share:check`, audit `docs/audits/2026-11-25-og-audit.md`, stories M45-S20 to S24 in `docs/plan/v2/L6-discovery.md`. Kids-only titles are never indexed or placed in the sitemap (R26). Every new cookie or storage key needs a row in `STORAGE_INVENTORY` (`apps/web/src/lib/consent/inventory.ts`). Plan and stories: `docs/plan/v2/L6-discovery.md`. Build notes: `docs/lanes/L6-build.md`.
 
 ### M41 Home hero, rows and sections [READY]
 

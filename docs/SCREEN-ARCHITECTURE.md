@@ -676,6 +676,10 @@ Entry points: a Help button in the top bar (drawer at md and up, bottom sheet on
 6. **Recover.** Sign in (locked), Forgot password, Reset password, Sign in.
 7. **Guest.** Home, Title detail, Watch (progress kept on the device), My List opens the Sign in to save dialog, Sign in, Profile picker, the save is applied, Import prompt.
 
+### Share sheet (no route of its own, mockups S200 to S203)
+
+Share is one control with one sheet. It appears on the title page, series page, home hero (round button after More info), hover card, Continue menu, watch page and the end screens (not during the autoplay countdown). Under 600 px it is a bottom sheet (handle, swipe down, Close, safe area, at most 90 percent high). From 600 px it is a popover hung from the button, or a centred dialog under 560 px of window height. The link is the clean `/title/<slug>` or `/series/<slug>` address. It is absent on a kids profile and in a guest's Kids mode. Mockups: S200 placement, S201 sheet and popover, S202 states (start at, kids, guest, offline, error, long title, Yoruba and Hausa labels), S203 link preview.
+
 ### Share metadata (no screen of its own)
 
 Every public page sends its share tags through one builder (`apps/web/src/lib/seo/metadata.ts`). Pages that are not share targets (search results, errors, watch, account) are noindex with no canonical. `/og/title/<slug>` and `/og/series/<slug>` are image routes, not screens. The Discovery tab in Site settings holds the site description, default share image link, X handle, share text, title overlay and play badge switches.
