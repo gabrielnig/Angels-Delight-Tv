@@ -31,6 +31,7 @@
     "kb:stack": "scripts/kb-stack.sh",
     "brand:generate": "tsx scripts/generate-brand-kit.ts",
     "perf:budget": "tsx scripts/perf-budget.ts",
+    "share:check": "tsx scripts/share-check.ts",
     "launch:apply": "tsx packages/launch/src/cli/apply.ts",
     "secrets:generate": "tsx packages/launch/src/cli/secrets.ts",
     "content:import": "tsx packages/launch/src/cli/import.ts",

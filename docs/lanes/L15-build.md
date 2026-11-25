@@ -7,9 +7,9 @@ Audit: `docs/audits/2026-11-25-og-audit.md`. L15a owns share UI code. L15b owns 
 | # | Slice | State | PR |
 |---|---|---|---|
 | 1 | Metadata builder for every public route | merged | #446 |
-| 2 | Image pipeline and privacy gate | in review | |
+| 2 | Image pipeline and privacy gate | merged | #447 |
 | 3 | Admin share control per video and series | open | |
-| 4 | `pnpm share:check` and CI | open | |
+| 4 | `pnpm share:check` and CI | in review | #449 |
 | 5 | JSON-LD alignment | open | |
 | 6 | Docs | open | |
 
@@ -47,3 +47,10 @@ Audit: `docs/audits/2026-11-25-share-audit.md`. Mockups S200 to S203 in `docs/mo
 - `apps/web/src/components/share/share-targets.ts`: `SHARE_TARGET_IDS`, `targetHref(channel, {title, text, url})`, `clampShareText`, `sheetTargets(channels, {nativeShare})`, `canonicalShareUrl({origin, kind, slug, startAt})`. No tags, no third party code.
 - `SHARE_CHANNELS` in `@ad/theme` now has `telegram` and `sms`; default is all six. The old `share-links.ts` and `ShareMenu.tsx` keep working until slice 2 replaces them.
 - Tests: `pnpm vitest run apps/web/src/components/share packages/theme/src/settings-discovery.test.ts apps/web/src/lib/site/seo-settings.test.ts apps/web/src/components/admin/site`.
+
+## Slice 4 (pnpm share:check)
+
+- Rules in `apps/web/src/lib/seo/share-check.ts` (`parseHead`, `checkPage`, `checkImage`, `imageSize`, `FIXTURES`), CLI `scripts/share-check.ts`.
+- `pnpm share:check --self-test` (no network), `pnpm share:check --base http://localhost:3000 [paths] [--private /search]`. With no paths: Home, Browse, About, Help, Donate, Transparency and up to three videos and series from `/sitemap.xml`, plus `/search` as a private page (must be noindex). A plain http base allows http urls (local build) and reads the picture from the base.
+- CI: self test after Typecheck, real check after the fixture server starts in the a11y job (the fixture env sets `APP_ORIGIN=http://localhost:<port>`).
+- Tests: `pnpm vitest run apps/web/src/lib/seo/share-check.test.ts scripts/share-check.test.ts scripts/ci-workflow.test.ts`.
