@@ -1,7 +1,9 @@
 import { EmptyState, Pill, PillRow } from '@ad/ui';
+import { getLocale, getTranslator } from '../../lib/i18n/server';
 import { getCatalog, getLibrary } from '../../lib/data';
 import type { BrowseLength, BrowseSort, ViewerContext } from '../../lib/data';
 import { BrowseGrid } from './BoundGrids';
+import { CategoryRail } from './CategoryRail';
 import {
   LENGTHS,
   SORTS,
@@ -26,6 +28,7 @@ export async function BrowseView({
   sort: BrowseSort;
 }) {
   const catalog = getCatalog();
+  const msg = await getTranslator(await getLocale());
   const [categories, page, inList] = await Promise.all([
     catalog.categories(ctx),
     catalog.browse(ctx, { categorySlug, length, sort }),
@@ -38,20 +41,17 @@ export async function BrowseView({
   return (
     <div className="web-page">
       <h1 className="web-page__title">Browse</h1>
-      <PillRow label="Categories">
-        <Pill href={href('/browse', length, sort)} current={!categorySlug}>
-          All
-        </Pill>
-        {categories.map((c) => (
-          <Pill
-            key={c.slug}
-            href={href(`/browse/${c.slug}`, length, sort)}
-            current={categorySlug === c.slug}
-          >
-            {c.name}
-          </Pill>
-        ))}
-      </PillRow>
+      <CategoryRail
+        label={msg('browse.rail.label')}
+        items={[
+          { href: href('/browse', length, sort), label: msg('browse.rail.all'), current: !categorySlug },
+          ...categories.map((c) => ({
+            href: href(`/browse/${c.slug}`, length, sort),
+            label: c.name,
+            current: categorySlug === c.slug,
+          })),
+        ]}
+      />
       <div className="web-filters">
         <PillRow label="Length">
           {LENGTHS.map((l) => (
