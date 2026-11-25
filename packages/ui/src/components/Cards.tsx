@@ -264,6 +264,8 @@ export interface VideoCardProps {
   maturity?: string;
   /** Position in a Top 10 row. Spoken first, as Number 3, (M44-S09). */
   rank?: number;
+  /** When defined a Share button shows in the hover card. The page owns the sheet, so it can outlive the card. */
+  onShare?: () => void;
   className?: string;
 }
 
@@ -284,6 +286,7 @@ export function VideoCard({
   mostLiked,
   maturity,
   rank,
+  onShare,
   className,
 }: VideoCardProps) {
   const hover = useHoverCard();
@@ -349,6 +352,14 @@ export function VideoCard({
                 />
               ) : null}
               {rating ? <CardRatingChip title={title} rating={rating} /> : null}
+              {onShare ? (
+                <IconButton
+                  variant="on-dark"
+                  icon="share"
+                  label={`Share ${title}`}
+                  onClick={onShare}
+                />
+              ) : null}
               <Link href={href} className="ad-hovercard__info">
                 <Icon name="info" size={16} /> More info
                 <span className="ad-sr-only">: {title}</span>
@@ -383,6 +394,8 @@ export interface ContinueCardProps extends Omit<VideoCardProps, 'inList' | 'onTo
   /** With `titleHref` and `menuLabels` the remove button becomes a menu (M44-S15). */
   titleHref?: string;
   menuLabels?: ContinueMenuLabels;
+  /** Adds Share to the menu when `menuLabels.share` is set. */
+  onShare?: () => void;
 }
 
 export function ContinueCard({
@@ -396,6 +409,7 @@ export function ContinueCard({
   onRemove,
   titleHref,
   menuLabels,
+  onShare,
   priority,
   className,
 }: ContinueCardProps) {
@@ -436,7 +450,13 @@ export function ContinueCard({
         ) : null}
       </Link>
       {onRemove && titleHref && menuLabels ? (
-        <ContinueMenu title={title} titleHref={titleHref} labels={menuLabels} onRemove={onRemove} />
+        <ContinueMenu
+          title={title}
+          titleHref={titleHref}
+          labels={menuLabels}
+          onRemove={onRemove}
+          onShare={onShare}
+        />
       ) : onRemove ? (
         <IconButton
           className="ad-card__action ad-card__action--always"

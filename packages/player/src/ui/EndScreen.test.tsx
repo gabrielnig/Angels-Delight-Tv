@@ -55,6 +55,24 @@ describe('EndScreen (L4-08)', () => {
     expect(screen.getByRole('link', { name: 'Back to Home' })).toBeTruthy();
   });
 
+  it('offers Share beside Replay when a share handler is given, and not during the countdown (L15a)', () => {
+    const onShare = vi.fn();
+    const first = render(<EndScreen {...base} next={null} data={{ homeHref: '/', onShare }} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Share' }));
+    expect(onShare).toHaveBeenCalledTimes(1);
+    first.unmount();
+    const second = render(<EndScreen {...base} data={{ onShare }} />);
+    expect(screen.getByRole('button', { name: 'Share' })).toBeTruthy();
+    second.unmount();
+    render(<EndScreen {...base} data={{ onShare }} countdown={3} />);
+    expect(screen.queryByRole('button', { name: 'Share' })).toBeNull();
+  });
+
+  it('has no Share without a handler', () => {
+    render(<EndScreen {...base} next={null} data={{ homeHref: '/' }} />);
+    expect(screen.queryByRole('button', { name: 'Share' })).toBeNull();
+  });
+
   it('asks Still watching instead of counting down when three autoplays went unattended', () => {
     render(<EndScreen {...base} stillWatching />);
     expect(screen.getByRole('alertdialog', { name: 'Still watching?' })).toBeTruthy();

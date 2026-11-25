@@ -4,6 +4,7 @@ import { useCallback, useState } from 'react';
 import { Button, IconButton } from '@ad/ui';
 import { useT } from '../../lib/i18n/provider';
 import { ShareSheet } from './ShareSheet';
+import { resolveShareUrl } from './resolve-url';
 import type { ShareTargetId } from './share-targets';
 
 export interface ShareButtonProps {
@@ -17,13 +18,6 @@ export interface ShareButtonProps {
   /** `button` is the labelled secondary button of pages. `icon` is the 44 px round control of the hero and cards. */
   variant?: 'button' | 'icon';
   onShare?: (target: ShareTargetId) => void;
-}
-
-/** What gets shared: an absolute https address on this site, never the address bar's query or hash. */
-function resolveUrl(url: string | undefined): string {
-  if (url && /^https?:\/\//.test(url)) return url;
-  const path = url && url.startsWith('/') ? url : window.location.pathname;
-  return `${window.location.origin}${path}`;
 }
 
 /** The Share control (L15a). It always opens the sheet, so every place to share is visible on every device. */
@@ -45,7 +39,7 @@ export function ShareButton({
   const onClose = useCallback(() => setOpen(false), []);
 
   function openSheet() {
-    setTarget(resolveUrl(url));
+    setTarget(resolveShareUrl(url));
     setOpen(true);
   }
 

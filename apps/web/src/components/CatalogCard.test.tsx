@@ -7,6 +7,7 @@ import { MaturityLabelsProvider } from '../lib/maturity-context';
 import { ProfileIdProvider, ProfileKidsProvider } from '../lib/profile-context';
 import type { CatalogItem } from '../lib/data';
 import { CatalogCard } from './CatalogCard';
+import { ShareConfigProvider } from './share/share-context';
 
 vi.mock('../app/actions', () => ({
   restoreContinueAction: vi.fn(),
@@ -178,5 +179,47 @@ describe('CatalogCard maturity chip in the hover card (M44-S13)', () => {
     withRank(null);
     hoverOpen();
     expect(screen.queryByTestId('card-rated')).toBeNull();
+  });
+});
+
+describe('CatalogCard share (L15a slice 3)', () => {
+  const settings = {
+    channels: ['whatsapp' as const, 'telegram' as const],
+    template: '{title} on {siteName}',
+    siteName: 'ADTV',
+    origin: 'https://adtv.example',
+  };
+
+  it('puts Share in the hover card and opens the sheet outside it with the canonical link', async () => {
+    render(
+      <ToastProvider>
+        <ShareConfigProvider value={settings}>
+          <CatalogCard item={video} inList={false} toggle={async () => 'sent'} />
+        </ShareConfigProvider>
+      </ToastProvider>,
+    );
+    const card = hoverOpen();
+    fireEvent.click(within(card).getByRole('button', { name: 'Share Why the sky is blue' }));
+    expect(await screen.findByLabelText('Link to share')).toHaveValue('https://adtv.example/title/sky');
+  });
+
+  it('has no Share without settings and none on a kids profile', () => {
+    const first = render(
+      <ToastProvider>
+        <CatalogCard item={video} inList={false} toggle={async () => 'sent'} />
+      </ToastProvider>,
+    );
+    expect(within(hoverOpen()).queryByRole('button', { name: /^Share/ })).toBeNull();
+    first.unmount();
+    render(
+      <ToastProvider>
+        <ProfileKidsProvider kids>
+          <ShareConfigProvider value={settings}>
+            <CatalogCard item={video} inList={false} toggle={async () => 'sent'} />
+          </ShareConfigProvider>
+        </ProfileKidsProvider>
+      </ToastProvider>,
+    );
+    expect(within(hoverOpen()).queryByRole('button', { name: /^Share/ })).toBeNull();
   });
 });

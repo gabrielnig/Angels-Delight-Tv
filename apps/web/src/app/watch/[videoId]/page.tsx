@@ -1,6 +1,8 @@
 import '@ad/player/player.css';
 import { migrateDevicePrefsAction, savePlayerPrefsAction } from '@/app/actions';
 import type { Metadata } from 'next';
+import { ShareConfigProvider } from '@/components/share/share-context';
+import { getShareSettings } from '@/server/seo/page-seo';
 import { cookies } from 'next/headers';
 import { notFound } from 'next/navigation';
 import {
@@ -72,31 +74,35 @@ export default async function WatchPage({ params, searchParams }: PageProps) {
         sponsorFor('player_after', { audience: 'adult', guest: viewer.guest }),
         sponsorBeforeSeconds(),
       ]);
+  // Share is off on a kids profile (D-391).
+  const shareSettings = viewer.kids ? null : await getShareSettings();
   return (
-    <main className="watch">
-      <div className="watch__main">
-        <a className="watch__back" href={data.video.backHref}>
-          {'← Back'}
-        </a>
-        <WatchClient
-          data={data}
-          viewer={viewer}
-          challengeSiteKey={viewer.guest && !viewer.kids ? turnstileSiteKey() : undefined}
-          signUpOpen={viewer.guest ? (await getSite().content()).signUpOpen : undefined}
-          transport={getTransport()}
-          progressTransport={getProgressTransport(viewer)}
-          startAt={startAt}
-          sponsors={{ before: sponsorBefore, after: sponsorAfter, beforeSeconds }}
-          countdownSeconds={await playerCountdownSeconds()}
-          airplay={await airplayEnabled()}
-          {...(viewer.guest
-            ? {}
-            : { prefsSync: { save: savePlayerPrefsAction, migrate: migrateDevicePrefsAction } })}
-        >
-          <WatchDetails data={data} />
-        </WatchClient>
-      </div>
-      <UpNextList tiles={data.upNext} />
-    </main>
+    <ShareConfigProvider value={shareSettings}>
+      <main className="watch">
+        <div className="watch__main">
+          <a className="watch__back" href={data.video.backHref}>
+            {'← Back'}
+          </a>
+          <WatchClient
+            data={data}
+            viewer={viewer}
+            challengeSiteKey={viewer.guest && !viewer.kids ? turnstileSiteKey() : undefined}
+            signUpOpen={viewer.guest ? (await getSite().content()).signUpOpen : undefined}
+            transport={getTransport()}
+            progressTransport={getProgressTransport(viewer)}
+            startAt={startAt}
+            sponsors={{ before: sponsorBefore, after: sponsorAfter, beforeSeconds }}
+            countdownSeconds={await playerCountdownSeconds()}
+            airplay={await airplayEnabled()}
+            {...(viewer.guest
+              ? {}
+              : { prefsSync: { save: savePlayerPrefsAction, migrate: migrateDevicePrefsAction } })}
+          >
+            <WatchDetails data={data} />
+          </WatchClient>
+        </div>
+        <UpNextList tiles={data.upNext} />
+      </main>
+    </ShareConfigProvider>
   );
 }

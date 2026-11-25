@@ -3,6 +3,7 @@ import { isKidsOnlyTitle } from '@ad/catalog';
 import { getServices } from '../../lib/runtime/services';
 import { realDataEnabled } from '../data/mode';
 import { buildShareConfig } from '../../components/share/share-config';
+import type { ShareSettings } from '../../components/share/share-context';
 import { getSeoSettings } from './seo-settings';
 
 /** The public origin, the only source for canonical, sitemap and structured data urls. */
@@ -22,6 +23,17 @@ export async function titleIndexable(kind: 'video' | 'series', slug: string): Pr
   } catch {
     return false;
   }
+}
+
+/** What every card, hero and page needs to offer Share (L15a). Read once per page by the shell. */
+export async function getShareSettings(): Promise<ShareSettings> {
+  const seo = await getSeoSettings();
+  return {
+    channels: seo.shareChannels,
+    template: seo.shareTemplate,
+    siteName: seo.platformName,
+    origin: siteOrigin(),
+  };
 }
 
 /** What the Share sheet lists and says: the admin's channels, the text, and the clean canonical link (D-391). */

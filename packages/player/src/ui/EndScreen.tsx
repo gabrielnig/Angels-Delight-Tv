@@ -1,5 +1,5 @@
 import { usePlayerT } from '../t';
-import { PlayIcon, PlusIcon, ReplayIcon } from './icons';
+import { PlayIcon, PlusIcon, ReplayIcon, ShareIcon } from './icons';
 import type { UpNextItem } from '../types';
 import { StillWatching } from './StillWatching';
 
@@ -19,6 +19,8 @@ export interface EndScreenData {
   backLabel?: string;
   homeHref?: string;
   browseHref?: string;
+  /** Opens the page's Share sheet. Left out on a kids profile. Not shown during the autoplay countdown (L15a). */
+  onShare?: () => void;
 }
 
 interface Props {
@@ -109,6 +111,12 @@ export function EndScreen({
       {data.inMyList ? msg('player.end.inList') : msg('player.end.addToList')}
     </button>
   ) : null;
+  const share = data.onShare ? (
+    <button type="button" className="adp-btn adp-btn--ghost" onClick={data.onShare}>
+      <ShareIcon size={18} />
+      {msg('player.end.share')}
+    </button>
+  ) : null;
   const replay = (
     <button type="button" className="adp-btn adp-btn--ghost" onClick={onReplay}>
       <ReplayIcon size={18} />
@@ -171,6 +179,7 @@ export function EndScreen({
             {msg('player.end.playNext')}
           </button>
           {replay}
+          {share}
           {cancelled && data.backHref ? (
             <a className="adp-btn adp-btn--ghost" href={data.backHref}>
               {data.backLabel ?? msg('player.end.backToSeries')}
@@ -198,6 +207,7 @@ export function EndScreen({
             </a>
           ) : null}
           {replay}
+          {share}
           {data.browseHref ? (
             <a className="adp-btn adp-btn--ghost" href={data.browseHref}>
               {msg('player.end.browseMore')}
@@ -217,6 +227,7 @@ export function EndScreen({
           <ReplayIcon size={18} />
           {msg('player.end.replay')}
         </button>
+        {share}
         {addToList}
         {data.homeHref ? (
           <a className="adp-btn adp-btn--ghost" href={data.homeHref}>

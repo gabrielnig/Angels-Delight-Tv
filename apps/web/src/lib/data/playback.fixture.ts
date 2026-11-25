@@ -42,6 +42,7 @@ function video(
     kidsSafe: true,
     series: null,
     backHref: '/',
+    share: { kind: 'video', slug: id },
     ...extra,
   };
 }

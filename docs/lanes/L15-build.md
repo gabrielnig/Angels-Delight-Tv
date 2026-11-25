@@ -36,8 +36,8 @@ Audit: `docs/audits/2026-11-25-share-audit.md`. Mockups S200 to S203 in `docs/mo
 |---|---|---|---|
 | 0 | Audit, mockups S200 to S203 and review | in review | |
 | 1 | Share targets, URL builders, canonical share url, settings extended | merged | #448 |
-| 2 | ShareSheet and ShareButton, wired into the title and series pages | in review | |
-| 3 | Wire into title, series, hero, hover card, card menu, watch, end screen | open | |
+| 2 | ShareSheet and ShareButton, wired into the title and series pages | merged | #452 |
+| 3 | Wire into hero, hover card, Continue card menu, watch page and end screen | in review | |
 | 4 | Share analytics event per channel | open | |
 | 5 | Chromium layout tests, a11y, e2e | open | |
 | 6 | Docs | merged | #451 |
@@ -100,3 +100,12 @@ Test a kids only title and an unpublished title: the debugger must show the gene
 - Episode pages (`video.episode`) if episodes ever get their own url.
 - The pre commit hook runs related tests that already fail on main (ThemeHistoryView, launch apply, error page r39, DATA-MODEL table list): they should be fixed by their lanes.
 
+### L15a slice 3
+
+- Context: `share/share-context.tsx` (`ShareConfigProvider`, `useShareSettings`), mounted once by `AppShell` (null for a kids profile and a guest's Kids mode) and by the watch page (null for kids). `share/useShareTarget.tsx`: `useShareTarget(input)` for cards, `ShareHost`, `useShareEnabled`. `getShareSettings()` in `server/seo/page-seo.ts`.
+- UI package: `VideoCard.onShare` (hover card Share button), `ContinueCard.onShare` with `menuLabels.share` (Continue menu item), `Hero.onShare` and `shareLabel` (round 44 px button beside More info, class `ad-hero__share`). The page owns the sheet so it survives the hover card closing.
+- Player: `EndScreenData.onShare` shows Share beside Replay on the end screens without an autoplay countdown (a countdown would leave the page mid share). Message `player.end.share`.
+- Watch page: `WatchVideo.share = { kind, slug }` (the title page, or the series page for an episode). Share shares that clean link, never `/watch/<id>`. `WatchActions` now takes `onShare` and has no own share code.
+- Not done on purpose: touch devices have no hover card, so a plain card has no Share (the Continue menu, hero, title, series and watch pages cover touch). Series cards have no hover card.
+- Tests: `pnpm vitest run packages/ui/src/components/Cards.test.tsx packages/ui/src/components/Hero.test.tsx packages/player/src/ui/EndScreen.test.tsx apps/web/src/components/share apps/web/src/components/CatalogCard.test.tsx apps/web/src/components/ContinueRow.test.tsx apps/web/src/components/home/HomeHero.test.tsx apps/web/src/components/Shell.test.tsx apps/web/src/features/player`.
+- Known failures on main, not from this lane: `packages/ui/test/focus-ring.test.ts` and `hover-guard.test.ts` (help centre and TV css).

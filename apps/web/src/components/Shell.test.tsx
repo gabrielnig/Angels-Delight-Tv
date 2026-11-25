@@ -39,6 +39,11 @@ vi.mock('../lib/i18n/server', async () => {
 vi.mock('./ViewerChrome', () => ({ ViewerChrome: () => <p>viewer chrome</p> }));
 
 import { AppShell } from './Shell';
+import { useShareSettings } from './share/share-context';
+
+function ShareProbe() {
+  return <p>{useShareSettings() ? 'share on' : 'share off'}</p>;
+}
 
 const shell = async () => render(await AppShell({ children: <p>page</p> }));
 
@@ -55,6 +60,15 @@ describe('AppShell', () => {
     await shell();
     expect(screen.getByRole('navigation', { name: 'Main' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Sign in' })).toBeInTheDocument();
+  });
+
+  it('turns Share on for a guest and off in a guest Kids mode (L15a)', async () => {
+    const first = render(await AppShell({ children: <ShareProbe /> }));
+    expect(screen.getByText('share on')).toBeInTheDocument();
+    first.unmount();
+    mocks.audience = 'kids';
+    render(await AppShell({ children: <ShareProbe /> }));
+    expect(screen.getByText('share off')).toBeInTheDocument();
   });
 
   it('keeps the viewer chrome for a signed in profile', async () => {

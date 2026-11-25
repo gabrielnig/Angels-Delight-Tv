@@ -21,6 +21,7 @@ vi.mock('@/server/player/player-settings', () => ({
   playerCountdownSeconds: async () => 5,
   airplayEnabled: async () => false,
 }));
+vi.mock('@/server/seo/page-seo', () => ({ getShareSettings: async () => null }));
 vi.mock('@/features/player/WatchClient', () => ({ WatchClient: () => null }));
 vi.mock('@/features/player/WatchDetails', () => ({ WatchDetails: () => null }));
 vi.mock('@/features/player/UpNextList', () => ({ UpNextList: () => null }));

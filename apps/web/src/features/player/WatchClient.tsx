@@ -57,6 +57,7 @@ import type { SelectedSponsor } from '@ad/sponsors';
 import { SponsorGate } from '@/components/sponsor/SponsorGate';
 import { SponsorMessageCard } from '@/components/sponsor/SponsorMessageCard';
 import { WatchActions } from './WatchActions';
+import { useShareTarget } from '@/components/share/useShareTarget';
 
 export interface WatchClientProps {
   data: WatchData;
@@ -340,7 +341,18 @@ export function WatchClient({
   }, []);
   const onNext = useCallback((item: UpNextItem) => router.push(watchPath(item.id)), [router]);
 
+  const shareTarget = useShareTarget(
+    video.share
+      ? {
+          kind: video.share.kind,
+          slug: video.share.slug,
+          title: video.series ? video.series.title : video.title,
+          thumbnail: video.posterUrl ?? undefined,
+        }
+      : null,
+  );
   const end: EndScreenData = {
+    ...(shareTarget.onShare ? { onShare: shareTarget.onShare } : {}),
     ...(video.series
       ? { seriesTitle: video.series.title, lastInSeries: video.series.lastEpisode }
       : {}),
@@ -438,7 +450,9 @@ export function WatchClient({
         title={video.title}
         initialInMyList={data.inMyList}
         guest={viewer.guest ? { signUpOpen: signUpOpen ?? false } : undefined}
+        onShare={shareTarget.onShare}
       />
+      {shareTarget.sheet}
     </>
   );
 }
