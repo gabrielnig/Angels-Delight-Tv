@@ -2117,3 +2117,9 @@ Decision: `video.preview` catches every error and records `failed` or `skipped` 
 - Why: One source of truth for the scrim, no hidden information in buttons, and a count that screen readers hear once.
 - Reversible: Yes.
 
+
+## D-384 The Help panel is a modal-free drawer with a Tab trap, and keeps guides in memory only (lane KB-P2, M50-S03)
+- Decision: The panel is a drawer from 60rem up (the page behind stays usable by mouse) and a bottom sheet below. Both trap Tab, close on Escape, the Close button or a swipe down on the sheet handle, and return focus to the element that opened them, or to the Help button when the question mark key opened it. `aria-modal` is true only on the sheet. The guide for a screen is loaded by one read only server action and cached in component memory for the visit, so a guide already read stays on screen when the connection drops. No storage key, cookie or service worker cache is added, so there is no STORAGE_INVENTORY row. With no matching guide the panel shows search and up to six Start and Daily guides the role can do. An inline hint opens the guide in the panel and is a plain link to the exact section without it.
+- Options: Modal drawer with a scrim; non modal drawer with no trap; non modal drawer with a Tab trap (chosen); cache guides in a service worker (refused by D-359).
+- Why: The plan wants the page usable beside the panel, and keyboard users still need a contained tab order and a way back. Caching authenticated admin pages on shared devices is a risk (D-359), so offline is memory for this visit plus the downloadable handbook.
+- Reversible: Yes.
