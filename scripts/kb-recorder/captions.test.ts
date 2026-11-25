@@ -165,12 +165,12 @@ describe('buildCues', () => {
 });
 
 describe('readingTimeMs', () => {
-  it('gives short captions a two second floor and long ones about 55 ms per character', () => {
+  it('gives short captions a two second floor and long ones about 67 ms per character (15 characters a second)', () => {
     expect(readingTimeMs('Hi')).toBe(2000);
-    expect(readingTimeMs('x'.repeat(60))).toBe(400 + 60 * 55);
+    expect(readingTimeMs('x'.repeat(60))).toBe(400 + 60 * 67);
   });
   it('counts every line of a two line caption', () => {
-    expect(readingTimeMs('a'.repeat(40) + '\n' + 'b'.repeat(40))).toBe(400 + 80 * 55);
+    expect(readingTimeMs('a'.repeat(40) + '\n' + 'b'.repeat(40))).toBe(400 + 80 * 67);
   });
 });
 
@@ -197,5 +197,53 @@ describe('caption position (safe area)', () => {
     );
     expect(ass).toMatch(/Dialogue: 0,0:00:00\.00,0:00:02\.00,Caption,,0,0,0,,\{\\an8\}Up here\./);
     expect(ass).toMatch(/,Caption,,0,0,0,,Down here\./);
+  });
+});
+
+describe('toAss badges and cards', () => {
+  const o = { width: 1280, height: 720, fontSize: 34, marginX: 96, marginV: 44, fontName: 'Inter' };
+  it('draws a corner badge in its own style at the top right', () => {
+    const ass = toAss([{ startMs: 0, endMs: 2000, text: 'Hi.' }], {
+      ...o,
+      badges: [{ startMs: 0, endMs: 2000, text: 'Step 1 of 3' }],
+    });
+    expect(ass).toMatch(/Style: Badge,.*,9,/);
+    expect(ass).toMatch(/Dialogue: 1,0:00:00\.00,0:00:02\.00,Badge,,0,0,0,,Step 1 of 3/);
+  });
+
+  it('draws a full frame card with a solid panel and centred lines', () => {
+    const ass = toAss([], {
+      ...o,
+      cards: [{ startMs: 0, endMs: 3000, lines: ['Title', 'For Editors'] }],
+    });
+    expect(ass).toMatch(
+      /Dialogue: 5,0:00:00\.00,0:00:03\.00,Panel,,0,0,0,,\{\\p1\}m 0 0 l 1280 0 1280 720 0 720\{\\p0\}/,
+    );
+    expect(ass).toMatch(/Dialogue: 6,0:00:00\.00,0:00:03\.00,Card,,0,0,0,,Title\\NFor Editors/);
+  });
+});
+
+describe('buildCues caps and wraps', () => {
+  it('ends a long step caption after maxMs so it never stays over six seconds', () => {
+    const cues = buildCues([{ caption: 'Wait for it.', startMs: 0, endMs: 20_000 }], {
+      leadMs: 250,
+      minMs: 1800,
+      maxMs: 6000,
+    });
+    expect(cues[0]!.endMs - cues[0]!.startMs).toBe(6000);
+  });
+
+  it('wraps a long caption into two balanced lines', () => {
+    const cues = buildCues(
+      [
+        {
+          caption: 'Choose Videos in the side menu to see every video you have uploaded.',
+          startMs: 0,
+          endMs: 6000,
+        },
+      ],
+      { leadMs: 0, minMs: 1800, wrap: true },
+    );
+    expect(cues[0]!.text.split('\n')).toHaveLength(2);
   });
 });

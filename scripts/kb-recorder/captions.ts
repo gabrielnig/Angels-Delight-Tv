@@ -10,6 +10,10 @@ export interface Cue {
 
 export interface StepTiming {
   caption: string | undefined;
+  /** Name of the control the pointer went to in this step, for the transcript. */
+  pointer?: string;
+  /** Starts a chapter of this name. */
+  chapter?: string;
   position?: 'top' | 'bottom';
   startMs: number;
   endMs: number;
@@ -110,6 +114,10 @@ export interface AssOptions {
   marginX: number;
   marginV: number;
   fontName: string;
+  /** Fixed corner badges such as "Step 3 of 7". */
+  badges?: Cue[];
+  /** Full frame title and end cards. */
+  cards?: Array<{ startMs: number; endMs: number; lines: string[] }>;
 }
 
 const assTime = (ms: number) => {
@@ -123,12 +131,20 @@ const assTime = (ms: number) => {
 /** ASS lets us size text in real pixels (PlayRes equals the video) and keep margins, which SRT force_style cannot. */
 export function toAss(cues: Cue[], o: AssOptions): string {
   const esc = (t: string) => t.replace(/[{}\\]/g, '').replace(/\n/g, '\\N');
-  const events = cues
+  const caps = cues
     .map(
       (c) =>
         `Dialogue: 0,${assTime(c.startMs)},${assTime(c.endMs)},Caption,,0,0,0,,${c.position === 'top' ? '{\\an8}' : ''}${esc(c.text)}`,
     )
     .join('\n');
+  const badges = (o.badges ?? []).map(
+    (b) => `Dialogue: 1,${assTime(b.startMs)},${assTime(b.endMs)},Badge,,0,0,0,,${esc(b.text)}`,
+  );
+  const cards = (o.cards ?? []).flatMap((card) => [
+    `Dialogue: 5,${assTime(card.startMs)},${assTime(card.endMs)},Panel,,0,0,0,,{\\p1}m 0 0 l ${o.width} 0 ${o.width} ${o.height} 0 ${o.height}{\\p0}`,
+    `Dialogue: 6,${assTime(card.startMs)},${assTime(card.endMs)},Card,,0,0,0,,${card.lines.map(esc).join('\\N')}`,
+  ]);
+  const events = [caps, ...badges, ...cards].filter(Boolean).join('\n');
   return [
     '[Script Info]',
     'ScriptType: v4.00+',
@@ -141,6 +157,9 @@ export function toAss(cues: Cue[], o: AssOptions): string {
     'Format: Name,Fontname,Fontsize,PrimaryColour,SecondaryColour,OutlineColour,BackColour,Bold,Italic,Underline,StrikeOut,ScaleX,ScaleY,Spacing,Angle,BorderStyle,Outline,Shadow,Alignment,MarginL,MarginR,MarginV,Encoding',
     // BorderStyle 3 draws a box behind the text in the outline colour: white on 90 percent black stays readable on any screen.
     `Style: Caption,${o.fontName},${o.fontSize},&H00FFFFFF,&H00FFFFFF,&H1A000000,&H1A000000,-1,0,0,0,100,100,0,0,3,10,0,2,${o.marginX},${o.marginX},${o.marginV},1`,
+    `Style: Badge,${o.fontName},${Math.round(o.fontSize * 0.55)},&H00FFFFFF,&H00FFFFFF,&H33000000,&H33000000,-1,0,0,0,100,100,0,0,3,6,0,9,16,16,16,1`,
+    `Style: Panel,${o.fontName},20,&H00241B14,&H00241B14,&H00241B14,&H00241B14,0,0,0,0,100,100,0,0,1,0,0,7,0,0,0,1`,
+    `Style: Card,${o.fontName},${Math.round(o.fontSize * 1.5)},&H00FFFFFF,&H00FFFFFF,&H00241B14,&H00241B14,-1,0,0,0,100,100,0,0,1,0,0,5,${o.marginX},${o.marginX},0,1`,
     '',
     '[Events]',
     'Format: Layer,Start,End,Style,Name,MarginL,MarginR,MarginV,Effect,Text',
@@ -153,24 +172,48 @@ export function toAss(cues: Cue[], o: AssOptions): string {
  * Cues from measured step timings. leadMs delays the caption slightly after the step starts so the viewer sees the
  * action first. A cue shorter than minMs is stretched, but never into the next cue.
  */
-export function buildCues(steps: StepTiming[], o: { leadMs: number; minMs: number }): Cue[] {
+export function buildCues(
+  steps: StepTiming[],
+  o: { leadMs: number; minMs: number; maxMs?: number; wrap?: boolean },
+): Cue[] {
   const withText = steps.filter((s): s is StepTiming & { caption: string } => Boolean(s.caption));
   return withText.map((s, i) => {
     const startMs = s.startMs + o.leadMs;
     let endMs = Math.max(s.endMs, startMs + o.minMs);
     const next = withText[i + 1];
     if (next) endMs = Math.min(endMs, next.startMs + o.leadMs);
+    if (o.maxMs !== undefined) endMs = Math.min(endMs, startMs + o.maxMs);
     return {
       startMs,
       endMs: Math.max(endMs, startMs),
-      text: s.caption,
+      text: o.wrap ? wrapCaption(s.caption) : s.caption,
       ...(s.position ? { position: s.position } : {}),
     };
   });
 }
 
-/** How long a caption needs on screen so a calm reader finishes it: 2 s floor, then about 55 ms per character. */
+/** How long a caption needs on screen so a calm reader finishes it: 2 s floor, then 67 ms per character, the 15 characters a second of the style guide. */
 export function readingTimeMs(text: string): number {
   const chars = text.replace(/\n/g, '').length;
-  return Math.max(2000, 400 + chars * 55);
+  return Math.max(2000, 400 + chars * 67);
+}
+
+/** Longest caption line in characters (style guide, plan section 5.3). */
+export const MAX_LINE = 42;
+
+/** Breaks a caption at spaces into at most two balanced lines of 42 characters. Text that cannot fit stays as is. */
+export function wrapCaption(text: string, max = MAX_LINE): string {
+  const flat = text.replace(/\s*\n\s*/g, ' ').trim();
+  if (flat.length <= max) return flat;
+  const words = flat.split(' ');
+  let best: [string, string] | null = null;
+  for (let i = 1; i < words.length; i++) {
+    const a = words.slice(0, i).join(' ');
+    const b = words.slice(i).join(' ');
+    if (a.length <= max && b.length <= max) {
+      if (!best || Math.abs(a.length - b.length) < Math.abs(best[0].length - best[1].length))
+        best = [a, b];
+    }
+  }
+  return best ? `${best[0]}\n${best[1]}` : flat;
 }

@@ -29,6 +29,8 @@ export interface PlayResult {
   timings: StepTiming[];
   totalMs: number;
   videoPath: string | null;
+  /** Waits to cut, in video clock milliseconds. */
+  skips: Array<{ startMs: number; endMs: number }>;
   shots: Array<{ step: number; name: string; file: string; alt: string }>;
 }
 
@@ -87,6 +89,7 @@ export async function playEpisode(
     if (o.clockMs !== undefined) await context.clock.setFixedTime(o.clockMs);
     const page = await context.newPage();
     const t0 = Date.now();
+    const t0Abs = t0;
     const session = new Session(page, profile, o.shotsDir, o.pace);
     const timings: StepTiming[] = [];
     const shots: PlayResult['shots'] = [];
@@ -97,6 +100,7 @@ export async function playEpisode(
       i += 1;
       const startMs = Date.now() - t0;
       session.lastTarget = null;
+      session.lastTargetName = null;
       try {
         await step.run(session);
         await session.guard(`step ${i}`);
@@ -136,6 +140,8 @@ export async function playEpisode(
         startMs,
         endMs: Date.now() - t0,
         position: step.captionAt ?? session.captionSide(),
+        pointer: session.lastTargetName ?? undefined,
+        chapter: step.chapter,
       });
     }
     if (!o.check) await session.pause(1200);
@@ -143,7 +149,11 @@ export async function playEpisode(
     const video = page.video();
     await context.close();
     const videoPath = video ? await video.path() : null;
-    return { timings, totalMs, videoPath, shots };
+    const skips = session.skips.map((s) => ({
+      startMs: s.startAt - t0Abs,
+      endMs: s.endAt - t0Abs,
+    }));
+    return { timings, totalMs, videoPath, shots, skips };
   } finally {
     await browser.close();
   }

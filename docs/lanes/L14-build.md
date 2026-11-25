@@ -165,10 +165,19 @@ Recording and checking run only against the isolated demo stack (D-362, D-379). 
 - Annotation (`shapes.ts` and the overlay): numbered dark circles with a yellow highlight and a dark halo (fixed colours, not theme tokens), optional arrows (`arrow: true`), blur (`kind: 'blur'`), and a tight crop of one card (`crop`). Marks are numbered in order, blurs are not.
 - `webp.ts` (`pngToWebp`): WebP at the profile width (1280 desktop, 390 phone), no metadata chunk, quality lowered until it is at most 120 KB, fails when it cannot fit. File names: `<id>-<nn>-<name>-<desktop|mobile>[-dark].webp`. `scheme: 'dark'` emulates a dark colour scheme for screens that are dark by design.
 
+### Captions, transcript and chapters
+
+- Style guide lint (`caption-style.ts`): `lintCaption` returns errors (dash of any kind, emoji, exclamation mark, no capital or full stop, ALL CAPITALS words, jargon such as bitrate or transcode outside a quoted or bold label, more than one action, over 20 words, not fitting two lines of 42 characters) and warnings (does not start with a verb). `lintCues` checks the burned in timing: 2 to 6 seconds, at most 15 characters a second, two lines, 42 characters a line. `episodes.test.ts` lints every caption of every episode, so a bad caption fails the scoped test.
+- Reading time is 67 ms a character (15 characters a second) with a 2 s floor, so the runner holds each step long enough. `--pace` under 1 is for quick checks and skips the timing lint.
+- `produceOutputs` (`produce.ts`) turns a clean capture and the measured step timings into the published files, all on the final video clock: `<id>-<profile>.mp4` (burned in captions, no audio, 3 s title card, "Step n of N" corner badge, 3 s end card when `next` is set, long waits cut), `.vtt` (WebVTT), `.ass` (burn source), `.transcript.txt` (each caption with its time and "The pointer moves to X."), `.chapters.vtt` (a chapters track).
+- Wrap a long wait in `s.skippable(async () => ...)`: waits over 2.7 s are cut with 0.6 s kept on each side and a "Time skipped" badge.
+- A step can start a named chapter with `chapter: 'Add details'`. With no named chapters each step is one chapter. Set `next: 'D03 Upload many videos'` on the episode for the end card.
+- Captions sit at the bottom and move to the top when the target is low (per cue ASS alignment).
+
 ### Commands
 
-- `pnpm kb:record --episode <id> --profile desktop,mobile --out .kb-out` records one episode (see the spike note for the stack).
+- `pnpm kb:record --episode <id> --profile desktop,mobile --out .kb-out` records one episode against the demo stack (see Demo stack). If the dev server loops on page reloads after many edits, stop it and delete `apps/web/.next/dev`.
 
 ### Status
 
-Slices 1 (episode framework), 2 (demo stack) and 3 (redaction scanner, annotation, WebP) done. Later slices append here.
+Slices 1 (episode framework), 2 (demo stack), 3 (redaction scanner, annotation, WebP) and 4 (caption tools) done. Later slices append here.
