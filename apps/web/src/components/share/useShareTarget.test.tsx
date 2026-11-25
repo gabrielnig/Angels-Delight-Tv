@@ -13,8 +13,8 @@ const settings: ShareSettings = {
   origin: 'https://adtv.example',
 };
 
-function Probe({ slug = 'rivers' }: { slug?: string }) {
-  const share = useShareTarget({ kind: 'video', slug, title: 'Rivers' });
+function Probe({ slug = 'rivers', at }: { slug?: string; at?: () => number | null }) {
+  const share = useShareTarget({ kind: 'video', slug, title: 'Rivers', ...(at ? { getStartAt: at } : {}) });
   return (
     <div>
       {share.onShare ? <button onClick={share.onShare}>probe-share</button> : <span>no-share</span>}
@@ -65,5 +65,29 @@ describe('useShareTarget (L15a slice 3)', () => {
     expect(screen.queryByRole('link', { name: /Facebook/ })).toBeNull();
     await user.keyboard('{Escape}');
     expect(screen.queryByRole('dialog')).toBeNull();
+  });
+
+  it('reads the playing time when the sheet opens and offers Start at', async () => {
+    const user = userEvent.setup();
+    let now = 83.9;
+    render(
+      <ShareConfigProvider value={settings}>
+        <Probe at={() => now} />
+      </ShareConfigProvider>,
+    );
+    now = 95.2;
+    await user.click(screen.getByText('probe-share'));
+    expect(screen.getByRole('switch', { name: 'Start at 1:35' })).toBeInTheDocument();
+  });
+
+  it('does not offer Start at for the first seconds or when no time is known', async () => {
+    const user = userEvent.setup();
+    render(
+      <ShareConfigProvider value={settings}>
+        <Probe at={() => 3} />
+      </ShareConfigProvider>,
+    );
+    await user.click(screen.getByText('probe-share'));
+    expect(screen.queryByRole('switch')).toBeNull();
   });
 });

@@ -246,3 +246,54 @@
     animation: none;
   }
 }
+
+/* Start at switch: a 44 px row, the state shown by position and the label as well as colour (L15a). */
+.share-start {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+  min-height: 2.75rem;
+  padding: 0 var(--space-1);
+  background: none;
+  border: 0;
+  border-radius: var(--radius-md);
+  color: var(--color-ink);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.share-start:focus-visible {
+  outline: 3px solid var(--color-focus-ring);
+  outline-offset: 2px;
+}
+.share-start__track {
+  position: relative;
+  flex: none;
+  width: 2.5rem;
+  height: 1.5rem;
+  border-radius: 999px;
+  background: var(--color-border-strong);
+}
+.share-start__thumb {
+  position: absolute;
+  top: 0.1875rem;
+  left: 0.1875rem;
+  width: 1.125rem;
+  height: 1.125rem;
+  border-radius: 50%;
+  background: var(--color-surface);
+  transition: transform var(--motion-base) var(--ease-enter);
+}
+.share-start[aria-checked='true'] .share-start__track {
+  background: var(--color-primary);
+}
+.share-start[aria-checked='true'] .share-start__thumb {
+  transform: translateX(1rem);
+}
+@media (prefers-reduced-motion: reduce) {
+  .share-start__track,
+  .share-start__thumb {
+    transition: none;
+  }
+}

@@ -221,6 +221,7 @@ export const EN_NG = {
   'share.target.email': 'Email',
   'share.target.sms': 'Messages',
   'share.target.more': 'More',
+  'share.startAt': 'Start at {time}',
   'share.copyButton': 'Copy',
   'share.copiedButton': 'Copied',
   'share.copyFailed': 'Could not copy. Press and hold the link, then choose Copy.',

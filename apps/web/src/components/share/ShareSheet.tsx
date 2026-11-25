@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useId, useRef, useState, type CSSProperties } from 'react';
 import { createPortal } from 'react-dom';
-import { IconButton } from '@ad/ui';
+import { formatClock, IconButton } from '@ad/ui';
 import { useT } from '../../lib/i18n/provider';
 import { trackShare } from './share-analytics';
 import { ShareIcon } from './share-icons';
@@ -29,6 +29,8 @@ export interface ShareSheetProps {
   /** The clean canonical address. Never the address bar. */
   url: string;
   kind: 'video' | 'series';
+  /** Whole seconds into the video right now. Offers the Start at switch, off each time the sheet opens. */
+  startAt?: number;
   /** Catalog id, for the per title share count. Optional. */
   titleId?: string;
   /** Channels the admin enabled, in order. Copy link and More are added here. */
@@ -105,6 +107,7 @@ export function ShareSheet({
   text,
   url,
   kind,
+  startAt,
   titleId,
   channels,
   thumbnail,
@@ -122,6 +125,7 @@ export function ShareSheet({
   const [nativeShare, setNativeShare] = useState(false);
   const [status, setStatus] = useState<{ text: string; tone: 'ok' | 'error' | 'muted' } | null>(null);
   const [copied, setCopied] = useState(false);
+  const [fromTime, setFromTime] = useState(false);
   const [pos, setPos] = useState<CSSProperties | undefined>(undefined);
   const drag = useRef<{ startY: number; startT: number; dy: number } | null>(null);
 
@@ -130,6 +134,7 @@ export function ShareSheet({
     setNativeShare(typeof navigator.share === 'function');
     setStatus(null);
     setCopied(false);
+    setFromTime(false);
   }, [open]);
 
   // Focus in, lock the page behind it, give focus back.
@@ -186,6 +191,9 @@ export function ShareSheet({
 
   if (!open || typeof document === 'undefined') return null;
 
+  const offerStart = kind === 'video' && startAt !== undefined && startAt > 0;
+  const shareUrl = offerStart && fromTime ? `${url}?t=${Math.floor(startAt)}` : url;
+
   const targets = sheetTargets(channels, { nativeShare });
   const nameOf = (id: ShareTargetId): string => {
     switch (id) {
@@ -215,7 +223,7 @@ export function ShareSheet({
   }
 
   async function onCopy() {
-    const ok = await copyText(url, fieldRef.current);
+    const ok = await copyText(shareUrl, fieldRef.current);
     if (ok) {
       chosen('copy');
       setCopied(true);
@@ -230,7 +238,7 @@ export function ShareSheet({
 
   async function onMore() {
     try {
-      await navigator.share({ title, text, url });
+      await navigator.share({ title, text, url: shareUrl });
       chosen('more');
     } catch (error) {
       if (error instanceof DOMException && error.name === 'AbortError') return;
@@ -365,7 +373,7 @@ export function ShareSheet({
                   <a
                     className="share-target"
                     data-testid="share-target"
-                    href={targetHref(id as LinkChannel, { title, text, url })}
+                    href={targetHref(id as LinkChannel, { title, text, url: shareUrl })}
                     {...(newTab ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
                     onClick={() => {
                       chosen(id);
@@ -387,7 +395,7 @@ export function ShareSheet({
               className="share-link__field"
               readOnly
               aria-label={t('share.linkLabel')}
-              value={url}
+              value={shareUrl}
               onFocus={(event) => event.currentTarget.select()}
             />
             <button
@@ -399,6 +407,20 @@ export function ShareSheet({
               {copied ? t('share.copiedButton') : t('share.copyButton')}
             </button>
           </div>
+          {offerStart ? (
+            <button
+              type="button"
+              role="switch"
+              aria-checked={fromTime}
+              className="share-start"
+              onClick={() => setFromTime((on) => !on)}
+            >
+              <span className="share-start__track" aria-hidden="true">
+                <span className="share-start__thumb" />
+              </span>
+              <span className="share-start__label">{t('share.startAt', { time: formatClock(Math.floor(startAt)) })}</span>
+            </button>
+          ) : null}
           <p role="status" className="share-status" data-tone={status?.tone ?? 'ok'}>
             {status?.text ?? ''}
           </p>
