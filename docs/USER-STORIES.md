@@ -4354,6 +4354,7 @@ As staff, I want the Help link on a page to open the article for that page, so t
 - Empty: not applicable.
 
 ### M50-S03 Contextual help panel (Must)
+Built (D-384): `HelpPanelHost`, `HelpPanel`, `InlineHint`; tests `HelpPanel.test.tsx`, `InlineHint.test.tsx`, `help-panel.test.ts`, e2e `admin-help.e2e.ts`.
 As staff, I want a panel that shows the article for the page I am on, so that I can follow the steps beside my work.
 - AC1: Given md and up, When I press Help, Then a side drawer opens with the video, the steps and Open full article, and my page stays usable.
 - AC2: Given a phone, When I press Help, Then a bottom sheet opens and closes with a swipe, a close button or Escape.
@@ -4408,6 +4409,7 @@ As staff, I want to search the help centre in my own words, so that I find the a
 - Empty: an empty box shows recent articles from this browser and the core tasks.
 
 ### M50-S09 Print and PDF for each article (Must)
+Built (D-387): print stylesheet, Download PDF with print fallback, per guide PDF route, measured print layout in `admin-help.e2e.ts`.
 As staff, I want to print or save an article, so that I can keep it by my desk.
 - AC1: Given an article, When I choose Print, Then chrome and the player are hidden and all steps and pictures print without cut steps.
 - AC2: Given an article, When I choose Download PDF, Then a file for that article and release downloads.
@@ -4417,6 +4419,7 @@ As staff, I want to print or save an article, so that I can keep it by my desk.
 - Empty: not applicable.
 
 ### M50-S10 Offline handbook (Should)
+Not built in the platform slices: release tooling (plan L14-11). The honest offline states are in D-386.
 As a new volunteer with no account yet, I want a handbook I can open without a server, so that I can learn first.
 - AC1: Given a release, When I choose Download the handbook, Then I get a ZIP that opens offline with search, paths and pictures.
 - AC2: Given the choice With videos, When I select it, Then videos are included.

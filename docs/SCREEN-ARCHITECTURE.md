@@ -661,7 +661,8 @@ Planned in `docs/plan/v2/L14-admin-knowledge-base.md`, mockups in `docs/mockups/
 | `/admin/help/videos/[id]` | Video page: player, transcript and the playlist of the path (no autoplay) |
 | `/admin/help/search` | Search results with marked words, role labels, empty state and a suggestion (GET form, works without script) |
 | `/admin/help/glossary` | Words explained: A to Z jump bar, filter, anchors by term, links to guides |
-| `/admin/help/media/[...path]` | Private video, caption and picture route (not a page). `img/...` pictures, `video/<id>/<file>` videos with Range |
+| `/admin/help/media/[...path]` | Private video, caption, picture and PDF route (not a page). `img/...` pictures, `video/<id>/<file>` videos with Range, `pdf/<ID>.pdf` prebuilt guide PDF from the release (404 when none, the Download PDF button then prints) |
+| Help panel (any admin screen) | Opened by the top bar Help button or the question mark key: drawer from 60rem, bottom sheet below, guide for the current screen, or search and core tasks. States: loading (skeleton after 300 ms, slow sentence after 6 s), offline (saved summary, video needs data), error with Try again, no guide. Help pages also have offline note, server error, not found and video error states (S197, S198) |
 
 Entry points: a Help button in the top bar (drawer at md and up, bottom sheet on phones), a Help link in each page header, a Help item in the side menu.
 

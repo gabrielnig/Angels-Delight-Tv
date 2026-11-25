@@ -8,6 +8,8 @@ Worktree `/home/claude/wt2/KBP-build`. Builds the help centre itself: the conten
 
 ### Slice status
 
+Platform status: complete except the offline handbook ZIP and whole handbook PDFs (release tooling, plan L14-11) and wiring `InlineHint` to real settings forms once the content lanes publish the guides it points at. Design system review done (one finding fixed), production build passes.
+
 | Slice | Contents | State |
 |---|---|---|
 | 1 Content format | `@ad/help` (schema, parser, library, lint, glossary, route matching), `content/help`, `pnpm help:check`, 3 sample articles, stories and decisions | Merged in the first platform PR |
@@ -16,8 +18,8 @@ Worktree `/home/claude/wt2/KBP-build`. Builds the help centre itself: the conten
 | 4 Video | private media route with Range for pictures, videos and captions, `HelpVideo` player with captions track, quality and picture choice, transcript, watched at 90 percent, `/admin/help/videos/[id]` with playlist, isolation test | Merged in the fourth platform PR |
 | 5 Panel | `HelpPanelHost` and `HelpPanel` (drawer from 60rem, bottom sheet below), top bar Help button opens it (a real link without script), question mark key, focus trap, Escape, swipe, return focus, loading, slow, offline, error and no guide states, `InlineHint`, `panelFor` and `helpPanelAction`, D-384 | Merged (PR 435) |
 | 6 Search and glossary | pure scorer in `@ad/help` (`search.ts`: stemming, aliases, one edit typo tolerance, Did you mean, role ordering, highlights), `/admin/help/search`, `/admin/help/glossary` (A to Z jump, filter, anchors by slug, guide links), search box on the help home with the slash key. Recent searches are not stored, so no storage key was added | Merged in the fifth platform PR |
-| 8 Print and PDF | Download PDF with print fallback, `/admin/help/media/pdf/<ID>.pdf`, printed guide ids, measured print layout, D-387. Offline handbook ZIP is release tooling (plan L14-11), not built here | Merged (PR below) |
-| 7 States and checks | `HelpStates` (error, not found, loading, connection note), offline and playback states in `HelpVideo`, `useSaveQueue` retrying saves with a quiet toast, `apps/web/e2e/admin-help.e2e.ts`, D-386 | Merged (PR 437), final docs still open |
+| 8 Print and PDF | Download PDF with print fallback, `/admin/help/media/pdf/<ID>.pdf`, printed guide ids, measured print layout, D-387. Offline handbook ZIP is release tooling (plan L14-11), not built here | Merged (PR 439) |
+| 7 States and checks | `HelpStates` (error, not found, loading, connection note), offline and playback states in `HelpVideo`, `useSaveQueue` retrying saves with a quiet toast, `apps/web/e2e/admin-help.e2e.ts`, D-386 | Merged (PR 437), docs done |
 
 Update this table in every platform PR.
 

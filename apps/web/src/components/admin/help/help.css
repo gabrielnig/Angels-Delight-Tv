@@ -865,7 +865,7 @@
 }
 .hlp-searchpage mark,
 .hlp-result mark {
-  background: var(--color-warning-tint, #fff3c4);
+  background: var(--color-warning-tint);
   color: inherit;
   border-radius: 2px;
   padding: 0 1px;
