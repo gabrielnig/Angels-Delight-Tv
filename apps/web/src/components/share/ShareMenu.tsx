@@ -10,7 +10,9 @@ const NAMES: Record<ShareChannelId, string> = {
   whatsapp: 'WhatsApp',
   facebook: 'Facebook',
   x: 'X',
+  telegram: 'Telegram',
   email: 'Email',
+  sms: 'Messages (SMS)',
 };
 
 export interface ShareMenuProps {

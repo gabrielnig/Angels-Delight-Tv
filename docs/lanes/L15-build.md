@@ -27,3 +27,23 @@ Audit: `docs/audits/2026-11-25-og-audit.md`. L15a owns share UI code. L15b owns 
 - Image url is `/og/title/<slug>?v=<hash>` or `/og/series/<slug>?v=<hash>`, built by `lib/seo/share-image.ts` (`shareImageFor`, extra inputs from `shareImageExtra()`).
 - Tests: `pnpm vitest run apps/web/src/server/seo apps/web/src/lib/seo` and with the database `apps/web/src/server/data/real-catalog.int.test.ts -t public`. `filters by category, length and sort` in that file already fails on main.
 - Pre commit hook note: the hook runs `vitest related`, which hits tests that already fail on main (ThemeHistoryView, launch apply, error page r39), so slice commits use `--no-verify` after the scoped tests pass.
+
+## L15a (Share sheet UI, lane L15a)
+
+Audit: `docs/audits/2026-11-25-share-audit.md`. Mockups S200 to S203 in `docs/mockups/v2/L15`, review `docs/reviews/v2/L15-review.md`. Decision D-391. L15a never edits metadata generation; it only consumes the clean canonical path (`/title/<slug>`, `/series/<slug>`).
+
+| # | Slice | State | PR |
+|---|---|---|---|
+| 0 | Audit, mockups S200 to S203 and review | in review | |
+| 1 | Share targets, URL builders, canonical share url, settings extended | in review | |
+| 2 | ShareSheet component (bottom sheet, popover) | open | |
+| 3 | Wire into title, series, hero, hover card, card menu, watch, end screen | open | |
+| 4 | Share analytics event per channel | open | |
+| 5 | Chromium layout tests, a11y, e2e | open | |
+| 6 | Docs | open | |
+
+### Slice 1
+
+- `apps/web/src/components/share/share-targets.ts`: `SHARE_TARGET_IDS`, `targetHref(channel, {title, text, url})`, `clampShareText`, `sheetTargets(channels, {nativeShare})`, `canonicalShareUrl({origin, kind, slug, startAt})`. No tags, no third party code.
+- `SHARE_CHANNELS` in `@ad/theme` now has `telegram` and `sms`; default is all six. The old `share-links.ts` and `ShareMenu.tsx` keep working until slice 2 replaces them.
+- Tests: `pnpm vitest run apps/web/src/components/share packages/theme/src/settings-discovery.test.ts apps/web/src/lib/site/seo-settings.test.ts apps/web/src/components/admin/site`.

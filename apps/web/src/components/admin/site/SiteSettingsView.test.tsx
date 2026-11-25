@@ -560,10 +560,12 @@ describe('discovery tab (M45-S05)', () => {
     );
   });
 
-  it('lists share channels with Copy link always on and Email off', () => {
+  it('lists share channels with Copy link always on and every channel on by default', () => {
     return open().then(() => {
       expect(screen.getByRole('switch', { name: 'WhatsApp' })).toBeChecked();
-      expect(screen.getByRole('switch', { name: 'Email' })).not.toBeChecked();
+      expect(screen.getByRole('switch', { name: 'Telegram' })).toBeChecked();
+      expect(screen.getByRole('switch', { name: 'Messages (SMS)' })).toBeChecked();
+      expect(screen.getByRole('switch', { name: 'Email' })).toBeChecked();
       expect(screen.getByText('Copy link is always on')).toBeInTheDocument();
     });
   });

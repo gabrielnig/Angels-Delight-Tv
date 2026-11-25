@@ -38,11 +38,14 @@ describe('discovery settings (M45-S05, S06, S11)', () => {
     expect(parse('seo.share_text_template', '').success).toBe(false);
   });
 
-  it('share channels default to WhatsApp, Facebook and X, with Email off (R26)', () => {
-    expect(defaultSettings()['seo.share_channels']).toEqual(['whatsapp', 'facebook', 'x']);
-    expect(SHARE_CHANNELS).toEqual(['whatsapp', 'facebook', 'x', 'email']);
-    expect(parse('seo.share_channels', ['whatsapp', 'email']).success).toBe(true);
-    expect(parse('seo.share_channels', ['telegram']).success).toBe(false);
+  it('share channels default to all six places, in the order the owner asked for (D-391)', () => {
+    expect(defaultSettings()['seo.share_channels']).toEqual([
+      'whatsapp', 'facebook', 'x', 'telegram', 'email', 'sms',
+    ]);
+    expect(SHARE_CHANNELS).toEqual(['whatsapp', 'facebook', 'x', 'telegram', 'email', 'sms']);
+    expect(parse('seo.share_channels', ['telegram', 'whatsapp']).success).toBe(true);
+    expect(parse('seo.share_channels', ['sms']).success).toBe(true);
+    expect(parse('seo.share_channels', ['myspace']).success).toBe(false);
     expect(parse('seo.share_channels', ['x', 'x']).success).toBe(false);
   });
 

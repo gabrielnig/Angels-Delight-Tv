@@ -30,7 +30,9 @@ const CHANNEL_LABELS: Record<string, string> = {
   whatsapp: 'WhatsApp',
   facebook: 'Facebook',
   x: 'X',
+  telegram: 'Telegram',
   email: 'Email',
+  sms: 'Messages (SMS)',
 };
 
 const label = (key: SettingKey) => SETTING_DEFS[key].label;

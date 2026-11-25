@@ -1,5 +1,6 @@
 import { itemCount, resolveSeriesLabels, type SeriesLabelSetting } from '@ad/shared/series-labels';
 import { Badge, Breadcrumbs, ButtonLink, ProgressBar } from '@ad/ui';
+import type { ShareChannelId } from '../share/share-links';
 import { StickyPlay } from './StickyPlay';
 import type { Thumb, TitleDetail } from '../../lib/data';
 import { itemKey, percent } from '../../lib/format';
@@ -33,7 +34,7 @@ export function TitleView({
   guest?: { signUpOpen: boolean };
   /** The signed in profile that may rate this title (adult profiles only, M44-S01). */
   rating?: RatingTarget;
-  share?: { channels: ('whatsapp' | 'facebook' | 'x' | 'email')[]; text: string };
+  share?: { channels: ShareChannelId[]; text: string };
   /** A kids profile or Kids mode: Share is hidden. */
   kids?: boolean;
   /** The title card sponsor (M48). Ignored for kids, whatever the caller passes. */

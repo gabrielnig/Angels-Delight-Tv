@@ -2149,6 +2149,7 @@ Decision: `video.preview` catches every error and records `failed` or `skipped` 
 - Why: Keeps the format spec unchanged, makes the reference lists impossible to drift, and lets every troubleshooting guide be recorded from a real screen.
 - Reversible: Yes. A Handover path could be added later by moving the files and ids with redirects.
 
+<<<<<<< Updated upstream
 ## D-389 Share metadata comes from one builder, kids only titles show the generic card, no og:video (lane L15b, M45)
 - Decision: (1) Every public route builds its metadata through `buildMetadata` in `apps/web/src/lib/seo/metadata.ts` (site values from settings, text cleaned and trimmed on word boundaries, canonical, og, twitter, robots, locale). (2) A kids only title or series, and a title whose kids only lookup fails, answers with the generic platform card (site name, site description, default share image) and noindex, instead of its own title, text and picture. (3) `og:video` tags are not emitted: media urls are signed and short lived. (4) Episodes have no page of their own (episode urls redirect to the series page), so the series page is the share target and the builder keeps a `video.episode` kind for later. (5) New settings `seo.twitter_handle`, `seo.share_title_overlay`, `seo.share_play_badge`, all configurable in the Discovery tab.
 - Options: keep real metadata on kids only titles and only add noindex (leaks the title to chat apps); emit og:video with a public stream url (breaks signing); add a per episode page (new route and canonical rules for no gain).
@@ -2160,3 +2161,11 @@ Decision: `video.preview` catches every error and records `failed` or `skipped` 
 - Options: a disk or object store cache (more moving parts, needs cleanup); keep the 302 fallback (WhatsApp and some crawlers do not follow it); resize below 1200 by 630 to fit the limit (breaks declared og:image dimensions).
 - Why: Share links are public disclosures and chat apps are strict about speed, redirects and size. Memory is enough because Cloudflare and the chat apps cache the immutable url after the first fetch.
 - Reversible: Yes. The store is one Map in `og-handler.ts`.
+=======
+## D-391 Share opens our own sheet with eight places, the shared link is the clean canonical address, and Kids profiles get no Share (lane L15a)
+
+Decision: (1) Tapping Share always opens the platform's sheet (bottom sheet under 600 px, popover from 600 px). The device share menu is one target in it, called More, shown only when the device has one. (2) Targets: Copy link, WhatsApp, Facebook, X, Telegram, Email, Messages (SMS), More. The existing site setting `seo.share_channels` is extended with `telegram` and `sms` and its default now lists all six channels in that order, so the Email default off of R26 is replaced because the owner asked for every place. Copy link and More are not settings. (3) The shared link is `/title/<slug>` or `/series/<slug>` on `APP_ORIGIN`, built by one helper, never the address bar, never signed, never tagged with `?s=`; channels are counted by one anonymous `share` click event instead. The watch page may add `?t=<seconds>` when the viewer switches on Start at. (4) Share text is cut at 200 characters (title 120 for an email subject). (5) Kids profiles and Kids mode: Share is hidden everywhere. (6) Brand marks are drawn as `currentColor` SVG glyphs on a neutral round tile, so no brand colour is hardcoded and the sheet follows the theme.
+Options: keep jumping straight to the system sheet (Netflix mobile behaviour); keep `?s=` tags; show Share on kids profiles with only Copy link; brand coloured tiles.
+Why: the owner asked that every place to share be visible and that it look like a modern app sheet. A free platform cannot rely on a good system sheet, and a tag in a copied link leaks into reshares. Kids profiles keep the no external links rule.
+Reversible: yes. Everything is a setting or a component choice; no migration.
+>>>>>>> Stashed changes

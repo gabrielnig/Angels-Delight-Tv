@@ -25,7 +25,7 @@ describe('Discovery tab switches (S137, R30)', () => {
     );
     const names = screen.getAllByRole('switch').map((el) => el.getAttribute('aria-label'));
     expect(names).toEqual(
-      expect.arrayContaining(['WhatsApp', 'Facebook', 'X', 'Email', 'Storage notice']),
+      expect.arrayContaining(['WhatsApp', 'Facebook', 'X', 'Telegram', 'Email', 'Messages (SMS)', 'Storage notice']),
     );
     expect(names.some((n) => /search engines/i.test(n ?? ''))).toBe(true);
     for (const el of screen.getAllByRole('switch')) {
