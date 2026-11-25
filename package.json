@@ -22,6 +22,7 @@
     "db:seed:admin": "pnpm --filter @ad/auth run seed:admin",
     "db:seed:demo": "pnpm --filter @ad/catalog run seed:demo",
     "kb:record": "tsx scripts/kb-recorder/record.ts",
+    "kb:stack": "scripts/kb-stack.sh",
     "brand:generate": "tsx scripts/generate-brand-kit.ts",
     "perf:budget": "tsx scripts/perf-budget.ts",
     "launch:apply": "tsx packages/launch/src/cli/apply.ts",

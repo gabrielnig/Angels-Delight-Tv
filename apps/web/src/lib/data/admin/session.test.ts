@@ -53,3 +53,18 @@ describe('fixture admin sign in', () => {
     expect(auth.actorFor('acc_missing')).toBeNull();
   });
 });
+
+describe('demo names (KB_DEMO)', () => {
+  it('shows clearly fake names for the recording stack and the normal names otherwise', () => {
+    const auth = createFixtureAuth({ now: () => 0 });
+    expect(auth.actorFor('acc_ngozi')?.name).toBe('Ngozi Eze');
+    process.env.KB_DEMO = 'on';
+    try {
+      expect(auth.actorFor('acc_ngozi')?.name).toBe('Demo Editor');
+      expect(auth.actorFor('acc_chiamaka')?.name).toBe('Demo Admin');
+      expect(auth.actorFor('acc_arkdev')?.name).toBe('Demo Owner');
+    } finally {
+      delete process.env.KB_DEMO;
+    }
+  });
+});

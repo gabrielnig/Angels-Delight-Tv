@@ -79,7 +79,7 @@ export async function playEpisode(
     await context.addInitScript({ content: overlayInitScript({ touch: profile.mobile }) });
     // The storage notice would sit on top of every screen. Mark it as already dismissed (key from lib/consent/notice.ts).
     await context.addInitScript({
-      content: `try { localStorage.setItem('ad:notice:v1', JSON.stringify({ version: 1, at: Date.now() })); } catch (e) {}`,
+      content: `try { localStorage.setItem('ad:notice:v1', JSON.stringify({ version: 1, at: ${(o.clockMs ?? Date.now()) - 86_400_000} })); } catch (e) {}`,
     });
     if (o.clockMs !== undefined) await context.clock.setFixedTime(o.clockMs);
     const page = await context.newPage();

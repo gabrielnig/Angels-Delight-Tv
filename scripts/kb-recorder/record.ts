@@ -10,6 +10,8 @@ import { burnCaptions } from './burn';
 import { buildCues, toAss, toVtt, validateCues } from './captions';
 import { validateEpisode } from './episode';
 import { PROFILES, type Profile } from './profiles';
+import { resetDemo } from './demo/client';
+import { assertAllowedOrigin } from './demo/origin-guard';
 import { loadEpisode } from './registry';
 import { playEpisode } from './runner';
 
@@ -20,10 +22,17 @@ const { values } = parseArgs({
     out: { type: 'string', default: '.kb-out' },
     'base-url': { type: 'string', default: process.env.KB_BASE_URL ?? 'http://localhost:3113' },
     'no-warm': { type: 'boolean', default: false },
+    'no-reset': { type: 'boolean', default: false },
     pace: { type: 'string', default: '1' },
     run: { type: 'string', default: 'run1' },
   },
 });
+
+/** Resets the demo data so one episode never sees what another saved. Returns the pinned browser clock. */
+async function freshDemo(baseURL: string): Promise<number | undefined> {
+  if (values['no-reset']) return undefined;
+  return (await resetDemo(baseURL)).now;
+}
 
 async function main() {
   if (!values.episode) throw new Error('Pass --episode <id>');
@@ -31,6 +40,7 @@ async function main() {
   const problems = validateEpisode(episode);
   if (problems.length) throw new Error(`Episode ${episode.id}: ${problems.join('; ')}`);
   const baseURL = values['base-url']!;
+  assertAllowedOrigin(baseURL);
   const pace = Number(values.pace);
   const profiles = values.profile!.split(',').map((n) => {
     const p = PROFILES[n.trim() as Profile['name']];
@@ -44,12 +54,15 @@ async function main() {
     const started = Date.now();
     if (!values['no-warm']) {
       // Next dev compiles each route on first visit, which shows up as blank frames. One silent pass warms them.
-      await playEpisode(episode, profile, { baseURL, shotsDir: null, pace: 0.2 });
+      const clockMs = await freshDemo(baseURL);
+      await playEpisode(episode, profile, { baseURL, shotsDir: null, pace: 0.2, clockMs });
     }
     const warmMs = Date.now() - started;
     const recStart = Date.now();
+    const clockMs = await freshDemo(baseURL);
     const { timings, totalMs, videoPath } = await playEpisode(episode, profile, {
       baseURL,
+      clockMs,
       videoDir: join(dir, 'tmp'),
       shotsDir: join(dir, 'shots'),
       pace,

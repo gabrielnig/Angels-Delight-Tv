@@ -30,3 +30,5 @@ sbom.cdx.json
 
 # local stack from the launch lane runs
 .m1-storage/
+.env.kb-real
+.kb-storage/
