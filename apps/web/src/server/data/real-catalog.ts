@@ -421,6 +421,7 @@ function toSeriesDetail(detail: SeriesDetailDto): SeriesDetail {
   };
   const seasons = detail.seasons.map((season) => ({
     number: season.number,
+    title: season.title,
     episodes: season.episodes.map<Episode>((e: EpisodeDto) => ({
       video: videoCardToSummary(e.video, series.categoryName, series.categorySlug),
       number: e.video.episode?.number ?? 0,

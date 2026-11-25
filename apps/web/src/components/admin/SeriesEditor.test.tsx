@@ -31,6 +31,7 @@ const detail = (rank: number | null, ranks: Array<number | null>): SeriesDetail 
     published: false,
     maturityRank: rank,
   },
+  groups: [{ number: 1, title: null }],
   episodes: ranks.map((r, i) => episode(`e${i}`, r)),
   available: [],
 });
@@ -145,5 +146,70 @@ describe('SeriesEditor names (M51)', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Save names' }));
     expect((await screen.findAllByText('Enter this word')).length).toBeGreaterThan(0);
     expect(update).not.toHaveBeenCalled();
+  });
+});
+
+describe('SeriesEditor groups, order and warnings (M51-S05)', () => {
+  const numbered = (items: Array<[string, number, number]>, groups = [{ number: 1, title: null as string | null }]): SeriesDetail => {
+    const d = detail(2, []);
+    return {
+      ...d,
+      series: { ...d.series, labels: { preset: 'book_chapter' } },
+      groups,
+      episodes: items.map(([id, season, number]) =>
+        videoStub({ id, title: `Talk ${id}`, seriesId: 's1', seasonNumber: season, episodeNumber: number, maturityRank: 2 }),
+      ),
+    } as SeriesDetail;
+  };
+  function setupWith(d: SeriesDetail) {
+    const update = vi.fn(async () => ({ ok: true as const }));
+    const moveEpisode = vi.fn(async () => ({ ok: true as const }));
+    const renameGroup = vi.fn(async () => ({ ok: true as const }));
+    render(
+      <ToastProvider>
+        <SeriesEditor
+          detail={d}
+          canManage
+          actions={{ update, remove: vi.fn(), setEpisode: vi.fn(), moveEpisode, renameGroup } as never}
+        />
+      </ToastProvider>,
+    );
+    return { moveEpisode, renameGroup };
+  }
+
+  it('lists items under their group heading', () => {
+    setupWith(numbered([['a', 1, 1], ['b', 2, 1]], [{ number: 1, title: 'Genesis' }, { number: 2, title: null }]));
+    expect(screen.getByRole('heading', { name: 'Genesis' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Book 2' })).toBeInTheDocument();
+  });
+
+  it('moves an item down and up with buttons, and disables the ends', async () => {
+    const { moveEpisode } = setupWith(numbered([['a', 1, 1], ['b', 1, 2]]));
+    expect(screen.getByRole('button', { name: 'Move Talk a up' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Move Talk b down' })).toBeDisabled();
+    await userEvent.click(screen.getByRole('button', { name: 'Move Talk a down' }));
+    expect(moveEpisode).toHaveBeenCalledWith('s1', 'a', 'down');
+    await userEvent.click(screen.getByRole('button', { name: 'Move Talk b up' }));
+    expect(moveEpisode).toHaveBeenCalledWith('s1', 'b', 'up');
+  });
+
+  it('renames a group', async () => {
+    const { renameGroup } = setupWith(numbered([['a', 1, 1]]));
+    const field = screen.getByLabelText('Title for Book 1');
+    await userEvent.type(field, 'Genesis');
+    await userEvent.click(screen.getByRole('button', { name: 'Save title for Book 1' }));
+    expect(renameGroup).toHaveBeenCalledWith('s1', 1, 'Genesis');
+  });
+
+  it('warns once about a gap and once about a duplicate in the owner words', () => {
+    setupWith(numbered([['a', 1, 1], ['b', 1, 3], ['c', 2, 1], ['d', 2, 1]], [{ number: 1, title: null }, { number: 2, title: null }]));
+    const alert = screen.getByRole('alert');
+    expect(within(alert).getByText('Book 1 skips from Chapter 1 to Chapter 3.')).toBeInTheDocument();
+    expect(within(alert).getByText('Book 2 uses Chapter 1 more than once.')).toBeInTheDocument();
+  });
+
+  it('shows no warning for a clean series', () => {
+    setupWith(numbered([['a', 1, 1], ['b', 1, 2]]));
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
   });
 });

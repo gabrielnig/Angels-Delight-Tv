@@ -343,3 +343,31 @@ describe('VideosList', () => {
     expect(replace).toHaveBeenCalledWith('/admin/videos?status=failed');
   });
 });
+
+describe('VideosList Add to series (M51-S04)', () => {
+  const bundle = () => ({
+    series: [{ id: 's1', title: 'Genesis', labels: { preset: 'book_chapter' as const } }],
+    existing: vi.fn(async () => []),
+    setEpisode: vi.fn(async () => ({ ok: true as const })),
+    createSeries: vi.fn(async () => ({ ok: true as const, id: 'n' })),
+  });
+
+  it('is offered with a bundle and opens the dialog for the picked videos', async () => {
+    setup({ bundle: bundle() });
+    await pick(2);
+    await userEvent.click(screen.getByRole('button', { name: 'Add to series' }));
+    expect(await screen.findByRole('dialog', { name: 'Add 2 videos to a series' })).toBeInTheDocument();
+  });
+
+  it('is not offered without a bundle', async () => {
+    setup();
+    await pick(1);
+    expect(screen.queryByRole('button', { name: 'Add to series' })).not.toBeInTheDocument();
+  });
+
+  it('says why it is off for a role that cannot manage series', async () => {
+    setup({ bundle: bundle(), role: 'viewer' as never });
+    await pick(1);
+    expect(screen.getByRole('button', { name: 'Add to series' })).toHaveAttribute('aria-disabled', 'true');
+  });
+});

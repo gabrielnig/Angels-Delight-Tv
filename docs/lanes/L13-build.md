@@ -5,6 +5,8 @@ Plan: `docs/plan/v2/L13-series.md`. Worktree `/home/claude/wt2/L13-build`. Decis
 ## Merged
 - Slice 1 (label model): `packages/shared/src/series-labels.ts` (presets, `resolveSeriesLabels`, `effectiveSeriesLabels`, `validateSeriesLabels`, and the phrase helpers `groupName`, `itemName`, `itemCode`, `positionCode`, `positionLong`, `groupSummary`, `groupCount`, `itemCount`, `itemInSentence`, `groupInSentence`), catalog copy in `messages/l13-messages.ts`, subpath `@ad/shared/series-labels` for client bundles. Setting `content.series_labels` in `packages/theme/src/settings-registry.ts`. Migration `0059_series_label_overrides.sql` (`series.label_overrides jsonb`). `@ad/catalog` carries `labels` on `EpisodePosition` and on series `TitleCard`. Admin: Site settings, Series names tab (`SeriesNamesTab`, `SeriesNamesFields`), series editor Names section and worded headings, `updateAdminSeries({ labels })` with audit action `series.labels`. Viewer: `EpisodeList`, series page, `PublicSeries`, `SeriesCard` (props `itemsText` and `groupsText`), Continue Next code, title page line, primary button, activity and progress labels, marker siblings, upload and video editor fields. Scan test `scripts/series-copy-scan.test.ts` with an allowlist (schema names, fixtures, the CSV import vocabulary, the preset catalog).
 
+- Slice 2 (bundling): `apps/web/src/lib/series-bundle.ts` (`planBundle`, `findNumberIssues`, `describeIssue`), `AddToSeriesDialog`, Add to series in `VideosList` (prop `bundle`), `createSeriesForBundleAction`, `seriesNumbersAction`, `moveAdminEpisode`, `renameAdminGroup`, `AdminSeriesDetail.groups`, `cleanSeriesPatch` (the update action now forwards rating, apply to all and names). D-372.
+
 ## How to run scoped tests
 - `pnpm vitest run packages/shared/src/series-labels.test.ts packages/theme/src/settings-series-labels.test.ts scripts/series-copy-scan.test.ts`
 - `pnpm vitest run apps/web/src/components/admin/SeriesEditor.test.tsx apps/web/src/components/admin/site apps/web/src/components/title`
@@ -15,4 +17,4 @@ Plan: `docs/plan/v2/L13-series.md`. Worktree `/home/claude/wt2/L13-build`. Decis
 - `ErrorPage`, `error-pages.r39`, `consent/inventory`, `admin/tables` (AnalyticsView) and the analytics export route tests failed before the lane started.
 
 ## Left
-- Slice 2: bulk Add to series, editor reorder and group moves. Slice 3: viewer series page polish. Slice 4: docs (stories, MODULES, SCREEN-ARCHITECTURE, DATA-MODEL, CLIENT-INPUTS).
+- Slice 3: viewer series page polish. Slice 4: docs (stories, MODULES, SCREEN-ARCHITECTURE, DATA-MODEL, CLIENT-INPUTS).

@@ -2045,3 +2045,9 @@ Decision: `video.preview` catches every error and records `failed` or `skipped` 
 - Options: Ship fully resolved English words with every card (bigger payload, not translatable); read the setting in every client component through a context (a second source of truth).
 - Why: The setting is the smallest payload that lets each caller choose the language. Reading it with the card removes a second lookup and any chance of a card and a page disagreeing.
 - Reversible: Yes.
+
+## D-372 Bundling videos is a dialog that saves one video at a time, with a preview first and undo afterwards
+- Decision: The Videos list bulk bar gets Add to series (editors and above, page selections only). A dialog chooses or creates a series, the group and the start number, and how to number (order picked, by title with numbers read as numbers, or by upload date oldest first), then shows a preview table in the series' own words. Saving calls the existing `setEpisode` per video in that order and stops at the first failure, saying how many were added. A clash with a number already used blocks Save and names the fix. Undo takes every added video out of the series again. In the series editor, Up and Down buttons swap an item's number with its neighbour in one transaction (`moveAdminEpisode`, audit `series.episode_move`), group titles are saved with `renameAdminGroup` (audit `series.group_rename`), and one warning per gap or duplicate shows above the list. The series editor save now forwards rating and names (the action dropped them).
+- Options: A new bulk action type in the shared bulk core with chunking and its own undo token; or a dialog over the existing per item command.
+- Why: The bulk core is built for idempotent field changes in chunks. Numbering depends on order, so it must run in sequence and the preview already shows the result. The per item command keeps the clash check and the audit entry in one place.
+- Reversible: Yes. No schema change beyond migration 0059.

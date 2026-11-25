@@ -7,6 +7,7 @@ import {
   groupWord,
   itemCount,
   itemInSentence,
+  groupName,
   itemWord,
   resolveSeriesLabels,
   validateSeriesLabels,
@@ -24,6 +25,7 @@ import { SelectField, Switch, TextArea, TextField } from './fields';
 import { EmptyState } from './states';
 import { useCommand } from './useCommand';
 import { SeriesNamesFields } from './site/SeriesNamesFields';
+import { describeIssue, findNumberIssues } from '@/lib/series-bundle';
 
 export interface SeriesActions {
   update(id: string, patch: SeriesPatch): Promise<CommandResult>;
@@ -34,6 +36,10 @@ export interface SeriesActions {
     season: number | null,
     episode: number | null,
   ): Promise<CommandResult>;
+  /** Swaps the item's number with its neighbour in the same group. */
+  moveEpisode?(seriesId: string, videoId: string, direction: 'up' | 'down'): Promise<CommandResult>;
+  /** Gives a group its own title. A blank title goes back to the numbered name. */
+  renameGroup?(seriesId: string, group: number, title: string): Promise<CommandResult>;
 }
 
 export function SeriesEditor({
@@ -50,8 +56,20 @@ export function SeriesEditor({
 }) {
   const router = useRouter();
   const { run, busy } = useCommand();
-  const { series, episodes, available } = detail;
+  const { series, episodes, available, groups } = detail;
   const words = resolveSeriesLabels(series.labels, null);
+  const issues = findNumberIssues(
+    episodes.map((v) => ({ group: v.seasonNumber ?? 1, number: v.episodeNumber ?? 0 })),
+  );
+  const sections = [...new Set(episodes.map((v) => v.seasonNumber ?? 1))]
+    .sort((a, b) => a - b)
+    .map((number) => ({
+      number,
+      title: groups.find((g) => g.number === number)?.title ?? null,
+      items: episodes
+        .filter((v) => (v.seasonNumber ?? 1) === number)
+        .sort((a, b) => (a.episodeNumber ?? 0) - (b.episodeNumber ?? 0)),
+    }));
   const some = itemInSentence(words, 2);
   const one = itemInSentence(words, 1);
   const [title, setTitle] = useState(series.title);
@@ -173,25 +191,65 @@ export function SeriesEditor({
             icon="video"
           />
         ) : (
-          <ol className="adm-list">
-            {episodes.map((v) => (
-              <EpisodeRow
-                key={v.id}
-                words={words}
-                title={v.title}
-                published={v.publishState === 'published'}
-                season={v.seasonNumber}
-                episode={v.episodeNumber}
-                disabled={!canManage || busy}
-                onSave={(s, e) =>
-                  run(() => actions.setEpisode(v.id, series.id, s, e), 'Numbers saved.')
-                }
-                onRemove={() =>
-                  run(() => actions.setEpisode(v.id, null, null, null), 'Removed from the series.')
-                }
-              />
+          <>
+            {issues.length > 0 ? (
+              <div className="adm-banner adm-banner--warning" role="alert">
+                <strong>Check the numbers</strong>
+                <ul>
+                  {issues.map((issue) => (
+                    <li key={`${issue.group}-${issue.kind}-${issue.number}`}>
+                      {describeIssue(issue, words)}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ) : null}
+            {sections.map((section) => (
+              <div key={section.number} className="adm-stack">
+                <h3 className="adm-h3">{groupName(words, section.number, section.title)}</h3>
+                {actions.renameGroup ? (
+                  <GroupTitle
+                    label={groupName(words, section.number)}
+                    initial={section.title ?? ''}
+                    disabled={!canManage || busy}
+                    onSave={(text) =>
+                      run(
+                        () => actions.renameGroup!(series.id, section.number, text),
+                        'Title saved.',
+                      )
+                    }
+                  />
+                ) : null}
+                <ol className="adm-list">
+                  {section.items.map((v, index) => (
+                    <EpisodeRow
+                      key={v.id}
+                      words={words}
+                      title={v.title}
+                      published={v.publishState === 'published'}
+                      season={v.seasonNumber}
+                      episode={v.episodeNumber}
+                      disabled={!canManage || busy}
+                      canMoveUp={Boolean(actions.moveEpisode) && index > 0}
+                      canMoveDown={Boolean(actions.moveEpisode) && index < section.items.length - 1}
+                      onMove={(direction) =>
+                        run(() => actions.moveEpisode!(series.id, v.id, direction), 'Order saved.')
+                      }
+                      onSave={(s, e) =>
+                        run(() => actions.setEpisode(v.id, series.id, s, e), 'Numbers saved.')
+                      }
+                      onRemove={() =>
+                        run(
+                          () => actions.setEpisode(v.id, null, null, null),
+                          'Removed from the series.',
+                        )
+                      }
+                    />
+                  ))}
+                </ol>
+              </div>
             ))}
-          </ol>
+          </>
         )}
         <div className="adm-row">
           <SelectField
@@ -281,6 +339,9 @@ function EpisodeRow({
   season,
   episode,
   disabled,
+  canMoveUp,
+  canMoveDown,
+  onMove,
   onSave,
   onRemove,
 }: {
@@ -290,6 +351,9 @@ function EpisodeRow({
   season: number | null;
   episode: number | null;
   disabled: boolean;
+  canMoveUp: boolean;
+  canMoveDown: boolean;
+  onMove: (direction: 'up' | 'down') => void;
   onSave: (s: number | null, e: number | null) => void;
   onRemove: () => void;
 }) {
@@ -321,6 +385,22 @@ function EpisodeRow({
           onChange={(x) => setE(x.target.value)}
           style={{ width: '5rem' }}
         />
+        <Button
+          variant="secondary"
+          disabled={disabled || !canMoveUp}
+          aria-label={`Move ${title} up`}
+          onClick={() => onMove('up')}
+        >
+          Up
+        </Button>
+        <Button
+          variant="secondary"
+          disabled={disabled || !canMoveDown}
+          aria-label={`Move ${title} down`}
+          onClick={() => onMove('down')}
+        >
+          Down
+        </Button>
         <Button
           disabled={disabled}
           aria-label={`Save numbers for ${title}`}
@@ -425,5 +505,38 @@ function SeriesNamesSection({
         </Button>
       </div>
     </section>
+  );
+}
+
+function GroupTitle({
+  label,
+  initial,
+  disabled,
+  onSave,
+}: {
+  label: string;
+  initial: string;
+  disabled: boolean;
+  onSave: (title: string) => void;
+}) {
+  const [text, setText] = useState(initial);
+  return (
+    <div className="adm-row">
+      <TextField
+        label={`Title for ${label}`}
+        value={text}
+        maxLength={60}
+        disabled={disabled}
+        onChange={(e) => setText(e.target.value)}
+      />
+      <Button
+        variant="secondary"
+        disabled={disabled || text === initial}
+        aria-label={`Save title for ${label}`}
+        onClick={() => onSave(text)}
+      >
+        Save title
+      </Button>
+    </div>
   );
 }

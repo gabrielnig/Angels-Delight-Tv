@@ -8,6 +8,9 @@ import {
 import type { AdminStore as Store } from './store';
 import type { CommandResult } from './video-commands';
 
+/** A command that made something and says which id it got (M51-S04). */
+export type CreatedResult = { ok: true; id: string } | { ok: false; error: string };
+
 const fail = (error: string): CommandResult => ({ ok: false, error });
 const OK: CommandResult = { ok: true };
 const clean = (value: string) => value.trim().replace(/\s+/g, ' ');
@@ -100,18 +103,19 @@ export interface SeriesPatch {
 export function createSeries(
   s: Store,
   input: { title: string; description: string },
-): CommandResult {
+): CreatedResult {
   const title = clean(input.title);
-  if (!title) return fail('Give the series a title.');
-  if (title.length > 80) return fail('Use 80 characters or fewer.');
+  if (!title) return { ok: false, error: 'Give the series a title.' };
+  if (title.length > 80) return { ok: false, error: 'Use 80 characters or fewer.' };
+  const id = `ser_${Date.now().toString(36)}${s.series.length}`;
   s.series.push({
-    id: `ser_${Date.now().toString(36)}${s.series.length}`,
+    id,
     title,
     description: input.description.trim().slice(0, 500),
     posterId: null,
     published: false,
   });
-  return OK;
+  return { ok: true, id };
 }
 
 export function updateSeries(s: Store, id: string, patch: SeriesPatch): CommandResult {
@@ -150,6 +154,33 @@ function publishRefusal(override: SeriesLabelSetting | null): string {
   const words = resolveSeriesLabels(effectiveSeriesLabels(null, override), null);
   const item = itemWord(words, 1);
   return `Publish at least one ${words.typed ? item : item.toLowerCase()} before publishing the series.`;
+}
+
+export function moveEpisode(s: Store, seriesId: string, videoId: string, direction: 'up' | 'down'): CommandResult {
+  const own = s.videos.find((v) => v.id === videoId && v.seriesId === seriesId && v.deletedAt === null);
+  if (!own) return fail('That video is not in this series.');
+  const group = s.videos
+    .filter((v) => v.seriesId === seriesId && v.deletedAt === null && (v.seasonNumber ?? 1) === (own.seasonNumber ?? 1))
+    .sort((a, b) => (a.episodeNumber ?? 0) - (b.episodeNumber ?? 0));
+  const at = group.indexOf(own);
+  const other = group[direction === 'up' ? at - 1 : at + 1];
+  if (!other) return fail(direction === 'up' ? 'It is already first in its group.' : 'It is already last in its group.');
+  [own.episodeNumber, other.episodeNumber] = [other.episodeNumber, own.episodeNumber];
+  return OK;
+}
+
+export function renameGroup(s: Store, seriesId: string, group: number, rawTitle: string): CommandResult {
+  const series = s.series.find((x) => x.id === seriesId);
+  if (!series) return fail('Series not found.');
+  const title = clean(rawTitle);
+  if (title.length > 60) return fail('Use 60 characters or fewer.');
+  if (!s.videos.some((v) => v.seriesId === seriesId && (v.seasonNumber ?? 1) === group && v.deletedAt === null))
+    return fail('That group does not exist yet.');
+  const titles = { ...(series.groupTitles ?? {}) };
+  if (title === '') delete titles[group];
+  else titles[group] = title;
+  series.groupTitles = titles;
+  return OK;
 }
 
 export function deleteSeries(s: Store, id: string): CommandResult {

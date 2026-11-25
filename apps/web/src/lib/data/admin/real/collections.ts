@@ -10,6 +10,8 @@ import {
   moveAdminCategory,
   renameAdminCategory,
   setAdminCategoryHidden,
+  moveAdminEpisode,
+  renameAdminGroup,
   setAdminEpisode,
   updateAdminSeries,
 } from '@ad/catalog';
@@ -53,9 +55,18 @@ export const realCollectionService: CollectionService = {
     void _count;
     return {
       series,
+      groups: detail.groups,
       episodes: await toRecords(actor, detail.episodes),
       available: await toRecords(actor, detail.available),
     };
+  },
+  async moveEpisode(actor, seriesId, videoId, direction) {
+    need(actor, 'series.manage');
+    return moveAdminEpisode(await context(), catalogActor(actor), seriesId, videoId, direction);
+  },
+  async renameGroup(actor, seriesId, group, title) {
+    need(actor, 'series.manage');
+    return renameAdminGroup(await context(), catalogActor(actor), seriesId, group, title);
   },
   async createSeries(actor, input) {
     need(actor, 'series.manage');

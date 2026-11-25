@@ -66,6 +66,8 @@ export interface AdminVideo {
 }
 
 export type CommandResult = { ok: true } | { ok: false; error: string };
+/** A command that made something and says which id it got (M51-S04). */
+export type CreatedResult = { ok: true; id: string } | { ok: false; error: string };
 export const OK: CommandResult = { ok: true };
 export const fail = (error: string): CommandResult => ({ ok: false, error });
 
