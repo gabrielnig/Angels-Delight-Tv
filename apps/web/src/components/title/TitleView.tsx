@@ -1,5 +1,5 @@
 import { itemCount, resolveSeriesLabels, type SeriesLabelSetting } from '@ad/shared/series-labels';
-import { Badge, Breadcrumbs, ButtonLink, ProgressBar } from '@ad/ui';
+import { Badge, Breadcrumbs, ButtonLink, formatClock, ProgressBar } from '@ad/ui';
 import type { ShareTargetId } from '../share/share-targets';
 import { StickyPlay } from './StickyPlay';
 import type { Thumb, TitleDetail } from '../../lib/data';
@@ -27,6 +27,7 @@ export function TitleView({
   share,
   kids,
   sponsor,
+  startAt,
 }: {
   detail: TitleDetail;
   inList: boolean;
@@ -39,12 +40,19 @@ export function TitleView({
   kids?: boolean;
   /** The title card sponsor (M48). Ignored for kids, whatever the caller passes. */
   sponsor?: SelectedSponsor | null;
+  /** A shared `?t=` time. The page only hands it to the watch route, it never plays here (L15a). */
+  startAt?: number | null;
 }) {
   const { video, progress, play } = detail;
   const started = play.label === 'resume' && progress;
-  const watchHref = `/watch/${video.id}`;
-  const primary = primaryAction({ label: play.label, startSeconds: play.startSeconds, watchHref });
-  const primaryText = titlePrimaryText(
+  const baseHref = `/watch/${video.id}`;
+  const shared = startAt && startAt > 0 && play.label === 'play' ? Math.floor(startAt) : 0;
+  const watchHref = shared ? `${baseHref}?t=${shared}` : baseHref;
+  const plain = primaryAction({ label: play.label, startSeconds: play.startSeconds, watchHref: baseHref });
+  const primary = shared ? { ...plain, href: watchHref } : plain;
+  const primaryText = shared
+    ? `Play from ${formatClock(shared)}`
+    : titlePrimaryText(
     play.label,
     progress?.positionSeconds ?? play.startSeconds,
     progress?.durationSeconds ?? video.durationSeconds,

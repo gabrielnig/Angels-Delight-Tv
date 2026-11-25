@@ -13,6 +13,7 @@ import { shareOf, shareTextOf } from '../../../../lib/seo/share-overrides';
 import { shareImageFor } from '../../../../lib/seo/share-image';
 import { titlePageJsonLd } from '../../../../lib/seo/page-jsonld';
 import { shareConfig, siteOrigin, titleIndexable } from '../../../../server/seo/page-seo';
+import { parseStartAt } from '../../../../features/player/start-at';
 import { getRootTheme } from '../../../../lib/theme/root';
 import { itemKey } from '../../../../lib/format';
 import { getSite } from '../../../../lib/data';
@@ -20,6 +21,7 @@ import { getViewerOrGuest } from '../../../../lib/session';
 import { guestPlayEnabled } from '../../../../server/guest/guest-settings';
 
 type Params = { params: Promise<{ slug: string }> };
+type PageProps = Params & { searchParams?: Promise<{ t?: string | string[] }> };
 
 /** An unpublished, removed or unknown title is never indexed (M45-S02, M45-S14). */
 const NOT_INDEXED = { index: false, follow: false } as const;
@@ -48,8 +50,9 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   });
 }
 
-export default async function TitlePage({ params }: Params) {
+export default async function TitlePage({ params, searchParams }: PageProps) {
   const { slug } = await params;
+  const startAt = parseStartAt((await searchParams)?.t);
   const viewer = await getViewerOrGuest(`/title/${slug}`);
   // With guest play switched off a visitor sees the preview and a way in (M07-S06).
   if (viewer.kind === 'guest' && !(await guestPlayEnabled())) {
@@ -122,6 +125,7 @@ export default async function TitlePage({ params }: Params) {
           share={indexable ? share : null}
           kids={kids}
           sponsor={sponsor}
+          startAt={startAt}
         />
       </>
     );
@@ -137,6 +141,7 @@ export default async function TitlePage({ params }: Params) {
         share={indexable ? share : null}
         kids={kids}
         sponsor={sponsor}
+        startAt={startAt}
       />
     </>
   );

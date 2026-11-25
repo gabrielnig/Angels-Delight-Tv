@@ -78,6 +78,23 @@ describe('title page for a guest', () => {
     mocks.myListIds.mockClear();
   });
 
+  it('hands a valid ?t= to the watch route and ignores a bad one (L15a)', async () => {
+    const render1 = async (t: string) =>
+      render(
+        <ToastProvider>
+          {await TitlePage({
+            params: Promise.resolve({ slug: 'rain' }),
+            searchParams: Promise.resolve({ t }),
+          })}
+        </ToastProvider>,
+      );
+    const good = await render1('83');
+    expect(screen.getAllByRole('link', { name: 'Play from 1:23' })[0]).toHaveAttribute('href', '/watch/v1?t=83');
+    good.unmount();
+    await render1('abc');
+    expect(screen.getAllByRole('link', { name: 'Play' })[0]).toHaveAttribute('href', '/watch/v1');
+  });
+
   it('shows Play and a My List button that opens the dialog, without reading a list', async () => {
     await page();
     for (const link of screen.getAllByRole('link', { name: 'Play' }))
