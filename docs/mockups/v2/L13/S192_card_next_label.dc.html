@@ -1,0 +1,459 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S192 Card and hover card with Next label desktop</title>
+<style>
+
+
+:root {
+  
+  --color-bg: #F5F5F2;
+  --color-surface: #FFFFFF;
+  --color-ink: #1A1C22;
+  --color-muted: #5B606B;
+  --color-border: #DEDDD6;
+  --color-primary: #1F6FB5;       
+  --color-accent: #FFC93C;        
+
+  
+  --color-on-primary: #FFFFFF;
+  --color-on-accent: #1A1C22;
+  --color-primary-hover: #1B5F9C;
+  --color-primary-active: #174F83;
+  --color-primary-tint: #E3F1FF;
+  --color-accent-hover: #F2B84B;
+  --color-accent-active: #E0A63A;
+  --color-border-strong: #8A8D94;  
+  --color-surface-sunken: #ECEAE3;
+  --color-focus-ring: #1F6FB5;     
+  --color-focus-ring-dark: #FFC93C;
+
+  
+  --color-success: #1E7A46;
+  --color-success-tint: #E4F4EA;
+  --color-danger: #B42318;
+  --color-danger-tint: #FDECEA;
+  --color-warning: #8A5A00;
+  --color-warning-tint: #FFF3D6;
+  --color-info: #1F6FB5;
+  --color-info-tint: #E3F1FF;
+
+  
+  --color-sidebar-bg: #17181C;
+  --color-sidebar-ink: #FFFFFF;
+  --color-sidebar-muted: #A9AEB9;
+  --color-sidebar-hover: #23252B;
+  --color-sidebar-active: #2E3138;
+  --color-sidebar-accent: #FFC93C;
+
+  
+  --color-player-bg: #0E0F13;
+  --color-player-ink: #FFFFFF;
+  --color-player-muted: #B4B8C2;
+  --color-player-rail: #6A6E78;
+  --color-player-buffer: #9CA0AA;
+  --color-player-border: #3A3D46;
+  --color-player-surface-raised: #1B1D24;
+  --color-player-switch-off: #6E7179;
+  --color-player-control-bg: rgba(14, 15, 19, 0.72);
+  --color-scrim-top: rgba(14, 15, 19, 0.85);
+  --color-scrim-bottom: rgba(14, 15, 19, 0.0);
+  --color-card-progress-rail: #3A3D46;   
+  --color-bar-disabled-bg: #3A3D46;      
+  --color-bar-disabled-ink: #C9CCD3;     
+  --color-hero-chip-bg: rgba(14, 15, 19, 0.6); 
+
+  
+  --sponsor-slot-height-compact: calc(7rem * var(--type-scale));
+  --sponsor-slot-height-wide: calc(8.5rem * var(--type-scale));
+  --sponsor-label-bg: #ECEAE3;
+  --sponsor-label-ink: #1A1C22;
+  --sponsor-label-size: var(--text-caption);
+  --sponsor-label-height: calc(1.5rem * var(--type-scale));
+
+  
+  --scrim-rgb: 14, 15, 19;
+  --scrim-hero-start: 0.85;
+  --scrim-hero-mid: 0.45;
+  --scrim-hero-end: 0;
+  --scrim-hero-hold-desktop: 40%;
+  --scrim-hero-mid-desktop: 60%;
+  --scrim-hero-end-desktop: 100%;
+  --scrim-hero-mid-m: 0.7;   
+  --scrim-hero-hold-mobile: 72%;
+  --scrim-hero-mid-mobile: 82%;
+  --scrim-hero-end-mobile: 96%;
+  --hero-fade: var(--motion-slow);
+  --hero-interval: 10s;  
+  --nav-scrim-hold: 70%;
+
+  
+  --color-tile-sky: #E3F1FF;
+  --color-tile-mint: #DDF3EA;
+  --color-tile-lemon: #FFF3C9;
+  --color-tile-peach: #FFE3DA;
+  --color-tile-lavender: #ECE4FF;
+
+  
+  --color-avatar-mint: #BFE3D0;
+  --color-avatar-lemon: #F7D27A;
+  --color-avatar-sky: #B9D8F5;
+  --color-avatar-peach: #F2B1AC;
+  --color-avatar-lavender: #D9CCF5;
+
+  
+  --color-danger-border: #E8B4AE;
+  --color-danger-surface: #FFFBFA;
+  --color-danger-ink: #8F1D13;      
+  --color-info-ink: #14568F;        
+  --color-success-ink: #14532D;     
+  --color-warning-ink: #5E3D00;     
+  --color-warning-strong: #B26A00;  
+  --color-switch-off: #6E7179;
+  --color-switch-locked: #C9C8C1;
+  --color-toast-ok: #7BE0A0;        
+  --color-preview-from: #2B3A55;    
+  --color-preview-to: #12263A;
+
+  
+  --font-sans: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-display: "Space Grotesk", var(--font-sans);
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+  
+  --type-scale: 1;
+
+  --text-micro: calc(0.6875rem * var(--type-scale));  
+  --text-caption: calc(0.8125rem * var(--type-scale));
+  --text-small: calc(0.875rem * var(--type-scale));   
+  --text-body: calc(1rem * var(--type-scale));        
+  
+  --text-lead: calc(1.0625rem * var(--type-scale));   
+  --text-h4: calc(1.125rem * var(--type-scale));      
+  --text-h3: calc(1.25rem * var(--type-scale));       
+  --text-h2: calc(1.5rem * var(--type-scale));        
+  --text-h1: calc(1.75rem * var(--type-scale));       
+  --text-hero: calc(clamp(2rem, 5vw, 3.5rem) * var(--type-scale)); 
+
+  --weight-regular: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+  --weight-bold: 700;
+
+  --leading-tight: 1.15;
+  --leading-snug: 1.3;
+  --leading-marks: 1.3;       
+  --leading-normal: 1.5;
+
+  
+  --space-0: 0;
+  --space-1: 0.25rem;  
+  --space-2: 0.5rem;   
+  --space-3: 0.75rem;  
+  --space-4: 1rem;     
+  --space-5: 1.25rem;  
+  --space-6: 1.5rem;   
+  --space-8: 2rem;     
+  --space-10: 2.5rem;  
+  --space-12: 3rem;    
+  --space-16: 4rem;    
+  --space-20: 5rem;    
+
+  
+  --page-gutter: clamp(1rem, 4vw, 3.5rem);  
+  --content-max: 90rem;      
+  --prose-max: 90rem;        
+  --row-gap: var(--space-8);
+  --card-gap: var(--space-2);
+  --cards-visible: 2.3;      
+  --nav-height: 3.5rem;      
+  --tabbar-height: 3.5rem;   
+  --admin-sidebar-width: 15rem;
+  --touch-target: 2.75rem;   
+  --button-height-sm: 2rem;  
+  --button-height-md: 2.5rem;
+  --button-height-lg: 3rem;
+  --button-pad-x: 1rem;
+  --icon-gap: 0.5rem;
+  --avatar-initial-120: 2.5rem;
+  --avatar-initial-160: 3.5rem;
+
+  
+  --radius-xs: 0.25rem;   
+  --radius-sm: 0.5rem;    
+  --radius-md: 0.75rem;   
+  --radius-lg: 1rem;      
+  --radius-pill: 62.4375rem;
+  --radius-circle: 50%;
+
+  
+  --shadow-0: none;
+  --shadow-1: 0 1px 2px rgba(26, 28, 34, 0.08);
+  --shadow-2: 0 4px 12px rgba(26, 28, 34, 0.12);
+  --shadow-3: 0 12px 32px rgba(26, 28, 34, 0.18);
+  --shadow-up: 0 -4px 12px rgba(26, 28, 34, 0.08);
+
+  
+  --motion-instant: 100ms;
+  --motion-fast: 150ms;
+  --motion-base: 200ms;
+  --motion-slow: 350ms;
+  --motion-spin: 700ms;
+  --motion-shimmer: 1.4s;
+  --ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-enter: cubic-bezier(0, 0, 0.2, 1);
+  --ease-exit: cubic-bezier(0.4, 0, 1, 1);
+  --motion-hover: 250ms;
+  --motion-press: 0ms;
+  --ease-out-strong: cubic-bezier(0.22, 1, 0.36, 1);
+  --hover-card-delay: 300ms;
+  --card-scale: 1.25;
+
+  
+  --z-base: 0;
+  --z-sticky: 10;
+  --z-nav: 20;
+  --z-overlay: 30;
+  --z-modal: 40;
+  --z-toast: 50;
+
+  
+  --ratio-video: 16 / 9;
+  --ratio-poster: 2 / 3;
+  --ratio-square: 1 / 1;
+  --ratio-hero: 16 / 9;
+  --ratio-hero-mobile: 4 / 5;
+}
+
+@media (min-width: 600px) {
+  :root { --cards-visible: 3.3; }
+}
+@media (min-width: 960px) {
+  :root {
+    --cards-visible: 4.3;
+    --nav-height: 4.25rem;
+    --card-gap: var(--space-3);
+    --text-lead: calc(1.125rem * var(--type-scale));  
+    --text-h4: calc(1.25rem * var(--type-scale));     
+    --text-h3: calc(1.5rem * var(--type-scale));      
+    --text-h2: calc(2rem * var(--type-scale));        
+    --text-h1: calc(2.5rem * var(--type-scale));      
+  }
+}
+@media (min-width: 1280px) {
+  :root { --cards-visible: 5.3; }
+}
+@media (min-width: 1920px) {
+  :root { --cards-visible: 6.3; --content-max: 120rem; }
+}
+
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --motion-instant: 0.01ms;
+    --motion-fast: 0.01ms;
+    --motion-base: 0.01ms;
+    --motion-slow: 0.01ms;
+    --motion-hover: 0.01ms;
+    --motion-press: 0ms;
+    --hover-card-delay: 0ms;
+  }
+}
+
+
+:root[data-saver="on"] {
+  --motion-slow: 0.01ms;
+}
+
+
+*{box-sizing:border-box}
+body{margin:0;background:var(--color-bg);font-family:var(--font-sans);font-size:var(--text-body);color:var(--color-ink);line-height:1.5}
+a{color:inherit;text-decoration:none}
+h1,h2,h3,h4{font-family:var(--font-display);margin:0;color:var(--color-ink);line-height:1.2}
+p{margin:0}
+button,input,select{font-family:inherit;font-size:inherit;color:inherit}
+ol,ul{margin:0;padding:0;list-style:none}
+svg{flex:none}
+.lbl{background:var(--color-surface-sunken);border-top:1px solid var(--color-border);border-bottom:1px solid var(--color-border);padding:var(--space-3) var(--space-12);font-size:var(--text-caption);font-weight:600;letter-spacing:.02em}
+.m .lbl{padding:var(--space-3) var(--space-4)}
+.lbl small{font-weight:400;color:var(--color-muted);margin-left:var(--space-3)}
+.m .lbl small{display:block;margin:2px 0 0}
+.pad{padding:var(--space-8) var(--space-12)}
+.m .pad{padding:var(--space-4)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:var(--space-2);min-height:48px;padding:0 var(--space-6);border-radius:var(--radius-sm);border:1px solid var(--color-primary);font-size:var(--text-body);font-weight:600;cursor:pointer;background:var(--color-primary);color:var(--color-on-primary);white-space:nowrap}
+.btn.sec{background:var(--color-surface);color:var(--color-ink);border-color:var(--color-border-strong)}
+.btn.dng{background:var(--color-danger);border-color:var(--color-danger);color:var(--color-surface)}
+.btn.sm{min-height:44px;padding:0 var(--space-4);font-size:var(--text-small)}
+.btn.full{width:100%}
+.btn.ghost{background:transparent;border-color:transparent;color:var(--color-primary);padding:0 var(--space-3)}
+.btn[disabled],.btn.dis{background:var(--color-surface-sunken);color:var(--color-muted);border-color:var(--color-border);cursor:not-allowed}
+.btn.onacc{background:var(--color-accent);border-color:var(--color-accent);color:var(--color-on-accent)}
+.ib{display:inline-flex;align-items:center;justify-content:center;width:44px;height:44px;border-radius:var(--radius-sm);border:1px solid var(--color-border-strong);background:var(--color-surface);color:var(--color-ink);cursor:pointer;padding:0}
+.ib.plain{border-color:transparent;background:transparent}
+.ib[disabled]{color:var(--color-muted);background:var(--color-surface-sunken);border-color:var(--color-border);cursor:not-allowed}
+.f,:focus-visible{outline:3px solid var(--color-focus-ring);outline-offset:2px}
+.fd{outline:3px solid var(--color-focus-ring-dark);outline-offset:2px}
+@media (forced-colors:active){.f,.fd,:focus-visible{outline-color:Highlight}}
+.inp{display:flex;align-items:center;justify-content:space-between;gap:var(--space-2);min-height:48px;border:1px solid var(--color-border-strong);border-radius:var(--radius-sm);background:var(--color-surface);padding:0 var(--space-3);width:100%}
+.inp.err{border:2px solid var(--color-danger)}
+.inp.foc{border:2px solid var(--color-primary);outline:3px solid var(--color-focus-ring);outline-offset:2px}
+.inp.dis{background:var(--color-surface-sunken);color:var(--color-muted)}
+.fld{display:flex;flex-direction:column;min-width:0}
+.fld>.l{font-size:var(--text-small);font-weight:600;margin-bottom:var(--space-2)}
+.help{font-size:var(--text-small);color:var(--color-muted);margin-top:var(--space-2);line-height:1.45}
+.errtx{font-size:var(--text-small);color:var(--color-danger);margin-top:var(--space-2);display:flex;gap:var(--space-2);align-items:flex-start;line-height:1.45;font-weight:500}
+.chip{display:inline-flex;align-items:center;gap:var(--space-1);height:24px;padding:0 var(--space-2);border-radius:var(--radius-xs);font-size:var(--text-caption);font-weight:600;white-space:nowrap}
+.chip.ok{background:var(--color-success-tint);color:var(--color-success)}
+.chip.dr{background:var(--color-surface-sunken);color:var(--color-ink)}
+.chip.wn{background:var(--color-warning-tint);color:var(--color-warning)}
+.chip.er{background:var(--color-danger-tint);color:var(--color-danger)}
+.chip.in{background:var(--color-info-tint);color:var(--color-primary-active)}
+.chip.kid{background:var(--color-accent);color:var(--color-on-accent)}
+.nxt{display:inline-flex;align-items:center;height:24px;padding:0 var(--space-2);border-radius:var(--radius-xs);background:var(--color-accent);color:var(--color-on-accent);font-size:var(--text-caption);font-weight:700;white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis}
+.banner{display:flex;align-items:flex-start;gap:var(--space-3);padding:var(--space-3) var(--space-4);border-radius:var(--radius-sm);font-size:var(--text-small);line-height:1.45;border:1px solid}
+.banner.warn{background:var(--color-warning-tint);color:var(--color-warning);border-color:var(--color-warning)}
+.banner.err{background:var(--color-danger-tint);color:var(--color-danger);border-color:var(--color-danger)}
+.banner.ok{background:var(--color-success-tint);color:var(--color-success);border-color:var(--color-success)}
+.banner.info{background:var(--color-info-tint);color:var(--color-ink);border-color:var(--color-info)}
+.banner .tx{flex:1;min-width:0;color:var(--color-ink)}
+.banner .tx b{display:block}
+.pbar{height:6px;border-radius:var(--radius-pill);background:var(--color-card-progress-rail);overflow:hidden}
+.pbar i{display:block;height:6px;background:var(--color-accent)}
+.pbar.lt{background:var(--color-border)}
+.pbar.lt i{background:var(--color-primary)}
+.thumb{position:relative;aspect-ratio:16/9;border-radius:var(--radius-sm);background:linear-gradient(135deg,var(--color-player-surface-raised),var(--color-player-border));overflow:hidden;color:var(--color-player-ink);display:flex;align-items:center;justify-content:center;flex:none}
+.thumb .pbar{position:absolute;left:0;right:0;bottom:0;border-radius:0}
+.thumb .dur{position:absolute;right:var(--space-1);bottom:var(--space-2);background:var(--color-hero-chip-bg);color:var(--color-player-ink);font-size:var(--text-caption);font-weight:600;padding:1px var(--space-2);border-radius:var(--radius-xs)}
+.thumb .tn{position:absolute;left:var(--space-2);top:var(--space-2);background:var(--color-hero-chip-bg);color:var(--color-player-ink);font-size:var(--text-caption);font-weight:700;padding:1px var(--space-2);border-radius:var(--radius-xs)}
+.sk{background:var(--color-surface-sunken);border-radius:var(--radius-sm)}
+.sw{position:relative;width:52px;height:44px;flex:none;display:inline-block}
+.sw::before{content:"";position:absolute;left:0;right:0;top:9px;height:26px;border-radius:13px;background:var(--color-border-strong)}
+.sw::after{content:"";position:absolute;top:12px;left:3px;width:20px;height:20px;border-radius:50%;background:var(--color-surface)}
+.sw.on::before{background:var(--color-primary)}.sw.on::after{left:29px}
+.rad{width:22px;height:22px;border-radius:50%;border:2px solid var(--color-border-strong);background:var(--color-surface);display:flex;align-items:center;justify-content:center;flex:none;margin-top:1px}
+.rad.on{border-color:var(--color-primary)}.rad.on i{width:10px;height:10px;border-radius:50%;background:var(--color-primary);display:block}
+.cb{width:22px;height:22px;border-radius:var(--radius-xs);border:2px solid var(--color-border-strong);background:var(--color-surface);display:flex;align-items:center;justify-content:center;flex:none;color:var(--color-on-primary)}
+.cb.on{background:var(--color-primary);border-color:var(--color-primary)}
+.hit{display:inline-flex;align-items:center;justify-content:center;width:44px;height:44px;flex:none}
+.opt{display:flex;gap:var(--space-3);align-items:flex-start;padding:var(--space-3) var(--space-4);border:1px solid var(--color-border-strong);border-radius:var(--radius-sm);background:var(--color-surface);min-height:44px}
+.opt.on{border:2px solid var(--color-primary);background:var(--color-primary-tint);padding:calc(var(--space-3) - 1px) calc(var(--space-4) - 1px)}
+.opt .t{font-weight:600;font-size:var(--text-body)}
+.opt .s{font-size:var(--text-small);color:var(--color-muted)}
+.scrim{background:rgba(var(--scrim-rgb),.6);padding:var(--space-8);display:flex;justify-content:center;border-radius:var(--radius-md)}
+.m .scrim{padding:0;align-items:flex-end;border-radius:0}
+.dlg{width:600px;max-width:100%;background:var(--color-surface);border-radius:var(--radius-lg);box-shadow:var(--shadow-3);display:flex;flex-direction:column}
+.dlg .hd{display:flex;align-items:flex-start;gap:var(--space-2);padding:var(--space-5) var(--space-3) 0 var(--space-6)}
+.dlg .hd h3{font-size:var(--text-h3);flex:1;padding-top:var(--space-2)}
+.dlg .bd{padding:var(--space-3) var(--space-6) var(--space-2);display:flex;flex-direction:column;gap:var(--space-4)}
+.dlg .ft{display:flex;justify-content:flex-end;gap:var(--space-3);padding:var(--space-4) var(--space-6) var(--space-6);flex-wrap:wrap}
+.m .dlg{width:100%;border-radius:var(--radius-lg) var(--radius-lg) 0 0}
+.m .dlg .hd{padding-left:var(--space-5)}
+.m .dlg .bd{padding-left:var(--space-5);padding-right:var(--space-5)}
+.m .dlg .ft{flex-direction:column-reverse;padding:var(--space-3) var(--space-5) var(--space-4)}
+.m .dlg .ft .btn{width:100%}
+.grab{width:40px;height:4px;border-radius:2px;background:var(--color-border-strong);margin:var(--space-2) auto 0}
+.toast{width:420px;max-width:100%;border-radius:var(--radius-sm);box-shadow:var(--shadow-2);padding:var(--space-1) var(--space-1) var(--space-1) var(--space-4);display:flex;align-items:center;gap:var(--space-3);min-height:56px;border:1px solid;position:relative;overflow:hidden}
+.toast.s{background:var(--color-success-tint);border-color:var(--color-success)}
+.toast.e{background:var(--color-danger-tint);border-color:var(--color-danger)}
+.toast .t{flex:1;font-size:var(--text-small);font-weight:500;line-height:1.35;padding:var(--space-2) 0}
+.toast .ac{display:inline-flex;align-items:center;justify-content:center;min-height:44px;min-width:44px;padding:0 var(--space-3);font-weight:700;font-size:var(--text-small);text-decoration:underline;background:transparent;border:0;cursor:pointer}
+.toast .cd{position:absolute;left:0;bottom:0;height:3px;width:60%;background:var(--color-success)}
+.m .toast{width:100%}
+.note{font-size:var(--text-caption);color:var(--color-muted)}
+.sectl{font-size:var(--text-caption);font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--color-muted)}
+.card{background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-md)}
+.crumbs ol{display:flex;flex-wrap:wrap;align-items:center;color:var(--color-muted);font-size:var(--text-caption)}
+.crumbs li{display:inline-flex;align-items:center;min-height:44px}
+.crumbs li+li::before{content:"/";padding:0 var(--space-2)}
+.crumbs a{display:inline-flex;align-items:center;min-height:44px;min-width:44px;justify-content:center}
+.crumbs [aria-current]{display:inline-block;line-height:44px;color:var(--color-ink);max-width:40ch;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.vh{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+/* viewer chrome */
+.vhead{display:flex;align-items:center;gap:var(--space-6);padding:0 var(--space-12);height:64px;background:var(--color-surface);border-bottom:1px solid var(--color-border)}
+.m .vhead{padding:0 var(--space-2) 0 var(--space-4);height:56px;gap:var(--space-2)}
+.vhead .nav{display:flex;gap:var(--space-1);flex:1}
+.vhead .nav a{display:inline-flex;align-items:center;min-height:44px;padding:0 var(--space-3);font-weight:500;font-size:var(--text-small)}
+.vhead .nav a.on{font-weight:700;box-shadow:inset 0 -3px 0 var(--color-primary)}
+.logo{display:flex;align-items:center;gap:var(--space-2);font-family:var(--font-display);font-weight:700;font-size:var(--text-h4)}
+.m .logo{flex:1}
+.vfoot{border-top:1px solid var(--color-border);padding:var(--space-6) var(--space-12);font-size:var(--text-small);color:var(--color-muted)}
+.m .vfoot{padding:var(--space-4)}
+/* admin chrome */
+.adm{display:flex;align-items:stretch;min-height:640px;background:var(--color-bg)}
+.side{flex:0 0 240px;background:var(--color-sidebar-bg);color:var(--color-sidebar-ink);padding:var(--space-6) var(--space-4);display:flex;flex-direction:column;gap:var(--space-6)}
+.side nav{display:flex;flex-direction:column;gap:2px}
+.nv{display:flex;align-items:center;gap:var(--space-3);min-height:44px;padding:0 var(--space-3);border-radius:var(--radius-sm);color:var(--color-sidebar-muted);font-size:var(--text-small);font-weight:500}
+.nv.on{background:var(--color-sidebar-active);color:var(--color-sidebar-ink);box-shadow:inset 3px 0 0 var(--color-sidebar-accent)}
+.main{flex:1;min-width:0;padding:var(--space-6) var(--space-8) var(--space-10);display:flex;flex-direction:column;gap:var(--space-5)}
+.mtop{display:flex;align-items:center;gap:var(--space-2);height:56px;padding:0 var(--space-2) 0 var(--space-4);background:var(--color-sidebar-bg);color:var(--color-sidebar-ink)}
+.mtop .logo{color:var(--color-sidebar-ink)}
+.mmain{padding:var(--space-2) var(--space-4) var(--space-6);display:flex;flex-direction:column;gap:var(--space-4);background:var(--color-bg)}
+.ph{display:flex;align-items:center;gap:var(--space-4);flex-wrap:wrap}
+.ph h1{font-size:var(--text-h1);flex:1}
+.m .ph h1{font-size:var(--text-h2)}
+.tbl{width:100%;border-collapse:collapse;font-size:var(--text-small)}
+.tbl th{height:44px;text-align:left;font-size:var(--text-caption);font-weight:600;color:var(--color-muted);padding:0 var(--space-2);border-bottom:1px solid var(--color-border);background:var(--color-surface)}
+.tbl td{padding:var(--space-2);border-bottom:1px solid var(--color-border);height:72px;vertical-align:middle}
+.tbl tr.sel td{background:var(--color-primary-tint)}
+.tbl th:first-child,.tbl td:first-child{padding-left:var(--space-2);width:52px}
+.bulk{background:var(--color-sidebar-bg);color:var(--color-sidebar-ink);border-radius:var(--radius-md);padding:var(--space-2) var(--space-4);min-height:60px;display:flex;align-items:center;gap:var(--space-3);box-shadow:var(--shadow-3);flex-wrap:wrap}
+.bulk .cnt{font-weight:700;white-space:nowrap}
+.bulk .w{background:var(--color-surface);color:var(--color-ink);border-color:var(--color-surface)}
+.bulk .clr{background:transparent;color:var(--color-sidebar-ink);border-color:var(--color-sidebar-muted)}
+.bulk .lnk{display:inline-flex;align-items:center;min-height:44px;color:var(--color-sidebar-accent);font-weight:600;text-decoration:underline;white-space:nowrap}
+.bulk .mt{color:var(--color-sidebar-muted);font-size:var(--text-small)}
+.bulk .off{background:var(--color-bar-disabled-bg);border-color:var(--color-bar-disabled-bg);color:var(--color-bar-disabled-ink);cursor:not-allowed}
+.dock{position:absolute;left:0;right:0;bottom:0;background:var(--color-sidebar-bg);color:var(--color-sidebar-ink);padding:var(--space-3) var(--space-3) var(--space-4);box-shadow:var(--shadow-up);display:flex;flex-direction:column;gap:var(--space-2)}
+.dock .row{display:flex;gap:var(--space-2);align-items:center}
+.dock .btn{flex:1;padding:0 var(--space-2)}
+.dock .w{background:var(--color-surface);color:var(--color-ink);border-color:var(--color-surface)}
+.dock .clr{background:transparent;color:var(--color-sidebar-ink);border-color:var(--color-sidebar-muted)}
+.dock .lnk{display:inline-flex;align-items:center;min-height:44px;color:var(--color-sidebar-accent);font-weight:600;text-decoration:underline;white-space:nowrap}
+.menu{background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-sm);box-shadow:var(--shadow-3);padding:var(--space-1);display:flex;flex-direction:column;min-width:240px}
+.menu .mi{display:flex;align-items:center;gap:var(--space-3);min-height:44px;padding:0 var(--space-3);border-radius:var(--radius-xs);font-size:var(--text-small);font-weight:500}
+.menu .mi.on{background:var(--color-primary-tint)}
+.menu .mi.off{color:var(--color-muted)}
+.menu .sep{height:1px;background:var(--color-border);margin:var(--space-1) 0}
+.vp{position:relative;width:390px;background:var(--color-bg);overflow:hidden}
+.mark{outline:2px dashed var(--color-danger);outline-offset:2px}
+
+
+.rowt{font-family:var(--font-display);font-size:var(--text-h3);font-weight:700;margin-bottom:var(--space-3)}
+.rowc{display:flex;gap:var(--space-3);overflow:hidden;align-items:flex-start}
+.cardx{flex:none;display:flex;flex-direction:column;gap:var(--space-2);width:227px;border-radius:var(--radius-sm)}
+.m .cardx{width:157px}
+.cardx .thumb{width:100%;border-radius:var(--radius-sm)}
+.cardx .ti{font-weight:600;font-size:var(--text-small);line-height:1.3}
+.cardx .su{font-size:var(--text-caption);color:var(--color-muted);line-height:1.35}
+.cardx .nx{position:absolute;left:var(--space-2);bottom:var(--space-2);max-width:calc(100% - var(--space-4))}
+.cardx a{display:flex;flex-direction:column;gap:var(--space-2);border-radius:var(--radius-sm);min-height:44px}
+.cardx.foc .thumb{outline:3px solid var(--color-focus-ring);outline-offset:2px}
+.cardx.cut{opacity:1}
+.hov{position:relative;flex:none;width:284px;background:var(--color-surface);border-radius:var(--radius-sm);box-shadow:var(--shadow-3);overflow:hidden;z-index:var(--z-overlay)}
+.hov .thumb{border-radius:0;width:100%}
+.hov .bd{padding:var(--space-3);display:flex;flex-direction:column;gap:var(--space-2)}
+.hov .ar{display:flex;gap:var(--space-2);align-items:center}
+.hov .pl{width:44px;height:44px;border-radius:50%;background:var(--color-primary);color:var(--color-on-primary);display:inline-flex;align-items:center;justify-content:center;border:0}
+.hov .nt{font-size:var(--text-small)}
+.hov .nt b{display:block}
+.spec{background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-md);padding:var(--space-4);display:flex;flex-direction:column;gap:var(--space-2);font-size:var(--text-small);max-width:760px}
+.spec code{font-family:var(--font-mono);background:var(--color-surface-sunken);padding:1px var(--space-2);border-radius:var(--radius-xs)}
+.three{display:flex;gap:var(--space-6);flex-wrap:wrap}
+.three>div{display:flex;flex-direction:column;gap:var(--space-2)}
+.m .three{flex-direction:column}
+.stage{display:flex;gap:var(--space-3);align-items:flex-start;padding-left:0}
+
+</style>
+</head>
+<body>
+<div class="d" style="width:1360px;background:var(--color-bg)">
+<header class="vhead"><span class="logo"><svg width="28" height="28" viewBox="0 0 28 28" aria-hidden="true"><circle cx="14" cy="14" r="13" fill="var(--color-accent)"/><path d="M11 8.5v11l9-5.5z" fill="var(--color-on-accent)"/></svg><span>ADTV</span></span><nav class="nav" aria-label="Main"><a href="#">Home</a><a class="on" href="#" aria-current="page">Series</a><a href="#">Categories</a><a href="#">My List</a></nav><button class="ib plain" aria-label="Search"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6"/><path d="M20 20l-4.5-4.5"/></svg></button><span class="btn sm sec">Sign in</span></header><div class="lbl">1. Continue learning row<small>In progress cards keep the progress bar. When a lesson is finished the bar is replaced by the Next label (accent chip with its own fill, so the text is readable on any thumbnail). Fractional columns 5.3 on desktop and 2.3 on phones (R11).</small></div><div class=""><div class="pad"><h2 class="rowt">Continue learning</h2><div class="rowc" role="list"><div class="cardx"><a href="#" aria-label="Genesis, Part 2, Lesson 5, 12 min left"><div class="thumb"><span style="opacity:.9"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 5v14l11-7z" fill="currentColor" stroke="none"/></svg></span><div class="pbar" role="progressbar" aria-valuenow="60" aria-valuemin="0" aria-valuemax="100" aria-label="Genesis progress"><i style="width:60%"></i></div></div><div><div class="ti">Genesis</div><div class="su">Part 2, Lesson 5, 12 min left</div></div></a></div><div class="cardx"><a href="#" aria-label="Genesis for beginners, Part 2, Lesson 6 is next, Next: L6"><div class="thumb"><span style="opacity:.9"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 5v14l11-7z" fill="currentColor" stroke="none"/></svg></span><span class="nxt nx" aria-hidden="true">Next: L6</span></div><div><div class="ti">Genesis for beginners</div><div class="su">Part 2, Lesson 6 is next</div></div></a></div><div class="cardx"><a href="#" aria-label="Exodus, Part 2, Lesson 1 is next, Next: P2 L1"><div class="thumb"><span style="opacity:.9"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 5v14l11-7z" fill="currentColor" stroke="none"/></svg></span><span class="nxt nx" aria-hidden="true">Next: P2 L1</span></div><div><div class="ti">Exodus</div><div class="su">Part 2, Lesson 1 is next</div></div></a></div><div class="cardx"><a href="#" aria-label="Psalms study, Chapter 12 is next, Next: C12"><div class="thumb"><span style="opacity:.9"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 5v14l11-7z" fill="currentColor" stroke="none"/></svg></span><span class="nxt nx" aria-hidden="true">Next: C12</span></div><div><div class="ti">Psalms study</div><div class="su">Chapter 12 is next</div></div></a></div><div class="cardx"><a href="#" aria-label="Prayer basics, Lesson 124 is next, Next: LES124"><div class="thumb"><span style="opacity:.9"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 5v14l11-7z" fill="currentColor" stroke="none"/></svg></span><span class="nxt nx" aria-hidden="true">Next: LES124</span></div><div><div class="ti">Prayer basics</div><div class="su">Lesson 124 is next</div></div></a></div></div></div></div><div class="lbl">2. Where the label comes from</div><div class=""><div class="pad"><div class="spec"><div><b>Same group:</b> <code>Next: L6</code> (item short code plus number).</div><div><b>Next lesson starts a new group:</b> <code>Next: P2 L1</code> (group code and item code), so Lesson 1 is not confused with the old Lesson 1.</div><div><b>Series with its own names:</b> that series code is used, for example <code>Next: C12</code>.</div><div><b>Longest case:</b> three letter code and three digit number, for example <code>Next: LES124</code>. The chip truncates with an ellipsis, never wraps, and the full words stay in the accessible name.</div><div><b>Screen reader name:</b> Genesis for beginners, Part 2, Lesson 6 is next, Next: L6.</div></div></div></div><div class="lbl">3. Hover card, first visible card<small>Scale 1.25 after a 300 ms delay, only on devices with hover and a fine pointer (R10, R31). Origin is the left edge for the first visible card. No delay when the pointer leaves. Under reduced motion the card appears without scaling. Keyboard focus shows the ring only. Details open from More info, so nothing pops up unasked.</small></div><div class=""><div class="pad"><div class="stage"><div class="hov" role="dialog" aria-label="Genesis for beginners details"><div class="thumb"><span style="opacity:.9"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 5v14l11-7z" fill="currentColor" stroke="none"/></svg></span><span class="nxt" style="position:absolute;left:var(--space-2);bottom:var(--space-2)">Next: L6</span></div>
+<div class="bd"><div class="ar"><button class="pl" aria-label="Play Part 2, Lesson 6"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 5v14l11-7z" fill="currentColor" stroke="none"/></svg></button><button class="ib" aria-label="Add Genesis for beginners to My List"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button><span style="flex:1"></span><button class="ib" aria-label="More info about Genesis for beginners"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button></div>
+<div style="font-weight:700">Genesis for beginners</div><div class="nt"><b>Part 2, Lesson 6</b>Part 2, finished Lesson 5 on 21 Nov.</div><div style="display:flex;gap:var(--space-2);align-items:center"><span class="chip dr">PG</span><span class="note">3 parts · 20 lessons</span></div></div></div><div class="cardx"><a href="#" aria-label="Exodus, Part 2, Lesson 1 is next, Next: P2 L1"><div class="thumb"><span style="opacity:.9"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 5v14l11-7z" fill="currentColor" stroke="none"/></svg></span><span class="nxt nx" aria-hidden="true">Next: P2 L1</span></div><div><div class="ti">Exodus</div><div class="su">Part 2, Lesson 1 is next</div></div></a></div><div class="cardx"><a href="#" aria-label="Psalms study, Chapter 12 is next, Next: C12"><div class="thumb"><span style="opacity:.9"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 5v14l11-7z" fill="currentColor" stroke="none"/></svg></span><span class="nxt nx" aria-hidden="true">Next: C12</span></div><div><div class="ti">Psalms study</div><div class="su">Chapter 12 is next</div></div></a></div><div class="cardx"><a href="#" aria-label="Prayer basics, Lesson 124 is next, Next: LES124"><div class="thumb"><span style="opacity:.9"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 5v14l11-7z" fill="currentColor" stroke="none"/></svg></span><span class="nxt nx" aria-hidden="true">Next: LES124</span></div><div><div class="ti">Prayer basics</div><div class="su">Lesson 124 is next</div></div></a></div></div></div></div><div class="lbl">4. Hover card, last visible card<small>Origin right, so the card grows inward and is never cut off by the screen edge.</small></div><div class=""><div class="pad" style="display:flex;justify-content:flex-end"><div class="stage" style="justify-content:flex-end"><div class="cardx"><a href="#" aria-label="Genesis, Part 2, Lesson 5, 12 min left"><div class="thumb"><span style="opacity:.9"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 5v14l11-7z" fill="currentColor" stroke="none"/></svg></span><div class="pbar" role="progressbar" aria-valuenow="60" aria-valuemin="0" aria-valuemax="100" aria-label="Genesis progress"><i style="width:60%"></i></div></div><div><div class="ti">Genesis</div><div class="su">Part 2, Lesson 5, 12 min left</div></div></a></div><div class="cardx"><a href="#" aria-label="Genesis for beginners, Part 2, Lesson 6 is next, Next: L6"><div class="thumb"><span style="opacity:.9"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 5v14l11-7z" fill="currentColor" stroke="none"/></svg></span><span class="nxt nx" aria-hidden="true">Next: L6</span></div><div><div class="ti">Genesis for beginners</div><div class="su">Part 2, Lesson 6 is next</div></div></a></div><div class="hov" role="dialog" aria-label="Psalms study details"><div class="thumb"><span style="opacity:.9"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 5v14l11-7z" fill="currentColor" stroke="none"/></svg></span><span class="nxt" style="position:absolute;left:var(--space-2);bottom:var(--space-2)">Next: C13</span></div>
+<div class="bd"><div class="ar"><button class="pl" aria-label="Play Chapter 13"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 5v14l11-7z" fill="currentColor" stroke="none"/></svg></button><button class="ib" aria-label="Add Psalms study to My List"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button><span style="flex:1"></span><button class="ib" aria-label="More info about Psalms study"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button></div>
+<div style="font-weight:700">Psalms study</div><div class="nt"><b>Chapter 13</b>Chapter 12 of 40.</div><div style="display:flex;gap:var(--space-2);align-items:center"><span class="chip dr">PG</span><span class="note">3 parts · 20 lessons</span></div></div></div></div></div></div><div class="lbl">5. Keyboard focus on a card<small>Offset ring 3 px with 2 px offset plus a transparent outline for forced colours (R37). Ring sits on the thumbnail, not the text.</small></div><div class=""><div class="pad"><h2 class="rowt">Continue learning</h2><div class="rowc" role="list"><div class="cardx"><a href="#" aria-label="Genesis, Part 2, Lesson 5, 12 min left"><div class="thumb"><span style="opacity:.9"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 5v14l11-7z" fill="currentColor" stroke="none"/></svg></span><div class="pbar" role="progressbar" aria-valuenow="60" aria-valuemin="0" aria-valuemax="100" aria-label="Genesis progress"><i style="width:60%"></i></div></div><div><div class="ti">Genesis</div><div class="su">Part 2, Lesson 5, 12 min left</div></div></a></div><div class="cardx foc"><a href="#" aria-label="Genesis for beginners, Part 2, Lesson 6 is next, Next: L6"><div class="thumb"><span style="opacity:.9"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 5v14l11-7z" fill="currentColor" stroke="none"/></svg></span><span class="nxt nx" aria-hidden="true">Next: L6</span></div><div><div class="ti">Genesis for beginners</div><div class="su">Part 2, Lesson 6 is next</div></div></a></div><div class="cardx"><a href="#" aria-label="Exodus, Part 2, Lesson 1 is next, Next: P2 L1"><div class="thumb"><span style="opacity:.9"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 5v14l11-7z" fill="currentColor" stroke="none"/></svg></span><span class="nxt nx" aria-hidden="true">Next: P2 L1</span></div><div><div class="ti">Exodus</div><div class="su">Part 2, Lesson 1 is next</div></div></a></div><div class="cardx"><a href="#" aria-label="Psalms study, Chapter 12 is next, Next: C12"><div class="thumb"><span style="opacity:.9"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 5v14l11-7z" fill="currentColor" stroke="none"/></svg></span><span class="nxt nx" aria-hidden="true">Next: C12</span></div><div><div class="ti">Psalms study</div><div class="su">Chapter 12 is next</div></div></a></div></div></div></div><div class="lbl">6. Same card under three presets<small>Only the owner's words change. Size, colours and spacing do not, so a theme or a long code cannot break the card.</small></div><div class=""><div class="pad"><div class="three"><div><span class="sectl">Season and Episode</span><div class="cardx"><a href="#" aria-label="Genesis for beginners, Next up, Next: E6"><div class="thumb"><span style="opacity:.9"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 5v14l11-7z" fill="currentColor" stroke="none"/></svg></span><span class="nxt nx" aria-hidden="true">Next: E6</span></div><div><div class="ti">Genesis for beginners</div><div class="su">Next up</div></div></a></div></div><div><span class="sectl">Book and Chapter</span><div class="cardx"><a href="#" aria-label="Genesis for beginners, Next up, Next: C6"><div class="thumb"><span style="opacity:.9"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 5v14l11-7z" fill="currentColor" stroke="none"/></svg></span><span class="nxt nx" aria-hidden="true">Next: C6</span></div><div><div class="ti">Genesis for beginners</div><div class="su">Next up</div></div></a></div></div><div><span class="sectl">Part and Lesson</span><div class="cardx"><a href="#" aria-label="Genesis for beginners, Next up, Next: L6"><div class="thumb"><span style="opacity:.9"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 5v14l11-7z" fill="currentColor" stroke="none"/></svg></span><span class="nxt nx" aria-hidden="true">Next: L6</span></div><div><div class="ti">Genesis for beginners</div><div class="su">Next up</div></div></a></div></div></div></div></div><div class="lbl">7. Loading<small>Skeleton uses the card geometry, shows after 300 ms, static under reduced motion.</small></div><div class=""><div class="pad" aria-busy="true"><div class="rowc"><div class="cardx"><div class="sk sh thumb" style="background:var(--color-surface-sunken)"></div><div class="sk" style="height:16px;width:80%"></div><div class="sk" style="height:13px;width:60%"></div></div><div class="cardx"><div class="sk sh thumb" style="background:var(--color-surface-sunken)"></div><div class="sk" style="height:16px;width:80%"></div><div class="sk" style="height:13px;width:60%"></div></div><div class="cardx"><div class="sk sh thumb" style="background:var(--color-surface-sunken)"></div><div class="sk" style="height:16px;width:80%"></div><div class="sk" style="height:13px;width:60%"></div></div><div class="cardx"><div class="sk sh thumb" style="background:var(--color-surface-sunken)"></div><div class="sk" style="height:16px;width:80%"></div><div class="sk" style="height:13px;width:60%"></div></div><div class="cardx"><div class="sk sh thumb" style="background:var(--color-surface-sunken)"></div><div class="sk" style="height:16px;width:80%"></div><div class="sk" style="height:13px;width:60%"></div></div></div></div></div>
+</div>
+</body>
+</html>
