@@ -39,11 +39,11 @@ const episode: Episode = {
       },
     },
     {
-      caption: 'Type "03/12/2026" in the **Date** box.',
-      note: 'Times are Lagos time, all year. Type the month first as shown here, or the day first if your computer shows it that way. The practice site clock says it is 10 Mar 2026.',
+      caption: 'Type "12/03/2026" in the **Date** box.',
+      note: 'Times are Lagos time, all year. The day comes first. A computer set to American style shows the month first. The practice site clock says it is 10 Mar 2026.',
       holdMs: 2000,
       run: async (s) => {
-        await s.type(s.page.getByRole('textbox', { name: 'Date', exact: true }), '03/12/2026');
+        await s.type(s.page.getByRole('textbox', { name: 'Date', exact: true }), '12/03/2026');
       },
       shot: {
         name: 'date',
