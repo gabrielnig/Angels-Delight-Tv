@@ -36,6 +36,9 @@ export interface DemoSeries {
   id: string;
   title: string;
   labels?: { preset: 'season_episode' | 'book_chapter' | 'part_lesson' | 'module_lesson' };
+  description?: string;
+  /** Own titles of the groups, by group number. */
+  groupTitles?: Record<number, string>;
 }
 
 export interface DemoDataset {
@@ -115,6 +118,19 @@ export const DEMO_DATASET: DemoDataset = {
     {
       id: 'ser_demo_parts',
       title: 'Demo series: Learn to budget',
+      labels: { preset: 'part_lesson' },
+    },
+    {
+      id: 'ser_demo_genesis',
+      title: 'Demo series: Genesis',
+      description: 'Demo Bible lessons from the book of Genesis, in two parts.',
+      labels: { preset: 'part_lesson' },
+      groupTitles: { 1: 'Beginnings', 2: 'The family of Abraham' },
+    },
+    {
+      id: 'ser_demo_proverbs',
+      title: 'Demo series: Proverbs',
+      description: 'Demo lessons from Proverbs. The numbers need tidying.',
       labels: { preset: 'part_lesson' },
     },
   ],

@@ -99,6 +99,98 @@ export function applyDemo(
     });
   }
 
+  // Bible teaching examples for the series articles (lane C4): a tidy Genesis series with two Parts, three
+  // unassigned Genesis lessons to bundle from the Videos list, and a Proverbs series with a gap and a duplicate.
+  const bible = (
+    id: string,
+    title: string,
+    ageDays: number,
+    place?: { series: string; group: number; number: number },
+  ): VideoRecord =>
+    videoStub({
+      id,
+      slug: id.replace(/_/g, '-'),
+      title,
+      description: 'A demo Bible lesson for the help videos.',
+      categoryIds: ['cat_life'],
+      status: 'ready',
+      publishState: 'published',
+      publishedAt: iso(-ageDays * DAY),
+      captionState: 'approved',
+      captionCueCount: 60,
+      posterId: `poster_${id}`,
+      suitability: 'everyone',
+      maturityRank: 0,
+      uploadedBy: 'Demo Editor',
+      createdAt: iso(-(ageDays + 2) * DAY),
+      updatedAt: iso(-ageDays * DAY),
+      durationSeconds: 600,
+      views: 100,
+      ...(place
+        ? { seriesId: place.series, seasonNumber: place.group, episodeNumber: place.number }
+        : {}),
+    });
+  const gen = (n: string) => `vid_demo_gen_${n}`;
+  const bibleVideos = [
+    bible(gen('1'), 'Demo lesson: Genesis 1, God makes the world', 40, {
+      series: 'ser_demo_genesis',
+      group: 1,
+      number: 1,
+    }),
+    bible(gen('3'), 'Demo lesson: Genesis 3, Adam and Eve', 39, {
+      series: 'ser_demo_genesis',
+      group: 1,
+      number: 2,
+    }),
+    bible(gen('6'), 'Demo lesson: Genesis 6, Noah and the ark', 38, {
+      series: 'ser_demo_genesis',
+      group: 1,
+      number: 3,
+    }),
+    bible(gen('12'), 'Demo lesson: Genesis 12, Abraham is called', 37, {
+      series: 'ser_demo_genesis',
+      group: 2,
+      number: 1,
+    }),
+    bible(gen('22'), 'Demo lesson: Genesis 22, Abraham and Isaac', 36, {
+      series: 'ser_demo_genesis',
+      group: 2,
+      number: 2,
+    }),
+    bible(gen('37'), 'Demo lesson: Genesis 37, Joseph and his brothers', 35),
+    bible(gen('41'), 'Demo lesson: Genesis 41, Joseph in Egypt', 34),
+    bible(gen('45'), 'Demo lesson: Genesis 45, Joseph forgives', 33),
+    bible('vid_demo_prov_1', 'Demo lesson: Proverbs 1, the start of wisdom', 32, {
+      series: 'ser_demo_proverbs',
+      group: 1,
+      number: 1,
+    }),
+    bible('vid_demo_prov_3', 'Demo lesson: Proverbs 10, wise words', 31, {
+      series: 'ser_demo_proverbs',
+      group: 1,
+      number: 3,
+    }),
+    bible('vid_demo_prov_3b', 'Demo lesson: Proverbs 15, a gentle answer', 30, {
+      series: 'ser_demo_proverbs',
+      group: 1,
+      number: 3,
+    }),
+  ];
+  for (const v of bibleVideos) if (!known.has(v.id)) store.videos.push(v);
+  for (const s of ds.series) {
+    if (s.id === 'ser_demo_parts' || store.series.some((x) => x.id === s.id)) continue;
+    store.series.push({
+      id: s.id,
+      title: s.title,
+      description: s.description ?? 'Demo Bible lessons for the help videos.',
+      posterId: null,
+      published: true,
+      maturityRank: 0,
+      labelOverride: s.labels ?? null,
+      ...(s.groupTitles ? { groupTitles: s.groupTitles } : {}),
+    });
+  }
+
   // Monetization examples, all marked as test. The sponsor and donation screens read these collections.
   store.sponsors = ds.sponsors.map((s) => ({ ...s }));
   store.donations = ds.donations.map((d) => ({ ...d }));
