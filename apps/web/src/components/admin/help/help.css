@@ -578,6 +578,20 @@
     color: inherit;
     text-decoration: underline;
   }
+  /* A link to another guide prints its id, since paper has no link. */
+  .hlp-body a[data-guide]::after {
+    content: ' (guide ' attr(data-guide) ')';
+  }
+  .hlp-figure {
+    break-before: auto;
+  }
+  .hlp-figure img {
+    max-width: 100%;
+    height: auto;
+  }
+  .hlp-section h2 {
+    break-after: avoid;
+  }
   .hlp-stamp {
     margin-top: var(--space-5);
     font-size: 10pt;

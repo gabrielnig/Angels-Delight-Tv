@@ -48,7 +48,11 @@ export function Inlines({ nodes }: { nodes: Inline[] }) {
                   ? `/admin/help/glossary#${n.href}`
                   : n.href;
             return (
-              <Link key={i} href={href}>
+              <Link
+                key={i}
+                href={href}
+                data-guide={n.kind === 'help' ? n.href.split('#')[0] : undefined}
+              >
                 <Inlines nodes={n.c} />
               </Link>
             );

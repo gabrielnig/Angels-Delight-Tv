@@ -128,3 +128,65 @@ for (const width of WIDTHS) {
     await context.setOffline(false);
   });
 }
+
+// M50-S09: the print copy. Chrome and the player are hidden, steps and pictures are not cut, type is at least 11 pt,
+// links to other guides print their id, and the id and release line is there.
+test('print layout of a guide', async ({ page }) => {
+  test.setTimeout(90_000);
+  await page.setViewportSize({ width: 794, height: 1123 });
+  await signIn(page);
+  for (const id of ['S04', 'D02']) {
+    await page.goto(`/admin/help/${id}`, { waitUntil: 'networkidle' });
+    await page.emulateMedia({ media: 'print' });
+    const report = await page.evaluate(() => {
+      const out: string[] = [];
+      const shown = (sel: string) =>
+        Array.from(document.querySelectorAll(sel)).filter(
+          (el) => getComputedStyle(el).display !== 'none',
+        );
+      for (const sel of [
+        '.adm-side',
+        '.adm-top',
+        '.hlp-video',
+        '.hlp-toc',
+        '.hlp-prevnext',
+        '.hlp-actions',
+        '.adm-pagehead__actions',
+      ]) {
+        if (shown(sel).length) out.push(`${sel} still shows in print`);
+      }
+      const de = document.documentElement;
+      if (de.scrollWidth > window.innerWidth + 1)
+        out.push(`print copy is wider than the page (${de.scrollWidth})`);
+      const body = document.querySelector('.hlp-body');
+      if (body && parseFloat(getComputedStyle(body).fontSize) < 14.6)
+        out.push('body type under 11 pt');
+      for (const li of Array.from(document.querySelectorAll('.hlp-steps > li'))) {
+        if (getComputedStyle(li).breakInside !== 'avoid') out.push('a step can be cut');
+      }
+      for (const fig of Array.from(document.querySelectorAll('.hlp-figure'))) {
+        if (getComputedStyle(fig).breakInside !== 'avoid') out.push('a picture can be cut');
+        const img = fig.querySelector('img');
+        const ir = img?.getBoundingClientRect();
+        const fr = fig.getBoundingClientRect();
+        if (ir && Math.abs(ir.width - fr.width) > 2) out.push('a picture does not fill its frame');
+        if (ir && body && ir.right > body.getBoundingClientRect().right + 1)
+          out.push('a picture runs past the page text');
+        if (img && !img.getAttribute('alt')) out.push('a picture has no alt text');
+      }
+      for (const a of Array.from(document.querySelectorAll('.hlp-body a[data-guide]'))) {
+        const after = getComputedStyle(a, '::after').content;
+        if (!after.includes(`guide ${a.getAttribute('data-guide')}`))
+          out.push('a guide link does not print its id');
+      }
+      const stamp = document.querySelector('.hlp-stamp');
+      if (!stamp || getComputedStyle(stamp).display === 'none') out.push('no id and release line');
+      return out;
+    });
+    expect(report, `print layout of ${id}`).toEqual([]);
+    await expect(page.locator('.hlp-stamp')).toContainText(`guide ${id}`);
+    const pdf = await page.pdf({ format: 'A4', printBackground: true });
+    expect(pdf.subarray(0, 5).toString()).toBe('%PDF-');
+    await page.emulateMedia({ media: 'screen' });
+  }
+});

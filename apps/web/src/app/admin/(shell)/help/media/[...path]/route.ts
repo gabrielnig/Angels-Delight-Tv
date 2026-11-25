@@ -3,6 +3,7 @@ import { Readable } from 'node:stream';
 import { findContentDir } from '@ad/help/node';
 import { getActor } from '@/lib/data/admin/session-next';
 import { resolveHelpImage } from '@/server/help/media';
+import { resolvePdfSource } from '@/server/help/pdf';
 import { helpMediaRelease, openVideoSource } from '@/server/help/sources';
 import { resolveVideoSource, serveVideo, videoFileType } from '@/server/help/video';
 
@@ -16,7 +17,7 @@ const HEADERS = {
 
 /**
  * Private files for the help centre (M50-S07). Only signed in staff get anything. Pictures live in the repo
- * (img/...). Video files (video/<id>/<file>) come from the media release. Anything else is a 404, a path never leaves its folder.
+ * (img/...). Video files (video/<id>/<file>) and the prebuilt guide PDFs (pdf/<id>.pdf) come from the media release. Anything else is a 404, a path never leaves its folder.
  */
 export async function GET(request: Request, context: { params: Promise<{ path: string[] }> }) {
   const actor = await getActor();
@@ -38,6 +39,26 @@ export async function GET(request: Request, context: { params: Promise<{ path: s
       try {
         const file = await openVideoSource(resolveVideoSource(helpMediaRelease(), videoId, name));
         if (file) return serveVideo(file, type, request.headers.get('range'), HEADERS);
+      } catch {
+        return new Response('The file could not be read. Try again.', {
+          status: 502,
+          headers: HEADERS,
+        });
+      }
+    }
+  }
+  if (kind === 'pdf' && rest.length === 1) {
+    const name = rest[0] as string;
+    const source = resolvePdfSource(helpMediaRelease(), name);
+    if (source) {
+      try {
+        const file = await openVideoSource(source);
+        if (file) {
+          return serveVideo(file, 'application/pdf', null, {
+            ...HEADERS,
+            'content-disposition': `attachment; filename="help-${name}"`,
+          });
+        }
       } catch {
         return new Response('The file could not be read. Try again.', {
           status: 502,

@@ -7,6 +7,16 @@ import { Blocks, Inlines, mediaUrl } from './render';
 afterEach(cleanup);
 
 describe('Inlines', () => {
+  it('marks a link to another guide with its id so the print copy can show it', () => {
+    render(
+      <p>
+        <Inlines nodes={parseInline('[Fix](help:T01#step-2) [Videos](/admin/videos)')} />
+      </p>,
+    );
+    expect(screen.getByRole('link', { name: 'Fix' })).toHaveAttribute('data-guide', 'T01');
+    expect(screen.getByRole('link', { name: 'Videos' })).not.toHaveAttribute('data-guide');
+  });
+
   it('links guides, glossary terms and admin screens inside the app, and external links safely', () => {
     render(
       <p>
