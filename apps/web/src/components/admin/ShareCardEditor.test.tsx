@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 import { cleanup, render, screen } from '@testing-library/react';
+import type { ComponentProps } from 'react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { ShareCardEditor } from './ShareCardEditor';
@@ -14,7 +15,9 @@ const base = {
   initial: { title: null, description: null },
 };
 
-function setup(save = vi.fn(async () => ({ ok: true as const }))) {
+type Save = ComponentProps<typeof ShareCardEditor>['save'];
+
+function setup(save: Save = vi.fn(async () => ({ ok: true as const }))) {
   render(
     <ToastProvider>
       <ShareCardEditor {...base} save={save} />
@@ -64,7 +67,7 @@ describe('ShareCardEditor (M45-S23)', () => {
   });
 
   it('shows a server error under the form', async () => {
-    const save = vi.fn(async () => ({ ok: false as const, errors: { form: 'Saving share text needs the real database.' } }));
+    const save: Save = vi.fn(async () => ({ ok: false as const, errors: { form: 'Saving share text needs the real database.' } }));
     setup(save);
     await userEvent.type(screen.getByLabelText('Share title'), 'Hi');
     await userEvent.click(screen.getByRole('button', { name: 'Save share card' }));
