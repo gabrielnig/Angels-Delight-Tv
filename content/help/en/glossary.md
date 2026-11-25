@@ -104,7 +104,7 @@ Aliases: add staff
 
 ## Item
 One video inside a group of a series, such as Lesson 3 or Chapter 3. The owner chooses the word.
-Guides: W20, W23
+Guides: W20
 
 ## Job
 A task the site does in the background, such as getting a video ready, making captions or sending an email.

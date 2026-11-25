@@ -5,7 +5,7 @@ path: weekly
 summary: Learn how a series holds groups and items, using a Genesis series with Parts and Lessons.
 role: editor
 needs: [S04]
-related: [W01, W21, W23]
+related: [W01, W21]
 readMinutes: 3
 watchSeconds: 60
 video:

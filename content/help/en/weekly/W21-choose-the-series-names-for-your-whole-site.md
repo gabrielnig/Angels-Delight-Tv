@@ -5,7 +5,7 @@ path: weekly
 summary: Pick the words every series uses for groups and items, such as Part and Lesson.
 role: admin
 needs: [W20]
-related: [W22, W01, W27]
+related: [W22, W01]
 readMinutes: 3
 watchSeconds: 75
 video:

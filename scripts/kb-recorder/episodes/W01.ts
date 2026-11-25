@@ -72,9 +72,9 @@ const episode: Episode = {
       },
     },
     {
-      caption: 'Click **Add Episode** to put it in the series.',
+      caption: 'Click **Add episode** to put it in the series.',
       run: async (s) => {
-        await clickByName(s, 'button', 'Add Episode');
+        await clickByName(s, 'button', 'Add episode');
         await waitForToast(s, 'Episode added.');
       },
     },

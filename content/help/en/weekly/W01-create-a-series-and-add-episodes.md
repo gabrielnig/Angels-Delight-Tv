@@ -5,7 +5,7 @@ path: weekly
 summary: Make a new series, give it a title and description, and add its first video.
 role: editor
 needs: [S04]
-related: [W02, W20, W23]
+related: [W02, W20]
 readMinutes: 4
 watchSeconds: 120
 video:
@@ -38,14 +38,14 @@ A new series uses the words chosen for the whole site, which are Season and Epis
 6. Click **Demo series: Joseph** in the list.
 7. Select **Demo lesson: Joseph is sold** from the **Add a video** list.
    ![The Add a video list with a Joseph lesson chosen, marked 1](../../media/W01/W01-07-add-video-desktop.webp)
-8. Click **Add Episode** to put it in the series.
+8. Click **Add episode** to put it in the series.
 <!-- /kb:steps -->
 
 ## What you should see
 A message says **Episode added.** The video now shows under its group with a number. The series stays a draft until you publish it, so viewers cannot see it yet.
 
 > [!TIP]
-> To add many videos in one go, use [Add many videos to a series](help:W23).
+> To add many videos in one go, use Add many videos to a series.
 
 ## If something goes wrong
 - **The Create series button does nothing.** The title may be empty. Type a title and try again.

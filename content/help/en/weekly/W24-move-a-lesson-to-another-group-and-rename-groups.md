@@ -29,13 +29,21 @@ There is no one click move. You change the group number and the lesson number of
 
 ## Steps
 <!-- kb:steps W24 -->
+1. Choose **Series** in the side menu.
+2. Click **Demo series: Genesis** in the list.
+3. Type "Creation" in the **Title for Part 1** box.
+4. Click **Save title for Part 1**.
+   ![The Part 1 heading now reading Creation, with its Save title button marked 1](../../media/W24/W24-04-renamed-desktop.webp)
+5. Type "1" in the **Part** box.
+6. Type "4" in the **Lesson** box.
+7. Click **Save numbers for Demo lesson: Genesis 22, Abraham and Isaac**.
 <!-- /kb:steps -->
 
 ## What you should see
 A message says **Title saved.** and later **Numbers saved.** The moved lesson now appears under the other group, in its new place.
 
 > [!TIP]
-> The group title is shown beside the group word, for example Part 1: Creation.
+> A group with a title shows the title as its heading, for example Creation instead of Part 1. The number box still says Part.
 
 ## If something goes wrong
 - **A warning says Check the numbers.** Two lessons share a number in the group. [Fix gaps and duplicate numbers](help:W25)
