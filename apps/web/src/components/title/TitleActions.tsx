@@ -2,15 +2,13 @@
 
 import { useT } from '../../lib/i18n/provider';
 import { useState } from 'react';
-import { useEffect } from 'react';
 import { Button, ButtonLink, useToast } from '@ad/ui';
 import { ShareMenu } from '../share/ShareMenu';
 import type { ShareChannelId } from '../share/share-links';
-import { readGuestProgress } from '../../lib/guest/progress-store';
-import { guestPrimary } from '../../lib/guest/resume';
 import { useListToggle } from '../../lib/pwa/useListToggle';
 import { SignInToSaveDialog } from '../guest/SignInToSaveDialog';
 import type { PrimaryAction } from '../../lib/title-cta';
+import { useGuestPrimary, type GuestPlace } from './useGuestPrimary';
 
 export interface TitleActionsProps {
   primary: PrimaryAction;
@@ -31,7 +29,7 @@ export interface TitleActionsProps {
    * A visitor without an account (M40). My List opens the Sign in to save dialog and nothing is stored.
    * With `videoId` the main button follows the place saved on this device.
    */
-  guest?: { signUpOpen: boolean; next: string; videoId?: string; durationSeconds?: number };
+  guest?: GuestPlace & { signUpOpen: boolean; next: string };
 }
 
 /** Play, Resume or Watch again, Start over, an optimistic My List toggle and Share (M07, M10-S01). */
@@ -48,17 +46,8 @@ export function TitleActions({
   guest,
 }: TitleActionsProps) {
   const msg = useT();
-  const [primary, setPrimary] = useState(serverPrimary);
+  const primary = useGuestPrimary(serverPrimary, guest);
   const [saveOpen, setSaveOpen] = useState(false);
-  const guestVideo = guest?.videoId;
-  const guestDuration = guest?.durationSeconds ?? 0;
-  useEffect(() => {
-    if (!guestVideo) return;
-    const entry = readGuestProgress(window.localStorage, guestVideo);
-    setPrimary(
-      guestPrimary({ watchHref: serverPrimary.href, durationSeconds: guestDuration }, entry),
-    );
-  }, [guestVideo, guestDuration, serverPrimary.href]);
   const queued = useListToggle();
   const toggle = toggleProp ?? queued;
   const [inList, setInList] = useState(initial);

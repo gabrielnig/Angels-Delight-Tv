@@ -7,6 +7,8 @@ Plan: `docs/plan/v2/L13-series.md`. Worktree `/home/claude/wt2/L13-build`. Decis
 
 - Slice 2 (bundling): `apps/web/src/lib/series-bundle.ts` (`planBundle`, `findNumberIssues`, `describeIssue`), `AddToSeriesDialog`, Add to series in `VideosList` (prop `bundle`), `createSeriesForBundleAction`, `seriesNumbersAction`, `moveAdminEpisode`, `renameAdminGroup`, `AdminSeriesDetail.groups`, `cleanSeriesPatch` (the update action now forwards rating, apply to all and names). D-372.
 
+- Slice 3 (viewer): `lib/guest/series-resume.ts` (`guestSeriesPrimary`), `components/title/useGuestPrimary.ts`, `StickyPlay` (series and title pages), `TitleActions` guest `series` option, `catalog.series` answers `{ blocked: 'kids' }` for a Kids mode guest and the series page shows `GuestKidsBlocked`. D-375. The group select (owner word label), item list and progress bars shipped in slice 1.
+
 ## How to run scoped tests
 - `pnpm vitest run packages/shared/src/series-labels.test.ts packages/theme/src/settings-series-labels.test.ts scripts/series-copy-scan.test.ts`
 - `pnpm vitest run apps/web/src/components/admin/SeriesEditor.test.tsx apps/web/src/components/admin/site apps/web/src/components/title`
@@ -17,4 +19,4 @@ Plan: `docs/plan/v2/L13-series.md`. Worktree `/home/claude/wt2/L13-build`. Decis
 - `ErrorPage`, `error-pages.r39`, `consent/inventory`, `admin/tables` (AnalyticsView) and the analytics export route tests failed before the lane started.
 
 ## Left
-- Slice 3: viewer series page polish. Slice 4: docs (stories, MODULES, SCREEN-ARCHITECTURE, DATA-MODEL, CLIENT-INPUTS).
+- Slice 4: docs (stories, MODULES, SCREEN-ARCHITECTURE, DATA-MODEL, CLIENT-INPUTS).

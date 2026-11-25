@@ -37,6 +37,11 @@ vi.mock('../../../../components/title/TitleActions', () => ({ TitleActions: () =
 vi.mock('../../../../components/guest/GuestEpisodeProgress', () => ({
   GuestEpisodeProgress: () => null,
 }));
+vi.mock('../../../actions', () => ({ setGuestAudienceAction: vi.fn() }));
+vi.mock('../../../../components/title/TitleStates', () => ({ TitleBlocked: () => null }));
+vi.mock('../../../../components/guest/GuestKidsBlocked', () => ({
+  GuestKidsBlocked: () => <p>kids blocked screen</p>,
+}));
 vi.mock('../../../../components/title/EpisodeList', () => ({ EpisodeList: () => null }));
 
 import SeriesPage, { generateMetadata } from './page';
@@ -107,5 +112,13 @@ describe('series page search engine rules (M45-S02, R26)', () => {
       await SeriesPage({ ...params, searchParams: Promise.resolve({}) }),
     );
     expect(container.querySelector('script[type="application/ld+json"]')).toBeNull();
+  });
+});
+
+describe('series page for a guest in Kids mode (M51-S07)', () => {
+  it('shows the Kids blocked screen when the series is not in the Kids library', async () => {
+    mocks.series.mockResolvedValue({ blocked: 'kids' });
+    const { findByText } = render(await SeriesPage({ ...params, searchParams: Promise.resolve({}) }));
+    expect(await findByText('kids blocked screen')).toBeInTheDocument();
   });
 });

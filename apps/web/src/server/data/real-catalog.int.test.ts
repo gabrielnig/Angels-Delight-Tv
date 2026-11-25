@@ -46,6 +46,7 @@ describe.skipIf(!integrationEnabled())('real catalog repository', () => {
   async function seriesDetail(ctx: ViewerContext, slug: string) {
     const result = await catalog.series(ctx, slug);
     if (result && 'redirect' in result) throw new Error('unexpected redirect');
+    if (result && 'blocked' in result) throw new Error('unexpected kids block');
     return result;
   }
 
@@ -494,6 +495,13 @@ describe.skipIf(!integrationEnabled())('real catalog repository', () => {
       expect(await catalog.title(kids(), adultOnly.slug)).toEqual({ blocked: 'kids' });
       expect(await catalog.title(kids(), 'no-such-title')).toBeNull();
       expect(await catalog.title(general(), adultOnly.slug)).not.toBeNull();
+    });
+
+    it('says an adult series is not in Kids mode, and a missing one is still not found (M51-S07)', async () => {
+      const adultOnly = await seedSeries(h.db.setup, { seasonSizes: [1], series: { kidsSafe: false } });
+      expect(await catalog.series(kids(), adultOnly.slug)).toEqual({ blocked: 'kids' });
+      expect(await catalog.series(kids(), 'no-such-series')).toBeNull();
+      expect(await catalog.series(general(), adultOnly.slug)).not.toBeNull();
     });
 
     it('ignores personal state the same title has for a signed in viewer', async () => {

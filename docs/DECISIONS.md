@@ -2063,3 +2063,9 @@ Decision: `video.preview` catches every error and records `failed` or `skipped` 
 - Options: Keep the old guest bar of four controls; a separate guest header component; one shared bar (chosen). Adopt `viewport-fit=cover` with insets; or keep content below the notch (chosen).
 - Why: One bar means one set of states, focus rules and width tests. Without `cover` the browser keeps content below the notch, so nothing is hidden and nothing can overlap the status bar. The old guest bar overlapped at 390 px.
 - Reversible: Yes. Adopting `viewport-fit=cover` later needs the inset spec from S183 and the scrim token from this lane.
+
+## D-375 A guest's series button follows the first unfinished item on this device, and series get the Kids blocked screen
+- Decision: For a guest the series main button and a new sticky Play bar read the device progress (`ad:guest:progress:v1`, no new storage key). The first item not finished is the target: Resume when five seconds or more were played, else Play with the item code in the series words, and Watch again from the first item when everything is finished. With nothing saved the server button stays. The title page sticky bar follows device progress the same way. `catalog.series` answers `{ blocked: 'kids' }` when a guest in Kids mode opens a series that exists but is not in the Kids library, and the page shows the same screen as titles.
+- Options: Leave the series button on the server answer (always Play for a guest); or keep a per series last watched pointer on the device.
+- Why: The progress map already has every item's place, so no new storage or consent row is needed and the answer is always consistent with the list below it. The blocked screen closes a gap listed in the release candidate notes.
+- Reversible: Yes.
