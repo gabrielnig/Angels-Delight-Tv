@@ -56,6 +56,7 @@ Related documents: `docs/PRD.md` (why), `docs/USER-STORIES.md` (what, per module
 | M48 | Sponsors and donations | Viewer and admin | [CLIENT] |
 | M46 | Languages (interface and caption translations) | Viewer and admin | [CLIENT] |
 | M49 | Account security, activity and reach | Viewer and backend | [READY] |
+| M50 | Admin help centre (text, silent captioned video, screenshots) | Admin | [READY] |
 
 40 modules in total. M41 owns the Home hero carousel, preview clips, row defaults, sections and View all links. M01 to M26 follow the planned set. M27 to M36 are modules found while breaking the brief down: they own behaviour that would otherwise be spread across several modules with nobody responsible.
 
@@ -894,3 +895,21 @@ Nothing in a [CLIENT] module blocks starting. The rule from `CLAUDE.md` applies:
 **Not now: offline downloads.** Stories M49-S18 and S19. Feasibility and the minimal design are in `docs/plan/v2/L10-account-and-reach.md` section 6. Entry criteria: real repeat viewing of the same lessons on weak networks, a licence endpoint with its own lifetime and revocation, and a security review of key storage on the device.
 
 **Not now: passkeys.** Would use their own table, not `mfa_factors` (D-L10-06). No story is scheduled.
+
+### M50 Admin help centre [READY]
+
+**Area.** Admin. Planned only: `docs/plan/v2/L14-admin-knowledge-base.md` (nothing built yet).
+
+**Purpose.** A staff only help centre at `/admin/help` that teaches every admin screen and task as text, silent captioned video and annotated screenshots, in seven learning paths, so the client can run the platform alone after handover.
+
+**Responsibilities.**
+- Help pages, search, print and PDF, offline handbook, a Help link on each admin page and a contextual help panel.
+- Content as code: Markdown articles, one flow file per procedure that produces the video, the pictures, the steps and the proof.
+- Isolated demo stack and a recorder (Playwright) that makes silent captioned videos from the real screens.
+- Coverage tests and CI checks that fail when a screen no longer matches its recording.
+
+**Data owned.** None in the database. Content files in the repo, release media in private object storage under `help/`.
+
+**Dependencies.** M12, M16, M20, M34, M42, M46.
+
+**Client input.** None.
