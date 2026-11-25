@@ -1,11 +1,12 @@
 import { readFileSync, readdirSync, statSync, existsSync } from 'node:fs';
 import { join, resolve } from 'node:path';
-import { DEFAULT_SESSION_POLICIES, PENDING_MFA_SECONDS } from '@ad/auth';
+import { DEFAULT_SESSION_POLICIES, OAUTH_NOTE_SECONDS, PENDING_MFA_SECONDS } from '@ad/auth';
 import { describe, expect, it } from 'vitest';
 import { DEVICE_COOKIE_DAYS } from '../../server/auth/cookies';
 import { GUEST_AUDIENCE_DAYS } from '../../server/guest/guest-audience';
 import { GUEST_COOKIE_DAYS } from '../../server/guest/guest-cookie';
 import { LOCALE_COOKIE_MAX_AGE } from '../i18n/cookie';
+import { TV_COOKIE_MAX_AGE } from '../tv/detect';
 import { ALWAYS_ASK_MAX_AGE } from '../profiles/always-ask';
 import { PICKER_CACHE_MAX_AGE_MS } from '../profiles/picker-cache';
 import { GUEST_INTENT_MAX_AGE_MS } from '../guest/intent';
@@ -68,6 +69,9 @@ describe('storage inventory (M45-S11)', () => {
     expect(seconds('ad:notice:v1')).toBe(NOTICE_MAX_AGE_MS / 1000);
     expect(seconds('__Host-ad_dev')).toBe(DEVICE_COOKIE_DAYS * 86400);
     expect(seconds('__Host-ad_profile')).toBe(30 * 86400);
+    expect(seconds('__Host-ad_oauth')).toBe(OAUTH_NOTE_SECONDS);
+    expect(seconds('__Host-ad_goog')).toBe(OAUTH_NOTE_SECONDS);
+    expect(seconds('ad_tv')).toBe(TV_COOKIE_MAX_AGE);
     for (const item of STORAGE_INVENTORY) {
       if (item.seconds !== undefined) expect(item.kept, item.name).toContain(durationText(item.seconds));
     }
