@@ -496,7 +496,9 @@ a {
 .web-grid .ad-skelcard {
   flex: 1 1 auto;
 }
-.web-list-skeleton {
+/* .ad-skeleton-region is display: contents, which ignores min-height, so the list region becomes a box here. */
+.ad-skeleton-region.web-list-skeleton {
+  display: block;
   min-height: 70vh;
 }
 .web-list-skeleton__title {
