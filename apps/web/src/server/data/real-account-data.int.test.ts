@@ -102,6 +102,23 @@ describe.skipIf(!integrationEnabled())('account viewer data', () => {
     });
   });
 
+  describe('export of help centre progress (M50-S25)', () => {
+    it('lists this account guides done, videos watched and helpful answers, and nothing of another account', async () => {
+      const u = await h.makeUser();
+      const other = await h.makeUser();
+      await h.db.setup.execute(sql`
+        INSERT INTO help_progress (account_id, article_id, guide_done_at, helpful)
+        VALUES (${u.accountId}::uuid, 'D02', now(), true),
+               (${other.accountId}::uuid, 'D07', now(), false)`);
+      const file = await data.buildExport(u.accountId, { email: 'x@example.com', memberSince: 'now' });
+      expect(file.helpCentre).toEqual([
+        expect.objectContaining({ guide: 'D02', helpful: true, videoWatchedAt: null }),
+      ]);
+      expect(file.helpCentre[0]?.guideDoneAt).toEqual(expect.any(String));
+      expect(JSON.stringify(file)).not.toContain('D07');
+    });
+  });
+
   describe('stats', () => {
     it('counts what this account watched this month and saved across profiles', async () => {
       const u = await h.makeUser();

@@ -14,6 +14,7 @@ const file = {
   },
   signIns: [],
   linkedSignIn: { google: null },
+  helpCentre: [],
   donations: [],
 };
 

@@ -12,7 +12,7 @@ Worktree `/home/claude/wt2/KBP-build`. Builds the help centre itself: the conten
 |---|---|---|
 | 1 Content format | `@ad/help` (schema, parser, library, lint, glossary, route matching), `content/help`, `pnpm help:check`, 3 sample articles, stories and decisions | Merged in the first platform PR |
 | 2 Pages | `/admin/help` home, path, article with contents list, role labels, print layout, Help in the side menu, top bar and page header, route to article map, private picture route, `help.support_contact` setting, coverage tests with `content/help/coverage-gaps.json` | Merged in the second platform PR |
-| 3 Progress | `help_progress` table, finished, watched, helpful, progress card | Not yet |
+| 3 Progress | migration 0060 `help_progress` (RLS, purge, export), service with fixture and real versions, Mark as done, Was this helpful, progress card | Merged in the third platform PR |
 | 4 Video | private media route, player, playlist, transcript | Not yet |
 | 5 Panel | contextual help drawer and sheet | Not yet |
 | 6 Search and glossary | search page and highlights, glossary page | Not yet |
