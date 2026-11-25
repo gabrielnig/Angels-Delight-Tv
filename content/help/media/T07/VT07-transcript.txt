@@ -1,0 +1,13 @@
+I changed something by mistake (T07)
+For Editors. 1 min 25 s.
+
+0:05  Choose Trash in the side menu.
+      The pointer moves to Trash.
+0:20  Check the Deleted column.
+      The pointer moves to Deleted.
+0:34  Click Restore Welcome Video (old cut).
+      The pointer moves to Restore Welcome Video (old cut).
+0:50  Choose Home curation in the side menu.
+      The pointer moves to Home curation.
+1:06  Scroll to Restore previous at the top.
+      The pointer moves to Restore previous.

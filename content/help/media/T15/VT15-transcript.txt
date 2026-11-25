@@ -1,0 +1,13 @@
+Emails are not arriving (T15)
+For Super admins. 1 min 14 s.
+
+0:05  Choose System in the side menu.
+      The pointer moves to System.
+0:17  Check the Jobs tab.
+      The pointer moves to Jobs3.
+0:28  Scroll to Email in the jobs table.
+      The pointer moves to Email: Invite to sade@example.testFailed, will retry 1 of 5 .
+0:41  Check the What went wrong text for that email.
+      The pointer moves to The mail service refused the message..
+0:56  Click Retry Email for Invite to sade@example.test.
+      The pointer moves to Retry Email for Invite to sade@example.test.

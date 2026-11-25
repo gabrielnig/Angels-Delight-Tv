@@ -1,0 +1,11 @@
+A series is missing lessons (T14)
+For Editors. 1 min 21 s.
+
+0:05  Choose Series in the side menu.
+      The pointer moves to Series.
+0:22  Click Demo series: Small space gardening.
+      The pointer moves to Demo series: Small space gardening.
+0:40  Scroll to Not published on one lesson.
+      The pointer moves to Not published.
+0:58  Check the Published switch for the whole series.
+      The pointer moves to Published.

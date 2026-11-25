@@ -1,0 +1,14 @@
+The preview clip says Failed or Skipped (T12)
+For Editors. 1 min 16 s.
+
+0:05  Choose Videos in the side menu.
+      The pointer moves to Videos.
+0:14  Type "Decimals" in the Search box.
+0:23  Click Edit Decimals at the Market.
+      The pointer moves to Edit Decimals at the Market.
+0:33  Scroll to Home preview clip on the right.
+0:43  Check the Preview clip badge and the note under it.
+      The pointer moves to The preview clip could not be cut from this video..
+0:55  Click Retry under the options.
+      The pointer moves to Retry.
+1:04  Wait until the badge says Queued.

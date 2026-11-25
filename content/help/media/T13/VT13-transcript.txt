@@ -1,0 +1,21 @@
+A row is not showing on Home (T13)
+For Editors. 1 min 32 s.
+
+0:05  Choose Home curation in the side menu.
+      The pointer moves to Home curation.
+0:15  Check the Draft line beside the buttons.
+      The pointer moves to Published and up to date.
+0:25  Scroll to Sections for the row.
+      The pointer moves to New this week.
+0:34  Click the Show New this week switch.
+      The pointer moves to Show New this week.
+0:44  Click Show New this week again to show it.
+      The pointer moves to Show New this week.
+0:55  Click Kids view in the live preview.
+      The pointer moves to Kids view.
+1:04  Click Move New this week down.
+      The pointer moves to Move New this week down.
+1:13  Click Save draft.
+      The pointer moves to Save draft.
+1:21  Click Publish changes.
+      The pointer moves to Publish changes.

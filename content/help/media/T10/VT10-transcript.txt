@@ -1,0 +1,15 @@
+Storage is nearly full (T10)
+For Admins. 1 min 13 s.
+
+0:06  Choose System in the side menu.
+      The pointer moves to System.
+0:15  Click Storage.
+      The pointer moves to Storage.
+0:24  Check the Storage used figure and the warning under it.
+      The pointer moves to Storage is over your budget. Delete files you no longer need.
+0:37  Check the Videos figure in the breakdown.
+      The pointer moves to Videos.
+0:48  Choose Trash in the side menu.
+      The pointer moves to Trash.
+0:57  Scroll to Delete forever next to a video you do not need.
+      The pointer moves to Delete forever: Test clip.

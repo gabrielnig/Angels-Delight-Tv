@@ -1,0 +1,9 @@
+Viewers say a video will not play (T04)
+For Editors. 1 min 8 s.
+
+0:05  Choose Videos in the side menu.
+      The pointer moves to Videos.
+0:25  Check the Search box above the video list.
+      The pointer moves to Select Staying Safe Online.
+0:46  Check the Status badge.
+      The pointer moves to Status.

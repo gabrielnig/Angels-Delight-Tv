@@ -1,0 +1,16 @@
+Captions are missing or wrong (T03)
+For Editors. 1 min 18 s.
+
+0:05  Choose Captions in the side menu.
+      The pointer moves to Captions1 need attention.
+0:14  Check the State of your video.
+      The pointer moves to State.
+0:23  Click Failed 1 above the list.
+      The pointer moves to Failed 1.
+0:32  Click Retry captions for Fractions with Jollof Rice.
+      The pointer moves to Retry captions for Fractions with Jollof Rice.
+0:44  Check that Captions could not be made for this video appears.
+      The pointer moves to Captions could not be made for this video..
+0:57  Click Try again.
+      The pointer moves to Try again.
+1:05  Wait until Making captions appears.

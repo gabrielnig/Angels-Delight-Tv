@@ -1,0 +1,17 @@
+A video is stuck on Encoding (T01)
+For Editors. 1 min 22 s.
+
+0:05  Choose Encoding in the side menu.
+      The pointer moves to Encoding1 need attention.
+0:14  Check the Failed encodes section.
+      The pointer moves to Rivers of Africa.
+0:23  Check the Processing badge for your video.
+      The pointer moves to Final checks , updated 10 min ago.
+0:34  Wait until Processing shows the progress bar moving.
+      The pointer moves to Encoding jobs.
+0:48  Scroll to Failed in the list.
+      The pointer moves to Our Solar System.
+0:57  Check that It did not finish appears in the red box.
+      The pointer moves to It did not finish. The audio track could not be read. The or.
+1:09  Click Retry encoding Our Solar System.
+      The pointer moves to Retry encoding Our Solar System.

@@ -118,7 +118,7 @@ export function SystemView({
       {tab === 'jobs' ? (
         <>
           <TrendingFreshness at={trendingRefreshedAt} now={now} staleHours={trendingStaleHours} />
-          jobs.length === 0 ? (
+          {jobs.length === 0 ? (
           <EmptyState
             title="No failed jobs."
             help="Background work is running normally."
@@ -178,7 +178,7 @@ export function SystemView({
               </tbody>
             </table>
           </div>
-          )
+          )}
         </>
       ) : tab === 'storage' ? (
         <div className="adm-card adm-stack">

@@ -20,6 +20,7 @@ Aliases: two step app, code app
 
 ## Backup
 A safe copy of the site data, made every night and kept in a separate place. ARKDEV can restore from it if something is lost.
+Guides: R11
 Aliases: restore, copy
 
 ## Caption
@@ -33,6 +34,7 @@ Aliases: genre, topic
 
 ## Cloudflare
 The company that delivers your videos to viewers quickly and keeps the site address working. You log in to it to see the plan and the domain.
+Guides: T17
 Aliases: cdn, media host
 
 ## Creative
@@ -50,10 +52,12 @@ Guides: S04
 
 ## Domain
 The web address of the site, such as the name people type in a browser. It is rented for a year at a time and must be renewed.
+Guides: R11
 Aliases: web address, url, website name
 
 ## Donation
 A gift of money from a viewer, made through the payment service. You can see each gift on the Donations screen.
+Guides: T09
 Aliases: gift, giving, payment
 Guides: M01, M08
 
@@ -79,6 +83,7 @@ Aliases: download, report
 
 ## Failed
 A word on a badge that means the work did not finish. Most failed items have a Retry button.
+Guides: T01
 Aliases: error, did not finish
 
 ## Group
@@ -108,6 +113,7 @@ Guides: W20
 
 ## Job
 A task the site does in the background, such as getting a video ready, making captions or sending an email.
+Guides: T15
 Aliases: queue, background task
 
 ## Kids safe
@@ -130,6 +136,7 @@ Guides: W21, W22
 
 ## Needs review
 A caption state that means the captions are written but nobody has approved them yet.
+Guides: T03
 Aliases: review
 Guides: M09
 
@@ -149,6 +156,7 @@ Aliases: thumbnail, cover, picture
 
 ## Preview clip
 A short silent clip that can play on the Home hero for viewers on fast connections.
+Guides: T12
 Aliases: trailer, hero clip
 
 ## Publish
@@ -165,10 +173,12 @@ Guides: M06
 
 ## Recovery code
 A code you saved when you set up two step sign in. Each one works once if you lose your phone.
+Guides: T06
 Aliases: backup code, lost phone code
 
 ## Reference code
 A short code such as AD-7K4Q shown to a viewer when a video cannot play. Send it to ARKDEV so they can find the problem.
+Guides: T11
 Aliases: error code, support code
 
 ## Retry
@@ -177,6 +187,7 @@ Aliases: try again
 
 ## Role
 What a staff person is allowed to do. The roles are Editor, Admin and Super admin.
+Guides: R02
 Aliases: permission, access
 
 ## Scheduled
@@ -210,6 +221,7 @@ Guides: M01, M03
 
 ## Storage budget
 The amount of file space you plan to use. The System screen warns you when you are near it.
+Guides: T10
 Aliases: space, disk, storage limit
 
 ## Super admin
@@ -239,6 +251,7 @@ Aliases: popular, top ten
 
 ## Two step sign in
 A second proof when you sign in: a 6 digit code from your phone after your password. All staff accounts need it.
+Guides: T06
 Aliases: 2fa, two factor, verification code
 
 ## Unpublish
@@ -252,6 +265,7 @@ Aliases: import, add video
 
 ## Uptime monitor
 A free service that checks the site every minute and sends an email if it stops answering.
+Guides: R11
 Aliases: monitor, site down alert
 
 ## Viewer
@@ -260,6 +274,7 @@ Aliases: learner, audience, user
 
 ## Workers plan
 The Cloudflare plan that delivers your videos. The free plan stops at a daily limit and the paid plan raises it.
+Guides: T17
 Aliases: cloudflare plan, plan limit
 
 ## Audit log

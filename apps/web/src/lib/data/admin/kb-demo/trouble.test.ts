@@ -10,7 +10,7 @@ describe('troubleshooting states of the demo (lane C7)', () => {
   it('has a failed caption track, a failed and a skipped preview clip, and a failed encode', () => {
     const store = demo();
     const by = (id: string) => store.videos.find((v) => v.id === id)!;
-    expect(by('vid_test_clip').captionState).toBe('failed');
+    expect(by('vid_fractions').captionState).toBe('failed');
     expect(by('vid_decimals').preview?.state).toBe('failed');
     expect(by('vid_hygiene').preview?.state).toBe('skipped');
     expect(by('vid_solar').status).toBe('failed');
