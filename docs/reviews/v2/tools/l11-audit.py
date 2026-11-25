@@ -1,4 +1,4 @@
-"""L11 audit for S182 (Browse) and S183 (Home hero sound control).
+"""L11 audit for S186 (Browse) and S187 (Home hero sound control).
 
 Run: python3 l11-audit.py <docs/mockups/v2/L11 dir>
 Needs python playwright and PIL. Prints one line per check. Nothing here changes a file.
@@ -11,7 +11,7 @@ from playwright.sync_api import sync_playwright
 from PIL import Image
 
 D = sys.argv[1]
-FILES = sorted(glob.glob(os.path.join(D, 'S18[23]_*.dc.html')))
+FILES = sorted(glob.glob(os.path.join(D, 'S18[67]_*.dc.html')))
 
 
 def lum(rgb):
@@ -90,7 +90,7 @@ print(f'white text under the 0.88 left scrim over pale: {ratio((255, 255, 255), 
 print(f'white text at mobile hold 0.85 over pale: {ratio((255, 255, 255), blend((14, 15, 19), .85, pale)):.2f}:1 need 4.5')
 print(f'white text at mobile mid 0.70 over pale: {ratio((255, 255, 255), blend((14, 15, 19), .70, pale)):.2f}:1')
 
-print('== theme test pairs (dark ink on lemon, S182 state 12)')
+print('== theme test pairs (dark ink on lemon, S186 state 12)')
 lbg, lprim, lhov, ltint, lstrong, lmuted, linfo = map(hexrgb, ('#FFF8DC', '#6B4200', '#573500', '#FBE7B0', '#7A6A3A', '#5A4F2C', '#4D3000'))
 for n, a, b, need in [('ink on lemon', ink, lbg, 4.5), ('muted on lemon', lmuted, lbg, 4.5), ('white on primary', (255, 255, 255), lprim, 4.5),
                       ('info-ink on tint', linfo, ltint, 4.5), ('primary link on lemon (Clear)', lprim, lbg, 4.5),

@@ -1953,18 +1953,18 @@ Decision: `video.preview` catches every error and records `failed` or `skipped` 
 - Why: The sweep never touches failed, skipped or already ready clips, so it cannot replace silent 6 second clips with the new ones, and the owner has no way to see or push it. A button is the smallest owner facing control, reuses the job and its limits, and is repeatable.
 - Reversible: Yes.
 
-## D-356 Phone header direction: one account icon with a bottom sheet (mockups S182 to S185, owner to confirm)
+## D-356 Phone header direction: one account icon with a bottom sheet (mockups S186 to S185, owner to confirm)
 - Decision: The recommended phone header is logo, Search and one account icon that opens a bottom sheet (Sign in, Create account, Kids mode, Language, Help). The bar scrim holds 0.85 through the whole bar and fades over a new `--nav-scrim-fade` below it, replacing the 70 percent hold, so icons keep contrast under a safe area inset. No code changes in this slice.
 - Options: A one Sign in button with a More tab, B account icon and sheet, C transparent bar with a category rail.
 - Why: Fewest controls, same skeleton as the signed in bar, immune to long Yoruba, Igbo and Hausa labels (measured at 320, 360 and 414), smallest build that keeps the tab bar. See docs/reviews/v2/L12-review.md.
 - Reversible: Yes, mockups only until the build slice.
-## D-357 Browse controls: one chip rail, two menu buttons, instant apply, headroom bar on phones (S182)
+## D-357 Browse controls: one chip rail, two menu buttons, instant apply, headroom bar on phones (S186)
 - Decision: Browse shows one horizontal chip rail for categories (native scroll snap, edge fades, arrows on fine pointers) and one quiet bar with two menu buttons, Length and Sort, plus a Clear link when a value is set. The rail and bar stick under the nav, and on phones the bar hides on scroll down and returns on scroll up. Length and Sort apply at once, on phones through a bottom sheet with no Apply bar. Category stays in the rail.
 - Options: Keep three chip rows. Segmented controls for length and sort. One Filters button with an Apply bar (DESIGN-SYSTEM 11.11). Two menu buttons.
 - Why: Length and Sort are single choice lists of four that do not need to be always visible, so menu buttons keep one clear row of chips and one quiet bar. Segmented controls would be 8 segments wide on a phone. Instant apply matches 11.11 "updates instantly" and saves a tap. 11.11 and the page template need a one line edit when built.
 - Reversible: Yes.
 
-## D-358 Home hero clip may carry sound, off by default, with an Unmute button, and the slide indicator becomes filling segments (S183)
+## D-358 Home hero clip may carry sound, off by default, with an Unmute button, and the slide indicator becomes filling segments (S187)
 - Decision: A hero clip may have an audio track and run up to 20 s (the largest slide interval). It is muted on every visit. An Unmute button sits beside Pause (icon and word on desktop, 44 px icon button on phones), turns to Mute, and the choice lasts for the visit. Pause stops rotation and the clip together. Reduced motion, Data saver, no clip, a failed clip or a stall show the still with no sound button. The indicator is five segments, the current one filling accent over the slide time.
 - Options: Keep clips silent with no audio track (11.7). Unmute on hover. Unmute button with a muted default.
 - Why: Sound is wanted by the owner, but a page must never start talking, and browsers allow sound only after a tap. A muted default with a visible button respects both. Segments show progress and position together, the old 36 by 10 px bar was too small to read.
