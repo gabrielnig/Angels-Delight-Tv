@@ -4,6 +4,7 @@ import { useCallback, useEffect, useId, useRef, useState, type CSSProperties } f
 import { createPortal } from 'react-dom';
 import { IconButton } from '@ad/ui';
 import { useT } from '../../lib/i18n/provider';
+import { trackShare } from './share-analytics';
 import { ShareIcon } from './share-icons';
 import {
   sheetTargets,
@@ -204,10 +205,16 @@ export function ShareSheet({
     }
   };
 
+  /** One anonymous count, then the page's own callback. */
+  function chosen(target: ShareTargetId) {
+    trackShare(target, kind);
+    onShare?.(target);
+  }
+
   async function onCopy() {
     const ok = await copyText(url, fieldRef.current);
-    onShare?.('copy');
     if (ok) {
+      chosen('copy');
       setCopied(true);
       setStatus({ text: t('share.copied'), tone: 'ok' });
     } else {
@@ -221,7 +228,7 @@ export function ShareSheet({
   async function onMore() {
     try {
       await navigator.share({ title, text, url });
-      onShare?.('more');
+      chosen('more');
     } catch (error) {
       if (error instanceof DOMException && error.name === 'AbortError') return;
       setStatus({ text: t('share.nativeFailed'), tone: 'error' });
@@ -358,7 +365,7 @@ export function ShareSheet({
                     href={targetHref(id as LinkChannel, { title, text, url })}
                     {...(newTab ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
                     onClick={() => {
-                      onShare?.(id);
+                      chosen(id);
                       close();
                     }}
                   >

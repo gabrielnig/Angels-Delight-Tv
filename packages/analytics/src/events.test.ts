@@ -30,6 +30,32 @@ describe('parseBatch', () => {
     }
   });
 
+  it('accepts a share event with a channel and a title kind only (L15a)', () => {
+    const ok = parseBatch({
+      v: 1,
+      events: [
+        { kind: 'share', channel: 'whatsapp', titleKind: 'video' },
+        { kind: 'share', channel: 'more', titleKind: 'series' },
+      ],
+    });
+    expect(ok.ok && ok.events).toHaveLength(2);
+  });
+
+  it('drops a share event that carries a link, text, id or an unknown channel', () => {
+    const bad = parseBatch({
+      v: 1,
+      events: [
+        { kind: 'share', channel: 'whatsapp', titleKind: 'video', url: 'https://x.test/title/a' },
+        { kind: 'share', channel: 'whatsapp', titleKind: 'video', title: 'Rivers' },
+        { kind: 'share', channel: 'myspace', titleKind: 'video' },
+        { kind: 'share', channel: 'x', titleKind: 'episode' },
+        { kind: 'share', channel: 'x' },
+      ],
+    });
+    expect(bad.ok && bad.events).toHaveLength(0);
+    expect(bad.ok && bad.rejected).toBe(5);
+  });
+
   it('drops invalid events but keeps the valid ones', () => {
     const result = parseBatch({
       v: 1,
