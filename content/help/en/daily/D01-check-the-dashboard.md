@@ -32,6 +32,18 @@ Read the [Dashboard](glossary:dashboard) from top to bottom. You end knowing whi
 ## Steps
 <!-- kb:steps D01 -->
 1. Check that the **Published** tile counts the videos viewers can watch.
+   ![The four video tiles with Published marked 1](../../media/D01/D01-01-tiles-desktop.webp)
+2. Check that the **Needs attention** card lists what waits for you.
+   ![The Needs attention card marked 1](../../media/D01/D01-02-attention-desktop.webp)
+3. Scroll to **Recent uploads**.
+   ![The Recent uploads card marked 1](../../media/D01/D01-03-recent-desktop.webp)
+4. Scroll to **Storage used**.
+   Admins see the numbers here. Editors see a note that says to ask an Admin.
+5. Scroll to **Views, last 7 days**.
+   ![The chart of views in the last 7 days marked 1](../../media/D01/D01-05-views-desktop.webp)
+6. Click **Open in Encoding** to go straight to a video that needs you.
+7. Choose **Dashboard** in the side menu to come back.
+   ![The Dashboard again with its heading marked 1](../../media/D01/D01-07-back-desktop.webp)
 <!-- /kb:steps -->
 
 ## What you should see

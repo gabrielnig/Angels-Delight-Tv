@@ -33,6 +33,17 @@ Watch the [Encoding](glossary:encoding) queue and retry a video that did not fin
 ## Steps
 <!-- kb:steps D12 -->
 1. Choose **Encoding** in the side menu.
+   ![The Encoding queue with the list of videos marked 1](../../media/D12/D12-01-queue-desktop.webp)
+2. Check that **Updating live** is shown.
+   ![The Updating live note marked 1](../../media/D12/D12-02-live-desktop.webp)
+3. Check that **Rivers of Africa** shows its progress.
+   ![A video with its progress bar marked 1](../../media/D12/D12-03-progress-desktop.webp)
+4. Check that **It did not finish** explains why a video failed.
+   ![The reason a video failed, marked 1](../../media/D12/D12-04-failed-desktop.webp)
+5. Click **Retry encoding Our Solar System**.
+   The button on your screen carries the name of your own video.
+6. Wait until you see **is back in the queue**.
+   ![The message that the video is back in the queue, marked 1](../../media/D12/D12-06-retried-desktop.webp)
 <!-- /kb:steps -->
 
 ## What you should see

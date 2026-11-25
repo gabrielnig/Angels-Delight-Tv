@@ -33,6 +33,19 @@ Check the [captions](glossary:caption) made for a new video and approve them. Yo
 ## Steps
 <!-- kb:steps D07 -->
 1. Choose **Captions** in the side menu.
+   ![The Captions list with the oldest waiting video marked 1](../../media/D07/D07-01-list-desktop.webp)
+2. Click **Review captions for How Plants Make Food**.
+   A video that needs a check has a blue Review button.
+   ![The caption review screen with the video and the cue list marked 1](../../media/D07/D07-02-review-desktop.webp)
+3. Click **Play** to watch the video with its captions.
+4. Click **Pause** when you want to read a cue.
+5. Check that **Approving is allowed with warnings** shows under the video.
+   ![The warnings note under the video marked 1](../../media/D07/D07-05-cues-desktop.webp)
+6. Click **Approve captions**.
+   Approve only when the words match what is said. Anyone can still edit them later.
+   ![The Approve captions button marked 1](../../media/D07/D07-06-approve-desktop.webp)
+7. Wait until you see **Captions approved**.
+   ![The message Captions approved marked 1](../../media/D07/D07-07-approved-desktop.webp)
 <!-- /kb:steps -->
 
 ## What you should see

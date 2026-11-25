@@ -23,10 +23,10 @@ const episode: Episode = {
       shot: {
         name: 'search',
         alt: 'The Search box with Naira typed and one video left in the list',
-        marks: [{ target: (s) => s.page.getByLabel('Search', { exact: true }), label: 'Search' }],
+        marks: [{ target: (s) => s.page.getByLabel('Search', { exact: true }).first(), label: 'Search' }],
       },
       run: async (s) => {
-        await typeInto(s, 'Search', 'Naira');
+        await typeInto(s, /^Search$/, 'Naira');
         await s.page.getByRole('link', { name: 'Counting Money in Naira', exact: true }).first().waitFor();
       },
     },

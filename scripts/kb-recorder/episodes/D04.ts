@@ -59,7 +59,7 @@ const episode: Episode = {
     },
     {
       caption: 'Wait until you see **Uploaded just now**.',
-      holdMs: 11000,
+      holdMs: 16000,
       run: async (s) => {
         await s.skippable(async () => {
           await s.page.getByText('Uploaded just now').filter({ visible: true }).first().waitFor({ timeout: 120_000 });

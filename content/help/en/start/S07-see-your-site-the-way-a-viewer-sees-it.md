@@ -33,6 +33,12 @@ Open a video in the preview player, the way a viewer would watch it, even before
 ## Steps
 <!-- kb:steps S07 -->
 1. Choose **Videos** in the side menu.
+2. Click **Edit Staying Safe Online**.
+3. Check that **Before you publish** shows what is left to do.
+4. Check that **Preview as viewer** is on the video screen.
+   ![The Preview as viewer link marked 1](../../media/S07/S07-04-link-desktop.webp)
+5. Click **Preview as viewer**.
+   ![The preview page with the staff only notice marked 1](../../media/S07/S07-05-notice-desktop.webp)
 <!-- /kb:steps -->
 
 ## What you should see

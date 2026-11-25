@@ -34,6 +34,20 @@ Sign in to the admin with your email, your password and a 6 digit code. You end 
 ## Steps
 <!-- kb:steps S02 -->
 1. Go to the sign in page, "/admin/login".
+   Your developer gives you the full address of your site. Add this ending to it.
+   ![The admin sign in page with the Email box marked 1](../../media/S02/S02-01-sign-in-desktop-dark.webp)
+2. Type your email in the **Email** box.
+3. Type your password in the **Password** box.
+   The dots hide your password. Nobody can read it over your shoulder.
+4. Click **Sign in**.
+5. Wait until you see **Enter your code**.
+   The first time, this page shows a square code to scan with an authenticator app. Scan it, then enter the code the app shows.
+   ![The Enter your code page with the six digit boxes marked 1](../../media/S02/S02-05-code-desktop-dark.webp)
+6. Type the 6 digit code from your app in the **Digit 1 of 6** box.
+   The code changes every 30 seconds. Type the one you see now.
+7. Click **Verify**.
+8. Wait until you see **Dashboard**. You are signed in.
+   ![The Dashboard with its heading marked 1](../../media/S02/S02-08-dashboard-desktop.webp)
 <!-- /kb:steps -->
 
 ## What you should see

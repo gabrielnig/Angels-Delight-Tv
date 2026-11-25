@@ -33,6 +33,16 @@ Filter the [Videos](/admin/videos) list, select the rows you want and add them a
 ## Steps
 <!-- kb:steps D10 -->
 1. Choose **Videos** in the side menu.
+   ![The Videos list with the filters marked 1](../../media/D10/D10-01-list-desktop.webp)
+2. Select **Published** from the **Status** list.
+   ![The Status filter set to Published, marked 1](../../media/D10/D10-02-filter-desktop.webp)
+3. Tick **Select all on this page**.
+   ![The bar that shows how many videos are selected, marked 1](../../media/D10/D10-03-selected-desktop.webp)
+4. Click **Add to category**.
+5. Select **Science** from the **Category** list.
+6. Click **Apply**.
+7. Check that **Undo** is shown if you need to go back.
+   ![The result message with the Undo button marked 1](../../media/D10/D10-07-undo-desktop.webp)
 <!-- /kb:steps -->
 
 ## What you should see

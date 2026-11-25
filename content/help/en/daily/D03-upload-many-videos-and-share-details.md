@@ -32,6 +32,20 @@ Upload several videos together and give every file the same category and suitabi
 ## Steps
 <!-- kb:steps D03 -->
 1. Choose **Upload** in the side menu.
+   ![The Details for every file card with the categories marked 1](../../media/D03/D03-01-details-desktop.webp)
+2. Tick **Science** to give every file this category.
+   ![The Science category box ticked and marked 1](../../media/D03/D03-02-category-desktop.webp)
+3. Select **Everyone** from the **Suitability** list.
+4. Select **2 at a time** from the **Files at once** list.
+   Sending two files at once is faster. Use 1 at a time on a slow connection.
+   ![The Files at once list marked 1](../../media/D03/D03-04-parallel-desktop.webp)
+5. Click **Choose videos**.
+6. Choose a file from your computer.
+   Hold the Ctrl key to pick more than one file. The files upload side by side.
+   ![The Upload queue with three files uploading, marked 1](../../media/D03/D03-06-queue-desktop.webp)
+7. Wait until you see **Uploaded just now**.
+8. Check that **Details were saved with the draft**.
+   ![The note that details were saved with the draft, marked 1](../../media/D03/D03-08-saved-desktop.webp)
 <!-- /kb:steps -->
 
 ## What you should see
