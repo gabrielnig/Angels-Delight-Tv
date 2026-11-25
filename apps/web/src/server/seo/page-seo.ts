@@ -2,7 +2,7 @@ import 'server-only';
 import { isKidsOnlyTitle } from '@ad/catalog';
 import { getServices } from '../../lib/runtime/services';
 import { realDataEnabled } from '../data/mode';
-import { shareText } from '../../lib/site/seo-settings';
+import { buildShareConfig } from '../../components/share/share-config';
 import { getSeoSettings } from './seo-settings';
 
 /** The public origin, the only source for canonical, sitemap and structured data urls. */
@@ -24,11 +24,19 @@ export async function titleIndexable(kind: 'video' | 'series', slug: string): Pr
   }
 }
 
-/** What the Share menu lists and says: the admin's channels and text with this title filled in. */
-export async function shareConfig(title: string) {
-  const seo = await getSeoSettings();
-  return {
-    channels: seo.shareChannels,
-    text: shareText(seo.shareTemplate, { title, siteName: seo.platformName }),
-  };
+/** What the Share sheet lists and says: the admin's channels, the text, and the clean canonical link (D-391). */
+export async function shareConfig(
+  title: string,
+  kind: 'video' | 'series',
+  slug: string,
+  thumbnail?: string,
+) {
+  return buildShareConfig({
+    seo: await getSeoSettings(),
+    title,
+    kind,
+    slug,
+    origin: siteOrigin(),
+    thumbnail,
+  });
 }

@@ -35,14 +35,14 @@ Audit: `docs/audits/2026-11-25-share-audit.md`. Mockups S200 to S203 in `docs/mo
 | # | Slice | State | PR |
 |---|---|---|---|
 | 0 | Audit, mockups S200 to S203 and review | in review | |
-| 1 | Share targets, URL builders, canonical share url, settings extended | in review | |
-| 2 | ShareSheet component (bottom sheet, popover) | open | |
+| 1 | Share targets, URL builders, canonical share url, settings extended | merged | #448 |
+| 2 | ShareSheet and ShareButton, wired into the title and series pages | in review | |
 | 3 | Wire into title, series, hero, hover card, card menu, watch, end screen | open | |
 | 4 | Share analytics event per channel | open | |
 | 5 | Chromium layout tests, a11y, e2e | open | |
 | 6 | Docs | in review | |
 
-### Slice 1
+### L15a slice 1
 
 - `apps/web/src/components/share/share-targets.ts`: `SHARE_TARGET_IDS`, `targetHref(channel, {title, text, url})`, `clampShareText`, `sheetTargets(channels, {nativeShare})`, `canonicalShareUrl({origin, kind, slug, startAt})`. No tags, no third party code.
 - `SHARE_CHANNELS` in `@ad/theme` now has `telegram` and `sms`; default is all six. The old `share-links.ts` and `ShareMenu.tsx` keep working until slice 2 replaces them.
@@ -59,3 +59,10 @@ Audit: `docs/audits/2026-11-25-share-audit.md`. Mockups S200 to S203 in `docs/mo
 
 - `titlePageJsonLd` and `seriesPageJsonLd` take `shareImage` (the same `/og/...?v=` path the tags use) and put it first; descriptions go through `trimWords(text, 160)` so JSON-LD equals og:description. `homePageJsonLd` takes `twitterHandle` (sameAs `https://x.com/<handle>`) and a `logoUrl` made absolute. `contentUrl` stays omitted (signed media).
 - Tests: `pnpm vitest run apps/web/src/lib/seo/page-jsonld.test.ts "apps/web/src/app/(viewer)" apps/web/src/app/page.test.tsx`.
+
+### L15a slice 2
+
+- `components/share/ShareSheet.tsx` (props `open, onClose, title, text, url, kind, channels, thumbnail, anchor, onShare`), `ShareButton.tsx` (`variant` `button` or `icon`, `url` absolute or a path, falls back to this page without query or hash), `share-icons.tsx` (currentColor glyphs), `share-sheet.css`, `share-config.ts` (`buildShareConfig`). Replaces `ShareMenu`, `share-links` and `share.css`.
+- Sheet under 600 px (handle, swipe down past 25 percent or a flick, scroll inside, safe area), popover from 600 px hung from the button and flipped near the right edge, centred dialog under 560 px of height. Focus moves in, is trapped, Escape and scrim close, focus returns. Status line is a polite `role="status"`. Copy uses the clipboard api, then `execCommand`, then selects the field. More hides without `navigator.share`. Offline: Facebook, WhatsApp, X, Telegram and Email explain themselves, Copy link, Messages and More still work.
+- Pages: `shareConfig(title, kind, slug, thumbnail)` returns channels, text and the canonical url. `share={null}` hides Share for a title that is not indexable (kids only or a failed lookup).
+- Tests: `pnpm vitest run apps/web/src/components/share apps/web/src/components/title "apps/web/src/app/(viewer)"`.

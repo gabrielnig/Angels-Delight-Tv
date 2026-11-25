@@ -58,7 +58,7 @@ describe('TitleActions', () => {
     expect(await screen.findByText(/could not update My List/i)).toBeInTheDocument();
   });
 
-  it('shares with the Web Share API when it exists', async () => {
+  it('Share opens the sheet and More reaches the device share menu', async () => {
     const share = vi.fn().mockResolvedValue(undefined);
     Object.assign(navigator, { share });
     wrap(
@@ -68,14 +68,21 @@ describe('TitleActions', () => {
         inList={false}
         toggle={vi.fn()}
         shareTitle="Rivers"
+        share={{ channels: ['whatsapp'], text: 'Rivers on ADTV', url: 'https://e.test/title/rivers' }}
       />,
     );
     await userEvent.click(screen.getByRole('button', { name: 'Share' }));
-    expect(share).toHaveBeenCalledWith(expect.objectContaining({ title: 'Rivers' }));
+    expect(share).not.toHaveBeenCalled();
+    await userEvent.click(screen.getByRole('button', { name: 'More' }));
+    expect(share).toHaveBeenCalledWith({
+      title: 'Rivers',
+      text: 'Rivers on ADTV',
+      url: 'https://e.test/title/rivers',
+    });
     Object.assign(navigator, { share: undefined });
   });
 
-  it('opens the share menu where there is no native share, and Copy link shows a toast (M45-S06)', async () => {
+  it('opens the sheet where there is no native share, and Copy link says Link copied (M45-S06)', async () => {
     Object.assign(navigator, { share: undefined });
     wrap(
       <TitleActions
@@ -91,7 +98,21 @@ describe('TitleActions', () => {
     Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true });
     expect(screen.getByRole('link', { name: /WhatsApp/ })).toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: 'Copy link' }));
-    expect(await screen.findByText('Link copied')).toBeInTheDocument();
+    expect(await screen.findByRole('status', { name: '' })).toHaveTextContent('Link copied');
+  });
+
+  it('has no Share button when the page says the title must not be shared', () => {
+    wrap(
+      <TitleActions
+        primary={play}
+        itemKey="video:a"
+        inList={false}
+        toggle={vi.fn()}
+        shareTitle="Rivers"
+        share={null}
+      />,
+    );
+    expect(screen.queryByRole('button', { name: 'Share' })).not.toBeInTheDocument();
   });
 
   it('has no Share button on a kids profile (M45-S06 AC4)', () => {
