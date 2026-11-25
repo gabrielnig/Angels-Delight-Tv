@@ -1,0 +1,80 @@
+name: kb-verify
+
+# Admin knowledge base, fast tier (plan section 10.5): when a pull request touches an admin screen, the side menu, the
+# permissions, the settings registry, the recorder or the help content, play only the affected episodes with no video
+# and fail if a step can no longer find its control. A failure means a screen changed and a how to is out of date.
+# Runs on the fixture demo stack. No secrets, no database.
+
+on:
+  pull_request:
+    paths:
+      - 'apps/web/src/app/admin/**'
+      - 'apps/web/src/components/admin/**'
+      - 'apps/web/src/lib/admin/**'
+      - 'apps/web/src/lib/data/admin/**'
+      - 'packages/theme/src/settings-registry.ts'
+      - 'scripts/kb-recorder/**'
+      - 'scripts/kb-stack.sh'
+      - 'content/help/**'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: kb-verify-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Build
+        run: pnpm --filter @ad/web build
+
+      - name: Start the demo stack
+        run: |
+          (scripts/kb-stack.sh start 3141 > server.log 2>&1 &)
+          for i in $(seq 1 40); do curl -sf http://localhost:3141/api/health && break; sleep 2; done
+          curl -sf http://localhost:3141/api/health
+
+      - run: pnpm exec playwright install --with-deps chromium
+
+      # Exit code 1 is a content failure (a screen changed). Exit code 2 is the stack failing, shown as such.
+      - name: Check the affected episodes
+        env:
+          KB_BASE_URL: http://localhost:3141
+        run: pnpm kb:verify --changed --base origin/${{ github.base_ref }} --report kb-verify-report.json
+
+      - name: Show the report
+        if: failure()
+        run: |
+          echo '### Admin help check failed' >> "$GITHUB_STEP_SUMMARY"
+          if [ -f kb-verify-report.json ]; then
+            echo '```json' >> "$GITHUB_STEP_SUMMARY"
+            cat kb-verify-report.json >> "$GITHUB_STEP_SUMMARY"
+            echo '```' >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo 'No report was written, so the stack or the browser failed (infrastructure, not content). See server.log.' >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: kb-verify-report
+          path: |
+            kb-verify-report.json
+            server.log

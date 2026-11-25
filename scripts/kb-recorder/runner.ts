@@ -31,7 +31,13 @@ export interface PlayResult {
   videoPath: string | null;
   /** Waits to cut, in video clock milliseconds. */
   skips: Array<{ startMs: number; endMs: number }>;
-  shots: Array<{ step: number; name: string; file: string; alt: string }>;
+  shots: Array<{
+    step: number;
+    name: string;
+    file: string;
+    alt: string;
+    masks: Array<{ x: number; y: number; width: number; height: number }>;
+  }>;
 }
 
 export class StepFailure extends Error {
@@ -110,12 +116,13 @@ export async function playEpisode(
             /\.webp$/,
             '',
           );
-          const png = await session.shot(base, {
+          const taken = await session.shot(base, {
             marks: spec.marks.map((m) => ({ ...m, target: m.target(session) })),
             crop: spec.crop?.(session),
             scheme: spec.scheme,
           });
-          if (png) {
+          if (taken) {
+            const png = taken.file;
             const webp = png.replace(/\.png$/, '.webp');
             await pngToWebp(png, webp, { width: profile.width });
             await rm(png);
@@ -124,6 +131,7 @@ export async function playEpisode(
               name: spec.name,
               file: webp,
               alt: spec.alt ?? `Step ${i}: ${step.caption}`,
+              masks: taken.masks,
             });
           }
         }

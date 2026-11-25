@@ -198,6 +198,15 @@ Per episode and profile, three passes: a silent warm up (dev server compile), a 
 
 Checks per video (ffprobe): H.264, yuv420p, no audio stream, the profile size, length within the limits, size under the limit. A failing episode is not published: work happens in `<profile>.work` and replaces the old folder only after every check passed, so a failed recording leaves the previous files untouched.
 
+### CI, screenshots baselines, publishing
+
+- `.github/workflows/kb-verify.yml`: on pull requests touching `apps/web/src/app/admin`, `components/admin`, `lib/admin`, `lib/data/admin`, the settings registry, `scripts/kb-recorder`, `scripts/kb-stack.sh` or `content/help`, builds the app, starts `scripts/kb-stack.sh start 3141` and runs `pnpm kb:verify --changed --base origin/<base>`. A failure names the article, the step and the labels on screen and uploads `kb-verify-report.json`. Exit 1 is a content failure, exit 2 is the stack failing.
+- `.github/workflows/kb-nightly.yml`: nightly (02:17 UTC), on `v*` tags and by hand. Records everything, checks length against the last run, compares screenshots, uploads `.kb-out` (without raw captures) for 14 days. The shortest allowed video is `KB_MIN_SECONDS` (default 10, a manual run can set 60). Raise the default to 60 when the content lanes have written the full playlist. No secrets are read. Validated as YAML and by `scripts/kb-workflow.test.ts`.
+- `pnpm kb:shots-diff --run .kb-out/nightly --baseline content/help/media`: each screenshot against `content/help/media/<ID>/<same file name>`. Over 0.5 percent of pixels changed (or a different size) fails with a red diff picture in `.kb-out/diffs`. A picture with no baseline yet is listed as new (a failure with `--strict`). Mark a live area in the app with `data-kb-dynamic` so the diff ignores it.
+- `pnpm kb:update D02`: records the episode, copies its pictures to `content/help/media/D02/` and rewrites the `kb:steps` block of its article, for a reviewed commit. `pnpm kb:steps D02 [--check]` rewrites or checks the steps block alone with no recording.
+- `pnpm kb:publish --run .kb-out/nightly --release v1.0.0 --dest dist-media`: writes `help/<release>/<VIDEO_ID>/<VIDEO_ID>-720.mp4`, `-480.mp4`, `-poster.webp`, `-captions.vtt`, `-chapters.vtt`, `-transcript.txt`, `-phone-720.mp4` and `-phone-captions.vtt`, the names the help media route reads. Uploading that folder to the originals bucket is an operations step.
+- Bold labels in a caption (`Click **Upload**`) are kept in the article and dropped from the burned in caption, the VTT and the transcript.
+
 ### Status
 
-Slices 1 to 5 done (framework, demo stack, scanner and annotation, caption tools, pipeline commands). Later slices append here.
+Slices 1 to 6 done (framework, demo stack, scanner and annotation, caption tools, pipeline commands, CI). Later slices append here.

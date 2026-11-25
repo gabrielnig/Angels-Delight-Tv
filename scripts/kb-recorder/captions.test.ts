@@ -4,6 +4,7 @@ import {
   formatTimestamp,
   parseCues,
   parseTimestamp,
+  plainCaption,
   readingTimeMs,
   toAss,
   toSrt,
@@ -245,5 +246,14 @@ describe('buildCues caps and wraps', () => {
       { leadMs: 0, minMs: 1800, wrap: true },
     );
     expect(cues[0]!.text.split('\n')).toHaveLength(2);
+  });
+});
+
+describe('plainCaption', () => {
+  it('drops the bold markers that mark a label in the article', () => {
+    expect(plainCaption('Click **Upload** in the side menu.')).toBe(
+      'Click Upload in the side menu.',
+    );
+    expect(plainCaption('Choose Verify.')).toBe('Choose Verify.');
   });
 });

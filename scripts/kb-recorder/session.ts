@@ -164,7 +164,7 @@ export class Session {
       crop?: Locator;
       scheme?: 'light' | 'dark';
     },
-  ): Promise<string | null> {
+  ): Promise<{ file: string; masks: Rect[] } | null> {
     if (!this.shotsDir) return null;
     const view = { width: this.profile.width, height: this.profile.height };
     await this.page.evaluate(() => {
@@ -196,6 +196,18 @@ export class Session {
     });
     await this.page.evaluate((s) => window.__kb.annotate(s), shapes);
     const file = `${this.shotsDir}/${name}.png`;
+    // Areas the app marks as changing between runs (a live counter): the screenshot diff ignores them.
+    const masks = await this.page.evaluate(() =>
+      Array.from(document.querySelectorAll('[data-kb-dynamic]')).map((el) => {
+        const r = el.getBoundingClientRect();
+        return {
+          x: Math.round(r.x),
+          y: Math.round(r.y),
+          width: Math.round(r.width),
+          height: Math.round(r.height),
+        };
+      }),
+    );
     await this.page.screenshot({
       path: file,
       ...(clip ? { clip } : {}),
@@ -211,6 +223,6 @@ export class Session {
       }
     });
     if (spec.scheme) await this.page.emulateMedia({ colorScheme: 'light' });
-    return file;
+    return { file, masks };
   }
 }

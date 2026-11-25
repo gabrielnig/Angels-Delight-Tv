@@ -186,7 +186,7 @@ export function buildCues(
     return {
       startMs,
       endMs: Math.max(endMs, startMs),
-      text: o.wrap ? wrapCaption(s.caption) : s.caption,
+      text: o.wrap ? wrapCaption(plainCaption(s.caption)) : plainCaption(s.caption),
       ...(s.position ? { position: s.position } : {}),
     };
   });
@@ -216,4 +216,9 @@ export function wrapCaption(text: string, max = MAX_LINE): string {
     }
   }
   return best ? `${best[0]}\n${best[1]}` : flat;
+}
+
+/** The caption as burned in, spoken in the transcript and written to the VTT: the bold label markers are dropped. */
+export function plainCaption(text: string): string {
+  return text.replace(/\*\*/g, '');
 }

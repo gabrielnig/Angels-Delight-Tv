@@ -68,7 +68,12 @@ export async function recordProfile(
       timings.warmMs = Date.now() - t;
     }
     const shotsDir = join(work, 'shots');
-    let shotList: Array<{ step: number; file: string; alt: string }> = [];
+    let shotList: Array<{
+      step: number;
+      file: string;
+      alt: string;
+      masks: Array<{ x: number; y: number; width: number; height: number }>;
+    }> = [];
     if (o.shots && episode.steps.some((s) => s.shot)) {
       const s0 = Date.now();
       const r = await playEpisode(episode, profile, {
@@ -166,6 +171,7 @@ export async function recordProfile(
         step: s.step,
         alt: s.alt,
         file: s.file,
+        masks: s.masks,
         bytes: (await stat(s.file)).size,
       })),
     );
@@ -203,7 +209,13 @@ export async function recordProfile(
         height: probe.height,
         bytes: probe.bytes,
         durationMs: probe.durationMs,
-        shots: shots.map((s) => ({ step: s.step, file: rel(s.file), alt: s.alt, bytes: s.bytes })),
+        shots: shots.map((s) => ({
+          step: s.step,
+          file: rel(s.file),
+          alt: s.alt,
+          bytes: s.bytes,
+          ...(s.masks.length ? { masks: s.masks } : {}),
+        })),
       },
     };
   } catch (e) {
