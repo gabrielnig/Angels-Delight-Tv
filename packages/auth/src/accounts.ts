@@ -1409,6 +1409,8 @@ export class AccountService {
       await tx
         .delete(schema.viewerNotificationPrefs)
         .where(eq(schema.viewerNotificationPrefs.accountId, accountId));
+      // Help centre progress and the helpful answers go with the person (M50).
+      await tx.delete(schema.helpProgress).where(eq(schema.helpProgress.accountId, accountId));
       await tx.delete(schema.mfaFactors).where(eq(schema.mfaFactors.accountId, accountId));
       await tx
         .delete(schema.mfaRecoveryCodes)

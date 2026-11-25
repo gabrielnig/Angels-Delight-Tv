@@ -409,6 +409,9 @@ describe.skipIf(!integrationEnabled())('account overview, email change and delet
         addressEnc: Buffer.from('sealed'),
         emailFrequency: 'daily',
       });
+      await h.dbs.admin.db
+        .insert(schema.helpProgress)
+        .values({ accountId: m.id, articleId: 'D02', guideDoneAt: new Date(), helpful: true });
       await h.dbs.admin.db.insert(schema.viewerNotices).values({
         profileId: owned!.id,
         kind: 'new_video',
@@ -460,6 +463,7 @@ describe.skipIf(!integrationEnabled())('account overview, email change and delet
         schema.mfaRecoveryCodes,
         schema.dataExports,
         schema.viewerNotificationPrefs,
+        schema.helpProgress,
         schema.accountIdentities,
         schema.loginEvents,
       ]) {

@@ -17,3 +17,4 @@ export * from './sponsors';
 export * from './engage';
 export * from './search';
 export * from './donations';
+export * from './help';

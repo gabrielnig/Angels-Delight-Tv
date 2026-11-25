@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { HelpHome } from '@/components/admin/help/HelpHome';
+import { helpProgress, type ProgressRows } from '@/lib/data/admin/help-progress';
 import { requireActor } from '@/lib/data/admin/session-next';
 import { getLibrary, helpRole, supportContactSetting, wantsAll } from '@/server/help';
 
@@ -19,6 +20,7 @@ export default async function HelpHomePage({
       role={helpRole(actor.role)}
       showAll={wantsAll(query.show)}
       supportContact={await supportContactSetting()}
+      progress={await helpProgress.read(actor).catch((): ProgressRows => ({}))}
     />
   );
 }

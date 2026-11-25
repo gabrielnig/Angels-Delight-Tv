@@ -28,12 +28,15 @@ export function ArticleView({
   article,
   role,
   video,
+  actions,
 }: {
   library: Library;
   article: Article;
   role: HelpRole;
   /** The video block, supplied by the page when the article has one. */
   video?: ReactNode;
+  /** Mark as done and Was this helpful, supplied by the page. */
+  actions?: ReactNode;
 }) {
   const { meta } = article;
   const path = library.paths.find((p) => p.key === meta.path);
@@ -190,6 +193,7 @@ export function ArticleView({
               </ul>
             </section>
           ) : null}
+          {actions}
           <nav className="hlp-prevnext hlp-noprint" aria-label="Previous and next guide">
             {prev ? (
               <Link href={articleHref(prev.meta.id)} rel="prev">

@@ -231,6 +231,7 @@ PII inventory:
 | Ratings | `title_ratings` | Owner-only RLS per profile. Never for kids. Deleted with the profile |
 | Notices | `viewer_notices` | Owner-only RLS per profile. Never created for kids. Kept 60 days, at most 100 per profile, then pruned by the worker. Deleted with the profile |
 | Notification choices and digest address | `viewer_notification_prefs` | Owner-only RLS. The address is sealed with the field key (D-129) and cleared when the account email changes or the person unsubscribes. Deleted at account purge. Exported without the address |
+| Help centre progress | `help_progress` | Per account: guides marked done, videos watched, one Yes or No answer to Was this helpful. Owner only RLS, no cookie and no browser storage. Deleted at account purge, listed in the data export. Nothing else is stored with it (M50). |
 | Push subscriptions | not built (Could, M44-S16) | If built: endpoint and keys per device, generic payload, removed on sign out and at purge |
 | Country | `view_events.country` | Coarse, from the CDN header |
 | Sign in events | `login_events` | Country, time, outcome, short user agent and keyed device hash. Never an address. Owner-only RLS. Kept 90 days, deleted at account purge, exported without the device hash |

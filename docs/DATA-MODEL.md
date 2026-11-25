@@ -477,6 +477,10 @@ Constraints: `CHECK (num_nonnulls(video_id, series_id) = 1)`; `UNIQUE (profile_i
 
 The hourly snapshot behind Trending now, Top 10 and Popular: `kind` (`trending` or `popular`), `video_id` or `series_id` (exactly one, a series scores as the sum of its episodes), `score` (double), `plays`, `rank`, `computed_at`. Unique per kind and title, index `(kind, rank)`. Global top 60 per kind, unfiltered, no RLS (aggregate data). `ad_app` SELECT, `ad_worker` full DML. Visibility, kids and the maturity limit are applied when a row is read.
 
+### 7.2d `help_progress` (migration 0060)
+
+One row per account and help guide (M50-S25, S26): `account_id` (CASCADE), `article_id` (check `^[SDWCMKTR][0-9]{2}$`), `guide_done_at`, `video_watched_at`, `helpful` (null, true or false), `updated_at`. Primary key `(account_id, article_id)`. Owner only RLS (`app_account_id()`), FORCE, grants to `ad_app` (select, insert, update, delete). Deleted by the account purge, listed in the account data export under `helpCentre`. Nothing else is stored: no text, no timing, no search words.
+
 ### 7.2c `viewer_notices` and `viewer_notification_prefs` (migration 0048)
 
 `viewer_notices`: `profile_id` (FK `profiles` CASCADE), `kind` (`new_episode` or `new_video`), `title`, `body`, `href`, `series_id` and `video_id` (nullable, CASCADE), `item_count`, `dedupe_key` (unique per profile, `episode:<seriesId>:<profileId>:<lagos date>` or `video:<profileId>:<lagos date>`), `created_at`, `read_at`, `emailed_at`. RLS on and forced: the owner (`owns_profile`) may SELECT, DELETE and UPDATE only `read_at` (column grant); the worker has a full policy and writes every notice. Trigger `viewer_notices_not_kids` refuses a kids profile.

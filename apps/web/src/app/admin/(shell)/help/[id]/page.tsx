@@ -1,8 +1,11 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { ArticleView } from '@/components/admin/help/ArticleView';
+import { ArticleActions } from '@/components/admin/help/ArticleActions';
+import { helpProgress, type ProgressRows } from '@/lib/data/admin/help-progress';
 import { requireActor } from '@/lib/data/admin/session-next';
 import { getLibrary, helpRole } from '@/server/help';
+import { setGuideDoneAction, setHelpfulAction } from '../actions';
 
 export const dynamic = 'force-dynamic';
 
@@ -20,5 +23,21 @@ export default async function HelpArticlePage({ params }: Props) {
   const library = getLibrary();
   const article = library.byId.get(id.toUpperCase());
   if (!article) notFound();
-  return <ArticleView library={library} article={article} role={helpRole(actor.role)} />;
+  const rows: ProgressRows = await helpProgress.read(actor).catch(() => ({}));
+  const mine = rows[article.meta.id];
+  return (
+    <ArticleView
+      library={library}
+      article={article}
+      role={helpRole(actor.role)}
+      actions={
+        <ArticleActions
+          guide={article.meta.id}
+          initial={{ done: mine?.done ?? false, helpful: mine?.helpful ?? null }}
+          setDone={setGuideDoneAction}
+          setHelpful={setHelpfulAction}
+        />
+      }
+    />
+  );
 }

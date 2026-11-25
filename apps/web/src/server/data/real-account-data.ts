@@ -10,6 +10,7 @@ import {
   videos,
   viewerNotices,
   viewerNotificationPrefs,
+  helpProgress,
   watchProgress,
   withAccount,
 } from '@ad/db';
@@ -54,6 +55,13 @@ export interface AccountStats {
 }
 
 export interface ExportFile {
+  /** Help centre progress: guides marked done, videos watched, helpful answers (M50-S25). */
+  helpCentre: {
+    guide: string;
+    guideDoneAt: string | null;
+    videoWatchedAt: string | null;
+    helpful: boolean | null;
+  }[];
   exportedAt: string;
   account: { email: string; memberSince: string };
   profiles: Array<{
@@ -381,7 +389,12 @@ export class AccountViewerData {
         .from(donations)
         .where(eq(donations.accountId, accountId))
         .orderBy(desc(donations.createdAt));
-      const extras = { events, google, gifts };
+      const help = await tx
+        .select()
+        .from(helpProgress)
+        .where(eq(helpProgress.accountId, accountId))
+        .orderBy(asc(helpProgress.articleId));
+      const extras = { events, google, gifts, help };
       if (ids.length === 0)
         return { owned, saved: [], progress: [], ratings: [], notices: [], prefs, ...extras };
       const saved = await tx
@@ -511,6 +524,12 @@ export class AccountViewerData {
           ? { hint: rows.google.hint, linkedAt: rows.google.linkedAt.toISOString() }
           : null,
       },
+      helpCentre: rows.help.map((r) => ({
+        guide: r.articleId,
+        guideDoneAt: r.guideDoneAt?.toISOString() ?? null,
+        videoWatchedAt: r.videoWatchedAt?.toISOString() ?? null,
+        helpful: r.helpful,
+      })),
       donations: rows.gifts.map((g) => ({
         reference: g.reference,
         kind: g.kind,

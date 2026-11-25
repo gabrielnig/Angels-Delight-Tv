@@ -11,6 +11,8 @@ import { Icon } from '../Icon';
 import { PageHeader } from '../PageHeader';
 import { clock } from './format';
 import { HiddenNote } from './HiddenNote';
+import { ProgressCard } from './ProgressCard';
+import { summarizeProgress, type ProgressRows } from '@/lib/data/admin/help-progress';
 import { SupportStrip } from './SupportStrip';
 
 const plural = (n: number, one: string, many = `${one}s`) => `${n} ${n === 1 ? one : many}`;
@@ -53,13 +55,20 @@ export function HelpHome({
   role,
   showAll,
   supportContact,
+  progress = {},
 }: {
   library: Library;
   role: HelpRole;
   showAll: boolean;
   supportContact: string;
+  progress?: ProgressRows;
 }) {
   const { paths, higher } = visiblePaths(library, role, showAll);
+  const ids = paths.flatMap((p) => p.articles);
+  const summary = summarizeProgress(progress, {
+    guides: ids.map((a) => a.meta.id),
+    videos: ids.filter((a) => a.meta.video).map((a) => a.meta.id),
+  });
   const start = paths.find((p) => p.key === 'start');
   const others = paths.filter((p) => p.key !== 'start');
   return (
@@ -100,6 +109,7 @@ export function HelpHome({
           </Link>
         </section>
       ) : null}
+      {ids.length ? <ProgressCard summary={summary} /> : null}
       {others.length ? (
         <section className="hlp-paths" aria-labelledby="hlp-paths-title">
           <h2 id="hlp-paths-title">Learning paths</h2>
