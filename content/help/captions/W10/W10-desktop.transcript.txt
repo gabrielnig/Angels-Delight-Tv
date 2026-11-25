@@ -1,0 +1,16 @@
+Read Analytics (W10)
+For Editors. 1 min 2 s.
+
+0:05  Choose Analytics in the side menu.
+      The pointer moves to Analytics.
+0:12  Click Last 28 days.
+      The pointer moves to Last 28 days.
+0:17  Check that the Views tile shows a number.
+      The pointer moves to Views.
+0:25  Check that the Finished watching tile shows a percent.
+      The pointer moves to Finished watching.
+0:35  Scroll to Views each day.
+0:40  Scroll to Top titles.
+0:46  Click Sort by Likes.
+      The pointer moves to Sort by Likes.
+0:51  Scroll to Devices.

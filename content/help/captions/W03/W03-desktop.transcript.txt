@@ -1,0 +1,23 @@
+Manage categories (W03)
+For Editors. 2 min 1 s.
+
+0:06  Choose Categories in the side menu.
+      The pointer moves to Categories.
+0:16  Click Add category.
+      The pointer moves to Add category.
+0:25  Type "Demo Study Skills" in the Name box.
+0:36  Click Save.
+      The pointer moves to Save.
+0:45  Click Move Demo Study Skills up.
+      The pointer moves to Move Demo Study Skills up.
+0:55  Click Rename Demo Study Skills.
+      The pointer moves to Rename Demo Study Skills.
+1:05  Type "Demo Study Skills Tips" in the Name box.
+1:17  Click Save.
+      The pointer moves to Save.
+1:25  Click Hide Demo Study Skills Tips.
+      The pointer moves to Hide Demo Study Skills Tips.
+1:36  Click Delete Demo Study Skills Tips.
+      The pointer moves to Delete Demo Study Skills Tips.
+1:46  Click Delete category.
+      The pointer moves to Delete category.
