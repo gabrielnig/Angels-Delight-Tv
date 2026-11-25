@@ -899,7 +899,7 @@ Nothing in a [CLIENT] module blocks starting. The rule from `CLAUDE.md` applies:
 
 ### M50 Admin help centre [READY]
 
-**Area.** Admin. Plan: `docs/plan/v2/L14-admin-knowledge-base.md`. Platform built by lane L14 (`packages/help`, `/admin/help`), notes and the content format in `docs/lanes/L14-build.md`. Stories M50-S01 to S30 are in `docs/USER-STORIES.md`.
+**Area.** Admin. Plan: `docs/plan/v2/L14-admin-knowledge-base.md`. Platform built by lane L14 and lane KB-P (`packages/help`, `/admin/help`, contextual panel, states, print and PDF), notes and the content format in `docs/lanes/L14-build.md`. Stories M50-S01 to S30 are in `docs/USER-STORIES.md`.
 
 **Purpose.** A staff only help centre at `/admin/help` that teaches every admin screen and task as text, silent captioned video and annotated screenshots, in seven learning paths, so the client can run the platform alone after handover.
 

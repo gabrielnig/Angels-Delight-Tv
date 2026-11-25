@@ -13,7 +13,7 @@ export const MAX_IMAGE_BYTES = 120 * 1024;
 export function findContentDir(from: string = process.cwd()): string {
   const fromEnv = process.env.HELP_CONTENT_DIR;
   if (fromEnv) return resolve(fromEnv);
-  let dir = resolve(from);
+  let dir = resolve(/*turbopackIgnore: true*/ from);
   for (;;) {
     const candidate = join(dir, 'content', 'help');
     if (existsSync(join(candidate, 'en'))) return candidate;
