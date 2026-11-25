@@ -65,8 +65,13 @@ async function createRuntime(): Promise<ThemeRuntime> {
     bucket: 'media',
     signingSecret: new Uint8Array(32),
   });
+  const theme = new ThemeService({ store: new MemoryThemeStore(), logger });
+  if (process.env.KB_DEMO === 'on') {
+    const { seedDemoThemeHistory } = await import('./kb-demo/theme-history');
+    await seedDemoThemeHistory(theme);
+  }
   return {
-    theme: new ThemeService({ store: new MemoryThemeStore(), logger }),
+    theme,
     settings: new SettingsService({ store: new MemorySettingsStore(), logger }),
     logos: new LogoUploader({ storage, assets: new MemoryAssetStore() }),
     storage,
