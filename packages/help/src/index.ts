@@ -6,3 +6,4 @@ export * from './glossary';
 export * from './library';
 export * from './lint';
 export { bestScreenMatch } from './routes';
+export * from './visibility';
