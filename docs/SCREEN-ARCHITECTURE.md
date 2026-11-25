@@ -676,6 +676,10 @@ Entry points: a Help button in the top bar (drawer at md and up, bottom sheet on
 6. **Recover.** Sign in (locked), Forgot password, Reset password, Sign in.
 7. **Guest.** Home, Title detail, Watch (progress kept on the device), My List opens the Sign in to save dialog, Sign in, Profile picker, the save is applied, Import prompt.
 
+### Share metadata (no screen of its own)
+
+Every public page sends its share tags through one builder (`apps/web/src/lib/seo/metadata.ts`). Pages that are not share targets (search results, errors, watch, account) are noindex with no canonical. `/og/title/<slug>` and `/og/series/<slug>` are image routes, not screens. The Discovery tab in Site settings holds the site description, default share image link, X handle, share text, title overlay and play badge switches.
+
 ## 8. Story coverage check
 
 Every module with a user interface has at least one screen. Modules without their own screens: M04 (data), M14 (shown on screens 44 and 48), M22 and M31 (infrastructure, shown on screen 65), M23, M24 (screen 65), M30 (screen 65), M33. Screen 24 and 25 together cover the player edge cases in M08. Any new story in `docs/USER-STORIES.md` must be added to a screen here in the same change.

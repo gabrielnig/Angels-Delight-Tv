@@ -9,9 +9,9 @@ Audit: `docs/audits/2026-11-25-og-audit.md`. L15a owns share UI code. L15b owns 
 | 1 | Metadata builder for every public route | merged | #446 |
 | 2 | Image pipeline and privacy gate | merged | #447 |
 | 3 | Admin share control per video and series | open | |
-| 4 | `pnpm share:check` and CI | in review | #449 |
-| 5 | JSON-LD alignment | in review | |
-| 6 | Docs | open | |
+| 4 | `pnpm share:check` and CI | merged | #449 |
+| 5 | JSON-LD alignment | merged | #450 |
+| 6 | Docs | in review | |
 
 ## Slice 1
 
@@ -40,7 +40,7 @@ Audit: `docs/audits/2026-11-25-share-audit.md`. Mockups S200 to S203 in `docs/mo
 | 3 | Wire into title, series, hero, hover card, card menu, watch, end screen | open | |
 | 4 | Share analytics event per channel | open | |
 | 5 | Chromium layout tests, a11y, e2e | open | |
-| 6 | Docs | open | |
+| 6 | Docs | in review | |
 
 ### Slice 1
 

@@ -429,6 +429,10 @@ Incident response:
 
 Key compromise specifics: playback token or media URL secret leak means rotate the secret (dual-key window, then remove the old); `HLS_KEK` leak means re-wrap keys; leaked content keys mean run `video.rekey` for affected videos (re-encrypt segments, no transcode); `FIELD_KEK` leak means rotate the KEK and re-wrap all DEKs, and treat encrypted PII as exposed if the main database was also taken.
 
+### 17.1 Share previews are public disclosures
+
+A share preview is read by crawlers without a session, so it follows the signed out rules: `publicPreview` applies `maturity.guest_max_rank`, unpublished, scheduled, trashed titles answer not found, kids only titles and failed kids only lookups show the generic platform card with noindex (R26, D-389, D-390). `og:video` tags are never emitted and JSON-LD never sets `contentUrl`, because media urls are signed. Share text is cleaned of markup and control characters before it reaches a tag, and JSON-LD is escaped by `serializeJsonLd`. `pnpm share:check` guards the tags in CI.
+
 ## 18. Residual risks
 
 | Id | Risk | Decision |

@@ -327,3 +327,38 @@ Use the next free D-number at merge time (highest on main today is D-168). Worki
 1. Should kids-only titles be excluded from search engines (recommended, D-L6-5) or indexed like other titles?
 2. Is a short informational storage notice enough for the client's legal advisers, or do they want an Accept and Reject banner from day one (D-L6-2)?
 3. Which social channels matter beyond WhatsApp, Facebook and X (for example Instagram, Telegram), so the share menu lists the right ones?
+
+## 9. Share metadata stories (lane L15b, added 2026-11-25)
+
+Audit: `docs/audits/2026-11-25-og-audit.md`. Decisions D-389 and D-390.
+
+### M45-S20 Complete share tags on every public page (Must)
+As a visitor sharing a link, I want a proper preview in WhatsApp, Facebook, X, Telegram, LinkedIn, iMessage, Slack and email, so that people know what they are opening.
+- AC1: Given any public page, When a crawler reads it, Then it has og:title, og:type, og:url, og:site_name, og:description, og:locale, an absolute https og:image with width, height, type and alt, twitter:card summary_large_image with title, description, image and image alt, and a canonical equal to og:url.
+- AC2: Given a video, series, or other page, Then og:type is video.other, video.tv_show or website, with duration, release date and category tags on videos, and no og:video tags.
+- AC3: Given long text, quotes, markup or Yoruba, Igbo or Hausa diacritics, Then descriptions are cut on a word boundary at 160 characters, markup is removed and letters are never split.
+- Edge: search results, errors and watch pages are noindex and carry no canonical.
+
+### M45-S21 Share picture for every video and series (Must)
+As an editor, I want every title to have a 1200 by 630 share picture made from its poster, so that shared links look good without extra work.
+- AC1: Given a published title with a poster, When `/og/title/<slug>?v=<hash>` is fetched, Then it answers 200 with a JPEG of 1200 by 630 under 300 KB, one year immutable caching, a title overlay unless switched off, and a play badge on videos unless switched off.
+- AC2: Given a changed poster, title or share setting, Then the version in the url changes.
+- AC3: Given no poster or a failed render, Then the generic platform card is returned with 200 bytes, never a redirect.
+- Edge: the card background and ink come from the theme colour and its contrast, never from a fixed colour.
+
+### M45-S22 Public previews never leak (Must)
+As the owner, I want drafts, trashed titles, kids only titles and titles above the guest ceiling to stay out of share previews.
+- AC1: Given an unpublished, scheduled, trashed or above ceiling title, Then the page tags and the picture answer not found and noindex.
+- AC2: Given a kids only title, Then every tag and the picture show the generic platform card and noindex.
+
+### M45-S23 Share control per title (Should, slice 3 of lane L15b)
+As an editor, I want to set a share picture, title and description for a video or series with a live preview, so that I can word a share card.
+- AC1: Given the title editor, When I upload or choose a share picture and edit the share title and description, Then I see WhatsApp, Facebook and X preview cards that update as I type, and a clear message when a value is too long.
+- AC2: Given I save, Then the change is audited and the picture version changes.
+- Fallback chain: custom share picture, then poster, then thumbnail, then the platform default card.
+
+### M45-S24 Share check (Should)
+As a developer or owner, I want one command that checks the real tags and pictures, so that regressions are caught before a deploy.
+- AC1: Given a running build, When `pnpm share:check --base <url>` runs, Then it prints a table and exits 1 on any missing tag, relative or non https url, canonical mismatch, redirect, wrong content type, picture over 300 KB, wrong or mismatched dimensions or slow response.
+- AC2: `pnpm share:check --self-test` runs the rules against fixtures and runs in CI.
+
