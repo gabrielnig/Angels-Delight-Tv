@@ -5,6 +5,8 @@ export interface ManifestShot {
   file: string;
   alt: string;
   bytes: number;
+  /** Areas that change between runs (marked `data-kb-dynamic`). The screenshot diff ignores them. */
+  masks?: Array<{ x: number; y: number; width: number; height: number }>;
 }
 
 export interface ManifestProfile {

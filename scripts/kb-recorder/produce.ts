@@ -4,7 +4,15 @@ import { join } from 'node:path';
 import { promisify } from 'node:util';
 import { burnCaptions } from './burn';
 import { lintCues } from './caption-style';
-import { buildCues, toAss, toVtt, validateCues, type Cue, type StepTiming } from './captions';
+import {
+  buildCues,
+  plainCaption,
+  toAss,
+  toVtt,
+  validateCues,
+  type Cue,
+  type StepTiming,
+} from './captions';
 import type { Profile } from './profiles';
 import {
   buildCards,
@@ -118,7 +126,7 @@ export async function produceOutputs(i: ProduceInput): Promise<ProduceOutput> {
       totalMs: keptMs + CARD_MS * (i.next ? 2 : 1),
       steps: captioned.map((t, n) => ({
         n: n + 1,
-        caption: t.caption!,
+        caption: plainCaption(t.caption!),
         startMs: t.startMs,
         pointer: t.pointer,
       })),

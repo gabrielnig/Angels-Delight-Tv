@@ -25,6 +25,8 @@ import {
 import { PROFILES, type Profile } from './profiles';
 import { loadAllEpisodes } from './registry';
 import { selectEpisodes } from './select';
+import { exitCodeFor } from './exit-code';
+import { copyShotsToBaseline, updateArticleSteps } from './update';
 
 const { values } = parseArgs({
   options: {
@@ -49,6 +51,8 @@ const { values } = parseArgs({
     'max-mb': { type: 'string', default: '5' },
     compare: { type: 'string' },
     list: { type: 'boolean', default: false },
+    update: { type: 'boolean', default: false },
+    content: { type: 'string', default: 'content/help' },
   },
 });
 
@@ -165,6 +169,17 @@ async function main(): Promise<void> {
       }
     }
     if (profiles.length) entries.push(manifestEntry(e, profiles));
+    if (values.update && profiles.length) {
+      // kb:update: refresh the committed pictures and the article steps block for review.
+      const content = resolve(values.content!);
+      const run = resolve(options.out, options.run);
+      const shots = profiles.flatMap((p) => p.shots.map((s) => s.file));
+      copyShotsToBaseline(content, e.id, run, shots);
+      const article = updateArticleSteps(content, e);
+      console.log(
+        `${e.id}: ${shots.length} picture(s) copied to ${content}/media/${e.id}${article ? `, steps block rewritten in ${article}` : ', no article yet'}`,
+      );
+    }
   }
   const manifest = await writeManifest({ out: options.out, run: options.run, episodes: entries });
   console.log(
@@ -182,5 +197,9 @@ async function main(): Promise<void> {
 
 main().catch((e) => {
   console.error(e instanceof Error ? e.message : e);
-  process.exit(1);
+  if (exitCodeFor(e) === 2)
+    console.error(
+      'This is an infrastructure problem (stack, browser or reset), not a content failure.',
+    );
+  process.exit(exitCodeFor(e));
 });

@@ -2,6 +2,7 @@
 # The isolated demo stack for the admin knowledge base recorder (plan section 11, D-362).
 #   scripts/kb-stack.sh env [port]      print the environment of the fixture stack (no database, throwaway keys)
 #   scripts/kb-stack.sh fixture [port]  start the web app on the fixture data with the demo layer (dev server, foreground)
+#   scripts/kb-stack.sh start [port]    the same for an app that is already built (next start), for CI: no compile pauses
 #   scripts/kb-stack.sh real [port]     prepare databases ad_kb and ad_kb_keys on the local Postgres and write .env.kb-real
 # The fixture stack serves the demo dataset (apps/web/src/lib/data/admin/kb-demo), a pinned server clock and the reset
 # route the recorder calls between episodes. Never point this at real data: the recorder refuses any other origin.
@@ -23,7 +24,13 @@ ENV
 
 case "$MODE" in
   env)
-    fixture_env
+    # NODE_OPTIONS holds a space, so it is quoted for `set -a; . file`.
+    fixture_env | sed -E 's/^NODE_OPTIONS=(.*)$/NODE_OPTIONS="\1"/'
+    ;;
+  start)
+    while IFS= read -r line; do export "$line"; done < <(fixture_env)
+    cd apps/web
+    exec pnpm exec next start -p "$PORT"
     ;;
   fixture)
     while IFS= read -r line; do export "$line"; done < <(fixture_env)
@@ -86,7 +93,7 @@ ENV
     echo "Reset between episodes: re run this script (about a minute)."
     ;;
   *)
-    echo "usage: $0 env|fixture|real [port]" >&2
+    echo "usage: $0 env|fixture|start|real [port]" >&2
     exit 2
     ;;
 esac

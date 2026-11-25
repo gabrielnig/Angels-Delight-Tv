@@ -1,0 +1,97 @@
+name: kb-nightly
+
+# Admin knowledge base, full tier (plan section 10.5): every night, on release tags and by hand, record every episode on
+# the fixture demo stack, check the videos with ffprobe, compare lengths with the last run and compare each screenshot
+# with its committed baseline in content/help/media. Output is an artifact. Nothing is published and no secret is read.
+
+on:
+  schedule:
+    - cron: '17 2 * * *'
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      min_seconds:
+        description: 'Shortest allowed video in seconds (60 once the content is complete)'
+        required: false
+        default: '10'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: kb-nightly-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  record:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    env:
+      KB_BASE_URL: http://localhost:3141
+      KB_MIN_SECONDS: ${{ github.event.inputs.min_seconds || '10' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Install ffmpeg and the caption font
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg fonts-inter
+
+      - name: Build
+        run: pnpm --filter @ad/web build
+
+      - name: Start the demo stack
+        run: |
+          (scripts/kb-stack.sh start 3141 > server.log 2>&1 &)
+          for i in $(seq 1 40); do curl -sf http://localhost:3141/api/health && break; sleep 2; done
+          curl -sf http://localhost:3141/api/health
+
+      - run: pnpm exec playwright install --with-deps chromium
+
+      - name: Restore the manifest of the last run
+        uses: actions/cache@v4
+        with:
+          path: .kb-last
+          key: kb-manifest-${{ github.run_id }}
+          restore-keys: kb-manifest-
+
+      - name: Record everything
+        run: |
+          COMPARE=""
+          if [ -f .kb-last/manifest.json ]; then COMPARE="--compare .kb-last/manifest.json"; fi
+          pnpm kb:record --all --no-warm --out .kb-out --run nightly --min-seconds "$KB_MIN_SECONDS" $COMPARE
+
+      - name: Remember this manifest for the next run
+        if: success()
+        run: |
+          mkdir -p .kb-last
+          cp .kb-out/nightly/manifest.json .kb-last/manifest.json
+
+      - name: Compare screenshots with the committed baselines
+        run: pnpm kb:shots-diff --run .kb-out/nightly --baseline content/help/media --out .kb-out/diffs --max-percent 0.5
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: kb-output
+          retention-days: 14
+          path: |
+            .kb-out
+            !.kb-out/**/*.raw.webm
+            server.log
+
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: kb-diffs
+          path: .kb-out/diffs
