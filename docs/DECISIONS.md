@@ -2181,3 +2181,9 @@ Decision: (1) The `share` event may carry the catalog id of the shared title (a 
 Options: per title counts by slug (needs no id but leaks nothing more, yet slugs change); a drag handle for ordering; remembering the Start at choice between opens.
 Why: ids are stable and already public in watch links; counters keep the privacy position of D-391. Off by default each time avoids sharing a spoiler position by accident.
 Reversible: yes. The id is optional and old events stay valid; no migration.
+
+## D-394 Setup and settings guides follow the real screens, the settings dictionary is generated, and the demo seeds a theme history (lane C3, M50)
+- Decision: (1) Guides C01 to C15, W04, W05, W08, W09 and K03 follow the real Site settings, Theme and Home curation screens, and a new guide id C15 covers the storage notice. Where the plan and the screen differ, the screen wins and the lane note lists the difference. (2) The settings dictionary (R04) is generated from the settings registry by `scripts/kb-recorder/settings-reference.ts` (`pnpm help:settings`), with plain wording overrides, and a test fails when a registry key has no plain words or the guide differs from the generator. (3) The demo seeds a published theme history (`kb-demo/theme-history.ts`, KB_DEMO only) so the restore guide has something to restore. (4) The fact checker now clears a box before typing, scrolls to far tabs, matches menu items that carry a count badge, opens summary menus, and lets the page settle after each click. (5) Things fixture mode cannot show (email sending, the domain, real storage totals) are written from the code and flagged in `docs/lanes/L14-content-C3.md`.
+- Options: Write guides from the plan only (drift from the screens); hand write the settings list (drift from the registry); record against an empty theme history (no restore step).
+- Why: Guides must match what staff see, and a generated list cannot go stale.
+- Reversible: Yes.
