@@ -2136,3 +2136,9 @@ Decision: `video.preview` catches every error and records `failed` or `skipped` 
 - Options: Service worker cache of the last 30 guides (refused by D-359); nothing but the browser offline page; honest copy plus in memory retry (chosen).
 - Why: Shared devices must not keep authenticated admin pages, and a message that promises a saved copy would be false. The offline handbook (a download) is the answer for a person with no connection.
 - Reversible: Yes. A cache would need a new decision and a STORAGE_INVENTORY row.
+
+## D-387 Per guide PDFs are prebuilt release files served by one private route, with the print dialog as the fallback (lane KB-P2, M50-S09)
+- Decision: Print or save as PDF always uses the browser print dialog and the print stylesheet. Download PDF asks `/admin/help/media/pdf/<ID>.pdf`, which serves `help/<release>/pdf/<ID>.pdf` from the private originals bucket to signed in staff (attachment, private cache, nosniff, noindex). The `sample` release has none, an odd name is a 404, and a missing file or a failed check makes the button open the print dialog instead. The release job (lane KB-H and the integrator) writes the files. A link to another guide prints its id (`(guide D01)`) because paper has no link. The offline handbook ZIP and the whole handbook PDFs belong to the release tooling (plan L14-11), not the platform slices.
+- Options: Only the print dialog; a server side PDF render per request (heavy, needs a browser on the server); prebuilt files with a print fallback (chosen).
+- Why: Zero build cost for the common case, a real file for people who want one, and no PDF renderer in the production image.
+- Reversible: Yes.
