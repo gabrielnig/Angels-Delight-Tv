@@ -125,7 +125,6 @@ export const DEMO_DATASET: DemoDataset = {
       title: 'Demo series: Genesis',
       description: 'Demo Bible lessons from the book of Genesis, in two parts.',
       labels: { preset: 'part_lesson' },
-      groupTitles: { 1: 'Beginnings', 2: 'The family of Abraham' },
     },
     {
       id: 'ser_demo_proverbs',

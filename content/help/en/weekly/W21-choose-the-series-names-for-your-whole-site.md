@@ -31,6 +31,13 @@ The **Item code** is a short tag on small cards, such as Gen 4. Use one to four 
 
 ## Steps
 <!-- kb:steps W21 -->
+1. Choose **Site settings** in the side menu.
+2. Click the **Series names** tab.
+   ![The Series names tab with the Name set list marked 1](../../media/W21/W21-02-tab-desktop.webp)
+3. Select **Part and Lesson** from the **Name set** list.
+   ![The preview list showing how Part and Lesson will read, marked 1](../../media/W21/W21-03-preview-desktop.webp)
+4. Type "Gen" in the **Item code** box.
+5. Click **Save changes**.
 <!-- /kb:steps -->
 
 ## What you should see

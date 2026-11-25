@@ -96,6 +96,7 @@ export function applyDemo(
       posterId: null,
       published: true,
       labelOverride: demoSeries.labels ?? null,
+      ...(demoSeries.labels ? { labels: demoSeries.labels } : {}),
     });
   }
 
@@ -157,9 +158,9 @@ export function applyDemo(
       group: 2,
       number: 2,
     }),
-    bible(gen('37'), 'Demo lesson: Genesis 37, Joseph and his brothers', 35),
-    bible(gen('41'), 'Demo lesson: Genesis 41, Joseph in Egypt', 34),
-    bible(gen('45'), 'Demo lesson: Genesis 45, Joseph forgives', 33),
+    bible(gen('37'), 'Demo lesson: Joseph is sold', 35),
+    bible(gen('41'), 'Demo lesson: Joseph in Egypt', 34),
+    bible(gen('45'), 'Demo lesson: Joseph forgives', 33),
     bible('vid_demo_prov_1', 'Demo lesson: Proverbs 1, the start of wisdom', 32, {
       series: 'ser_demo_proverbs',
       group: 1,
@@ -187,6 +188,7 @@ export function applyDemo(
       published: true,
       maturityRank: 0,
       labelOverride: s.labels ?? null,
+      ...(s.labels ? { labels: s.labels } : {}),
       ...(s.groupTitles ? { groupTitles: s.groupTitles } : {}),
     });
   }

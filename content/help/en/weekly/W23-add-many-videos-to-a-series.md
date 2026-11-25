@@ -4,7 +4,7 @@ title: Add many videos to a series
 path: weekly
 summary: Bundle several videos into a series from the Videos list, check the numbers, and undo if needed.
 role: editor
-needs: [W20, D10]
+needs: [W20]
 related: [W02, W25, W01]
 readMinutes: 4
 watchSeconds: 90
@@ -41,5 +41,5 @@ The preview table lists every video with its place, for example Part 3, Lesson 1
 > The demo recording clicks **Undo** at the end so the demo stays the same. Do the same only if the numbers look wrong.
 
 ## If something goes wrong
-- **Add to series is grey.** Select rows on this page first. It cannot work on every match of a search. [Find videos and change many at once](help:D10)
+- **Add to series is grey.** Select rows on this page first. It cannot work on every match of a search. Find videos and change many at once
 - **A red message says a number is taken.** Choose another **Part** or start at a later lesson. [Fix gaps and duplicate numbers](help:W25)

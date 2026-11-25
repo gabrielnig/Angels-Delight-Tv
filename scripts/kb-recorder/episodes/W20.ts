@@ -48,7 +48,9 @@ const episode: Episode = {
       shot: {
         name: 'group-one',
         alt: 'The Part 1 group marked 1, with its lessons listed below it',
-        marks: [{ target: (s) => s.page.getByRole('heading', { name: /^Part 1/ }), label: 'A group' }],
+        marks: [
+          { target: (s) => s.page.getByRole('heading', { name: /^Part 1/ }), label: 'A group' },
+        ],
       },
     },
     {
