@@ -778,7 +778,7 @@ Each module lists: purpose, responsibilities, data owned, dependencies, client i
 
 **Dependencies.** M01, M06, M07, M26, M35, M40, M34.
 
-**Notes.** Kids-only titles are never indexed or placed in the sitemap (R26). Every new cookie or storage key needs a row in `STORAGE_INVENTORY` (`apps/web/src/lib/consent/inventory.ts`). Plan and stories: `docs/plan/v2/L6-discovery.md`. Build notes: `docs/lanes/L6-build.md`.
+**Notes.** Share metadata (lane L15b, D-389, D-390): one builder `buildMetadata` for every public route, share pictures from `/og/...`, `pnpm share:check`, audit `docs/audits/2026-11-25-og-audit.md`, stories M45-S20 to S24 in `docs/plan/v2/L6-discovery.md`. Kids-only titles are never indexed or placed in the sitemap (R26). Every new cookie or storage key needs a row in `STORAGE_INVENTORY` (`apps/web/src/lib/consent/inventory.ts`). Plan and stories: `docs/plan/v2/L6-discovery.md`. Build notes: `docs/lanes/L6-build.md`.
 
 ### M41 Home hero, rows and sections [READY]
 
