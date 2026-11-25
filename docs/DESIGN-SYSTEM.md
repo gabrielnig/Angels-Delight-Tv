@@ -536,7 +536,7 @@ Accessibility: card is an `<a>` with accessible name "Title, 4 minutes". Actions
 - Pill rows scroll horizontally on mobile with no wrap, wrap on desktop only if three or fewer lines are needed.
 - Selecting a pill updates the content beneath instantly, no full reload, URL query updated.
 - States: default, hover (border ink), focus (ring), active (selected, `aria-pressed` for toggles or `aria-selected` in a tablist), disabled (sunken), loading (content below shows skeleton, pill stays active), error (inline message under the row).
-- A single "Filters" button on mobile opens a bottom sheet with sort and category groups and a sticky "Show 24 videos" apply button. Admin tables use the same pills for status filters with counts.
+- Browse keeps categories in one pill rail (no wrap, scroll snap, edge fades, arrows on fine pointers only) and puts Length and Sort in two menu buttons (a popover menu on desktop, a bottom sheet on phones) that apply instantly with no Apply bar, tint when set and show a Clear link (D-357). Admin tables use the same pills for status filters with counts.
 
 ### 11.12 Modal and bottom sheet
 

@@ -186,3 +186,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 - The bar scrim over the Home hero now holds 0.85 through the whole bar and fades over the new token `--nav-scrim-fade` below it (it replaces `--nav-scrim-hold`), so icons stay readable over pale posters. A test reads the resolved gradient and checks the contrast. A second test checks the header does not move when the display font loads in a different width. Design system 11.8 and 11.12, the screen map (S81, S182 to S185) and stories M47-S17 to M47-S19 describe the phone header, sheet and tab bar. Decision D-381.
 
+### Lane L11 Browse page redesign (S186)
+
+- Browse has one category rail that never wraps (native scroll snap, edge fades, arrow buttons on fine pointers only, the selected chip scrolled into view, 44 px links) and one quiet bar with two menu buttons, Length and Sort. They open a popover menu on desktop and a bottom sheet on phones, apply at once, tint when set and show a Clear link. The choices stay in the URL. The rail and bar stick under the nav, and on phones the bar hides on scroll down and returns on scroll up.
+- Results stream behind a skeleton that holds its height, the count sits beside the title, the two empty states have one action each, and Show more has idle, loading and failed states (failed shows Try again only).
+- The length filter now matches its labels: Under 5 min, 5 to 15 min and Over 15 min (was under 3, 3 to 5, 5 and over). Saved links with `length=short`, `medium` or `long` keep working. Decisions D-382 and D-383. Measured width tests in Chromium at 320, 360, 414 and 1360.
+

@@ -530,7 +530,7 @@ As a viewer, I want to browse titles by category, so that I can find a subject I
 
 ### M06-S02 Sort and filter (Should)
 As a viewer, I want to sort by newest, shortest or A to Z and filter by length, so that I can pick something that fits my time.
-- AC1: Given I choose "Under 3 minutes", When it applies, Then only titles with duration under 180 seconds show and the filter appears as a removable chip.
+- AC1: Given I choose "Under 5 min" in the Length menu, When it applies, Then only titles with duration under 300 seconds show at once, the Length button is tinted with its value and a Clear link appears. "5 to 15 min" is 300 up to 900 seconds and "Over 15 min" is 900 seconds and over.
 - AC2: Given I choose Sort: Newest, When it applies, Then the order is by publish date descending, with the choice kept in the URL.
 - AC3: Given filters produce nothing, When the grid renders, Then it shows "No videos match. Clear filters" with a Clear button.
 - Edge: filter and sort persist per session, not per account.
