@@ -16,7 +16,7 @@ Worktree `/home/claude/wt2/KBP-build`. Builds the help centre itself: the conten
 | 4 Video | private media route with Range for pictures, videos and captions, `HelpVideo` player with captions track, quality and picture choice, transcript, watched at 90 percent, `/admin/help/videos/[id]` with playlist, isolation test | Merged in the fourth platform PR |
 | 5 Panel | `HelpPanelHost` and `HelpPanel` (drawer from 60rem, bottom sheet below), top bar Help button opens it (a real link without script), question mark key, focus trap, Escape, swipe, return focus, loading, slow, offline, error and no guide states, `InlineHint`, `panelFor` and `helpPanelAction`, D-384 | Merged (PR 435) |
 | 6 Search and glossary | pure scorer in `@ad/help` (`search.ts`: stemming, aliases, one edit typo tolerance, Did you mean, role ordering, highlights), `/admin/help/search`, `/admin/help/glossary` (A to Z jump, filter, anchors by slug, guide links), search box on the help home with the slash key. Recent searches are not stored, so no storage key was added | Merged in the fifth platform PR |
-| 7 States and checks | offline and error states, accessibility and layout e2e, final docs | Not yet |
+| 7 States and checks | `HelpStates` (error, not found, loading, connection note), offline and playback states in `HelpVideo`, `useSaveQueue` retrying saves with a quiet toast, `apps/web/e2e/admin-help.e2e.ts`, D-386 | Merged (PR below), final docs still open |
 
 Update this table in every platform PR.
 
@@ -95,6 +95,7 @@ Video files are not in the repo. The page looks for them under the media release
 - `pnpm vitest run apps/web/src/server/help "apps/web/src/app/admin/(shell)/help/media"` (media route, Range, isolation)
 - Media release: env `HELP_MEDIA_RELEASE` (default `sample`, which serves `content/help/placeholder`). A real release is read from the originals bucket at `help/<release>/<VIDEO_ID>/<file>`. `kb:publish` (harness lane) writes it.
 - `pnpm vitest run apps/web/src/components/admin/help/HelpPanel.test.tsx apps/web/src/components/admin/help/InlineHint.test.tsx apps/web/src/lib/admin/help-panel.test.ts apps/web/src/components/admin/AdminShellHelp.test.tsx` (panel)
+- e2e (runs here with Chrome): start the fixture web app (`pnpm kb:stack env` values, port of your choice, no `KB_DEMO`), then `cd apps/web && E2E_BASE_URL=http://localhost:PORT E2E_CHROMIUM_PATH=/usr/bin/google-chrome pnpm exec playwright test e2e/admin-help.e2e.ts --project=desktop` (axe, layout and panel at 360, 600, 960, 1280)
 - Later slices add their own lines here.
 
 ## Harness (lane KB-H)

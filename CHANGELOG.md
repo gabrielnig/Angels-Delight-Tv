@@ -199,3 +199,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - Results stream behind a skeleton that holds its height, the count sits beside the title, the two empty states have one action each, and Show more has idle, loading and failed states (failed shows Try again only).
 - The length filter now matches its labels: Under 5 min, 5 to 15 min and Over 15 min (was under 3, 3 to 5, 5 and over). Saved links with `length=short`, `medium` or `long` keep working. Decisions D-382 and D-383. Measured width tests in Chromium at 320, 360, 414 and 1360.
 
+### Lane KB-P2 help panel and states (M50, S197 and S198)
+
+- The Help button in the top bar opens a contextual panel (drawer from 60rem, bottom sheet below) showing the guide for the current screen with its steps, video and Open the full guide. The question mark key opens it when no field has focus. Tab is trapped, Escape, Close and a swipe down close it, focus returns to the opener. With no guide it shows search and the core tasks. The `InlineHint` pattern opens a guide section in the panel. Decision D-384.
+- Help pages have offline, slow, server error, not found and video error states with one action each, and progress saves keep the chosen state and retry by themselves with a quiet toast. Decision D-386.
+- Fixes found by the new `apps/web/e2e/admin-help.e2e.ts` (axe and layout at 360, 600, 960 and 1280): the top bar Help button had no name below 60rem, the help search box was 40 px tall, and the glossary used an invalid definition list.
