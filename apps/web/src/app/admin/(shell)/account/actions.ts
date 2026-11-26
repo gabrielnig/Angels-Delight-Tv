@@ -44,6 +44,28 @@ export async function regenerateCodesAction(code: string) {
   return result;
 }
 
+const unavailable = { ok: false as const, field: 'code', error: 'This is not available here.' };
+
+export async function sendConfirmCodeAction() {
+  const actor = await requireActionActor('/admin/account');
+  return (await accountService.sendConfirmCode?.(actor)) ?? unavailable;
+}
+
+export async function revokeTrustedDeviceAction(id: string) {
+  const actor = await requireActionActor('/admin/account');
+  const result = (await accountService.revokeTrustedDevice?.(actor, String(id))) ?? unavailable;
+  revalidatePath('/admin/account');
+  return result;
+}
+
+export async function switchToEmailAction(code: string) {
+  const actor = await requireActionActor('/admin/account');
+  const result =
+    (await accountService.switchToEmail?.(actor, String(code).replace(/\s/g, ''))) ?? unavailable;
+  revalidatePath('/admin/account');
+  return result;
+}
+
 export async function saveNotificationPrefsAction(patch: {
   failures?: boolean;
   captionsReady?: boolean;

@@ -26,6 +26,10 @@ export interface AccountActions {
   regenerateCodes(
     code: string,
   ): Promise<{ ok: false; field: string; error: string } | { ok: true; codes: string[] }>;
+  /** Emails a fresh confirmation code. Only for people who use emailed codes. */
+  sendConfirmCode?(): Promise<FieldResult>;
+  revokeTrustedDevice?(id: string): Promise<FieldResult>;
+  switchToEmail?(code: string): Promise<FieldResult>;
 }
 
 export function MyAccountView({
@@ -54,6 +58,11 @@ export function MyAccountView({
   const [codeError, setCodeError] = useState<string>();
   const [codes, setCodes] = useState<string[] | null>(null);
   const check = checkPassword(next, account.email);
+  const emailMode = account.secondStep === 'email';
+  const [codeNotice, setCodeNotice] = useState<string>();
+  const [switchOpen, setSwitchOpen] = useState(false);
+  const [switchCode, setSwitchCode] = useState('');
+  const [switchError, setSwitchError] = useState<string>();
 
   async function guard<T>(key: string, work: () => Promise<T>): Promise<T | null> {
     setBusy(key);
@@ -105,6 +114,24 @@ export function MyAccountView({
       setCodeError(undefined);
       router.refresh();
     } else setCodeError(r.error);
+  }
+  async function emailMeACode() {
+    const r = await guard('send', () => actions.sendConfirmCode!());
+    if (!r) return;
+    if (r.ok) {
+      setErrors({});
+      setCodeNotice('A code is on its way. Check your email, then enter it here.');
+    } else setErrors({ code: r.error });
+  }
+  async function switchToEmail() {
+    const r = await guard('switch', () => actions.switchToEmail!(switchCode.replace(/\s/g, '')));
+    if (!r) return;
+    if (r.ok) {
+      setSwitchOpen(false);
+      setSwitchCode('');
+      toast.show({ tone: 'success', message: 'You will use emailed codes from now on.' });
+      router.refresh();
+    } else setSwitchError(r.error);
   }
   const closeCodes = () => {
     setCodesOpen(false);
@@ -200,14 +227,28 @@ export function MyAccountView({
             onChange={(e) => setConfirm(e.target.value)}
           />
           <TextField
-            label="Authenticator code"
-            hint="The 6 digit code from your authenticator app."
+            label={emailMode ? 'Emailed code' : 'Authenticator code'}
+            hint={
+              emailMode
+                ? 'The 6 digit code we email you. Use Email me a code to get one.'
+                : 'The 6 digit code from your authenticator app.'
+            }
             inputMode="numeric"
             autoComplete="one-time-code"
             value={passwordCode}
             error={errors.code}
             onChange={(e) => setPasswordCode(e.target.value)}
           />
+          {emailMode && actions.sendConfirmCode ? (
+            <div>
+              <Button loading={busy === 'send'} onClick={() => void emailMeACode()}>
+                Email me a code
+              </Button>
+              <p role="status" className="adm-muted" style={{ margin: 0 }}>
+                {codeNotice}
+              </p>
+            </div>
+          ) : null}
           <div>
             <Button
               type="submit"
@@ -228,24 +269,85 @@ export function MyAccountView({
         <h2 className="adm-h3" id="acc-2fa">
           Two step sign in
         </h2>
-        <div className="adm-row">
-          <Badge
-            tone={account.twoFactor ? 'success' : 'warning'}
-            icon={account.twoFactor ? 'shield' : 'alert'}
-          >
-            {account.twoFactor ? 'On' : 'Not set up'}
-          </Badge>
-          <span className="adm-muted">{account.recoveryCodesLeft} recovery codes left</span>
-        </div>
-        {account.recoveryCodesLeft <= 3 ? (
-          <Banner tone="warning">
-            You are running low on recovery codes. Make new ones and keep them somewhere safe.
-          </Banner>
-        ) : null}
-        <div>
-          <Button onClick={() => setCodesOpen(true)}>Make new recovery codes</Button>
-        </div>
+        {emailMode ? (
+          <>
+            <div className="adm-row">
+              <Badge tone="success" icon="shield">
+                Emailed code
+              </Badge>
+            </div>
+            <p className="adm-muted" style={{ margin: 0 }}>
+              After your password we email you a code. There are no recovery codes: your inbox is the
+              fallback, so keep that account secure.
+            </p>
+          </>
+        ) : (
+          <>
+            <div className="adm-row">
+              <Badge
+                tone={account.twoFactor ? 'success' : 'warning'}
+                icon={account.twoFactor ? 'shield' : 'alert'}
+              >
+                {account.twoFactor ? 'Authenticator app' : 'Not set up'}
+              </Badge>
+              <span className="adm-muted">{account.recoveryCodesLeft} recovery codes left</span>
+            </div>
+            {account.recoveryCodesLeft <= 3 ? (
+              <Banner tone="warning">
+                You are running low on recovery codes. Make new ones and keep them somewhere safe.
+              </Banner>
+            ) : null}
+            <div className="adm-row">
+              <Button onClick={() => setCodesOpen(true)}>Make new recovery codes</Button>
+              {account.emailSwitchAvailable && actions.switchToEmail ? (
+                <Button onClick={() => setSwitchOpen(true)}>Use emailed codes instead</Button>
+              ) : null}
+            </div>
+          </>
+        )}
       </section>
+
+      {account.trustedDevices && account.trustedDevices.length > 0 ? (
+        <section className="adm-card adm-stack" aria-labelledby="acc-trusted">
+          <h2 className="adm-h3" id="acc-trusted">
+            Remembered devices
+          </h2>
+          <p className="adm-muted" style={{ margin: 0 }}>
+            These browsers skip the emailed code until they expire. Forget any you do not use or no
+            longer trust. Signing out everywhere and changing your password forget them all.
+          </p>
+          <ul className="adm-list">
+            {account.trustedDevices.map((device) => (
+              <li key={device.id}>
+                <span className="adm-listrow__main">
+                  <strong>{device.label}</strong>
+                  <span className="adm-muted">
+                    {device.place}, {device.lastUsedAt ? `used ${formatRelative(device.lastUsedAt, now)}` : 'not used since'}
+                  </span>
+                </span>
+                <Button
+                  variant="ghost"
+                  loading={busy === device.id}
+                  aria-label={`Forget ${device.label}`}
+                  onClick={async () => {
+                    const r = await guard(device.id, () => actions.revokeTrustedDevice!(device.id));
+                    if (r) {
+                      toast.show(
+                        r.ok
+                          ? { tone: 'success', message: 'Device forgotten.' }
+                          : { tone: 'danger', message: r.error },
+                      );
+                      if (r.ok) router.refresh();
+                    }
+                  }}
+                >
+                  Forget
+                </Button>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
 
       <section className="adm-card adm-stack" aria-labelledby="acc-sessions">
         <h2 className="adm-h3" id="acc-sessions">
@@ -289,6 +391,40 @@ export function MyAccountView({
           ))}
         </ul>
       </section>
+
+      <Dialog
+        open={switchOpen}
+        onClose={() => {
+          setSwitchOpen(false);
+          setSwitchCode('');
+          setSwitchError(undefined);
+        }}
+        title="Use emailed codes instead?"
+        size="sm"
+        footer={
+          <>
+            <Button variant="ghost" onClick={() => setSwitchOpen(false)}>
+              Cancel
+            </Button>
+            <Button variant="primary" loading={busy === 'switch'} onClick={() => void switchToEmail()}>
+              Switch to emailed codes
+            </Button>
+          </>
+        }
+      >
+        <p style={{ margin: 0 }}>
+          Your authenticator app and recovery codes stop working and you are signed out on your other
+          devices. Enter the 6 digit code from your app to confirm.
+        </p>
+        <TextField
+          label="Authenticator code"
+          inputMode="numeric"
+          autoComplete="one-time-code"
+          value={switchCode}
+          error={switchError}
+          onChange={(e) => setSwitchCode(e.target.value)}
+        />
+      </Dialog>
 
       <Dialog
         open={codesOpen}

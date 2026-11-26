@@ -42,11 +42,20 @@ export function whereIs(key: SettingKey): string {
     return `${SITE}, Features and limits tab`;
   if (g === 'home') return `${SITE}, Home tab`;
   if (g === 'discovery') return `${SITE}, Discovery tab`;
+  if (g === 'security') return `${SITE}, Security tab`;
   return 'No screen yet. Ask the developer';
 }
 
 /** Plain words for settings whose registry text is long or technical. Keep each to 25 words or fewer. */
 const PLAIN: Partial<Record<SettingKey, string>> = {
+  'security.staff_second_step':
+    'After the password, staff enter a code sent by email, or from an authenticator app. Existing apps keep working.',
+  'security.staff_session_idle_days':
+    'Staff sign in again after this many idle days. Each visit restarts the count. 1 to 30.',
+  'security.staff_session_absolute_days':
+    'Every staff sign in ends after this many days, however busy. 1 to 90.',
+  'security.trusted_device_days':
+    'Days a remembered device skips the emailed code. 0 turns Remember this device off. 0 to 90.',
   'home.hero_clip_seconds':
     'How long a hero clip plays, 6 to 30 seconds. Longer videos play their best part.',
   'home.hero_sound':
@@ -114,6 +123,8 @@ export function plainDefault(key: SettingKey): string {
   const v = SETTING_DEFS[key].default as unknown;
   if (key === 'limits.upload_max_bytes') return `${(v as number) / 1024 ** 3} GB`;
   if (key === 'maintenance.banner') return 'Off, with no message';
+  if (key === 'security.staff_second_step') return 'Email';
+  if (key.startsWith('security.') && typeof v === 'number') return `${v} days`;
   if (key === 'content.series_labels') return 'The ready made set that ships with the site';
   if (MINOR_AMOUNTS.includes(key)) {
     const sym = key.endsWith('usd') ? '$' : '₦';
@@ -142,6 +153,7 @@ const GROUP_NAMES: Record<string, string> = {
   maintenance: 'Maintenance',
   monetization: 'Sponsors and donations',
   discovery: 'Discovery and notices',
+  security: 'Security',
 };
 
 const GROUP_ORDER = [
@@ -151,6 +163,7 @@ const GROUP_ORDER = [
   'home',
   'content',
   'discovery',
+  'security',
   'legal',
   'maintenance',
   'analytics',

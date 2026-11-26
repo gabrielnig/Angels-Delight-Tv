@@ -6,6 +6,7 @@ import { classifyCode } from './admin-code';
 import { type FormState, toFormState } from './form-errors';
 import { adminRuntime, titleCaseFromEmail } from '@/server/admin/runtime';
 import { authRuntime } from './runtime';
+import { themeRuntime } from '@/lib/data/admin/theme-runtime';
 import { turnstileFromEnv, verifyTurnstile } from './turnstile';
 import {
   clearSessionCookie,
@@ -13,6 +14,7 @@ import {
   readSessionToken,
   requestMeta,
   setSessionCookie,
+  setTrustedDeviceCookie,
 } from './session';
 
 const STAFF = new Set(['editor', 'admin', 'super_admin']);
@@ -71,7 +73,7 @@ export async function realAdminSignIn(
   email: string,
   password: string,
   challengeToken?: string,
-): Promise<FormState & { ok?: true }> {
+): Promise<FormState & { ok?: true; signedIn?: boolean; codeSent?: boolean }> {
   const keys = turnstileFromEnv(authRuntime().env);
   if (keys && !(await verifyTurnstile(keys, challengeToken, (await requestMeta()).ip)))
     return { error: 'We could not confirm the security check. Try again.' };
@@ -81,7 +83,11 @@ export async function realAdminSignIn(
       result.session.token,
       result.status === 'signed_in' ? 'staff' : 'pending_mfa',
     );
-    return { ok: true };
+    return {
+      ok: true,
+      signedIn: result.status === 'signed_in',
+      ...(result.codeSent === undefined ? {} : { codeSent: result.codeSent }),
+    };
   } catch (error) {
     const state = toFormState(error);
     return state.error
@@ -90,17 +96,40 @@ export async function realAdminSignIn(
   }
 }
 
+const CODE_PROBLEMS: Record<string, string> = {
+  'That code has expired': 'That code has expired. Send a new code.',
+  'Too many wrong tries on that code': 'Too many wrong tries on that code. Send a new code.',
+};
+
 export async function realSubmitCode(
   input: string,
+  options: { remember?: boolean } = {},
 ): Promise<{ ok: true } | { ok: false; error: string }> {
   const actor = await realPendingActor();
   if (!actor) return { ok: false, error: 'Your sign in expired. Sign in again.' };
+  const staff = authRuntime().staff;
+  const emailStep = (await staff.secondStep(actor)) === 'email';
   const parsed = classifyCode(input);
-  if (parsed.kind === 'invalid')
-    return { ok: false, error: 'Enter the 6 digit code from your app, or a recovery code.' };
+  if (parsed.kind === 'invalid' || (emailStep && parsed.kind !== 'totp'))
+    return {
+      ok: false,
+      error: emailStep
+        ? 'Enter the 6 digit code from your email.'
+        : 'Enter the 6 digit code from your app, or a recovery code.',
+    };
   try {
-    const staff = authRuntime().staff;
     const meta = await requestMeta();
+    if (emailStep) {
+      const result = await staff.verifyEmailCode(
+        actor,
+        { code: parsed.code, remember: options.remember === true },
+        meta,
+      );
+      await setSessionCookie(result.session.token, 'staff');
+      if (result.trustedDevice)
+        await setTrustedDeviceCookie(result.trustedDevice.token, result.trustedDevice.maxAgeSeconds);
+      return { ok: true };
+    }
     const result =
       parsed.kind === 'totp'
         ? await staff.verifyMfa(actor, { code: parsed.code }, meta)
@@ -109,16 +138,45 @@ export async function realSubmitCode(
     return { ok: true };
   } catch (error) {
     const state = toFormState(error);
-    if (state.fields?.code)
-      return { ok: false, error: 'That code is not right. Wait for the next code and try again.' };
+    const problem = state.fields?.code;
+    if (problem)
+      return {
+        ok: false,
+        error:
+          CODE_PROBLEMS[problem] ??
+          (emailStep
+            ? 'That code is not right. Check your email and try again.'
+            : 'That code is not right. Wait for the next code and try again.'),
+      };
     return { ok: false, error: state.error ?? 'That code is not right.' };
   }
 }
 
-export async function realTwoFactorState(): Promise<'none' | 'enrolled' | 'signed_out'> {
+/** Sends the emailed sign in code again. The wait and the hourly cap come from the service. */
+export async function realResendCode(): Promise<
+  { ok: true; sent: boolean } | { ok: false; error: string; retryAfter?: number }
+> {
+  const actor = await realPendingActor();
+  if (!actor) return { ok: false, error: 'Your sign in expired. Sign in again.' };
+  try {
+    const result = await authRuntime().staff.sendSignInCode(actor, await requestMeta());
+    return { ok: true, sent: result.sent };
+  } catch (error) {
+    const state = toFormState(error);
+    return { ok: false, error: state.error ?? 'We could not send a new code. Try again.', retryAfter: state.retryAfter };
+  }
+}
+
+export async function realTwoFactorState(): Promise<'none' | 'enrolled' | 'email' | 'signed_out'> {
   const actor = await realPendingActor();
   if (!actor) return 'signed_out';
-  return (await authRuntime().staff.twoFactorConfirmed(actor)) ? 'enrolled' : 'none';
+  const step = await authRuntime().staff.secondStep(actor);
+  return step === 'authenticator' ? 'enrolled' : step === 'email' ? 'email' : 'none';
+}
+
+/** Days a remembered device skips the emailed code, from the site setting. 0 hides the option. */
+export async function realRememberDays(): Promise<number> {
+  return (await themeRuntime()).settings.get('security.trusted_device_days');
 }
 
 export async function realBeginEnrolment() {

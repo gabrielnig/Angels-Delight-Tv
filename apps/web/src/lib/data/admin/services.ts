@@ -817,6 +817,9 @@ export interface PeopleService {
   ): Promise<BulkOutcome>;
   /** Confirms the staff member's password so a sensitive action can follow (D-069). */
   reauthenticate(actor: AdminActor, password: string): Promise<CommandResult>;
+  /** Real service only: confirm with a code sent by email instead of the password (D-397). */
+  sendReauthCode?(actor: AdminActor): Promise<CommandResult>;
+  reauthenticateWithCode?(actor: AdminActor, code: string): Promise<CommandResult>;
   /** An admin clears another person's authenticator after confirming with their own code. */
   resetTwoFactor(actor: AdminActor, staffId: string, code: string): Promise<CommandResult>;
   invite(actor: AdminActor, email: string, role: StaffRoleName): Promise<CommandResult>;
@@ -1071,6 +1074,10 @@ export interface AccountService {
     /** The 6 digit authenticator code (D-069). */
     code: string,
   ): Promise<{ ok: false; field: string; error: string } | { ok: true; codes: string[] }>;
+  /** Real service only: mails a confirmation code to someone who uses emailed codes (D-397). */
+  sendConfirmCode?(actor: AdminActor): Promise<FieldResult>;
+  revokeTrustedDevice?(actor: AdminActor, id: string): Promise<FieldResult>;
+  switchToEmail?(actor: AdminActor, code: string): Promise<FieldResult>;
 }
 
 const own = (actor: AdminActor) =>

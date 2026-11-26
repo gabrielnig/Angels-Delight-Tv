@@ -29,6 +29,10 @@ export interface RoleActions {
   changeRole(id: string, role: string): Promise<CommandResult>;
   /** Confirms the signed in person's password before invites and role changes (D-069). */
   reauthenticate(password: string): Promise<CommandResult>;
+  /** Mails a confirmation code, for people who use emailed codes instead of an authenticator (D-397). */
+  sendReauthCode?(): Promise<CommandResult>;
+  /** Confirms an emailed code in place of the password. */
+  reauthenticateWithCode?(code: string): Promise<CommandResult>;
   /** Clears another person's authenticator. Needs the admin's own code. */
   resetTwoFactor(id: string, code: string): Promise<CommandResult>;
   /** Super admin only. Answers `reauth` when the password was not confirmed recently. */
@@ -76,7 +80,12 @@ export function RolesInvites({
   actions: RoleActions;
 }) {
   const { run, busy } = useCommand();
-  const { guard, dialog: reauthDialog } = useReauth(actions.reauthenticate);
+  const { guard, dialog: reauthDialog } = useReauth(actions.reauthenticate, {
+    emailCode:
+      actions.sendReauthCode && actions.reauthenticateWithCode
+        ? { send: actions.sendReauthCode, confirm: actions.reauthenticateWithCode }
+        : undefined,
+  });
   const [email, setEmail] = useState('');
   const [role, setRole] = useState('editor');
   const [error, setError] = useState<string>();

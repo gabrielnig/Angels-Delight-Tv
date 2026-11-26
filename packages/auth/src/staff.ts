@@ -344,6 +344,12 @@ export class StaffService extends AccountService {
     return policy === 'email' && mailOn ? 'email' : 'enrol';
   }
 
+  /** Whether emailed codes can be offered right now: the site setting is email and mail is on. */
+  async emailStepAvailable(): Promise<boolean> {
+    const policy = (await this.deps.secondStepPolicy?.()) ?? 'authenticator';
+    return policy === 'email' && (this.deps.emailAvailable?.() ?? true);
+  }
+
   /** The second step the signed in or waiting session of this account faces now. */
   async secondStep(actor: Actor): Promise<SecondStep> {
     const account = await this.staffAccount(actor);
@@ -510,7 +516,7 @@ export class StaffService extends AccountService {
     const account = await this.staffAccount(actor);
     if (await this.sessionIsPending(actor)) throw new Forbidden();
     if (await this.mfa.isConfirmed(account.id))
-      throw new Conflict('Use the code from your authenticator app');
+      throw new Conflict('Your account uses an authenticator app. Use your password or the code from the app instead.');
     return this.mailCode(account.id, account.role, 'staff_confirm', meta);
   }
 
@@ -544,6 +550,25 @@ export class StaffService extends AccountService {
   private async assertMayEnrol(actor: Actor, accountId: string): Promise<void> {
     if ((await this.sessionIsPending(actor)) && (await this.secondStepFor(accountId)) !== 'enrol')
       throw new Forbidden();
+  }
+
+  /**
+   * An authenticator user moves to emailed codes (the owner's request). Needs a current authenticator code, the site on
+   * email and mail working, so nobody ends up with no second step. Other sessions and remembered devices end.
+   */
+  async switchToEmailCodes(actor: Actor, input: { code: string }, meta: RequestMeta): Promise<void> {
+    const account = await this.staffAccount(actor);
+    if (!(await this.mfa.isConfirmed(account.id))) throw new Conflict('You already use emailed codes');
+    const policy = (await this.deps.secondStepPolicy?.()) ?? 'authenticator';
+    if (policy !== 'email' || !(this.deps.emailAvailable?.() ?? true))
+      throw new Conflict('Emailed codes are not available on this site right now');
+    await this.checkTotp(account.id, account.role, input.code, meta, { requireConfirmed: true });
+    await this.mfa.removeAll(account.id);
+    await this.deps.sessions.revokeAll(account.id, { exceptSessionId: actor.sessionId });
+    await this.audit('admin.mfa_switched_to_email', 'success', meta, {
+      accountId: account.id,
+      role: account.role,
+    });
   }
 
   /** True once the second factor was confirmed, so the sign in page knows whether to enrol or ask for a code. */

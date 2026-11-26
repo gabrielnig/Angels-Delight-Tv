@@ -92,7 +92,7 @@ const seriesLabels = z
 
 export type SettingTier = 'admin' | 'super';
 export type SettingGroup =
-  'platform' | 'features' | 'limits' | 'content' | 'legal' | 'analytics' | 'audit' | 'maintenance' | 'monetization' | 'home' | 'discovery';
+  'platform' | 'features' | 'limits' | 'content' | 'legal' | 'analytics' | 'audit' | 'maintenance' | 'monetization' | 'home' | 'discovery' | 'security';
 
 interface Def<S extends z.ZodType> {
   schema: S;
@@ -646,6 +646,44 @@ export const SETTING_DEFS = {
     group: 'audit',
     label: 'Audit log retention (months)',
     description: 'Between 6 and 120. Older entries are purged monthly',
+  }),
+  'security.staff_second_step': def({
+    schema: z.enum(['email', 'authenticator']),
+    default: 'email' as 'email' | 'authenticator',
+    isPublic: false,
+    tier: 'super',
+    group: 'security',
+    label: 'Staff second sign in step',
+    description:
+      'After the password, staff enter a code. Email: the code is mailed to them. Authenticator: they set up an authenticator app. Anyone who already has an app keeps using it.',
+  }),
+  'security.staff_session_idle_days': def({
+    schema: int(1, 30),
+    default: 7,
+    isPublic: false,
+    tier: 'super',
+    group: 'security',
+    label: 'Days before an idle staff sign in ends',
+    description: 'A staff member who does nothing for this many days must sign in again. Each visit restarts the count. 1 to 30.',
+  }),
+  'security.staff_session_absolute_days': def({
+    schema: int(1, 90),
+    default: 30,
+    isPublic: false,
+    tier: 'super',
+    group: 'security',
+    label: 'Days before every staff sign in ends',
+    description: 'A staff sign in always ends after this many days, however busy it was. 1 to 90.',
+  }),
+  'security.trusted_device_days': def({
+    schema: int(0, 90),
+    default: 30,
+    isPublic: false,
+    tier: 'super',
+    group: 'security',
+    label: 'Days a remembered device skips the emailed code',
+    description:
+      'Staff can tick Remember this device on the code step. 0 turns the option off. A password or fresh code is still needed for sensitive actions. 0 to 90.',
   }),
   'maintenance.banner': def({
     schema: maintenanceBanner,

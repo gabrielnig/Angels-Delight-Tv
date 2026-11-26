@@ -85,3 +85,64 @@ describe('MyAccountView', () => {
     expect(a.regenerateCodes).toHaveBeenCalledWith('123456');
   });
 });
+
+describe('MyAccountView with emailed codes (D-397)', () => {
+  const emailAccount = {
+    ...account,
+    twoFactor: false,
+    secondStep: 'email' as const,
+    recoveryCodesLeft: 0,
+    trustedDevices: [
+      { id: 'td1', label: 'Chrome on Windows', place: 'Nigeria', lastUsedAt: null, expiresAt: new Date(Date.now() + 86400000).toISOString() },
+    ],
+  };
+  function emailView(over = {}) {
+    const actions = {
+      updateName: vi.fn().mockResolvedValue(ok),
+      changePassword: vi.fn().mockResolvedValue(ok),
+      revokeSession: vi.fn().mockResolvedValue(ok),
+      regenerateCodes: vi.fn(),
+      sendConfirmCode: vi.fn().mockResolvedValue({ ok: true }),
+      revokeTrustedDevice: vi.fn().mockResolvedValue(ok),
+      switchToEmail: vi.fn().mockResolvedValue(ok),
+    };
+    render(
+      <ToastProvider>
+        <MyAccountView account={{ ...emailAccount, ...over }} roleLabel="Admin" now={Date.now()} actions={actions} />
+      </ToastProvider>,
+    );
+    return actions;
+  }
+
+  it('asks for an emailed code on the password form and sends one on request', async () => {
+    const a = emailView();
+    expect(screen.queryByLabelText('Authenticator code')).toBeNull();
+    expect(screen.getByLabelText('Emailed code')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Email me a code' }));
+    await waitFor(() => expect(a.sendConfirmCode).toHaveBeenCalledTimes(1));
+    expect(await screen.findByText(/code is on its way/)).toBeTruthy();
+  });
+
+  it('has no recovery codes to make without an authenticator, and says emailed codes are on', () => {
+    emailView();
+    expect(screen.queryByRole('button', { name: 'Make new recovery codes' })).toBeNull();
+    expect(screen.getByText(/There are no recovery codes/)).toBeTruthy();
+  });
+
+  it('lists remembered devices and revokes one', async () => {
+    const a = emailView();
+    expect(screen.getByText('Chrome on Windows')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Forget Chrome on Windows' }));
+    await waitFor(() => expect(a.revokeTrustedDevice).toHaveBeenCalledWith('td1'));
+  });
+
+  it('lets an authenticator user switch to emailed codes with their current code', async () => {
+    const a = emailView({ secondStep: 'authenticator', twoFactor: true, emailSwitchAvailable: true, recoveryCodesLeft: 8 });
+    fireEvent.click(screen.getByRole('button', { name: 'Use emailed codes instead' }));
+    fireEvent.change(screen.getByLabelText('Authenticator code', { selector: 'dialog input, [role=dialog] input' }), {
+      target: { value: '123 456' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Switch to emailed codes' }));
+    await waitFor(() => expect(a.switchToEmail).toHaveBeenCalledWith('123456'));
+  });
+});

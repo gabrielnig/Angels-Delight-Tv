@@ -72,11 +72,22 @@ export const realAccountService: AccountService = {
         ),
       );
     const live = await sessions.list(actor.accountId);
+    const step = await staff.secondStep(who);
+    const trusted = await staff.listTrustedDevices(who);
     const account: MyAccount = {
       accountId: actor.accountId,
       name,
       email: overview.email,
-      twoFactor: await staff.twoFactorConfirmed(who),
+      twoFactor: step === 'authenticator',
+      secondStep: step === 'email' ? 'email' : 'authenticator',
+      emailSwitchAvailable: step === 'authenticator' && (await staff.emailStepAvailable()),
+      trustedDevices: trusted.map((d) => ({
+        id: d.id,
+        label: d.label,
+        place: d.country ?? 'Unknown location',
+        lastUsedAt: d.lastUsedAt ? d.lastUsedAt.toISOString() : null,
+        expiresAt: d.expiresAt.toISOString(),
+      })),
       recoveryCodesLeft: codes?.left ?? 0,
       passwordChangedAt: row?.passwordChangedAt ? row.passwordChangedAt.toISOString() : null,
       sessions: live.map((s) => ({
@@ -157,6 +168,41 @@ export const realAccountService: AccountService = {
       return failed.ok
         ? { ok: false, field: 'code', error: 'Something went wrong.' }
         : { ok: false, field: failed.field, error: failed.error };
+    }
+  },
+
+  async sendConfirmCode(actor) {
+    need(actor, 'account.own');
+    try {
+      const rt = adminRuntime();
+      const result = await rt.auth().staff.sendConfirmCode(staffActor(actor), await rt.meta());
+      return result.sent
+        ? OK
+        : fail('code', 'We could not send the code. Try again in a moment.');
+    } catch (error) {
+      return fieldFailure(error, 'code');
+    }
+  },
+
+  async revokeTrustedDevice(actor, id) {
+    need(actor, 'account.own');
+    try {
+      const rt = adminRuntime();
+      await rt.auth().staff.revokeTrustedDevice(staffActor(actor), id, await rt.meta());
+      return OK;
+    } catch (error) {
+      return fieldFailure(error, 'device');
+    }
+  },
+
+  async switchToEmail(actor, code) {
+    need(actor, 'account.own');
+    try {
+      const rt = adminRuntime();
+      await rt.auth().staff.switchToEmailCodes(staffActor(actor), { code }, await rt.meta());
+      return OK;
+    } catch (error) {
+      return fieldFailure(error, 'code');
     }
   },
 };

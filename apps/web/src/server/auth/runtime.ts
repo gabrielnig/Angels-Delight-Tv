@@ -12,7 +12,7 @@ import {
 } from '@ad/auth';
 import { type WebEnv, loadWebEnv } from '@ad/config';
 import { type Database, createDb, createPool } from '@ad/db';
-import { Mailer, OutageMonitor, RetryingTransport, transportFromSmtpUrl } from '@ad/mailer';
+import { DISABLED_SMTP_URL, Mailer, OutageMonitor, RetryingTransport, transportFromSmtpUrl } from '@ad/mailer';
 import { googleConfigFrom } from './google-enabled';
 import { productionMailLocalizer } from '../email/localization';
 import { createSuppressionStore } from '../email/suppression';
@@ -65,7 +65,15 @@ function build(env: WebEnv): AuthRuntime {
     kek: env.FIELD_KEK,
     kekPrevious: env.FIELD_KEK_PREVIOUS,
   });
-  const sessions = new SessionService(db);
+  const setting = async <K extends 'security.staff_session_idle_days' | 'security.staff_session_absolute_days' | 'security.staff_second_step' | 'security.trusted_device_days'>(key: K) =>
+    (await themeRuntime()).settings.get(key);
+  const sessions = new SessionService(db, {
+    staffPolicy: async () => {
+      const idle = await setting('security.staff_session_idle_days');
+      const absolute = await setting('security.staff_session_absolute_days');
+      return { idleSeconds: idle * 86400, absoluteSeconds: Math.max(idle, absolute) * 86400 };
+    },
+  });
   const limiter = new RateLimiter(db, {
     onError: (e) => logger.error('rate limiter failed', { e: String(e) }),
   });
@@ -108,6 +116,9 @@ function build(env: WebEnv): AuthRuntime {
       devSkipMfa: env.DEV_SKIP_MFA,
       viewerMfaEnabled: env.VIEWER_MFA_ENABLED,
     },
+    secondStepPolicy: () => setting('security.staff_second_step'),
+    emailAvailable: () => env.SMTP_URL !== DISABLED_SMTP_URL,
+    trustedDeviceDays: () => setting('security.trusted_device_days'),
     signUpPolicy: async () => ({
       open: await (await themeRuntime()).settings.get('features.signups_open'),
     }),

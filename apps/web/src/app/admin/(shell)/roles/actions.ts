@@ -42,6 +42,23 @@ export async function reauthenticateAction(password: string) {
   return peopleService.reauthenticate(actor, String(password));
 }
 
+export async function sendReauthCodeAction() {
+  const actor = await requireActionActor('/admin/roles');
+  return (
+    (await peopleService.sendReauthCode?.(actor)) ?? { ok: false as const, error: 'Not available here.' }
+  );
+}
+
+export async function reauthenticateWithCodeAction(code: string) {
+  const actor = await requireActionActor('/admin/roles');
+  return (
+    (await peopleService.reauthenticateWithCode?.(actor, String(code).replace(/\s/g, ''))) ?? {
+      ok: false as const,
+      error: 'Not available here.',
+    }
+  );
+}
+
 export async function resetTwoFactorAction(id: string, code: string) {
   return run((a) => peopleService.resetTwoFactor(a, String(id), String(code).replace(/\s/g, '')));
 }

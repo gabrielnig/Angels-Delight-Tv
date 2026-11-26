@@ -300,6 +300,29 @@ export const realPeopleService: PeopleService = {
     }
   },
 
+  async sendReauthCode(actor) {
+    try {
+      need(actor, 'roles.change');
+      const rt = adminRuntime();
+      const result = await rt.auth().staff.sendConfirmCode(staffActor(actor), await rt.meta());
+      return result.sent ? OK : fail('We could not send the code. Try again in a moment.');
+    } catch (error) {
+      return staffFailure(error);
+    }
+  },
+  async reauthenticateWithCode(actor, code) {
+    try {
+      need(actor, 'roles.change');
+      const rt = adminRuntime();
+      await rt
+        .auth()
+        .staff.reauthenticateWithEmailCode(staffActor(actor), { code }, await rt.meta());
+      return OK;
+    } catch (error) {
+      return staffFailure(error);
+    }
+  },
+
   async resetTwoFactor(actor, staffId, code) {
     try {
       need(actor, 'roles.change');

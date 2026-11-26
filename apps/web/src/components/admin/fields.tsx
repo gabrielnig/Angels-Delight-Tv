@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useId, useRef } from 'react';
+import { PasswordInput } from '../PasswordToggle';
 import type {
   InputHTMLAttributes,
   ReactNode,
@@ -59,15 +60,16 @@ export function TextField({
   ...rest
 }: FieldShell & InputHTMLAttributes<HTMLInputElement>) {
   const id = useId();
+  const props = {
+    id,
+    className: 'adm-input',
+    'aria-invalid': error ? true : undefined,
+    'aria-describedby': described(id, hint, error),
+    ...rest,
+  } as const;
   return (
     <Shell id={id} label={label} hint={hint} error={error} aside={aside}>
-      <input
-        id={id}
-        className="adm-input"
-        aria-invalid={error ? true : undefined}
-        aria-describedby={described(id, hint, error)}
-        {...rest}
-      />
+      {rest.type === 'password' ? <PasswordInput {...props} /> : <input {...props} />}
     </Shell>
   );
 }

@@ -10,6 +10,9 @@ import {
   changePasswordAction,
   regenerateCodesAction,
   revokeSessionAction,
+  revokeTrustedDeviceAction,
+  sendConfirmCodeAction,
+  switchToEmailAction,
   saveNotificationPrefsAction,
   updateNameAction,
 } from './actions';
@@ -36,6 +39,9 @@ export default async function AccountPage() {
           changePassword: changePasswordAction,
           revokeSession: revokeSessionAction,
           regenerateCodes: regenerateCodesAction,
+          sendConfirmCode: sendConfirmCodeAction,
+          revokeTrustedDevice: revokeTrustedDeviceAction,
+          switchToEmail: switchToEmailAction,
         }}
       />
       <NotificationPrefsCard prefs={prefs} save={saveNotificationPrefsAction} />
