@@ -12,7 +12,7 @@ import type { InviteRecord, StaffRecord, UserRecord } from '../types';
 import { filterUsers, maskEmail } from '../users-commands';
 import type { CommandResult } from '../video-commands';
 import { catalogActor, need } from './shared';
-import { staffFailure } from './staff-errors';
+import { inviteMailFailure, staffFailure } from './staff-errors';
 
 const OK: CommandResult = { ok: true };
 const fail = (error: string): CommandResult => ({ ok: false, error });
@@ -320,7 +320,7 @@ export const realPeopleService: PeopleService = {
       await rt.auth().staff.createInvite(staffActor(actor), { email, role }, await rt.meta());
       return OK;
     } catch (error) {
-      return staffFailure(error);
+      return inviteMailFailure(error);
     }
   },
 
@@ -336,7 +336,7 @@ export const realPeopleService: PeopleService = {
         .staff.createInvite(who, { email: invite.email, role: invite.role }, await rt.meta());
       return OK;
     } catch (error) {
-      return staffFailure(error);
+      return inviteMailFailure(error);
     }
   },
 

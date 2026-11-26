@@ -69,6 +69,31 @@ describe('RolesInvites', () => {
     await waitFor(() => expect(a.invite).toHaveBeenCalledTimes(2));
     expect(a.reauthenticate).toHaveBeenCalledWith('secret-pass', undefined);
   });
+  it('shows the saved-but-not-sent message for an invite whose email failed, not a generic toast', async () => {
+    const a = roles();
+    const message =
+      'The invite was saved but the email could not be sent. Resend it from Pending invites.';
+    a.invite.mockResolvedValueOnce({ ok: false, error: message });
+    fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'new@example.test' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Send invite' }));
+    expect((await screen.findAllByText(message)).length).toBeGreaterThan(0);
+    expect(screen.queryByText(/That did not work/)).toBeNull();
+  });
+  it('shows a wrong password inside the confirm dialog and keeps the invite waiting', async () => {
+    const a = roles();
+    a.invite.mockResolvedValueOnce({
+      ok: false,
+      error: 'Confirm your password to continue.',
+      reauth: true,
+    });
+    a.reauthenticate.mockResolvedValueOnce({ ok: false, error: 'Password is not right' });
+    fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'new@example.test' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Send invite' }));
+    fireEvent.change(await screen.findByLabelText('Password'), { target: { value: 'nope' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Confirm' }));
+    expect(await screen.findByText('Password is not right')).toBeTruthy();
+    expect(a.invite).toHaveBeenCalledTimes(1);
+  });
   it('resets another person two step sign in with the admin code', async () => {
     const a = roles();
     fireEvent.click(screen.getByRole('button', { name: 'Reset two step sign in for Ngozi' }));
