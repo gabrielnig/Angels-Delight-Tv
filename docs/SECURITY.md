@@ -77,16 +77,26 @@ Signup, verification and reset (no enumeration):
 
 Sessions:
 - Token: 256-bit random, base64url, only SHA-256 stored in `sessions`. Rotated at login and on privilege change (MFA, password change).
-- Cookie: name `__Host-ad_session` in production (`ad_session` in development over http). Attributes: `HttpOnly`, `Secure`, `SameSite=Lax`, `Path=/`, no `Domain`. Max-Age equals the idle window for viewers and is a session cookie for staff.
-- Lifetimes: viewers idle 30 days and absolute 90 days (mobile friendly). Staff idle 60 minutes and absolute 8 hours.
+- Cookie: name `__Host-ad_session` in production (`ad_session` in development over http). Attributes: `HttpOnly`, `Secure`, `SameSite=Lax`, `Path=/`, no `Domain`. Max-Age equals the idle window for viewers and the absolute window for staff.
+- Lifetimes: viewers idle 30 days and absolute 90 days (mobile friendly). Staff idle 7 days (sliding) and absolute 30 days by default, both site settings (`security.staff_session_idle_days`, `security.staff_session_absolute_days`, D-398). The staff cookie is persistent for the absolute window, keeps `__Host-`, Secure and HttpOnly, and the server enforces the idle window.
 - Revocation: logout, password change, password reset, role change, suspension and account deletion revoke sessions (`revoked_at`). Account page lists active sessions with revoke buttons.
 - Profile cookie `ad_profile` carries only a profile id and is a hint, never trusted. Every request re-verifies that the profile belongs to the session account.
 - Kids lock: the session row stores `active_profile_id` and `kids_locked`. Selecting a kids profile sets the lock. While it holds, every viewer route and the playback session refuse any other profile id (`kids_gate`, 403), the cookie is ignored, and only exit kids mode with the account password clears it. A new sign in needs the password anyway, so deleting cookies does not escape the lock.
 
 Staff accounts:
-- TOTP MFA is mandatory for `editor` and `admin` (secret encrypted with the user DEK, replay guard on time step, ten single-use recovery codes). If schedule forces a cut, the minimum fallback is a unique long password plus login alerts, logged as an exception in `docs/DECISIONS.md`.
-- Sensitive actions require password confirmation within 10 minutes (`reauth_at`): role change, user suspension or deletion, platform settings, theme publish, MFA reset.
+- A second step is mandatory for `editor`, `admin` and `super_admin`, and sign in with no second step never exists in production (`DEV_SKIP_MFA` is development only and the production env schema rejects it). The step is an emailed one time code by default or an authenticator (TOTP) app, chosen by the site setting `security.staff_second_step` (D-397). A staff member who has a confirmed authenticator always uses it, with ten single-use recovery codes, secret encrypted with the user DEK and a replay guard on the time step, and is never offered an email code. If mail is off the step falls back to authenticator enrolment.
+- Emailed code: six digits, 10 minutes, single use, stored only as a keyed hash, 5 wrong tries per code, resend after 60 seconds, at most 5 sends an hour per account and 20 an hour per network (keyed hash of the IPv4 /24 or IPv6 /48). Wrong codes count toward the `mfa:<account>` lockout. Sent only after a correct password, in the request (D-024, D-163). The mail names the UTC time, the browser and the country, never an address, and tells the reader to reset the password if it was not them. A password only session cannot enrol an authenticator while email is the step.
+- Sensitive actions require password confirmation within 10 minutes (`reauth_at`): role change, user suspension or deletion, platform settings, theme publish, MFA reset. Staff without an authenticator may confirm with a fresh emailed code instead of the password (and for password change and a colleague's two step reset, in place of an app code).
+- Remembered device: on the code step, "Remember this device" (default on, `security.trusted_device_days`, default 30, 0 turns it off) stores a random token in `__Host-ad_td` and only its SHA-256 in `trusted_devices`, bound to the account and under row level security. It skips the emailed code only, never the password, and never for an authenticator account. It ends at expiry, from the My account list, and on every sign out everywhere, password change, password reset, role change and two step reset (`SessionService.revokeAll`).
 - First admin is created by a CLI seed script that prompts for credentials. No default or env-provided admin password. The seed refuses to run when an admin exists.
+
+### 4a. Honest tradeoff of the emailed code (D-397, D-398)
+
+An email code puts the password reset and the second step in one mailbox. Someone who controls a staff inbox can request a reset, set a new password and read the sign in code. Remembered devices and the 7 and 30 day session also give a stolen, signed in laptop more time than the old 30 minutes.
+
+Mitigations in place: a staff password reset never signs anyone in and ends every session; a password change, reset and email change each mail a notice (the old address for an email change); every code sent, send failure, wrong code, lockout and success is in the audit log; five wrong codes lock the second step for 15 minutes; the code mail states the time, browser and country; sensitive actions still need the password within 10 minutes or a fresh code; sign out everywhere, a password change or reset and any role change forget every remembered device; the device list has a Forget button; the Super admin can shorten every lifetime.
+
+Residual risk: a compromised staff mailbox plus knowledge of the account still opens that account. Recommendation for the owner: set up an authenticator app on every Super admin account (it is per account and wins over email for that account), keep the default for editors, and set `security.staff_second_step` to `authenticator` if no one should rely on email. Not verified against a real mail provider: delivery speed and spam placement of the code mail.
 
 CSRF:
 - `SameSite=Lax` cookies, plus every state-changing route handler calls `assertSameOrigin()`: requires `Origin` (or `Sec-Fetch-Site: same-origin`) to match `APP_ORIGIN`, otherwise 403. Server Actions use the framework origin check plus the same helper. No state changes on GET.
@@ -174,6 +184,7 @@ Postgres token buckets (`rate_limit_buckets`). Keys combine route policy and sub
 | Password reset request | email hash, IP | 3 per hour, 10 per hour |
 | Verification resend | account | 3 per hour |
 | MFA code entry | account | 5 per 10 minutes |
+| Staff email code send (D-397) | account, network (keyed hash) | 60 second wait, 5 per hour, 20 per hour |
 | Kids PIN entry | profile | 5 per 15 minutes |
 | Playback session mint | profile | 60 per minute |
 | Playback session mint, guest | guest id, network (keyed hash of IPv4 /24 or IPv6 /48) | 20 per minute, 120 per minute (D-197) |
@@ -447,6 +458,7 @@ The Share sheet (lane L15a) uses plain links, `mailto:`, `sms:` and the Web Shar
 | R-4 | Hand-written auth | Mitigated by tests, independent scan, minimal surface. |
 | R-5 | In-memory DEK cache delays shredding on other processes up to 5 minutes | Accepted. |
 | R-6 | CPU-bound hashing and encoding on the same VPS | Mitigated by concurrency caps and limits. |
+| R-7 | An attacker with a staff inbox can reset the password and read the emailed sign in code. A stolen signed in laptop has up to 7 idle days | Accepted with mitigations (D-397, D-398): notices, audit, lockout, sensitive action reauth, device forget, authenticator per account for Super admins. |
 
 ## 19. Knowledge base recording rules
 

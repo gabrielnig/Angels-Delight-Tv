@@ -17,6 +17,7 @@ import { Tabs } from '../Tabs';
 import { useToast } from '../Toast';
 import { FormActions } from './FormActions';
 import { DiscoveryTab } from './DiscoveryTab';
+import { SecurityTab } from './SecurityTab';
 import { SeriesNamesTab } from './SeriesNamesTab';
 import { InviteCodesTab, type InviteCodeActions } from './InviteCodesTab';
 import { PagesEditor } from './PagesEditor';
@@ -33,7 +34,7 @@ export interface SiteActions extends Partial<InviteCodeActions> {
   saveSynonyms?(text: string): Promise<SynonymSaveResult>;
 }
 
-type TabId = 'platform' | 'features' | 'home' | 'series' | 'discovery' | 'invites' | 'pages' | 'maintenance';
+type TabId = 'platform' | 'features' | 'home' | 'series' | 'discovery' | 'security' | 'invites' | 'pages' | 'maintenance';
 
 const GIB = 1024 ** 3;
 
@@ -135,6 +136,7 @@ export function SiteSettingsView({
               { id: 'home', label: 'Home' },
               { id: 'series', label: 'Series names' },
               { id: 'discovery', label: 'Discovery' },
+              { id: 'security', label: 'Security' },
               ...(invites && actions.create && actions.revoke
                 ? [{ id: 'invites', label: 'Invite codes' }]
                 : []),
@@ -169,6 +171,9 @@ export function SiteSettingsView({
                   />
                 ) : null}
               </>
+            ) : null}
+            {tab === 'security' ? (
+              <SecurityTab data={data} actions={actions} onSaved={setData} />
             ) : null}
             {tab === 'invites' && invites && actions.create && actions.revoke ? (
               <InviteCodesTab

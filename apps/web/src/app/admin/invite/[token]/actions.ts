@@ -16,5 +16,5 @@ export async function acceptInviteAction(_prev: InviteState, form: FormData): Pr
     String(form.get('password') ?? ''),
   );
   if (!result.ok) return { error: result.error, fields: result.fields };
-  redirect('/admin/login/2fa');
+  redirect(result.codeSent === false ? '/admin/login/2fa?sent=0' : '/admin/login/2fa');
 }

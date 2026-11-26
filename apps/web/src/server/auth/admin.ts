@@ -48,13 +48,19 @@ export async function realAdminActor(): Promise<AdminActor | null> {
 }
 
 /** How long the signed in staff session has left, read on the server clock. Null when there is none. */
-export async function realSessionTimes(): Promise<{ idleMs: number; absoluteMs: number } | null> {
+export async function realSessionTimes(): Promise<{
+  idleMs: number;
+  absoluteMs: number;
+  /** The whole idle window from the site setting, so the warning can tell a long idle from a short one. */
+  idleWindowMs: number;
+} | null> {
   const session = await currentStaff();
   if (!session?.mfaVerified) return null;
   const now = Date.now();
   return {
     idleMs: Math.max(0, session.idleExpiresAt.getTime() - now),
     absoluteMs: Math.max(0, session.absoluteExpiresAt.getTime() - now),
+    idleWindowMs: (await authRuntime().sessions.policyFor('staff')).idleSeconds * 1000,
   };
 }
 
@@ -225,11 +231,11 @@ export async function realInspectInvite(token: string) {
 export async function realAcceptInvite(
   token: string,
   password: string,
-): Promise<FormState & { ok?: true }> {
+): Promise<FormState & { ok?: true; codeSent?: boolean }> {
   try {
     const result = await authRuntime().staff.acceptInvite({ token, password }, await requestMeta());
     await setSessionCookie(result.session.token, 'pending_mfa');
-    return { ok: true };
+    return { ok: true, ...(result.codeSent === undefined ? {} : { codeSent: result.codeSent }) };
   } catch (error) {
     return toFormState(error);
   }
