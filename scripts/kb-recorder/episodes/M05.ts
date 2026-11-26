@@ -5,7 +5,7 @@ export default money({
   title: 'Pause, archive or delete a sponsor',
   role: 'admin',
   screens: ['/admin/sponsors/[id]'],
-  actions: ['sponsor.manage', 'sponsor.activate'],
+  actions: ['sponsor.activate'],
   dependsOn: ['apps/web/src/components/admin/SponsorStatusPanel.tsx'],
   next: 'M06 Read a sponsor report and print it',
   notes: { 3: ['NOTE','Pause keeps everything. Use Approve to run to start it again.'], 7: ['CAREFUL','Archive hides the sponsor for good, but its report numbers stay.'], 11: ['CAREFUL','Delete cannot be undone, and it is refused for a sponsor that has report numbers. Archive it instead.'] },

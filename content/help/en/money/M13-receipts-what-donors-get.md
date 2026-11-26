@@ -28,6 +28,14 @@ The receipt makes no tax claim. A tax note is added only when you and an adviser
 
 ## Steps
 <!-- kb:steps M13 -->
+1. Choose **Donations** in the side menu.
+2. Click **addondemo01**.
+3. Check that **Receipt queued** shows under the reference.
+   ![A succeeded gift with the receipt line marked 1](../../media/M13/M13-03-queued-desktop.webp)
+4. Click **Donations** in the top path.
+5. Click **addondemo04**.
+6. Check that **Receipt not queued** shows because the gift is still pending.
+   ![A pending gift with the receipt line marked 1](../../media/M13/M13-06-pending-desktop.webp)
 <!-- /kb:steps -->
 
 ## What you should see

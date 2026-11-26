@@ -1,0 +1,21 @@
+WEBVTT
+
+00:00:05.155 --> 00:00:08.752
+Choose Donations in the side menu.
+
+00:00:09.002 --> 00:00:11.922
+Click addondemo01.
+
+00:00:12.172 --> 00:00:16.974
+Check that Receipt queued
+shows under the reference.
+
+00:00:17.224 --> 00:00:20.688
+Click Donations in the top path.
+
+00:00:20.938 --> 00:00:23.893
+Click addondemo04.
+
+00:00:24.143 --> 00:00:30.143
+Check that Receipt not queued shows
+because the gift is still pending.

@@ -12,7 +12,7 @@ watchSeconds: 120
 video:
   id: VM05
 screens: ["/admin/sponsors/[id]"]
-actions: [sponsor.manage, sponsor.activate]
+actions: [sponsor.activate]
 aliases: [stop sponsor, remove sponsor, end sponsor]
 flow: M05
 updated: 2026-11-25

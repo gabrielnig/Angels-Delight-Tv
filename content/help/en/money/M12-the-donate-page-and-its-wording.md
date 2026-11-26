@@ -29,6 +29,12 @@ You can change: the page title and text, the thank you title and text, the prese
 
 ## Steps
 <!-- kb:steps M12 -->
+1. Choose **Donations** in the side menu.
+2. Check that **Gifts received through Paystack** shows under the title.
+   ![The Donations screen title line, marked 1](../../media/M12/M12-02-lead-desktop.webp)
+3. Click **addondemo01**.
+   ![A gift made on the Donate page, marked 1](../../media/M12/M12-03-gift-desktop.webp)
+4. Check that **addondemo01** shows as the gift reference.
 <!-- /kb:steps -->
 
 ## What you should see
