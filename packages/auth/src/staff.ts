@@ -21,6 +21,7 @@ import { countryName, deviceLabel } from './login-events';
 import { MfaCore } from './mfa-core';
 import {
   checkStaffCode,
+  codeMailContext,
   sendStaffCode,
   type StaffCodeContext,
   type StaffCodePurpose,
@@ -55,6 +56,17 @@ const enc = new TextEncoder();
 const dec = new TextDecoder();
 
 /** Which second step a staff member meets after a correct password (D-397). */
+/** What the Security section of My account shows (L16b). */
+export interface SecuritySummary {
+  method: 'authenticator' | 'email';
+  /** Emailed codes can be used now: mail is on, the site allows it and the address is verified. */
+  canUseEmail: boolean;
+  /** Plain words for why not, when canUseEmail is false. */
+  blocker?: string;
+  /** A test code worked in the last 15 minutes. */
+  testedRecently: boolean;
+}
+
 export type SecondStep = 'authenticator' | 'email' | 'enrol';
 
 export interface StaffSignIn {
@@ -552,23 +564,154 @@ export class StaffService extends AccountService {
       throw new Forbidden();
   }
 
-  /**
-   * An authenticator user moves to emailed codes (the owner's request). Needs a current authenticator code, the site on
-   * email and mail working, so nobody ends up with no second step. Other sessions and remembered devices end.
-   */
-  async switchToEmailCodes(actor: Actor, input: { code: string }, meta: RequestMeta): Promise<void> {
+  /** Why this account cannot use emailed codes right now, in plain words, or null when it can (lockout guard). */
+  private async emailBlocker(account: { emailVerifiedAt: Date | null }): Promise<string | null> {
+    if (!(this.deps.emailAvailable?.() ?? true))
+      return 'Email is not set up on this site yet, so codes cannot be sent. Ask your Super admin to set it up.';
+    if (((await this.deps.secondStepPolicy?.()) ?? 'authenticator') !== 'email')
+      return 'This site is set to authenticator apps. A Super admin can allow emailed codes in Site settings, Security.';
+    if (!account.emailVerifiedAt) return 'Verify your email address first, then come back.';
+    return null;
+  }
+
+  /** A test code worked in the last 15 minutes (the audit entry is the record, so no new table). */
+  private async emailTestedRecently(accountId: string): Promise<boolean> {
+    const [row] = await this.deps.db
+      .select({ id: schema.auditLog.id })
+      .from(schema.auditLog)
+      .where(
+        and(
+          eq(schema.auditLog.actorAccountId, accountId),
+          eq(schema.auditLog.action, 'admin.email_code_tested'),
+          eq(schema.auditLog.outcome, 'success'),
+          sql`${schema.auditLog.occurredAt} > now() - interval '15 minutes'`,
+        ),
+      )
+      .limit(1);
+    return Boolean(row);
+  }
+
+  /** What My account needs to draw the Security section: the method now and whether a switch to email is safe. */
+  async securitySummary(actor: Actor): Promise<SecuritySummary> {
     const account = await this.staffAccount(actor);
+    const method = (await this.mfa.isConfirmed(account.id)) ? 'authenticator' : 'email';
+    const blocker = await this.emailBlocker(account);
+    return {
+      method,
+      canUseEmail: blocker === null,
+      ...(blocker ? { blocker } : {}),
+      testedRecently: method === 'authenticator' ? await this.emailTestedRecently(account.id) : false,
+    };
+  }
+
+  /** Mails a test code so the person can prove the inbox works before the authenticator is removed. */
+  async sendTestCode(actor: Actor, meta: RequestMeta): Promise<{ sent: boolean }> {
+    const account = await this.staffAccount(actor);
+    if (await this.sessionIsPending(actor)) throw new Forbidden();
+    const blocker = await this.emailBlocker(account);
+    if (blocker) throw new Conflict(blocker);
+    return this.mailCode(account.id, account.role, 'staff_confirm', meta);
+  }
+
+  /** Checks the test code. A right code is recorded, which unlocks the switch for 15 minutes. */
+  async confirmTestCode(actor: Actor, input: { code: string }, meta: RequestMeta): Promise<void> {
+    const account = await this.staffAccount(actor);
+    if (await this.sessionIsPending(actor)) throw new Forbidden();
+    await this.checkEmailCode(account, 'staff_confirm', input.code, meta);
+    await this.audit('admin.email_code_tested', 'success', meta, {
+      accountId: account.id,
+      role: account.role,
+    });
+  }
+
+  /** Tells the address that the second step method changed, with time and place, so a takeover is noticed. */
+  private async noticeMethodChanged(
+    account: { id: string; role: string; emailEnc: Uint8Array | null },
+    method: 'email' | 'authenticator',
+    meta: RequestMeta,
+  ): Promise<void> {
+    if (!account.emailEnc) return;
+    const to = await this.deps.keys.open(account.id, 'email', account.emailEnc);
+    const context = codeMailContext(meta, this.now());
+    this.run(async () => {
+      await this.deps.mailer.sendStaffSecondStepChanged({ to, method, ...context });
+    });
+  }
+
+  /**
+   * An authenticator user moves to emailed codes. Proof is either a fresh emailed code, or a fresh password plus the
+   * current authenticator code after a test code worked. Mail must be on, the site on email and the address verified,
+   * so nobody ends up with no second step. The authenticator and its recovery codes are removed, other sessions end.
+   */
+  async switchToEmailCodes(
+    actor: Actor,
+    input: { password?: string; code?: string; emailCode?: string },
+    meta: RequestMeta,
+  ): Promise<void> {
+    const account = await this.staffAccount(actor);
+    if (await this.sessionIsPending(actor)) throw new Forbidden();
     if (!(await this.mfa.isConfirmed(account.id))) throw new Conflict('You already use emailed codes');
-    const policy = (await this.deps.secondStepPolicy?.()) ?? 'authenticator';
-    if (policy !== 'email' || !(this.deps.emailAvailable?.() ?? true))
-      throw new Conflict('Emailed codes are not available on this site right now');
-    await this.checkTotp(account.id, account.role, input.code, meta, { requireConfirmed: true });
+    const blocker = await this.emailBlocker(account);
+    if (blocker) throw new Conflict(blocker);
+    let proof: 'email_code' | 'password_and_authenticator';
+    if (input.emailCode) {
+      await this.checkEmailCode(account, 'staff_confirm', input.emailCode, meta);
+      await this.audit('admin.email_code_tested', 'success', meta, {
+        accountId: account.id,
+        role: account.role,
+      });
+      proof = 'email_code';
+    } else {
+      if (!(await this.emailTestedRecently(account.id)))
+        throw new Conflict('Send yourself a test code first and enter it, so we know the email reaches you.');
+      await this.reauthenticate(actor, input.password ?? '', meta);
+      await this.checkTotp(account.id, account.role, input.code ?? '', meta, { requireConfirmed: true });
+      proof = 'password_and_authenticator';
+    }
     await this.mfa.removeAll(account.id);
     await this.deps.sessions.revokeAll(account.id, { exceptSessionId: actor.sessionId });
     await this.audit('admin.mfa_switched_to_email', 'success', meta, {
       accountId: account.id,
       role: account.role,
+      metadata: { proof },
     });
+    await this.noticeMethodChanged(account, 'email', meta);
+  }
+
+  /** Step one of moving back to an authenticator: a fresh password, then the secret and QR for the new app. */
+  async beginAuthenticatorSwitch(
+    actor: Actor,
+    input: { password: string },
+    meta: RequestMeta,
+  ): Promise<{ secret: string; uri: string; qrSvg: string }> {
+    const account = await this.staffAccount(actor);
+    if (await this.sessionIsPending(actor)) throw new Forbidden();
+    if (await this.mfa.isConfirmed(account.id)) throw new Conflict('You already use an authenticator app');
+    await this.reauthenticate(actor, input.password, meta);
+    const email = await this.deps.keys.open(account.id, 'email', account.emailEnc!);
+    return this.mfa.beginEnrolment(account.id, this.cfg.issuerName, email);
+  }
+
+  /** Step two: a code from the new app turns it on, shows fresh recovery codes and ends the other sessions. */
+  async finishAuthenticatorSwitch(
+    actor: Actor,
+    input: { code: string },
+    meta: RequestMeta,
+  ): Promise<{ recoveryCodes: string[] }> {
+    const account = await this.staffAccount(actor);
+    if (await this.sessionIsPending(actor)) throw new Forbidden();
+    if (await this.mfa.isConfirmed(account.id)) throw new Conflict('You already use an authenticator app');
+    await this.checkTotp(account.id, account.role, input.code, meta, { requireConfirmed: false });
+    await this.mfa.confirm(account.id);
+    const recoveryCodes = await this.mfa.replaceRecoveryCodes(account.id);
+    await this.deps.sessions.revokeAll(account.id, { exceptSessionId: actor.sessionId });
+    await this.trusted.revokeAll(account.id);
+    await this.audit('admin.mfa_switched_to_authenticator', 'success', meta, {
+      accountId: account.id,
+      role: account.role,
+    });
+    await this.noticeMethodChanged(account, 'authenticator', meta);
+    return { recoveryCodes };
   }
 
   /** True once the second factor was confirmed, so the sign in page knows whether to enrol or ask for a code. */

@@ -95,6 +95,13 @@ export const MAIL_MESSAGES = {
   'mail.staff_confirm_code.subject': 'Your {appName} confirmation code',
   'mail.staff_confirm_code.intro1':
     'You asked to confirm a sensitive action in the staff area. Enter this code to continue.',
+  'mail.staff_second_step_changed.subject': 'Your {appName} staff sign in method changed',
+  'mail.staff_second_step_changed.intro1':
+    'Your second step for the staff area is now {method}. This was done on {time} from {device} near {place}.',
+  'mail.staff_second_step_changed.emailed': 'an emailed code',
+  'mail.staff_second_step_changed.authenticator': 'an authenticator app',
+  'mail.staff_second_step_changed.outro1':
+    'If this was not you, reset your password now with the button above, then tell your Super admin.',
   'mail.staff_code.where': 'Requested on {time} from {device} near {place}.',
   'mail.staff_code.action': 'Not you? Reset your password',
   'mail.staff_code.expires': 'The code works once and expires in {minutes} minutes.',
