@@ -19,6 +19,12 @@ import { emailHash, maskEmail, normalizeEmail } from './identifiers';
 import { findAccountByEmailHash, isUniqueViolation } from './lookup';
 import { MfaCore } from './mfa-core';
 import {
+  checkStaffCode,
+  sendStaffCode,
+  type StaffCodeContext,
+  type StaffCodePurpose,
+} from './staff-email-code';
+import {
   generateInviteCode,
   inviteCodeHash,
   inviteStatus,
@@ -37,11 +43,22 @@ import {
 type StaffRole = 'editor' | 'admin' | 'super_admin';
 const isStaffRole = (role: string): role is StaffRole => isStaffRoleName(role);
 
+const STEP_STATUS = {
+  authenticator: 'mfa_required',
+  email: 'email_code_required',
+  enrol: 'enrol_required',
+} as const;
+
 const enc = new TextEncoder();
 const dec = new TextDecoder();
 
+/** Which second step a staff member meets after a correct password (D-397). */
+export type SecondStep = 'authenticator' | 'email' | 'enrol';
+
 export interface StaffSignIn {
-  status: 'enrol_required' | 'mfa_required' | 'signed_in';
+  status: 'enrol_required' | 'mfa_required' | 'email_code_required' | 'signed_in';
+  /** For `email_code_required`: false when the mail could not be sent and the person must ask again. */
+  codeSent?: boolean;
   accountId: string;
   session: { token: string; id: string };
 }
@@ -176,17 +193,19 @@ export class StaffService extends AccountService {
         session: { token: session.token, id: session.session.id },
       };
     }
-    const [factor] = await this.deps.db
-      .select({ confirmedAt: schema.mfaFactors.confirmedAt })
-      .from(schema.mfaFactors)
-      .where(eq(schema.mfaFactors.accountId, account.id));
+    const step = await this.secondStepFor(account.id);
     const session = await this.deps.sessions.create({ ...sessionInput, kind: 'pending_mfa' });
     await this.audit('admin.login_password', 'success', meta, {
       accountId: account.id,
       role: account.role,
     });
+    const codeSent =
+      step === 'email'
+        ? (await this.mailCode(account.id, account.role, 'staff_sign_in', meta)).sent
+        : undefined;
     return {
-      status: factor?.confirmedAt ? 'mfa_required' : 'enrol_required',
+      status: STEP_STATUS[step],
+      ...(codeSent === undefined ? {} : { codeSent }),
       accountId: account.id,
       session: { token: session.token, id: session.session.id },
     };
@@ -295,6 +314,170 @@ export class StaffService extends AccountService {
     });
   }
 
+  /**
+   * An enrolled authenticator always wins. Otherwise the site setting decides: an emailed code (when mail is on)
+   * or enrolment. The result is never "no second step" (D-397).
+   */
+  private async secondStepFor(accountId: string): Promise<SecondStep> {
+    if (await this.mfa.isConfirmed(accountId)) return 'authenticator';
+    const policy = (await this.deps.secondStepPolicy?.()) ?? 'authenticator';
+    const mailOn = this.deps.emailAvailable?.() ?? true;
+    return policy === 'email' && mailOn ? 'email' : 'enrol';
+  }
+
+  /** The second step the signed in or waiting session of this account faces now. */
+  async secondStep(actor: Actor): Promise<SecondStep> {
+    const account = await this.staffAccount(actor);
+    return this.secondStepFor(account.id);
+  }
+
+  private async sessionIsPending(actor: Actor): Promise<boolean> {
+    const [session] = await this.deps.db
+      .select({ mfaVerifiedAt: schema.sessions.mfaVerifiedAt })
+      .from(schema.sessions)
+      .where(and(eq(schema.sessions.id, actor.sessionId), isNull(schema.sessions.revokedAt)));
+    return !session || session.mfaVerifiedAt === null;
+  }
+
+  private codeContext(to: string, purpose: StaffCodePurpose): StaffCodeContext {
+    return {
+      db: this.deps.db,
+      limiter: this.deps.limiter,
+      pepper: this.deps.pepper,
+      cfg: this.cfg,
+      now: () => this.now(),
+      subject: (kind, value) => this.subject(kind, value),
+      send: (mail) =>
+        purpose === 'staff_sign_in'
+          ? this.deps.mailer.sendStaffSignInCode({ to, ...mail })
+          : this.deps.mailer.sendStaffConfirmCode({ to, ...mail }),
+    };
+  }
+
+  /** Mails a code in the request (D-024) and audits it. A failed send is audited, not hidden. */
+  private async mailCode(
+    accountId: string,
+    role: string,
+    purpose: StaffCodePurpose,
+    meta: RequestMeta,
+  ): Promise<{ sent: boolean }> {
+    const account = await this.loadOwn(accountId);
+    if (!account?.emailEnc) throw new Forbidden();
+    const to = await this.deps.keys.open(accountId, 'email', account.emailEnc);
+    const result = await sendStaffCode(this.codeContext(to, purpose), {
+      accountId,
+      purpose,
+      meta,
+    });
+    const kind = purpose === 'staff_sign_in' ? 'sign_in' : 'confirm';
+    await this.audit(
+      result.sent ? 'admin.email_code_sent' : 'admin.email_code_send_failed',
+      result.sent ? 'success' : 'failure',
+      meta,
+      { accountId, role, metadata: { kind } },
+    );
+    return result;
+  }
+
+  private async checkEmailCode(
+    account: { id: string; role: string },
+    purpose: StaffCodePurpose,
+    code: string,
+    meta: RequestMeta,
+  ): Promise<void> {
+    await this.mfa.lockCheck(account.id);
+    const result = await checkStaffCode(this.codeContext('', purpose), {
+      accountId: account.id,
+      purpose,
+      code: code.replace(/\s/g, ''),
+    });
+    if (result === 'ok') {
+      await this.mfa.clearFailures(account.id);
+      return;
+    }
+    const message =
+      result === 'expired'
+        ? 'That code has expired'
+        : result === 'too_many'
+          ? 'Too many wrong tries on that code'
+          : 'That code is not right';
+    return this.mfa.failWrongCode(account.id, {
+      onFailure: () =>
+        this.audit('admin.email_code_failed', 'failure', meta, {
+          accountId: account.id,
+          role: account.role,
+          metadata: { reason: result },
+        }),
+      message,
+    });
+  }
+
+  /** Sends the sign in code again. Only a session still waiting for its second step, only for email accounts. */
+  async sendSignInCode(actor: Actor, meta: RequestMeta): Promise<{ sent: boolean }> {
+    const account = await this.staffAccount(actor);
+    if (!(await this.sessionIsPending(actor))) throw new Forbidden();
+    if ((await this.secondStepFor(account.id)) !== 'email') throw new Forbidden();
+    return this.mailCode(account.id, account.role, 'staff_sign_in', meta);
+  }
+
+  async verifyEmailCode(
+    actor: Actor,
+    input: { code: string },
+    meta: RequestMeta,
+  ): Promise<{ session: { token: string; id: string } }> {
+    const account = await this.staffAccount(actor);
+    if ((await this.secondStepFor(account.id)) !== 'email') throw new Forbidden();
+    await this.checkEmailCode(account, 'staff_sign_in', input.code, meta);
+    const session = await this.deps.sessions.promoteToStaff(actor.sessionId);
+    await this.audit('admin.login', 'success', meta, {
+      accountId: account.id,
+      role: account.role,
+      metadata: { mfa: 'email' },
+    });
+    return { session: { token: session.token, id: session.session.id } };
+  }
+
+  /** Mails a code to confirm a sensitive action. Someone with an authenticator uses that instead. */
+  async sendConfirmCode(actor: Actor, meta: RequestMeta): Promise<{ sent: boolean }> {
+    const account = await this.staffAccount(actor);
+    if (await this.sessionIsPending(actor)) throw new Forbidden();
+    if (await this.mfa.isConfirmed(account.id))
+      throw new Conflict('Use the code from your authenticator app');
+    return this.mailCode(account.id, account.role, 'staff_confirm', meta);
+  }
+
+  /** Authenticator code when one is set up, otherwise a fresh emailed confirmation code. */
+  private async checkSensitiveCode(
+    account: { id: string; role: string },
+    code: string,
+    meta: RequestMeta,
+  ): Promise<void> {
+    if (await this.mfa.isConfirmed(account.id)) {
+      await this.checkTotp(account.id, account.role, code, meta, { requireConfirmed: true });
+      return;
+    }
+    await this.checkEmailCode(account, 'staff_confirm', code, meta);
+  }
+
+  /** Same as confirming the password, for staff without an authenticator: a fresh emailed code. */
+  async reauthenticateWithEmailCode(
+    actor: Actor,
+    input: { code: string },
+    meta: RequestMeta,
+  ): Promise<void> {
+    const account = await this.staffAccount(actor);
+    if (await this.mfa.isConfirmed(account.id))
+      throw new Conflict('Use your password or the code from your authenticator app');
+    await this.checkEmailCode(account, 'staff_confirm', input.code, meta);
+    await this.deps.sessions.markReauth(actor.sessionId);
+  }
+
+  /** A waiting session may enrol only when the site asks for an authenticator, never to bypass the email step. */
+  private async assertMayEnrol(actor: Actor, accountId: string): Promise<void> {
+    if ((await this.sessionIsPending(actor)) && (await this.secondStepFor(accountId)) !== 'enrol')
+      throw new Forbidden();
+  }
+
   /** True once the second factor was confirmed, so the sign in page knows whether to enrol or ask for a code. */
   async twoFactorConfirmed(actor: Actor): Promise<boolean> {
     const account = await this.staffAccount(actor);
@@ -308,6 +491,7 @@ export class StaffService extends AccountService {
     const account = await this.staffAccount(actor);
     if (await this.mfa.isConfirmed(account.id))
       throw new Conflict('Two factor sign in is already set up');
+    await this.assertMayEnrol(actor, account.id);
     const email = await this.deps.keys.open(account.id, 'email', account.emailEnc!);
     return this.mfa.beginEnrolment(account.id, this.cfg.issuerName, email);
   }
@@ -318,6 +502,7 @@ export class StaffService extends AccountService {
     meta: RequestMeta,
   ): Promise<{ recoveryCodes: string[]; session: { token: string; id: string } }> {
     const account = await this.staffAccount(actor);
+    await this.assertMayEnrol(actor, account.id);
     await this.checkTotp(account.id, account.role, input.code, meta, {
       requireConfirmed: false,
     });
@@ -380,6 +565,8 @@ export class StaffService extends AccountService {
     meta: RequestMeta,
   ): Promise<string[]> {
     const account = await this.staffAccount(actor);
+    if (!(await this.mfa.isConfirmed(account.id)))
+      throw new Conflict('Recovery codes belong to an authenticator app. Set one up first.');
     await this.checkTotp(account.id, account.role, input.code, meta, { requireConfirmed: true });
     const codes = await this.mfa.replaceRecoveryCodes(account.id);
     await this.audit('admin.recovery_codes_regenerated', 'success', meta, {
@@ -395,7 +582,7 @@ export class StaffService extends AccountService {
     meta: RequestMeta,
   ): Promise<{ session: { token: string; id: string } }> {
     const account = await this.staffAccount(actor);
-    await this.checkTotp(account.id, account.role, input.code, meta, { requireConfirmed: true });
+    await this.checkSensitiveCode(account, input.code, meta);
     return this.changePassword(
       actor,
       { currentPassword: input.currentPassword, newPassword: input.newPassword },
@@ -413,7 +600,7 @@ export class StaffService extends AccountService {
     const admin = await this.staffAccount(actor, 'super_admin');
     if (input.accountId === admin.id)
       throw new Forbidden('Use a recovery code to reset your own two factor sign in');
-    await this.checkTotp(admin.id, admin.role, input.code, meta, { requireConfirmed: true });
+    await this.checkSensitiveCode(admin, input.code, meta);
     const target = await withAccount(
       this.deps.db,
       { accountId: admin.id, role: admin.role },
@@ -645,7 +832,8 @@ export class StaffService extends AccountService {
     input: { token: string; password: string },
     meta: RequestMeta,
   ): Promise<{
-    status: 'enrol_required';
+    status: StaffSignIn['status'];
+    codeSent?: boolean;
     accountId: string;
     session: { token: string; id: string };
   }> {
@@ -723,8 +911,12 @@ export class StaffService extends AccountService {
       role,
       metadata: { existing: Boolean(existing) },
     });
+    const step = await this.secondStepFor(accountId);
+    const codeSent =
+      step === 'email' ? (await this.mailCode(accountId, role, 'staff_sign_in', meta)).sent : undefined;
     return {
-      status: 'enrol_required',
+      status: STEP_STATUS[step],
+      ...(codeSent === undefined ? {} : { codeSent }),
       accountId,
       session: { token: session.token, id: session.session.id },
     };

@@ -38,6 +38,8 @@ const cases: Array<[TemplateName, Record<string, string | number>]> = [
   ['email_change_notice', { resetUrl: 'https://tv.example.org/forgot-password' }],
   ['two_factor_reset', { signInUrl: 'https://tv.example.org/admin/login' }],
   ['staff_lockout_alert', { account: 'e***@example.org', minutes: 30 }],
+  ['staff_sign_in_code', { code: '482913', minutes: 10, device: 'Chrome on Windows', place: 'Nigeria', time: '2026-11-26 10:00 UTC', resetUrl: 'https://tv.example.org/forgot-password' }],
+  ['staff_confirm_code', { code: '482913', minutes: 10, device: 'Chrome on Windows', place: 'Nigeria', time: '2026-11-26 10:00 UTC', resetUrl: 'https://tv.example.org/forgot-password' }],
   ['account_deleted', {}],
   ['welcome', { homeUrl: 'https://tv.example.org/' }],
   ['export_ready', { linkUrl: 'https://tv.example.org/api/account/export?token=abc', hours: 24 }],

@@ -53,6 +53,8 @@ export type TemplateName =
   | 'google_linked'
   | 'google_unlinked'
   | 'staff_lockout_alert'
+  | 'staff_sign_in_code'
+  | 'staff_confirm_code'
   | 'welcome'
   | 'account_deleted'
   | 'deletion_scheduled'
@@ -319,6 +321,40 @@ const DEFINITIONS: Record<TemplateName, Definition> = {
       outro: ['Existing sessions of that account were not ended.'],
     }),
   },
+  staff_sign_in_code: {
+    required: ['code', 'minutes', 'device', 'place', 'time', 'resetUrl'],
+    links: ['resetUrl'],
+    build: (v, b, msg) => ({
+      subject: msg('mail.staff_sign_in_code.subject', { appName: b.appName }),
+      intro: [
+        msg('mail.staff_sign_in_code.intro1', { appName: b.appName }),
+        msg('mail.staff_code.where', { device: v.device!, place: v.place!, time: v.time! }),
+      ],
+      code: v.code,
+      action: { label: msg('mail.staff_code.action'), url: v.resetUrl! },
+      outro: [
+        msg('mail.staff_code.expires', { minutes: v.minutes! }),
+        msg('mail.staff_code.notYou'),
+      ],
+    }),
+  },
+  staff_confirm_code: {
+    required: ['code', 'minutes', 'device', 'place', 'time', 'resetUrl'],
+    links: ['resetUrl'],
+    build: (v, b, msg) => ({
+      subject: msg('mail.staff_confirm_code.subject', { appName: b.appName }),
+      intro: [
+        msg('mail.staff_confirm_code.intro1'),
+        msg('mail.staff_code.where', { device: v.device!, place: v.place!, time: v.time! }),
+      ],
+      code: v.code,
+      action: { label: msg('mail.staff_code.action'), url: v.resetUrl! },
+      outro: [
+        msg('mail.staff_code.expires', { minutes: v.minutes! }),
+        msg('mail.staff_code.notYou'),
+      ],
+    }),
+  },
   account_deleted: {
     required: [],
     build: (_v, b, msg) => ({
@@ -467,6 +503,8 @@ const ENGLISH_ONLY = new Set<TemplateName>([
   'admin_invite',
   'two_factor_reset',
   'staff_lockout_alert',
+  'staff_sign_in_code',
+  'staff_confirm_code',
   'staff_notice',
   'staff_summary',
   'staff_export_ready',

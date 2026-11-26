@@ -99,6 +99,16 @@ const NON_ESSENTIAL: ReadonlySet<TemplateName> = new Set<TemplateName>([
  * Typed transactional emails (M21). Sends directly from the calling process, one attempt. Callers decide how
  * to react to MailDeliveryError: sign up shows "could not send", reset keeps the generic message.
  */
+/** Where and when a staff code was asked for, in coarse words. A raw address never goes into the mail. */
+export interface StaffCodeMail {
+  to: string;
+  code: string;
+  minutes: number;
+  device: string;
+  place: string;
+  time: string;
+}
+
 export class Mailer {
   constructor(
     private readonly transport: MailTransport,
@@ -273,6 +283,25 @@ export class Mailer {
       account: input.account,
       minutes: input.minutes,
     });
+  }
+
+  sendStaffSignInCode(input: StaffCodeMail) {
+    return this.deliver(input.to, 'staff_sign_in_code', this.staffCodeVars(input));
+  }
+
+  sendStaffConfirmCode(input: StaffCodeMail) {
+    return this.deliver(input.to, 'staff_confirm_code', this.staffCodeVars(input));
+  }
+
+  private staffCodeVars(input: StaffCodeMail) {
+    return {
+      code: input.code,
+      minutes: input.minutes,
+      device: input.device,
+      place: input.place,
+      time: input.time,
+      resetUrl: this.url('/forgot-password'),
+    };
   }
 
   sendAccountDeleted(input: { to: string }) {

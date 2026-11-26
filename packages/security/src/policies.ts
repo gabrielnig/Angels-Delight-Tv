@@ -20,6 +20,8 @@ export const RATE_POLICIES = {
   googleCallbackIp: perMinutes('google-callback-ip', 30, 15),
   adminGeneral: perMinutes('admin-general', 300, 1),
   globalApiIp: perMinutes('api-ip', 300, 1),
+  staffCodeSendAccount: perMinutes('staff-code-send', 5, 60),
+  staffCodeSendNetwork: perMinutes('staff-code-send-ip', 20, 60),
   inviteSend: perMinutes('invite-send', 20, 60),
 } as const;
 
