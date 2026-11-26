@@ -3,7 +3,7 @@ id: W05
 title: Choose hero banners and preview clips
 path: weekly
 summary: Pick the titles for the big Home banner, write their slide text and make preview clips.
-role: admin
+role: editor
 roleNote: Editors can choose titles and text, only Admins can make previews
 needs: [W04]
 related: [W04, C05]
