@@ -3,7 +3,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { execFileSync, spawnSync } from 'node:child_process';
-import { publishRun, releaseFiles, videoIdOf } from './publish';
+import { newestEpisodes, publishRun, publishRuns, releaseFiles, videoIdOf } from './publish';
 import type { Manifest } from './manifest';
 
 const manifest: Manifest = {
@@ -115,5 +115,97 @@ describe.skipIf(spawnSync('ffmpeg', ['-version']).status !== 0)('publishRun', ()
     expect(
       readFileSync(join(dest, 'help/v1/VD02/VD02-poster.webp')).subarray(8, 12).toString(),
     ).toBe('WEBP');
+  });
+});
+
+describe('newestEpisodes (merging several run folders)', () => {
+  const ep = (id: string, file: string) => ({
+    ...manifest.episodes[0]!,
+    id,
+    profiles: manifest.episodes[0]!.profiles.map((p) => ({ ...p, video: file })),
+  });
+  const old = {
+    dir: '/runs/a',
+    manifest: {
+      ...manifest,
+      generatedAt: '2026-11-25T08:00:00Z',
+      episodes: [ep('D02', 'old.mp4'), ep('D03', 'old3.mp4')],
+    },
+  };
+  const fresh = {
+    dir: '/runs/b',
+    manifest: {
+      ...manifest,
+      generatedAt: '2026-11-25T18:00:00Z',
+      episodes: [ep('D02', 'new.mp4')],
+    },
+  };
+
+  it('takes each episode from the newest run that has it', () => {
+    const picked = newestEpisodes([old, fresh], () => true);
+    expect(picked.map((p) => `${p.episode.id}:${p.dir}`).sort()).toEqual([
+      'D02:/runs/b',
+      'D03:/runs/a',
+    ]);
+  });
+
+  it('skips a run whose files are gone and falls back to the older one', () => {
+    const picked = newestEpisodes([old, fresh], (dir) => dir !== '/runs/b');
+    expect(picked.find((p) => p.episode.id === 'D02')!.dir).toBe('/runs/a');
+  });
+
+  it('keeps only the wanted ids', () => {
+    expect(newestEpisodes([old, fresh], () => true, ['D03']).map((p) => p.episode.id)).toEqual([
+      'D03',
+    ]);
+  });
+});
+
+describe.skipIf(spawnSync('ffmpeg', ['-version']).status !== 0)('publishRuns', () => {
+  it('writes one release from two run folders', async () => {
+    const mk = (id: string) => {
+      const run = mkdtempSync(join(tmpdir(), 'kb-run-'));
+      const m: Manifest = {
+        ...manifest,
+        episodes: [
+          {
+            ...manifest.episodes[0]!,
+            id,
+            profiles: manifest.episodes[0]!.profiles.map((p) => ({
+              ...p,
+              video: p.video.replace('D02', id),
+              renditions: p.renditions.map((r) => ({ ...r, file: r.file.replace('D02', id) })),
+              vtt: p.vtt.replace('D02', id),
+              transcript: p.transcript.replace('D02', id),
+              chapters: p.chapters.replace('D02', id),
+              poster: p.poster.replace('D02', id),
+            })),
+          },
+        ],
+      };
+      for (const f of releaseFiles(m, 'x')) {
+        mkdirSync(join(run, f.source, '..'), { recursive: true });
+        if (f.source.endsWith('.jpg'))
+          execFileSync('ffmpeg', [
+            '-v',
+            'error',
+            '-f',
+            'lavfi',
+            '-i',
+            'color=c=red:s=64x36',
+            '-frames:v',
+            '1',
+            '-y',
+            join(run, f.source),
+          ]);
+        else writeFileSync(join(run, f.source), f.source);
+      }
+      return { dir: run, manifest: m };
+    };
+    const dest = mkdtempSync(join(tmpdir(), 'kb-dest-'));
+    const n = await publishRuns({ runs: [mk('D02'), mk('D03')], release: 'v1', dest });
+    expect(n).toBe(16);
+    expect(existsSync(join(dest, 'help/v1/VD02/VD02-720.mp4'))).toBe(true);
+    expect(existsSync(join(dest, 'help/v1/VD03/VD03-480.mp4'))).toBe(true);
   });
 });

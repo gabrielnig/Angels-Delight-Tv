@@ -1,8 +1,9 @@
 import { execFile } from 'node:child_process';
+import { existsSync } from 'node:fs';
 import { copyFile, mkdir } from 'node:fs/promises';
 import { dirname, join, resolve } from 'node:path';
 import { promisify } from 'node:util';
-import type { Manifest } from './manifest';
+import type { Manifest, ManifestEpisode } from './manifest';
 
 const exec = promisify(execFile);
 
@@ -82,3 +83,48 @@ export async function publishRun(o: {
 }
 
 export const releaseRoot = (dest: string, release: string) => join(dest, 'help', release);
+
+export interface RunFolder {
+  dir: string;
+  manifest: Manifest;
+}
+
+/**
+ * Merges several run folders: each episode comes from the newest run (by `generatedAt`) that has it.
+ * `hasFiles(dir, episode)` lets the caller skip a run whose video files were deleted. `only` keeps listed ids.
+ */
+export function newestEpisodes(
+  runs: RunFolder[],
+  hasFiles: (dir: string, episode: ManifestEpisode) => boolean,
+  only?: string[],
+): Array<{ dir: string; episode: ManifestEpisode }> {
+  const newestFirst = [...runs].sort((a, b) =>
+    b.manifest.generatedAt.localeCompare(a.manifest.generatedAt),
+  );
+  const picked = new Map<string, { dir: string; episode: ManifestEpisode }>();
+  for (const run of newestFirst) {
+    for (const episode of run.manifest.episodes) {
+      if (only && !only.includes(episode.id)) continue;
+      if (picked.has(episode.id) || !hasFiles(run.dir, episode)) continue;
+      picked.set(episode.id, { dir: run.dir, episode });
+    }
+  }
+  return [...picked.values()];
+}
+
+/** Writes one release folder from several run folders (newest recording per episode). Returns the file count. */
+export async function publishRuns(o: {
+  runs: RunFolder[];
+  release: string;
+  dest: string;
+  only?: string[];
+}): Promise<number> {
+  const hasFiles = (dir: string, e: ManifestEpisode) =>
+    e.profiles.every((p) => p.renditions.every((r) => existsSync(resolve(dir, r.file))));
+  let n = 0;
+  for (const { dir, episode } of newestEpisodes(o.runs, hasFiles, o.only)) {
+    const manifest: Manifest = { schema: 1, run: dir, generatedAt: '', episodes: [episode] };
+    n += await publishRun({ run: dir, manifest, release: o.release, dest: o.dest });
+  }
+  return n;
+}

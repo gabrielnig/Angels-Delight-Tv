@@ -1,7 +1,7 @@
 /**
  * Small KB tools next to the recorder (lane L14):
  *   tsx scripts/kb-recorder/tools.ts shots-diff --run .kb-out/nightly --baseline content/help/media [--out .kb-out/diffs] [--max-percent 0.5] [--strict]
- *   tsx scripts/kb-recorder/tools.ts publish --run .kb-out/nightly --release v1.0.0 --dest dist-media
+ *   tsx scripts/kb-recorder/tools.ts publish --run .kb-out/nightly [--run <more runs>] [--only D02,D03] --release v1.0.0 --dest dist-media
  *   tsx scripts/kb-recorder/tools.ts steps --episode D02 [--check]
  */
 import { readFile, mkdir } from 'node:fs/promises';
@@ -10,7 +10,7 @@ import { basename, join, resolve } from 'node:path';
 import { parseArgs } from 'node:util';
 import { exitCodeFor } from './exit-code';
 import type { Manifest } from './manifest';
-import { publishRun } from './publish';
+import { publishRuns } from './publish';
 import { loadAllEpisodes } from './registry';
 import { renderStepsBlock } from './steps-block';
 import { compareImages } from './shot-diff';
@@ -20,7 +20,8 @@ const [command, ...rest] = process.argv.slice(2);
 const { values } = parseArgs({
   args: rest,
   options: {
-    run: { type: 'string' },
+    run: { type: 'string', multiple: true },
+    only: { type: 'string' },
     baseline: { type: 'string', default: 'content/help/media' },
     out: { type: 'string', default: '.kb-out/diffs' },
     'max-percent': { type: 'string', default: '0.5' },
@@ -33,13 +34,14 @@ const { values } = parseArgs({
   },
 });
 
-async function manifestOf(run: string): Promise<Manifest> {
+async function manifestOf(run: string | undefined): Promise<Manifest> {
+  if (!run) throw new Error('Pass --run <run folder>');
   return JSON.parse(await readFile(resolve(run, 'manifest.json'), 'utf8')) as Manifest;
 }
 
 async function shotsDiff(): Promise<void> {
-  if (!values.run) throw new Error('Pass --run <run folder>');
-  const manifest = await manifestOf(values.run);
+  if (!values.run?.length) throw new Error('Pass --run <run folder>');
+  const manifest = await manifestOf(values.run[0]);
   const max = Number(values['max-percent']) / 100;
   await mkdir(resolve(values.out!), { recursive: true });
   const failures: string[] = [];
@@ -79,13 +81,19 @@ async function shotsDiff(): Promise<void> {
 }
 
 async function publish(): Promise<void> {
-  if (!values.run || !values.release || !values.dest)
-    throw new Error('Pass --run, --release and --dest');
-  const n = await publishRun({
-    run: resolve(values.run),
-    manifest: await manifestOf(values.run),
+  if (!values.run?.length || !values.release || !values.dest)
+    throw new Error('Pass --run (repeat it for several runs), --release and --dest');
+  const runs = await Promise.all(
+    values.run.map(async (r) => ({ dir: resolve(r), manifest: await manifestOf(r) })),
+  );
+  const n = await publishRuns({
+    runs,
     release: values.release,
     dest: resolve(values.dest),
+    only: values.only
+      ?.split(',')
+      .map((s) => s.trim())
+      .filter(Boolean),
   });
   console.log(
     `${n} file(s) written under ${resolve(values.dest)}/help/${values.release}/. Upload that folder to the media bucket.`,
