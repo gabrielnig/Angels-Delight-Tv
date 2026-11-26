@@ -37,9 +37,9 @@ Have your email address and access to your inbox. If you set up an [authenticato
    ![The sign in page with the wrong password message marked 1](../../media/T06/T06-05-wrong-desktop-dark.webp)
 6. Type your password in the **Password** box.
 7. Click **Sign in** again.
-8. Check the **Enter your code** page.
-   The code is in the email we sent, or in your app if you use one. Emailed codes last 10 minutes.
-   ![The code page with the six digit boxes marked 1](../../media/T06/T06-08-code-desktop-dark.webp)
+8. Check the **Check your email** page.
+   The code is in the email we sent and lasts 10 minutes. If it has not come, wait a minute and click Send a new code. App users type the app code instead.
+   ![The Check your email page with the code box marked 1](../../media/T06/T06-08-code-desktop-dark.webp)
 <!-- /kb:steps -->
 
 ## What you should see

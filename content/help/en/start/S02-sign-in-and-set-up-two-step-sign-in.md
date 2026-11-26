@@ -40,14 +40,17 @@ Sign in to the admin with your email, your password and a 6 digit code sent to y
 3. Type your password in the **Password** box.
    The dots hide your password. Nobody can read it over your shoulder.
 4. Click **Sign in**.
-5. Wait until you see **Enter your code**.
-   We email a 6 digit code to your address. It works once and lasts 10 minutes. The page has a **Remember this device** box, on by default.
-   ![The Enter your code page with the six digit boxes marked 1](../../media/S02/S02-05-code-desktop-dark.webp)
-6. Type the 6 digit code from the email in the code box.
-   If it has not come, wait a minute and choose **Email me a new code**. Authenticator app users type the app code instead.
-7. Click **Verify**.
-8. Wait until you see **Dashboard**. You are signed in.
-   ![The Dashboard with its heading marked 1](../../media/S02/S02-08-dashboard-desktop.webp)
+5. Wait until you see **Check your email**.
+   We email a 6 digit code to your address. It works once and lasts 10 minutes.
+   ![The Check your email page with the code box marked 1](../../media/S02/S02-05-code-desktop-dark.webp)
+6. Check that **Remember this device for 30 days** is ticked.
+   It is on by default. Untick it on a shared computer. If you use an authenticator app, the page asks for the app code instead.
+   ![The Remember this device box marked 1](../../media/S02/S02-06-remember-desktop-dark.webp)
+7. Type the 6 digit code from the email in the **6 digit code** box.
+   If it has not come, wait a minute and click **Send a new code**. Only the newest code works.
+8. Click **Sign in**.
+9. Wait until you see **Dashboard**. You are signed in.
+   ![The Dashboard with its heading marked 1](../../media/S02/S02-09-dashboard-desktop.webp)
 <!-- /kb:steps -->
 
 ## What you should see

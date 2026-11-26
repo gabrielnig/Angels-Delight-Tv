@@ -1,4 +1,5 @@
 import type { Episode } from '../episode';
+import { slow } from '../helpers-c7';
 import { pointAt, settle } from '../safety-helpers';
 
 /** K07: the safe habits that live on My account: password rules, the Security card, remembered devices, devices. */
@@ -96,4 +97,4 @@ const episode: Episode = {
   ],
 };
 
-export default episode;
+export default slow(episode, 3800);

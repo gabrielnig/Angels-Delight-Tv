@@ -47,17 +47,15 @@ If you think someone else has your password, change it now, press **Sign out** b
 4. Type "river" in the **New password** box.
    This is only to show the rules. Nothing is saved until you press Change password.
    ![The password rules list under the New password box, marked 1](../../media/K07/K07-04-password-rules-desktop.webp)
-5. Scroll to **Two step sign in**.
-   Two step sign in is on for every staff account. It asks for a code we email you, or one from your app.
-6. Click **Make new recovery codes**.
-   Recovery codes let you in if you lose your phone. Each code works once. Keep them somewhere safe and private.
-   ![The Make new recovery codes box asking for the authenticator code, marked 1](../../media/K07/K07-06-recovery-box-desktop.webp)
-7. Check that **Your old codes stop working.** is in the box.
-8. Click **Cancel**.
-   Do not paste recovery codes into chats or emails, and do not take pictures of them.
-9. Scroll to **Where you are signed in**.
-   Sign out any device you do not know or no longer use. Staff sessions end after 7 days of no use, and after 30 days at most. Remembered devices are listed on this page with **Forget**.
-   ![The list of devices where you are signed in, marked 1](../../media/K07/K07-09-devices-desktop.webp)
+5. Scroll to **Security**.
+   Every staff account has a second step. It asks for a code we email you, or one from your authenticator app.
+   ![The Security card showing the second step in use, marked 1](../../media/K07/K07-05-security-desktop.webp)
+6. Scroll to **Remembered devices**.
+   These browsers skip the emailed code. Click **Forget** beside any you do not use. Authenticator app users see **Make new recovery codes** on the Security card instead. Each recovery code works once, so keep them private.
+   ![The Remembered devices card with its Forget button marked 1](../../media/K07/K07-06-remembered-desktop.webp)
+7. Scroll to **Where you are signed in**.
+   Sign out any device you do not know or no longer use. Staff sessions end after 60 minutes of no use.
+   ![The list of devices where you are signed in, marked 1](../../media/K07/K07-07-devices-desktop.webp)
 <!-- /kb:steps -->
 
 ## What you should see
