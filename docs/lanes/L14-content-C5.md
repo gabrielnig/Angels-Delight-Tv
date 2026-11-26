@@ -1,19 +1,17 @@
 # L14 content lane C5: Money and sponsors (path M)
 
-Worktree `/home/claude/wt2/C5-content`, branches `c5/*`, demo port 3205, raw output `/home/claude/kb-out/C5` (never committed). Heavy steps run through `/home/claude/kb-slot.sh`.
+Guides M01 to M24 in `content/help/en/money`, episodes `scripts/kb-recorder/episodes/M01.ts` to `M24.ts` built with the step helper `scripts/kb-recorder/money-steps.ts`, pictures, `.vtt` and `.transcript.txt` in `content/help/media/M<nn>`. 24 articles, 24 videos (desktop only, recorded, mp4 not committed), about 80 screenshots. PRs 468 (M01 to M11 and the demo), 479 (M12 to M18) and the third batch (M19 to M24). Decision D-395.
 
-## Findings that shape the articles (read first)
+## Demo stack for money
+`apps/web/src/lib/data/admin/kb-demo/money.ts` gives the Sponsors, report and Donations services in memory copies of the demo dataset when `KB_DEMO=on` (fixture only). `money-settings.ts` seeds fake donate and transparency wording. `scripts/kb-stack.sh` adds a random throwaway Paystack test key. Demo reauthentication accepts any password.
 
-1. The Sponsors and Donations admin screens read Postgres only. The fixture demo stack had no data for them (the pages failed with a generic error). This lane adds `apps/web/src/lib/data/admin/kb-demo/money.ts`: with `KB_DEMO=on` on a development fixture build, the sponsor, report and donation services read in memory copies of the demo dataset (all marked test). The reset route drops this state. `money-settings.ts` seeds fake demo wording so the Donate and transparency pages exist, and `scripts/kb-stack.sh` adds a throwaway random Paystack test key and receipt secret (never printed, never committed). Demo reauthentication accepts any typed password.
-2. No admin screen edits any `donate.*` setting or any `sponsors.*` setting except the master switch on Sponsors. The plan (M07) and the docs say "Settings, Monetization" or "Features", but `SiteSettingsView` has no such tab and `FLAG_KEYS` has no donation switch. So the owner cannot turn donations on, change amounts, wording, bank details or the transparency lines in the admin today. The developer sets them. The articles say so plainly. Follow up for the owner of M48 or M29: add the Monetization tab (plan S169).
-3. Real screen words differ from the plan: the sponsor status button is **Approve to run** (not Activate), pictures are added per "creative" (**Add creative**), placements are labelled Home page banner, Video page card, After the video, Before the video. Articles use the real words.
-4. Viewer side (what a viewer sees of a sponsor, the sponsor gate) reads the database on the real site and cannot be recorded in fixture mode. Those articles explain it in words.
-5. Bank transfer gifts, monthly giving, refunds and manual entry have no admin screen (D-335, slice 13 partial).
-6. Sponsor categories refused: the app does not check categories. The plan's sponsor terms list (tobacco, alcohol, betting, adult content, political advertising) is a proposal and open question 3 in the L9 plan, so the article presents it as the owner's own rule to confirm.
+## Things that cannot be shown or do not exist (stated in the guides)
+- No admin screen edits `donate.*` or `sponsors.*` settings (only the sponsors master switch). The owner decides, the developer enters. Follow up: Monetization settings tab (plan S169).
+- Viewer side sponsor look and the sponsor gate, bank transfer gifts, manual entry, refunds and monthly giving have no recordable screen: M16, M20, M22 are written from the code.
+- Sponsor categories refused are not enforced by software: M19 gives a suggested list for the owner to confirm.
+- Paystack keys are never shown: M07 and M10 describe them as hidden.
+- File uploads (sponsor pictures) are pointed at, not performed (manual steps).
 
-## Articles
-
-See the table below. State: todo, written, recorded, checked, merged.
-
-| Id | Title | State |
-|---|---|---|
+## Checks
+Fact checker passed on M01, M02, M04 to M24. M03 still fails at step 9 (the Headline box does not appear when the checker clicks Add creative, although the recorder gets there); the guide steps are correct for a person. Open item: make the checker click wait for the creative form.
+help:check, caption lint, episode coverage and the C5 article gaps are clean. `help-coverage.test.ts` passes after the gap prune.
