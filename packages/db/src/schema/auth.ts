@@ -117,6 +117,30 @@ export const loginEvents = pgTable(
   ],
 );
 
+/** A staff browser that passed the emailed code and was remembered (L16, D-397). Only a hash of the token is stored. */
+export const trustedDevices = pgTable(
+  'trusted_devices',
+  {
+    id: pk(),
+    accountId: uuid('account_id')
+      .notNull()
+      .references(() => accounts.id, { onDelete: 'cascade' }),
+    tokenHash: bytea('token_hash').notNull(),
+    label: text('label').notNull(),
+    country: text('country'),
+    createdAt: timestamptz('created_at').notNull().defaultNow(),
+    lastUsedAt: timestamptz('last_used_at'),
+    expiresAt: timestamptz('expires_at').notNull(),
+    revokedAt: timestamptz('revoked_at'),
+  },
+  (t) => [
+    uniqueIndex('trusted_devices_token_hash_uniq').on(t.tokenHash),
+    index('trusted_devices_account_idx').on(t.accountId),
+    check('trusted_devices_country_code', sql`${t.country} IS NULL OR char_length(${t.country}) = 2`),
+    check('trusted_devices_expiry_after_creation', sql`${t.expiresAt} > ${t.createdAt}`),
+  ],
+);
+
 /**
  * A sign in method linked to an account (M49-S05, S06). Only Google for now. The address is held as the keyed
  * lookup hash plus a masked hint, never in clear. `(provider, subject)` is the key: a change of address at Google

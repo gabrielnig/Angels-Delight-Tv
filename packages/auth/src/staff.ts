@@ -17,6 +17,7 @@ import { and, desc, eq, inArray, isNull, ne, sql } from 'drizzle-orm';
 import { AccountService, formatDate } from './accounts';
 import { emailHash, maskEmail, normalizeEmail } from './identifiers';
 import { findAccountByEmailHash, isUniqueViolation } from './lookup';
+import { countryName, deviceLabel } from './login-events';
 import { MfaCore } from './mfa-core';
 import {
   checkStaffCode,
@@ -31,6 +32,7 @@ import {
   type SignupInviteStatus,
 } from './signup-invites';
 import { generateToken, hashToken } from './tokens';
+import { TrustedDevices, type TrustedDeviceView } from './trusted-devices';
 import {
   FieldErrors,
   InvalidCredentials,
@@ -194,6 +196,23 @@ export class StaffService extends AccountService {
       };
     }
     const step = await this.secondStepFor(account.id);
+    if (step === 'email' && (await this.trustedDays()) > 0) {
+      const known = await this.trusted.recognise(account.id, meta.trustedDeviceToken);
+      if (known) {
+        const session = await this.deps.sessions.create({ ...sessionInput, kind: 'staff' });
+        await this.deps.sessions.markReauth(session.session.id);
+        await this.audit('admin.login', 'success', meta, {
+          accountId: account.id,
+          role: account.role,
+          metadata: { mfa: 'trusted_device', deviceId: known },
+        });
+        return {
+          status: 'signed_in',
+          accountId: account.id,
+          session: { token: session.token, id: session.session.id },
+        };
+      }
+    }
     const session = await this.deps.sessions.create({ ...sessionInput, kind: 'pending_mfa' });
     await this.audit('admin.login_password', 'success', meta, {
       accountId: account.id,
@@ -201,7 +220,7 @@ export class StaffService extends AccountService {
     });
     const codeSent =
       step === 'email'
-        ? (await this.mailCode(account.id, account.role, 'staff_sign_in', meta)).sent
+        ? (await this.mailCode(account.id, account.role, 'staff_sign_in', meta, 'reuse')).sent
         : undefined;
     return {
       status: STEP_STATUS[step],
@@ -360,6 +379,7 @@ export class StaffService extends AccountService {
     role: string,
     purpose: StaffCodePurpose,
     meta: RequestMeta,
+    whenWaiting: 'reuse' | 'throw' = 'throw',
   ): Promise<{ sent: boolean }> {
     const account = await this.loadOwn(accountId);
     if (!account?.emailEnc) throw new Forbidden();
@@ -368,6 +388,7 @@ export class StaffService extends AccountService {
       accountId,
       purpose,
       meta,
+      whenWaiting,
     });
     const kind = purpose === 'staff_sign_in' ? 'sign_in' : 'confirm';
     await this.audit(
@@ -420,11 +441,40 @@ export class StaffService extends AccountService {
     return this.mailCode(account.id, account.role, 'staff_sign_in', meta);
   }
 
+  private trustedStore?: TrustedDevices;
+  private get trusted(): TrustedDevices {
+    this.trustedStore ??= new TrustedDevices(this.deps.db, () => this.now());
+    return this.trustedStore;
+  }
+
+  private async trustedDays(): Promise<number> {
+    return (await this.deps.trustedDeviceDays?.()) ?? 30;
+  }
+
+  async listTrustedDevices(actor: Actor): Promise<TrustedDeviceView[]> {
+    const account = await this.staffAccount(actor);
+    return this.trusted.list(account.id);
+  }
+
+  async revokeTrustedDevice(actor: Actor, deviceId: string, meta: RequestMeta): Promise<void> {
+    const account = await this.staffAccount(actor);
+    if (!(await this.trusted.revoke(account.id, deviceId))) throw new NotFound();
+    await this.audit('admin.trusted_device_revoked', 'success', meta, {
+      accountId: account.id,
+      role: account.role,
+      metadata: { deviceId },
+    });
+  }
+
   async verifyEmailCode(
     actor: Actor,
-    input: { code: string },
+    input: { code: string; remember?: boolean },
     meta: RequestMeta,
-  ): Promise<{ session: { token: string; id: string } }> {
+  ): Promise<{
+    session: { token: string; id: string };
+    /** Set when the person chose Remember this device and the site allows it. Goes in a cookie. */
+    trustedDevice?: { token: string; maxAgeSeconds: number };
+  }> {
     const account = await this.staffAccount(actor);
     if ((await this.secondStepFor(account.id)) !== 'email') throw new Forbidden();
     await this.checkEmailCode(account, 'staff_sign_in', input.code, meta);
@@ -434,7 +484,25 @@ export class StaffService extends AccountService {
       role: account.role,
       metadata: { mfa: 'email' },
     });
-    return { session: { token: session.token, id: session.session.id } };
+    const days = input.remember ? await this.trustedDays() : 0;
+    const trustedDevice =
+      days > 0
+        ? await this.trusted.remember(account.id, {
+            label: deviceLabel(meta.userAgent),
+            country: meta.country ?? null,
+            days,
+          })
+        : undefined;
+    if (trustedDevice)
+      await this.audit('admin.trusted_device_added', 'success', meta, {
+        accountId: account.id,
+        role: account.role,
+        metadata: { country: countryName(meta.country ?? null), days },
+      });
+    return {
+      session: { token: session.token, id: session.session.id },
+      ...(trustedDevice ? { trustedDevice } : {}),
+    };
   }
 
   /** Mails a code to confirm a sensitive action. Someone with an authenticator uses that instead. */
@@ -913,7 +981,7 @@ export class StaffService extends AccountService {
     });
     const step = await this.secondStepFor(accountId);
     const codeSent =
-      step === 'email' ? (await this.mailCode(accountId, role, 'staff_sign_in', meta)).sent : undefined;
+      step === 'email' ? (await this.mailCode(accountId, role, 'staff_sign_in', meta, 'reuse')).sent : undefined;
     return {
       status: STEP_STATUS[step],
       ...(codeSent === undefined ? {} : { codeSent }),

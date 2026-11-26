@@ -2,16 +2,17 @@ import { schema, withAccount, type Database } from '@ad/db';
 import type { AccountRole, AccountStatus } from '@ad/shared';
 import { and, desc, eq, isNull, ne, sql } from 'drizzle-orm';
 import { generateToken, hashToken } from './tokens';
+import { TrustedDevices } from './trusted-devices';
 
 export interface SessionPolicy {
   idleSeconds: number;
   absoluteSeconds: number;
 }
 
-/** SECURITY.md section 4 for viewers. Staff use the stricter M12-S01 values (30 minutes idle, 8 hours absolute). */
+/** SECURITY.md section 4 for viewers. Staff default to 7 days idle (sliding) and 30 days absolute (D-397); the site settings `security.staff_session_idle_days` and `security.staff_session_absolute_days` change them. */
 export const DEFAULT_SESSION_POLICIES = {
   viewer: { idleSeconds: 30 * 86400, absoluteSeconds: 90 * 86400 },
-  staff: { idleSeconds: 30 * 60, absoluteSeconds: 8 * 3600 },
+  staff: { idleSeconds: 7 * 86400, absoluteSeconds: 30 * 86400 },
   pendingMfa: { idleSeconds: 10 * 60, absoluteSeconds: 10 * 60 },
 } as const satisfies Record<string, SessionPolicy>;
 
@@ -38,6 +39,8 @@ export type SessionEnd = 'unknown' | 'revoked' | 'expired' | 'unavailable';
 export interface SessionServiceOptions {
   clock?: () => Date;
   policies?: typeof DEFAULT_SESSION_POLICIES;
+  /** Read at each staff session start and touch, so a change of the site setting applies at once. */
+  staffPolicy?: () => Promise<SessionPolicy>;
   /** Minimum gap between last_seen writes. */
   touchIntervalSeconds?: number;
 }
@@ -68,6 +71,7 @@ export class SessionService {
   private readonly clock: () => Date;
   private readonly policies: typeof DEFAULT_SESSION_POLICIES;
   private readonly touchInterval: number;
+  private readonly staffPolicy?: () => Promise<SessionPolicy>;
 
   constructor(
     private readonly db: Database,
@@ -75,21 +79,19 @@ export class SessionService {
   ) {
     this.clock = options.clock ?? (() => new Date());
     this.policies = options.policies ?? DEFAULT_SESSION_POLICIES;
+    this.staffPolicy = options.staffPolicy;
     this.touchInterval = (options.touchIntervalSeconds ?? 60) * 1000;
   }
 
-  policyFor(kind: SessionKind): SessionPolicy {
-    return kind === 'viewer'
-      ? this.policies.viewer
-      : kind === 'staff'
-        ? this.policies.staff
-        : this.policies.pendingMfa;
+  async policyFor(kind: SessionKind): Promise<SessionPolicy> {
+    if (kind === 'staff') return (await this.staffPolicy?.()) ?? this.policies.staff;
+    return kind === 'viewer' ? this.policies.viewer : this.policies.pendingMfa;
   }
 
   async create(input: CreateSessionInput): Promise<{ token: string; session: { id: string } }> {
     const token = generateToken();
     const now = this.clock();
-    const policy = this.policyFor(input.kind);
+    const policy = await this.policyFor(input.kind);
     const absolute = new Date(now.getTime() + policy.absoluteSeconds * 1000);
     const idle = new Date(Math.min(now.getTime() + policy.idleSeconds * 1000, absolute.getTime()));
     const [row] = await this.db
@@ -153,7 +155,7 @@ export class SessionService {
     let { lastSeenAt } = session;
     if (now.getTime() - session.lastSeenAt.getTime() >= this.touchInterval) {
       const kind: SessionKind = session.mfaVerifiedAt ? 'staff' : 'viewer';
-      const idleSeconds = this.policyFor(kind).idleSeconds;
+      const idleSeconds = (await this.policyFor(kind)).idleSeconds;
       idleExpiresAt = new Date(
         Math.min(now.getTime() + idleSeconds * 1000, session.absoluteExpiresAt.getTime()),
       );
@@ -230,6 +232,8 @@ export class SessionService {
       .update(schema.sessions)
       .set({ revokedAt: this.clock() })
       .where(and(...conditions));
+    // A remembered device must not outlive a sign out everywhere, a password change or reset, or a role change.
+    await new TrustedDevices(this.db, this.clock).revokeAll(accountId);
   }
 
   /** Revokes one session if it belongs to the account. Returns false for someone else's session id. */

@@ -169,6 +169,22 @@ describe.skipIf(!integrationEnabled())('staff email code second step (L16, D-397
   });
 
   describe('resend', () => {
+    it('a second password sign in within a minute reuses the mailed code instead of failing', async () => {
+      const { member } = await staffAccount();
+      const first = await login(member);
+      const mails = h.mailsTo(member.email);
+      const second = await login(member);
+      expect(second.status).toBe('email_code_required');
+      expect(second.codeSent).toBe(true);
+      expect(h.mailsTo(member.email)).toBe(mails);
+      await staff.verifyEmailCode(
+        pendingOf(member, 'editor', second.session.id),
+        { code: h.codeFor(member.email) },
+        h.meta,
+      );
+      expect(first.session.id).not.toBe(second.session.id);
+    });
+
     it('waits 60 seconds, then voids the old code', async () => {
       const { member, role } = await staffAccount();
       const first = await login(member);

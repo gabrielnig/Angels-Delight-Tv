@@ -81,6 +81,7 @@ const MAIN_TABLES = [
   'title_ratings',
   'title_scores',
   'translation_usage',
+  'trusted_devices',
   'ui_missing_keys',
   'ui_translations',
   'upload_sessions',
