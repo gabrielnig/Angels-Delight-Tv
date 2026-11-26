@@ -10,11 +10,8 @@ Glossary terms added: Group, Item, Name set.
 ## Demo seed
 `apps/web/src/lib/data/admin/kb-demo/apply.ts` and `dataset.ts` now add: series "Demo series: Genesis" (Part and Lesson, Part 1 Beginnings with 3 lessons, Part 2 The family of Abraham with 2), three unassigned Genesis 37, 41, 45 lessons for bundling, and "Demo series: Proverbs" (Part and Lesson, lesson numbers 1, 3, 3: a gap and a duplicate). 11 videos added, all published. Other lanes that baseline Videos list or Dashboard counts must re-record.
 
-## State (batch 1 merged)
-Articles with recorded pictures, steps blocks and a passing fact check: W02, W20, W21, W22, W24, W25, W26, W28 (8). W01 article written, locator fixed (Add episode), fact check to rerun. W03 belongs to lane C1 (removed here).
-Episodes written but article not yet in the repo (drafts kept in /home/claude/kb-out/C4/pending, regenerate with gen-articles.py): W23, W27, W29, W30, W31, W32, W33. Search box locator fixed with getByRole('searchbox'); W23 and W30 need a re-run.
-No videos were recorded (kb:update records them but they are not committed); no phone pictures.
-Coverage gaps closed: series routes, Series, Site settings, Captions, Encoding nav, content.series_labels, series.manage, series.delete, settings.site, caption.approve_bulk, video.edit, video.upload.
-
-## Next steps
-Run `/home/claude/kb-slot.sh` batches: `pnpm kb:update` then `pnpm kb:fact-check --article` for W01, W23, W27, W29 to W33; restore their articles and links (help:W23 etc.), then PR.
+## State (all merged or in the final PR)
+Articles with pictures, filled steps blocks and a passing fact check: W01, W02, W20, W21, W22, W23, W24, W25, W26, W27, W28, W29, W30, W31, W32, W33 (16). W03 belongs to lane C1.
+Limits shown in the articles: W27 records the admin side only (the demo series are not on the viewer demo site, and Preview site opens a new tab). W31 stops at the selection bar because the demo has no caption ready for bulk approval. W33 shows only the Upload screen because choosing files is a manual step.
+Not done: committed videos (mp4 not committed, `pnpm kb:record` makes them), phone pictures, a second look at ai-context.md.
+Coverage gaps for the series routes, Series, Site settings, Captions, Encoding, content.series_labels, series.manage, series.delete, settings.site, caption.approve_bulk, video.edit and video.upload are closed.
