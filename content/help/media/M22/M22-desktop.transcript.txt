@@ -1,0 +1,11 @@
+Monthly giving: not available yet (M22)
+For Admins. 57 s.
+
+0:04  Choose Donations in the side menu.
+      The pointer moves to Donations.
+0:08  Select Monthly from the Kind list.
+      The pointer moves to AllOne timeMonthly.
+0:12  Click Apply.
+      The pointer moves to Apply.
+0:46  Check that No gifts match. shows because nobody can give monthly yet.
+      The pointer moves to No gifts match..
