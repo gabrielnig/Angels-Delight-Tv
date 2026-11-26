@@ -13,7 +13,7 @@ import { Inlines } from './render';
 export type PanelView =
   | { phase: 'loading' }
   | { phase: 'error' }
-  | { phase: 'ready'; data: PanelData; cues: TranscriptCue[] };
+  | { phase: 'ready'; data: PanelData; cues: TranscriptCue[]; sample?: boolean };
 
 const FOCUSABLE =
   'a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),summary,video[controls],[tabindex]:not([tabindex="-1"])';
@@ -24,12 +24,14 @@ function GuideBlock({
   guide,
   main,
   cues,
+  sample,
   online,
   onWatched,
 }: {
   guide: PanelGuide;
   main: boolean;
   cues: TranscriptCue[];
+  sample?: boolean;
   online: boolean;
   onWatched: (guide: string) => Promise<{ ok: boolean }>;
 }) {
@@ -59,6 +61,7 @@ function GuideBlock({
             captions={guide.video.captions}
             cues={cues}
             watched={false}
+            sample={sample}
             onWatched={onWatched}
           />
         ) : (
@@ -270,6 +273,7 @@ export function HelpPanel({
                   guide={g}
                   main={i === 0}
                   cues={view.cues}
+                  sample={view.sample}
                   online={online}
                   onWatched={onWatched}
                 />

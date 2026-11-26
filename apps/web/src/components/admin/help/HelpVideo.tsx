@@ -33,6 +33,7 @@ export function HelpVideo({
   captions,
   cues,
   watched,
+  sample = false,
   onWatched,
 }: {
   guide: string;
@@ -42,6 +43,8 @@ export function HelpVideo({
   captions: 'track' | 'burned';
   cues: TranscriptCue[];
   watched: boolean;
+  /** The live site still plays the placeholder (HELP_MEDIA_RELEASE is `sample`). */
+  sample?: boolean;
   onWatched: (guide: string) => Promise<{ ok: boolean }>;
 }) {
   const ref = useRef<HTMLVideoElement>(null);
@@ -89,6 +92,12 @@ export function HelpVideo({
 
   return (
     <div className={`hlp-videobox${picture === 'phone' ? ' is-phone' : ''}`}>
+      {sample ? (
+        <p role="note" className="hlp-videosample">
+          <strong>Sample video.</strong> The real recording of this guide is not installed yet.
+          Follow the written steps below.
+        </p>
+      ) : null}
       {online ? (
         <video
           key={src}

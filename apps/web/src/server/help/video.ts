@@ -23,6 +23,10 @@ export function videoFileType(videoId: string, name: string): string | null {
       : 'text/vtt; charset=utf-8';
 }
 
+/** True when a production site would play the placeholder video for every guide (the release was never set). */
+export const isSampleInProduction = (release: string, nodeEnv: string | undefined): boolean =>
+  nodeEnv === 'production' && release === 'sample';
+
 export type VideoSource = { kind: 'placeholder'; name: string } | { kind: 'storage'; key: string };
 
 /** The release `sample` serves the committed placeholder files. A real release is read from private storage under help/<release>/. */

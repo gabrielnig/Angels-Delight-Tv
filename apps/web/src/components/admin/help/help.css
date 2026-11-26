@@ -695,6 +695,14 @@
 .hlp-videoerror p {
   margin: 0 0 var(--space-2);
 }
+.hlp-videosample {
+  margin: 0 0 var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  background: var(--color-warning-tint);
+  color: var(--color-warning-ink);
+  border-left: 4px solid var(--color-warning);
+  border-radius: var(--radius-sm);
+}
 .hlp-transcript {
   background: var(--color-surface);
   border: 1px solid var(--color-border);

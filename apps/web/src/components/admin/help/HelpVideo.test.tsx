@@ -148,4 +148,16 @@ describe('HelpVideo', () => {
       '/admin/help/media/video/VD02/VD02-720.mp4',
     );
   });
+
+  it('says plainly that the video is a sample when the release is the sample one', () => {
+    render(<HelpVideo {...base} sample />);
+    const note = screen.getByRole('note');
+    expect(note).toHaveTextContent('Sample video');
+    expect(note).toHaveTextContent('Follow the written steps');
+  });
+
+  it('shows no sample note for a real recording', () => {
+    render(<HelpVideo {...base} />);
+    expect(screen.queryByRole('note')).toBeNull();
+  });
 });

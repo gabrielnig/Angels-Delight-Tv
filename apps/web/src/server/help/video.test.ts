@@ -1,6 +1,13 @@
 import { Readable } from 'node:stream';
 import { describe, expect, it } from 'vitest';
-import { parseRange, parseVtt, resolveVideoSource, serveVideo, videoFileType } from './video';
+import {
+  isSampleInProduction,
+  parseRange,
+  parseVtt,
+  resolveVideoSource,
+  serveVideo,
+  videoFileType,
+} from './video';
 
 describe('videoFileType (M50-S07)', () => {
   it('allows only the files a help video has', () => {
@@ -95,5 +102,14 @@ describe('parseVtt', () => {
       { start: 0.5, end: 3, text: 'First line.' },
       { start: 65.25, end: 68, text: 'Second line.' },
     ]);
+  });
+});
+
+describe('isSampleInProduction', () => {
+  it('is true only for the sample release in production', () => {
+    expect(isSampleInProduction('sample', 'production')).toBe(true);
+    expect(isSampleInProduction('v1', 'production')).toBe(false);
+    expect(isSampleInProduction('sample', 'development')).toBe(false);
+    expect(isSampleInProduction('sample', 'test')).toBe(false);
   });
 });
