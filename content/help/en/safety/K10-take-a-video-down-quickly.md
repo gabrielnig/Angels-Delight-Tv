@@ -3,7 +3,7 @@ id: K10
 title: Take a video down quickly
 path: safety
 summary: Hide a video from viewers at once, move it to Trash and bring it back.
-role: editor
+role: admin
 roleNote: Editors can unpublish and restore. Only Admins can move a video to Trash.
 needs: [S04]
 related: [K02]
