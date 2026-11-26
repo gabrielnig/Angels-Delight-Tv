@@ -120,7 +120,7 @@ async function execute(
   fileName?: string,
 ): Promise<string | null> {
   const find = async (what: string, loc: Locator) =>
-    (await visible(loc, 6000)) ? null : `Cannot find ${what} on ${new URL(s.page.url()).pathname}.`;
+    (await visible(loc, 10_000)) ? null : `Cannot find ${what} on ${new URL(s.page.url()).pathname}.`;
   switch (a.kind) {
     case 'menu': {
       const link = s.page.getByRole('link', { name: menuName(a.label) }).first();
@@ -196,6 +196,10 @@ async function execute(
         await s.page.waitForTimeout(1500);
         await loc.setChecked(a.on);
       }
+      // A list that reloads after a filter can clear a tick, so a person looks once more before moving on.
+      await s.page.waitForLoadState('networkidle', { timeout: 3000 }).catch(() => {});
+      await s.page.waitForTimeout(500);
+      if ((await loc.isChecked().catch(() => a.on)) !== a.on) await loc.setChecked(a.on).catch(() => {});
       break;
     }
     case 'select': {
