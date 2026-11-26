@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { ArticleView } from '@/components/admin/help/ArticleView';
+import { helpMediaIsSample } from '@/server/help/sources';
 import { HelpVideo } from '@/components/admin/help/HelpVideo';
 import { videoCues } from '@/server/help/video-block';
 import { ArticleActions } from '@/components/admin/help/ArticleActions';
@@ -42,6 +43,7 @@ export default async function HelpArticlePage({ params }: Props) {
             captions={article.meta.video.captions}
             cues={await videoCues(article)}
             watched={mine?.watched ?? false}
+            sample={helpMediaIsSample()}
             onWatched={markVideoWatchedAction}
           />
         ) : undefined

@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
+import { helpMediaIsSample } from '@/server/help/sources';
 import { HelpVideo } from '@/components/admin/help/HelpVideo';
 import { Playlist } from '@/components/admin/help/Playlist';
 import { PageHeader } from '@/components/admin/PageHeader';
@@ -60,6 +61,7 @@ export default async function HelpVideoPage({ params }: Props) {
           captions={article.meta.video.captions}
           cues={await videoCues(article)}
           watched={rows[article.meta.id]?.watched ?? false}
+          sample={helpMediaIsSample()}
           onWatched={markVideoWatchedAction}
         />
         <Playlist

@@ -4,6 +4,7 @@ import { requireActionActor } from '@/lib/data/admin/session-next';
 import { helpProgress } from '@/lib/data/admin/help-progress';
 import { panelFor, type PanelData } from '@/lib/admin/help-panel';
 import { getLibrary, helpRole } from '@/server/help';
+import { helpMediaIsSample } from '@/server/help/sources';
 import { videoCues } from '@/server/help/video-block';
 
 type Saved = { ok: boolean };
@@ -42,7 +43,12 @@ export async function helpPanelAction(
   pathname: string,
   guide?: string,
 ): Promise<
-  | { ok: true; data: PanelData; cues: { start: number; end: number; text: string }[] }
+  | {
+      ok: true;
+      data: PanelData;
+      cues: { start: number; end: number; text: string }[];
+      sample: boolean;
+    }
   | { ok: false }
 > {
   const actor = await requireActionActor('/admin');
@@ -51,7 +57,7 @@ export async function helpPanelAction(
     const library = getLibrary();
     const data = panelFor(library, helpRole(actor.role), pathname, guide);
     const main = data.guides[0] ? library.byId.get(data.guides[0].id) : undefined;
-    return { ok: true, data, cues: main ? await videoCues(main) : [] };
+    return { ok: true, data, cues: main ? await videoCues(main) : [], sample: helpMediaIsSample() };
   } catch {
     return { ok: false };
   }

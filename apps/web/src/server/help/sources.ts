@@ -4,10 +4,14 @@ import { join } from 'node:path';
 import { Readable, Transform } from 'node:stream';
 import { findContentDir } from '@ad/help/node';
 import { adminRuntime } from '@/server/admin/runtime';
-import type { FileSource, VideoSource } from './video';
+import { isSampleInProduction, type FileSource, type VideoSource } from './video';
 
 /** The media release the pages play from. `sample` is the placeholder set committed with the content (D-376). */
 export const helpMediaRelease = (): string => process.env.HELP_MEDIA_RELEASE?.trim() || 'sample';
+
+/** True when this site is live but still plays the placeholder video, so the guide pages can say so. */
+export const helpMediaIsSample = (): boolean =>
+  isSampleInProduction(helpMediaRelease(), process.env.NODE_ENV);
 
 /** Skips the bytes before `start` and stops after `end`, for stores that can only stream a whole object. */
 function slice(from: Readable, start: number, end: number): Readable {

@@ -15,7 +15,8 @@ import type { PanelData } from '@/lib/admin/help-panel';
 import { HelpPanel, type PanelView } from './HelpPanel';
 import type { TranscriptCue } from './HelpVideo';
 
-export type PanelResult = { ok: true; data: PanelData; cues: TranscriptCue[] } | { ok: false };
+export type PanelResult =
+  { ok: true; data: PanelData; cues: TranscriptCue[]; sample?: boolean } | { ok: false };
 
 export interface OpenOptions {
   /** Show this guide first, for example from an inline hint. */
@@ -71,7 +72,9 @@ export function HelpPanelHost({
   const [slow, setSlow] = useState(false);
   const [tick, setTick] = useState(0);
   const opener = useRef<HTMLElement | null>(null);
-  const cache = useRef(new Map<string, { data: PanelData; cues: TranscriptCue[] }>());
+  const cache = useRef(
+    new Map<string, { data: PanelData; cues: TranscriptCue[]; sample?: boolean }>(),
+  );
   const key = `${pathname}|${request.guide ?? ''}`;
 
   const openPanel = useCallback((options: OpenOptions = {}) => {
@@ -134,7 +137,7 @@ export function HelpPanelHost({
       .then((res) => {
         if (!live) return;
         if (res.ok) {
-          const entry = { data: res.data, cues: res.cues };
+          const entry = { data: res.data, cues: res.cues, sample: res.sample };
           cache.current.set(key, entry);
           setView({ phase: 'ready', ...entry });
         } else if (!cached) setView({ phase: 'error' });
