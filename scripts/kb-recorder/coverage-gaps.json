@@ -30,7 +30,6 @@
     "donate.transparency.title",
     "donate.transparency.updated_at",
     "features.guest_audience",
-    "help.support_contact",
     "maturity.guest_max_rank",
     "maturity.labels",
     "seo.share_play_badge",
@@ -53,12 +52,8 @@
     "trending.top_ten_size"
   ],
   "statuses": [
-    "video:uploading",
     "video:uploaded",
     "video:validating",
-    "video:ready",
-    "publish:unpublished",
-    "caption:draft",
     "caption:rejected",
     "caption:superseded"
   ]
