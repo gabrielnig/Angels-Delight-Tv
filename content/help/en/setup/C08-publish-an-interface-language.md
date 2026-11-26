@@ -8,7 +8,7 @@ roleNote: Admins publish a language at 80 percent approved. Only Super admins ca
 needs: [C09]
 related: [C09, W08]
 readMinutes: 3
-watchSeconds: 100
+watchSeconds: 70
 video:
   id: VC08
 screens: ["/admin/languages"]

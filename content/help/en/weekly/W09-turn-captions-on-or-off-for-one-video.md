@@ -7,7 +7,7 @@ role: admin
 needs: [D07]
 related: [D07, C04]
 readMinutes: 3
-watchSeconds: 90
+watchSeconds: 89
 video:
   id: VW09
 actions: [caption.availability]

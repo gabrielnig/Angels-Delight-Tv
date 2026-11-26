@@ -8,7 +8,7 @@ roleNote: Admins can read this tab. Only Super admins can change it
 needs: [C01]
 related: [C05, C06]
 readMinutes: 5
-watchSeconds: 100
+watchSeconds: 71
 video:
   id: VC04
 screens: ["/admin/site-settings"]

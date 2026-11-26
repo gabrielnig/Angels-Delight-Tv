@@ -7,7 +7,7 @@ role: admin
 needs: [C05]
 related: [C05, C06, C01]
 readMinutes: 4
-watchSeconds: 110
+watchSeconds: 68
 video:
   id: VC15
 actions: [settings.site]

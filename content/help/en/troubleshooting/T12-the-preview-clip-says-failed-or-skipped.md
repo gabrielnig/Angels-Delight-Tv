@@ -5,7 +5,7 @@ path: troubleshooting
 summary: Read why Home shows a poster instead of a clip, and try again.
 role: editor
 readMinutes: 3
-watchSeconds: 80
+watchSeconds: 77
 video:
   id: VT12
 screens: ["/admin/videos/[id]"]

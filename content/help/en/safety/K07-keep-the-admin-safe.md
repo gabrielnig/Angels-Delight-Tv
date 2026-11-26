@@ -7,7 +7,7 @@ role: editor
 needs: [S04]
 related: [K11]
 readMinutes: 4
-watchSeconds: 71
+watchSeconds: 64
 video:
   id: VK07
 screens: ["/admin/account"]

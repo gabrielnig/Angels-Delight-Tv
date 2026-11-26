@@ -8,7 +8,7 @@ roleNote: Admins can use the notice banner. Only Super admins can turn on Mainte
 needs: [C04]
 related: [C04, C05, C06]
 readMinutes: 3
-watchSeconds: 100
+watchSeconds: 91
 video:
   id: VC10
 screens: ["/admin/site-settings"]

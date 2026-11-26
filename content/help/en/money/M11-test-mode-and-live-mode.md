@@ -7,7 +7,7 @@ role: admin
 needs: [M10]
 related: [M10, M08]
 readMinutes: 3
-watchSeconds: 120
+watchSeconds: 36
 video:
   id: VM11
 screens: ["/admin/donations"]

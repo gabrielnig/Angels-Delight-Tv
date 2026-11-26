@@ -7,7 +7,7 @@ role: editor
 needs: [M03]
 related: [M03, M04]
 readMinutes: 3
-watchSeconds: 90
+watchSeconds: 45
 video:
   id: VM18
 screens: ["/admin/sponsors/[id]"]

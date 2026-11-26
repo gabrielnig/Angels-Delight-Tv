@@ -8,7 +8,7 @@ roleNote: Editors can read and print. Only Admins can download the CSV.
 needs: [M04]
 related: [M05, M08]
 readMinutes: 4
-watchSeconds: 210
+watchSeconds: 44
 video:
   id: VM06
 screens: ["/admin/sponsors/[id]/report", "/admin/sponsors/[id]/report/print"]

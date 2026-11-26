@@ -7,7 +7,7 @@ role: editor
 needs: [M04]
 related: [M04, M21]
 readMinutes: 4
-watchSeconds: 70
+watchSeconds: 28
 video:
   id: VM20
 actions: [sponsor.manage]

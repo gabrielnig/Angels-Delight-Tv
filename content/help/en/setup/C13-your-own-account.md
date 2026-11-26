@@ -7,7 +7,7 @@ role: editor
 needs: [S04]
 related: [C14, C11]
 readMinutes: 3
-watchSeconds: 110
+watchSeconds: 71
 video:
   id: VC13
 screens: ["/admin/account"]

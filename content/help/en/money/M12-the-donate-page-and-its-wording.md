@@ -7,7 +7,7 @@ role: admin
 needs: [M07]
 related: [M07, M13, M17]
 readMinutes: 3
-watchSeconds: 60
+watchSeconds: 27
 video:
   id: VM12
 actions: [donation.view]
