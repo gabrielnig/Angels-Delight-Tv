@@ -2,11 +2,13 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { AuthLayout } from '@/components/admin/AuthLayout';
-import { realBeginEnrolment, realTwoFactorState } from '@/server/auth/admin';
+import { realBeginEnrolment, realRememberDays, realTwoFactorState } from '@/server/auth/admin';
 import { realAuthEnabled } from '@/server/auth/mode';
 import { FIXTURE_CODE } from '@/lib/data/admin/session';
 import { pendingAccountId, safeNext } from '@/lib/data/admin/session-next';
+import { resendCodeAction, verifyCodeAction } from '../actions';
 import { CodeForm } from './CodeForm';
+import { EmailCodeForm } from './EmailCodeForm';
 import { EnrolForm } from './EnrolForm';
 import { RecoveryForm } from './RecoveryForm';
 
@@ -16,13 +18,35 @@ export const dynamic = 'force-dynamic';
 export default async function AdminTwoFactorPage({
   searchParams,
 }: {
-  searchParams: Promise<{ next?: string; recovery?: string }>;
+  searchParams: Promise<{ next?: string; recovery?: string; sent?: string }>;
 }) {
   if (!(await pendingAccountId())) redirect('/admin/login');
   const params = await searchParams;
   const next = safeNext(params.next);
   const recovery = realAuthEnabled() && params.recovery === '1';
-  if (realAuthEnabled() && (await realTwoFactorState()) === 'none') {
+  const state = realAuthEnabled() ? await realTwoFactorState() : null;
+  if (state === 'email') {
+    const days = await realRememberDays();
+    return (
+      <AuthLayout
+        title="Check your email"
+        lead="We sent a 6 digit code to the email address on your staff account. Enter it to finish signing in."
+      >
+        <EmailCodeForm
+          next={next}
+          sent={params.sent !== '0'}
+          canRemember={days > 0}
+          rememberDays={days}
+          verify={verifyCodeAction}
+          resend={resendCodeAction}
+        />
+        <Link href="/admin/login" className="adm-link">
+          Back to sign in
+        </Link>
+      </AuthLayout>
+    );
+  }
+  if (state === 'none') {
     const enrolment = await realBeginEnrolment();
     if (!enrolment) redirect('/admin/login');
     return (

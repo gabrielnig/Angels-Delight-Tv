@@ -12,6 +12,7 @@ export function buildMeta(
   headers: Headers,
   mode: TrustedProxyMode,
   deviceId: string | null = null,
+  trustedDeviceToken: string | null = null,
 ): RequestMeta {
   const ip = clientIp(headers, mode);
   return {
@@ -21,6 +22,7 @@ export function buildMeta(
     requestId: headers.get('x-request-id'),
     country: trustedCountry(headers, mode),
     deviceId,
+    trustedDeviceToken,
   };
 }
 

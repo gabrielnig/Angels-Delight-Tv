@@ -6,6 +6,7 @@ import {
   realAdminSignIn,
   realAdminSignOut,
   realConfirmEnrolment,
+  realResendCode,
   realSubmitCode,
 } from '@/server/auth/admin';
 import { assertActionOrigin } from '@/server/auth/session';
@@ -37,7 +38,10 @@ export async function signInAction(_prev: LoginState, form: FormData): Promise<L
       String(form.get('cf-turnstile-response') ?? ''),
     );
     if (!real.ok) return { email, error: real.error, locked: real.retryAfter !== undefined };
-    redirect(`/admin/login/2fa?next=${encodeURIComponent(next)}`);
+    if (real.signedIn) redirect(next);
+    redirect(
+      `/admin/login/2fa?next=${encodeURIComponent(next)}${real.codeSent === false ? '&sent=0' : ''}`,
+    );
   }
   if (!fixtureAuthEnabled())
     return { email, error: 'Sign in is not available right now. Try again later.' };
@@ -65,7 +69,9 @@ export async function verifyCodeAction(_prev: CodeState, form: FormData): Promis
   if (realAuthEnabled()) {
     await assertActionOrigin();
     const next = safeNext(form.get('next'));
-    const real = await realSubmitCode(String(form.get('code') ?? ''));
+    const real = await realSubmitCode(String(form.get('code') ?? ''), {
+      remember: form.get('remember') === 'on',
+    });
     if (!real.ok) return { error: real.error };
     redirect(next);
   }
@@ -87,6 +93,23 @@ export async function verifyCodeAction(_prev: CodeState, form: FormData): Promis
   jar.delete({ name: PENDING_COOKIE, path: '/admin' });
   jar.set(SESSION_COOKIE, accountId, { ...cookieOptions, maxAge: 60 * 30 });
   redirect(next);
+}
+
+export interface ResendState {
+  /** Seconds until the next send is allowed. Counted down on the screen. */
+  wait?: number;
+  error?: string;
+  sent?: boolean;
+}
+
+export async function resendCodeAction(): Promise<ResendState> {
+  await assertActionOrigin();
+  const result = await realResendCode();
+  if (result.ok)
+    return result.sent
+      ? { sent: true, wait: 60 }
+      : { error: 'We could not send the code. Try again in a moment.', wait: 0 };
+  return { error: result.error, wait: result.retryAfter ?? 0 };
 }
 
 export interface EnrolState {

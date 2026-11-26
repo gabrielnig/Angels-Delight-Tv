@@ -1,6 +1,7 @@
 'use client';
 
 import { useId, type InputHTMLAttributes, type ReactNode } from 'react';
+import { PasswordInput } from '../PasswordToggle';
 import { AcctIcon } from './icons';
 
 /** Label above a 44px input, with the mockup error line (warning icon and red text) underneath. */
@@ -28,14 +29,25 @@ export function AcctField({
         {label}
       </label>
       <div className={ok ? 'acct-field__ok' : undefined}>
-        <input
-          {...rest}
-          id={id}
-          ref={inputRef}
-          className="acct-input"
-          aria-invalid={error || invalid ? 'true' : undefined}
-          aria-describedby={error ? errorId : undefined}
-        />
+        {rest.type === 'password' ? (
+          <PasswordInput
+            {...rest}
+            id={id}
+            ref={inputRef}
+            className="acct-input"
+            aria-invalid={error || invalid ? 'true' : undefined}
+            aria-describedby={error ? errorId : undefined}
+          />
+        ) : (
+          <input
+            {...rest}
+            id={id}
+            ref={inputRef}
+            className="acct-input"
+            aria-invalid={error || invalid ? 'true' : undefined}
+            aria-describedby={error ? errorId : undefined}
+          />
+        )}
         {ok ? <AcctIcon name="check" size={18} /> : null}
       </div>
       {error ? (

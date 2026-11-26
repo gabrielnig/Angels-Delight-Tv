@@ -211,6 +211,20 @@ export interface MyAccount {
   recoveryCodesLeft: number;
   passwordChangedAt: string | null;
   sessions: SessionRow[];
+  /** Which second step this person uses. Missing means an authenticator (fixtures). */
+  secondStep?: 'authenticator' | 'email';
+  /** An authenticator user may move to emailed codes: the site is on email and mail works. */
+  emailSwitchAvailable?: boolean;
+  /** Browsers that skip the emailed code until they expire (D-397). */
+  trustedDevices?: TrustedDeviceRow[];
+}
+
+export interface TrustedDeviceRow {
+  id: string;
+  label: string;
+  place: string;
+  lastUsedAt: string | null;
+  expiresAt: string;
 }
 
 export interface JobRecord {

@@ -11,6 +11,7 @@ import {
   sessionCookieOptions,
   DEVICE_COOKIE_DAYS,
   deviceCookieName,
+  trustedDeviceCookieName,
   twoStepCookieName,
   googleStateCookieName,
   googleNoteCookieName,
@@ -46,7 +47,9 @@ async function deviceId(): Promise<string> {
 }
 
 export async function requestMeta() {
-  return buildMeta(await headers(), authRuntime().env.TRUSTED_PROXY_MODE, await deviceId());
+  const secure = authRuntime().secureCookies;
+  const trusted = (await cookies()).get(trustedDeviceCookieName(secure))?.value ?? null;
+  return buildMeta(await headers(), authRuntime().env.TRUSTED_PROXY_MODE, await deviceId(), trusted);
 }
 
 /** Server actions are also checked against Origin here, on top of the framework check (SECURITY.md section 4). */
@@ -57,11 +60,28 @@ export async function assertActionOrigin(): Promise<void> {
 
 export async function setSessionCookie(token: string, kind: SessionCookieKind): Promise<void> {
   const secure = authRuntime().secureCookies;
+  const staff = kind === 'staff' ? await authRuntime().sessions.policyFor('staff') : null;
   (await cookies()).set(
     sessionCookieName(secure),
     token,
-    sessionCookieOptions({ secure, kind, idleSeconds: IDLE[kind] }),
+    sessionCookieOptions({
+      secure,
+      kind,
+      idleSeconds: staff?.idleSeconds ?? IDLE[kind],
+      absoluteSeconds: staff?.absoluteSeconds,
+    }),
   );
+}
+
+/** Remembers a staff browser after the emailed code. Same flags as the session cookie, lasts as long as the device row. */
+export async function setTrustedDeviceCookie(token: string, maxAgeSeconds: number): Promise<void> {
+  const secure = authRuntime().secureCookies;
+  (await cookies()).set(trustedDeviceCookieName(secure), token, pendingCookieOptions(secure, maxAgeSeconds));
+}
+
+export async function clearTrustedDeviceCookie(): Promise<void> {
+  const secure = authRuntime().secureCookies;
+  (await cookies()).set(trustedDeviceCookieName(secure), '', pendingCookieOptions(secure, 0));
 }
 
 export async function clearSessionCookie(): Promise<void> {

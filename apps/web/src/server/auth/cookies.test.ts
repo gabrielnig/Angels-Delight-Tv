@@ -5,6 +5,7 @@ import {
   sessionCookieName,
   sessionCookieOptions,
   deviceCookieName,
+  trustedDeviceCookieName,
   twoStepCookieName,
   googleStateCookieName,
   googleNoteCookieName,
@@ -28,10 +29,21 @@ describe('session cookie', () => {
     ).toBe(2592000);
   });
 
-  it('makes staff cookies session cookies with no Max-Age or Expires', () => {
-    const options = sessionCookieOptions({ secure: true, kind: 'staff', idleSeconds: 1800 });
-    expect(options).not.toHaveProperty('maxAge');
-    expect(options).not.toHaveProperty('expires');
+  it('persists staff cookies for the absolute window, so closing the browser does not sign staff out (D-397)', () => {
+    const options = sessionCookieOptions({
+      secure: true,
+      kind: 'staff',
+      idleSeconds: 7 * 86400,
+      absoluteSeconds: 30 * 86400,
+    });
+    expect(options.maxAge).toBe(30 * 86400);
+    expect(options).toMatchObject({ httpOnly: true, secure: true, sameSite: 'lax', path: '/' });
+    expect(options).not.toHaveProperty('domain');
+  });
+
+  it('names the remembered device cookie with the __Host- prefix when secure', () => {
+    expect(trustedDeviceCookieName(true)).toBe('__Host-ad_td');
+    expect(trustedDeviceCookieName(false)).toBe('ad_td');
   });
 
   it('keeps a pending second factor cookie to ten minutes', () => {

@@ -390,6 +390,57 @@ describe.skipIf(!integrationEnabled())('staff email code second step (L16, D-397
     });
   });
 
+  describe('switching an authenticator account to email codes', () => {
+    async function enrolled() {
+      const s = await signedIn();
+      const enrol = await staff.beginEnrolment(s.actor, h.meta);
+      h.advance(31);
+      const secret = enrol.secret;
+      const done = await staff.confirmEnrolment(
+        s.actor,
+        { code: totpAt(base32Decode(secret), h.deps.clock!().getTime()) },
+        h.meta,
+      );
+      const context = await h.deps.sessions.validate(done.session.token);
+      return {
+        ...s,
+        secret,
+        actor: { ...s.actor, sessionId: context!.sessionId },
+      };
+    }
+
+    it('needs the current authenticator code, then email codes take over', async () => {
+      const s = await enrolled();
+      await expect(
+        staff.switchToEmailCodes(s.actor, { code: '000000' }, h.meta),
+      ).rejects.toBeInstanceOf(FieldErrors);
+      h.advance(31);
+      await staff.switchToEmailCodes(
+        s.actor,
+        { code: totpAt(base32Decode(s.secret), h.deps.clock!().getTime()) },
+        h.meta,
+      );
+      expect((await login(s.member)).status).toBe('email_code_required');
+    });
+
+    it('is refused when the site wants authenticators or mail is off, so nobody is left without a step', async () => {
+      const s = await enrolled();
+      h.advance(31);
+      const code = () => totpAt(base32Decode(s.secret), h.deps.clock!().getTime());
+      policy = 'authenticator';
+      await expect(staff.switchToEmailCodes(s.actor, { code: code() }, h.meta)).rejects.toBeInstanceOf(
+        Conflict,
+      );
+      policy = 'email';
+      emailUp = false;
+      await expect(staff.switchToEmailCodes(s.actor, { code: code() }, h.meta)).rejects.toBeInstanceOf(
+        Conflict,
+      );
+      emailUp = true;
+      expect((await login(s.member)).status).toBe('mfa_required');
+    });
+  });
+
   describe('recovery by email', () => {
     it('a staff password reset ends sessions, signs nobody in and still needs a code', async () => {
       const s = await signedIn();

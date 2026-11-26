@@ -11,33 +11,55 @@ import { TextField } from './fields';
  * Asks the person to confirm their password (and, where the action needs it, their authenticator code)
  * before a sensitive staff action (SECURITY.md section 4, D-069).
  */
+export interface EmailCodeOption {
+  /** Mails a fresh confirmation code. */
+  send: () => Promise<CommandResult>;
+  /** Checks the emailed code and marks the session as recently confirmed. */
+  confirm: (code: string) => Promise<CommandResult>;
+}
+
 export function ReauthDialog({
   open,
   withCode,
   busy,
   error,
+  emailCode,
   onSubmit,
+  onSubmitEmailCode,
   onCancel,
 }: {
   open: boolean;
   withCode?: boolean;
   busy?: boolean;
   error?: string;
+  /** Present when the person can confirm with a code sent by email instead of the password. */
+  emailCode?: Pick<EmailCodeOption, 'send'>;
   onSubmit: (password: string, code?: string) => void;
+  onSubmitEmailCode?: (code: string) => void;
   onCancel: () => void;
 }) {
   const formId = useId();
   const [password, setPassword] = useState('');
   const [code, setCode] = useState('');
+  const [byEmail, setByEmail] = useState(false);
+  const [sendProblem, setSendProblem] = useState<string>();
+  async function useEmail() {
+    setSendProblem(undefined);
+    const result = await emailCode!.send();
+    if (result.ok) setByEmail(true);
+    else setSendProblem(result.error);
+  }
   return (
     <Dialog
       open={open}
       onClose={onCancel}
       title="Confirm it is you"
       description={
-        withCode
-          ? 'Enter your password and the 6 digit code from your authenticator app.'
-          : 'Enter your password to continue. You will not be asked again for 10 minutes.'
+        byEmail
+          ? 'We emailed you a 6 digit code. Enter it to continue. You will not be asked again for 10 minutes.'
+          : withCode
+            ? 'Enter your password and the 6 digit code from your authenticator app.'
+            : 'Enter your password to continue. You will not be asked again for 10 minutes.'
       }
       size="sm"
       footer={
@@ -57,18 +79,52 @@ export function ReauthDialog({
         noValidate
         onSubmit={(event) => {
           event.preventDefault();
-          onSubmit(password, withCode ? code.replace(/\s/g, '') : undefined);
+          if (byEmail) onSubmitEmailCode?.(code.replace(/\s/g, ''));
+          else onSubmit(password, withCode ? code.replace(/\s/g, '') : undefined);
         }}
       >
-        <TextField
-          label="Password"
-          type="password"
-          autoComplete="current-password"
-          value={password}
-          autoFocus
-          error={error}
-          onChange={(event) => setPassword(event.target.value)}
-        />
+        {byEmail ? (
+          <TextField
+            label="Emailed code"
+            inputMode="numeric"
+            autoComplete="one-time-code"
+            maxLength={7}
+            value={code}
+            autoFocus
+            error={error}
+            onChange={(event) => setCode(event.target.value)}
+          />
+        ) : (
+          <TextField
+            label="Password"
+            type="password"
+            autoComplete="current-password"
+            value={password}
+            autoFocus
+            error={error}
+            onChange={(event) => setPassword(event.target.value)}
+          />
+        )}
+        {emailCode && !withCode ? (
+          <div>
+            <Button
+              variant="ghost"
+              onClick={() => {
+                if (byEmail) {
+                  setByEmail(false);
+                  setCode('');
+                } else void useEmail();
+              }}
+            >
+              {byEmail ? 'Use my password instead' : 'Email me a code instead'}
+            </Button>
+            {sendProblem ? (
+              <p role="alert" className="adm-field__error">
+                {sendProblem}
+              </p>
+            ) : null}
+          </div>
+        ) : null}
         {withCode ? (
           <TextField
             label="Authenticator code"
@@ -94,7 +150,7 @@ interface Waiting {
  */
 export function useReauth(
   reauthenticate: (password: string, code?: string) => Promise<CommandResult>,
-  options: { withCode?: boolean } = {},
+  options: { withCode?: boolean; emailCode?: EmailCodeOption } = {},
 ): { guard: (work: () => Promise<CommandResult>) => Promise<CommandResult>; dialog: ReactNode } {
   const waiting = useRef<Waiting | null>(null);
   const [open, setOpen] = useState(false);
@@ -111,12 +167,15 @@ export function useReauth(
     });
   }
 
-  async function submit(password: string, code?: string) {
+  async function submit(password: string, code?: string, emailed?: string) {
     const pending = waiting.current;
     if (!pending) return;
     setBusy(true);
     try {
-      const confirmed = await reauthenticate(password, code);
+      const confirmed =
+        emailed !== undefined
+          ? await options.emailCode!.confirm(emailed)
+          : await reauthenticate(password, code);
       if (!confirmed.ok) {
         setError(confirmed.error);
         return;
@@ -143,7 +202,9 @@ export function useReauth(
       withCode={options.withCode}
       busy={busy}
       error={error}
+      emailCode={options.emailCode}
       onSubmit={submit}
+      onSubmitEmailCode={(code) => void submit('', undefined, code)}
       onCancel={cancel}
     />
   );

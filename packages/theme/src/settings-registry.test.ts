@@ -66,6 +66,36 @@ describe('registry shape', () => {
     }
   });
 
+  it('has security settings with safe defaults, Super admin only and never public (D-397)', () => {
+    const keys = [
+      'security.staff_second_step',
+      'security.staff_session_idle_days',
+      'security.staff_session_absolute_days',
+      'security.trusted_device_days',
+    ] as const;
+    expect(SETTING_DEFS['security.staff_second_step'].default).toBe('email');
+    expect(SETTING_DEFS['security.staff_session_idle_days'].default).toBe(7);
+    expect(SETTING_DEFS['security.staff_session_absolute_days'].default).toBe(30);
+    expect(SETTING_DEFS['security.trusted_device_days'].default).toBe(30);
+    for (const key of keys) {
+      expect(SETTING_DEFS[key].tier).toBe('super');
+      expect(SETTING_DEFS[key].isPublic).toBe(false);
+      expect(SETTING_DEFS[key].group).toBe('security');
+      expect(PUBLIC_SETTING_KEYS).not.toContain(key);
+    }
+    expect(parse('security.staff_second_step', 'email').success).toBe(true);
+    expect(parse('security.staff_second_step', 'authenticator').success).toBe(true);
+    expect(parse('security.staff_second_step', 'none').success).toBe(false);
+    expect(parse('security.staff_second_step', '').success).toBe(false);
+    expect(parse('security.staff_session_idle_days', 0).success).toBe(false);
+    expect(parse('security.staff_session_idle_days', 30).success).toBe(true);
+    expect(parse('security.staff_session_idle_days', 31).success).toBe(false);
+    expect(parse('security.staff_session_absolute_days', 90).success).toBe(true);
+    expect(parse('security.staff_session_absolute_days', 91).success).toBe(false);
+    expect(parse('security.trusted_device_days', 0).success).toBe(true);
+    expect(parse('security.trusted_device_days', 91).success).toBe(false);
+  });
+
   it('has an audit retention in months, default 24, super admin only and never public', () => {
     const def = SETTING_DEFS['audit.retention_months'];
     expect(def.default).toBe(24);

@@ -104,6 +104,16 @@ export const STORAGE_INVENTORY: readonly StorageItem[] = [
     needle: '__Host-ad_dev',
   }),
   row({
+    name: '__Host-ad_td',
+    store: 'cookie',
+    purpose: 'Remembers a staff browser you chose to trust, so it is not asked for the emailed code again for a while.',
+    seconds: 30 * DAY,
+    kept: (d) => `Up to ${d}, or until you revoke the device or sign out everywhere`,
+    type: 'necessary',
+    source: `${WEB}/server/auth/cookies.ts`,
+    needle: '__Host-ad_td',
+  }),
+  row({
     name: '__Host-ad_profile',
     store: 'cookie',
     purpose: 'Remembers which profile is watching on this device.',

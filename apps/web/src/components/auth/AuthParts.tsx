@@ -2,6 +2,7 @@
 
 import { msg as sharedMsg, type Translate } from '@ad/shared/messages';
 import { useT } from '../../lib/i18n/provider';
+import { PasswordToggle } from '../PasswordToggle';
 import {
   useEffect,
   useId,
@@ -143,6 +144,15 @@ export function AuthField({
   const hintId = `${inputId}-hint`;
   const errorId = `${inputId}-error`;
   const isInvalid = Boolean(error) || Boolean(invalid);
+  const [shown, setShown] = useState(false);
+  const ownToggle = rest.type === 'password' && !action;
+  const toggle = ownToggle ? (
+    <PasswordToggle
+      className="auth-field__action"
+      visible={shown}
+      onToggle={() => setShown((current) => !current)}
+    />
+  ) : null;
   const describedBy =
     [describedByProp, hint ? hintId : null, error ? errorId : null].filter(Boolean).join(' ') ||
     undefined;
@@ -154,15 +164,16 @@ export function AuthField({
       <div className="auth-field__control">
         <input
           {...rest}
+          type={ownToggle && shown ? 'text' : rest.type}
           id={inputId}
-          className={['auth-input', action ? 'auth-input--with-action' : '', className ?? '']
+          className={['auth-input', action || toggle ? 'auth-input--with-action' : '', className ?? '']
             .filter(Boolean)
             .join(' ')}
           aria-invalid={isInvalid ? 'true' : undefined}
           aria-required={rest.required ? 'true' : undefined}
           aria-describedby={describedBy}
         />
-        {action}
+        {action ?? toggle}
       </div>
       {error ? (
         <p className="auth-field__error" id={errorId} role="alert">
@@ -316,15 +327,13 @@ export function AuthPasswordField({
         onKeyDown?.(event);
       }}
       action={
-        <button
-          type="button"
+        <PasswordToggle
           className="auth-field__action"
-          aria-label={visible ? msg('auth.hidePassword') : msg('auth.showPassword')}
-          aria-pressed={visible}
-          onClick={() => setVisible((current) => !current)}
-        >
-          <AuthIcon name={visible ? 'eyeOff' : 'eye'} />
-        </button>
+          visible={visible}
+          onToggle={() => setVisible((current) => !current)}
+          showLabel={msg('auth.showPassword')}
+          hideLabel={msg('auth.hidePassword')}
+        />
       }
     />
   );

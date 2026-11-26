@@ -28,6 +28,11 @@ export function deviceCookieName(secure: boolean): string {
   return secure ? '__Host-ad_dev' : 'ad_dev';
 }
 
+/** The remembered staff device (D-397). Holds a random token whose hash is in `trusted_devices`. */
+export function trustedDeviceCookieName(secure: boolean): string {
+  return secure ? '__Host-ad_td' : 'ad_td';
+}
+
 export const DEVICE_COOKIE_DAYS = 400;
 
 export interface CookieOptions {
@@ -38,14 +43,19 @@ export interface CookieOptions {
   maxAge?: number;
 }
 
-/** Staff cookies are browser-session cookies, so they carry no Max-Age. No Domain, so __Host- rules hold. */
+/**
+ * Viewer and waiting cookies last as long as the idle window. A staff cookie lasts the absolute window and the server
+ * enforces the sliding idle window, so staff stay signed in across browser restarts (D-397). No Domain, so __Host- rules hold.
+ */
 export function sessionCookieOptions(input: {
   secure: boolean;
   kind: SessionCookieKind;
   idleSeconds: number;
+  absoluteSeconds?: number;
 }): CookieOptions {
   const base: CookieOptions = { httpOnly: true, secure: input.secure, sameSite: 'lax', path: '/' };
-  return input.kind === 'staff' ? base : { ...base, maxAge: input.idleSeconds };
+  const maxAge = input.kind === 'staff' ? (input.absoluteSeconds ?? input.idleSeconds) : input.idleSeconds;
+  return { ...base, maxAge };
 }
 
 export function pendingCookieOptions(secure: boolean, maxAge: number): CookieOptions {

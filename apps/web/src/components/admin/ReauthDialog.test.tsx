@@ -10,14 +10,19 @@ function Harness({
   work,
   reauthenticate,
   withCode,
+  emailCode,
   onDone,
 }: {
   work: () => Promise<CommandResult>;
   reauthenticate: (password: string, code?: string) => Promise<CommandResult>;
   withCode?: boolean;
+  emailCode?: {
+    send: () => Promise<CommandResult>;
+    confirm: (code: string) => Promise<CommandResult>;
+  };
   onDone: (r: CommandResult) => void;
 }) {
-  const { guard, dialog } = useReauth(reauthenticate, { withCode });
+  const { guard, dialog } = useReauth(reauthenticate, { withCode, emailCode });
   return (
     <>
       <button type="button" onClick={async () => onDone(await guard(work))}>
@@ -91,5 +96,64 @@ describe('useReauth', () => {
     await waitFor(() =>
       expect(onDone).toHaveBeenCalledWith({ ok: false, error: 'Nothing was changed.' }),
     );
+  });
+});
+
+describe('useReauth with an emailed code option (D-397)', () => {
+  const emailCode = () => ({
+    send: vi.fn().mockResolvedValue({ ok: true }),
+    confirm: vi.fn().mockResolvedValue({ ok: true }),
+  });
+
+  it('offers a code by email instead of the password, then repeats the action', async () => {
+    const work = vi.fn().mockResolvedValueOnce(needsReauth).mockResolvedValueOnce({ ok: true });
+    const email = emailCode();
+    const onDone = vi.fn();
+    render(<Harness work={work} reauthenticate={vi.fn()} emailCode={email} onDone={onDone} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Go' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Email me a code instead' }));
+    await waitFor(() => expect(email.send).toHaveBeenCalledTimes(1));
+    fireEvent.change(await screen.findByLabelText('Emailed code'), { target: { value: '123 456' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Confirm' }));
+    await waitFor(() => expect(onDone).toHaveBeenCalledWith({ ok: true }));
+    expect(email.confirm).toHaveBeenCalledWith('123456');
+    expect(work).toHaveBeenCalledTimes(2);
+  });
+
+  it('shows a wrong code inside the dialog and keeps it open', async () => {
+    const email = emailCode();
+    email.confirm.mockResolvedValue({ ok: false, error: 'That code is not right' });
+    render(
+      <Harness work={async () => needsReauth} reauthenticate={vi.fn()} emailCode={email} onDone={vi.fn()} />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Go' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Email me a code instead' }));
+    fireEvent.change(await screen.findByLabelText('Emailed code'), { target: { value: '000000' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Confirm' }));
+    expect(await screen.findByText('That code is not right')).toBeTruthy();
+  });
+
+  it('lets the person go back to the password', async () => {
+    render(
+      <Harness work={async () => needsReauth} reauthenticate={vi.fn()} emailCode={emailCode()} onDone={vi.fn()} />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Go' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Email me a code instead' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Use my password instead' }));
+    expect(await screen.findByLabelText('Password')).toBeTruthy();
+  });
+
+  it('has no email option unless the app provides one', async () => {
+    render(<Harness work={async () => needsReauth} reauthenticate={vi.fn()} onDone={vi.fn()} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Go' }));
+    await screen.findByLabelText('Password');
+    expect(screen.queryByRole('button', { name: 'Email me a code instead' })).toBeNull();
+  });
+
+  it('has an eye button on the password field', async () => {
+    render(<Harness work={async () => needsReauth} reauthenticate={vi.fn()} onDone={vi.fn()} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Go' }));
+    await screen.findByLabelText('Password');
+    expect(screen.getByRole('button', { name: 'Show password' })).toBeTruthy();
   });
 });
