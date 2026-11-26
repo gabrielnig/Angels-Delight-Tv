@@ -23,7 +23,7 @@ status: draft
 Change your display name and look after your own sign in. You end with your name saved and other devices signed out.
 
 ## Before you start
-Any staff role can do this. You need your authenticator app on your phone for password changes. Read [Find your way around](help:S04) if you have not yet.
+Any staff role can do this. For a password change you need your inbox or your authenticator app. Read [Find your way around](help:S04) if you have not yet.
 
 ## Steps
 <!-- kb:steps C13 -->
@@ -34,7 +34,7 @@ Any staff role can do this. You need your authenticator app on your phone for pa
 3. Type "Demo Editor One" in the **Display name** box.
 4. Click **Save name**.
 5. Check the **Two step sign in** card.
-   It shows whether two step sign in is on and how many recovery codes you have left. Make new ones before you run out.
+   It shows whether you get a code by email or from an authenticator app. With an app it also shows your recovery codes left. Remembered devices are listed below it, each with **Forget**.
    ![The Two step sign in card with the recovery codes button marked 1](../../media/C13/C13-05-two-step-desktop.webp)
 6. Click **Sign out Laptop, Firefox**.
    Use this when you left yourself signed in on a shared computer. Sign out only the other devices, not this browser.
@@ -47,9 +47,9 @@ Any staff role can do this. You need your authenticator app on your phone for pa
 The message **Name saved.** appears. The device you signed out disappears from **Where you are signed in**. The **This device** line stays, because it is the browser you are using.
 
 > [!NOTE]
-> The **Password** card changes your password: type your **Current password**, a **New password**, **Confirm new password** and your **Authenticator code**, then click **Change password**. This signs you out on your other devices. **Make new recovery codes** replaces your old codes, so save the new ones somewhere safe. Under **Email notifications** you choose **Failures**, **Captions ready to review** and **Daily summary**, and **How often** they arrive.
+> The **Password** card changes your password: type your **Current password**, a **New password**, **Confirm new password** and a code (choose **Email me a code** or use your app), then click **Change password**. This signs you out on your other devices and forgets remembered devices. **Make new recovery codes** (authenticator only) replaces your old codes, so save the new ones somewhere safe. Under **Email notifications** you choose **Failures**, **Captions ready to review** and **Daily summary**, and **How often** they arrive.
 
 ## If something goes wrong
 - **Change password will not work.** Check the rules under the New password box. The password needs at least 10 characters and must not be common or your email.
-- **I lost my phone.** Ask a Super admin to reset your two step sign in. [Change a role, remove access, reset two step](help:C12)
+- **I lost my phone or cannot get the email.** Ask a Super admin to reset your two step sign in. [Change a role, remove access, reset two step](help:C12)
 - **I do not get any emails.** Check **Email notifications**. Security emails are always sent, other emails only if their switch is on. Still stuck? [What to send ARKDEV](help:T11)

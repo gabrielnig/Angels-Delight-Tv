@@ -1,5 +1,5 @@
 ## Account
-Your own sign in on the platform. It has an email address, a password and, for staff, a two step sign in.
+Your own sign in on the platform. It has an email address, a password and, for staff, a second step with a code.
 Aliases: login, profile
 
 ## Admin
@@ -172,7 +172,7 @@ The number of different viewers on one day. It is a daily figure and is never ad
 Guides: M06
 
 ## Recovery code
-A code you saved when you set up two step sign in. Each one works once if you lose your phone.
+A code you saved when you set up an authenticator app. Each one works once if you lose your phone.
 Guides: T06
 Aliases: backup code, lost phone code
 
@@ -250,7 +250,7 @@ A viewer row of videos that many people are watching right now. It refreshes eve
 Aliases: popular, top ten
 
 ## Two step sign in
-A second proof when you sign in: a 6 digit code from your phone after your password. All staff accounts need it.
+A second proof when you sign in: a 6 digit code emailed to you, or from your authenticator app, after your password. All staff accounts need it.
 Guides: T06
 Aliases: 2fa, two factor, verification code
 

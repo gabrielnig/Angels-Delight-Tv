@@ -37,7 +37,7 @@ A reset removes the authenticator and the recovery codes, signs the person out e
 
 Deleting an account is different. Only a Super admin can do it, and only when the owner asks. See [Delete an account when the owner asks](help:K13). A viewer can also ask for their own data as a file from their account page, and can delete their own account there.
 
-Staff two step sign in is reset on **Roles and invites** by a Super admin, and needs the Super admin's own code.
+Staff two step sign in is reset on **Roles and invites** by a Super admin, and needs the Super admin's own password or emailed code.
 
 ## Steps
 <!-- kb:steps K05 -->

@@ -50,7 +50,7 @@ The side menu only shows the screens your role can open. If a link below says yo
 27. **Staff invite**: The page a new staff member opens from an invite email.
 28. **Language texts**: Edit the texts of one language.
 29. **Staff sign in**: Sign in with your email and password. [Open Staff sign in](/admin/login)
-30. **Enter your code**: Enter the 6 digit code from your app. [Open Enter your code](/admin/login/2fa)
+30. **Enter your code**: Enter the 6 digit code we emailed you, or from your app. [Open Enter your code](/admin/login/2fa)
 31. **One series**: Change one series and put its lessons in order.
 32. **Share a series**: Make a link to share a whole series.
 33. **One sponsor**: Edit one sponsor and its pictures.

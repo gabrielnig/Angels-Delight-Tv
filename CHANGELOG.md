@@ -220,3 +220,5 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - Download PDF takes the prebuilt guide PDF of the release from a private route and falls back to the print dialog. A link to another guide prints its id. The print layout is measured in `admin-help.e2e.ts`. Decision D-387.
 - Design system review of every help screen: one hardcoded colour fallback removed. The production build of `@ad/web` passes, and the help loader no longer makes Turbopack trace the whole project.
 
+
+- Staff sign in now uses an emailed code, with Remember this device, longer staff sessions, password eye toggles and a Security settings tab (L16).
