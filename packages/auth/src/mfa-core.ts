@@ -58,6 +58,19 @@ export class MfaCore {
     if (lock.locked) throw new RateLimited(lock.retryAfterSeconds);
   }
 
+  /** Counts one wrong code of any kind toward the shared lockout, runs the caller's audit and throws. */
+  async failWrongCode(accountId: string, hook: MfaFailureHook & { message?: string }): Promise<never> {
+    await this.closed(() =>
+      this.deps.lockouts.registerFailure(this.lockKey(accountId), LOCKOUT_POLICIES.mfaCode),
+    );
+    await hook.onFailure();
+    throw new FieldErrors({ [hook.field ?? 'code']: hook.message ?? 'That code is not right' });
+  }
+
+  async clearFailures(accountId: string): Promise<void> {
+    await this.closed(() => this.deps.lockouts.clear(this.lockKey(accountId)));
+  }
+
   private async fail(accountId: string, hook: MfaFailureHook): Promise<never> {
     await this.closed(() =>
       this.deps.lockouts.registerFailure(this.lockKey(accountId), LOCKOUT_POLICIES.mfaCode),

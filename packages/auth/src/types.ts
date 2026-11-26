@@ -17,6 +17,10 @@ export interface AuthConfig {
   deletionGraceDays: number;
   /** Password confirmation stays valid for sensitive actions this long (SECURITY.md section 4). */
   reauthWindowSeconds: number;
+  /** Emailed staff second step codes (D-397): life, wrong tries per code and the wait before a resend. */
+  staffCodeTtlSeconds: number;
+  staffCodeMaxAttempts: number;
+  staffCodeResendCooldownSeconds: number;
   /** Versions recorded in `consents` at sign up. Content owned by the client (legal.*_version). */
   legalVersions: { terms: string; privacy: string; guardian_declaration: string };
   supportEmail: string;
@@ -37,6 +41,9 @@ export const DEFAULT_AUTH_CONFIG: AuthConfig = {
   resetTtlSeconds: 30 * 60,
   emailChangeTtlSeconds: 24 * 3600,
   inviteTtlSeconds: 72 * 3600,
+  staffCodeTtlSeconds: 10 * 60,
+  staffCodeMaxAttempts: 5,
+  staffCodeResendCooldownSeconds: 60,
   deletionGraceDays: 14,
   reauthWindowSeconds: 10 * 60,
   legalVersions: { terms: '1', privacy: '1', guardian_declaration: '1' },
@@ -80,6 +87,14 @@ export interface AuthDeps {
    * not open, sign up needs an invite code. Defaults to `config.signUpOpen`.
    */
   signUpPolicy?: () => Promise<{ open: boolean }>;
+  /**
+   * The site setting `security.staff_second_step`, read at each staff sign in so a change applies at once. `email`
+   * mails a code to staff with no authenticator. `authenticator` makes them enrol one. Defaults to `authenticator`
+   * (the stricter, original behaviour) when the app does not pass it.
+   */
+  secondStepPolicy?: () => Promise<'email' | 'authenticator'>;
+  /** False when mail is switched off (SMTP_URL=disabled). Staff then fall back to the authenticator, never to nothing. */
+  emailAvailable?: () => boolean;
 }
 
 export interface RequestMeta {

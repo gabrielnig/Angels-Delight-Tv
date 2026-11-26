@@ -58,7 +58,7 @@ export type ViewAllMode = (typeof VIEW_ALL_MODES)[number];
 /** Maturity ladder, lowest to highest. Rank 0 is all ages and equals the legacy kids safe flag (L5, M44). */
 export const MATURITY_RANKS = [0, 1, 2, 3, 4] as const;
 export const MATURITY_DEFAULT_LABELS = ['G', 'PG', '12', '15', '18'] as const;
-export const TOKEN_PURPOSES = ['verify_email', 'reset_password', 'change_email'] as const;
+export const TOKEN_PURPOSES = ['verify_email', 'reset_password', 'change_email', 'staff_sign_in', 'staff_confirm'] as const;
 export const THEME_STATUSES = ['draft', 'published', 'archived'] as const;
 export const ASSET_PURPOSES = ['logo', 'favicon', 'thumbnail', 'hero', 'series_art', 'sponsor'] as const;
 export const ASSET_STATUSES = ['processing', 'ready', 'failed'] as const;
