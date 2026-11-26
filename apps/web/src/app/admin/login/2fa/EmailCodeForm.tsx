@@ -60,7 +60,7 @@ export function EmailCodeForm({ next, sent, canRemember, rememberDays = 30, veri
           name="code"
           inputMode="numeric"
           autoComplete="one-time-code"
-          maxLength={6}
+          maxLength={7}
           pattern="[0-9]*"
           autoFocus
           required
@@ -87,7 +87,6 @@ export function EmailCodeForm({ next, sent, canRemember, rememberDays = 30, veri
       <Button
         variant="secondary"
         loading={sending}
-        disabledReason={waiting ? undefined : undefined}
         disabled={waiting}
         onClick={() => void sendAgain()}
       >

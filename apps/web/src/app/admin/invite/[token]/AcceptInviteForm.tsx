@@ -22,6 +22,7 @@ export function AcceptInviteForm({ token }: { token: string }) {
         type="password"
         autoComplete="new-password"
         required
+        hint="At least 10 characters. A long phrase you can remember works well."
         error={state.fields?.password}
       />
       <Button type="submit" variant="primary" loading={pending}>

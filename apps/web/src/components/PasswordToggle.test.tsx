@@ -63,3 +63,13 @@ describe('a field that is not a password', () => {
     expect(screen.queryByRole('button')).toBeNull();
   });
 });
+
+describe('password toggle styling', () => {
+  it('uses the 3px focus ring and a 44px target', async () => {
+    const { readFileSync } = await import('node:fs');
+    const css = readFileSync('apps/web/src/components/password-toggle.css', 'utf8');
+    expect(css).toMatch(/\.pw-toggle:focus-visible\s*{[^}]*outline:\s*3px solid var\(--color-focus-ring\)/);
+    expect(css).toMatch(/width:\s*var\(--touch-target\)/);
+    expect(css).toMatch(/height:\s*var\(--touch-target\)/);
+  });
+});
