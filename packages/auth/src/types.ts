@@ -95,6 +95,8 @@ export interface AuthDeps {
   secondStepPolicy?: () => Promise<'email' | 'authenticator'>;
   /** False when mail is switched off (SMTP_URL=disabled). Staff then fall back to the authenticator, never to nothing. */
   emailAvailable?: () => boolean;
+  /** Days a remembered staff device skips the emailed code. 0 turns Remember this device off. Defaults to 30. */
+  trustedDeviceDays?: () => Promise<number>;
 }
 
 export interface RequestMeta {
@@ -107,6 +109,8 @@ export interface RequestMeta {
   country?: string | null;
   /** The random device cookie value. Only a keyed hash of it is stored. */
   deviceId?: string | null;
+  /** The value of the remembered device cookie, when the browser sent one. Only its hash is looked up. */
+  trustedDeviceToken?: string | null;
 }
 
 export const NO_META: RequestMeta = { ip: null, ipTrunc: null, userAgent: null, requestId: null };

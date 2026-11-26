@@ -44,7 +44,13 @@ export function codeMailContext(meta: RequestMeta, now: Date) {
  */
 export async function sendStaffCode(
   ctx: StaffCodeContext,
-  input: { accountId: string; purpose: StaffCodePurpose; meta: RequestMeta },
+  input: {
+    accountId: string;
+    purpose: StaffCodePurpose;
+    meta: RequestMeta;
+    /** `reuse` (sign in): a code mailed under a minute ago is still good, so nothing new is sent. `throw` (resend). */
+    whenWaiting: 'reuse' | 'throw';
+  },
 ): Promise<{ sent: boolean }> {
   const now = ctx.now();
   const [latest] = await ctx.db
@@ -61,6 +67,7 @@ export async function sendStaffCode(
     .limit(1);
   if (latest) {
     const waitMs = latest.createdAt.getTime() + ctx.cfg.staffCodeResendCooldownSeconds * 1000 - now.getTime();
+    if (waitMs > 0 && input.whenWaiting === 'reuse') return { sent: true };
     if (waitMs > 0) throw new RateLimited(Math.ceil(waitMs / 1000));
   }
   await ctx.limiter.enforce(

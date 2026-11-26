@@ -188,20 +188,22 @@ describe.skipIf(!integrationEnabled())('SessionService', () => {
     expect(await sessions.validate(first.token)).toBeNull();
     const context = await sessions.validate(second.token);
     expect(context?.mfaVerified).toBe(true);
-    at(31 * 60);
+    at(6 * 86400);
+    expect(await sessions.validate(second.token)).not.toBeNull();
+    at(14 * 86400);
     expect(await sessions.validate(second.token)).toBeNull();
   });
 
-  it('caps a staff session at 8 hours even with constant activity', async () => {
+  it('caps a staff session at 30 days even with constant activity', async () => {
     at(0);
     const account = await newAccount({ role: 'admin' });
     const pending = await sessions.create({ accountId: account.id, kind: 'pending_mfa' });
     const { token } = await sessions.promoteToStaff(pending.session.id);
-    for (let minutes = 20; minutes < 480; minutes += 20) {
-      at(minutes * 60);
-      expect(await sessions.validate(token), `minute ${minutes}`).not.toBeNull();
+    for (let day = 5; day < 30; day += 5) {
+      at(day * 86400);
+      expect(await sessions.validate(token), `day ${day}`).not.toBeNull();
     }
-    at(8 * 3600 + 1);
+    at(30 * 86400 + 1);
     expect(await sessions.validate(token)).toBeNull();
   });
 
