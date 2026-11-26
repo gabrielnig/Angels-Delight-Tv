@@ -41,4 +41,4 @@ The **Donations** screen only lists gifts received through Paystack. Bank transf
 
 ## If something goes wrong
 - **A bank transfer gift is missing from the list.** That is expected. Only Paystack gifts appear. [See donations and download the list](help:M08)
-- **The bank details do not show on the Donate page.** Both the bank switch and the text must be set. Ask the developer to check.
+- **The bank details do not show on the Donate page.** Both the bank switch and the text must be set. Ask the developer to check. Still stuck? [What to send ARKDEV](help:T11)

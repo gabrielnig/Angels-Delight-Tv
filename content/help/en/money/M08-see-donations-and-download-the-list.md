@@ -43,4 +43,4 @@ The list shows the newest gifts first with date, reference, donor, amount and st
 
 ## If something goes wrong
 - **The totals say **No succeeded live gifts in this view.**** Only live gifts count. Test gifts and gifts still waiting do not. [Test mode and live mode](help:M11)
-- **The list is empty.** Clear the filters. Find gifts with the filters
+- **The list is empty.** Clear the filters. Find gifts with the filters Still stuck? [What to send ARKDEV](help:T11)

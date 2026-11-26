@@ -58,4 +58,4 @@ The restored video is gone from **Trash** and is back in **Videos** as a draft. 
 ## If something goes wrong
 - **Clean up all is greyed out.** There are no leftover files to remove. You can still click **Retry** on a row.
 - **A row says the original file was removed.** It cannot be retried. Upload the video again with **Replace file** on the row.
-- **Restore did not work.** Nothing was changed. Try again, and if it fails again, send the reference code to the developer.
+- **Restore did not work.** Nothing was changed. Try again, and if it fails again, send the reference code to the developer. Still stuck? [What to send ARKDEV](help:T11)

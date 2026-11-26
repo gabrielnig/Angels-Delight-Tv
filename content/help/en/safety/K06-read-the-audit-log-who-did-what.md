@@ -59,4 +59,4 @@ The table shows only the entries that match your filter, and the details of one 
 
 ## If something goes wrong
 - **No entries match.** Widen the dates or press **Clear**. The Action box matches the start of an action, so video. finds video.publish.
-- **I cannot see sign in entries.** Security entries are for Super admins. Ask one to look, or to export the log.
+- **I cannot see sign in entries.** Security entries are for Super admins. Ask one to look, or to export the log. Still stuck? [What to send ARKDEV](help:T11)

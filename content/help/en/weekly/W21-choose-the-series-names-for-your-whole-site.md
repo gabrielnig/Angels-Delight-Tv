@@ -48,4 +48,4 @@ A message says **Series names saved.** The preview list under the name set shows
 
 ## If something goes wrong
 - **Save changes does nothing.** A word may be too long or contain a dash. Fix the field marked in red and save again.
-- **A series still shows the old words.** It has its own names. [Use different names for one series](help:W22)
+- **A series still shows the old words.** It has its own names. [Use different names for one series](help:W22) Still stuck? [What to send ARKDEV](help:T11)

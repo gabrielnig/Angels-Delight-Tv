@@ -55,4 +55,4 @@ The **Donations** screen opens. Until the first real gift arrives it says **No s
 
 ## If something goes wrong
 - **There is no **Donations** item in the side menu.** Only Admins and Super admins can open it. [Roles and permissions](help:R02)
-- **Viewers cannot find the Donate page.** Donations are off until the developer switches them on and sets the keys. [Check Paystack with a test gift](help:M10)
+- **Viewers cannot find the Donate page.** Donations are off until the developer switches them on and sets the keys. [Check Paystack with a test gift](help:M10) Still stuck? [What to send ARKDEV](help:T11)

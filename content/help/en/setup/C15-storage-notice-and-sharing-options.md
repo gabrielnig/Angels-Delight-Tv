@@ -55,4 +55,4 @@ The message **Discovery settings saved. They apply within 5 minutes.** appears. 
 ## If something goes wrong
 - **The text will not save.** The words contain a dash, an emoji or markup. Remove them and try again.
 - **The notice did not come back for some visitors.** Changes apply within 5 minutes. Click **Show notice again to everyone** and save, then wait.
-- **Search engines still list the site.** They update slowly, sometimes over several days.
+- **Search engines still list the site.** They update slowly, sometimes over several days. Still stuck? [What to send ARKDEV](help:T11)

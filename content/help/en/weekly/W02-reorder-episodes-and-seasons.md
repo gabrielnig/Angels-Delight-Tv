@@ -44,4 +44,4 @@ A message says **Order saved.** The lessons swap numbers, so the lesson you move
 
 ## If something goes wrong
 - **Up or Down is grey.** The lesson is already first or last in its group.
-- **The numbers look wrong afterwards.** The series may have a gap or a repeat. [Fix gaps and duplicate numbers](help:W25)
+- **The numbers look wrong afterwards.** The series may have a gap or a repeat. [Fix gaps and duplicate numbers](help:W25) Still stuck? [What to send ARKDEV](help:T11)

@@ -244,3 +244,5 @@ A failure names the step, why, and the labels on screen at that moment.
 ### Status
 
 Slices 1 to 9 done (framework, demo stack, scanner and annotation, caption tools, pipeline commands, CI, episode coverage, fact checker, docs). Open: the real Postgres mode (`pnpm kb:stack real`) is written but not yet run end to end, and content lanes still own the episodes that empty the coverage gaps file.
+
+Integration pass: all 135 guides pass `pnpm help:check`, the scoped help tests pass, the fact checker passes W05, W08, K10, C10, C14, M03, S04, D06, D08, D10 and D11 on the fixture stack (D-396). Redaction scan over `content/help` found only path text, no emails, numbers or keys. Procedural guides link to T11.

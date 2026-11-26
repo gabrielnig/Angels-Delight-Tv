@@ -56,4 +56,4 @@ The **Sponsors** screen opens, and the staff only hints under the contact boxes 
 
 ## If something goes wrong
 - **Your question is not here.** Ask your Admin or the developer.
-- **A screen looks different from the guide.** Tell the developer. The guides are checked against the screens, but a change may be new.
+- **A screen looks different from the guide.** Tell the developer. The guides are checked against the screens, but a change may be new. Still stuck? [What to send ARKDEV](help:T11)

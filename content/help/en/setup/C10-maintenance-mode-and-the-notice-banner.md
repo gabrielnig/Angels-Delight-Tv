@@ -3,7 +3,7 @@ id: C10
 title: Maintenance mode and the notice banner
 path: setup
 summary: Show a short notice to every visitor, or close the site while you do maintenance.
-role: super_admin
+role: admin
 roleNote: Admins can use the notice banner. Only Super admins can turn on Maintenance mode
 needs: [C04]
 related: [C04, C05, C06]
@@ -58,4 +58,4 @@ The message **Maintenance settings saved.** appears after each save. While the b
 ## If something goes wrong
 - **The Maintenance mode switch will not save.** Your role is Admin. Ask a Super admin to turn it on.
 - **Viewers still see the old page.** Wait one minute and reload. Changes reach viewers within a minute.
-- **The banner message will not save.** It is over 200 characters. Shorten it.
+- **The banner message will not save.** It is over 200 characters. Shorten it. Still stuck? [What to send ARKDEV](help:T11)

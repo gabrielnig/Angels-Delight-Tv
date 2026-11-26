@@ -50,4 +50,4 @@ The [Dashboard](glossary:dashboard) opens. From now on you sign in with your ema
 ## If something goes wrong
 - **The page says This invite has expired.** Invites last 72 hours and work once. Ask the person who invited you to send a new one.
 - **The code is not accepted.** Wait for a new code in your app and type that one.
-- **You lost the recovery codes.** You can make new ones later on the **My account** screen.
+- **You lost the recovery codes.** You can make new ones later on the **My account** screen. Still stuck? [What to send ARKDEV](help:T11)

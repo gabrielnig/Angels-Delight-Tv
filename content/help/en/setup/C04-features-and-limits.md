@@ -33,7 +33,7 @@ You need to be a Super admin. Admins can open the tab but the switches are locke
    Only a Super admin can change this tab. Admins can read it but the switches are locked.
    ![The Features and limits tab with the Open sign up switch marked 1](../../media/C04/C04-02-features-desktop.webp)
 3. Check the hint under **Open sign up**.
-   Every switch has a hint that says what it does. The full list is in the settings dictionary, guide R04.
+   Every switch has a hint that says what it does. The full list is in the [settings dictionary](help:R04).
 4. Untick **Guests can watch**.
    With this off, visitors can browse but must sign in to play a video.
    ![The Guests can watch switch turned off and marked 1](../../media/C04/C04-04-guests-off-desktop.webp)
@@ -51,9 +51,9 @@ The message Features and limits saved appears for a few seconds, then goes. The 
 > **Open sign up**, **Guests can watch** and **Maintenance mode** change what every viewer can do. Check the hint first. You can turn any of them back on or off at any time.
 
 > [!NOTE]
-> Switches on this tab: **Open sign up**, **Kids profiles**, **My List**, **Auto rotate hero**, **Data saver by default**, **Require approved captions**, **Captions are available to viewers by default**, **Guests can watch**, **AirPlay button** and **Sign in with Google**. **Require approved captions** means a video cannot be published until its captions are approved. **Captions are available to viewers by default** is the site default that each video can follow or override, see Turn captions on or off for one video (guide W09). The limits are explained one by one in the settings dictionary, guide R04.
+> Switches on this tab: **Open sign up**, **Kids profiles**, **My List**, **Auto rotate hero**, **Data saver by default**, **Require approved captions**, **Captions are available to viewers by default**, **Guests can watch**, **AirPlay button** and **Sign in with Google**. **Require approved captions** means a video cannot be published until its captions are approved. **Captions are available to viewers by default** is the site default that each video can follow or override, see [Turn captions on or off for one video](help:W09). The limits are explained one by one in the [settings dictionary](help:R04).
 
 ## If something goes wrong
 - **The switches are greyed out.** Your role is Admin. Ask a Super admin to make the change.
 - **A limit shows a red message.** The number is outside the allowed range. Use a number inside the range in the hint.
-- **A change does not show for viewers.** Wait one minute and reload the site. Features and limits apply within a minute.
+- **A change does not show for viewers.** Wait one minute and reload the site. Features and limits apply within a minute. Still stuck? [What to send ARKDEV](help:T11)

@@ -55,4 +55,4 @@ A CSV file in your Downloads folder with one row for each day and title in the r
 ## If something goes wrong
 - **Nothing downloads.** Your browser may have blocked it. Allow downloads for this site, then click **Export CSV** again.
 - **The row says Failed.** Read the reason under it, then ask for the report again with a shorter date range.
-- **The link in the email has expired.** Files stay for 3 days. Ask for the report again.
+- **The link in the email has expired.** Files stay for 3 days. Ask for the report again. Still stuck? [What to send ARKDEV](help:T11)

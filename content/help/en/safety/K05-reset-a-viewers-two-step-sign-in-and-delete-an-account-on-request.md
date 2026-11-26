@@ -61,4 +61,4 @@ The message **Two step verification reset.** appears. The person gets an email a
 
 ## If something goes wrong
 - **I do not see Reset two step verification.** Your role may be Editor, or you are on the wrong page. Open the person from **Users**.
-- **The person says they did not ask.** Do not reset. Suspend the account first, then check with the owner. See [Suspend an account and sign someone out everywhere](help:K04).
+- **The person says they did not ask.** Do not reset. Suspend the account first, then check with the owner. See [Suspend an account and sign someone out everywhere](help:K04). Still stuck? [What to send ARKDEV](help:T11)

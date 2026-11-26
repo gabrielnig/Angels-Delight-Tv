@@ -57,4 +57,4 @@ A message says the rating was set, with an **Undo** button for a few seconds. Th
 
 ## If something goes wrong
 - **Set maturity rating is grey.** You have not ticked any video yet. Tick one or more rows first.
-- **You chose the wrong rating.** Press **Undo** in the message straight away. Later, set the right rating the same way.
+- **You chose the wrong rating.** Press **Undo** in the message straight away. Later, set the right rating the same way. Still stuck? [What to send ARKDEV](help:T11)

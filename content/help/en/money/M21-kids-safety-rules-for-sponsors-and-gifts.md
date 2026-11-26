@@ -47,4 +47,4 @@ The **Sponsors** screen says **Sponsors never show to children** and **Kids prof
 
 ## If something goes wrong
 - **A child saw a sponsor.** Pause the sponsor and tell an Admin. [Pause, archive or delete a sponsor](help:M05)
-- **You are unsure a video is safe for kids.** Do not mark it Kids safe.
+- **You are unsure a video is safe for kids.** Do not mark it Kids safe. Still stuck? [What to send ARKDEV](help:T11)

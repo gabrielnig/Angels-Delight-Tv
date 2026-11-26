@@ -60,4 +60,4 @@ The message **Deletion started.** appears. The audit log has an entry for the de
 
 ## If something goes wrong
 - **Delete account is not on the page.** Only a Super admin sees it. Ask one, or sign in with that role.
-- **The red button stays grey.** The box needs the word DELETE in capital letters, with no spaces.
+- **The red button stays grey.** The box needs the word DELETE in capital letters, with no spaces. Still stuck? [What to send ARKDEV](help:T11)

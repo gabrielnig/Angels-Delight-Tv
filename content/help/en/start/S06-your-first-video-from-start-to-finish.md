@@ -61,4 +61,4 @@ The card **Before you publish** shows how many steps are done. After this guide,
 ## If something goes wrong
 - **The upload stops.** Check your connection and choose **Retry** on the row. The part that was sent is kept.
 - **Save changes is grey.** Nothing has changed yet. Edit a box and it turns on.
-- **You cannot find the poster button.** Open the video again from **Videos**. The button is in the card **Before you publish**.
+- **You cannot find the poster button.** Open the video again from **Videos**. The button is in the card **Before you publish**. Still stuck? [What to send ARKDEV](help:T11)

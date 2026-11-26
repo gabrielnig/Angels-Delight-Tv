@@ -46,4 +46,4 @@ A short message says **Gift accepted** or **Gift rejected**. The gift is no long
 
 ## If something goes wrong
 - **The buttons are grey.** Write a note first. Both buttons stay off until you do.
-- **The gift does not say **Needs review**.** Only gifts we could not confirm can be settled. [See donations and download the list](help:M08)
+- **The gift does not say **Needs review**.** Only gifts we could not confirm can be settled. [See donations and download the list](help:M08) Still stuck? [What to send ARKDEV](help:T11)

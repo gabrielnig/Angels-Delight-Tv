@@ -58,4 +58,4 @@ The row for your file says **Uploaded just now** and has an **Edit details** but
 ## If something goes wrong
 - **The bar stops, or the row says Paused or Failed.** Check your internet connection, then choose **Retry** on the row.
 - **The file is not accepted.** Check that it is an MP4, MOV or MKV file and not larger than the limit shown on the page.
-- **You uploaded the wrong file.** Choose **Remove** on its row before you add details, or move the video to Trash later.
+- **You uploaded the wrong file.** Choose **Remove** on its row before you add details, or move the video to Trash later. Still stuck? [What to send ARKDEV](help:T11)

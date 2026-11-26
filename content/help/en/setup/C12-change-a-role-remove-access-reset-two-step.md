@@ -53,4 +53,4 @@ The **Role** column shows the new role. After a reset, the person is signed out 
 ## If something goes wrong
 - **The role list is greyed out.** It is your own row, or the only Super admin. Ask another Super admin.
 - **The reset says the code is wrong.** Enter your own 6 digit code from your authenticator app, not the other person's code.
-- **The person still cannot sign in.** They must use the sign in page and follow the new setup steps. They can use a recovery code if they kept one.
+- **The person still cannot sign in.** They must use the sign in page and follow the new setup steps. They can use a recovery code if they kept one. Still stuck? [What to send ARKDEV](help:T11)

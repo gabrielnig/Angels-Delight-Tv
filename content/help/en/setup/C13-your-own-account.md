@@ -52,4 +52,4 @@ The message **Name saved.** appears. The device you signed out disappears from *
 ## If something goes wrong
 - **Change password will not work.** Check the rules under the New password box. The password needs at least 10 characters and must not be common or your email.
 - **I lost my phone.** Ask a Super admin to reset your two step sign in. [Change a role, remove access, reset two step](help:C12)
-- **I do not get any emails.** Check **Email notifications**. Security emails are always sent, other emails only if their switch is on.
+- **I do not get any emails.** Check **Email notifications**. Security emails are always sent, other emails only if their switch is on. Still stuck? [What to send ARKDEV](help:T11)

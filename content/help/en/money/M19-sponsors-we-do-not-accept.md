@@ -43,4 +43,4 @@ A short message says **Sponsor saved.** and your note stays on the sponsor scree
 
 ## If something goes wrong
 - **A sponsor does not fit the rules.** Do not approve it. Leave it in Draft or archive it. [Pause, archive or delete a sponsor](help:M05)
-- **You are not sure.** Ask an Admin before approving. Approving is what puts a message in front of viewers.
+- **You are not sure.** Ask an Admin before approving. Approving is what puts a message in front of viewers. Still stuck? [What to send ARKDEV](help:T11)

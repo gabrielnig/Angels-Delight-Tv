@@ -53,4 +53,4 @@ The invite appears under **Pending invites** with the role, who invited them and
 ## If something goes wrong
 - **The email did not arrive.** Ask the person to check spam, then click **Resend invite**. If it keeps failing, look for it on the Jobs tab of System. [System: jobs, storage and player quality](help:C14)
 - **The invite shows Expired.** The link lasted 7 days. Click **Send a new invite** beside it.
-- **I typed the wrong address.** Click **Cancel invite**, then send a new one to the right address.
+- **I typed the wrong address.** Click **Cancel invite**, then send a new one to the right address. Still stuck? [What to send ARKDEV](help:T11)

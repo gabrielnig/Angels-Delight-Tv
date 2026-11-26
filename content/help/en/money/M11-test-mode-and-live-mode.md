@@ -46,4 +46,4 @@ The list shows a **Test** badge beside the status of each test gift. The note un
 
 ## If something goes wrong
 - **Real gifts show a Test badge.** The server may still hold the test key. Ask the developer to check which key is set.
-- **The totals are empty.** Only succeeded live gifts count. [See donations and download the list](help:M08)
+- **The totals are empty.** Only succeeded live gifts count. [See donations and download the list](help:M08) Still stuck? [What to send ARKDEV](help:T11)

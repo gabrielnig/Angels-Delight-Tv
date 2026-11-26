@@ -57,4 +57,4 @@ A message says **Captions approved**. In the **Captions** list the state of the 
 ## If something goes wrong
 - **The list says No captions waiting.** Nothing needs review. New videos appear here when their captions are ready.
 - **A video says Generating.** The captions are still being made. Come back in a few minutes.
-- **The words are wrong in many places.** Edit the cues on this screen before you approve. Each cue has its own **Words in cue** box.
+- **The words are wrong in many places.** Edit the cues on this screen before you approve. Each cue has its own **Words in cue** box. Still stuck? [What to send ARKDEV](help:T11)

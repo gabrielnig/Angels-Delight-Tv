@@ -43,4 +43,4 @@ The failed videos move back to waiting or encoding, and a message says how many 
 
 ## If something goes wrong
 - **There is no Retry button.** No failed row is ticked. Tick a failed row first.
-- **It fails again.** The file may be damaged. Upload it again.
+- **It fails again.** The file may be damaged. Upload it again. Still stuck? [What to send ARKDEV](help:T11)

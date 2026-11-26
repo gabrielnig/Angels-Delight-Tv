@@ -41,4 +41,4 @@ A message says **Series names saved.** The lists and buttons on this page use th
 
 ## If something goes wrong
 - **The names do not save.** A custom word may be empty or too long. Fix the field marked in red.
-- **Viewers still see the old words.** Reload their page. The change is saved on the series, not on single videos.
+- **Viewers still see the old words.** Reload their page. The change is saved on the series, not on single videos. Still stuck? [What to send ARKDEV](help:T11)

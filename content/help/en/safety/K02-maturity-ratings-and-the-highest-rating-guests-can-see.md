@@ -72,4 +72,4 @@ The Publish box has the rating list filled in and the **Maturity rating** step i
 
 ## If something goes wrong
 - **Publish says Choose a maturity rating.** The video has no rating yet. Pick one in the Publish box or in **Maturity rating** on the video screen, then publish again.
-- **Publish is grey.** Another step is still open. Read the list in the box and finish each step.
+- **Publish is grey.** Another step is still open. Read the list in the box and finish each step. Still stuck? [What to send ARKDEV](help:T11)

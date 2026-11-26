@@ -52,4 +52,4 @@ In the demo, the **Add a translation** box says every caption language already h
 ## If something goes wrong
 - **The box says translation is not set up on this server.** Ask your developer to turn it on.
 - **There is no language to choose.** Every language that is turned on already has a translation. Ask your developer to turn on another caption language.
-- **The publish switch is greyed out.** The translation is not approved yet, or your role is Editor. Approve it, or ask an Admin. [Turn captions on or off for one video](help:W09)
+- **The publish switch is greyed out.** The translation is not approved yet, or your role is Editor. Approve it, or ask an Admin. [Turn captions on or off for one video](help:W09) Still stuck? [What to send ARKDEV](help:T11)

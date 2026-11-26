@@ -57,4 +57,4 @@ The message **Changes saved.** appears, and **Maturity rating** shows **G**. The
 
 ## If something goes wrong
 - **The Save changes button is grey.** Nothing has changed yet. Pick a different rating first, then save.
-- **A video is G but a child cannot see it.** It may still be a draft or unpublished. Publish it, then check again.
+- **A video is G but a child cannot see it.** It may still be a draft or unpublished. Publish it, then check again. Still stuck? [What to send ARKDEV](help:T11)

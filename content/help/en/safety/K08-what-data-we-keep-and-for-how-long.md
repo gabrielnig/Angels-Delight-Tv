@@ -74,4 +74,4 @@ You have found the two retention settings and the Pages tab where the Privacy pa
 
 ## If something goes wrong
 - **A viewer asks for a copy of their data.** They download it from their own account page. An admin cannot make the file for them.
-- **A viewer asks for deletion and cannot sign in.** Check they own the account, then ask a Super admin. See [Delete an account when the owner asks](help:K13).
+- **A viewer asks for deletion and cannot sign in.** Check they own the account, then ask a Super admin. See [Delete an account when the owner asks](help:K13). Still stuck? [What to send ARKDEV](help:T11)

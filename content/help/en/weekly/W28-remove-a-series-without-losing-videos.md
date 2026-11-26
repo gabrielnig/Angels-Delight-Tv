@@ -45,4 +45,4 @@ A message says **Series deleted.** The Series list no longer shows it, and the v
 
 ## If something goes wrong
 - **The Delete series button is grey.** Only Admins can delete. Ask an Admin, or remove lessons one by one.
-- **You deleted the wrong series.** Create it again and add the videos back. Add many videos to a series
+- **You deleted the wrong series.** Create it again and add the videos back. Add many videos to a series Still stuck? [What to send ARKDEV](help:T11)

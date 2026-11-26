@@ -44,4 +44,4 @@ The recording shows only the admin side, because the demo series are not on the 
 
 ## If something goes wrong
 - **The series is not on the site.** It is probably a draft. Use the **Published** switch on the series page.
-- **The words are Season and Episode.** The site words are not set. [Choose the series names for your whole site](help:W21)
+- **The words are Season and Episode.** The site words are not set. [Choose the series names for your whole site](help:W21) Still stuck? [What to send ARKDEV](help:T11)

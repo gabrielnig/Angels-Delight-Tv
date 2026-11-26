@@ -43,4 +43,4 @@ The row appears in the preview. Trending shows only titles that people have watc
 ## If something goes wrong
 - **The row is missing for viewers.** Too few titles have views. Wait for more viewing, or lower the minimum titles for that section.
 - **The System page says Trending has not been refreshed yet.** The first refresh has not run. Wait up to an hour, then tell the developer if it stays empty.
-- **The refresh is older than 3 hours.** Ask the developer to check the refresh job. [System](help:C14)
+- **The refresh is older than 3 hours.** Ask the developer to check the refresh job. [System](help:C14) Still stuck? [What to send ARKDEV](help:T11)

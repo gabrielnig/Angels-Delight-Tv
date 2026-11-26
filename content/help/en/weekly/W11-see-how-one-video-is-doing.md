@@ -55,4 +55,4 @@ The video title as the page heading, three tiles (**Views**, **Watch time** and 
 ## If something goes wrong
 - **The page says "No views for this video in this period."** Choose a longer range, such as **Last 90 days**. A new video may not have been watched yet.
 - **The chart says "Retention needs a few more views."** The video has too few views to draw a fair line. Check again next week.
-- **The page says "We could not load analytics for this video."** Nothing was changed. Wait a minute and try again.
+- **The page says "We could not load analytics for this video."** Nothing was changed. Wait a minute and try again. Still stuck? [What to send ARKDEV](help:T11)

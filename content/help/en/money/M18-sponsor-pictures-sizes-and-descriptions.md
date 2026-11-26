@@ -47,4 +47,4 @@ The form shows the picture boxes and the **Picture description** box with its hi
 
 ## If something goes wrong
 - **The picture is refused as too small.** Use a bigger file. The message tells you the size it needs.
-- **The form asks you to describe the picture.** Type a short description. [Add a sponsor and its images](help:M03)
+- **The form asks you to describe the picture.** Type a short description. [Add a sponsor and its images](help:M03) Still stuck? [What to send ARKDEV](help:T11)

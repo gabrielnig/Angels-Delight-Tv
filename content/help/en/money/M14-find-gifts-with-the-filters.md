@@ -52,4 +52,4 @@ The list shows only the gifts that match. When nothing matches the screen says *
 
 ## If something goes wrong
 - **The list says **No gifts match.**** Clear one filter at a time, or set the list back to **All**.
-- **A date box looks empty after you type.** Type the day, month and year with no spaces, for example 03032026.
+- **A date box looks empty after you type.** Type the day, month and year with no spaces, for example 03032026. Still stuck? [What to send ARKDEV](help:T11)

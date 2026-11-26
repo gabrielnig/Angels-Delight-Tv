@@ -53,4 +53,4 @@ The message **Theme published.** appears. Viewers see the earlier colours and fo
 ## If something goes wrong
 - **The history says No saved versions yet.** Nothing has been saved. Save or publish a theme first. [Colours, fonts and logo with the Theme editor](help:C02)
 - **There is no Restore button on a row.** That row is the theme viewers see now. Pick an older row.
-- **Viewers still see the old look.** Restoring only fills your draft. Click **Publish theme** on the **Theme** screen.
+- **Viewers still see the old look.** Restoring only fills your draft. Click **Publish theme** on the **Theme** screen. Still stuck? [What to send ARKDEV](help:T11)

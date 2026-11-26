@@ -53,4 +53,4 @@ The guide shows **Done. Mark as not done**, and the question **Was this helpful?
 ## If something goes wrong
 - **Nothing is found.** Try a shorter or plainer word, such as "poster" or "captions". You can also open a learning path from the Help centre home.
 - **A step does not match your screen.** Your site may be newer than the guide. Tell your developer which guide it is.
-- **Print or save as PDF does nothing.** Your browser may block the print box. Allow it for this site and try again.
+- **Print or save as PDF does nothing.** Your browser may block the print box. Allow it for this site and try again. Still stuck? [What to send ARKDEV](help:T11)

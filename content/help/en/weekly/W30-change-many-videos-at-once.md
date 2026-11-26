@@ -47,4 +47,4 @@ A message says how many videos changed, with **Undo** for a few seconds. The lis
 
 ## If something goes wrong
 - **A bar button is grey.** Your role cannot do it, or you used Select all for every match. Select rows on this page instead.
-- **Some videos failed.** The result lists each one with a reason. Click Retry on the result.
+- **Some videos failed.** The result lists each one with a reason. Click Retry on the result. Still stuck? [What to send ARKDEV](help:T11)

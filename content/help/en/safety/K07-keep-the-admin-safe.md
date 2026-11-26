@@ -65,4 +65,4 @@ You have seen the password rules, the two step sign in card, the recovery codes 
 
 ## If something goes wrong
 - **I lost my phone.** Use one of your recovery codes to sign in. If you have none, ask a Super admin to reset your two step sign in.
-- **A device I do not know is in the list.** Press **Sign out** beside it, then change your password.
+- **A device I do not know is in the list.** Press **Sign out** beside it, then change your password. Still stuck? [What to send ARKDEV](help:T11)

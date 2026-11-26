@@ -56,4 +56,4 @@ Each [cue](glossary:cue) is one block of words with a start and an end time. You
 ## If something goes wrong
 - **The video preview does not play.** The page says the preview could not start. Timing still works, so you can keep editing the words.
 - **A cue is flagged Check this cue.** It is too long or too fast to read. Split it, or shorten the words.
-- **Your edit did not save.** Check your connection. The page tries again by itself and says when it has saved.
+- **Your edit did not save.** Check your connection. The page tries again by itself and says when it has saved. Still stuck? [What to send ARKDEV](help:T11)

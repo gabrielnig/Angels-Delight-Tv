@@ -45,4 +45,4 @@ A message says the video was saved. The tags show in the **Tags** box, separated
 
 ## If something goes wrong
 - **The tags do not save.** Check for a very long tag. Keep each tag short.
-- **A video shows in the wrong shelf.** Change its category in the same editor. Add the title, description and categories
+- **A video shows in the wrong shelf.** Change its category in the same editor. Add the title, description and categories Still stuck? [What to send ARKDEV](help:T11)

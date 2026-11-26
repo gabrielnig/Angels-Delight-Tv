@@ -60,4 +60,4 @@ You are back on the Dashboard. Each part tells you something:
 
 ## If something goes wrong
 - **A tile says it could not load a number.** Your videos are safe. Choose **Retry** on the tile.
-- **The Dashboard shows a card called Start here.** You have no videos yet. Follow its three steps, beginning with [Upload one video](help:D02).
+- **The Dashboard shows a card called Start here.** You have no videos yet. Follow its three steps, beginning with [Upload one video](help:D02). Still stuck? [What to send ARKDEV](help:T11)

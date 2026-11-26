@@ -52,4 +52,4 @@ The row says **Uploaded just now**. You did not have to choose the file again.
 ## If something goes wrong
 - **Retry fails again.** Check your connection. Try one file alone, not many. On mobile data, wait for a better signal.
 - **The row says Paused.** Choose **Resume** on the row.
-- **You do not want this file.** Choose **Cancel** or **Remove** on the row and start again with the right file.
+- **You do not want this file.** Choose **Cancel** or **Remove** on the row and start again with the right file. Still stuck? [What to send ARKDEV](help:T11)
