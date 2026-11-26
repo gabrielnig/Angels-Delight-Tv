@@ -41,7 +41,7 @@ const episode: Episode = {
       },
     },
     {
-      caption: 'Click **Retry** in the box to confirm.',
+      caption: 'Click **Retry 1** in the box to confirm.',
       run: async (s) => {
         await s.click(s.page.getByRole('dialog').getByRole('button', { name: /^Retry \d/ }));
         await s.pause(1200);
