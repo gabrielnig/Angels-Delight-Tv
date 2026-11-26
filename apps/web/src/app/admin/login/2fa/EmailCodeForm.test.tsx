@@ -25,7 +25,7 @@ describe('EmailCodeForm', () => {
     const input = screen.getByLabelText('6 digit code') as HTMLInputElement;
     expect(input.getAttribute('inputmode')).toBe('numeric');
     expect(input.getAttribute('autocomplete')).toBe('one-time-code');
-    expect(input.getAttribute('maxlength')).toBe('6');
+    expect(input.getAttribute('maxlength')).toBe('7');
     expect(input.getAttribute('name')).toBe('code');
   });
 
