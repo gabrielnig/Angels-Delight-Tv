@@ -36,6 +36,7 @@
     "launch:apply": "tsx packages/launch/src/cli/apply.ts",
     "secrets:generate": "tsx packages/launch/src/cli/secrets.ts",
     "content:import": "tsx packages/launch/src/cli/import.ts",
+    "kb:upload": "tsx packages/launch/src/cli/help-media.ts",
     "backup:run": "tsx packages/launch/src/cli/backup.ts",
     "backup:restore": "tsx packages/launch/src/cli/restore.ts",
     "dns:check": "tsx packages/launch/src/cli/dns-check.ts",
