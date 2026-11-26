@@ -47,4 +47,4 @@ The test gift shows **Succeeded** and a **Test** badge. The line under the refer
 
 ## If something goes wrong
 - **No gift appears after the test.** Wait a few minutes. Paystack tells us when it is paid. If it still has not appeared, ask the developer to check the connection.
-- **The gift shows **Pending**.** It has not been confirmed yet. Find gifts with the filters
+- **The gift shows **Pending**.** It has not been confirmed yet. Find gifts with the filters Still stuck? [What to send ARKDEV](help:T11)

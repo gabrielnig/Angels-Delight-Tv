@@ -55,4 +55,4 @@ The saved line moves from **Missing** to **In review**. Nothing is live until an
 ## If something goes wrong
 - **Save is greyed out.** The box is empty, unchanged, or a mark in curly brackets is missing or changed. Fix the red message under the box.
 - **I cannot find a line.** Type a word in the search box, or choose an area from the **Area** list.
-- **My import was refused.** The red table lists each rejected row and why. Fix those rows in the file and import again.
+- **My import was refused.** The red table lists each rejected row and why. Fix those rows in the file and import again. Still stuck? [What to send ARKDEV](help:T11)

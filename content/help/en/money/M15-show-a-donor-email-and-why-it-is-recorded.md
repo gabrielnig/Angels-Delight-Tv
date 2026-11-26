@@ -43,4 +43,4 @@ The full email appears in place of the button, with the line **This view was rec
 
 ## If something goes wrong
 - **The button says you cannot do this.** Only Admins and Super admins can show an email.
-- **You showed the wrong email.** The view is already recorded. Tell the Super admin if it matters.
+- **You showed the wrong email.** The view is already recorded. Tell the Super admin if it matters. Still stuck? [What to send ARKDEV](help:T11)

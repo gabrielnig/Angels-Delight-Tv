@@ -43,4 +43,4 @@ A succeeded gift says **Receipt queued** under its reference. A gift that is sti
 
 ## If something goes wrong
 - **A succeeded gift says **Receipt not queued**.** The email may have been refused. Ask the developer to check the mail log.
-- **A donor says no email arrived.** Ask them to check their spam folder. The reference on the gift helps the developer find it.
+- **A donor says no email arrived.** Ask them to check their spam folder. The reference on the gift helps the developer find it. Still stuck? [What to send ARKDEV](help:T11)

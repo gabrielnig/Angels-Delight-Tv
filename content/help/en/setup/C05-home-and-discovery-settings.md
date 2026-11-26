@@ -23,7 +23,7 @@ status: draft
 Set the timing and sound of the Home banner, then set the words search engines and share cards use. You end with both tabs saved.
 
 ## Before you start
-You need to be an Admin or a Super admin. To choose which videos appear in the banner, use **Home curation** instead, see Choose hero banners and preview clips (guide W05).
+You need to be an Admin or a Super admin. To choose which videos appear in the banner, use **Home curation** instead, see [Choose hero banners and preview clips](help:W05).
 
 ## Steps
 <!-- kb:steps C05 -->
@@ -52,9 +52,9 @@ You need to be an Admin or a Super admin. To choose which videos appear in the b
 The messages **Home settings saved. They apply within a minute.** and **Discovery settings saved. They apply within 5 minutes.** appear. The previews under **Share text** show how the site looks in a search result and when shared.
 
 > [!NOTE]
-> The other Home settings are **Slide waits for its clip**, **Hero loops before it stops**, **Hero preview clips**, **Preview clips on unknown connections**, **Slowest link that plays clips (Mbps)**, **Seconds per hero clip**, **Newest titles in the hero** and **View all label**. The Discovery tab also has **Social image link**, **Share text**, **Let search engines list the site** and the share options. Each is explained in the settings dictionary, guide R04. The storage notice is in Storage notice and sharing options (guide C15).
+> The other Home settings are **Slide waits for its clip**, **Hero loops before it stops**, **Hero preview clips**, **Preview clips on unknown connections**, **Slowest link that plays clips (Mbps)**, **Seconds per hero clip**, **Newest titles in the hero** and **View all label**. The Discovery tab also has **Social image link**, **Share text**, **Let search engines list the site** and the share options. Each is explained in the [settings dictionary](help:R04). The storage notice is in [Storage notice and sharing options](help:C15).
 
 ## If something goes wrong
 - **A number box shows a red message.** The number is outside the allowed range. Use the range in the hint, for example 5 to 60 seconds.
 - **The description will not save.** It is over 160 characters. Shorten it, then save.
-- **Viewers do not see the change yet.** Home settings apply within a minute and Discovery settings within 5 minutes. Wait, then reload the site.
+- **Viewers do not see the change yet.** Home settings apply within a minute and Discovery settings within 5 minutes. Wait, then reload the site. Still stuck? [What to send ARKDEV](help:T11)

@@ -46,4 +46,4 @@ A message says **Rating applied to every lesson.** Every lesson in the series sh
 
 ## If something goes wrong
 - **The Apply button is missing.** Save the rating first. The button appears once the saved rating matches the list.
-- **A lesson still shows another rating.** It may have been added after you applied. Apply again.
+- **A lesson still shows another rating.** It may have been added after you applied. Apply again. Still stuck? [What to send ARKDEV](help:T11)

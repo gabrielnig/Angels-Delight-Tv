@@ -65,4 +65,4 @@ You end on the [Dashboard](glossary:dashboard) again. You now know the areas you
 
 ## If something goes wrong
 - **A menu item is missing.** It may be for a higher role. Ask a Super admin which role you have.
-- **The page looks cut off.** Make the window wider, or open the side menu with the menu button at the top left.
+- **The page looks cut off.** Make the window wider, or open the side menu with the menu button at the top left. Still stuck? [What to send ARKDEV](help:T11)

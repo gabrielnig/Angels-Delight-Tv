@@ -64,4 +64,4 @@ The category list with your changes. A hidden category shows a **Hidden** badge.
 ## If something goes wrong
 - **The buttons are greyed out.** Your role cannot manage categories, or a change is still saving. Wait a moment, then try again.
 - **The box says the name is not allowed.** Names must not be empty or repeat another category. Choose a different name.
-- **The delete box says videos still use it.** Open each video and change its category, or choose **Hide** instead.
+- **The delete box says videos still use it.** Open each video and change its category, or choose **Hide** instead. Still stuck? [What to send ARKDEV](help:T11)

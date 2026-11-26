@@ -3,7 +3,7 @@ id: K10
 title: Take a video down quickly
 path: safety
 summary: Hide a video from viewers at once, move it to Trash and bring it back.
-role: admin
+role: editor
 roleNote: Editors can unpublish and restore. Only Admins can move a video to Trash.
 needs: [S04]
 related: [K02]
@@ -59,4 +59,4 @@ The video is no longer on the site. It shows in **Trash** with the days it has l
 
 ## If something goes wrong
 - **Move to Trash is grey.** Only Admins and Super admins can use it. Ask one of them, or use Unpublish.
-- **A restored video is not live.** Restored videos come back as drafts. Open it and choose **Publish**.
+- **A restored video is not live.** Restored videos come back as drafts. Open it and choose **Publish**. Still stuck? [What to send ARKDEV](help:T11)

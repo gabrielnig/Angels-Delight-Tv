@@ -47,4 +47,4 @@ The series page lists each group with its lessons in order. Each lesson shows it
 
 ## If something goes wrong
 - **You see Season and Episode, not Part and Lesson.** Your site uses the default words. [Choose the series names for your whole site](help:W21)
-- **A lesson is missing.** It may not be added yet. [Create a series and add episodes](help:W01)
+- **A lesson is missing.** It may not be added yet. [Create a series and add episodes](help:W01) Still stuck? [What to send ARKDEV](help:T11)

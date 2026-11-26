@@ -54,4 +54,4 @@ The language shows **Live** in the **State** column and its switch is on. Viewer
 ## If something goes wrong
 - **The switch is locked and there is no Publish anyway.** Your role is Admin, or the language is below 80 percent. Approve more lines, or ask a Super admin.
 - **Viewers do not see the picker.** Changes take about a minute. Reload the site, and check at least one language is **Live**.
-- **A language looks half translated.** Lines missing a translation show in English. Finish them in [Translate the site text](help:C09).
+- **A language looks half translated.** Lines missing a translation show in English. Finish them in [Translate the site text](help:C09). Still stuck? [What to send ARKDEV](help:T11)

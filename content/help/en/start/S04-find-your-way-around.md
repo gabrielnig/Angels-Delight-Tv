@@ -58,4 +58,4 @@ The top bar has a search box for videos, a **Help** link, the notice bell and yo
 ## If something goes wrong
 - **A menu item is missing.** It may be for a higher role. Ask a Super admin which role you have.
 - **The page looks cut off.** Make the window wider or turn your phone sideways.
-- **You cannot find the account menu.** It is the button with your name at the top right. On a phone it shows your initials.
+- **You cannot find the account menu.** It is the button with your name at the top right. On a phone it shows your initials. Still stuck? [What to send ARKDEV](help:T11)

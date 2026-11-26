@@ -58,4 +58,4 @@ The sponsor shows a green **Live** badge. The sponsors master switch must also b
 ## If something goes wrong
 - ****Approve to run** says to add a creative.** Add a message and tick at least one place first, then try again. [Add a sponsor and its images](help:M03)
 - **The sponsor is **Scheduled**, not **Live**.** The start day is in the future. It goes Live on that day.
-- ****Approve to run** is grey.** Only an Admin can approve. Ask an Admin to do this step.
+- ****Approve to run** is grey.** Only an Admin can approve. Ask an Admin to do this step. Still stuck? [What to send ARKDEV](help:T11)

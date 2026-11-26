@@ -48,4 +48,4 @@ The message **Features and limits saved. They apply within a minute.** appears f
 ## If something goes wrong
 - **The switch is greyed out.** Your role is Admin. Only a Super admin can change it.
 - **Guests still play videos.** Changes take up to a minute. Reload the site and try again in a private window.
-- **A guest video stops after a while.** The guest video link ended. The player renews it by itself. If it keeps stopping, raise **Guest video link minutes**.
+- **A guest video stops after a while.** The guest video link ended. The player renews it by itself. If it keeps stopping, raise **Guest video link minutes**. Still stuck? [What to send ARKDEV](help:T11)

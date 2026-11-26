@@ -58,4 +58,4 @@ The message **Poster saved** shows and you are back on the video screen. The but
 ## If something goes wrong
 - **The frames look dark or blurry.** Choose **Upload your own** and pick a clear picture instead.
 - **Save poster does nothing.** A red message may show in the page. Read it and fix that item. The crop must stay inside the picture.
-- **The old poster still shows.** The new crop is being applied to the files. Wait a moment and reload the page.
+- **The old poster still shows.** The new crop is being applied to the files. Wait a moment and reload the page. Still stuck? [What to send ARKDEV](help:T11)

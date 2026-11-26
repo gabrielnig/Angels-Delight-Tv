@@ -53,4 +53,4 @@ The preview table lists every video with its place, for example Part 3, Lesson 1
 
 ## If something goes wrong
 - **Add to series is grey.** Select rows on this page first. It cannot work on every match of a search. Find videos and change many at once
-- **A red message says a number is taken.** Choose another **Part** or start at a later lesson. [Fix gaps and duplicate numbers](help:W25)
+- **A red message says a number is taken.** Choose another **Part** or start at a later lesson. [Fix gaps and duplicate numbers](help:W25) Still stuck? [What to send ARKDEV](help:T11)

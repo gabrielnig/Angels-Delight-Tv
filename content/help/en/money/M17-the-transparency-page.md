@@ -41,4 +41,4 @@ The **Donations** screen keeps donor names private: names of private donors show
 
 ## If something goes wrong
 - **The percentages are refused.** They must add up to exactly 100.
-- **The page is not found.** It is off. Ask the developer to switch it on.
+- **The page is not found.** It is off. Ask the developer to switch it on. Still stuck? [What to send ARKDEV](help:T11)

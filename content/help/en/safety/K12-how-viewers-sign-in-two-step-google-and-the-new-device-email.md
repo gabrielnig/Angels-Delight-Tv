@@ -58,4 +58,4 @@ You have found each switch and box and know who sets it. This guide changes noth
 
 ## If something goes wrong
 - **Continue with Google is missing on the sign in page.** The keys are not set on the server, or the switch is off. Ask the developer to check the keys.
-- **A viewer is locked out.** They can try again after the lockout minutes. If they lost their phone, see [Reset a viewer's two step sign in and delete an account on request](help:K05).
+- **A viewer is locked out.** They can try again after the lockout minutes. If they lost their phone, see [Reset a viewer's two step sign in and delete an account on request](help:K05). Still stuck? [What to send ARKDEV](help:T11)

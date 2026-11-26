@@ -4,6 +4,7 @@ title: The site looks wrong after a theme change
 path: troubleshooting
 summary: Check colours, then go back to an earlier look or the default.
 role: admin
+related: [T07]
 readMinutes: 2
 watchSeconds: 90
 video:

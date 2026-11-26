@@ -66,4 +66,4 @@ Four tiles, a line of **Views each day**, the **Top titles** table and three car
 ## If something goes wrong
 - **The page says "No views in this period."** Choose **Last 90 days**. If it is still empty, no one has watched yet, or the dates are before your first video.
 - **A tile says "No data for the period before".** The range you picked starts before there is data. Pick a shorter range or wait a few weeks.
-- **The page says "We could not load analytics."** Nothing was changed. Wait a minute and try again. If it keeps failing, send the reference code on the screen to the developer.
+- **The page says "We could not load analytics."** Nothing was changed. Wait a minute and try again. If it keeps failing, send the reference code on the screen to the developer. Still stuck? [What to send ARKDEV](help:T11)

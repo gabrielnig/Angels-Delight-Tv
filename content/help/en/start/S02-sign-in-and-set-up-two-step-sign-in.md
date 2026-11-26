@@ -5,7 +5,7 @@ path: start
 summary: Sign in with your password and a 6 digit code from your phone.
 role: editor
 needs: []
-related: [S04, S05]
+related: [S04, S05, S03]
 readMinutes: 3
 watchSeconds: 62
 video:
@@ -59,4 +59,4 @@ The **Dashboard** opens with your name at the top right. From now on you sign in
 ## If something goes wrong
 - **The code is not accepted.** Wait for a new code in your app and type that one. Check that your phone clock is correct.
 - **The message says the sign in failed.** The message is the same for a wrong email and a wrong password, on purpose. Check both and try again.
-- **You lost your phone.** Use a recovery code on the code page. If you have none, ask a Super admin to reset your two step sign in.
+- **You lost your phone.** Use a recovery code on the code page. If you have none, ask a Super admin to reset your two step sign in. Still stuck? [What to send ARKDEV](help:T11)

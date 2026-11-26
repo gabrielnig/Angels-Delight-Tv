@@ -41,4 +41,4 @@ The list is empty and says **No gifts match.** because no monthly gift can exist
 
 ## If something goes wrong
 - **A donor asks to give every month.** Ask them to give once for now, or to use bank transfer. [Bank transfer instructions](help:M16)
-- **A monthly gift appears in the list.** Tell the developer. This should not happen yet.
+- **A monthly gift appears in the list.** Tell the developer. This should not happen yet. Still stuck? [What to send ARKDEV](help:T11)

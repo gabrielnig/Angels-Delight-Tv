@@ -57,4 +57,4 @@ After each click a short message appears at the bottom of the screen: **Sponsor 
 
 ## If something goes wrong
 - **Delete says the sponsor has report numbers.** That is the rule. Choose **Archive** instead. [Read a sponsor report](help:M06)
-- ****Archive** and **Delete sponsor** are grey.** Only an Admin can use them.
+- ****Archive** and **Delete sponsor** are grey.** Only an Admin can use them. Still stuck? [What to send ARKDEV](help:T11)

@@ -47,4 +47,4 @@ The message **Captions setting saved.** appears. With **Off**, the CC button is 
 ## If something goes wrong
 - **The choices are greyed out.** Your role is Editor. Only an Admin can change this.
 - **Save captions setting is greyed out.** You chose **Off** but have not typed a reason. Type one.
-- **Captions are on but viewers see none.** The captions may not be approved yet. Approve them first. [Review and approve captions](help:D07)
+- **Captions are on but viewers see none.** The captions may not be approved yet. Approve them first. [Review and approve captions](help:D07) Still stuck? [What to send ARKDEV](help:T11)

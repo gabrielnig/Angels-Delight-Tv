@@ -2191,3 +2191,9 @@ Reversible: yes. The id is optional and old events stay valid; no migration.
 - Options: Record against real Postgres (not proven end to end, one staff account); hide the money guides until the screens exist; write the guides as if the settings screen existed (untrue).
 - Why: Keeps recordings repeatable and honest, fixes a real broken page, and does not promise the owner controls the product does not have.
 - Reversible: Yes.
+
+## D-396 Mixed role guides keep the lowest role and the fact checker runs them as the highest role they need, and procedural guides link to T11 (integration pass, M50)
+- Decision: (1) `help-coverage.test.ts` requires front matter `role` to equal the lowest role among a guide's actions, so K10, C10 and C14 stay at their lower role with the higher parts in `roleNote`. The fact checker follows every step, so `FACT_ROLE_OVERRIDES` in `scripts/kb-recorder/fact-roles.ts` runs those three as admin, super admin and super admin. An explicit `--role` still wins. (2) The checker waits up to 10 seconds for a control and re-checks a tick after the list settles, which fixes slow fields (M03 Headline) and bulk selection (D10). (3) Every procedural guide (start, daily, weekly, setup, money, safety) ends its last "If something goes wrong" item with a link to T11, plain "(guide X)" text became `help:` links, and S02 and S03, T07 and T08 are related.
+- Options: Raise the front matter role (breaks the lowest role rule and hides the guide from editors); split mixed guides in two; leave the fact checker at the front matter role (fails on steps the role cannot do).
+- Why: Keeps the role rule true for readers and still proves every step can be followed.
+- Reversible: Yes.

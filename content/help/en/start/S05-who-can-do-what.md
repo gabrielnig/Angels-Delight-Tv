@@ -55,4 +55,4 @@ You are reading the guide **Roles and permissions**. It lists each task and the 
 
 ## If something goes wrong
 - **A screen is missing from the side menu.** It is for a higher role. Ask a Super admin to change your role.
-- **You are not sure which role you have.** Open the account menu at the top right. The role is shown there, and on the **My account** screen.
+- **You are not sure which role you have.** Open the account menu at the top right. The role is shown there, and on the **My account** screen. Still stuck? [What to send ARKDEV](help:T11)

@@ -47,4 +47,4 @@ A result lists each video approved and any that were skipped with a reason.
 
 ## If something goes wrong
 - **The Approve button says Approve 0.** None of the ticked rows are ready to approve.
-- **You are an Editor.** Ask an Admin, or approve one video at a time. [Review and approve captions](help:D07)
+- **You are an Editor.** Ask an Admin, or approve one video at a time. [Review and approve captions](help:D07) Still stuck? [What to send ARKDEV](help:T11)

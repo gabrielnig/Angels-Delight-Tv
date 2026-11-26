@@ -56,4 +56,4 @@ The **Versions** list shows a new version at the top marked **(live)**. On the *
 ## If something goes wrong
 - **Save new version is greyed out.** You have not edited the page yet. Change the text first.
 - **My formatting disappeared.** The editor keeps only headings, paragraphs, lists and links. Use those instead.
-- **The checklist still shows placeholder text.** The page still contains the sample words. Replace all of them, then save a new version.
+- **The checklist still shows placeholder text.** The page still contains the sample words. Replace all of them, then save a new version. Still stuck? [What to send ARKDEV](help:T11)

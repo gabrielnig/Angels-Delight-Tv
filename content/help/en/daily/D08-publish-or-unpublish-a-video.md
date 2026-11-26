@@ -58,4 +58,4 @@ The video shows the badge **Published** and viewers can find it. After you unpub
 ## If something goes wrong
 - **The Publish button is grey.** The video is still getting ready, or it has unsaved changes. Wait, or choose **Save changes** first.
 - **The box says steps are not finished.** Open the item in **Before you publish** that is not done and finish it. Captions need approval first.
-- **Viewers still see the video after you unpublish.** Ask them to reload the page. It can take a moment to disappear.
+- **Viewers still see the video after you unpublish.** Ask them to reload the page. It can take a moment to disappear. Still stuck? [What to send ARKDEV](help:T11)

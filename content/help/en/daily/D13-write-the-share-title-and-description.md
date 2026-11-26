@@ -38,4 +38,4 @@ The message **Share card saved. Chat apps pick it up the next time the link is s
 
 ## If something goes wrong
 - **The chat app still shows the old words.** Apps keep previews for days. Share the link again with `?x=1` added, or use a debugger. [Check how links preview](help:C17)
-- **The text will not save.** It may be too long or hold a dash, emoji or markup. Shorten it and try again.
+- **The text will not save.** It may be too long or hold a dash, emoji or markup. Shorten it and try again. Still stuck? [What to send ARKDEV](help:T11)

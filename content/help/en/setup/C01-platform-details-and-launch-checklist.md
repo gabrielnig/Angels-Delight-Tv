@@ -48,9 +48,9 @@ You need to be an Admin or a Super admin. Have your tagline, support email and d
 The message **Settings saved.** appears. On the **Launch checklist**, the tagline, support email and domain lines say **Done**. The **Terms page** and **Privacy page** lines stay open until you edit those pages in [Edit the legal and About pages](help:C06).
 
 > [!TIP]
-> The other boxes on this tab are the **Platform name**, **Footer text**, **Default language** and **Social links**. Each one is explained in the settings dictionary (guide R04).
+> The other boxes on this tab are the **Platform name**, **Footer text**, **Default language** and **Social links**. Each one is explained in the [settings dictionary](help:R04).
 
 ## If something goes wrong
 - **The Domain box shows a red message.** Type only the web address, for example lessons.example.org, without https://.
 - **Save changes is greyed out.** You have not changed anything yet. Edit a box first.
-- **You cannot see Site settings in the menu.** Your role is Editor. Ask an Admin to make the change.
+- **You cannot see Site settings in the menu.** Your role is Editor. Ask an Admin to make the change. Still stuck? [What to send ARKDEV](help:T11)

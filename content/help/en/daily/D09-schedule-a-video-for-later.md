@@ -53,4 +53,4 @@ The message **is scheduled** shows. On the video screen the button says **Change
 ## If something goes wrong
 - **The button says Pick a time in the future.** The time you chose has passed. The box shows the time now in Lagos. Pick a later time.
 - **The Publish button is grey.** The video is still getting ready, or it has unsaved changes. Wait, or choose **Save changes**.
-- **You want it live now.** Choose **Publish** and **Publish now** instead. See [Publish or unpublish a video](help:D08).
+- **You want it live now.** Choose **Publish** and **Publish now** instead. See [Publish or unpublish a video](help:D08). Still stuck? [What to send ARKDEV](help:T11)

@@ -48,4 +48,4 @@ The message **Discovery settings saved. They apply within 5 minutes.** appears. 
 ## If something goes wrong
 - **Up or Down is greyed out.** The row is already first or last. Move the other rows instead.
 - **The order did not change on the site.** Changes apply within 5 minutes. Reload the page after that wait.
-- **An option is missing from the Share sheet.** Its switch is off, or the device cannot use it. [Share sheet for viewers](help:R14)
+- **An option is missing from the Share sheet.** Its switch is off, or the device cannot use it. [Share sheet for viewers](help:R14) Still stuck? [What to send ARKDEV](help:T11)

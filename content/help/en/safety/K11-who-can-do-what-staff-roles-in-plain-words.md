@@ -70,4 +70,4 @@ You have found the table and read the rows that matter most: Trash, viewer accou
 
 ## If something goes wrong
 - **Roles and invites is missing from the menu.** Only Super admins see it. Ask a Super admin.
-- **The Role list is grey.** You cannot change your own role, and the only Super admin is locked. Make another person a Super admin first.
+- **The Role list is grey.** You cannot change your own role, and the only Super admin is locked. Make another person a Super admin first. Still stuck? [What to send ARKDEV](help:T11)

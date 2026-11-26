@@ -47,4 +47,4 @@ The sponsor screen lists each message with the places it is ticked for. The plac
 
 ## If something goes wrong
 - **A sponsor does not show on the site.** Check the master switch is on, the sponsor is **Live**, a place is ticked and the dates include today. [Choose where a sponsor shows](help:M04)
-- **A viewer complains about a sponsor.** Pause it at once. [Pause, archive or delete a sponsor](help:M05)
+- **A viewer complains about a sponsor.** Pause it at once. [Pause, archive or delete a sponsor](help:M05) Still stuck? [What to send ARKDEV](help:T11)

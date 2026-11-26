@@ -49,4 +49,4 @@ A message says **Episode added.** The video now shows under its group with a num
 
 ## If something goes wrong
 - **The Create series button does nothing.** The title may be empty. Type a title and try again.
-- **The video is not in the Add a video list.** Only videos that are not in a series are listed. [Remove a series without losing videos](help:W28)
+- **The video is not in the Add a video list.** Only videos that are not in a series are listed. [Remove a series without losing videos](help:W28) Still stuck? [What to send ARKDEV](help:T11)

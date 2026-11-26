@@ -42,4 +42,4 @@ The **Donations** screen opens, and a gift made on the Donate page shows in the 
 
 ## If something goes wrong
 - **The Donate page shows a not found message.** Donations are switched off or the server keys are missing. [Set up donations](help:M07)
-- **A preset amount is wrong.** Send the developer the amounts in naira. They are stored in kobo, so ₦500 is 50000.
+- **A preset amount is wrong.** Send the developer the amounts in naira. They are stored in kobo, so ₦500 is 50000. Still stuck? [What to send ARKDEV](help:T11)

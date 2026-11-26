@@ -45,4 +45,4 @@ A message says **Numbers saved.** The **Check the numbers** warning is gone.
 
 ## If something goes wrong
 - **The warning stays.** Another lesson still shares a number. Read the warning again and fix the next one.
-- **You changed the wrong lesson.** Type its old number back and save again. [Reorder episodes and seasons](help:W02)
+- **You changed the wrong lesson.** Type its old number back and save again. [Reorder episodes and seasons](help:W02) Still stuck? [What to send ARKDEV](help:T11)

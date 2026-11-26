@@ -7,6 +7,7 @@ import { resetDemo } from './demo/client';
 import { assertAllowedOrigin } from './demo/origin-guard';
 import { parseArticle, roleAllows, startsSignedOut } from './fact-check';
 import { runSteps, type StepFailureReport, type StepResult } from './fact-run';
+import { FACT_ROLE_OVERRIDES } from './fact-roles';
 import { signInAs } from './helpers';
 import { overlayInitScript } from './overlay';
 import { PROFILES } from './profiles';
@@ -32,7 +33,7 @@ export async function factCheckArticle(
 ): Promise<FactReport> {
   assertAllowedOrigin(o.baseURL);
   const article = parseArticle(md);
-  const role = o.role ?? article.role;
+  const role = o.role ?? FACT_ROLE_OVERRIDES[article.id] ?? article.role;
   if (!roleAllows(role, article.role)) {
     return {
       id: article.id,

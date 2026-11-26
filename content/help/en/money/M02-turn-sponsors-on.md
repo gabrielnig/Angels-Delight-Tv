@@ -52,4 +52,4 @@ The switch shows **On** and the note beside it says **Sponsors are on.** Live sp
 
 ## If something goes wrong
 - **The password is not accepted.** Check the password you use to sign in to the admin area, then try again. If you forgot it, ask a Super admin to help you.
-- **The switch is grey and will not move.** Your role is below Admin. Ask an Admin to switch it. [How sponsors and donations work](help:M01)
+- **The switch is grey and will not move.** Your role is below Admin. Ask an Admin to switch it. [How sponsors and donations work](help:M01) Still stuck? [What to send ARKDEV](help:T11)

@@ -44,4 +44,4 @@ The **Donations** screen says **Currencies are never added together.** and the *
 
 ## If something goes wrong
 - **A donor asks for a tax receipt.** Do not promise one. Ask your professional what is allowed first.
-- **The totals do not match your bank.** Fees, test gifts and bank transfers explain most gaps. [Test mode and live mode](help:M11)
+- **The totals do not match your bank.** Fees, test gifts and bank transfers explain most gaps. [Test mode and live mode](help:M11) Still stuck? [What to send ARKDEV](help:T11)

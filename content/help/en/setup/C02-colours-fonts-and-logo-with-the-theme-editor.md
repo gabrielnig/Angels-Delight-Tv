@@ -60,4 +60,4 @@ The message **Theme published.** appears. Viewers see the new colours, font and 
 ## If something goes wrong
 - **A colour will not save.** The red message says the colour cannot be read. Click the suggested colour in the message, or type a darker colour.
 - **Publish theme is greyed out.** You have no changes yet, or a colour box has a typing mistake. Fix the box, then try again.
-- **The site looks wrong after publishing.** Go back to the earlier look in [Go back to an earlier theme](help:C03).
+- **The site looks wrong after publishing.** Go back to the earlier look in [Go back to an earlier theme](help:C03). Still stuck? [What to send ARKDEV](help:T11)

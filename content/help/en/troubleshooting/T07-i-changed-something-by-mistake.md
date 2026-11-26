@@ -5,6 +5,7 @@ path: troubleshooting
 summary: Undo a mistake: restore a video from Trash or put an earlier Home back.
 role: editor
 roleNote: Editors can restore videos and Home. Admins can also restore an earlier Theme.
+related: [T08]
 readMinutes: 3
 watchSeconds: 90
 video:

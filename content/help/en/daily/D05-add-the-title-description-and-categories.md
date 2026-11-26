@@ -65,4 +65,4 @@ The message **Changes saved** appears. The card **How viewers see it** shows you
 ## If something goes wrong
 - **Save changes is grey.** Nothing has changed yet. Edit a box and the button turns on.
 - **A red message sits under a box.** Read it and fix that box. The page keeps your other changes.
-- **You left the page by mistake.** Choose **Discard changes** to go back to the last saved version, or open the video again from Videos.
+- **You left the page by mistake.** Choose **Discard changes** to go back to the last saved version, or open the video again from Videos. Still stuck? [What to send ARKDEV](help:T11)

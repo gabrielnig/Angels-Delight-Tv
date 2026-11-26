@@ -68,4 +68,4 @@ Each action shows a message such as **Signed out everywhere.** or **Account susp
 
 ## If something goes wrong
 - **Sign out everywhere is grey.** No device is signed in, so there is nothing to end. The account page says how many devices.
-- **I cannot find the person.** Search by email or by profile name, and set **Status** to **All**. Check the spelling.
+- **I cannot find the person.** Search by email or by profile name, and set **Status** to **All**. Check the spelling. Still stuck? [What to send ARKDEV](help:T11)

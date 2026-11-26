@@ -49,4 +49,4 @@ The preview page shows the notice **Only signed in staff can see this preview**,
 
 ## If something goes wrong
 - **The player does not start.** Check that the video has finished getting ready. Look at the **Encoding** screen. See [Check the Dashboard](help:D01).
-- **You see a sign in page.** Your session ended. Sign in again and open the preview again.
+- **You see a sign in page.** Your session ended. Sign in again and open the preview again. Still stuck? [What to send ARKDEV](help:T11)

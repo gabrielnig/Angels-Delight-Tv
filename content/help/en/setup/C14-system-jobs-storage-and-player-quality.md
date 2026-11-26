@@ -3,7 +3,7 @@ id: C14
 title: "System: jobs, storage and player quality"
 path: setup
 summary: Check failed jobs, storage use and how well videos play for viewers.
-role: super_admin
+role: admin
 roleNote: Admins can open Storage and Player quality. Only Super admins see Jobs
 needs: [S04]
 related: [C11, C01]
@@ -55,4 +55,4 @@ You can read the failed jobs, the storage used against your budget, and the star
 ## If something goes wrong
 - **I cannot see the Jobs tab.** Your role is Admin. Ask a Super admin to check jobs.
 - **Storage says it is over budget.** Delete files you no longer need in Trash and failed encodes, or ask your developer to raise the budget.
-- **Start time looks slow.** Send the numbers and the day to your developer. Viewers on slow links may see this even when the site is healthy.
+- **Start time looks slow.** Send the numbers and the day to your developer. Viewers on slow links may see this even when the site is healthy. Still stuck? [What to send ARKDEV](help:T11)

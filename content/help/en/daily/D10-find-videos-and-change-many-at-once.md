@@ -53,4 +53,4 @@ A bar shows how many videos you changed. For a short time it offers **Undo**. Th
 ## If something goes wrong
 - **A video was left out.** The result lists the videos that could not be changed and why. Choose **Retry** on the list of failed ones.
 - **The bar says only this page is selected.** Bulk actions work on the rows shown. Change the filter to reach the rest.
-- **The Undo button is gone.** It stays for a short time only. Change the category by hand from each video.
+- **The Undo button is gone.** It stays for a short time only. Change the category by hand from each video. Still stuck? [What to send ARKDEV](help:T11)

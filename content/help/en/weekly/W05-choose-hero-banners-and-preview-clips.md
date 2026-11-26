@@ -54,4 +54,4 @@ The message **Home page published.** appears. The hero list shows your title, an
 ## If something goes wrong
 - **The title says Not published, skipped.** The video is not published, so the hero skips it. Publish the video first.
 - **Generate previews for all videos is greyed out.** Your role is Editor. Ask an Admin to press it.
-- **No clip shows yet.** Clips take about a minute each, and viewers with Data saver on or a slow connection see a photo instead.
+- **No clip shows yet.** Clips take about a minute each, and viewers with Data saver on or a slow connection see a photo instead. Still stuck? [What to send ARKDEV](help:T11)

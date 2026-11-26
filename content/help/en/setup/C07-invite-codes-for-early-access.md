@@ -58,4 +58,4 @@ The **Codes** table lists the code with its label, uses, expiry date and a statu
 ## If something goes wrong
 - **The tab says sign up is open.** Visitors do not need a code. Ask a Super admin to turn off **Open sign up**.
 - **Create code shows a red message.** Check that **Uses allowed** is a whole number above zero and the date is in the future.
-- **I lost the code.** The full code is never shown again. Revoke the old one and create a new one.
+- **I lost the code.** The full code is never shown again. Revoke the old one and create a new one. Still stuck? [What to send ARKDEV](help:T11)

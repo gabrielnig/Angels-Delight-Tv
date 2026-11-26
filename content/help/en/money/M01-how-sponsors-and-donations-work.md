@@ -49,4 +49,4 @@ The **Sponsors** screen shows a switch that is off, then the list of sponsors wi
 
 ## If something goes wrong
 - **You cannot see **Donations** in the side menu.** Only Admins and Super admins can. Ask an Admin to look, or read [Roles and permissions](help:R02).
-- **The switch on **Sponsors** is grey.** Only an Admin can change it. [Turn sponsors on](help:M02)
+- **The switch on **Sponsors** is grey.** Only an Admin can change it. [Turn sponsors on](help:M02) Still stuck? [What to send ARKDEV](help:T11)

@@ -57,4 +57,4 @@ Every file has its own row and its own progress bar. When a row is done, the not
 ## If something goes wrong
 - **One file fails and the others carry on.** Each file is its own lane. Choose **Retry** on the failed row. See [Fix an upload that stopped or failed](help:D04).
 - **A file is not added.** It is not an MP4, MOV or MKV file, or it is larger than the limit shown on the page.
-- **Everything goes slowly.** Choose **1 at a time** in the **Files at once** list. Many files at once can slow a weak connection.
+- **Everything goes slowly.** Choose **1 at a time** in the **Files at once** list. Many files at once can slow a weak connection. Still stuck? [What to send ARKDEV](help:T11)

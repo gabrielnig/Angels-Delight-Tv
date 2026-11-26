@@ -58,4 +58,4 @@ The message **Home page published.** appears and the bar at the top says **Publi
 ## If something goes wrong
 - **Publish changes is greyed out.** There is nothing new to publish, or a yellow message names a problem to fix first. Read the message above the lists.
 - **A section does not show for viewers.** It may be hidden, or it has fewer titles than its minimum. Check the **Show** switch and **Minimum titles to show**.
-- **I cannot add another section.** Home holds at most 12 sections. Hide or remove one first.
+- **I cannot add another section.** Home holds at most 12 sections. Hide or remove one first. Still stuck? [What to send ARKDEV](help:T11)

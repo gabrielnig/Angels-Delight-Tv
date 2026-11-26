@@ -47,4 +47,4 @@ A message says **Title saved.** and later **Numbers saved.** The moved lesson no
 
 ## If something goes wrong
 - **A warning says Check the numbers.** Two lessons share a number in the group. [Fix gaps and duplicate numbers](help:W25)
-- **The title does not save.** It can be up to 60 characters. Shorten it and click the save button again.
+- **The title does not save.** It can be up to 60 characters. Shorten it and click the save button again. Still stuck? [What to send ARKDEV](help:T11)

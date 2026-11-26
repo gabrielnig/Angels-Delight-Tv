@@ -55,4 +55,4 @@ The video is in the queue again. The page updates by itself, so you do not need 
 ## If something goes wrong
 - **A video stays on Processing a long time.** Large files take longer. Wait, and look again after a while.
 - **Retry fails again.** Read the reason on the row. If it says the file could not be read, upload the file again from [Upload one video](help:D02).
-- **The page says Live updates paused.** Choose **Resume updates**. Updates also pause when you are offline.
+- **The page says Live updates paused.** Choose **Resume updates**. Updates also pause when you are offline. Still stuck? [What to send ARKDEV](help:T11)

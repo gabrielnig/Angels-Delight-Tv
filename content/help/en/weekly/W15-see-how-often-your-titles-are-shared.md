@@ -47,4 +47,4 @@ A card called **Shares by channel**. It lists each share option with a number, s
 
 ## If something goes wrong
 - **The card says "Nothing was shared in this period."** Choose a longer range at the top of the page. A new video may not have been shared yet.
-- **The counts look low.** Viewers who share with the device menu show under **Device share menu**, and some people copy the address bar instead. [Read Analytics](help:W10)
+- **The counts look low.** Viewers who share with the device menu show under **Device share menu**, and some people copy the address bar instead. [Read Analytics](help:W10) Still stuck? [What to send ARKDEV](help:T11)

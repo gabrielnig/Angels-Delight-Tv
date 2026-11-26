@@ -42,4 +42,4 @@ Each file has its own row and progress bar. The shared details show on every row
 
 ## If something goes wrong
 - **A file will not start.** Check the type is MP4, MOV or MKV. An upload keeps failing
-- **You set the wrong rating.** Use [Change many videos at once](help:W30) to fix it.
+- **You set the wrong rating.** Use [Change many videos at once](help:W30) to fix it. Still stuck? [What to send ARKDEV](help:T11)

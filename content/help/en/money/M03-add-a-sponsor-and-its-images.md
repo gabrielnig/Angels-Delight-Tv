@@ -61,4 +61,4 @@ The new sponsor opens on its own screen with the **Draft** badge. Your message a
 
 ## If something goes wrong
 - **A box shows a red message.** Read it and fix that box. The sponsor link must be the sponsor's own website, not this site. [Where a sponsor shows](help:M04)
-- **The picture is refused.** Use a JPG or PNG under 2 MB and at least the size in [Sponsor pictures](help:M18).
+- **The picture is refused.** Use a JPG or PNG under 2 MB and at least the size in [Sponsor pictures](help:M18). Still stuck? [What to send ARKDEV](help:T11)

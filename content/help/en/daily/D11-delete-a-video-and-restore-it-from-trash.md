@@ -56,4 +56,4 @@ The video is back in [Videos](/admin/videos) as a draft. Publish it again when y
 ## If something goes wrong
 - **Move to Trash is grey.** Only an Admin can move a video to Trash. Ask an Admin.
 - **The video is not in Trash.** It may have been deleted for good after 30 days. Upload it again if you still have the file.
-- **You restored the wrong video.** Choose **Undo** in the message, or move the video to Trash again.
+- **You restored the wrong video.** Choose **Undo** in the message, or move the video to Trash again. Still stuck? [What to send ARKDEV](help:T11)
