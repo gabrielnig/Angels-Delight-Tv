@@ -7,7 +7,7 @@ role: editor
 needs: [W10]
 related: [W10, W11, C16]
 readMinutes: 2
-watchSeconds: 38
+watchSeconds: 66
 video:
   id: VW15
 actions: [analytics.view]

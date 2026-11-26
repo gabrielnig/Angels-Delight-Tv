@@ -7,7 +7,7 @@ role: admin
 needs: [M08]
 related: [M08]
 readMinutes: 3
-watchSeconds: 100
+watchSeconds: 35
 video:
   id: VM13
 screens: ["/admin/donations/[id]"]

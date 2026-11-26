@@ -5,7 +5,7 @@ path: troubleshooting
 summary: Find why a lesson is missing from a series and fix it.
 role: editor
 readMinutes: 3
-watchSeconds: 80
+watchSeconds: 81
 video:
   id: VT14
 screens: ["/admin/series", "/admin/series/[id]"]

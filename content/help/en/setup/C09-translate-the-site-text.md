@@ -7,7 +7,7 @@ role: editor
 needs: [S04]
 related: [C08, W08]
 readMinutes: 4
-watchSeconds: 120
+watchSeconds: 73
 video:
   id: VC09
 screens: ["/admin/languages/[locale]"]

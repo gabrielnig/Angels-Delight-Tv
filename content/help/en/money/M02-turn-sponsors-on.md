@@ -7,7 +7,7 @@ role: admin
 needs: [M01]
 related: [M03]
 readMinutes: 2
-watchSeconds: 120
+watchSeconds: 52
 video:
   id: VM02
 screens: ["/admin/sponsors"]

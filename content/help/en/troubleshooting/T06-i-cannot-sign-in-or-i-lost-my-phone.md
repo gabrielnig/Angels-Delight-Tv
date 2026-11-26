@@ -5,7 +5,7 @@ path: troubleshooting
 summary: Work out why sign in fails and what to do if your codes are lost.
 role: editor
 readMinutes: 3
-watchSeconds: 84
+watchSeconds: 66
 video:
   id: VT06
   phone: true

@@ -7,7 +7,7 @@ role: admin
 needs: [C01]
 related: [C06, C04]
 readMinutes: 5
-watchSeconds: 110
+watchSeconds: 85
 video:
   id: VC05
 screens: ["/admin/site-settings"]

@@ -8,7 +8,7 @@ roleNote: Editors can start and review a translation, only Admins can publish it
 needs: [D07]
 related: [D07, W09, C08]
 readMinutes: 4
-watchSeconds: 130
+watchSeconds: 67
 video:
   id: VW08
 actions: [caption.translate, caption.publish_language]

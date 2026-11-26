@@ -8,7 +8,7 @@ roleNote: Editors can pause. Only Admins can start again, archive or delete.
 needs: [M03]
 related: [M04, M06]
 readMinutes: 2
-watchSeconds: 120
+watchSeconds: 61
 video:
   id: VM05
 screens: ["/admin/sponsors/[id]"]

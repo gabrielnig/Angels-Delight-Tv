@@ -8,7 +8,7 @@ roleNote: Editors can pick places and dates. Only Admins can approve a sponsor t
 needs: [M03]
 related: [M03, M05]
 readMinutes: 3
-watchSeconds: 180
+watchSeconds: 49
 video:
   id: VM04
 screens: ["/admin/sponsors/[id]"]

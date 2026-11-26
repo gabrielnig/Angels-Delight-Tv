@@ -7,7 +7,7 @@ role: admin
 needs: [C01]
 related: [C01, C05, C07]
 readMinutes: 5
-watchSeconds: 110
+watchSeconds: 75
 video:
   id: VC02
 screens: ["/admin/theme"]

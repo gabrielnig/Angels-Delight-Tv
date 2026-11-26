@@ -7,7 +7,7 @@ role: editor
 needs: []
 related: [S04, S05, S03]
 readMinutes: 3
-watchSeconds: 62
+watchSeconds: 84
 video:
   id: VS02
   phone: true

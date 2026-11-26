@@ -6,7 +6,7 @@ summary: Find a failed email on System, read why and try it again.
 role: super_admin
 roleNote: Only a Super admin can see the Jobs tab on System.
 readMinutes: 3
-watchSeconds: 80
+watchSeconds: 78
 video:
   id: VT15
 screens: ["/admin/system"]
