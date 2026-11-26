@@ -7,7 +7,7 @@ role: admin
 needs: [W20]
 related: [W22, W01]
 readMinutes: 3
-watchSeconds: 75
+watchSeconds: 28
 video:
   id: VW21
 screens: ["/admin/site-settings"]

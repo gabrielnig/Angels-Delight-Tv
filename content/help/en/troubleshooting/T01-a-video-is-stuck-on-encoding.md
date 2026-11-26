@@ -7,7 +7,7 @@ role: editor
 related: [D12, C14, T15]
 needs: [D12]
 readMinutes: 3
-watchSeconds: 90
+watchSeconds: 81
 video:
   id: VT01
   phone: true

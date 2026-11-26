@@ -5,7 +5,7 @@ path: troubleshooting
 summary: Read the storage warning and free space safely.
 role: admin
 readMinutes: 3
-watchSeconds: 90
+watchSeconds: 73
 video:
   id: VT10
 screens: ["/admin/system"]

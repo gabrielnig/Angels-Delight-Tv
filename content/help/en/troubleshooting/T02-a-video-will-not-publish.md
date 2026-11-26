@@ -5,7 +5,7 @@ path: troubleshooting
 summary: Find what is missing and fix it so you can publish.
 role: editor
 readMinutes: 3
-watchSeconds: 90
+watchSeconds: 65
 video:
   id: VT02
 screens: ["/admin/videos/[id]"]

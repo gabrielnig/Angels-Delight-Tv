@@ -6,7 +6,7 @@ summary: Choose the email or link that the Message ARKDEV button opens.
 role: admin
 related: [R10]
 readMinutes: 2
-watchSeconds: 80
+watchSeconds: 62
 video:
   id: VR13
 screens: ["/admin/site-settings"]

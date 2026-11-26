@@ -5,7 +5,7 @@ path: troubleshooting
 summary: Read the player quality figures to find out what viewers see.
 role: admin
 readMinutes: 3
-watchSeconds: 90
+watchSeconds: 71
 video:
   id: VT16
 screens: ["/admin/system"]
