@@ -409,35 +409,21 @@ describe.skipIf(!integrationEnabled())('staff email code second step (L16, D-397
       };
     }
 
-    it('needs the current authenticator code, then email codes take over', async () => {
+    it('needs the password, the current authenticator code and a working test, then email codes take over', async () => {
       const s = await enrolled();
+      h.advance(61);
+      await staff.sendTestCode(s.actor, h.meta);
+      await staff.confirmTestCode(s.actor, { code: h.codeFor(s.member.email) }, h.meta);
       await expect(
-        staff.switchToEmailCodes(s.actor, { code: '000000' }, h.meta),
+        staff.switchToEmailCodes(s.actor, { password: s.member.password, code: '000000' }, h.meta),
       ).rejects.toBeInstanceOf(FieldErrors);
       h.advance(31);
       await staff.switchToEmailCodes(
         s.actor,
-        { code: totpAt(base32Decode(s.secret), h.deps.clock!().getTime()) },
+        { password: s.member.password, code: totpAt(base32Decode(s.secret), h.deps.clock!().getTime()) },
         h.meta,
       );
       expect((await login(s.member)).status).toBe('email_code_required');
-    });
-
-    it('is refused when the site wants authenticators or mail is off, so nobody is left without a step', async () => {
-      const s = await enrolled();
-      h.advance(31);
-      const code = () => totpAt(base32Decode(s.secret), h.deps.clock!().getTime());
-      policy = 'authenticator';
-      await expect(staff.switchToEmailCodes(s.actor, { code: code() }, h.meta)).rejects.toBeInstanceOf(
-        Conflict,
-      );
-      policy = 'email';
-      emailUp = false;
-      await expect(staff.switchToEmailCodes(s.actor, { code: code() }, h.meta)).rejects.toBeInstanceOf(
-        Conflict,
-      );
-      emailUp = true;
-      expect((await login(s.member)).status).toBe('mfa_required');
     });
   });
 

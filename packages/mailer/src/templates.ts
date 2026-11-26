@@ -55,6 +55,7 @@ export type TemplateName =
   | 'staff_lockout_alert'
   | 'staff_sign_in_code'
   | 'staff_confirm_code'
+  | 'staff_second_step_changed'
   | 'welcome'
   | 'account_deleted'
   | 'deletion_scheduled'
@@ -355,6 +356,27 @@ const DEFINITIONS: Record<TemplateName, Definition> = {
       ],
     }),
   },
+  staff_second_step_changed: {
+    required: ['method', 'device', 'place', 'time', 'resetUrl'],
+    links: ['resetUrl'],
+    build: (v, b, msg) => ({
+      subject: msg('mail.staff_second_step_changed.subject', { appName: b.appName }),
+      intro: [
+        msg('mail.staff_second_step_changed.intro1', {
+          method: msg(
+            v.method === 'authenticator'
+              ? 'mail.staff_second_step_changed.authenticator'
+              : 'mail.staff_second_step_changed.emailed',
+          ),
+          time: v.time!,
+          device: v.device!,
+          place: v.place!,
+        }),
+      ],
+      action: { label: msg('mail.staff_code.action'), url: v.resetUrl! },
+      outro: [msg('mail.staff_second_step_changed.outro1')],
+    }),
+  },
   account_deleted: {
     required: [],
     build: (_v, b, msg) => ({
@@ -505,6 +527,7 @@ const ENGLISH_ONLY = new Set<TemplateName>([
   'staff_lockout_alert',
   'staff_sign_in_code',
   'staff_confirm_code',
+  'staff_second_step_changed',
   'staff_notice',
   'staff_summary',
   'staff_export_ready',

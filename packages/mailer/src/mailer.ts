@@ -293,6 +293,23 @@ export class Mailer {
     return this.deliver(input.to, 'staff_confirm_code', this.staffCodeVars(input));
   }
 
+  /** Tells the staff member their second step method changed, with the time and a way to react (L16b). */
+  sendStaffSecondStepChanged(input: {
+    to: string;
+    method: 'email' | 'authenticator';
+    device: string;
+    place: string;
+    time: string;
+  }) {
+    return this.deliver(input.to, 'staff_second_step_changed', {
+      method: input.method,
+      device: input.device,
+      place: input.place,
+      time: input.time,
+      resetUrl: this.url('/forgot-password'),
+    });
+  }
+
   private staffCodeVars(input: StaffCodeMail) {
     return {
       code: input.code,
