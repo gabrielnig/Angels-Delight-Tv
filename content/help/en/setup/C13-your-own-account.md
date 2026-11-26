@@ -34,12 +34,15 @@ Any staff role can do this. For a password change you need your inbox or your au
 3. Type "Demo Editor One" in the **Display name** box.
 4. Click **Save name**.
 5. Check the **Security** card.
-   It shows whether you get a code by email or from an authenticator app. With an app it also shows your recovery codes left. Remembered devices are listed below it, each with **Forget**.
-   ![The Security card with the recovery codes button marked 1](../../media/C13/C13-05-two-step-desktop.webp)
-6. Click **Sign out Laptop, Firefox**.
+   It shows whether you get a code by email or from an authenticator app. Use **Switch to an authenticator app** or **Switch to emailed codes** to change it.
+   ![The Security card with the Switch to an authenticator app button marked 1](../../media/C13/C13-05-security-desktop.webp)
+6. Check the **Remembered devices** card.
+   These browsers skip the emailed code until they expire. Click **Forget** beside one you no longer trust.
+   ![The Remembered devices card with its Forget button marked 1](../../media/C13/C13-06-remembered-desktop.webp)
+7. Click **Sign out Laptop, Firefox**.
    Use this when you left yourself signed in on a shared computer. Sign out only the other devices, not this browser.
-   ![The list of places you are signed in, marked 1](../../media/C13/C13-06-devices-desktop.webp)
-7. Check the **Email notifications** card.
+   ![The list of places you are signed in, marked 1](../../media/C13/C13-07-devices-desktop.webp)
+8. Check the **Email notifications** card.
    Choose which emails you get: failures, captions ready to review and a daily summary. Security emails like password resets are always sent.
 <!-- /kb:steps -->
 

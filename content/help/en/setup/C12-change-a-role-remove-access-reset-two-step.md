@@ -35,10 +35,12 @@ You need to be a Super admin. Read [Invite a teammate and choose their role](hel
    The box explains what the new role can do. The person gets the new role the next time they open the admin.
 5. Click **Reset two step sign in for Demo Admin**.
    Use this when someone loses their phone. They are signed out everywhere, their remembered devices are forgotten, and they sign in again with an emailed code.
-   ![The reset box with the code field marked 1](../../media/C12/C12-05-reset-desktop.webp)
-6. Type "123456" in the **Your authenticator code** box.
-   This is your own code, not theirs. If you use emailed codes, choose **Email me a code instead** and type that code.
-7. Click **Reset** to confirm.
+   ![The reset box with the Email me a code instead button marked 1](../../media/C12/C12-05-reset-desktop.webp)
+6. Click **Email me a code instead**.
+   Use this when you sign in with emailed codes. We send a code to your own address. App users skip this and type the app code.
+7. Type "123456" in the **Your emailed code** box.
+   This is your own code, not theirs. In this demo the code is 123456.
+8. Click **Reset** to confirm.
 <!-- /kb:steps -->
 
 ## What you should see

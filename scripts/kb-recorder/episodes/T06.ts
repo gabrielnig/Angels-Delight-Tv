@@ -87,4 +87,4 @@ const episode: Episode = {
   ],
 };
 
-export default slow(episode, 1500);
+export default slow(episode, 3000);
