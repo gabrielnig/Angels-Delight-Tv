@@ -3,7 +3,7 @@ id: W08
 title: Add a caption language and publish it
 path: weekly
 summary: Translate a video's approved captions into another language, review the draft and publish it.
-role: admin
+role: editor
 roleNote: Editors can start and review a translation, only Admins can publish it
 needs: [D07]
 related: [D07, W09, C08]

@@ -3,7 +3,7 @@ id: C14
 title: "System: jobs, storage and player quality"
 path: setup
 summary: Check failed jobs, storage use and how well videos play for viewers.
-role: super_admin
+role: admin
 roleNote: Admins can open Storage and Player quality. Only Super admins see Jobs
 needs: [S04]
 related: [C11, C01]

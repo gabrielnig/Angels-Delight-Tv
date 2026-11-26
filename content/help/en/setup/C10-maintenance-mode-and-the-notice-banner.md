@@ -3,7 +3,7 @@ id: C10
 title: Maintenance mode and the notice banner
 path: setup
 summary: Show a short notice to every visitor, or close the site while you do maintenance.
-role: super_admin
+role: admin
 roleNote: Admins can use the notice banner. Only Super admins can turn on Maintenance mode
 needs: [C04]
 related: [C04, C05, C06]

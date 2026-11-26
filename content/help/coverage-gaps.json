@@ -1,6 +1,4 @@
 {
-  "routes": [
-    "/admin/videos/[id]/markers"
-  ],
+  "routes": [],
   "nav": []
 }
