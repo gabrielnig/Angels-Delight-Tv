@@ -8,6 +8,7 @@ cmd="${1:-help}"
 case "$cmd" in
   apply) exec "$tsx" src/cli/apply.ts "$@" ;;
   import) exec "$tsx" src/cli/import.ts "$@" ;;
+  help-media) exec "$tsx" src/cli/help-media.ts "$@" ;;
   secrets) exec "$tsx" src/cli/secrets.ts "$@" ;;
   backup) exec "$tsx" src/cli/backup.ts "$@" ;;
   restore) exec "$tsx" src/cli/restore.ts "$@" ;;
@@ -16,6 +17,7 @@ case "$cmd" in
     echo "Usage: ad-tool <command> [args]"
     echo "  apply       apply client.json to settings, theme and icons (--config /client/client.json, --dry-run)"
     echo "  import      bulk import videos (--dir /content --manifest /content/videos.csv, --dry-run)"
+    echo "  help-media  upload help videos to the originals bucket (--dir /content/help-media --release v1, --dry-run)"
     echo "  secrets     generate secrets for the production env file"
     echo "  backup      encrypted dump of both databases to the backup bucket"
     echo "  restore     restore a dump into a scratch database (never the live one)"
