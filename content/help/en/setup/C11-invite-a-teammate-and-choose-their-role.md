@@ -7,7 +7,7 @@ role: super_admin
 needs: [S04]
 related: [C12, C14, C01]
 readMinutes: 3
-watchSeconds: 110
+watchSeconds: 77
 video:
   id: VC11
 screens: ["/admin/roles"]

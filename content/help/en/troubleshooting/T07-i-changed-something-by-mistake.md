@@ -7,7 +7,7 @@ role: editor
 roleNote: Editors can restore videos and Home. Admins can also restore an earlier Theme.
 related: [T08]
 readMinutes: 3
-watchSeconds: 90
+watchSeconds: 85
 video:
   id: VT07
 screens: ["/admin/videos/trash", "/admin/home"]

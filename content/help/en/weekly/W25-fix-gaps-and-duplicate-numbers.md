@@ -7,7 +7,7 @@ role: editor
 needs: [W02]
 related: [W02, W24]
 readMinutes: 3
-watchSeconds: 75
+watchSeconds: 33
 video:
   id: VW25
 screens: ["/admin/series/[id]"]

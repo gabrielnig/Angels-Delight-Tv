@@ -5,7 +5,7 @@ path: troubleshooting
 summary: Check the file type and size, read the message and try again.
 role: editor
 readMinutes: 3
-watchSeconds: 80
+watchSeconds: 73
 video:
   id: VT05
 screens: ["/admin/videos/upload"]

@@ -8,7 +8,7 @@ roleNote: Admins can open Storage and Player quality. Only Super admins see Jobs
 needs: [S04]
 related: [C11, C01]
 readMinutes: 4
-watchSeconds: 120
+watchSeconds: 69
 video:
   id: VC14
 screens: ["/admin/system"]

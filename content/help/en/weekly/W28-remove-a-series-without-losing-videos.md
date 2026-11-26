@@ -8,7 +8,7 @@ roleNote: Editors can take a lesson out, only Admins can delete the whole series
 needs: [W01]
 related: [W01]
 readMinutes: 3
-watchSeconds: 75
+watchSeconds: 26
 video:
   id: VW28
 screens: ["/admin/series/[id]"]

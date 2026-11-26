@@ -6,7 +6,7 @@ summary: Check colours, then go back to an earlier look or the default.
 role: admin
 related: [T07]
 readMinutes: 2
-watchSeconds: 90
+watchSeconds: 61
 video:
   id: VT08
 screens: ["/admin/theme", "/admin/theme/history"]

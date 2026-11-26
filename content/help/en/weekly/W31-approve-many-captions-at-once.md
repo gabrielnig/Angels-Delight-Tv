@@ -7,7 +7,7 @@ role: admin
 needs: [D07]
 related: [D07]
 readMinutes: 3
-watchSeconds: 60
+watchSeconds: 32
 video:
   id: VW31
 screens: ["/admin/captions"]

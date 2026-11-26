@@ -7,7 +7,7 @@ role: editor
 needs: [S04]
 related: [T01]
 readMinutes: 2
-watchSeconds: 75
+watchSeconds: 24
 video:
   id: VW32
 screens: ["/admin/encoding"]

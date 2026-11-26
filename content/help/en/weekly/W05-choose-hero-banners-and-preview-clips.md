@@ -8,7 +8,7 @@ roleNote: Editors can choose titles and text, only Admins can make previews
 needs: [W04]
 related: [W04, C05]
 readMinutes: 4
-watchSeconds: 150
+watchSeconds: 74
 video:
   id: VW05
 actions: [home.curate, preview.backfill]

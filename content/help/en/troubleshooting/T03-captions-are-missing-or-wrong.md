@@ -5,7 +5,7 @@ path: troubleshooting
 summary: Find the caption state, read the reason and fix it.
 role: editor
 readMinutes: 3
-watchSeconds: 100
+watchSeconds: 78
 video:
   id: VT03
 screens: ["/admin/captions", "/admin/captions/[videoId]"]

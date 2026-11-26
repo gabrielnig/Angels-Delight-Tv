@@ -7,7 +7,7 @@ role: super_admin
 needs: [C11]
 related: [C11, C14]
 readMinutes: 3
-watchSeconds: 120
+watchSeconds: 103
 video:
   id: VC12
 actions: [roles.bulk]

@@ -5,7 +5,7 @@ path: troubleshooting
 summary: Find why a Home row is missing: draft, hidden or kids.
 role: editor
 readMinutes: 3
-watchSeconds: 100
+watchSeconds: 93
 video:
   id: VT13
 screens: ["/admin/home"]

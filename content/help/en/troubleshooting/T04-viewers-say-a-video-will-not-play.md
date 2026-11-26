@@ -5,7 +5,7 @@ path: troubleshooting
 summary: Check the video is published and ready, then collect the reference code.
 role: editor
 readMinutes: 3
-watchSeconds: 80
+watchSeconds: 68
 video:
   id: VT04
 screens: ["/admin/videos"]
