@@ -19,6 +19,7 @@ const episode: Episode = {
   steps: [
     {
       caption: 'Choose **Upload** in the side menu.',
+      holdMs: 3000,
       run: async (s) => {
         await goToScreen(s, 'Upload');
       },
@@ -35,6 +36,7 @@ const episode: Episode = {
     },
     {
       caption: 'Check that **Upload** lists the file types you can add.',
+      holdMs: 3000,
       run: async (s) => {
         await highlight(s, s.page.getByRole('heading', { name: 'Upload' }).first());
       },
