@@ -295,3 +295,13 @@ Guides: K01
 Stop an account from signing in without deleting anything. A suspension can be undone.
 Aliases: ban, block, lock
 Guides: K04
+
+## Receipt
+The email sent to a donor after a successful gift, with the amount, date and reference.
+Aliases: thank you email
+Guides: M13
+
+## Transparency page
+A public page that shows donors how gifts are used.
+Aliases: how gifts are used
+Guides: M17

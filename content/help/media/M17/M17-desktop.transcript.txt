@@ -1,0 +1,9 @@
+The transparency page (M17)
+For Admins. 24 s.
+
+0:04  Choose Donations in the side menu.
+      The pointer moves to Donations.
+0:08  Check that Emails are masked shows under the title.
+      The pointer moves to Gifts received through Paystack. Emails are masked and the n.
+0:13  Check that Anonymous shows instead of a name for private donors.
+      The pointer moves to Gifts received through Paystack. Emails are masked and the n.

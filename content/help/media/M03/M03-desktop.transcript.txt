@@ -1,24 +1,28 @@
 Add a sponsor and its images (M03)
-For Editors. 1 min 28 s.
+For Editors. 1 min 30 s.
 
-0:05  Choose Sponsors in the side menu.
+0:04  Choose Sponsors in the side menu.
       The pointer moves to Sponsors.
 0:08  Click Add sponsor.
       The pointer moves to Add sponsor.
 0:11  Type "Demo Radio Two (test)" in the Sponsor name box.
 0:16  Type "Demo Contact" in the Contact name box.
 0:21  Type "radio2@example.com" in the Contact email box.
-0:27  Type "Test sponsor for the help videos." in the Notes box.
-0:32  Click Save sponsor.
+0:26  Type "Test sponsor for the help videos." in the Notes box.
+0:31  Click Save sponsor.
       The pointer moves to Save sponsor.
-0:36  Click Add creative.
+0:35  Check that Demo Radio Two (test) shows as the page title.
+      The pointer moves to Demo Radio Two (test).
+0:40  Click Add creative.
       The pointer moves to Add creative.
-0:45  Type "Demo welcome message (test)" in the Headline box.
-0:51  Type "Welcome to our test sponsor." in the Short text box.
-0:56  Type "https://example.com/demo" in the Link box.
-1:02  Choose a file for the Square picture box.
-1:06  Type "Welcome picture, test only" in the Picture description box.
-1:12  Click Save creative.
+0:44  Check that Headline shows in the new form.
+      The pointer moves to Headline.
+0:48  Type "Demo welcome message (test)" in the Headline box.
+0:54  Type "Welcome to our test sponsor." in the Short text box.
+0:59  Type "https://example.com/demo" in the Link box.
+1:05  Choose a file for the Square picture box.
+1:09  Type "Welcome picture, test only" in the Picture description box.
+1:15  Click Save creative.
       The pointer moves to Save creative.
-1:17  Check that Demo welcome message (test) shows in the sponsor page.
+1:20  Check that Demo welcome message (test) shows in the sponsor page.
       The pointer moves to Demo welcome message (test).

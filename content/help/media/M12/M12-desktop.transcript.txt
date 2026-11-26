@@ -1,0 +1,11 @@
+The Donate page and its wording (M12)
+For Admins. 27 s.
+
+0:04  Choose Donations in the side menu.
+      The pointer moves to Donations.
+0:08  Check that Gifts received through Paystack shows under the title.
+      The pointer moves to Gifts received through Paystack. Emails are masked and the n.
+0:14  Click addondemo01.
+      The pointer moves to addondemo01.
+0:17  Check that addondemo01 shows as the gift reference.
+      The pointer moves to addondemo01.
