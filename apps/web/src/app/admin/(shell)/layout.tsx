@@ -6,7 +6,6 @@ import { dashboardService, uploadTransportMode } from '@/lib/data/admin/services
 import { ROLE_LABELS } from '@/lib/data/admin/session';
 import { getActor } from '@/lib/data/admin/session-next';
 import { DEFAULT_PLATFORM_NAME } from '@/lib/platform';
-import { DEFAULT_SESSION_POLICIES } from '@ad/auth';
 import { realAuthEnabled } from '@/server/auth/mode';
 import { realSessionTimes } from '@/server/auth/admin';
 import { SessionExpiryWarning } from '@/components/admin/SessionExpiryWarning';
@@ -58,7 +57,7 @@ export default async function ShellLayout({ children }: { children: ReactNode })
             {times ? (
               <SessionExpiryWarning
                 remainingMs={Math.min(times.idleMs, times.absoluteMs)}
-                idleMs={DEFAULT_SESSION_POLICIES.staff.idleSeconds * 1000}
+                idleMs={times.idleWindowMs}
                 absoluteMs={times.absoluteMs}
                 extend={extendSessionAction}
                 signInHref="/admin/login?expired=1"

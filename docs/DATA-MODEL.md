@@ -52,7 +52,7 @@ Roles are created by `packages/db/sql/roles.sql` (compose init and the integrati
 | `upload_status` | `initiated`, `uploading`, `completing`, `completed`, `aborted`, `expired`, `failed` |
 | `job_status` | `queued`, `running`, `succeeded`, `failed`, `failed_permanent`, `cancelled` |
 | `row_kind` | `hero`, `curated`, `category`, `recently_added`, `continue_watching`, `my_list`, `popular`, `trending`, `top_ten`, `most_liked` |
-| `token_purpose` | `verify_email`, `reset_password`, `change_email` |
+| `token_purpose` | `verify_email`, `reset_password`, `change_email`, `staff_sign_in`, `staff_confirm` (migration 0062, L16: the emailed staff code) |
 | `theme_status` | `draft`, `published`, `archived` |
 | `asset_purpose` | `logo`, `favicon`, `thumbnail`, `hero`, `series_art` |
 | `asset_status` | `processing`, `ready`, `failed` |
@@ -676,5 +676,6 @@ The schema in `packages/db/src/schema` is the source of truth. These changes wer
 | 0050 | `videos` gains the hero preview columns `preview_key`, `preview_state` (none, queued, ready, failed, skipped), `preview_mode` (auto, picked, off), `preview_start_ms`, `preview_bytes`, `preview_note`, `preview_updated_at`, three checks and the partial index `videos_preview_sweep` (M41) |
 | 0060 | New table `help_progress` (section 7.2d) with owner only RLS, grants and a CHECK on the guide id shape. |
 | 0058 | `videos` gains `preview_has_audio` (boolean, default false) and `preview_length_ms` (integer, null or above 0) with check `videos_preview_length`. Clips made before it stay silent and have no recorded length (M41, D-353) |
+| 0062 | Staff email code (L16, D-397, D-398): `token_purpose` gains `staff_sign_in` and `staff_confirm`, so the emailed code reuses `email_tokens` and `verification_codes` (hashed, attempt counted). New table `trusted_devices` (account, SHA-256 of the cookie token, label, country, expiry, revoked time; unique token hash; CHECK expiry after creation and a two letter country; RLS forced to the owning account; cascade on account delete). No SECURITY DEFINER function, so no search_path pin is needed. Purge and export: the table cascades with the account and holds no readable personal data beyond a browser label and country. |
 
 Row level security summary additions: `search_history` is on and forced like `watch_progress`. `admin_invites`, `auth_lockouts`, `verification_codes`, `site_daily_stats`, `analytics_counters` and `slug_redirects` have no policies and are reached only by their own modules.
