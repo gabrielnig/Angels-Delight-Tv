@@ -13,8 +13,9 @@ const s = structuredClone(getStore());
 const ok = () => vi.fn().mockResolvedValue({ ok: true });
 const now = Date.now();
 
-function roles(canManage = true) {
+function roles(canManage = true, extra: Record<string, unknown> = {}) {
   const actions = {
+    ...extra,
     invite: ok(),
     resend: ok(),
     revoke: ok(),
@@ -102,6 +103,23 @@ describe('RolesInvites', () => {
     });
     fireEvent.click(screen.getByRole('button', { name: 'Reset' }));
     await waitFor(() => expect(a.resetTwoFactor).toHaveBeenCalledWith('stf_2', '123456'));
+  });
+  it('can mail the admin a code for the reset instead of using an app code', async () => {
+    const send = ok();
+    const a = roles(true, { sendReauthCode: send });
+    fireEvent.click(screen.getByRole('button', { name: 'Reset two step sign in for Ngozi' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Email me a code instead' }));
+    await waitFor(() => expect(send).toHaveBeenCalledTimes(1));
+    fireEvent.change(await screen.findByLabelText('Your emailed code'), {
+      target: { value: '654321' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Reset' }));
+    await waitFor(() => expect(a.resetTwoFactor).toHaveBeenCalledWith('stf_2', '654321'));
+  });
+  it('offers no emailed code button when the site cannot send one', () => {
+    roles();
+    fireEvent.click(screen.getByRole('button', { name: 'Reset two step sign in for Ngozi' }));
+    expect(screen.queryByRole('button', { name: 'Email me a code instead' })).toBeNull();
   });
   it('does not offer a reset for yourself', () => {
     roles();

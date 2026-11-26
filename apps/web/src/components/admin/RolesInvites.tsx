@@ -95,6 +95,7 @@ export function RolesInvites({
   const [resetting, setResetting] = useState<StaffRecord | null>(null);
   const [resetCode, setResetCode] = useState('');
   const [resetError, setResetError] = useState<string>();
+  const [resetByEmail, setResetByEmail] = useState(false);
   const supers = staff.filter((m) => m.role === 'super_admin').length;
   const toast = useToast();
   const selectable = useMemo(
@@ -286,6 +287,7 @@ export function RolesInvites({
                         onClick={() => {
                           setResetCode('');
                           setResetError(undefined);
+                          setResetByEmail(false);
                           setResetting(m);
                         }}
                       >
@@ -469,7 +471,7 @@ export function RolesInvites({
         open={resetting !== null}
         onClose={() => setResetting(null)}
         title={`Reset two step sign in for ${resetting?.name ?? 'this person'}?`}
-        description="They are signed out everywhere and must set up their authenticator again at their next sign in. Enter your own 6 digit code to confirm."
+        description="They are signed out everywhere and their remembered devices are forgotten. Enter your own 6 digit code to confirm."
         size="sm"
         footer={
           <>
@@ -504,13 +506,30 @@ export function RolesInvites({
           }}
         >
           <TextField
-            label="Your authenticator code"
+            label={resetByEmail ? 'Your emailed code' : 'Your authenticator code'}
             inputMode="numeric"
             autoComplete="one-time-code"
             value={resetCode}
             error={resetError}
             onChange={(e) => setResetCode(e.target.value)}
           />
+          {actions.sendReauthCode && !resetByEmail ? (
+            <div>
+              <Button
+                variant="ghost"
+                onClick={async () => {
+                  const r = await actions.sendReauthCode!();
+                  if (r.ok) {
+                    setResetByEmail(true);
+                    setResetCode('');
+                    setResetError(undefined);
+                  } else setResetError(r.error);
+                }}
+              >
+                Email me a code instead
+              </Button>
+            </div>
+          ) : null}
         </form>
       </Dialog>
       {reauthDialog}

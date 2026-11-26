@@ -4,7 +4,7 @@ import { redirect } from 'next/navigation';
 import { AuthLayout } from '@/components/admin/AuthLayout';
 import { realBeginEnrolment, realRememberDays, realTwoFactorState } from '@/server/auth/admin';
 import { realAuthEnabled } from '@/server/auth/mode';
-import { FIXTURE_CODE } from '@/lib/data/admin/session';
+import { FIXTURE_CODE, fixtureEmailStep } from '@/lib/data/admin/session';
 import { pendingAccountId, safeNext } from '@/lib/data/admin/session-next';
 import { resendCodeAction, verifyCodeAction } from '../actions';
 import { CodeForm } from './CodeForm';
@@ -24,9 +24,10 @@ export default async function AdminTwoFactorPage({
   const params = await searchParams;
   const next = safeNext(params.next);
   const recovery = realAuthEnabled() && params.recovery === '1';
-  const state = realAuthEnabled() ? await realTwoFactorState() : null;
+  const demoEmail = !realAuthEnabled() && fixtureEmailStep();
+  const state = realAuthEnabled() ? await realTwoFactorState() : demoEmail ? 'email' : null;
   if (state === 'email') {
-    const days = await realRememberDays();
+    const days = demoEmail ? 30 : await realRememberDays();
     return (
       <AuthLayout
         title="Check your email"

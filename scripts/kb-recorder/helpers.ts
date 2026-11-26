@@ -133,10 +133,27 @@ export async function signInAs(
     await s.page.getByLabel('Password').fill(account.password);
   }
   await s.page.getByRole('button', { name: 'Sign in' }).click();
-  await s.page.getByLabel('Digit 1 of 6').click();
-  await s.page.keyboard.type(code, { delay: o.slow ? 120 : 10 });
-  await s.page.getByRole('button', { name: 'Verify' }).click();
+  await enterSignInCode(s, code, o.slow ? 120 : 10);
   await s.page.getByRole('heading', { name: 'Dashboard' }).waitFor();
+}
+
+/**
+ * Types the second step code on whichever code page the stack shows: the single 6 digit code box of the emailed code
+ * step (the demo default), or the six authenticator boxes with Verify.
+ */
+export async function enterSignInCode(s: Session, code: string, delay: number): Promise<void> {
+  const emailed = s.page.getByRole('textbox', { name: '6 digit code', exact: true });
+  const boxes = s.page.getByLabel('Digit 1 of 6');
+  await emailed.or(boxes).first().waitFor();
+  if (await emailed.count()) {
+    await emailed.click();
+    await s.page.keyboard.type(code, { delay });
+    await s.page.getByRole('button', { name: 'Sign in' }).click();
+  } else {
+    await boxes.click();
+    await s.page.keyboard.type(code, { delay });
+    await s.page.getByRole('button', { name: 'Verify' }).click();
+  }
 }
 
 async function expectFound(target: Locator, what: string): Promise<void> {

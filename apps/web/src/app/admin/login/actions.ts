@@ -11,7 +11,12 @@ import {
 } from '@/server/auth/admin';
 import { assertActionOrigin } from '@/server/auth/session';
 import { realAuthEnabled } from '@/server/auth/mode';
-import { PENDING_COOKIE, SESSION_COOKIE, fixtureAuthEnabled } from '@/lib/data/admin/session';
+import {
+  PENDING_COOKIE,
+  SESSION_COOKIE,
+  fixtureAuthEnabled,
+  fixtureEmailStep,
+} from '@/lib/data/admin/session';
 import {
   cookieOptions,
   fixtureAuth,
@@ -79,7 +84,12 @@ export async function verifyCodeAction(_prev: CodeState, form: FormData): Promis
   const next = safeNext(form.get('next'));
   if (!accountId) redirect('/admin/login?expired=1');
   const code = String(form.get('code') ?? '').replace(/\s/g, '');
-  if (!/^\d{6}$/.test(code)) return { error: 'Enter the 6 digit code from your app.' };
+  if (!/^\d{6}$/.test(code))
+    return {
+      error: fixtureEmailStep()
+        ? 'Enter the 6 digit code from your email.'
+        : 'Enter the 6 digit code from your app.',
+    };
   const result = fixtureAuth().checkCode(accountId, code);
   if (!result.ok) {
     return {
@@ -103,6 +113,7 @@ export interface ResendState {
 }
 
 export async function resendCodeAction(): Promise<ResendState> {
+  if (!realAuthEnabled() && fixtureEmailStep()) return { sent: true, wait: 60 };
   await assertActionOrigin();
   const result = await realResendCode();
   if (result.ok)
