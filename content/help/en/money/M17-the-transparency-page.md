@@ -29,6 +29,11 @@ Use real figures only, and update them when they change. The page shows no donor
 
 ## Steps
 <!-- kb:steps M17 -->
+1. Choose **Donations** in the side menu.
+2. Check that **Emails are masked** shows under the title.
+   ![The privacy line under the Donations title, marked 1](../../media/M17/M17-02-privacy-desktop.webp)
+3. Check that **Anonymous** shows instead of a name for private donors.
+   ![The Anonymous donor row, marked 1](../../media/M17/M17-03-anon-desktop.webp)
 <!-- /kb:steps -->
 
 ## What you should see

@@ -39,19 +39,21 @@ The contact name, contact email and notes are for staff only. They are never sho
 6. Type "Test sponsor for the help videos." in the **Notes** box.
    ![The sponsor form filled in, with Save sponsor marked 1](../../media/M03/M03-06-filled-desktop.webp)
 7. Click **Save sponsor**.
-8. Click **Add creative**.
-   ![The creative form with the picture boxes marked 1](../../media/M03/M03-08-creative-desktop.webp)
-9. Type "Demo welcome message (test)" in the **Headline** box.
-10. Type "Welcome to our test sponsor." in the **Short text** box.
-11. Type "https://example.com/demo" in the **Link** box.
-12. Choose a file for the **Square picture** box.
+8. Check that **Demo Radio Two (test)** shows as the page title.
+9. Click **Add creative**.
+   ![The creative form with the picture boxes marked 1](../../media/M03/M03-09-creative-desktop.webp)
+10. Check that **Headline** shows in the new form.
+11. Type "Demo welcome message (test)" in the **Headline** box.
+12. Type "Welcome to our test sponsor." in the **Short text** box.
+13. Type "https://example.com/demo" in the **Link** box.
+14. Choose a file for the **Square picture** box.
    > [!TIP]
    > Use a JPG or PNG under 2 MB. The wide picture is optional.
-13. Type "Welcome picture, test only" in the **Picture description** box.
-   ![The creative form with Save creative marked 1](../../media/M03/M03-13-described-desktop.webp)
-14. Click **Save creative**.
-15. Check that **Demo welcome message (test)** shows in the sponsor page.
-   ![The saved creative on the sponsor page, marked 1](../../media/M03/M03-15-saved-desktop.webp)
+15. Type "Welcome picture, test only" in the **Picture description** box.
+   ![The creative form with Save creative marked 1](../../media/M03/M03-15-described-desktop.webp)
+16. Click **Save creative**.
+17. Check that **Demo welcome message (test)** shows in the sponsor page.
+   ![The saved creative on the sponsor page, marked 1](../../media/M03/M03-17-saved-desktop.webp)
 <!-- /kb:steps -->
 
 ## What you should see

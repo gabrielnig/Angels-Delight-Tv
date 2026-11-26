@@ -1,0 +1,15 @@
+Kids safety rules for sponsors and gifts (M21)
+For Editors. 38 s.
+
+0:04  Choose Sponsors in the side menu.
+      The pointer moves to Sponsors.
+0:08  Check that Sponsors never show to children appears under the title.
+      The pointer moves to Sponsors never show to children. Everything here is off unti.
+0:14  Check that Kids profiles and Kids mode never show sponsors appears.
+      The pointer moves to Kids profiles and Kids mode never show sponsors, whatever th.
+0:20  Click Demo Sponsor Ltd (test).
+      The pointer moves to Demo Sponsor Ltd (test).
+0:24  Click Report.
+      The pointer moves to Report.
+0:27  Check that Cards shown to children are never counted shows in the report notes.
+      The pointer moves to Impressions count a card that was half visible for one secon.

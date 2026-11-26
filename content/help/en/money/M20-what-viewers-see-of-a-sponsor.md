@@ -34,6 +34,12 @@ Each card has a limit on how often one browser sees it, so people are not shown 
 
 ## Steps
 <!-- kb:steps M20 -->
+1. Choose **Sponsors** in the side menu.
+2. Click **Demo Sponsor Ltd (test)**.
+3. Check that **Demo thank you message (test)** shows as the creative headline.
+   ![The sponsor creative with its placements, marked 1](../../media/M20/M20-03-creative-desktop.webp)
+4. Check that **Home page banner** shows as one of its places.
+   ![The places ticked for this creative, marked 1](../../media/M20/M20-04-places-desktop.webp)
 <!-- /kb:steps -->
 
 ## What you should see

@@ -1,55 +1,62 @@
 WEBVTT
 
-00:00:05.346 --> 00:00:08.876
+00:00:05.124 --> 00:00:08.654
 Choose Sponsors in the side menu.
 
-00:00:09.126 --> 00:00:11.786
+00:00:08.904 --> 00:00:11.556
 Click Add sponsor.
 
-00:00:12.036 --> 00:00:16.904
+00:00:11.806 --> 00:00:16.674
 Type "Demo Radio Two (test)"
 in the Sponsor name box.
 
-00:00:17.154 --> 00:00:21.420
+00:00:16.925 --> 00:00:21.192
 Type "Demo Contact" in
 the Contact name box.
 
-00:00:21.670 --> 00:00:27.026
+00:00:21.442 --> 00:00:26.313
 Type "radio2@example.com"
 in the Contact email box.
 
-00:00:27.276 --> 00:00:32.481
+00:00:26.563 --> 00:00:31.767
 Type "Test sponsor for the
 help videos." in the Notes box.
 
-00:00:32.732 --> 00:00:36.082
+00:00:32.017 --> 00:00:35.239
 Click Save sponsor.
 
-00:00:36.332 --> 00:00:42.332
+00:00:35.489 --> 00:00:40.629
+Check that Demo Radio Two
+(test) shows as the page title.
+
+00:00:40.879 --> 00:00:44.394
 Click Add creative.
 
-00:00:45.431 --> 00:00:51.385
+00:00:44.644 --> 00:00:48.776
+Check that Headline shows in the new form.
+
+00:00:49.026 --> 00:00:54.029
 Type "Demo welcome message
 (test)" in the Headline box.
 
-00:00:51.635 --> 00:00:56.840
+00:00:54.279 --> 00:00:59.483
 Type "Welcome to our test
 sponsor." in the Short text box.
 
-00:00:57.090 --> 00:01:02.594
+00:00:59.733 --> 00:01:05.288
 Type "https://example.com/demo"
 in the Link box.
 
-00:01:02.844 --> 00:01:06.910
+00:01:05.538 --> 00:01:09.605
 Choose a file for the Square picture box.
 
-00:01:07.160 --> 00:01:12.834
+00:01:09.855 --> 00:01:15.528
 Type "Welcome picture, test only"
 in the Picture description box.
 
-00:01:13.084 --> 00:01:17.590
+00:01:15.778 --> 00:01:20.195
 Click Save creative.
 
-00:01:17.840 --> 00:01:23.513
+00:01:20.445 --> 00:01:26.119
 Check that Demo welcome message
 (test) shows in the sponsor page.

@@ -30,6 +30,12 @@ Write each check in **Notes**. Notes are for staff only. Put the agreement with 
 
 ## Steps
 <!-- kb:steps M19 -->
+1. Choose **Sponsors** in the side menu.
+2. Click **Demo Bakery (test)**.
+3. Type "Checked against our sponsor rules. Fine to run." in the **Notes** box.
+   ![The Notes box with Save sponsor marked 1](../../media/M19/M19-03-notes-desktop.webp)
+4. Click **Save sponsor**.
+5. Check that **Sponsor saved.** shows at the bottom of the screen.
 <!-- /kb:steps -->
 
 ## What you should see

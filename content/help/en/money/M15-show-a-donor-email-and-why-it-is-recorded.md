@@ -28,6 +28,14 @@ Every time you click **Show full email**, a line is added to the audit log with 
 
 ## Steps
 <!-- kb:steps M15 -->
+1. Choose **Donations** in the side menu.
+2. Click **addondemo01**.
+   ![A gift with the email masked and Show full email marked 1](../../media/M15/M15-02-masked-desktop.webp)
+3. Click **Show full email**.
+   > [!CAREFUL]
+   > This view is written to the audit log. Show an email only when you need it.
+4. Check that **This view was recorded in the audit log.** shows under the email.
+   ![The full email with the audit note marked 1](../../media/M15/M15-04-shown-desktop.webp)
 <!-- /kb:steps -->
 
 ## What you should see

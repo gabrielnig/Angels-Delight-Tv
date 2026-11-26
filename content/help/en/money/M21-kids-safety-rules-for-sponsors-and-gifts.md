@@ -32,6 +32,14 @@ What stays your job: pick sponsors who suit a family site, and mark videos as Ki
 
 ## Steps
 <!-- kb:steps M21 -->
+1. Choose **Sponsors** in the side menu.
+2. Check that **Sponsors never show to children** appears under the title.
+   ![The Sponsors title line, marked 1](../../media/M21/M21-02-title-desktop.webp)
+3. Check that **Kids profiles and Kids mode never show sponsors** appears.
+   ![The kids rule under the switch, marked 1](../../media/M21/M21-03-switch-desktop.webp)
+4. Click **Demo Sponsor Ltd (test)**.
+5. Click **Report**.
+6. Check that **Cards shown to children are never counted** shows in the report notes.
 <!-- /kb:steps -->
 
 ## What you should see

@@ -28,6 +28,12 @@ You may see a **Monthly** choice in the **Kind** list. It is only a filter, and 
 
 ## Steps
 <!-- kb:steps M22 -->
+1. Choose **Donations** in the side menu.
+2. Select **Monthly** from the **Kind** list.
+   ![The Kind list set to Monthly, marked 1](../../media/M22/M22-02-kind-desktop.webp)
+3. Click **Apply**.
+4. Check that **No gifts match.** shows because nobody can give monthly yet.
+   ![The empty list, marked 1](../../media/M22/M22-04-none-desktop.webp)
 <!-- /kb:steps -->
 
 ## What you should see

@@ -8,7 +8,7 @@ export default money({
   actions: ['sponsor.manage'],
   dependsOn: ['apps/web/src/components/admin/SponsorForm.tsx', 'apps/web/src/components/admin/CreativesEditor.tsx'],
   next: 'M04 Choose where a sponsor shows and for how long',
-  notes: { 5: ['NOTE','Contact details are for staff only and are stored sealed. Viewers never see them.'], 12: ['TIP','Use a JPG or PNG under 2 MB. The wide picture is optional.'] },
+  notes: { 5: ['NOTE','Contact details are for staff only and are stored sealed. Viewers never see them.'], 14: ['TIP','Use a JPG or PNG under 2 MB. The wide picture is optional.'] },
   steps: [
     menu('Sponsors', 'Sponsors'),
     link('Add sponsor', { name: 'form', alt: 'The Add sponsor form with the name box marked 1', marks: [[['label', 'Sponsor name'], 'Sponsor name']] }),
@@ -17,7 +17,9 @@ export default money({
     type('Contact email', 'radio2@example.com'),
     type('Notes', 'Test sponsor for the help videos.', { name: 'filled', alt: 'The sponsor form filled in, with Save sponsor marked 1', marks: [[['button', 'Save sponsor'], 'Save']] }),
     button('Save sponsor', undefined, '', 1500),
+    see('Demo Radio Two (test)', 'shows as the page title'),
     button('Add creative', { name: 'creative', alt: 'The creative form with the picture boxes marked 1', marks: [[['label', 'Square picture'], 'Square picture']] }, '', 600, 'Headline'),
+    see('Headline', 'shows in the new form'),
     type('Headline', 'Demo welcome message (test)'),
     type('Short text', 'Welcome to our test sponsor.'),
     type('Link', 'https://example.com/demo'),

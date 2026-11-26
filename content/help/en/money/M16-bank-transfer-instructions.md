@@ -29,6 +29,11 @@ Gifts made by bank transfer do not pass through Paystack. They are not in the **
 
 ## Steps
 <!-- kb:steps M16 -->
+1. Choose **Donations** in the side menu.
+2. Check that **Gifts received through Paystack** shows under the title.
+   ![The Donations title line, marked 1](../../media/M16/M16-02-lead-desktop.webp)
+3. Check that **Donations, newest first** is the list of Paystack gifts.
+   ![The gifts table, marked 1](../../media/M16/M16-03-table-desktop.webp)
 <!-- /kb:steps -->
 
 ## What you should see

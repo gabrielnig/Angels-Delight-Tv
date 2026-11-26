@@ -1,0 +1,11 @@
+Money questions answered (M24)
+For Editors. 26 s.
+
+0:04  Choose Sponsors in the side menu.
+      The pointer moves to Sponsors.
+0:08  Check that Sponsors are off. Viewers see nothing. shows beside the switch.
+      The pointer moves to Sponsors are off. Viewers see nothing..
+0:15  Click Add sponsor.
+      The pointer moves to Add sponsor.
+0:17  Check that Staff only. Never shown to viewers. shows under the contact name.
+      The pointer moves to Staff only. Never shown to viewers..

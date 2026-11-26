@@ -1,0 +1,13 @@
+Sponsors we do not accept (M19)
+For Editors. 33 s.
+
+0:04  Choose Sponsors in the side menu.
+      The pointer moves to Sponsors.
+0:08  Click Demo Bakery (test).
+      The pointer moves to Demo Bakery (test).
+0:11  Type "Checked against our sponsor rules. Fine to run." in the Notes box.
+      The pointer moves to Test sponsor, not live..
+0:19  Click Save sponsor.
+      The pointer moves to Save sponsor.
+0:23  Check that Sponsor saved. shows at the bottom of the screen.
+      The pointer moves to Sponsor saved..

@@ -1,0 +1,16 @@
+Sponsor pictures: sizes and descriptions (M18)
+For Editors. 45 s.
+
+0:04  Choose Sponsors in the side menu.
+      The pointer moves to Sponsors.
+0:08  Click Demo Sponsor Ltd (test).
+      The pointer moves to Demo Sponsor Ltd (test).
+0:12  Click Add creative.
+      The pointer moves to Add creative.
+0:16  Choose a file for the Square picture box.
+0:20  Choose a file for the Wide picture box.
+0:24  Check that Read aloud by screen readers. appears under the box.
+      The pointer moves to Read aloud by screen readers. Leave empty only if the pictur.
+0:30  Type "A friendly welcome card, test only" in the Picture description box.
+0:36  Click Cancel.
+      The pointer moves to Cancel.

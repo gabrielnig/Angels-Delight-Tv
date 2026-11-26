@@ -1,0 +1,11 @@
+What viewers see of a sponsor (M20)
+For Editors. 28 s.
+
+0:04  Choose Sponsors in the side menu.
+      The pointer moves to Sponsors.
+0:08  Click Demo Sponsor Ltd (test).
+      The pointer moves to Demo Sponsor Ltd (test).
+0:12  Check that Demo thank you message (test) shows as the creative headline.
+      The pointer moves to Demo thank you message (test).
+0:18  Check that Home page banner shows as one of its places.
+      The pointer moves to Home page banner, Video page card.

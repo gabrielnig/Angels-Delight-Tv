@@ -44,6 +44,11 @@ You need to be an Editor or above for sponsors. Donations are for Admins.
 
 ## Steps
 <!-- kb:steps M24 -->
+1. Choose **Sponsors** in the side menu.
+2. Check that **Sponsors are off. Viewers see nothing.** shows beside the switch.
+3. Click **Add sponsor**.
+4. Check that **Staff only. Never shown to viewers.** shows under the contact name.
+   ![The staff only hints under the contact boxes, marked 1](../../media/M24/M24-04-private-desktop.webp)
 <!-- /kb:steps -->
 
 ## What you should see

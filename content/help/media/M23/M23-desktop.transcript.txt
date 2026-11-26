@@ -1,0 +1,9 @@
+Taxes and legal notes (M23)
+For Admins. 23 s.
+
+0:04  Choose Donations in the side menu.
+      The pointer moves to Donations.
+0:08  Check that Currencies are never added together. shows under the totals.
+      The pointer moves to Test gifts are not counted. Currencies are never added toget.
+0:14  Click Export CSV to keep a record.
+      The pointer moves to Export CSV.

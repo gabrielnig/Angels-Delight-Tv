@@ -28,6 +28,18 @@ The **Picture description** is read aloud by screen readers. Say what the pictur
 
 ## Steps
 <!-- kb:steps M18 -->
+1. Choose **Sponsors** in the side menu.
+2. Click **Demo Sponsor Ltd (test)**.
+3. Click **Add creative**.
+   ![The creative form with the two picture boxes marked 1](../../media/M18/M18-03-pictures-desktop.webp)
+4. Choose a file for the **Square picture** box.
+   > [!NOTE]
+   > The square picture must be at least 400 by 400 pixels. The wide picture must be at least 1200 by 400. Both under 2 MB.
+5. Choose a file for the **Wide picture** box.
+6. Check that **Read aloud by screen readers.** appears under the box.
+   ![The picture description box with its hint marked 1](../../media/M18/M18-06-alt-desktop.webp)
+7. Type "A friendly welcome card, test only" in the **Picture description** box.
+8. Click **Cancel**.
 <!-- /kb:steps -->
 
 ## What you should see

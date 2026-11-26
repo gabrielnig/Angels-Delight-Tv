@@ -32,6 +32,11 @@ Questions for a professional: how gifts and sponsor money are taxed for your kin
 
 ## Steps
 <!-- kb:steps M23 -->
+1. Choose **Donations** in the side menu.
+2. Check that **Currencies are never added together.** shows under the totals.
+   ![The totals note about currencies, marked 1](../../media/M23/M23-02-currencies-desktop.webp)
+3. Click **Export CSV** to keep a record.
+   ![The Export CSV button, marked 1](../../media/M23/M23-03-export-desktop.webp)
 <!-- /kb:steps -->
 
 ## What you should see
