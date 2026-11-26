@@ -1,0 +1,9 @@
+Bank transfer instructions (M16)
+For Admins. 25 s.
+
+0:04  Choose Donations in the side menu.
+      The pointer moves to Donations.
+0:08  Check that Gifts received through Paystack shows under the title.
+      The pointer moves to Gifts received through Paystack. Emails are masked and the n.
+0:14  Check that Donations, newest first is the list of Paystack gifts.
+      The pointer moves to Donations, newest first.

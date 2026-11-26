@@ -1,0 +1,15 @@
+Receipts: what donors get (M13)
+For Admins. 34 s.
+
+0:04  Choose Donations in the side menu.
+      The pointer moves to Donations.
+0:08  Click addondemo01.
+      The pointer moves to addondemo01.
+0:11  Check that Receipt queued shows under the reference.
+      The pointer moves to Email d***@example.net. Receipt queued..
+0:16  Click Donations in the top path.
+      The pointer moves to Donations.
+0:20  Click addondemo04.
+      The pointer moves to addondemo04.
+0:23  Check that Receipt not queued shows because the gift is still pending.
+      The pointer moves to Email d***@example.net. Receipt not queued..

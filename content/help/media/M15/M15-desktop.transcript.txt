@@ -1,0 +1,11 @@
+Show a donor email and why it is recorded (M15)
+For Admins. 26 s.
+
+0:04  Choose Donations in the side menu.
+      The pointer moves to Donations.
+0:08  Click addondemo01.
+      The pointer moves to addondemo01.
+0:11  Click Show full email.
+      The pointer moves to Show full email.
+0:15  Check that This view was recorded in the audit log. shows under the email.
+      The pointer moves to This view was recorded in the audit log..
