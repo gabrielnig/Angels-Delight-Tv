@@ -60,7 +60,7 @@ import {
   updateName,
 } from './account-commands';
 import type { FieldResult } from './account-commands';
-import { FIXTURE_CODE, fixtureEmailOf } from './session';
+import { FIXTURE_CODE, fixtureEmailOf, fixtureEmailStep } from './session';
 import type { MyAccount } from './types';
 import type { DayRange, TitleDailyRow } from '@ad/analytics';
 import { buildFixtureOverview, buildFixtureTitleDaily, buildFixtureVideo } from './analytics-rules';
@@ -918,6 +918,21 @@ const fixturePeopleService: PeopleService = {
     fixtureReauthAt = Date.now();
     return { ok: true };
   },
+  // The demo stack (KB_DEMO=on) can "email" the confirmation code, so the reset box shows the same choice as the real site.
+  ...(fixtureEmailStep()
+    ? {
+        async sendReauthCode(actor) {
+          need(actor, 'roles.change');
+          return { ok: true } as const;
+        },
+        async reauthenticateWithCode(actor, code) {
+          need(actor, 'roles.change');
+          if (code !== FIXTURE_CODE) return { ok: false, error: 'That code is not right.' } as const;
+          fixtureReauthAt = Date.now();
+          return { ok: true } as const;
+        },
+      }
+    : {}),
   async resetTwoFactor(actor, staffId, code) {
     need(actor, 'roles.change');
     if (staffId === actor.accountId)

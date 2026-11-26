@@ -57,6 +57,6 @@ The **Dashboard** opens with your name at the top right. With **Remember this de
 > Do not tick **Remember this device** on a shared computer. You can see and forget remembered devices on **My account**.
 
 ## If something goes wrong
-- **The code is not accepted or has not come.** Check spam, then choose **Email me a new code** after the wait. Only the newest code works.
+- **The code is not accepted or has not come.** Check spam, then click **Send a new code** after the wait. Only the newest code works.
 - **The message says the sign in failed.** The message is the same for a wrong email and a wrong password, on purpose. Check both and try again.
 - **You cannot reach your inbox or lost your phone.** Ask a Super admin to reset your two step sign in. Authenticator users can use a recovery code. Still stuck? [What to send ARKDEV](help:T11)

@@ -35,7 +35,7 @@ const episode: Episode = {
       caption: 'Type "wrongpassword" in the **Password** box.',
       note: 'The demo shows a made up password. Never share your real password with anyone.',
       run: async (s) => {
-        await s.type(s.page.getByLabel('Password'), 'wrongpassword');
+        await s.type(s.page.getByLabel('Password', { exact: true }), 'wrongpassword');
       },
     },
     {
@@ -61,27 +61,27 @@ const episode: Episode = {
     {
       caption: 'Type your password in the **Password** box.',
       run: async (s) => {
-        await s.type(s.page.getByLabel('Password'), 'fixture-password');
+        await s.type(s.page.getByLabel('Password', { exact: true }), 'fixture-password');
       },
     },
     {
       caption: 'Click **Sign in** again.',
       run: async (s) => {
         await clickByName(s, 'button', 'Sign in', { exact: true });
-        await s.page.getByLabel('Digit 1 of 6').waitFor();
+        await s.page.getByRole('heading', { name: 'Check your email' }).waitFor();
       },
     },
     {
-      caption: 'Check the **Enter your code** page.',
-      note: 'The code is in your authenticator app and changes every 30 seconds. Check the clock on your phone is right.',
+      caption: 'Check the **Check your email** page.',
+      note: 'The code is in the email we sent and lasts 10 minutes. If it has not come, wait a minute and click Send a new code. App users type the app code instead.',
       run: async (s) => {
-        await highlight(s, s.page.getByRole('heading', { name: 'Enter your code' }));
+        await highlight(s, s.page.getByRole('heading', { name: 'Check your email' }));
       },
       shot: {
         name: 'code',
-        alt: 'The code page with the six digit boxes marked 1',
+        alt: 'The Check your email page with the code box marked 1',
         scheme: 'dark',
-        marks: [{ target: (s) => s.page.getByRole('group', { name: '6 digit code' }), label: 'Code' }],
+        marks: [{ target: (s) => s.page.getByLabel('6 digit code', { exact: true }), label: 'Code' }],
       },
     },
   ],

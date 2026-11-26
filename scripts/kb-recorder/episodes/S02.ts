@@ -1,7 +1,8 @@
 import { DEMO_ACCOUNTS, FIXTURE_CODE } from '../accounts';
 import type { Episode } from '../episode';
+import { highlight } from '../helpers';
 
-/** S02 Sign in and set up two step sign in. Signed out at the start. Enrolment needs real sign in, so it is not shown. */
+/** S02 Sign in with an emailed code (D-397). Signed out at the start. The demo stack accepts the fixed code 123456. */
 const account = DEMO_ACCOUNTS.editor;
 
 const episode: Episode = {
@@ -46,40 +47,54 @@ const episode: Episode = {
       caption: 'Click **Sign in**.',
       holdMs: 2800,
       run: async (s) => {
-        await s.click(s.page.getByRole('button', { name: 'Sign in' }));
-        await s.page.getByLabel('Digit 1 of 6').waitFor();
+        await s.click(s.page.getByRole('button', { name: 'Sign in', exact: true }));
+        await s.page.getByRole('heading', { name: 'Check your email' }).waitFor();
       },
     },
     {
-      caption: 'Wait until you see **Enter your code**.',
-      note: 'The first time, this page shows a square code to scan with an authenticator app. Scan it, then enter the code the app shows.',
+      caption: 'Wait until you see **Check your email**.',
+      note: 'We email a 6 digit code to your address. It works once and lasts 10 minutes.',
       holdMs: 3500,
       run: async (s) => {
-        await s.page.getByRole('heading', { name: 'Enter your code' }).waitFor();
+        await s.page.getByRole('heading', { name: 'Check your email' }).waitFor();
         await s.pause(500);
       },
       shot: {
         name: 'code',
-        alt: 'The Enter your code page with the six digit boxes marked 1',
+        alt: 'The Check your email page with the code box marked 1',
         scheme: 'dark',
-        marks: [{ target: (s) => s.page.getByLabel('Digit 1 of 6'), label: 'Code boxes' }],
+        marks: [{ target: (s) => s.page.getByLabel('6 digit code', { exact: true }), label: 'Code box' }],
       },
     },
     {
-      caption: 'Type the 6 digit code from your app in the **Digit 1 of 6** box.',
-      note: 'The code changes every 30 seconds. Type the one you see now.',
+      caption: 'Check that **Remember this device for 30 days** is ticked.',
+      note: 'It is on by default. Untick it on a shared computer. If you use an authenticator app, the page asks for the app code instead.',
+      holdMs: 3500,
+      run: async (s) => {
+        await highlight(s, s.page.getByLabel('Remember this device for 30 days'), 1800);
+      },
+      shot: {
+        name: 'remember',
+        alt: 'The Remember this device box marked 1',
+        scheme: 'dark',
+        marks: [{ target: (s) => s.page.getByLabel('Remember this device for 30 days'), label: 'Remember this device' }],
+      },
+    },
+    {
+      caption: 'Type the 6 digit code from the email in the **6 digit code** box.',
+      note: 'If it has not come, wait a minute and click **Send a new code**. Only the newest code works.',
       holdMs: 2800,
       run: async (s) => {
-        await s.click(s.page.getByLabel('Digit 1 of 6'));
+        await s.click(s.page.getByLabel('6 digit code', { exact: true }));
         await s.page.keyboard.type(process.env.KB_2FA_CODE ?? FIXTURE_CODE, { delay: 140 * s.paceFactor });
         await s.pause(300);
       },
     },
     {
-      caption: 'Click **Verify**.',
+      caption: 'Click **Sign in**.',
       holdMs: 2800,
       run: async (s) => {
-        await s.click(s.page.getByRole('button', { name: 'Verify' }));
+        await s.click(s.page.getByRole('button', { name: 'Sign in', exact: true }));
         await s.page.getByRole('heading', { name: 'Dashboard' }).waitFor();
       },
     },

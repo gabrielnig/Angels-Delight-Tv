@@ -40,18 +40,23 @@ const episode: Episode = {
     },
     {
       caption: 'Click **Reset two step sign in for Demo Admin**.',
-      note: 'Use this when someone loses their phone. They are signed out everywhere and set up their authenticator again at their next sign in.',
+      note: 'Use this when someone loses their phone. They are signed out everywhere, their remembered devices are forgotten, and they sign in again with an emailed code.',
       run: async (s) => { await clickByName(s, 'button', 'Reset two step sign in for Demo Admin'); await s.page.getByRole('dialog').waitFor(); },
       shot: {
         name: 'reset',
-        alt: 'The reset box with the code field marked 1',
-        marks: [{ target: (s) => s.page.getByLabel('Your authenticator code', { exact: true }), label: 'Your code' }],
+        alt: 'The reset box with the Email me a code instead button marked 1',
+        marks: [{ target: (s) => s.page.getByRole('button', { name: 'Email me a code instead' }), label: 'Email me a code' }],
       },
     },
     {
-      caption: 'Type "123456" in the **Your authenticator code** box.',
-      note: 'This is your own 6 digit code, not theirs. In this demo the code is 123456.',
-      run: async (s) => typeInto(s, 'Your authenticator code', '123456'),
+      caption: 'Click **Email me a code instead**.',
+      note: 'Use this when you sign in with emailed codes. We send a code to your own address. App users skip this and type the app code.',
+      run: async (s) => { await clickByName(s, 'button', 'Email me a code instead'); await s.page.getByLabel('Your emailed code', { exact: true }).waitFor(); },
+    },
+    {
+      caption: 'Type "123456" in the **Your emailed code** box.',
+      note: 'This is your own code, not theirs. In this demo the code is 123456.',
+      run: async (s) => typeInto(s, 'Your emailed code', '123456'),
     },
     {
       caption: 'Click **Reset** to confirm.',

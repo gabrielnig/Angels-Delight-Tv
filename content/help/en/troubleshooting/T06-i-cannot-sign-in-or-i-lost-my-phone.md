@@ -53,5 +53,5 @@ After the right password, the page asks for the 6 digit code. After the right co
 
 ## If something goes wrong
 - **The message says the email or password is not right.** Check both. The message is the same for a wrong email or password. Ask a Super admin which email your account uses.
-- **The code is rejected or the email has not come.** Check spam, wait a minute, choose **Email me a new code** and use only the newest. App users: check the phone clock is automatic.
+- **The code is rejected or the email has not come.** Check spam, wait a minute, click **Send a new code** and use only the newest. App users: check the phone clock is automatic.
 - **You lost your phone and have no recovery codes.** A Super admin opens **Roles and invites**, clicks **Reset** next to your name and enters their own code. You then sign in again with an emailed code.
