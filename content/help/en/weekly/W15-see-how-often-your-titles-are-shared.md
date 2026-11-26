@@ -7,7 +7,7 @@ role: editor
 needs: [W10]
 related: [W10, W11, C16]
 readMinutes: 2
-watchSeconds: 60
+watchSeconds: 38
 video:
   id: VW15
 actions: [analytics.view]
@@ -27,6 +27,13 @@ Editors, Admins and Super admins can do this. Read [Read Analytics](help:W10) fi
 ## Steps
 <!-- kb:steps W15 -->
 1. Choose **Analytics** in the side menu.
+2. Scroll to **Shares by channel**.
+   The list shows how many times viewers used each Share option in the period you chose.
+   ![The Shares by channel card listing each option with a count, marked 1](../../media/W15/W15-02-overview-desktop.webp)
+3. Click **Washing Hands the Right Way** in Top titles.
+4. Scroll to **Shares by channel**.
+   On a title page the counts are for that title alone.
+   ![The Shares by channel card on the page of one video, marked 1](../../media/W15/W15-04-one-video-desktop.webp)
 <!-- /kb:steps -->
 
 ## What you should see
