@@ -43,5 +43,5 @@ A message says **Job queued again**, and the row leaves the list when the email 
 
 ## If something goes wrong
 - **The row says Gave up.** The job tried all its times and stopped. Click **Retry** once. If it fails again, the email service needs ARKDEV.
-- **There is no Email row.** The email may not have been sent at all. Check the address on **Roles and invites**, then ask the person to check spam.
+- **There is no Email row.** Invite and sign in emails go out at once, so they never get a row. If an invite said it was saved but the email could not be sent, click **Resend invite** under **Pending invites** on **Roles and invites**. Otherwise the email may not have been sent at all. Check the address on **Roles and invites**, then ask the person to check spam.
 - **Retry works and the email still does not come.** The email may be in spam, or the sending address is blocked. Ask ARKDEV to check the sender settings.

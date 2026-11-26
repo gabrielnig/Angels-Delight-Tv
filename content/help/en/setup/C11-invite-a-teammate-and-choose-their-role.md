@@ -51,6 +51,7 @@ The invite appears under **Pending invites** with the role, who invited them and
 > Roles: **Editor** looks after videos, captions and Home. **Admin** also sets the look, pages and viewer accounts. **Super admin** also controls the team and the switches. The table **What each role can do** at the bottom of the screen lists every action.
 
 ## If something goes wrong
-- **The email did not arrive.** Ask the person to check spam, then click **Resend invite**. If it keeps failing, look for it on the Jobs tab of System. [System: jobs, storage and player quality](help:C14)
-- **The invite shows Expired.** The link lasted 7 days. Click **Send a new invite** beside it.
-- **I typed the wrong address.** Click **Cancel invite**, then send a new one to the right address. Still stuck? [What to send ARKDEV](help:T11)
+- **The email did not arrive, or a message says the invite was saved but the email could not be sent.** The invite exists. Ask the person to check spam, then click **Resend invite** under **Pending invites**. If it keeps failing, see [Emails are not arriving](help:T15).
+- **A box asks me to confirm my password.** Sending invites and changing roles need your password within the last 10 minutes. Enter it and the action carries on by itself.
+- **The invite shows Expired, or I typed the wrong address.** Click **Send a new invite** beside an expired one. For a wrong address, click **Cancel invite** and send a new one. Still stuck? [What to send ARKDEV](help:T11)
+

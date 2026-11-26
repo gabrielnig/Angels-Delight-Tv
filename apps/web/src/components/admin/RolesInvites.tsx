@@ -113,6 +113,11 @@ export function RolesInvites({
     staff.find((m) => m.id === id)?.name ?? invites.find((i) => i.id === id)?.email ?? id;
 
   async function runBulk(action: StaffBulkAction, list: string[], prior?: BulkOutcome) {
+    const ready = await guard(() => actions.bulkPreflight!());
+    if (!ready.ok) {
+      if (ready.error !== 'Nothing was changed.') setRoleError(ready.error);
+      return;
+    }
     actionRef.current = action;
     setLastAction(action);
     setRoleConfirm(null);
