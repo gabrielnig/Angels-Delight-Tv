@@ -153,7 +153,7 @@ This list is written from the settings list in the platform, so it always has ev
    Group: Discovery and notices. Where: Site settings, Discovery tab. Default: "This site keeps a few small things on your device so it can work and remember your choices. It does not track you for advertising.". Who: Admins and Super admins.
 65. **Storage notice version**: Raise this number to show the storage notice again to everyone who already closed it.
    Group: Discovery and notices. Where: Site settings, Discovery tab, with the button Show notice again to everyone. Default: 1. Who: Admins and Super admins.
-66. **Staff second sign in step**: After the password, staff enter a code sent by email, or from an authenticator app. Existing apps keep working.
+66. **Staff second sign in step**: After the password, staff enter a code from email or an authenticator app. Each person can switch on My account.
    Group: Security. Where: Site settings, Security tab. Default: Email. Who: Super admins only.
 67. **Days before an idle staff sign in ends**: Staff sign in again after this many idle days. Each visit restarts the count. 1 to 30.
    Group: Security. Where: Site settings, Security tab. Default: 7 days. Who: Super admins only.

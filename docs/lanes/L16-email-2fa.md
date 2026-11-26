@@ -12,6 +12,11 @@ Branch `l16-email-2fa`. Migration 0062. Decisions D-397 to D-399. Earlier PR #48
 - Eye toggle on every password input (`components/PasswordToggle.tsx`) with a scan test.
 - Mail templates `staff_sign_in_code` and `staff_confirm_code`.
 
+## L16b: Security section on My account (D-400)
+- `StaffService`: `securitySummary`, `sendTestCode`, `confirmTestCode`, `switchToEmailCodes({password,code}|{emailCode})`, `beginAuthenticatorSwitch`, `finishAuthenticatorSwitch`. Mail template `staff_second_step_changed`.
+- UI: `components/admin/SecuritySection.tsx` inside `MyAccountView`. Tests: `staff-second-step-switch.int.test.ts`, `SecuritySection.test.tsx`.
+- Help: C13 updated, R04 rebuilt by running `pnpm help:settings`. The C13 two step screenshot and video still show the old card heading and need re-recording.
+
 ## Scoped tests
 - `TEST_DATABASE_ADMIN_URL=... pnpm vitest run packages/auth/src/staff-email-code.int.test.ts packages/auth/src/staff-trusted-device.int.test.ts packages/auth/src/sessions.int.test.ts`
 - `pnpm vitest run packages/mailer packages/theme packages/db/src scripts/design-doc-sync.test.ts scripts/kb-recorder/settings-reference.test.ts`
@@ -19,7 +24,7 @@ Branch `l16-email-2fa`. Migration 0062. Decisions D-397 to D-399. Earlier PR #48
 - `pnpm help:check`
 
 ## Gaps
-- No authenticator enrolment screen on My account yet. The service supports it.
+- Authenticator enrolment on My account exists only as the switch back from emailed codes (L16b, D-400); there is no enrolment for an account that never had a second step other than at sign in.
 - Staff mail and admin UI are English only (L7-D5), so no yo, ig or ha drafts were added.
 - Delivery of staff code mail is not verified against Brevo.
 - Purge relies on the cascade from accounts for `trusted_devices`.

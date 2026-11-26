@@ -213,10 +213,19 @@ export interface MyAccount {
   sessions: SessionRow[];
   /** Which second step this person uses. Missing means an authenticator (fixtures). */
   secondStep?: 'authenticator' | 'email';
-  /** An authenticator user may move to emailed codes: the site is on email and mail works. */
-  emailSwitchAvailable?: boolean;
+  /** The Security section: the method now and whether emailed codes are safe to switch to (L16b). */
+  security?: SecurityInfo;
   /** Browsers that skip the emailed code until they expire (D-397). */
   trustedDevices?: TrustedDeviceRow[];
+}
+
+export interface SecurityInfo {
+  method: 'authenticator' | 'email';
+  canUseEmail: boolean;
+  /** Plain words for why emailed codes are not available, when canUseEmail is false. */
+  blocker?: string;
+  /** A test code worked in the last 15 minutes. */
+  testedRecently: boolean;
 }
 
 export interface TrustedDeviceRow {

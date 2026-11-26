@@ -1077,7 +1077,23 @@ export interface AccountService {
   /** Real service only: mails a confirmation code to someone who uses emailed codes (D-397). */
   sendConfirmCode?(actor: AdminActor): Promise<FieldResult>;
   revokeTrustedDevice?(actor: AdminActor, id: string): Promise<FieldResult>;
-  switchToEmail?(actor: AdminActor, code: string): Promise<FieldResult>;
+  /** Mails a test code so the person can prove the inbox works before switching (L16b). */
+  sendTestCode?(actor: AdminActor): Promise<FieldResult>;
+  confirmTestCode?(actor: AdminActor, code: string): Promise<FieldResult>;
+  /** Authenticator to emailed codes. Proof is an emailed code, or password plus authenticator code after a test. */
+  switchToEmail?(
+    actor: AdminActor,
+    input: { password?: string; code?: string; emailCode?: string },
+  ): Promise<FieldResult>;
+  /** Emailed codes back to an authenticator: step one needs the password and returns the QR, step two a code. */
+  beginAuthenticator?(
+    actor: AdminActor,
+    password: string,
+  ): Promise<{ ok: true; secret: string; qrSvg: string } | { ok: false; field: string; error: string }>;
+  finishAuthenticator?(
+    actor: AdminActor,
+    code: string,
+  ): Promise<{ ok: true; codes: string[] } | { ok: false; field: string; error: string }>;
 }
 
 const own = (actor: AdminActor) =>

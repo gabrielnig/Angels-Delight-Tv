@@ -49,7 +49,7 @@ export function whereIs(key: SettingKey): string {
 /** Plain words for settings whose registry text is long or technical. Keep each to 25 words or fewer. */
 const PLAIN: Partial<Record<SettingKey, string>> = {
   'security.staff_second_step':
-    'After the password, staff enter a code sent by email, or from an authenticator app. Existing apps keep working.',
+    'After the password, staff enter a code from email or an authenticator app. Each person can switch on My account.',
   'security.staff_session_idle_days':
     'Staff sign in again after this many idle days. Each visit restarts the count. 1 to 30.',
   'security.staff_session_absolute_days':

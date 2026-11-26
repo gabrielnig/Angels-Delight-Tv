@@ -33,12 +33,12 @@ const episode: Episode = {
       run: async (s) => { await clickByName(s, 'button', 'Save name'); await s.pause(1200); },
     },
     {
-      caption: 'Check the **Two step sign in** card.',
-      note: 'It shows whether two step sign in is on and how many recovery codes you have left. Make new ones before you run out.',
-      run: async (s) => highlight(s, s.page.getByText('Two step sign in', { exact: true }).first(), 2400),
+      caption: 'Check the **Security** card.',
+      note: 'It shows whether you get a code by email or from an authenticator app, and how many recovery codes you have left. Use **Switch to emailed codes** or **Switch to an authenticator app** to change it.',
+      run: async (s) => highlight(s, s.page.getByRole('heading', { name: 'Security', exact: true }).first(), 2400),
       shot: {
         name: 'two-step',
-        alt: 'The Two step sign in card with the recovery codes button marked 1',
+        alt: 'The Security card with the recovery codes button marked 1',
         marks: [{ target: (s) => s.page.getByRole('button', { name: 'Make new recovery codes' }), label: 'Recovery codes' }],
       },
     },
