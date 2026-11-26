@@ -127,10 +127,10 @@ export async function signInAs(
   await s.goto('/admin/login');
   if (o.slow) {
     await s.type(s.page.getByLabel('Email'), account.email);
-    await s.type(s.page.getByLabel('Password'), account.password);
+    await s.type(s.page.getByLabel('Password', { exact: true }), account.password);
   } else {
     await s.page.getByLabel('Email').fill(account.email);
-    await s.page.getByLabel('Password').fill(account.password);
+    await s.page.getByLabel('Password', { exact: true }).fill(account.password);
   }
   await s.page.getByRole('button', { name: 'Sign in' }).click();
   await enterSignInCode(s, code, o.slow ? 120 : 10);

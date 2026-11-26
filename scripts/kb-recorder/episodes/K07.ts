@@ -1,7 +1,7 @@
 import type { Episode } from '../episode';
 import { pointAt, settle } from '../safety-helpers';
 
-/** K07: the safe habits that live on My account: password rules, two step sign in, recovery codes, devices. */
+/** K07: the safe habits that live on My account: password rules, the Security card, remembered devices, devices. */
 const episode: Episode = {
   id: 'K07',
   title: 'Keep the admin safe',
@@ -52,41 +52,31 @@ const episode: Episode = {
       },
     },
     {
-      caption: 'Scroll to **Two step sign in**.',
-      note: 'Two step sign in is on for every staff account. It asks for a code from your phone.',
+      caption: 'Scroll to **Security**.',
+      note: 'Every staff account has a second step. It asks for a code we email you, or one from your authenticator app.',
       run: async (s) => {
-        const h = s.page.getByRole('heading', { name: 'Two step sign in' });
+        const h = s.page.getByRole('heading', { name: 'Security', exact: true });
         await s.reveal(h, 0.2);
         await pointAt(s, h);
       },
+      shot: {
+        name: 'security',
+        alt: 'The Security card showing the second step in use, marked 1',
+        marks: [{ target: (s) => s.page.getByRole('heading', { name: 'Security', exact: true }), label: 'Security' }],
+      },
     },
     {
-      caption: 'Click **Make new recovery codes**.',
-      note: 'Recovery codes let you in if you lose your phone. Each code works once. Keep them somewhere safe and private.',
+      caption: 'Scroll to **Remembered devices**.',
+      note: 'These browsers skip the emailed code. Click **Forget** beside any you do not use. Authenticator app users see **Make new recovery codes** on the Security card instead. Each recovery code works once, so keep them private.',
       run: async (s) => {
-        const b = s.page.getByRole('button', { name: 'Make new recovery codes' });
-        await s.click(b);
-        await s.page.getByRole('dialog').waitFor();
-        await settle(s, 600);
+        const h = s.page.getByRole('heading', { name: 'Remembered devices', exact: true });
+        await s.reveal(h, 0.2);
+        await pointAt(s, h);
       },
       shot: {
-        name: 'recovery-box',
-        alt: 'The Make new recovery codes box asking for the authenticator code, marked 1',
-        marks: [{ target: (s) => s.page.getByRole('dialog').getByLabel('Authenticator code'), label: 'Authenticator code' }],
-      },
-    },
-    {
-      caption: 'Check that **Your old codes stop working.** is in the box.',
-      run: async (s) => {
-        await pointAt(s, s.page.getByRole('dialog').getByText('Your old codes stop working.'));
-      },
-    },
-    {
-      caption: 'Click **Cancel**.',
-      note: 'Do not paste recovery codes into chats or emails, and do not take pictures of them.',
-      run: async (s) => {
-        await s.click(s.page.getByRole('dialog').getByRole('button', { name: 'Cancel' }));
-        await settle(s, 500);
+        name: 'remembered',
+        alt: 'The Remembered devices card with its Forget button marked 1',
+        marks: [{ target: (s) => s.page.getByRole('button', { name: /^Forget / }).first(), label: 'Forget' }],
       },
     },
     {

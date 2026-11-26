@@ -34,12 +34,22 @@ const episode: Episode = {
     },
     {
       caption: 'Check the **Security** card.',
-      note: 'It shows whether you get a code by email or from an authenticator app, and how many recovery codes you have left. Use **Switch to emailed codes** or **Switch to an authenticator app** to change it.',
+      note: 'It shows whether you get a code by email or from an authenticator app. Use **Switch to an authenticator app** or **Switch to emailed codes** to change it.',
       run: async (s) => highlight(s, s.page.getByRole('heading', { name: 'Security', exact: true }).first(), 2400),
       shot: {
-        name: 'two-step',
-        alt: 'The Security card with the recovery codes button marked 1',
-        marks: [{ target: (s) => s.page.getByRole('button', { name: 'Make new recovery codes' }), label: 'Recovery codes' }],
+        name: 'security',
+        alt: 'The Security card with the Switch to an authenticator app button marked 1',
+        marks: [{ target: (s) => s.page.getByRole('button', { name: 'Switch to an authenticator app' }), label: 'Switch method' }],
+      },
+    },
+    {
+      caption: 'Check the **Remembered devices** card.',
+      note: 'These browsers skip the emailed code until they expire. Click **Forget** beside one you no longer trust.',
+      run: async (s) => highlight(s, s.page.getByRole('heading', { name: 'Remembered devices', exact: true }), 2400),
+      shot: {
+        name: 'remembered',
+        alt: 'The Remembered devices card with its Forget button marked 1',
+        marks: [{ target: (s) => s.page.getByRole('button', { name: /^Forget / }).first(), label: 'Forget' }],
       },
     },
     {

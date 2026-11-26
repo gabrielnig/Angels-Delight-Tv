@@ -22,7 +22,7 @@ status: draft
 Change one person's role and reset another person's two step sign in. You end with both changes recorded in the audit log.
 
 ## Before you start
-You need to be a Super admin. Read [Invite a teammate and choose their role](help:C11) first. For a reset, you confirm with your password or a code we email you.
+You need to be a Super admin. Read [Invite a teammate and choose their role](help:C11) first. For a reset, you confirm with your own code: one we email you, or one from your authenticator app.
 
 ## Steps
 <!-- kb:steps C12 -->

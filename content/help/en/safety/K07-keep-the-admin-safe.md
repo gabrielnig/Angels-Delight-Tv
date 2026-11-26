@@ -20,7 +20,7 @@ locale: en
 status: draft
 ---
 ## What you will do
-Look at the safety tools on **My account**: password rules, two step sign in, recovery codes and your list of devices. You change nothing.
+Look at the safety tools on **My account**: password rules, the **Security** card, remembered devices and your list of devices. You change nothing.
 
 ## Before you start
 You need to be an Editor, Admin or Super admin.
@@ -34,9 +34,9 @@ Safe habits:
 
 Password rules: at least 10 characters, not a very common password, and not the same as your email. The list under **New password** shows each rule as you type.
 
-Staff sessions end after 60 minutes of no use, and after 8 hours in all. A warning shows before that happens. Changing your password signs you out on your other devices.
+Staff sessions end after 7 days of no use, and after 30 days in all, unless your Super admin changed this. Changing your password signs you out on your other devices and forgets remembered devices.
 
-If you think someone else has your password, change it now, press **Sign out** beside every device you do not know, make new recovery codes and tell a Super admin.
+If you think someone else has your password, change it now, press **Sign out** beside every device you do not know, click **Forget** beside every remembered device you do not know, make new recovery codes if you use an authenticator app, and tell a Super admin.
 
 ## Steps
 <!-- kb:steps K07 -->
@@ -61,7 +61,7 @@ If you think someone else has your password, change it now, press **Sign out** b
 <!-- /kb:steps -->
 
 ## What you should see
-You have seen the password rules, the two step sign in card, the recovery codes box and your devices. Nothing was saved.
+You have seen the password rules, the **Security** card, your remembered devices and your signed in devices. Nothing was saved.
 
 ## If something goes wrong
 - **I lost my phone or cannot get the email.** Authenticator users can use a recovery code. Otherwise ask a Super admin to reset your two step sign in.

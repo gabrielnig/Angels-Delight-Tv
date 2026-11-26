@@ -32,7 +32,7 @@ const episode: Episode = {
     {
       caption: 'Type your password.',
       run: async (s) => {
-        await s.type(s.page.getByLabel('Password'), account.password);
+        await s.type(s.page.getByLabel('Password', { exact: true }), account.password);
       },
     },
     {
