@@ -655,7 +655,7 @@ export const SETTING_DEFS = {
     group: 'security',
     label: 'Staff second sign in step',
     description:
-      'After the password, staff enter a code. Email: the code is mailed to them. Authenticator: they set up an authenticator app. Anyone who already has an app keeps using it.',
+      'After the password, staff enter a code. Email: the code is mailed to them. Authenticator: they set up an authenticator app. Anyone who already has an app keeps using it until they switch on My account.',
   }),
   'security.staff_session_idle_days': def({
     schema: int(1, 30),

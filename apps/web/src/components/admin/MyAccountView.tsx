@@ -10,11 +10,13 @@ import { Button } from './Button';
 import { Dialog } from './Dialog';
 import { TextField } from './fields';
 import { Icon } from './Icon';
+import { SecuritySection } from './SecuritySection';
+import type { SecurityActions } from './SecuritySection';
 import { Banner } from './states';
 import { useToast } from './Toast';
 import { useRouter } from 'next/navigation';
 
-export interface AccountActions {
+export interface AccountActions extends SecurityActions {
   updateName(name: string): Promise<FieldResult>;
   changePassword(
     current: string,
@@ -29,7 +31,6 @@ export interface AccountActions {
   /** Emails a fresh confirmation code. Only for people who use emailed codes. */
   sendConfirmCode?(): Promise<FieldResult>;
   revokeTrustedDevice?(id: string): Promise<FieldResult>;
-  switchToEmail?(code: string): Promise<FieldResult>;
 }
 
 export function MyAccountView({
@@ -60,9 +61,6 @@ export function MyAccountView({
   const check = checkPassword(next, account.email);
   const emailMode = account.secondStep === 'email';
   const [codeNotice, setCodeNotice] = useState<string>();
-  const [switchOpen, setSwitchOpen] = useState(false);
-  const [switchCode, setSwitchCode] = useState('');
-  const [switchError, setSwitchError] = useState<string>();
 
   async function guard<T>(key: string, work: () => Promise<T>): Promise<T | null> {
     setBusy(key);
@@ -122,16 +120,6 @@ export function MyAccountView({
       setErrors({});
       setCodeNotice('A code is on its way. Check your email, then enter it here.');
     } else setErrors({ code: r.error });
-  }
-  async function switchToEmail() {
-    const r = await guard('switch', () => actions.switchToEmail!(switchCode.replace(/\s/g, '')));
-    if (!r) return;
-    if (r.ok) {
-      setSwitchOpen(false);
-      setSwitchCode('');
-      toast.show({ tone: 'success', message: 'You will use emailed codes from now on.' });
-      router.refresh();
-    } else setSwitchError(r.error);
   }
   const closeCodes = () => {
     setCodesOpen(false);
@@ -267,41 +255,47 @@ export function MyAccountView({
 
       <section className="adm-card adm-stack" aria-labelledby="acc-2fa">
         <h2 className="adm-h3" id="acc-2fa">
-          Two step sign in
+          Security
         </h2>
+        <p className="adm-muted" style={{ margin: 0 }}>
+          Your second step after your password.
+        </p>
+        {account.security ? (
+          <SecuritySection
+            security={account.security}
+            actions={actions}
+            onChanged={() => router.refresh()}
+          />
+        ) : null}
         {emailMode ? (
-          <>
-            <div className="adm-row">
-              <Badge tone="success" icon="shield">
-                Emailed code
-              </Badge>
-            </div>
-            <p className="adm-muted" style={{ margin: 0 }}>
-              After your password we email you a code. There are no recovery codes: your inbox is the
-              fallback, so keep that account secure.
-            </p>
-          </>
+          <p className="adm-muted" style={{ margin: 0 }}>
+            After your password we email you a code. There are no recovery codes: your inbox is the
+            fallback, so keep that account secure.
+          </p>
         ) : (
           <>
+            {account.security ? null : (
+              <div className="adm-row">
+                <Badge
+                  tone={account.twoFactor ? 'success' : 'warning'}
+                  icon={account.twoFactor ? 'shield' : 'alert'}
+                >
+                  {account.twoFactor ? 'Authenticator app' : 'Not set up'}
+                </Badge>
+              </div>
+            )}
             <div className="adm-row">
-              <Badge
-                tone={account.twoFactor ? 'success' : 'warning'}
-                icon={account.twoFactor ? 'shield' : 'alert'}
-              >
-                {account.twoFactor ? 'Authenticator app' : 'Not set up'}
+              <Badge tone={account.recoveryCodesLeft <= 3 ? 'warning' : 'neutral'} icon="key">
+                {account.recoveryCodesLeft} recovery codes left
               </Badge>
-              <span className="adm-muted">{account.recoveryCodesLeft} recovery codes left</span>
             </div>
             {account.recoveryCodesLeft <= 3 ? (
               <Banner tone="warning">
                 You are running low on recovery codes. Make new ones and keep them somewhere safe.
               </Banner>
             ) : null}
-            <div className="adm-row">
+            <div>
               <Button onClick={() => setCodesOpen(true)}>Make new recovery codes</Button>
-              {account.emailSwitchAvailable && actions.switchToEmail ? (
-                <Button onClick={() => setSwitchOpen(true)}>Use emailed codes instead</Button>
-              ) : null}
             </div>
           </>
         )}
@@ -391,40 +385,6 @@ export function MyAccountView({
           ))}
         </ul>
       </section>
-
-      <Dialog
-        open={switchOpen}
-        onClose={() => {
-          setSwitchOpen(false);
-          setSwitchCode('');
-          setSwitchError(undefined);
-        }}
-        title="Use emailed codes instead?"
-        size="sm"
-        footer={
-          <>
-            <Button variant="ghost" onClick={() => setSwitchOpen(false)}>
-              Cancel
-            </Button>
-            <Button variant="primary" loading={busy === 'switch'} onClick={() => void switchToEmail()}>
-              Switch to emailed codes
-            </Button>
-          </>
-        }
-      >
-        <p style={{ margin: 0 }}>
-          Your authenticator app and recovery codes stop working and you are signed out on your other
-          devices. Enter the 6 digit code from your app to confirm.
-        </p>
-        <TextField
-          label="Authenticator code"
-          inputMode="numeric"
-          autoComplete="one-time-code"
-          value={switchCode}
-          error={switchError}
-          onChange={(e) => setSwitchCode(e.target.value)}
-        />
-      </Dialog>
 
       <Dialog
         open={codesOpen}

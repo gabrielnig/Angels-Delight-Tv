@@ -105,6 +105,7 @@ describe('MyAccountView with emailed codes (D-397)', () => {
       sendConfirmCode: vi.fn().mockResolvedValue({ ok: true }),
       revokeTrustedDevice: vi.fn().mockResolvedValue(ok),
       switchToEmail: vi.fn().mockResolvedValue(ok),
+      beginAuthenticator: vi.fn(),
     };
     render(
       <ToastProvider>
@@ -136,13 +137,20 @@ describe('MyAccountView with emailed codes (D-397)', () => {
     await waitFor(() => expect(a.revokeTrustedDevice).toHaveBeenCalledWith('td1'));
   });
 
-  it('lets an authenticator user switch to emailed codes with their current code', async () => {
-    const a = emailView({ secondStep: 'authenticator', twoFactor: true, emailSwitchAvailable: true, recoveryCodesLeft: 8 });
-    fireEvent.click(screen.getByRole('button', { name: 'Use emailed codes instead' }));
-    fireEvent.change(screen.getByLabelText('Authenticator code', { selector: 'dialog input, [role=dialog] input' }), {
-      target: { value: '123 456' },
+  it('shows the Security section with the switch for an authenticator user', () => {
+    emailView({
+      secondStep: 'authenticator',
+      twoFactor: true,
+      recoveryCodesLeft: 8,
+      security: { method: 'authenticator', canUseEmail: true, testedRecently: false },
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Switch to emailed codes' }));
-    await waitFor(() => expect(a.switchToEmail).toHaveBeenCalledWith('123456'));
+    expect(screen.getByRole('heading', { name: 'Security' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Switch to emailed codes' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Make new recovery codes' })).toBeTruthy();
+  });
+
+  it('offers the switch back to an authenticator for an email user', () => {
+    emailView({ security: { method: 'email', canUseEmail: true, testedRecently: false } });
+    expect(screen.getByRole('button', { name: 'Switch to an authenticator app' })).toBeTruthy();
   });
 });

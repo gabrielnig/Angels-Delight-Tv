@@ -2217,3 +2217,10 @@ Reversible: yes. The id is optional and old events stay valid; no migration.
 - Options: Style a native control per screen (drifts); one shared component used by the field wrappers (chosen).
 - Why: The owner could not see his password on the invite page and sent invites failed without a prompt.
 - Reversible: Yes.
+
+## D-400 Staff switch their own second step on My account, with a test code first (lane L16b, M12)
+- Decision: (1) My account has a Security section where a signed in staff member switches between emailed codes and an authenticator app. (2) To email: mail on, site setting email, address verified, and a test code that worked in the last 15 minutes (recorded as the audit entry `admin.email_code_tested`, no new table). Proof is a fresh password plus the current authenticator code, or a fresh emailed code, which also counts as the test. (3) The switch removes the authenticator and its recovery codes and ends the other sessions. (4) Back to an authenticator: fresh password, scan, a code from the new app, new recovery codes, remembered devices forgotten. (5) Each change is audited and mails a notice to the address. (6) The site setting stays the gate: with the site set to authenticator, the switch to email is refused and says a Super admin can allow it in Site settings, Security.
+- Options: Make the choice a per account setting that overrides the site setting (larger change to sign in, more states); keep the old authenticator code only switch (cannot prove the inbox works, no way back); site setting gate with a test code (chosen).
+- Why: The owner's Super admin account already had an authenticator, which always wins, so he could not move to emailed codes. The test code and verified address guard against lockout; the notice and audit make a hijacked switch visible.
+- Reversible: Yes. No schema change. Remove the Security buttons and the service methods to go back.
+

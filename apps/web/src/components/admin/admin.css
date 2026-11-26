@@ -51,6 +51,13 @@
   line-height: var(--leading-snug);
   font-weight: var(--weight-semibold);
 }
+.adm-h4 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: var(--text-body);
+  line-height: var(--leading-snug);
+  font-weight: var(--weight-semibold);
+}
 .adm-lead {
   margin: var(--space-1) 0 0;
   color: var(--color-muted);

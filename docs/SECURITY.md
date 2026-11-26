@@ -98,6 +98,8 @@ Mitigations in place: a staff password reset never signs anyone in and ends ever
 
 Residual risk: a compromised staff mailbox plus knowledge of the account still opens that account. Recommendation for the owner: set up an authenticator app on every Super admin account (it is per account and wins over email for that account), keep the default for editors, and set `security.staff_second_step` to `authenticator` if no one should rely on email. Not verified against a real mail provider: delivery speed and spam placement of the code mail.
 
+Switching the second step (D-400): a signed in staff member changes between an authenticator and emailed codes on My account, Security. To email: mail must be on, the site setting must be email and the address verified, a test code must have worked in the last 15 minutes, and the person proves it with a fresh password plus the current authenticator code, or a fresh emailed code. The authenticator and its recovery codes are removed and other sessions end. To an authenticator: a fresh password, then a code from the new app. Both changes are audited (`admin.mfa_switched_to_email`, `admin.mfa_switched_to_authenticator`, `admin.email_code_tested`) and mail a notice with time, device and country to the address.
+
 CSRF:
 - `SameSite=Lax` cookies, plus every state-changing route handler calls `assertSameOrigin()`: requires `Origin` (or `Sec-Fetch-Site: same-origin`) to match `APP_ORIGIN`, otherwise 403. Server Actions use the framework origin check plus the same helper. No state changes on GET.
 - No CORS headers on API routes. They are same-origin only.

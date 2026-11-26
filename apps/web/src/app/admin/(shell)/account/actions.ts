@@ -58,10 +58,46 @@ export async function revokeTrustedDeviceAction(id: string) {
   return result;
 }
 
-export async function switchToEmailAction(code: string) {
+const clean = (value: string | undefined) => (value === undefined ? undefined : String(value).replace(/\s/g, ''));
+
+export async function sendTestCodeAction() {
+  const actor = await requireActionActor('/admin/account');
+  return (await accountService.sendTestCode?.(actor)) ?? unavailable;
+}
+
+export async function confirmTestCodeAction(code: string) {
   const actor = await requireActionActor('/admin/account');
   const result =
-    (await accountService.switchToEmail?.(actor, String(code).replace(/\s/g, ''))) ?? unavailable;
+    (await accountService.confirmTestCode?.(actor, clean(code) ?? '')) ?? unavailable;
+  revalidatePath('/admin/account');
+  return result;
+}
+
+export async function switchToEmailAction(input: {
+  password?: string;
+  code?: string;
+  emailCode?: string;
+}) {
+  const actor = await requireActionActor('/admin/account');
+  const result =
+    (await accountService.switchToEmail?.(actor, {
+      password: input.password === undefined ? undefined : String(input.password),
+      code: clean(input.code),
+      emailCode: clean(input.emailCode),
+    })) ?? unavailable;
+  revalidatePath('/admin/account');
+  return result;
+}
+
+export async function beginAuthenticatorAction(password: string) {
+  const actor = await requireActionActor('/admin/account');
+  return (await accountService.beginAuthenticator?.(actor, String(password))) ?? unavailable;
+}
+
+export async function finishAuthenticatorAction(code: string) {
+  const actor = await requireActionActor('/admin/account');
+  const result =
+    (await accountService.finishAuthenticator?.(actor, clean(code) ?? '')) ?? unavailable;
   revalidatePath('/admin/account');
   return result;
 }

@@ -80,7 +80,7 @@ export const realAccountService: AccountService = {
       email: overview.email,
       twoFactor: step === 'authenticator',
       secondStep: step === 'email' ? 'email' : 'authenticator',
-      emailSwitchAvailable: step === 'authenticator' && (await staff.emailStepAvailable()),
+      security: await staff.securitySummary(who),
       trustedDevices: trusted.map((d) => ({
         id: d.id,
         label: d.label,
@@ -195,14 +195,60 @@ export const realAccountService: AccountService = {
     }
   },
 
-  async switchToEmail(actor, code) {
+  async sendTestCode(actor) {
     need(actor, 'account.own');
     try {
       const rt = adminRuntime();
-      await rt.auth().staff.switchToEmailCodes(staffActor(actor), { code }, await rt.meta());
+      const result = await rt.auth().staff.sendTestCode(staffActor(actor), await rt.meta());
+      return result.sent ? OK : fail('code', 'We could not send the code. Try again in a moment.');
+    } catch (error) {
+      return fieldFailure(error, 'code');
+    }
+  },
+
+  async confirmTestCode(actor, code) {
+    need(actor, 'account.own');
+    try {
+      const rt = adminRuntime();
+      await rt.auth().staff.confirmTestCode(staffActor(actor), { code }, await rt.meta());
       return OK;
     } catch (error) {
       return fieldFailure(error, 'code');
+    }
+  },
+
+  async switchToEmail(actor, input) {
+    need(actor, 'account.own');
+    try {
+      const rt = adminRuntime();
+      await rt.auth().staff.switchToEmailCodes(staffActor(actor), input, await rt.meta());
+      return OK;
+    } catch (error) {
+      return fieldFailure(error, 'code');
+    }
+  },
+
+  async beginAuthenticator(actor, password) {
+    need(actor, 'account.own');
+    try {
+      const rt = adminRuntime();
+      const begin = await rt.auth().staff.beginAuthenticatorSwitch(staffActor(actor), { password }, await rt.meta());
+      return { ok: true, secret: begin.secret, qrSvg: begin.qrSvg };
+    } catch (error) {
+      const failed = fieldFailure(error, 'password');
+      return failed.ok ? { ok: false, field: 'password', error: 'Something went wrong.' } : failed;
+    }
+  },
+
+  async finishAuthenticator(actor, code) {
+    need(actor, 'account.own');
+    try {
+      const rt = adminRuntime();
+      const done = await rt.auth().staff.finishAuthenticatorSwitch(staffActor(actor), { code }, await rt.meta());
+      return { ok: true, codes: done.recoveryCodes };
+    } catch (error) {
+      const failed = fieldFailure(error, 'code');
+      return failed.ok ? { ok: false, field: 'code', error: 'Something went wrong.' } : failed;
     }
   },
 };
