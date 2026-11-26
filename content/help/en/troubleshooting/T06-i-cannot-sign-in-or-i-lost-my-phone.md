@@ -22,7 +22,7 @@ status: draft
 Find out why you cannot sign in and what to do next. You end signed in, or with a Super admin resetting your [two step sign in](glossary:two-step-sign-in).
 
 ## Before you start
-Have your email address and your phone with the [authenticator app](glossary:authenticator-app). If you saved [recovery codes](glossary:recovery-code) when you first signed in, find them. Each one works once.
+Have your email address and access to your inbox. If you set up an [authenticator app](glossary:authenticator-app) and saved [recovery codes](glossary:recovery-code), find them. Each one works once.
 
 ## Steps
 <!-- kb:steps T06 -->
@@ -38,7 +38,7 @@ Have your email address and your phone with the [authenticator app](glossary:aut
 6. Type your password in the **Password** box.
 7. Click **Sign in** again.
 8. Check the **Enter your code** page.
-   The code is in your authenticator app and changes every 30 seconds. Check the clock on your phone is right.
+   The code is in the email we sent, or in your app if you use one. Emailed codes last 10 minutes.
    ![The code page with the six digit boxes marked 1](../../media/T06/T06-08-code-desktop-dark.webp)
 <!-- /kb:steps -->
 
@@ -49,9 +49,9 @@ After the right password, the page asks for the 6 digit code. After the right co
 > After too many wrong tries the page says **Too many attempts** and how many minutes to wait. Wait that long before you try again.
 
 > [!CAREFUL]
-> If your phone is lost, you can sign in with a recovery code. On the code page, click **Use a recovery code**, type one code and click **Use recovery code**. If you have no codes left, ask a Super admin to reset your two step sign in.
+> If you use an authenticator app and lost your phone, you can sign in with a recovery code. On the code page, click **Use a recovery code**, type one code and click **Use recovery code**. If you have no codes left, ask a Super admin to reset your two step sign in.
 
 ## If something goes wrong
 - **The message says the email or password is not right.** Check both. The message is the same for a wrong email or password. Ask a Super admin which email your account uses.
-- **The code is rejected.** Check the time on your phone is set to automatic. A code changes every 30 seconds, so type a fresh one.
-- **You lost your phone and have no recovery codes.** A Super admin opens **Roles and invites**, clicks **Reset** next to your name and enters their own code. You then set up the app again at your next sign in.
+- **The code is rejected or the email has not come.** Check spam, wait a minute, choose **Email me a new code** and use only the newest. App users: check the phone clock is automatic.
+- **You lost your phone and have no recovery codes.** A Super admin opens **Roles and invites**, clicks **Reset** next to your name and enters their own code. You then sign in again with an emailed code.

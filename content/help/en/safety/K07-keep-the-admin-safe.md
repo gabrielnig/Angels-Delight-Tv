@@ -48,7 +48,7 @@ If you think someone else has your password, change it now, press **Sign out** b
    This is only to show the rules. Nothing is saved until you press Change password.
    ![The password rules list under the New password box, marked 1](../../media/K07/K07-04-password-rules-desktop.webp)
 5. Scroll to **Two step sign in**.
-   Two step sign in is on for every staff account. It asks for a code from your phone.
+   Two step sign in is on for every staff account. It asks for a code we email you, or one from your app.
 6. Click **Make new recovery codes**.
    Recovery codes let you in if you lose your phone. Each code works once. Keep them somewhere safe and private.
    ![The Make new recovery codes box asking for the authenticator code, marked 1](../../media/K07/K07-06-recovery-box-desktop.webp)
@@ -56,7 +56,7 @@ If you think someone else has your password, change it now, press **Sign out** b
 8. Click **Cancel**.
    Do not paste recovery codes into chats or emails, and do not take pictures of them.
 9. Scroll to **Where you are signed in**.
-   Sign out any device you do not know or no longer use. Staff sessions end after 60 minutes of no use.
+   Sign out any device you do not know or no longer use. Staff sessions end after 7 days of no use, and after 30 days at most. Remembered devices are listed on this page with **Forget**.
    ![The list of devices where you are signed in, marked 1](../../media/K07/K07-09-devices-desktop.webp)
 <!-- /kb:steps -->
 
@@ -64,5 +64,5 @@ If you think someone else has your password, change it now, press **Sign out** b
 You have seen the password rules, the two step sign in card, the recovery codes box and your devices. Nothing was saved.
 
 ## If something goes wrong
-- **I lost my phone.** Use one of your recovery codes to sign in. If you have none, ask a Super admin to reset your two step sign in.
+- **I lost my phone or cannot get the email.** Authenticator users can use a recovery code. Otherwise ask a Super admin to reset your two step sign in.
 - **A device I do not know is in the list.** Press **Sign out** beside it, then change your password. Still stuck? [What to send ARKDEV](help:T11)

@@ -22,7 +22,7 @@ status: draft
 Change one person's role and reset another person's two step sign in. You end with both changes recorded in the audit log.
 
 ## Before you start
-You need to be a Super admin. Read [Invite a teammate and choose their role](help:C11) first. For a reset, you need your own authenticator app.
+You need to be a Super admin. Read [Invite a teammate and choose their role](help:C11) first. For a reset, you confirm with your password or a code we email you.
 
 ## Steps
 <!-- kb:steps C12 -->
@@ -34,15 +34,15 @@ You need to be a Super admin. Read [Invite a teammate and choose their role](hel
 4. Click **Change role** to confirm.
    The box explains what the new role can do. The person gets the new role the next time they open the admin.
 5. Click **Reset two step sign in for Demo Admin**.
-   Use this when someone loses their phone. They are signed out everywhere and set up their authenticator again at their next sign in.
+   Use this when someone loses their phone. They are signed out everywhere, their remembered devices are forgotten, and they sign in again with an emailed code.
    ![The reset box with the code field marked 1](../../media/C12/C12-05-reset-desktop.webp)
 6. Type "123456" in the **Your authenticator code** box.
-   This is your own 6 digit code, not theirs. In this demo the code is 123456.
+   This is your own code, not theirs. If you use emailed codes, choose **Email me a code instead** and type that code.
 7. Click **Reset** to confirm.
 <!-- /kb:steps -->
 
 ## What you should see
-The **Role** column shows the new role. After a reset, the person is signed out everywhere, and the **2FA** column says **Not set up** until they sign in again and scan a new code.
+The **Role** column shows the new role. After a reset, the person is signed out everywhere, and the **2FA** column says **Not set up** until they sign in again.
 
 > [!CAREFUL]
 > You cannot change your own role. The only Super admin is locked, so make someone else a Super admin before you step down.
@@ -52,5 +52,5 @@ The **Role** column shows the new role. After a reset, the person is signed out 
 
 ## If something goes wrong
 - **The role list is greyed out.** It is your own row, or the only Super admin. Ask another Super admin.
-- **The reset says the code is wrong.** Enter your own 6 digit code from your authenticator app, not the other person's code.
-- **The person still cannot sign in.** They must use the sign in page and follow the new setup steps. They can use a recovery code if they kept one. Still stuck? [What to send ARKDEV](help:T11)
+- **The reset says the code is wrong.** Enter your own code or the newest emailed code, not the other person's.
+- **The person still cannot sign in.** They sign in again and use the emailed code. Check their email address is right. Still stuck? [What to send ARKDEV](help:T11)

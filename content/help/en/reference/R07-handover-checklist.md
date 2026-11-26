@@ -17,10 +17,10 @@ textOnly: true
 Work through a short list that gets you from handover to confident owner. The list is in three parts: the first day, the first week and the first month.
 
 ## Before you start
-You need a Super admin account with [two step sign in](glossary:two-step-sign-in) working and your recovery codes saved. Keep a list of who owns each account: the domain, Cloudflare, the server and the email service. Read who to call in [Who does what](help:R10).
+You need a Super admin account with [two step sign in](glossary:two-step-sign-in) working. Keep a list of who owns each account: the domain, Cloudflare, the server and the email service. Read who to call in [Who does what](help:R10).
 
 ## Steps
-1. First day: sign in and save your [recovery codes](glossary:recovery-code) somewhere safe that is not your phone.
+1. First day: sign in and check your email codes arrive. If you use an authenticator app, save your [recovery codes](glossary:recovery-code) away from your phone.
 2. First day: open the **Dashboard** and read what needs your attention.
 3. First day: open **Site settings** and check the site name and your **Help centre contact**. [Contact setting](help:R13)
 4. First day: open **Roles and invites** and check that you know every person with a staff role.

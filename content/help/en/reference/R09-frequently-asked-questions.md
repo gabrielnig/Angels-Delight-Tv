@@ -27,7 +27,7 @@ Nothing is needed. If your question is about a word, use the glossary. If it is 
 6. **Which roles are there?** Editor, Admin and Super admin. Each can do everything the role below can do. [Roles](help:R02)
 7. **What does a coloured badge mean?** Green is done, blue is working, amber needs a person, red did not finish. [Status words](help:R06)
 8. **What file types can I upload?** MP4, MOV and MKV. The size limit is under the upload box. [An upload keeps failing](help:T05)
-9. **I lost my phone. Can I still sign in?** Use a recovery code, or ask a Super admin to reset it. [Cannot sign in](help:T06)
+9. **I lost my phone. Can I still sign in?** Ask a Super admin to reset it, or use a recovery code. [Cannot sign in](help:T06)
 10. **Where is a screen?** The screen map lists every screen with a link. [Screen map](help:R03)
 11. **Which keys save time?** Press the question mark for Help, and the slash on a Help page to search. [Keyboard shortcuts](help:R05)
 12. **Who do I ask when I am stuck?** Use **Message ARKDEV** on the Help centre home page and say what you tried. [What to send](help:T11)
