@@ -7,7 +7,7 @@ role: admin
 needs: [C05]
 related: [C15, R14, W15]
 readMinutes: 3
-watchSeconds: 60
+watchSeconds: 51
 video:
   id: VC16
 actions: [settings.site]
@@ -27,6 +27,16 @@ You need to be an Admin or a Super admin. The options are on the same **Discover
 ## Steps
 <!-- kb:steps C16 -->
 1. Click **Site settings** in the side menu.
+2. Click **Discovery** at the top.
+3. Scroll to **Share options**.
+   Each row is one way to share. The switch turns it on or off, and the order of the rows is the order viewers see.
+   ![The Share options list with an Up and Down button and a switch on each row, marked 1](../../media/C16/C16-03-order-desktop.webp)
+4. Click **Move WhatsApp down**.
+   The first row has no Up button and the last row has no Down button, because they cannot move further.
+5. Click **Move Email up**.
+6. Untick **Telegram**.
+   A switched off option disappears from the Share sheet. Copy link is always first and the device menu is always last.
+7. Click **Save changes**.
 <!-- /kb:steps -->
 
 ## What you should see
