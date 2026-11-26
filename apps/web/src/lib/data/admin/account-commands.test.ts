@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   changePassword,
   ensureAccount,
@@ -20,6 +20,22 @@ describe('ensureAccount', () => {
     const a = ensureAccount(s, actor, 'chiamaka@example.test', NOW);
     expect(a.sessions.filter((x) => x.current)).toHaveLength(1);
     expect(ensureAccount(s, actor, 'chiamaka@example.test', NOW)).toBe(a);
+  });
+});
+
+describe('ensureAccount in the knowledge base demo', () => {
+  afterEach(() => vi.unstubAllEnvs());
+  it('shows an emailed code account with one remembered device', () => {
+    vi.stubEnv('KB_DEMO', 'on');
+    const a = ensureAccount(fresh(), actor, 'chiamaka@example.test', NOW);
+    expect(a.secondStep).toBe('email');
+    expect(a.security).toMatchObject({ method: 'email', canUseEmail: true });
+    expect(a.trustedDevices).toHaveLength(1);
+  });
+  it('keeps the authenticator account outside the demo', () => {
+    const a = ensureAccount(fresh(), actor, 'chiamaka@example.test', NOW);
+    expect(a.secondStep).toBeUndefined();
+    expect(a.trustedDevices).toBeUndefined();
   });
 });
 

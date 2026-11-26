@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createFixtureAuth, FIXTURE_PASSWORD } from './session';
+import { createFixtureAuth, fixtureEmailStep, FIXTURE_PASSWORD } from './session';
 
 describe('fixture admin sign in', () => {
   it('signs in a fixture admin with the right password', () => {
@@ -66,5 +66,13 @@ describe('demo names (KB_DEMO)', () => {
     } finally {
       delete process.env.KB_DEMO;
     }
+  });
+});
+
+describe('fixture email step', () => {
+  it('is on only for the knowledge base demo', () => {
+    expect(fixtureEmailStep({ KB_DEMO: 'on' })).toBe(true);
+    expect(fixtureEmailStep({ KB_DEMO: 'off' })).toBe(false);
+    expect(fixtureEmailStep({})).toBe(false);
   });
 });

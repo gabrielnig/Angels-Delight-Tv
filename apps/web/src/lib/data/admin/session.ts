@@ -8,6 +8,15 @@ import type { AdminActor } from './types';
  */
 export const FIXTURE_PASSWORD = 'fixture-password';
 export const FIXTURE_CODE = '123456';
+
+/**
+ * The knowledge base demo (KB_DEMO=on) shows the emailed code step of staff sign in, as the real site does by
+ * default (D-397). The fixed demo code is FIXTURE_CODE. Never on without the demo flag.
+ */
+export function fixtureEmailStep(env: Record<string, string | undefined> = process.env): boolean {
+  return env.KB_DEMO === 'on';
+}
+
 export const SESSION_COOKIE = 'ad_fixture_session';
 export const PENDING_COOKIE = 'ad_fixture_pending';
 

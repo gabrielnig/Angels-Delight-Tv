@@ -17,13 +17,30 @@ export function ensureAccount(
 ): MyAccount {
   const existing = s.accounts[actor.accountId];
   if (existing) return existing;
+  // The knowledge base demo (KB_DEMO=on) shows staff on emailed codes, the default second step (D-397).
+  const demo = process.env.KB_DEMO === 'on';
   const account: MyAccount = {
     accountId: actor.accountId,
     name: actor.name,
     email,
-    twoFactor: true,
-    recoveryCodesLeft: 8,
+    twoFactor: !demo,
+    recoveryCodesLeft: demo ? 0 : 8,
     passwordChangedAt: null,
+    ...(demo
+      ? {
+          secondStep: 'email' as const,
+          security: { method: 'email' as const, canUseEmail: true, testedRecently: false },
+          trustedDevices: [
+            {
+              id: `${actor.accountId}_td1`,
+              label: 'Chrome on Windows',
+              place: 'Lagos, Nigeria',
+              lastUsedAt: iso(now - 86_400_000),
+              expiresAt: iso(now + 29 * 86_400_000),
+            },
+          ],
+        }
+      : {}),
     sessions: [
       {
         id: `${actor.accountId}_s1`,
