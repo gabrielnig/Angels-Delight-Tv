@@ -403,8 +403,8 @@ describe('uploader engine: speed and eta', () => {
 });
 
 describe('laneFingerprint', () => {
-  it('combines name, size and modified time', () => {
-    expect(laneFingerprint(fakeFile('a.mp4', 5, 123))).toBe('a.mp4:5:123');
+  it('is a safe id that ends with the size and modified time in base36', () => {
+    expect(laneFingerprint(fakeFile('a.mp4', 5, 123))).toMatch(/^f[a-z0-9]+-5-3f$/);
   });
 });
 

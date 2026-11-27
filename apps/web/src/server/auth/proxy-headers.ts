@@ -20,6 +20,8 @@ export interface ProxyHeaderInput {
   requestId: string;
   mediaOrigin: string;
   s3Endpoint?: string;
+  /** Originals bucket name. With virtual hosted style URLs the browser PUT goes to `<bucket>.<endpoint host>`. */
+  s3Bucket?: string;
   isDevelopment: boolean;
   reportOnly: boolean;
   turnstile: boolean;
@@ -27,12 +29,16 @@ export interface ProxyHeaderInput {
 
 export function proxyResponseHeaders(input: ProxyHeaderInput): Record<string, string> {
   const admin = input.pathname === '/admin' || input.pathname.startsWith('/admin/');
-  let uploadOrigin: string | undefined;
+  const uploadOrigin: string[] = [];
   if (input.s3Endpoint) {
     try {
-      uploadOrigin = new URL(input.s3Endpoint).origin;
+      const endpoint = new URL(input.s3Endpoint);
+      uploadOrigin.push(endpoint.origin);
+      if (input.s3Bucket) {
+        uploadOrigin.push(`${endpoint.protocol}//${input.s3Bucket}.${endpoint.host}`);
+      }
     } catch {
-      uploadOrigin = undefined;
+      uploadOrigin.length = 0;
     }
   }
   const headers = buildSecurityHeaders({

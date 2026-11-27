@@ -16,6 +16,7 @@ export function proxy(request: NextRequest) {
       ? new URL(process.env.MEDIA_ORIGIN).origin
       : "'self'",
     s3Endpoint: process.env.S3_ENDPOINT,
+    s3Bucket: process.env.BUCKET_ORIGINALS ?? 'ad-originals',
     isDevelopment: process.env.NODE_ENV !== 'production',
     reportOnly: process.env.CSP_REPORT_ONLY === 'true',
     turnstile: Boolean(process.env.TURNSTILE_SITE_KEY),

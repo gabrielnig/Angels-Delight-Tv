@@ -63,4 +63,19 @@ describe('proxyResponseHeaders', () => {
     expect(h['Content-Security-Policy-Report-Only']).toBeDefined();
     expect(h['Content-Security-Policy']).toBeUndefined();
   });
+
+  it('allows the bucket subdomain the presigned PUT really goes to (virtual hosted style)', () => {
+    const h = proxyResponseHeaders({
+      pathname: '/admin/upload',
+      nonce: 'n',
+      requestId: 'r',
+      ...env,
+      s3Endpoint: 'https://acct123.r2.cloudflarestorage.com',
+      s3Bucket: 'ad-originals',
+    });
+    const csp = h['Content-Security-Policy']!;
+    expect(csp).toContain('https://ad-originals.acct123.r2.cloudflarestorage.com');
+    expect(csp).toContain('https://acct123.r2.cloudflarestorage.com');
+    expect(csp).not.toContain('*');
+  });
 });

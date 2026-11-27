@@ -2,7 +2,7 @@ export interface CspOptions {
   nonce: string;
   mediaOrigin: string;
   /** Object storage origin used by the admin uploader. Only added on admin pages. */
-  uploadOrigin?: string;
+  uploadOrigin?: string | readonly string[];
   admin: boolean;
   isDevelopment: boolean;
   /** Origin of the Turnstile challenge frame, when Turnstile is configured. */
@@ -17,7 +17,7 @@ export interface HeaderOptions extends CspOptions {
 export function buildCsp(options: CspOptions): string {
   const { nonce, mediaOrigin, uploadOrigin, admin, isDevelopment, turnstile } = options;
   const connect = ["'self'", mediaOrigin];
-  if (admin && uploadOrigin) connect.push(uploadOrigin);
+  if (admin && uploadOrigin) connect.push(...[uploadOrigin].flat());
   const script = ["'self'", `'nonce-${nonce}'`, "'strict-dynamic'"];
   if (isDevelopment) script.push("'unsafe-eval'");
   const directives = [

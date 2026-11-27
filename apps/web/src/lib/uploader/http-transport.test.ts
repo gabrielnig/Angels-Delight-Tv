@@ -100,4 +100,48 @@ describe('http transport', () => {
     });
     expect(bodies[0]).toMatchObject({ replaceVideoId: 'vid-1' });
   });
+
+  it('carries the status and the first field message of a 422 on the error', async () => {
+    const fetcher = async () =>
+      json(
+        {
+          error: {
+            code: 'validation_failed',
+            message: 'Validation failed',
+            fields: { fingerprint: ['The file identifier is not valid.'] },
+          },
+        },
+        422,
+      );
+    const transport = createHttpTransport({ fetch: fetcher as never, putPart: async () => {} });
+    const error = await transport
+      .start({ fingerprint: 'f', name: 'a.mp4', size: 1, type: '' })
+      .catch((e) => e);
+    expect(error).toBeInstanceOf(TransportError);
+    expect(error.kind).toBe('rejected');
+    expect(error.status).toBe(422);
+    expect(error.detail).toBe('The file identifier is not valid.');
+  });
+
+  it('uses the plain error message when there are no fields, and none for an html 502', async () => {
+    const plain = createHttpTransport({
+      fetch: (async () =>
+        json(
+          { error: { code: 'conflict', message: 'Too many unfinished uploads.' } },
+          409,
+        )) as never,
+    });
+    const a = await plain
+      .start({ fingerprint: 'f', name: 'a.mp4', size: 1, type: '' })
+      .catch((e) => e);
+    expect(a.detail).toBe('Too many unfinished uploads.');
+    const html = createHttpTransport({
+      fetch: (async () => new Response('<html>bad gateway</html>', { status: 502 })) as never,
+    });
+    const b = await html
+      .start({ fingerprint: 'f', name: 'a.mp4', size: 1, type: '' })
+      .catch((e) => e);
+    expect(b.status).toBe(502);
+    expect(b.detail).toBeUndefined();
+  });
 });
