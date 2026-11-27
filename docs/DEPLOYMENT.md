@@ -73,6 +73,28 @@ R2 setup:
 ]
 ```
 
+   Owner steps (Cloudflare dashboard, R2, `ad-originals`, Settings, CORS Policy, Add CORS policy, JSON tab, paste, Save). For the live site the origin is exactly `https://angelsdelight.tv` (no trailing slash, no path, scheme and host must match `APP_ORIGIN`; add a second entry for `https://www.<APP_DOMAIN>` only if that host serves the admin):
+
+```json
+[
+  {
+    "AllowedOrigins": ["https://angelsdelight.tv"],
+    "AllowedMethods": ["PUT", "GET", "HEAD"],
+    "AllowedHeaders": ["content-type", "content-length"],
+    "ExposeHeaders": ["ETag"],
+    "MaxAgeSeconds": 3600
+  }
+]
+```
+
+   Check it from any shell (the preflight must answer 200 with `access-control-allow-origin` and `access-control-allow-methods` including PUT; use any key, the answer does not need a real upload):
+
+```
+curl -si -X OPTIONS "https://ad-originals.<ACCOUNT_ID>.r2.cloudflarestorage.com/originals/test" \
+  -H "Origin: https://angelsdelight.tv" -H "Access-Control-Request-Method: PUT" | head -12
+```
+
+   The browser PUT goes to `https://<bucket>.<account>.r2.cloudflarestorage.com` when `S3_FORCE_PATH_STYLE=false` (the default), or to the account host when it is `true`. The app allows both origins in the admin `connect-src` (D-401), so no env change is needed. The wrangler form of the same rule uses a different shape (`{"rules":[{"allowed":{"origins":[...],"methods":[...]}}]}`) and is not needed.
 5. CORS on `ad-media`: allowed origin `https://<APP_DOMAIN>`, methods `GET` and `HEAD`, headers `range`, max age 86400. The Edge Worker also sets these headers.
 
 Media domain with signed URLs (default, `EDGE_TOKEN_MODE=worker`):

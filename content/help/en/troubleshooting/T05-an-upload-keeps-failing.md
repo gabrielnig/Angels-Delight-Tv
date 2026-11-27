@@ -13,7 +13,7 @@ actions: [video.upload]
 aliases: [upload failed, cannot upload, file rejected, too big, wrong format, stuck uploading]
 flow: T05
 dependsOn: [apps/web/src/components/admin/UploadScreen.tsx, apps/web/src/components/admin/UploadLane.tsx]
-updated: 2026-11-25
+updated: 2026-11-27
 locale: en
 status: draft
 ---
@@ -45,4 +45,6 @@ A file that is not accepted shows a short message under its name, such as that i
 ## If something goes wrong
 - **The file is the wrong type.** Save or export it again as MP4, MOV or MKV, then add it again.
 - **The file is over the size limit.** Make the video smaller in your editing app, or cut it into parts.
+- **The message says Your session ended.** Sign in again, then press **Retry** on the file.
+- **The message gives a reason and says to remove the file.** Choose **Remove**, fix the file as the message says, then add it again.
 - **A file says Upload failed and Retry does not help.** Note the file name, the time and the message, and send them to the developer.

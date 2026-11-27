@@ -15,8 +15,42 @@ const SPEED_WINDOW_MS = 5000;
 export const DEFAULT_EXTENSIONS = ['mp4', 'mov', 'mkv'] as const;
 export const DEFAULT_MAX_FILE_BYTES = 5 * GIB;
 
+/** 53-bit string hash (cyrb53). Synchronous, so it needs no crypto.subtle and works on any page. */
+function hash53(text: string): number {
+  let h1 = 0xdeadbeef;
+  let h2 = 0x41c6ce57;
+  for (let i = 0; i < text.length; i++) {
+    const ch = text.charCodeAt(i);
+    h1 = Math.imul(h1 ^ ch, 2654435761);
+    h2 = Math.imul(h2 ^ ch, 1597334677);
+  }
+  h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^ Math.imul(h2 ^ (h2 >>> 13), 3266489909);
+  h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489909);
+  return 4294967296 * (2097151 & h2) + (h1 >>> 0);
+}
+
+/**
+ * A stable id for a picked file, in the server's alphabet [A-Za-z0-9_-] (8 to 128 characters). The raw name
+ * is never sent: iOS names carry dots, spaces and unicode, and the server rule stays strict.
+ */
 export function laneFingerprint(file: UploadSource): string {
-  return `${file.name}:${file.size}:${file.lastModified}`;
+  const digest = hash53(`${file.name}\u0000${file.size}\u0000${file.lastModified}`);
+  const part = (n: number) => Math.max(0, Math.floor(n)).toString(36);
+  return `f${digest.toString(36)}-${part(file.size)}-${part(file.lastModified)}`;
+}
+
+const START_RETRY_TEXT = 'Upload failed before it began. Try again.';
+
+/** Plain words for a failed start: the server's reason for a refusal, sign in for auth, retry otherwise. */
+function startFailureMessage(error: unknown): string {
+  if (!(error instanceof TransportError)) return START_RETRY_TEXT;
+  if (error.status === 401 || error.status === 403) {
+    return 'Your session ended. Sign in again, then press Retry.';
+  }
+  if (error.kind === 'rejected' && error.detail) {
+    return `${error.detail} Remove it and choose another file.`;
+  }
+  return START_RETRY_TEXT;
 }
 
 function formatLimit(bytes: number): string {
@@ -176,6 +210,7 @@ export function createUploader(options: UploaderOptions) {
     const { signal } = controller;
     setStatus(record, 'uploading');
     lane.message = undefined;
+    lane.errorStatus = undefined;
     lane.savedPercent = undefined;
     record.samples = [];
 
@@ -189,8 +224,12 @@ export function createUploader(options: UploaderOptions) {
         resumeUploadId: lane.uploadId ?? store?.get(lane.fingerprint),
         ...(lane.replaceVideoId ? { replaceVideoId: lane.replaceVideoId } : {}),
       });
-    } catch {
-      if (!signal.aborted) fail(record, 'Upload failed before it began. Try again.');
+    } catch (error) {
+      if (!signal.aborted) {
+        const status = error instanceof TransportError ? error.status : undefined;
+        lane.errorStatus = status;
+        fail(record, startFailureMessage(error));
+      }
       return;
     }
     if (signal.aborted) return;

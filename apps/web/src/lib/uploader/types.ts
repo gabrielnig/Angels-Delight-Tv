@@ -29,12 +29,20 @@ export interface PartRequest {
 export type TransportErrorKind = 'network' | 'server' | 'rejected';
 
 export class TransportError extends Error {
+  /** HTTP status when the server answered. Never contains a file name. */
+  readonly status?: number;
+  /** The server's own plain words for a refusal, safe to show the person. */
+  readonly detail?: string;
+
   constructor(
     message: string,
     readonly kind: TransportErrorKind,
+    info: { status?: number; detail?: string } = {},
   ) {
     super(message);
     this.name = 'TransportError';
+    this.status = info.status;
+    this.detail = info.detail;
   }
 }
 
@@ -86,6 +94,8 @@ export interface Lane {
   attempt: number;
   /** Plain words for the person, set on failed and rejected lanes. */
   message?: string;
+  /** HTTP status of the answer that failed the lane before it began, for the error reporter. */
+  errorStatus?: number;
   /** Percent saved on the server when the lane failed. */
   savedPercent?: number;
   completedAt?: number;

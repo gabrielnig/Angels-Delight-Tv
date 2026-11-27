@@ -42,6 +42,23 @@ export function xhrPutPart({ url, blob, signal, onProgress }: PutPartInput): Pro
   });
 }
 
+/** The first plain message in an error body: a field message, else the error message. */
+async function readDetail(response: Response): Promise<string | undefined> {
+  try {
+    const body = (await response.json()) as {
+      error?: { message?: unknown; fields?: Record<string, unknown> };
+    };
+    for (const messages of Object.values(body.error?.fields ?? {})) {
+      const first = Array.isArray(messages) ? messages[0] : undefined;
+      if (typeof first === 'string' && first) return first;
+    }
+    const message = body.error?.message;
+    return typeof message === 'string' && message ? message : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 /** Client for the admin upload API in docs/ARCHITECTURE.md section 7. */
 export function createHttpTransport(options: HttpTransportOptions = {}): UploadTransport {
   const doFetch: Fetcher = options.fetch ?? ((url, init) => fetch(url, init));
@@ -58,7 +75,11 @@ export function createHttpTransport(options: HttpTransportOptions = {}): UploadT
     }
     if (!response.ok) {
       const kind = response.status >= 500 || response.status === 429 ? 'server' : 'rejected';
-      throw new TransportError(`Server answered ${response.status}`, kind);
+      const detail = kind === 'rejected' ? await readDetail(response) : undefined;
+      throw new TransportError(`Server answered ${response.status}`, kind, {
+        status: response.status,
+        detail,
+      });
     }
     return response;
   }
